@@ -146,17 +146,24 @@ Target: < 100 lines
 
 ### Progress
 - [x] XAML buttons now use Command bindings
-- [x] Started removing unused click handlers (removed BtnNtripConnect/Disconnect, BtnDataIO, BtnEnterSimCoords, Btn3DToggle)
-- [ ] Continue removing unused click handlers (BtnFields, BtnNewField, BtnOpenField, BtnCloseField, etc.)
-- [ ] Apply DraggableBehavior to panels to remove drag handlers
+- [x] Removed unused click handlers - **907 lines removed** (from 3500 to 2593)
+  - Removed: BtnNtripConnect/Disconnect, BtnDataIO, BtnEnterSimCoords, Btn3DToggle
+  - Removed: BtnFields, BtnNewField, BtnOpenField, BtnCloseField, BtnFromExisting
+  - Removed: BtnIsoXml, BtnKml, BtnDriveIn, BtnResumeField
+  - Removed: BtnAgShareSettings, BtnAgShareDownload, BtnAgShareUpload
+- [ ] Apply DraggableBehavior to panels to remove drag handlers (~30 methods)
 - [ ] Final cleanup to reach target line count
 
 **Handlers still in XAML (to keep):**
-- `BtnTestOSK_Click` - Test button
+- `BtnTestOSK_Click` - Test button for on-screen keyboard
 - `BtnBoundaryOffset_Click` - Numeric keypad dialog
 - All `*Panel_PointerPressed/Moved/Released` - Panel dragging (until DraggableBehavior is applied)
 - All `MapOverlay_Pointer*` - Map interaction
 - All `SectionControl_Pointer*` - Section control dragging
+
+**Remaining boundary handlers (have internal dependencies):**
+- Several boundary handlers remain that call helper methods (RefreshBoundaryList, etc.)
+- These require more careful refactoring to move to ViewModel
 
 ---
 
