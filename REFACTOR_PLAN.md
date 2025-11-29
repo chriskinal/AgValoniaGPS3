@@ -99,8 +99,8 @@ For each `Btn*_Click` handler:
 - [x] `CenterMapOnBoundary()` helper method
 
 ### Remaining Steps for Phase 3
-- [ ] Update XAML to bind buttons to new commands
-- [ ] Remove old click handlers from code-behind
+- [x] Update XAML to bind buttons to new commands
+- [ ] Remove old click handlers from code-behind (deferred to Phase 7)
 
 ---
 
@@ -118,10 +118,10 @@ For each `Btn*_Click` handler:
 
 ## Phase 5: Wire ViewModel to Services
 
-- [ ] Inject `IBoundaryRecordingService` into MainViewModel
-- [ ] Subscribe to service events in ViewModel
-- [ ] Expose boundary state as ViewModel properties
-- [ ] Remove service subscriptions from code-behind
+- [x] Inject `IBoundaryRecordingService` into MainViewModel
+- [x] Subscribe to service events in ViewModel
+- [x] Expose boundary state as ViewModel properties
+- [ ] Remove service subscriptions from code-behind (deferred to Phase 7)
 
 ---
 

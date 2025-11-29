@@ -135,17 +135,17 @@
                         BorderThickness="0"
                         Background="{Binding FixQuality, Converter={StaticResource FixQualityToColorConverter}}"
                         ToolTip.Tip="Data I/O Configuration"
-                        Click="BtnDataIO_Click">
+                        Command="{Binding ShowDataIODialogCommand}">
                     <TextBlock Text="GPS" FontSize="12" FontWeight="Bold" Foreground="Black"/>
                 </Button>
 
                 <Separator Height="1" Background="#444" Margin="4,4"/>
                 <Button Classes="IconButton" Content="⚙️" ToolTip.Tip="Settings"/>
-                <Button Classes="IconButton" Content="📁" ToolTip.Tip="Fields" Click="BtnFields_Click"/>
-                <Button Classes="IconButton" Content="🎬" ToolTip.Tip="Toggle 2D/3D View (F3)" Click="Btn3DToggle_Click"/>
+                <Button Classes="IconButton" Content="📁" ToolTip.Tip="Fields" Command="{Binding ShowFieldSelectionDialogCommand}"/>
+                <Button Classes="IconButton" Content="🎬" ToolTip.Tip="Toggle 2D/3D View (F3)" Command="{Binding Toggle3DModeCommand}"/>
                 <Separator Height="1" Background="#444" Margin="4,4"/>
-                <Button Classes="IconButton" Content="+" ToolTip.Tip="Zoom In"/>
-                <Button Classes="IconButton" Content="-" ToolTip.Tip="Zoom Out"/>
+                <Button Classes="IconButton" Content="+" ToolTip.Tip="Zoom In" Command="{Binding ZoomInCommand}"/>
+                <Button Classes="IconButton" Content="-" ToolTip.Tip="Zoom Out" Command="{Binding ZoomOutCommand}"/>
             </StackPanel>
         </Border>
 
@@ -222,7 +222,7 @@
 
                     <!-- 7. AgIO / Data I/O -->
                     <Button Classes="LeftPanelButton" ToolTip.Tip="Data I/O"
-                            Click="BtnDataIO_Click">
+                            Command="{Binding ShowDataIODialogCommand}">
                         <Image Source="/Assets/Icons/AgIO.png" Stretch="Uniform"/>
                     </Button>
                 </StackPanel>
@@ -403,7 +403,7 @@
                 <Button Classes="ModernButton" Content="🎮 Simulator" HorizontalAlignment="Stretch" Margin="0,2"
                         Command="{Binding ToggleSimulatorPanelCommand}"/>
                 <Button Classes="ModernButton" Content="📍 Enter Sim Coords" HorizontalAlignment="Stretch" Margin="0,2"
-                        Click="BtnEnterSimCoords_Click"/>
+                        Command="{Binding ShowSimCoordsDialogCommand}"/>
 
                 <Separator Height="1" Background="#444" Margin="0,4"/>
 
@@ -416,7 +416,7 @@
                 <!-- Info & Help -->
                 <Button Classes="ModernButton" Content="ℹ️ About" HorizontalAlignment="Stretch" Margin="0,2"/>
                 <Button Classes="ModernButton" Content="🌐 AgShare API" HorizontalAlignment="Stretch" Margin="0,2"
-                                Click="BtnAgShareSettings_Click"/>
+                                Command="{Binding ShowAgShareSettingsDialogCommand}"/>
                 <Button Classes="ModernButton" Content="❓ Help" HorizontalAlignment="Stretch" Margin="0,2"/>
             </StackPanel>
         </Border>
@@ -726,14 +726,14 @@
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4">
                         <!-- Row 0: ISO-XML, Close -->
                         <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnIsoXml_Click">
+                                Command="{Binding ShowIsoXmlImportDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/ISOXML.png" Width="28" Height="28"/>
                                 <TextBlock Text="ISO-XML" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnCloseField_Click"
+                                Command="{Binding CloseFieldCommand}"
                                 IsEnabled="{Binding IsFieldOpen}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/FileClose.png" Width="28" Height="28"/>
@@ -743,14 +743,14 @@
 
                         <!-- Row 1: From KML, Drive In -->
                         <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnKml_Click">
+                                Command="{Binding ShowKmlImportDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/GoogleEarth.png" Width="28" Height="28"/>
                                 <TextBlock Text="From KML" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnDriveIn_Click">
+                                Command="{Binding DriveInCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/SteerDriveOn.png" Width="28" Height="28"/>
                                 <TextBlock Text="Drive In" VerticalAlignment="Center" FontSize="12"/>
@@ -759,14 +759,14 @@
 
                         <!-- Row 2: From Existing, Open -->
                         <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnFromExisting_Click">
+                                Command="{Binding ShowFromExistingFieldDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/FileExisting.png" Width="28" Height="28"/>
                                 <TextBlock Text="From Existing" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnOpenField_Click">
+                                Command="{Binding ShowFieldSelectionDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
                                 <TextBlock Text="Open" VerticalAlignment="Center" FontSize="12"/>
@@ -775,14 +775,14 @@
 
                         <!-- Row 3: New From Default, Resume -->
                         <Button Grid.Column="0" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnNewField_Click">
+                                Command="{Binding ShowNewFieldDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/FileNew.png" Width="28" Height="28"/>
                                 <TextBlock Text="New From Default" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnResumeField_Click">
+                                Command="{Binding ResumeFieldCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/FilePrevious.png" Width="28" Height="28"/>
                                 <TextBlock Text="Resume" VerticalAlignment="Center" FontSize="12"/>
@@ -791,14 +791,14 @@
 
                         <!-- Row 4: AgShare Download, AgShare Upload -->
                         <Button Grid.Column="0" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnAgShareDownload_Click">
+                                Command="{Binding ShowAgShareDownloadDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/AgShare.png" Width="28" Height="28"/>
                                 <TextBlock Text="AgShare Download" VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnAgShareUpload_Click">
+                                Command="{Binding ShowAgShareUploadDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/AgShare.png" Width="28" Height="28"/>
                                 <TextBlock Text="AgShare Upload" VerticalAlignment="Center" FontSize="12"/>
@@ -865,7 +865,7 @@
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4">
                         <!-- Row 0: Boundary, (Blank) -->
                         <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnBoundary_Click">
+                                Command="{Binding ShowBoundaryDialogCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="/Assets/Icons/Boundary.png" Width="28" Height="28"/>
                                 <TextBlock Text="Boundary" VerticalAlignment="Center" FontSize="12"/>
@@ -1093,34 +1093,34 @@
                                    Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         <Button Grid.Column="2" Content="✕" Width="28" Height="28" Margin="0,0,4,0"
                                 Background="Transparent" BorderThickness="0" Foreground="#FFFFFF"
-                                Click="BtnCloseBoundaryPanel_Click" Cursor="Hand"
+                                Command="{Binding ToggleBoundaryPanelCommand}" Cursor="Hand"
                                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                     </Grid>
 
                     <!-- Toolbar Row: Delete, KML Import, Bing, Build From Tracks, Drive Around, Accept -->
                     <Grid ColumnDefinitions="*,*,*,*,*,*" Margin="4,4,4,8">
                         <Button x:Name="BtnDeleteBoundary" Grid.Column="0" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnDeleteBoundary_Click" ToolTip.Tip="Delete selected boundary">
+                                Command="{Binding DeleteBoundaryCommand}" ToolTip.Tip="Delete selected boundary">
                             <Image Source="/Assets/Icons/Trash.png" Width="32" Height="32"/>
                         </Button>
                         <Button x:Name="BtnKmlImport" Grid.Column="1" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnKmlImportBoundary_Click" ToolTip.Tip="Import boundary from KML file">
+                                Command="{Binding ImportKmlBoundaryCommand}" ToolTip.Tip="Import boundary from KML file">
                             <Image Source="/Assets/Icons/BoundaryLoadFromGE.png" Width="32" Height="32"/>
                         </Button>
                         <Button x:Name="BtnBingMap" Grid.Column="2" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnBingMap_Click" ToolTip.Tip="Draw boundary on satellite map">
+                                ToolTip.Tip="Draw boundary on satellite map">
                             <Image Source="/Assets/Icons/BoundaryByMap.png" Width="32" Height="32"/>
                         </Button>
                         <Button x:Name="BtnBuildFromTracks" Grid.Column="3" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnBuildFromTracks_Click" ToolTip.Tip="Build boundary from driven tracks">
+                                ToolTip.Tip="Build boundary from driven tracks">
                             <Image Source="/Assets/Icons/BoundaryFromTracks.png" Width="32" Height="32"/>
                         </Button>
                         <Button x:Name="BtnDriveAroundField" Grid.Column="4" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnDriveAroundField_Click" ToolTip.Tip="Drive around field to record boundary">
+                                Command="{Binding StartBoundaryRecordingCommand}" ToolTip.Tip="Drive around field to record boundary">
                             <Image Source="/Assets/Icons/ST_SteerTab.png" Width="32" Height="32"/>
                         </Button>
                         <Button x:Name="BtnAcceptBoundary" Grid.Column="5" Classes="ModernButton" Margin="2" Height="50"
-                                Click="BtnCloseBoundaryPanel_Click" ToolTip.Tip="Accept and close">
+                                Command="{Binding ToggleBoundaryPanelCommand}" ToolTip.Tip="Accept and close">
                             <Image Source="/Assets/Icons/OK64.png" Width="32" Height="32"/>
                         </Button>
                     </Grid>
@@ -1163,19 +1163,19 @@
                     <!-- Recording Controls (shown when recording) -->
                     <Grid x:Name="RecordingControlsPanel" ColumnDefinitions="*,*,*,*" Margin="4,0,4,4" IsVisible="False">
                         <Button Grid.Column="0" Classes="ModernButton" Margin="2" Height="40"
-                                Click="BtnOuterBoundary_Click" ToolTip.Tip="Outer boundary">
+                                ToolTip.Tip="Outer boundary">
                             <TextBlock Text="Outer" FontWeight="Bold"/>
                         </Button>
                         <Button Grid.Column="1" Classes="ModernButton" Margin="2" Height="40"
-                                Click="BtnInnerBoundary_Click" ToolTip.Tip="Inner boundary">
+                                ToolTip.Tip="Inner boundary">
                             <TextBlock Text="Inner" FontWeight="Bold"/>
                         </Button>
                         <Button Grid.Column="2" Classes="ModernButton" Margin="2" Height="40"
-                                Click="BtnPauseBoundary_Click" ToolTip.Tip="Pause recording">
+                                Command="{Binding PauseBoundaryRecordingCommand}" ToolTip.Tip="Pause recording">
                             <Image Source="/Assets/Icons/boundaryPause.png" Width="24" Height="24"/>
                         </Button>
                         <Button Grid.Column="3" Classes="ModernButton" Margin="2" Height="40"
-                                Click="BtnUndoBoundaryPoint_Click" ToolTip.Tip="Undo last point">
+                                Command="{Binding UndoBoundaryPointCommand}" ToolTip.Tip="Undo last point">
                             <TextBlock Text="↩" FontSize="18"/>
                         </Button>
                     </Grid>
@@ -1190,21 +1190,21 @@
 
                             <!-- Import KML Button -->
                             <Button Classes="ModernButton" Height="80" Background="#FFFFFF"
-                                    Click="BtnImportKml_Click" HorizontalAlignment="Center" Width="90"
+                                    Command="{Binding ImportKmlBoundaryCommand}" HorizontalAlignment="Center" Width="90"
                                     ToolTip.Tip="Import boundary from KML file">
                                 <Image Source="/Assets/Icons/BoundaryLoadFromGE.png" Width="64" Height="64"/>
                             </Button>
 
                             <!-- Drive/Record Button -->
                             <Button Classes="ModernButton" Height="80" Background="#FFFFFF"
-                                    Click="BtnDriveRecord_Click" HorizontalAlignment="Center" Width="90"
+                                    Command="{Binding StartBoundaryRecordingCommand}" HorizontalAlignment="Center" Width="90"
                                     ToolTip.Tip="Drive around the field to record boundary">
                                 <Image Source="/Assets/Icons/SteerRight.png" Width="64" Height="64"/>
                             </Button>
 
                             <!-- Cancel Button -->
                             <Button Classes="ModernButton" Height="60" Background="#FFFFFF"
-                                    Click="BtnCancelAddBoundary_Click" HorizontalAlignment="Right" Width="70"
+                                    Command="{Binding ToggleBoundaryPanelCommand}" HorizontalAlignment="Right" Width="70"
                                     ToolTip.Tip="Cancel">
                                 <Image Source="/Assets/Icons/Cancel64.png" Width="48" Height="48"/>
                             </Button>
@@ -1253,13 +1253,12 @@
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="4">
                         <!-- Row 0: Trash (restart) | Section Control -->
                         <Button x:Name="BtnBoundaryRestart" Grid.Column="0" Grid.Row="0" Classes="ModernButton"
-                                Margin="2" Height="56" Click="BtnBoundaryRestart_Click"
+                                Margin="2" Height="56" Command="{Binding ClearBoundaryCommand}"
                                 ToolTip.Tip="Delete all points and restart">
                             <Image Source="/Assets/Icons/Trash.png" Width="40" Height="40"/>
                         </Button>
                         <ToggleButton x:Name="BtnBoundarySectionControl" Grid.Column="1" Grid.Row="0"
-                                      Margin="2" Height="56" Checked="BtnBoundarySectionControl_Checked"
-                                      Unchecked="BtnBoundarySectionControl_Unchecked"
+                                      Margin="2" Height="56"
                                       ToolTip.Tip="Record boundary when section is on">
                             <ToggleButton.Styles>
                                 <Style Selector="ToggleButton">
@@ -1284,24 +1283,24 @@
 
                         <!-- Row 1: Delete Last Point | Add Point -->
                         <Button x:Name="BtnBoundaryDeleteLast" Grid.Column="0" Grid.Row="1" Classes="ModernButton"
-                                Margin="2" Height="56" Click="BtnBoundaryDeleteLast_Click"
+                                Margin="2" Height="56" Command="{Binding UndoBoundaryPointCommand}"
                                 ToolTip.Tip="Delete last point">
                             <Image Source="/Assets/Icons/PointDelete.png" Width="40" Height="40"/>
                         </Button>
                         <Button x:Name="BtnBoundaryAddPoint" Grid.Column="1" Grid.Row="1" Classes="ModernButton"
-                                Margin="2" Height="56" Click="BtnBoundaryAddPoint_Click"
+                                Margin="2" Height="56" Command="{Binding AddBoundaryPointCommand}"
                                 ToolTip.Tip="Add point manually">
                             <Image Source="/Assets/Icons/PointAdd.png" Width="40" Height="40"/>
                         </Button>
 
                         <!-- Row 2: Left/Right toggle | Antenna/Tool toggle -->
                         <Button x:Name="BtnBoundaryLeftRight" Grid.Column="0" Grid.Row="2" Classes="ModernButton"
-                                Margin="2" Height="56" Click="BtnBoundaryLeftRight_Click"
+                                Margin="2" Height="56"
                                 ToolTip.Tip="Toggle left/right side">
                             <Image x:Name="BoundaryLeftRightImage" Source="/Assets/Icons/BoundaryLeft.png" Width="40" Height="40"/>
                         </Button>
                         <Button x:Name="BtnBoundaryAntennaTool" Grid.Column="1" Grid.Row="2" Classes="ModernButton"
-                                Margin="2" Height="56" Click="BtnBoundaryAntennaTool_Click"
+                                Margin="2" Height="56"
                                 ToolTip.Tip="Toggle antenna/tool position">
                             <Image x:Name="BoundaryAntennaToolImage" Source="/Assets/Icons/BoundaryRecordTool.png" Width="40" Height="40"/>
                         </Button>
@@ -1320,12 +1319,12 @@
 
                         <!-- Row 4: OK (stop/accept) | Record/Pause toggle -->
                         <Button x:Name="BtnBoundaryStop" Grid.Column="0" Grid.Row="4" Classes="ModernButton"
-                                Margin="2" Height="64" Click="BtnBoundaryStop_Click"
+                                Margin="2" Height="64" Command="{Binding StopBoundaryRecordingCommand}"
                                 ToolTip.Tip="Stop recording and save boundary">
                             <Image Source="/Assets/Icons/OK64.png" Width="48" Height="48"/>
                         </Button>
                         <Button x:Name="BtnBoundaryPausePlay" Grid.Column="1" Grid.Row="4" Classes="ModernButton"
-                                Margin="2" Height="64" Click="BtnBoundaryPausePlay_Click"
+                                Margin="2" Height="64" Command="{Binding PauseBoundaryRecordingCommand}"
                                 ToolTip.Tip="Start/Pause recording">
                             <Image x:Name="BoundaryPausePlayImage" Source="/Assets/Icons/BoundaryRecord.png" Width="48" Height="48"/>
                         </Button>
