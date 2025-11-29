@@ -330,80 +330,15 @@ public class DialogService : IDialogService
         return null;
     }
 
-    public async Task<double?> ShowNumericInputDialogAsync(string title, string prompt, double currentValue, double min, double max)
+    public async Task<double?> ShowNumericInputDialogAsync(string description, double initialValue, double minValue = double.MinValue, double maxValue = double.MaxValue, int decimalPlaces = 2)
     {
-        double? result = null;
-        var dialog = new Window
-        {
-            Title = title,
-            Width = 350,
-            Height = 200,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false,
-            Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
-        };
-
-        var stack = new StackPanel
-        {
-            Margin = new Avalonia.Thickness(24),
-            Spacing = 12
-        };
-
-        stack.Children.Add(new TextBlock
-        {
-            Text = prompt,
-            FontSize = 14,
-            Foreground = Brushes.White
-        });
-
-        var numericInput = new NumericUpDown
-        {
-            Value = (decimal)currentValue,
-            Minimum = (decimal)min,
-            Maximum = (decimal)max,
-            Increment = 1,
-            Width = 200
-        };
-        stack.Children.Add(numericInput);
-
-        var buttonPanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 16,
-            Margin = new Avalonia.Thickness(0, 12, 0, 0)
-        };
-
-        var okButton = new Button
-        {
-            Content = "OK",
-            Padding = new Avalonia.Thickness(24, 8),
-            Background = new SolidColorBrush(Color.FromRgb(0, 120, 212)),
-            Foreground = Brushes.White,
-            BorderThickness = new Avalonia.Thickness(0)
-        };
-        okButton.Click += (s, args) =>
-        {
-            result = (double?)numericInput.Value;
-            dialog.Close();
-        };
-
-        var cancelButton = new Button
-        {
-            Content = "Cancel",
-            Padding = new Avalonia.Thickness(24, 8),
-            Background = new SolidColorBrush(Color.FromRgb(100, 100, 100)),
-            Foreground = Brushes.White,
-            BorderThickness = new Avalonia.Thickness(0)
-        };
-        cancelButton.Click += (s, args) => dialog.Close();
-
-        buttonPanel.Children.Add(okButton);
-        buttonPanel.Children.Add(cancelButton);
-        stack.Children.Add(buttonPanel);
-
-        dialog.Content = stack;
-        await dialog.ShowDialog(GetParentWindow());
-        return result;
+        return await OnScreenKeyboard.ShowAsync(
+            GetParentWindow(),
+            description: description,
+            initialValue: initialValue,
+            minValue: minValue,
+            maxValue: maxValue,
+            maxDecimalPlaces: decimalPlaces,
+            allowNegative: minValue < 0);
     }
 }

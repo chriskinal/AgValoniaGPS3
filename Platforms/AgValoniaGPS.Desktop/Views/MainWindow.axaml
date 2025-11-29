@@ -805,14 +805,6 @@
                             </StackPanel>
                         </Button>
 
-                        <!-- Row 5: Test OSK (temporary for testing) -->
-                        <Button Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                                Click="BtnTestOSK_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="🔢" FontSize="24" VerticalAlignment="Center"/>
-                                <TextBlock Text="Test Keyboard" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </Button>
                     </Grid>
 
                     <!-- Current Field Display -->
@@ -1263,12 +1255,12 @@
                     <!-- Offset Distance Input (clickable to open numeric keypad) -->
                     <Grid ColumnDefinitions="Auto,*" Margin="8,4">
                         <Button Grid.Column="0" Background="AliceBlue" CornerRadius="4" Padding="8,4" MinWidth="100"
-                                Click="BtnBoundaryOffset_Click" Cursor="Hand"
+                                Command="{Binding ShowBoundaryOffsetDialogCommand}" Cursor="Hand"
                                 ToolTip.Tip="Click to enter offset distance">
-                            <TextBlock x:Name="BoundaryOffsetValue" Text="0" FontSize="22" FontWeight="Bold"
+                            <TextBlock Text="{Binding BoundaryOffset, StringFormat={}{0:F0}}" FontSize="22" FontWeight="Bold"
                                        Foreground="Black" HorizontalAlignment="Center"/>
                         </Button>
-                        <TextBlock Grid.Column="1" x:Name="BoundaryOffsetUnit" Text="cm" FontSize="14" FontWeight="Bold"
+                        <TextBlock Grid.Column="1" Text="cm" FontSize="14" FontWeight="Bold"
                                    Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
                     </Grid>
 
@@ -1282,6 +1274,7 @@
                         </Button>
                         <ToggleButton x:Name="BtnBoundarySectionControl" Grid.Column="1" Grid.Row="0"
                                       Margin="2" Height="56"
+                                      IsChecked="{Binding IsBoundarySectionControlOn}"
                                       ToolTip.Tip="Record boundary when section is on">
                             <ToggleButton.Styles>
                                 <Style Selector="ToggleButton">
@@ -1319,13 +1312,25 @@
                         <!-- Row 2: Left/Right toggle | Antenna/Tool toggle -->
                         <Button x:Name="BtnBoundaryLeftRight" Grid.Column="0" Grid.Row="2" Classes="ModernButton"
                                 Margin="2" Height="56"
+                                Command="{Binding ToggleBoundaryLeftRightCommand}"
                                 ToolTip.Tip="Toggle left/right side">
-                            <Image x:Name="BoundaryLeftRightImage" Source="/Assets/Icons/BoundaryLeft.png" Width="40" Height="40"/>
+                            <Panel>
+                                <Image Source="/Assets/Icons/BoundaryRight.png" Width="40" Height="40"
+                                       IsVisible="{Binding IsDrawRightSide}"/>
+                                <Image Source="/Assets/Icons/BoundaryLeft.png" Width="40" Height="40"
+                                       IsVisible="{Binding !IsDrawRightSide}"/>
+                            </Panel>
                         </Button>
                         <Button x:Name="BtnBoundaryAntennaTool" Grid.Column="1" Grid.Row="2" Classes="ModernButton"
                                 Margin="2" Height="56"
+                                Command="{Binding ToggleBoundaryAntennaToolCommand}"
                                 ToolTip.Tip="Toggle antenna/tool position">
-                            <Image x:Name="BoundaryAntennaToolImage" Source="/Assets/Icons/BoundaryRecordTool.png" Width="40" Height="40"/>
+                            <Panel>
+                                <Image Source="/Assets/Icons/BoundaryRecordPivot.png" Width="40" Height="40"
+                                       IsVisible="{Binding IsDrawAtPivot}"/>
+                                <Image Source="/Assets/Icons/BoundaryRecordTool.png" Width="40" Height="40"
+                                       IsVisible="{Binding !IsDrawAtPivot}"/>
+                            </Panel>
                         </Button>
 
                         <!-- Row 3: Points display | Area display -->

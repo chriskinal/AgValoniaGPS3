@@ -101,15 +101,15 @@ public interface IDialogService
     Task<DialogMapBoundaryResult?> ShowMapBoundaryDialogAsync(double centerLatitude, double centerLongitude);
 
     /// <summary>
-    /// Shows a numeric input dialog.
+    /// Shows a numeric input dialog using on-screen keyboard.
     /// </summary>
-    /// <param name="title">Dialog title.</param>
-    /// <param name="prompt">Input prompt.</param>
-    /// <param name="currentValue">Current value to pre-fill.</param>
-    /// <param name="min">Minimum allowed value.</param>
-    /// <param name="max">Maximum allowed value.</param>
+    /// <param name="description">Description/prompt for the input.</param>
+    /// <param name="initialValue">Initial value to display.</param>
+    /// <param name="minValue">Minimum allowed value.</param>
+    /// <param name="maxValue">Maximum allowed value.</param>
+    /// <param name="decimalPlaces">Maximum decimal places allowed.</param>
     /// <returns>Entered value if confirmed, null if cancelled.</returns>
-    Task<double?> ShowNumericInputDialogAsync(string title, string prompt, double currentValue, double min, double max);
+    Task<double?> ShowNumericInputDialogAsync(string description, double initialValue, double minValue = double.MinValue, double maxValue = double.MaxValue, int decimalPlaces = 2);
 }
 
 #region Dialog Result Types

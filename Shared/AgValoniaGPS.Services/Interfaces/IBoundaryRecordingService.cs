@@ -134,6 +134,15 @@ public interface IBoundaryRecordingService
     void AddPoint(double easting, double northing, double heading);
 
     /// <summary>
+    /// Manually add a point regardless of recording state.
+    /// Used for "Add Point Manually" button when paused.
+    /// </summary>
+    /// <param name="easting">Easting in local coordinates</param>
+    /// <param name="northing">Northing in local coordinates</param>
+    /// <param name="heading">Heading in radians</param>
+    void AddPointManual(double easting, double northing, double heading);
+
+    /// <summary>
     /// Remove the last recorded point (undo)
     /// </summary>
     /// <returns>True if a point was removed</returns>

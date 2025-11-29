@@ -153,6 +153,22 @@ public class BoundaryRecordingService : IBoundaryRecordingService
     }
 
     /// <inheritdoc/>
+    public void AddPointManual(double easting, double northing, double heading)
+    {
+        // Manual add bypasses recording state check - works when paused
+        if (_state == BoundaryRecordingState.Idle)
+        {
+            return; // Must have started recording at least once
+        }
+
+        var point = new BoundaryPoint(easting, northing, heading);
+        _recordedPoints.Add(point);
+        _lastPoint = point;
+
+        OnPointAdded(point);
+    }
+
+    /// <inheritdoc/>
     public bool RemoveLastPoint()
     {
         if (_recordedPoints.Count == 0)

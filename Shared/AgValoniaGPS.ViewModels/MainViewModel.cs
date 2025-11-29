@@ -787,6 +787,88 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _boundaryAreaHectares, value);
     }
 
+    // Boundary Player settings
+    private bool _isBoundarySectionControlOn;
+    public bool IsBoundarySectionControlOn
+    {
+        get => _isBoundarySectionControlOn;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value) != value) return;
+            StatusMessage = value ? "Boundary records when section is on" : "Boundary section control off";
+        }
+    }
+
+    private bool _isDrawRightSide = true;
+    public bool IsDrawRightSide
+    {
+        get => _isDrawRightSide;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isDrawRightSide, value) != value) return;
+            StatusMessage = value ? "Boundary on right side" : "Boundary on left side";
+            UpdateBoundaryOffsetIndicator();
+        }
+    }
+
+    private bool _isDrawAtPivot;
+    public bool IsDrawAtPivot
+    {
+        get => _isDrawAtPivot;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value) != value) return;
+            StatusMessage = value ? "Recording at pivot point" : "Recording at tool";
+        }
+    }
+
+    private double _boundaryOffset;
+    public double BoundaryOffset
+    {
+        get => _boundaryOffset;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _boundaryOffset, value) != value) return;
+            UpdateBoundaryOffsetIndicator();
+        }
+    }
+
+    private void UpdateBoundaryOffsetIndicator()
+    {
+        // Apply direction: right side = positive offset, left side = negative offset
+        double signedOffsetMeters = _boundaryOffset / 100.0;
+        if (!_isDrawRightSide)
+        {
+            signedOffsetMeters = -signedOffsetMeters;
+        }
+        _mapService.SetBoundaryOffsetIndicator(true, signedOffsetMeters);
+    }
+
+    /// <summary>
+    /// Calculate offset position perpendicular to heading.
+    /// Returns (easting, northing) with offset applied.
+    /// </summary>
+    private (double easting, double northing) CalculateOffsetPosition(double easting, double northing, double headingRadians)
+    {
+        if (_boundaryOffset == 0)
+            return (easting, northing);
+
+        // Offset in meters (input is cm)
+        double offsetMeters = _boundaryOffset / 100.0;
+
+        // If drawing on left side, negate the offset
+        if (!_isDrawRightSide)
+            offsetMeters = -offsetMeters;
+
+        // Calculate perpendicular offset (90 degrees to the right of heading)
+        double perpAngle = headingRadians + Math.PI / 2.0;
+
+        double offsetEasting = easting + offsetMeters * Math.Sin(perpAngle);
+        double offsetNorthing = northing + offsetMeters * Math.Cos(perpAngle);
+
+        return (offsetEasting, offsetNorthing);
+    }
+
     // Field management properties
     private bool _isFieldOpen;
     public bool IsFieldOpen
@@ -1009,6 +1091,9 @@ public class MainViewModel : ReactiveObject
     public ICommand? BuildFromTracksCommand { get; private set; }
     public ICommand? DriveAroundFieldCommand { get; private set; }
     public ICommand? ToggleRecordingCommand { get; private set; }
+    public ICommand? ToggleBoundaryLeftRightCommand { get; private set; }
+    public ICommand? ToggleBoundaryAntennaToolCommand { get; private set; }
+    public ICommand? ShowBoundaryOffsetDialogCommand { get; private set; }
 
     private void InitializeCommands()
     {
@@ -1173,12 +1258,13 @@ public class MainViewModel : ReactiveObject
 
         ShowFieldSelectionDialogCommand = new AsyncRelayCommand(async () =>
         {
-            var fieldsDir = FieldsRootDirectory;
+            // Use settings directory which defaults to ~/Documents/AgValoniaGPS/Fields
+            var fieldsDir = _settingsService.Settings.FieldsDirectory;
             if (string.IsNullOrWhiteSpace(fieldsDir))
             {
                 fieldsDir = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgOpenGPS", "Fields");
+                    "AgValoniaGPS", "Fields");
             }
             var result = await _dialogService.ShowFieldSelectionDialogAsync(fieldsDir);
             if (result != null)
@@ -1186,11 +1272,19 @@ public class MainViewModel : ReactiveObject
                 FieldsRootDirectory = fieldsDir;
                 CurrentFieldName = result.FieldName;
                 IsFieldOpen = true;
+
+                // Save as last opened field
+                _settingsService.Settings.LastOpenedField = result.FieldName;
+                _settingsService.Save();
+
                 if (result.Boundary != null)
                 {
                     _mapService.SetBoundary(result.Boundary);
                     CenterMapOnBoundary(result.Boundary);
                 }
+
+                IsJobMenuPanelVisible = false;
+                StatusMessage = $"Opened field: {result.FieldName}";
             }
         });
 
@@ -1313,21 +1407,44 @@ public class MainViewModel : ReactiveObject
             }
         });
 
-        ResumeFieldCommand = new AsyncRelayCommand(async () =>
+        ResumeFieldCommand = new RelayCommand(() =>
         {
             var lastField = _settingsService.Settings.LastOpenedField;
-            if (!string.IsNullOrEmpty(lastField))
+            if (string.IsNullOrEmpty(lastField))
             {
-                var result = await _dialogService.ShowFieldSelectionDialogAsync(_settingsService.Settings.FieldsDirectory);
-                if (result != null)
+                StatusMessage = "No previous field to resume";
+                return;
+            }
+
+            var fieldsDir = _settingsService.Settings.FieldsDirectory;
+            var fieldPath = Path.Combine(fieldsDir, lastField);
+
+            if (!_fieldService.FieldExists(fieldPath))
+            {
+                StatusMessage = $"Field not found: {lastField}";
+                return;
+            }
+
+            try
+            {
+                var field = _fieldService.LoadField(fieldPath);
+                _fieldService.SetActiveField(field);
+
+                CurrentFieldName = lastField;
+                IsFieldOpen = true;
+
+                if (field.Boundary != null)
                 {
-                    CurrentFieldName = result.FieldName;
-                    IsFieldOpen = true;
-                    if (result.Boundary != null)
-                    {
-                        _mapService.SetBoundary(result.Boundary);
-                    }
+                    _mapService.SetBoundary(field.Boundary);
+                    CenterMapOnBoundary(field.Boundary);
                 }
+
+                IsJobMenuPanelVisible = false;
+                StatusMessage = $"Resumed field: {lastField}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to load field: {ex.Message}";
             }
         });
 
@@ -1428,7 +1545,36 @@ public class MainViewModel : ReactiveObject
 
         AddBoundaryPointCommand = new RelayCommand(() =>
         {
-            _boundaryRecordingService.AddPoint(Easting, Northing, Heading * Math.PI / 180.0);
+            double headingRadians = Heading * Math.PI / 180.0;
+            var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(Easting, Northing, headingRadians);
+            _boundaryRecordingService.AddPointManual(offsetEasting, offsetNorthing, headingRadians);
+            StatusMessage = $"Point added ({_boundaryRecordingService.PointCount} total)";
+        });
+
+        ToggleBoundaryLeftRightCommand = new RelayCommand(() =>
+        {
+            IsDrawRightSide = !IsDrawRightSide;
+        });
+
+        ToggleBoundaryAntennaToolCommand = new RelayCommand(() =>
+        {
+            IsDrawAtPivot = !IsDrawAtPivot;
+        });
+
+        ShowBoundaryOffsetDialogCommand = new AsyncRelayCommand(async () =>
+        {
+            var result = await _dialogService.ShowNumericInputDialogAsync(
+                "Boundary Offset (cm)",
+                BoundaryOffset,
+                minValue: 0,
+                maxValue: 500,
+                decimalPlaces: 0);
+
+            if (result.HasValue)
+            {
+                BoundaryOffset = result.Value;
+                StatusMessage = $"Boundary offset set to {BoundaryOffset:F0} cm";
+            }
         });
 
         DeleteBoundaryCommand = new RelayCommand(DeleteSelectedBoundary);

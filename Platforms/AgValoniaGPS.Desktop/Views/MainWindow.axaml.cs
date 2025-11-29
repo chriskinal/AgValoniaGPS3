@@ -35,11 +35,6 @@ public partial class MainWindow : Window
     private bool _isDraggingBoundary = false;
     private bool _isDraggingBoundaryPlayer = false;
     private Avalonia.Point _dragStartPoint;
-    // Boundary Player state
-    private bool _isDrawRightSide = true;
-    private bool _isDrawAtPivot = false;
-    private bool _isBoundarySectionControlOn = false;
-    private double _boundaryOffset = 0; // Offset in centimeters
     private DateTime _leftPanelPressTime;
     private const int TapTimeThresholdMs = 300;
     private const double TapDistanceThreshold = 5.0;
@@ -263,51 +258,6 @@ public partial class MainWindow : Window
 
     // Removed: BtnIsoXml_Click, BtnKml_Click, BtnDriveIn_Click, BtnResumeField_Click
     // These are now handled by ViewModel commands via IDialogService
-
-    private async void BtnTestOSK_Click(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel == null) return;
-
-        // Test alphanumeric keyboard (for field names, etc.)
-        var textResult = await AlphanumericKeyboard.ShowAsync(
-            this,
-            description: "Enter field name:",
-            initialValue: "My Field",
-            maxLength: 50);
-
-        if (textResult != null)
-        {
-            ViewModel.StatusMessage = $"Text entered: {textResult}";
-        }
-        else
-        {
-            ViewModel.StatusMessage = "Keyboard cancelled";
-        }
-    }
-
-    private async void BtnTestNumericOSK_Click(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel == null) return;
-
-        // Test numeric keyboard (for values)
-        var numResult = await OnScreenKeyboard.ShowAsync(
-            this,
-            description: "Enter vehicle width (meters):",
-            initialValue: 6.5,
-            minValue: 0.5,
-            maxValue: 50.0,
-            maxDecimalPlaces: 2,
-            allowNegative: false);
-
-        if (numResult.HasValue)
-        {
-            ViewModel.StatusMessage = $"Value entered: {numResult.Value:F2} meters";
-        }
-        else
-        {
-            ViewModel.StatusMessage = "Keyboard cancelled";
-        }
-    }
 
     // Drag functionality for Section Control
     private void SectionControl_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -1304,12 +1254,17 @@ public partial class MainWindow : Window
 
     private void BoundaryRecordingService_StateChanged(object? sender, BoundaryRecordingStateChangedEventArgs e)
     {
-        // Clear the recording display when recording is stopped or cancelled
+        // Update the map display when state changes (includes point removal, clear, etc.)
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             if (e.State == BoundaryRecordingState.Idle)
             {
                 MapControl?.ClearRecordingPoints();
+            }
+            else
+            {
+                // Update display for point count changes (e.g., when points are deleted)
+                UpdateRecordingDisplay();
             }
         });
     }
@@ -1374,21 +1329,10 @@ public partial class MainWindow : Window
             ViewModel.IsBoundaryPanelVisible = false;
         }
 
-        // Show the BoundaryPlayerPanel
-        var playerPanel = this.FindControl<Border>("BoundaryPlayerPanel");
-        if (playerPanel != null)
-        {
-            playerPanel.IsVisible = true;
-        }
-
-        // Show boundary offset indicator on map
-        UpdateBoundaryOffsetIndicator();
-
-        // Initialize recording service for a new boundary (now handled by ViewModel DriveAroundFieldCommand)
-        // Display updated via ViewModel bindings
-
+        // Show the BoundaryPlayerPanel via ViewModel
         if (ViewModel != null)
         {
+            ViewModel.IsBoundaryPlayerPanelVisible = true;
             ViewModel.StatusMessage = "Boundary recording ready - Click Record (R) to start";
         }
     }
@@ -1754,154 +1698,26 @@ public partial class MainWindow : Window
     }
 
 
-    // Offset button clicked - show numeric keypad
-    private async void BtnBoundaryOffset_Click(object? sender, RoutedEventArgs e)
-    {
-        // Show numeric keypad dialog for offset input (0-500, direction controlled by Left/Right button)
-        var result = await OnScreenKeyboard.ShowAsync(
-            this,
-            description: "Boundary Offset (cm)",
-            initialValue: _boundaryOffset,
-            minValue: 0,
-            maxValue: 500,
-            maxDecimalPlaces: 0,
-            allowNegative: false);
-
-        if (result.HasValue)
-        {
-            _boundaryOffset = result.Value;
-
-            // Update the display
-            var offsetLabel = this.FindControl<TextBlock>("BoundaryOffsetValue");
-            if (offsetLabel != null)
-            {
-                offsetLabel.Text = _boundaryOffset.ToString("F0");
-            }
-
-            // Update the offset indicator on the map
-            UpdateBoundaryOffsetIndicator();
-
-            if (ViewModel != null)
-            {
-                ViewModel.StatusMessage = $"Boundary offset set to {_boundaryOffset:F0} cm";
-            }
-        }
-    }
-
-    // Helper to update the boundary offset indicator with the correct direction
-    private void UpdateBoundaryOffsetIndicator()
-    {
-        // Apply direction: right side = positive offset, left side = negative offset
-        double signedOffsetMeters = _boundaryOffset / 100.0;
-        if (!_isDrawRightSide)
-        {
-            signedOffsetMeters = -signedOffsetMeters;
-        }
-        MapControl?.SetBoundaryOffsetIndicator(true, signedOffsetMeters);
-    }
-
     // BtnBoundaryRestart now handled by ViewModel's ClearBoundaryCommand
-
-    // Toggle section control for boundary recording - Checked event
-    private void BtnBoundarySectionControl_Checked(object? sender, RoutedEventArgs e)
-    {
-        _isBoundarySectionControlOn = true;
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Boundary records when section is on";
-        }
-    }
-
-    // Toggle section control for boundary recording - Unchecked event
-    private void BtnBoundarySectionControl_Unchecked(object? sender, RoutedEventArgs e)
-    {
-        _isBoundarySectionControlOn = false;
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Boundary section control off";
-        }
-    }
-
-    // Delete last point
-    private void BtnBoundaryDeleteLast_Click(object? sender, RoutedEventArgs e)
-    {
-        if (BoundaryRecordingService == null) return;
-
-        BoundaryRecordingService.RemoveLastPoint();
-        // Display updated via ViewModel bindings
-        UpdateRecordingDisplay(); // Update map display
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Last point deleted";
-        }
-    }
-
-    // Toggle left/right side
-    private void BtnBoundaryLeftRight_Click(object? sender, RoutedEventArgs e)
-    {
-        _isDrawRightSide = !_isDrawRightSide;
-
-        var image = this.FindControl<Image>("BoundaryLeftRightImage");
-        if (image != null)
-        {
-            try
-            {
-                var assetUri = _isDrawRightSide
-                    ? new Uri("avares://AgValoniaGPS.Desktop/Assets/Icons/BoundaryRight.png")
-                    : new Uri("avares://AgValoniaGPS.Desktop/Assets/Icons/BoundaryLeft.png");
-                image.Source = new Avalonia.Media.Imaging.Bitmap(Avalonia.Platform.AssetLoader.Open(assetUri));
-            }
-            catch { }
-        }
-
-        // Update the offset indicator (offset sign depends on left/right side)
-        UpdateBoundaryOffsetIndicator();
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = _isDrawRightSide ? "Boundary on right side" : "Boundary on left side";
-        }
-    }
-
-    // Toggle antenna/tool position
-    private void BtnBoundaryAntennaTool_Click(object? sender, RoutedEventArgs e)
-    {
-        _isDrawAtPivot = !_isDrawAtPivot;
-
-        var image = this.FindControl<Image>("BoundaryAntennaToolImage");
-        if (image != null)
-        {
-            try
-            {
-                var assetUri = _isDrawAtPivot
-                    ? new Uri("avares://AgValoniaGPS.Desktop/Assets/Icons/BoundaryRecordPivot.png")
-                    : new Uri("avares://AgValoniaGPS.Desktop/Assets/Icons/BoundaryRecordTool.png");
-                image.Source = new Avalonia.Media.Imaging.Bitmap(Avalonia.Platform.AssetLoader.Open(assetUri));
-            }
-            catch { }
-        }
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = _isDrawAtPivot ? "Recording at pivot point" : "Recording at tool";
-        }
-    }
+    // BtnBoundaryOffset now handled by ViewModel's ShowBoundaryOffsetDialogCommand
+    // BtnBoundarySectionControl now handled by ViewModel's IsBoundarySectionControlOn binding
+    // BtnBoundaryLeftRight now handled by ViewModel's ToggleBoundaryLeftRightCommand
+    // BtnBoundaryAntennaTool now handled by ViewModel's ToggleBoundaryAntennaToolCommand
+    // BtnBoundaryDeleteLast now handled by ViewModel's UndoBoundaryPointCommand
 
     // Calculate offset position perpendicular to heading
     // Returns (easting, northing) with offset applied
     private (double easting, double northing) CalculateOffsetPosition(double easting, double northing, double headingRadians)
     {
-        if (_boundaryOffset == 0)
+        var boundaryOffset = ViewModel?.BoundaryOffset ?? 0;
+        if (boundaryOffset == 0)
             return (easting, northing);
 
         // Offset in meters (input is cm)
-        double offsetMeters = _boundaryOffset / 100.0;
+        double offsetMeters = boundaryOffset / 100.0;
 
         // If drawing on left side, negate the offset
-        if (!_isDrawRightSide)
+        if (ViewModel != null && !ViewModel.IsDrawRightSide)
             offsetMeters = -offsetMeters;
 
         // Calculate perpendicular offset (90 degrees to the right of heading)
@@ -1914,25 +1730,7 @@ public partial class MainWindow : Window
         return (offsetEasting, offsetNorthing);
     }
 
-    // Add point manually
-    private void BtnBoundaryAddPoint_Click(object? sender, RoutedEventArgs e)
-    {
-        if (BoundaryRecordingService == null || ViewModel == null) return;
-
-        // Calculate offset position based on boundary offset setting
-        double headingRadians = ViewModel.Heading * Math.PI / 180.0;
-        var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(
-            ViewModel.Easting, ViewModel.Northing, headingRadians);
-
-        // Add a UTM point with offset applied
-        BoundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
-        // Display updated via ViewModel bindings
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = $"Point added ({BoundaryRecordingService.PointCount} total)";
-        }
-    }
+    // BtnBoundaryAddPoint now handled by ViewModel's AddBoundaryPointCommand
 
     #endregion
 }
