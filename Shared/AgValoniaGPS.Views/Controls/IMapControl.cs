@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Avalonia;
 using AgValoniaGPS.Models;
 
-namespace AgValoniaGPS.Desktop.Controls;
+namespace AgValoniaGPS.Views.Controls;
 
 /// <summary>
 /// Interface for map rendering controls - allows both OpenGL and SkiaSharp implementations

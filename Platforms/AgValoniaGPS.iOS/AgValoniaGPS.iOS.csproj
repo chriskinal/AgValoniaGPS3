@@ -8,6 +8,7 @@
     <LangVersion>14</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <SupportedOSPlatformVersion>14.0</SupportedOSPlatformVersion>
+    <MtouchLink>None</MtouchLink>
     <ApplicationId>com.agvaloniaagps.ios</ApplicationId>
     <ApplicationTitle>AgValoniaGPS</ApplicationTitle>
   </PropertyGroup>
@@ -17,12 +18,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <BundleResource Include="Resources\LaunchScreen.storyboard" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.9" />
     <PackageReference Include="Avalonia.iOS" Version="11.3.9" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
     <PackageReference Include="ReactiveUI" Version="20.1.1" />
+    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="SkiaSharp" Version="3.116.1" />
+    <PackageReference Include="SkiaSharp.Views" Version="3.116.1" />
   </ItemGroup>
 
   <ItemGroup>

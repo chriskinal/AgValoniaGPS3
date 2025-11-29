@@ -13,7 +13,7 @@ using Avalonia.Threading;
 using SkiaSharp;
 using AgValoniaGPS.Models;
 
-namespace AgValoniaGPS.Desktop.Controls;
+namespace AgValoniaGPS.Views.Controls;
 
 /// <summary>
 /// SkiaSharp-based map control for cross-platform rendering (iOS, Android, Desktop).
@@ -174,9 +174,6 @@ public class SkiaMapControl : Control, IMapControl
         timer.Tick += (s, e) => InvalidateVisual();
         timer.Start();
 
-        // Load vehicle texture
-        LoadVehicleTexture();
-
         // Wire up mouse events for camera control
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -184,38 +181,64 @@ public class SkiaMapControl : Control, IMapControl
         PointerWheelChanged += OnPointerWheelChanged;
     }
 
-    private void LoadVehicleTexture()
+    private static bool _loggedRenderPath = false;
+
+    public override void Render(Avalonia.Media.DrawingContext context)
     {
         try
         {
-            string texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Images", "TractorAoG.png");
-            if (File.Exists(texturePath))
+            base.Render(context);
+
+            var bounds = Bounds;
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                return;
+
+            // Get the rendering scale factor for high-DPI displays
+            double scale = 1.0;
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel != null)
             {
-                using var stream = File.OpenRead(texturePath);
-                _vehicleBitmap = SKBitmap.Decode(stream);
+                scale = topLevel.RenderScaling;
+            }
+
+            // On iOS/mobile, RenderScaling may return 1.0 even on Retina displays
+            // Force 2x scale for crisp rendering on high-DPI mobile screens
+            if (_useWriteableBitmapFallback && scale < 1.5)
+            {
+                scale = 2.0; // Most iOS devices are 2x or 3x Retina
+            }
+
+            // Calculate pixel dimensions accounting for DPI scaling
+            int pixelWidth = (int)(bounds.Width * scale);
+            int pixelHeight = (int)(bounds.Height * scale);
+
+            if (!_loggedRenderPath)
+            {
+                Console.WriteLine($"[SkiaMapControl] Render: useWriteableBitmapFallback={_useWriteableBitmapFallback}, bounds={bounds.Width}x{bounds.Height}, scale={scale}, pixels={pixelWidth}x{pixelHeight}");
+                Console.WriteLine($"[SkiaMapControl] IsIOS={OperatingSystem.IsIOS()}, IsAndroid={OperatingSystem.IsAndroid()}, IsMacOS={OperatingSystem.IsMacOS()}");
+                _loggedRenderPath = true;
+            }
+
+            if (_useWriteableBitmapFallback)
+            {
+                // Use WriteableBitmap fallback (for iOS and other platforms without SkiaSharp lease)
+                RenderToWriteableBitmap(context, bounds, pixelWidth, pixelHeight, scale);
+            }
+            else
+            {
+                // Try to use SkiaSharp custom draw operation first (best quality on Desktop)
+                context.Custom(new SkiaMapDrawOperation(this, new Rect(0, 0, bounds.Width, bounds.Height)));
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading vehicle texture: {ex.Message}");
-        }
-    }
-
-    public override void Render(Avalonia.Media.DrawingContext context)
-    {
-        base.Render(context);
-
-        var bounds = Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-            return;
-
-        // Get the SkiaSharp canvas from Avalonia's DrawingContext
-        var skiaContext = context as Avalonia.Skia.ISkiaSharpApiLeaseFeature;
-        if (skiaContext == null)
-        {
-            // Try to get via custom rendering
-            context.Custom(new SkiaMapDrawOperation(this, new Rect(0, 0, bounds.Width, bounds.Height)));
-            return;
+            Console.WriteLine($"[SkiaMapControl] Render error: {ex}");
+            // Fallback: draw simple background if custom operation fails
+            try
+            {
+                context.DrawRectangle(Brushes.DarkSlateGray, null, Bounds);
+            }
+            catch { }
         }
     }
 
@@ -246,7 +269,11 @@ public class SkiaMapControl : Control, IMapControl
         {
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
             if (leaseFeature == null)
+            {
+                // SkiaSharp lease not available - this shouldn't happen if platform detection is correct
+                // Just return and let the WriteableBitmap path handle it
                 return;
+            }
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
@@ -260,26 +287,40 @@ public class SkiaMapControl : Control, IMapControl
     /// </summary>
     internal void RenderToCanvas(SKCanvas canvas, float width, float height)
     {
+        // Use pixel dimensions for both drawing and view calculations
+        RenderToCanvasInternal(canvas, width, height, width, height);
+    }
+
+    /// <summary>
+    /// Render the map to a SkiaSharp canvas with separate pixel and logical dimensions
+    /// </summary>
+    /// <param name="canvas">The canvas to render to</param>
+    /// <param name="pixelWidth">Width in pixels (for drawing)</param>
+    /// <param name="pixelHeight">Height in pixels (for drawing)</param>
+    /// <param name="logicalWidth">Logical width (for view/zoom calculations)</param>
+    /// <param name="logicalHeight">Logical height (for view/zoom calculations)</param>
+    internal void RenderToCanvasInternal(SKCanvas canvas, float pixelWidth, float pixelHeight, float logicalWidth, float logicalHeight)
+    {
         // Clear background
         canvas.Clear(new SKColor(25, 25, 25)); // Dark gray
 
-        // Calculate view transformation
-        float aspect = width / height;
+        // Calculate view transformation using LOGICAL dimensions for correct aspect/zoom
+        float aspect = logicalWidth / logicalHeight;
         float viewWidth = 200.0f * aspect / (float)_zoom;
         float viewHeight = 200.0f / (float)_zoom;
 
         // Save canvas state
         canvas.Save();
 
-        // Center the canvas
-        canvas.Translate(width / 2, height / 2);
+        // Center the canvas using PIXEL dimensions
+        canvas.Translate(pixelWidth / 2, pixelHeight / 2);
 
         // Apply rotation (around center)
         canvas.RotateDegrees((float)(-_rotation * 180.0 / Math.PI));
 
-        // Calculate scale: pixels per meter
-        float scaleX = width / viewWidth;
-        float scaleY = height / viewHeight;
+        // Calculate scale: pixels per meter (using PIXEL dimensions for drawing size)
+        float scaleX = pixelWidth / viewWidth;
+        float scaleY = pixelHeight / viewHeight;
         canvas.Scale(scaleX, -scaleY); // Flip Y axis (world Y goes up, screen Y goes down)
 
         // Translate to camera position
@@ -546,6 +587,83 @@ public class SkiaMapControl : Control, IMapControl
                 };
                 canvas.DrawPath(arrowPath, fillPaint);
             }
+        }
+    }
+
+    /// <summary>
+    /// Fallback rendering using Avalonia's drawing API when SkiaSharp lease is not available (e.g., iOS)
+    /// This method renders to a cached WriteableBitmap using SkiaSharp directly
+    /// </summary>
+    internal void RenderWithAvaloniaFallback(ImmediateDrawingContext context)
+    {
+        // ImmediateDrawingContext doesn't support direct bitmap drawing
+        // The rendering will be handled in the main Render method via WriteableBitmap
+        // This is just a placeholder that indicates the custom operation couldn't render
+    }
+
+    // Cached WriteableBitmap for iOS fallback rendering
+    private Avalonia.Media.Imaging.WriteableBitmap? _renderBitmap;
+    private int _lastRenderWidth = 0;
+    private int _lastRenderHeight = 0;
+
+    // Always use WriteableBitmap on mobile platforms (iOS, Android)
+    // Desktop can use ISkiaSharpApiLeaseFeature for better performance
+    private static readonly bool _useWriteableBitmapFallback =
+        OperatingSystem.IsIOS() || OperatingSystem.IsAndroid() || OperatingSystem.IsTvOS() || OperatingSystem.IsWatchOS();
+
+    /// <summary>
+    /// Render using WriteableBitmap fallback (for platforms without SkiaSharp lease)
+    /// </summary>
+    private void RenderToWriteableBitmap(Avalonia.Media.DrawingContext context, Rect bounds, int pixelWidth, int pixelHeight, double scale)
+    {
+        if (pixelWidth <= 0 || pixelHeight <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            // Create bitmap at full pixel resolution for crisp rendering
+            // DPI should match the scale factor (96 * scale = effective DPI)
+            // This tells Avalonia the bitmap's native resolution so it displays 1:1 on screen
+            double dpi = 96 * scale;
+
+            if (_renderBitmap == null || _lastRenderWidth != pixelWidth || _lastRenderHeight != pixelHeight)
+            {
+                Console.WriteLine($"[SkiaMapControl] Creating WriteableBitmap {pixelWidth}x{pixelHeight} (scale={scale}, dpi={dpi}, logical={bounds.Width}x{bounds.Height})");
+                _renderBitmap?.Dispose();
+
+                _renderBitmap = new Avalonia.Media.Imaging.WriteableBitmap(
+                    new Avalonia.PixelSize(pixelWidth, pixelHeight),
+                    new Avalonia.Vector(dpi, dpi),
+                    Avalonia.Platform.PixelFormat.Bgra8888,
+                    Avalonia.Platform.AlphaFormat.Premul);
+                _lastRenderWidth = pixelWidth;
+                _lastRenderHeight = pixelHeight;
+            }
+
+            // Lock the bitmap and render to it using SkiaSharp
+            using (var frameBuffer = _renderBitmap.Lock())
+            {
+                var info = new SKImageInfo(pixelWidth, pixelHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+                using var surface = SKSurface.Create(info, frameBuffer.Address, frameBuffer.RowBytes);
+                if (surface != null)
+                {
+                    var canvas = surface.Canvas;
+                    // Render using pixel dimensions for drawing, logical dimensions for view calculations
+                    // This ensures:
+                    // 1. Drawing fills the entire pixel buffer (crisp at full resolution)
+                    // 2. View calculations (aspect ratio, zoom) use logical dimensions for correct proportions
+                    RenderToCanvasInternal(canvas, (float)pixelWidth, (float)pixelHeight, (float)bounds.Width, (float)bounds.Height);
+                }
+            }
+
+            // Draw the bitmap to fill the logical bounds
+            context.DrawImage(_renderBitmap, new Rect(0, 0, bounds.Width, bounds.Height));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SkiaMapControl] RenderToWriteableBitmap error: {ex}");
         }
     }
 

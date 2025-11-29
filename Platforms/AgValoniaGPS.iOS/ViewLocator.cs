@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using AgValoniaGPS.ViewModels;
+using ReactiveUI;
 
 namespace AgValoniaGPS.iOS;
 
@@ -28,6 +28,6 @@ public class ViewLocator : IDataTemplate
 
     public bool Match(object? data)
     {
-        return data is ViewModelBase;
+        return data is ReactiveObject;
     }
 }

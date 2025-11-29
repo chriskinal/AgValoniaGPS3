@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AgValoniaGPS.iOS;
 
-public partial class App : Application
+public partial class App : Avalonia.Application
 {
     private IServiceProvider? _services;
 
@@ -20,30 +20,57 @@ public partial class App : Application
 
     public override void Initialize()
     {
-        AvaloniaXamlLoader.Load(this);
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("[App] Initialize starting...");
+            AvaloniaXamlLoader.Load(this);
+            System.Diagnostics.Debug.WriteLine("[App] Initialize completed.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[App] Initialize FAILED: {ex}");
+            throw;
+        }
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // Build DI container
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddAgValoniaServices();
-        _services = serviceCollection.BuildServiceProvider();
-        Services = _services;
-
-        // Load settings
-        var settingsService = Services.GetRequiredService<ISettingsService>();
-        settingsService.Load();
-
-        if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
+        try
         {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-            DisableAvaloniaDataAnnotationValidation();
+            System.Diagnostics.Debug.WriteLine("[App] OnFrameworkInitializationCompleted starting...");
 
-            singleViewPlatform.MainView = new MainView();
+            // Build DI container
+            System.Diagnostics.Debug.WriteLine("[App] Building DI container...");
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddAgValoniaServices();
+            _services = serviceCollection.BuildServiceProvider();
+            Services = _services;
+            System.Diagnostics.Debug.WriteLine("[App] DI container built.");
+
+            // Load settings
+            System.Diagnostics.Debug.WriteLine("[App] Loading settings...");
+            var settingsService = Services.GetRequiredService<ISettingsService>();
+            settingsService.Load();
+            System.Diagnostics.Debug.WriteLine("[App] Settings loaded.");
+
+            if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
+            {
+                System.Diagnostics.Debug.WriteLine("[App] Creating MainView...");
+                // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
+                DisableAvaloniaDataAnnotationValidation();
+
+                singleViewPlatform.MainView = new MainView();
+                System.Diagnostics.Debug.WriteLine("[App] MainView created and assigned.");
+            }
+
+            base.OnFrameworkInitializationCompleted();
+            System.Diagnostics.Debug.WriteLine("[App] OnFrameworkInitializationCompleted finished.");
         }
-
-        base.OnFrameworkInitializationCompleted();
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[App] OnFrameworkInitializationCompleted FAILED: {ex}");
+            throw;
+        }
     }
 
     private void DisableAvaloniaDataAnnotationValidation()

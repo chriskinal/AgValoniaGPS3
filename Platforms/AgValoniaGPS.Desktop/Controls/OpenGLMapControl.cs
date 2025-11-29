@@ -1135,6 +1135,15 @@ void main()
         }
     }
 
+    public bool Is3DMode => _is3DMode;
+
+    public void PanTo(double x, double y)
+    {
+        _cameraX = x;
+        _cameraY = y;
+        RequestNextFrameRendering();
+    }
+
     public void SetPitch(double deltaRadians)
     {
         _cameraPitch += deltaRadians;

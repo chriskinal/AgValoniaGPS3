@@ -5,25 +5,22 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
-using Avalonia.Platform;
-using Avalonia.Rendering.SceneGraph;
-using Avalonia.Skia;
+using Avalonia.Labs.Controls;
 using Avalonia.Threading;
 using SkiaSharp;
 using AgValoniaGPS.Models;
 
-namespace AgValoniaGPS.Desktop.Controls;
+namespace AgValoniaGPS.Views.Controls;
 
 /// <summary>
-/// SkiaSharp-based map control for cross-platform rendering (iOS, Android, Desktop).
-/// Implements 2D rendering only - no 3D perspective mode.
+/// SkiaSharp-based map control using Avalonia.Labs.SKCanvasView for proper DPI handling.
+/// This control handles high-DPI/Retina displays automatically.
 /// </summary>
-public class SkiaMapControl : Control, IMapControl
+public class SkiaMapControlLabs : SKCanvasView, IMapControl
 {
     // Avalonia property for grid visibility
     public static readonly StyledProperty<bool> IsGridVisibleProperty =
-        AvaloniaProperty.Register<SkiaMapControl, bool>(
+        AvaloniaProperty.Register<SkiaMapControlLabs, bool>(
             nameof(IsGridVisible),
             defaultValue: false);
 
@@ -40,9 +37,9 @@ public class SkiaMapControl : Control, IMapControl
     private double _rotation = 0.0; // Radians
 
     // GPS/Vehicle position
-    private double _vehicleX = 0.0;      // Meters (world coordinates)
-    private double _vehicleY = 0.0;      // Meters (world coordinates)
-    private double _vehicleHeading = 0.0; // Radians
+    private double _vehicleX = 0.0;
+    private double _vehicleY = 0.0;
+    private double _vehicleHeading = 0.0;
 
     // Mouse interaction state
     private bool _isPanning = false;
@@ -60,9 +57,6 @@ public class SkiaMapControl : Control, IMapControl
     private double _backgroundMinX, _backgroundMaxX, _backgroundMinY, _backgroundMaxY;
     private bool _hasBackgroundImage = false;
 
-    // Vehicle texture
-    private SKBitmap? _vehicleBitmap;
-
     // Boundary offset indicator
     private double _boundaryOffsetMeters = 0.0;
     private bool _showBoundaryOffsetIndicator = false;
@@ -78,10 +72,13 @@ public class SkiaMapControl : Control, IMapControl
     private readonly SKPaint _recordingPointPaint;
     private readonly SKPaint _offsetIndicatorPaint;
     private readonly SKPaint _offsetArrowPaint;
+    private readonly SKPaint _vehiclePaint;
 
-    public SkiaMapControl()
+    public SkiaMapControlLabs()
     {
-        // Make control focusable and set to accept all pointer events
+        Console.WriteLine("[SkiaMapControlLabs] Constructor starting...");
+
+        // Make control focusable
         Focusable = true;
         IsHitTestVisible = true;
         ClipToBounds = true;
@@ -89,7 +86,7 @@ public class SkiaMapControl : Control, IMapControl
         // Initialize paints
         _gridPaint = new SKPaint
         {
-            Color = new SKColor(76, 76, 76, 76), // Gray, semi-transparent
+            Color = new SKColor(76, 76, 76, 76),
             StrokeWidth = 1,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
@@ -97,7 +94,7 @@ public class SkiaMapControl : Control, IMapControl
 
         _gridMajorPaint = new SKPaint
         {
-            Color = new SKColor(76, 76, 76, 128), // Brighter gray
+            Color = new SKColor(76, 76, 76, 128),
             StrokeWidth = 1,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
@@ -105,7 +102,7 @@ public class SkiaMapControl : Control, IMapControl
 
         _axisXPaint = new SKPaint
         {
-            Color = new SKColor(204, 51, 51, 204), // Red
+            Color = new SKColor(204, 51, 51, 204),
             StrokeWidth = 2,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
@@ -113,7 +110,7 @@ public class SkiaMapControl : Control, IMapControl
 
         _axisYPaint = new SKPaint
         {
-            Color = new SKColor(51, 204, 51, 204), // Green
+            Color = new SKColor(51, 204, 51, 204),
             StrokeWidth = 2,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
@@ -145,7 +142,7 @@ public class SkiaMapControl : Control, IMapControl
 
         _recordingPointPaint = new SKPaint
         {
-            Color = new SKColor(255, 128, 0), // Orange
+            Color = new SKColor(255, 128, 0),
             StrokeWidth = 4,
             IsAntialias = true,
             Style = SKPaintStyle.Fill
@@ -153,139 +150,83 @@ public class SkiaMapControl : Control, IMapControl
 
         _offsetIndicatorPaint = new SKPaint
         {
-            Color = new SKColor(0, 204, 204), // Teal
+            Color = new SKColor(0, 204, 204),
             IsAntialias = true,
             Style = SKPaintStyle.Fill
         };
 
         _offsetArrowPaint = new SKPaint
         {
-            Color = new SKColor(255, 230, 0), // Yellow
+            Color = new SKColor(255, 230, 0),
             StrokeWidth = 2,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
         };
 
+        _vehiclePaint = new SKPaint
+        {
+            Color = SKColors.LimeGreen,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill
+        };
+
         // Start render loop
         var timer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
+            Interval = TimeSpan.FromMilliseconds(16)
         };
         timer.Tick += (s, e) => InvalidateVisual();
         timer.Start();
 
-        // Load vehicle texture
-        LoadVehicleTexture();
-
-        // Wire up mouse events for camera control
+        // Wire up mouse events
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerWheelChanged += OnPointerWheelChanged;
+
+        Console.WriteLine("[SkiaMapControlLabs] Constructor completed.");
     }
 
-    private void LoadVehicleTexture()
+    protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
-        try
-        {
-            string texturePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Images", "TractorAoG.png");
-            if (File.Exists(texturePath))
-            {
-                using var stream = File.OpenRead(texturePath);
-                _vehicleBitmap = SKBitmap.Decode(stream);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading vehicle texture: {ex.Message}");
-        }
-    }
+        base.OnPaintSurface(e);
 
-    public override void Render(Avalonia.Media.DrawingContext context)
-    {
-        base.Render(context);
+        var canvas = e.Surface.Canvas;
+        var info = e.Info;
 
-        var bounds = Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0)
+        // Use logical dimensions from control's Bounds
+        // SKCanvasView handles DPI scaling internally - we work in DIPs
+        float width = (float)Bounds.Width;
+        float height = (float)Bounds.Height;
+
+        if (width <= 0 || height <= 0)
             return;
 
-        // Get the SkiaSharp canvas from Avalonia's DrawingContext
-        var skiaContext = context as Avalonia.Skia.ISkiaSharpApiLeaseFeature;
-        if (skiaContext == null)
-        {
-            // Try to get via custom rendering
-            context.Custom(new SkiaMapDrawOperation(this, new Rect(0, 0, bounds.Width, bounds.Height)));
-            return;
-        }
-    }
-
-    /// <summary>
-    /// Custom draw operation for SkiaSharp rendering
-    /// </summary>
-    private class SkiaMapDrawOperation : ICustomDrawOperation
-    {
-        private readonly SkiaMapControl _control;
-        private readonly Rect _bounds;
-
-        public SkiaMapDrawOperation(SkiaMapControl control, Rect bounds)
-        {
-            _control = control;
-            _bounds = bounds;
-        }
-
-        public Rect Bounds => _bounds;
-
-        public void Dispose() { }
-
-        public bool Equals(ICustomDrawOperation? other) =>
-            other is SkiaMapDrawOperation op && op._bounds == _bounds;
-
-        public bool HitTest(Point p) => _bounds.Contains(p);
-
-        public void Render(ImmediateDrawingContext context)
-        {
-            var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-            if (leaseFeature == null)
-                return;
-
-            using var lease = leaseFeature.Lease();
-            var canvas = lease.SkCanvas;
-
-            _control.RenderToCanvas(canvas, (float)_bounds.Width, (float)_bounds.Height);
-        }
-    }
-
-    /// <summary>
-    /// Render the map to a SkiaSharp canvas
-    /// </summary>
-    internal void RenderToCanvas(SKCanvas canvas, float width, float height)
-    {
         // Clear background
-        canvas.Clear(new SKColor(25, 25, 25)); // Dark gray
+        canvas.Clear(new SKColor(25, 25, 25));
 
-        // Calculate view transformation
+        // Calculate view transformation using logical dimensions
         float aspect = width / height;
         float viewWidth = 200.0f * aspect / (float)_zoom;
         float viewHeight = 200.0f / (float)_zoom;
 
-        // Save canvas state
         canvas.Save();
 
-        // Center the canvas
+        // Center the canvas using logical dimensions
         canvas.Translate(width / 2, height / 2);
 
-        // Apply rotation (around center)
+        // Apply rotation
         canvas.RotateDegrees((float)(-_rotation * 180.0 / Math.PI));
 
-        // Calculate scale: pixels per meter
+        // Calculate scale: DIPs per meter
         float scaleX = width / viewWidth;
         float scaleY = height / viewHeight;
-        canvas.Scale(scaleX, -scaleY); // Flip Y axis (world Y goes up, screen Y goes down)
+        canvas.Scale(scaleX, -scaleY);
 
         // Translate to camera position
         canvas.Translate(-(float)_cameraX, -(float)_cameraY);
 
-        // Draw background image (if any)
+        // Draw background image
         if (_hasBackgroundImage && _backgroundBitmap != null)
         {
             DrawBackgroundImage(canvas);
@@ -318,7 +259,6 @@ public class SkiaMapControl : Control, IMapControl
             DrawBoundaryOffsetIndicator(canvas);
         }
 
-        // Restore canvas state
         canvas.Restore();
     }
 
@@ -326,63 +266,45 @@ public class SkiaMapControl : Control, IMapControl
     {
         if (_backgroundBitmap == null) return;
 
-        var destRect = new SKRect(
-            (float)_backgroundMinX,
-            (float)_backgroundMinY,
-            (float)_backgroundMaxX,
-            (float)_backgroundMaxY);
-
-        // Note: Since we flipped the Y axis, we need to handle this correctly
         canvas.Save();
         canvas.Scale(1, -1);
         canvas.Translate(0, -(float)(_backgroundMinY + _backgroundMaxY));
 
-        var adjustedRect = new SKRect(
+        var rect = new SKRect(
             (float)_backgroundMinX,
             (float)_backgroundMinY,
             (float)_backgroundMaxX,
             (float)_backgroundMaxY);
 
-        canvas.DrawBitmap(_backgroundBitmap, adjustedRect);
+        canvas.DrawBitmap(_backgroundBitmap, rect);
         canvas.Restore();
     }
 
     private void DrawGrid(SKCanvas canvas, float viewWidth, float viewHeight)
     {
-        float gridSize = 500.0f; // 500m x 500m grid
-        float spacing = 10.0f;   // 10m spacing
+        float gridSize = 500.0f;
+        float spacing = 10.0f;
 
-        // Calculate visible range based on camera position
-        float minX = (float)_cameraX - viewWidth;
-        float maxX = (float)_cameraX + viewWidth;
-        float minY = (float)_cameraY - viewHeight;
-        float maxY = (float)_cameraY + viewHeight;
+        float minX = Math.Max((float)_cameraX - viewWidth, -gridSize);
+        float maxX = Math.Min((float)_cameraX + viewWidth, gridSize);
+        float minY = Math.Max((float)_cameraY - viewHeight, -gridSize);
+        float maxY = Math.Min((float)_cameraY + viewHeight, gridSize);
 
-        // Clamp to grid bounds
-        minX = Math.Max(minX, -gridSize);
-        maxX = Math.Min(maxX, gridSize);
-        minY = Math.Max(minY, -gridSize);
-        maxY = Math.Min(maxY, gridSize);
-
-        // Round to nearest spacing
         float startX = (float)Math.Floor(minX / spacing) * spacing;
         float startY = (float)Math.Floor(minY / spacing) * spacing;
 
-        // Draw vertical lines
         for (float x = startX; x <= maxX; x += spacing)
         {
             var paint = (Math.Abs(x % 50.0f) < 0.1f) ? _gridMajorPaint : _gridPaint;
             canvas.DrawLine(x, Math.Max(minY, -gridSize), x, Math.Min(maxY, gridSize), paint);
         }
 
-        // Draw horizontal lines
         for (float y = startY; y <= maxY; y += spacing)
         {
             var paint = (Math.Abs(y % 50.0f) < 0.1f) ? _gridMajorPaint : _gridPaint;
             canvas.DrawLine(Math.Max(minX, -gridSize), y, Math.Min(maxX, gridSize), y, paint);
         }
 
-        // Draw axis lines
         canvas.DrawLine(-gridSize, 0, gridSize, 0, _axisXPaint);
         canvas.DrawLine(0, -gridSize, 0, gridSize, _axisYPaint);
     }
@@ -391,7 +313,6 @@ public class SkiaMapControl : Control, IMapControl
     {
         if (_currentBoundary == null) return;
 
-        // Draw outer boundary
         if (_currentBoundary.OuterBoundary != null && _currentBoundary.OuterBoundary.IsValid)
         {
             var points = _currentBoundary.OuterBoundary.Points;
@@ -408,7 +329,6 @@ public class SkiaMapControl : Control, IMapControl
             }
         }
 
-        // Draw inner boundaries
         foreach (var innerBoundary in _currentBoundary.InnerBoundaries)
         {
             if (innerBoundary.IsValid)
@@ -433,7 +353,6 @@ public class SkiaMapControl : Control, IMapControl
     {
         if (_recordingPoints.Count == 0) return;
 
-        // Draw line connecting points
         if (_recordingPoints.Count > 1)
         {
             using var path = new SKPath();
@@ -445,8 +364,7 @@ public class SkiaMapControl : Control, IMapControl
             canvas.DrawPath(path, _recordingLinePaint);
         }
 
-        // Draw point markers
-        float pointRadius = 0.5f; // meters
+        float pointRadius = 0.5f;
         foreach (var point in _recordingPoints)
         {
             canvas.DrawCircle((float)point.Easting, (float)point.Northing, pointRadius, _recordingPointPaint);
@@ -455,70 +373,39 @@ public class SkiaMapControl : Control, IMapControl
 
     private void DrawVehicle(SKCanvas canvas)
     {
-        float size = 5.0f; // Vehicle size in meters
+        float size = 5.0f;
 
         canvas.Save();
-
-        // Translate to vehicle position
         canvas.Translate((float)_vehicleX, (float)_vehicleY);
-
-        // Rotate based on heading
-        // Negate heading because AgOpenGPS uses compass convention (clockwise, 0=North)
-        // Also need to compensate for the flipped Y axis
         canvas.RotateDegrees((float)(_vehicleHeading * 180.0 / Math.PI));
-
-        // Flip the vehicle vertically since we're drawing in a flipped coordinate system
         canvas.Scale(1, -1);
 
-        if (_vehicleBitmap != null)
-        {
-            // Draw textured vehicle
-            var destRect = new SKRect(-size / 2, -size / 2, size / 2, size / 2);
-            canvas.DrawBitmap(_vehicleBitmap, destRect);
-        }
-        else
-        {
-            // Fallback: draw a simple triangle
-            using var path = new SKPath();
-            path.MoveTo(0, size / 2);           // Front
-            path.LineTo(-size / 3, -size / 2);  // Back left
-            path.LineTo(size / 3, -size / 2);   // Back right
-            path.Close();
+        using var path = new SKPath();
+        path.MoveTo(0, size / 2);
+        path.LineTo(-size / 3, -size / 2);
+        path.LineTo(size / 3, -size / 2);
+        path.Close();
 
-            using var paint = new SKPaint
-            {
-                Color = SKColors.LimeGreen,
-                IsAntialias = true,
-                Style = SKPaintStyle.Fill
-            };
-            canvas.DrawPath(path, paint);
-        }
-
+        canvas.DrawPath(path, _vehiclePaint);
         canvas.Restore();
     }
 
     private void DrawBoundaryOffsetIndicator(SKCanvas canvas)
     {
-        // Calculate reference point and offset point
         float refX = (float)_vehicleX;
         float refY = (float)_vehicleY;
 
-        // Calculate perpendicular direction
         float perpAngle = (float)_vehicleHeading + (float)(Math.PI / 2.0);
         float offsetX = refX + (float)(_boundaryOffsetMeters * Math.Sin(perpAngle));
         float offsetY = refY + (float)(_boundaryOffsetMeters * Math.Cos(perpAngle));
 
-        // Draw reference square
         float squareSize = 0.3f;
         canvas.DrawRect(refX - squareSize, refY - squareSize, squareSize * 2, squareSize * 2, _offsetIndicatorPaint);
 
-        // Draw arrow if offset is non-zero
         if (Math.Abs(_boundaryOffsetMeters) > 0.01)
         {
-            // Arrow line
             canvas.DrawLine(refX, refY, offsetX, offsetY, _offsetArrowPaint);
 
-            // Arrowhead
             float arrowSize = 0.4f;
             float dx = offsetX - refX;
             float dy = offsetY - refY;
@@ -551,38 +438,17 @@ public class SkiaMapControl : Control, IMapControl
 
     #region IMapControl Implementation
 
-    public void Toggle3DMode()
-    {
-        // No-op for 2D-only control
-        Console.WriteLine("SkiaMapControl: 3D mode not supported");
-    }
-
-    public void Set3DMode(bool is3D)
-    {
-        // No-op for 2D-only control
-        if (is3D)
-        {
-            Console.WriteLine("SkiaMapControl: 3D mode not supported");
-        }
-    }
-
+    public void Toggle3DMode() { }
+    public void Set3DMode(bool is3D) { }
     public bool Is3DMode => false;
+    public void SetPitch(double deltaRadians) { }
+    public void SetPitchAbsolute(double pitchRadians) { }
 
     public void PanTo(double x, double y)
     {
         _cameraX = x;
         _cameraY = y;
         InvalidateVisual();
-    }
-
-    public void SetPitch(double deltaRadians)
-    {
-        // No-op for 2D-only control
-    }
-
-    public void SetPitchAbsolute(double pitchRadians)
-    {
-        // No-op for 2D-only control
     }
 
     public void Pan(double deltaX, double deltaY)
@@ -634,11 +500,9 @@ public class SkiaMapControl : Control, IMapControl
         {
             double deltaX = position.X - _lastMousePosition.X;
             double deltaY = position.Y - _lastMousePosition.Y;
-
             float aspect = (float)Bounds.Width / (float)Bounds.Height;
             double worldDeltaX = -deltaX * (200.0 * aspect / _zoom) / Bounds.Width;
             double worldDeltaY = deltaY * (200.0 / _zoom) / Bounds.Height;
-
             Pan(worldDeltaX, worldDeltaY);
             _lastMousePosition = position;
         }
@@ -702,16 +566,11 @@ public class SkiaMapControl : Control, IMapControl
                 _backgroundMinY = minY;
                 _backgroundMaxY = maxY;
                 _hasBackgroundImage = true;
-                Console.WriteLine($"SkiaMapControl: Background image loaded from {imagePath}");
-            }
-            else
-            {
-                Console.WriteLine($"SkiaMapControl: Background image not found: {imagePath}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SkiaMapControl: Error loading background image: {ex.Message}");
+            Console.WriteLine($"Error loading background image: {ex.Message}");
         }
         InvalidateVisual();
     }
@@ -738,7 +597,6 @@ public class SkiaMapControl : Control, IMapControl
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
-
         if (point.Properties.IsLeftButtonPressed)
         {
             _isPanning = true;
@@ -764,11 +622,9 @@ public class SkiaMapControl : Control, IMapControl
         {
             double deltaX = currentPos.X - _lastMousePosition.X;
             double deltaY = currentPos.Y - _lastMousePosition.Y;
-
             float aspect = (float)Bounds.Width / (float)Bounds.Height;
             double worldDeltaX = -deltaX * (200.0 * aspect / _zoom) / Bounds.Width;
             double worldDeltaY = deltaY * (200.0 / _zoom) / Bounds.Height;
-
             Pan(worldDeltaX, worldDeltaY);
             _lastMousePosition = currentPos;
             e.Handled = true;
@@ -806,9 +662,6 @@ public class SkiaMapControl : Control, IMapControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-
-        // Cleanup resources
-        _vehicleBitmap?.Dispose();
         _backgroundBitmap?.Dispose();
         _gridPaint.Dispose();
         _gridMajorPaint.Dispose();
@@ -820,5 +673,6 @@ public class SkiaMapControl : Control, IMapControl
         _recordingPointPaint.Dispose();
         _offsetIndicatorPaint.Dispose();
         _offsetArrowPaint.Dispose();
+        _vehiclePaint.Dispose();
     }
 }
