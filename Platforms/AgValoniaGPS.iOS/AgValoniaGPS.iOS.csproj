@@ -8,6 +8,8 @@
     <LangVersion>14</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <SupportedOSPlatformVersion>14.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.agvaloniaagps.ios</ApplicationId>
+    <ApplicationTitle>AgValoniaGPS</ApplicationTitle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,13 +22,14 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
     <PackageReference Include="ReactiveUI" Version="20.1.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="SkiaSharp.Views.Avalonia" Version="3.116.1" />
+    <PackageReference Include="SkiaSharp" Version="3.116.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
+    <ProjectReference Include="..\..\Shared\AgValoniaGPS.Views\AgValoniaGPS.Views.csproj" />
   </ItemGroup>
 
 </Project>
