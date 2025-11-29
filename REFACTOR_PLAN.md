@@ -169,11 +169,32 @@ Target: < 100 lines
 
 ## Phase 8: Create Shared View Project
 
-- [ ] Create `Shared/AgValoniaGPS.Views` project
-- [ ] Move MainView.axaml (as UserControl) to Shared
-- [ ] Desktop MainWindow hosts shared MainView
+- [x] Create `Shared/AgValoniaGPS.Views` project (created in Phase 2)
+- [x] Create shared styles in `Styles/AppStyles.axaml`
+- [x] Create `MainView.axaml` as UserControl in Shared
+- [x] Add shared Views project reference to Desktop
+- [ ] Desktop MainWindow hosts shared MainView (optional - can use side-by-side)
 - [ ] iOS directly uses shared MainView
-- [ ] Move all dialogs to Shared (as UserControls or Windows)
+- [ ] Move dialogs to Shared (future - as needed)
+
+### Current Structure
+```
+Shared/AgValoniaGPS.Views/
+├── AgValoniaGPS.Views.csproj
+├── Behaviors/
+│   └── DraggableBehavior.cs
+├── Styles/
+│   └── AppStyles.axaml
+└── Views/
+    ├── MainView.axaml
+    └── MainView.axaml.cs
+```
+
+### Usage Pattern
+The shared MainView demonstrates the 95/5 pattern:
+- Core UI structure is in shared MainView.axaml
+- Platform-specific content (map control) is injected via code-behind
+- Desktop MainWindow can optionally host MainView or use its own detailed layout
 
 ---
 

@@ -43,6 +43,7 @@
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
+    <ProjectReference Include="..\..\Shared\AgValoniaGPS.Views\AgValoniaGPS.Views.csproj" />
   </ItemGroup>
 
 </Project>

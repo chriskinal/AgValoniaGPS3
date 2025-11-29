@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1366" d:DesignHeight="768"
+             x:Class="AgValoniaGPS.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="#1a1a1a">
+
+    <UserControl.Styles>
+        <StyleInclude Source="avares://AgValoniaGPS.Views/Styles/AppStyles.axaml"/>
+    </UserControl.Styles>
+
+    <!-- Main Grid -->
+    <Grid>
+        <!-- Map Render Area - Platform-specific content is injected via code-behind -->
+        <ContentControl x:Name="MapContentPresenter" ZIndex="0"/>
+
+        <!-- TOP STATUS BAR: RTK Status -->
+        <Border Classes="FloatingPanel"
+                ZIndex="10"
+                Margin="20"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                IsHitTestVisible="True">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="RTK Status" Foreground="#3498DB" FontSize="14" FontWeight="Bold"/>
+                <Ellipse Width="12" Height="12" Fill="#3498DB"/>
+                <TextBlock Text="{Binding FixQuality}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- TOP-RIGHT PANEL: Quick Actions -->
+        <Border Classes="FloatingPanel"
+                ZIndex="10"
+                Margin="20"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                IsHitTestVisible="True">
+            <StackPanel Spacing="8">
+                <!-- GPS Status Button -->
+                <Button Width="48" Height="48"
+                        CornerRadius="8"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="#3498DB"
+                        ToolTip.Tip="Data I/O Configuration"
+                        Command="{Binding ShowDataIODialogCommand}">
+                    <TextBlock Text="GPS" FontSize="12" FontWeight="Bold" Foreground="Black"/>
+                </Button>
+
+                <Separator Height="1" Background="#444" Margin="4,4"/>
+                <Button Classes="IconButton" Content="⚙️" ToolTip.Tip="Settings"/>
+                <Button Classes="IconButton" Content="📁" ToolTip.Tip="Fields" Command="{Binding ShowFieldSelectionDialogCommand}"/>
+                <Button Classes="IconButton" Content="🎬" ToolTip.Tip="Toggle 2D/3D View (F3)" Command="{Binding Toggle3DModeCommand}"/>
+                <Separator Height="1" Background="#444" Margin="4,4"/>
+                <Button Classes="IconButton" Content="+" ToolTip.Tip="Zoom In" Command="{Binding ZoomInCommand}"/>
+                <Button Classes="IconButton" Content="-" ToolTip.Tip="Zoom Out" Command="{Binding ZoomOutCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- BOTTOM STATUS BAR: Speed, Heading, Work Area -->
+        <Border Classes="FloatingPanel"
+                ZIndex="10"
+                Margin="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                IsHitTestVisible="True">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <Border Classes="StatusBox">
+                    <StackPanel>
+                        <TextBlock Text="Speed" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="{Binding Speed, StringFormat={}{0:F1} km/h}"
+                                   Foreground="#1ABC9C" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="StatusBox">
+                    <StackPanel>
+                        <TextBlock Text="Heading" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="{Binding Heading, StringFormat={}{0:F0}°}"
+                                   Foreground="#F39C12" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="StatusBox">
+                    <StackPanel>
+                        <TextBlock Text="Work" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="{Binding WorkedAreaDisplay}"
+                                   Foreground="#9B59B6" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Status Message Bar (bottom-left) -->
+        <Border Background="#CC000000"
+                CornerRadius="4"
+                Padding="12,6"
+                Margin="20,0,0,80"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#AAA" FontSize="12"/>
+        </Border>
+    </Grid>
+</UserControl>
