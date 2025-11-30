@@ -157,6 +157,11 @@ public class MainViewModel : ReactiveObject
                 settings.SimulatorLatitude,
                 settings.SimulatorLongitude));
             _simulatorService.StepDistance = settings.SimulatorSpeed;
+
+            // Also set Latitude/Longitude so map dialogs work correctly at startup
+            Latitude = settings.SimulatorLatitude;
+            Longitude = settings.SimulatorLongitude;
+
             Console.WriteLine($"  Restored simulator: {settings.SimulatorLatitude},{settings.SimulatorLongitude}");
         }
     }
@@ -948,6 +953,12 @@ public class MainViewModel : ReactiveObject
         _settingsService.Settings.SimulatorLatitude = latitude;
         _settingsService.Settings.SimulatorLongitude = longitude;
         _settingsService.Save();
+
+        // Also update the Latitude/Longitude properties directly so that
+        // the map boundary dialog uses the correct coordinates even if
+        // the simulator timer hasn't ticked yet
+        Latitude = latitude;
+        Longitude = longitude;
 
         StatusMessage = $"Simulator reset to {latitude:F7}, {longitude:F7}";
     }

@@ -108,10 +108,10 @@
                 </Border>
                 <Button Grid.Column="1" Classes="ToolButton" Width="50" Height="40" Margin="5,0,0,0"
                         Click="BtnBackspace_Click" ToolTip.Tip="Backspace">
-                    <Image Source="/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
                 </Button>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0,0,0">
-                    <Image Source="/Assets/Icons/ABTracks.png" Width="28" Height="28"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="28" Height="28"/>
                     <TextBlock Text="Sort" Foreground="White" VerticalAlignment="Center" Margin="5,0,0,0" FontSize="14"/>
                 </StackPanel>
             </Grid>
@@ -126,7 +126,7 @@
                 <TextBlock Text="+" Foreground="White" FontSize="20" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <Button x:Name="BtnAppendVehicle" Classes="ToolButton" Width="55" Height="55"
                         Click="BtnAppendVehicle_Click" ToolTip.Tip="Append vehicle name">
-                    <Image Source="/Assets/Icons/vehiclePageTractor.png" Width="40" Height="40"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png" Width="40" Height="40"/>
                 </Button>
             </StackPanel>
 
@@ -134,7 +134,7 @@
                 <TextBlock Text="+" Foreground="White" FontSize="20" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <Button x:Name="BtnAppendDate" Classes="ToolButton" Width="55" Height="55"
                         Click="BtnAppendDate_Click" ToolTip.Tip="Append date (yyyy-MMM-dd)">
-                    <Image Source="/Assets/Icons/JobNameCalendar.png" Width="40" Height="40"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameCalendar.png" Width="40" Height="40"/>
                 </Button>
             </StackPanel>
 
@@ -142,7 +142,7 @@
                 <TextBlock Text="+" Foreground="White" FontSize="20" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <Button x:Name="BtnAppendTime" Classes="ToolButton" Width="55" Height="55"
                         Click="BtnAppendTime_Click" ToolTip.Tip="Append time (HH-mm)">
-                    <Image Source="/Assets/Icons/JobNameTime.png" Width="40" Height="40"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameTime.png" Width="40" Height="40"/>
                 </Button>
             </StackPanel>
 
@@ -153,7 +153,7 @@
             <Button x:Name="BtnToggleFlags" Grid.Column="4" Classes="ToolButton" Width="70" Height="55" Margin="5,0"
                     Click="BtnToggleFlags_Click" ToolTip.Tip="Include Flags">
                 <StackPanel HorizontalAlignment="Center">
-                    <Image Source="/Assets/Icons/FlagRed.png" Width="32" Height="32"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="32" Height="32"/>
                     <TextBlock Text="Flags" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -161,7 +161,7 @@
             <Button x:Name="BtnToggleMapping" Grid.Column="5" Classes="ToolButton" Width="70" Height="55" Margin="5,0"
                     Click="BtnToggleMapping_Click" ToolTip.Tip="Include Mapping">
                 <StackPanel HorizontalAlignment="Center">
-                    <Image Source="/Assets/Icons/MappingOn.png" Width="32" Height="32"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/MappingOn.png" Width="32" Height="32"/>
                     <TextBlock Text="Mapping" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -169,7 +169,7 @@
             <Button x:Name="BtnToggleHeadland" Grid.Column="6" Classes="ToolButton" Width="70" Height="55" Margin="5,0"
                     Click="BtnToggleHeadland_Click" ToolTip.Tip="Include Headland">
                 <StackPanel HorizontalAlignment="Center">
-                    <Image Source="/Assets/Icons/HeadlandOn.png" Width="32" Height="32"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Width="32" Height="32"/>
                     <TextBlock Text="Headland" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -177,7 +177,7 @@
             <Button x:Name="BtnToggleLines" Grid.Column="7" Classes="ToolButton" Width="70" Height="55" Margin="5,0,0,0"
                     Click="BtnToggleLines_Click" ToolTip.Tip="Include AB Lines">
                 <StackPanel HorizontalAlignment="Center">
-                    <Image Source="/Assets/Icons/ABLineCycle.png" Width="32" Height="32"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png" Width="32" Height="32"/>
                     <TextBlock Text="Lines" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -188,7 +188,7 @@
             <Border Grid.Column="0"/>
             <Button Grid.Column="1" Classes="CancelButton" Width="60" Height="60" Margin="0,0,10,0"
                     Click="BtnCancel_Click" ToolTip.Tip="Cancel">
-                <Image Source="/Assets/Icons/FileClose.png" Width="40" Height="40"/>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="40" Height="40"/>
             </Button>
             <Button Grid.Column="2" Classes="OkButton" Width="60" Height="60"
                     Click="BtnOk_Click" ToolTip.Tip="Create field">

@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.ViewSettingsPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsViewSettingsPanelVisible}"
+             IsHitTestVisible="{Binding IsViewSettingsPanelVisible}">
+
+    <UserControl.Styles>
+        <!-- Floating Panel Style -->
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Modern Button Style -->
+        <Style Selector="Button.ModernButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pressed">
+            <Setter Property="Background" Value="#DD3E5872"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" MinWidth="200" IsVisible="{Binding IsViewSettingsPanelVisible}" IsHitTestVisible="True">
+        <StackPanel Spacing="4" Background="Transparent">
+            <!-- Header with drag handle and close button -->
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto"
+                  Height="32"
+                  Margin="0,0,0,8"
+                  Background="#DD2C3E50"
+                  Cursor="Hand"
+                  ToolTip.Tip="Drag to move">
+                <!-- Drag Handle Icon -->
+                <TextBlock Grid.Column="0"
+                           Text="="
+                           Foreground="#AAA"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="8,0,8,0"
+                           IsHitTestVisible="False"/>
+                <!-- Title -->
+                <TextBlock Grid.Column="1"
+                           Text="View Settings"
+                           Foreground="White"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"/>
+                <!-- Close Button -->
+                <Button Grid.Column="2"
+                        Content="X"
+                        Width="24" Height="24"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Foreground="#888"
+                        FontSize="16"
+                        Cursor="Hand"
+                        Command="{Binding ToggleViewSettingsPanelCommand}"
+                        ToolTip.Tip="Close"
+                        Margin="8,0,8,0"/>
+            </Grid>
+
+            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+
+            <!-- Camera Controls -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
+                <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
+                        Content="Tilt Down" Margin="2" ClickMode="Press"
+                        Command="{Binding DecreaseCameraPitchCommand}"
+                        ToolTip.Tip="Tilt camera down"/>
+                <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
+                        Content="Tilt Up" Margin="2" ClickMode="Press"
+                        Command="{Binding IncreaseCameraPitchCommand}"
+                        ToolTip.Tip="Tilt camera up"/>
+                <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Classes="ModernButton"
+                        Content="2D/3D" Margin="2" ClickMode="Press"
+                        Command="{Binding Toggle2D3DCommand}"
+                        ToolTip.Tip="Toggle 2D/3D view"/>
+            </Grid>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <!-- Display Options -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
+                <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
+                        Content="North" Margin="2" ClickMode="Press"
+                        Command="{Binding ToggleNorthUpCommand}"
+                        ToolTip.Tip="North-up/Track-up"/>
+                <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
+                        Content="Grid" Margin="2" ClickMode="Press"
+                        Command="{Binding ToggleGridCommand}"
+                        ToolTip.Tip="Toggle grid"/>
+                <Button Grid.Row="1" Grid.Column="0" Classes="ModernButton"
+                        Content="Day/Night" Margin="2" ClickMode="Press"
+                        Command="{Binding ToggleDayNightCommand}"
+                        ToolTip.Tip="Day/Night mode"/>
+                <TextBlock Grid.Row="1" Grid.Column="1"
+                           Text="10 Hz" Margin="2" Padding="8"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="White" FontWeight="Bold" FontSize="12"/>
+            </Grid>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <!-- Brightness -->
+            <Grid ColumnDefinitions="*,*" Background="Transparent">
+                <Button Grid.Column="0" Classes="ModernButton"
+                        Content="{Binding BrightnessDisplay, StringFormat='Dim -{0}'}" Margin="2" ClickMode="Press"
+                        Command="{Binding DecreaseBrightnessCommand}"
+                        ToolTip.Tip="Decrease brightness"/>
+                <Button Grid.Column="1" Classes="ModernButton"
+                        Content="Bright +" Margin="2" ClickMode="Press"
+                        Command="{Binding IncreaseBrightnessCommand}"
+                        ToolTip.Tip="Increase brightness"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.BoundaryRecordingPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsBoundaryPanelVisible}"
+             IsHitTestVisible="{Binding IsBoundaryPanelVisible}">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="TrueColor" Color="#1ABC9C"/>
+        <SolidColorBrush x:Key="FalseColor" Color="#E74C3C"/>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ModernButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" MinWidth="420" IsVisible="{Binding IsBoundaryPanelVisible}" IsHitTestVisible="True">
+        <StackPanel Spacing="4" Background="Transparent">
+            <!-- Header: Drag handle + Title + Close button -->
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,4"
+                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
+                           Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="Start or Delete A Boundary" FontSize="14" FontWeight="SemiBold"
+                           Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                <Button Grid.Column="2" Content="X" Width="28" Height="28" Margin="0,0,4,0"
+                        Background="Transparent" BorderThickness="0" Foreground="#FFFFFF"
+                        Command="{Binding ToggleBoundaryPanelCommand}" Cursor="Hand"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+            </Grid>
+
+            <!-- Toolbar Row: Delete, KML Import, Bing, Build From Tracks, Drive Around, Accept -->
+            <Grid ColumnDefinitions="*,*,*,*,*,*" Margin="4,4,4,8" Background="Transparent">
+                <Button Grid.Column="0" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Delete selected boundary" Command="{Binding DeleteBoundaryCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="1" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Import boundary from KML file" Command="{Binding ImportKmlBoundaryCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryLoadFromGE.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="2" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Draw boundary on satellite map" Command="{Binding DrawMapBoundaryCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryByMap.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="3" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Build boundary from driven tracks" Command="{Binding BuildFromTracksCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="4" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Drive around field to record boundary" Command="{Binding DriveAroundFieldCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ST_SteerTab.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="5" Classes="ModernButton" Margin="2" Height="50"
+                        ToolTip.Tip="Accept and close" Command="{Binding ToggleBoundaryPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/OK64.png" Width="32" Height="32"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+            </Grid>
+
+            <!-- Column Headers -->
+            <Grid ColumnDefinitions="*,*,*" Background="#3498DB" Margin="4,0,4,0">
+                <TextBlock Grid.Column="0" Text="Boundary" HorizontalAlignment="Center"
+                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+                <TextBlock Grid.Column="1" Text="Area" HorizontalAlignment="Center"
+                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+                <TextBlock Grid.Column="2" Text="Drive Thru" HorizontalAlignment="Center"
+                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+            </Grid>
+
+            <!-- Boundary List -->
+            <Border Background="#DD1a252f" Margin="4,0,4,4" MinHeight="60" MaxHeight="150">
+                <ListBox ItemsSource="{Binding BoundaryItems}"
+                         SelectedIndex="{Binding SelectedBoundaryIndex}"
+                         Background="Transparent"
+                         BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*,*,*">
+                                <TextBlock Grid.Column="0" Text="{Binding BoundaryType}"
+                                           HorizontalAlignment="Center" Foreground="White" Padding="8,6"/>
+                                <TextBlock Grid.Column="1" Text="{Binding AreaDisplay}"
+                                           HorizontalAlignment="Center" Foreground="White" Padding="8,6"/>
+                                <TextBlock Grid.Column="2" Text="{Binding DriveThruDisplay}"
+                                           HorizontalAlignment="Center" Padding="8,6"
+                                           Foreground="{Binding IsDriveThrough, Converter={StaticResource BoolToColorConverter}}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="Background" Value="#334C566A"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0,1,0,0"/>
+                        </Style>
+                        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#3498DB"/>
+                        </Style>
+                    </ListBox.Styles>
+                </ListBox>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

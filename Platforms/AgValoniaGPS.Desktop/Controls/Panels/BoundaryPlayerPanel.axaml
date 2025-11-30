@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.BoundaryPlayerPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsBoundaryPlayerPanelVisible}"
+             IsHitTestVisible="{Binding IsBoundaryPlayerPanelVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ModernButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" MinWidth="250" IsVisible="{Binding IsBoundaryPlayerPanelVisible}" IsHitTestVisible="True">
+        <StackPanel Spacing="4" Background="Transparent">
+            <!-- Header: Drag handle + Title -->
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*" Height="32" Margin="0,0,0,4"
+                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
+                           Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="Stop Record Pause Boundary" FontSize="12" FontWeight="SemiBold"
+                           Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+            </Grid>
+
+            <!-- Offset Distance Input (clickable to open numeric keypad) -->
+            <Grid ColumnDefinitions="Auto,*" Margin="8,4">
+                <Button Grid.Column="0" Background="AliceBlue" CornerRadius="4" Padding="8,4" MinWidth="100"
+                        ClickMode="Press" Command="{Binding ShowBoundaryOffsetDialogCommand}" Cursor="Hand"
+                        ToolTip.Tip="Click to enter offset distance">
+                    <TextBlock Text="{Binding BoundaryOffset, StringFormat={}{0:F0}}" FontSize="22" FontWeight="Bold"
+                               Foreground="Black" HorizontalAlignment="Center" IsHitTestVisible="False"/>
+                </Button>
+                <TextBlock Grid.Column="1" Text="cm" FontSize="14" FontWeight="Bold"
+                           Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
+            </Grid>
+
+            <!-- Two Column Layout -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="4" Background="Transparent">
+                <!-- Row 0: Trash (restart) | Section Control -->
+                <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton"
+                        Margin="2" Height="56" ClickMode="Press" Command="{Binding ClearBoundaryCommand}"
+                        ToolTip.Tip="Delete all points and restart">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png" Width="40" Height="40"
+                           IsHitTestVisible="False"/>
+                </Button>
+                <ToggleButton Grid.Column="1" Grid.Row="0"
+                              Margin="2" Height="56" ClickMode="Press"
+                              IsChecked="{Binding IsBoundarySectionControlOn}"
+                              ToolTip.Tip="Record boundary when section is on">
+                    <ToggleButton.Styles>
+                        <Style Selector="ToggleButton">
+                            <Setter Property="Background" Value="#3498DB"/>
+                            <Setter Property="CornerRadius" Value="6"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="12,6"/>
+                        </Style>
+                        <Style Selector="ToggleButton:pointerover">
+                            <Setter Property="Background" Value="#2980B9"/>
+                        </Style>
+                        <Style Selector="ToggleButton:checked">
+                            <Setter Property="Background" Value="#1ABC9C"/>
+                        </Style>
+                        <Style Selector="ToggleButton:checked:pointerover">
+                            <Setter Property="Background" Value="#16A085"/>
+                        </Style>
+                    </ToggleButton.Styles>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundarySectionControlOnOff.png" Width="40" Height="40"
+                           IsHitTestVisible="False"/>
+                </ToggleButton>
+
+                <!-- Row 1: Delete Last Point | Add Point -->
+                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton"
+                        Margin="2" Height="56" ClickMode="Press" Command="{Binding UndoBoundaryPointCommand}"
+                        ToolTip.Tip="Delete last point">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/PointDelete.png" Width="40" Height="40"
+                           IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton"
+                        Margin="2" Height="56" ClickMode="Press" Command="{Binding AddBoundaryPointCommand}"
+                        ToolTip.Tip="Add point manually">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/PointAdd.png" Width="40" Height="40"
+                           IsHitTestVisible="False"/>
+                </Button>
+
+                <!-- Row 2: Left/Right toggle | Antenna/Tool toggle -->
+                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton"
+                        Margin="2" Height="56" ClickMode="Press"
+                        Command="{Binding ToggleBoundaryLeftRightCommand}"
+                        ToolTip.Tip="Toggle left/right side">
+                    <Panel IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRight.png" Width="40" Height="40"
+                               IsVisible="{Binding IsDrawRightSide}"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryLeft.png" Width="40" Height="40"
+                               IsVisible="{Binding !IsDrawRightSide}"/>
+                    </Panel>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton"
+                        Margin="2" Height="56" ClickMode="Press"
+                        Command="{Binding ToggleBoundaryAntennaToolCommand}"
+                        ToolTip.Tip="Toggle antenna/tool position">
+                    <Panel IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecordPivot.png" Width="40" Height="40"
+                               IsVisible="{Binding IsDrawAtPivot}"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecordTool.png" Width="40" Height="40"
+                               IsVisible="{Binding !IsDrawAtPivot}"/>
+                    </Panel>
+                </Button>
+
+                <!-- Row 3: Points display | Area display -->
+                <StackPanel Grid.Column="0" Grid.Row="3" Margin="4">
+                    <TextBlock Text="Points:" Foreground="#888" FontSize="12"/>
+                    <TextBlock Text="{Binding BoundaryPointCount}" Foreground="White"
+                               FontSize="16" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Grid.Row="3" Margin="4">
+                    <TextBlock Text="Area:" Foreground="#888" FontSize="12"/>
+                    <TextBlock Text="{Binding BoundaryAreaHectares, StringFormat={}{0:F2} Ha}" Foreground="White"
+                               FontSize="16" FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Row 4: OK (stop/accept) | Record/Pause toggle -->
+                <Button Grid.Column="0" Grid.Row="4" Classes="ModernButton"
+                        Margin="2" Height="64" ClickMode="Press" Command="{Binding StopBoundaryRecordingCommand}"
+                        ToolTip.Tip="Stop recording and save boundary">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/OK64.png" Width="48" Height="48"
+                           IsHitTestVisible="False"/>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton"
+                        Margin="2" Height="64" ClickMode="Press" Command="{Binding ToggleRecordingCommand}"
+                        ToolTip.Tip="Start/Pause recording">
+                    <Panel IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecord.png" Width="48" Height="48"
+                               IsVisible="{Binding !IsBoundaryRecording}"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/boundaryPause.png" Width="48" Height="48"
+                               IsVisible="{Binding IsBoundaryRecording}"/>
+                    </Panel>
+                </Button>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

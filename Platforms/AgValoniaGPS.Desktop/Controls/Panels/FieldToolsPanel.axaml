@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.FieldToolsPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsFieldToolsPanelVisible}"
+             IsHitTestVisible="{Binding IsFieldToolsPanelVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ModernButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" MinWidth="400" IsVisible="{Binding IsFieldToolsPanelVisible}" IsHitTestVisible="True">
+        <StackPanel Spacing="4" Background="Transparent">
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
+                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="Field Tools" Foreground="White" FontSize="16" FontWeight="Bold"
+                           VerticalAlignment="Center" IsHitTestVisible="False"/>
+                <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
+                        Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
+                        Command="{Binding ToggleFieldToolsPanelCommand}" Margin="8,0,8,0"/>
+            </Grid>
+
+            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+
+            <!-- Menu Items: 2-column layout (5 rows x 2 columns) -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4" Background="Transparent">
+                <!-- Row 0: Boundary, (Blank) -->
+                <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press" Command="{Binding ShowBoundaryDialogCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="28" Height="28"/>
+                        <TextBlock Text="Boundary" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+                <!-- Grid.Column="1" Grid.Row="0" is intentionally blank -->
+
+                <!-- Row 1: Headland, Headland Builder -->
+                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandBuild.png" Width="28" Height="28"/>
+                        <TextBlock Text="Headland" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Headache.png" Width="28" Height="28"/>
+                        <TextBlock Text="Headland Builder" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 2: Tram Lines, Tram Lines Builder -->
+                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Width="28" Height="28"/>
+                        <TextBlock Text="Tram Lines" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramMulti.png" Width="28" Height="28"/>
+                        <TextBlock Text="Tram Lines Builder" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 3: Delete Applied Area, Flag By Lat Lon -->
+                <Button Grid.Column="0" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png" Width="28" Height="28"/>
+                        <TextBlock Text="Delete Applied Area" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="28" Height="28"/>
+                        <TextBlock Text="Flag By Lat Lon" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 4: Recorded Path, Import Tracks -->
+                <Button Grid.Column="0" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPath.png" Width="28" Height="28"/>
+                        <TextBlock Text="Recorded Path" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="28" Height="28"/>
+                        <TextBlock Text="Import Tracks" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

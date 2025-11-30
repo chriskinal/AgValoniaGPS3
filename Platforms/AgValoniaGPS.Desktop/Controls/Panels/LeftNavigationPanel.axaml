@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:controls="using:AgValoniaGPS.Desktop.Controls.Panels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.LeftNavigationPanel"
+             x:DataType="vm:MainViewModel"
+             ClipToBounds="False"
+             Background="{x:Null}"
+             IsHitTestVisible="True">
+
+    <UserControl.Styles>
+        <!-- Floating Panel Style -->
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Left Panel Button Style -->
+        <Style Selector="Button.LeftPanelButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.LeftPanelButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+        <Style Selector="Button.LeftPanelButton:pressed">
+            <Setter Property="Background" Value="#DD3E5872"/>
+        </Style>
+
+        <!-- Left Panel Separator -->
+        <Style Selector="Separator.LeftPanelSeparator">
+            <Setter Property="Background" Value="#444"/>
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="Margin" Value="8,4"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Canvas fills the parent control so sub-panels can render anywhere within the screen -->
+    <!-- Background must be null (not set) to allow pointer events to pass through to controls behind -->
+    <Canvas ClipToBounds="False" Background="{x:Null}">
+        <!-- Navigation Button Bar -->
+        <Border Classes="FloatingPanel" Canvas.Left="12" Canvas.Top="100">
+            <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
+                <!-- Touch Handle: Tap to rotate, Hold to drag -->
+                <Grid x:Name="DragHandle" Height="40" Margin="0"
+                      Background="#DD2C3E50"
+                      Cursor="Hand"
+                      ToolTip.Tip="Tap to rotate | Hold and drag to move">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                        <TextBlock Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="R" Foreground="#AAA" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
+                    </StackPanel>
+                </Grid>
+
+                <Separator Classes="LeftPanelSeparator" Margin="0,4,0,4"/>
+
+                <!-- 1. File/Application Menu -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="File Menu"
+                        Command="{Binding ToggleFileMenuPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/fileMenu.png" Stretch="Uniform"/>
+                </Button>
+
+                <Separator Classes="LeftPanelSeparator"/>
+
+                <!-- 2. View Settings -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="View Settings"
+                        Command="{Binding ToggleViewSettingsPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/NavigationSettings.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 3. Tools -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Tools"
+                        Command="{Binding ToggleToolsPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SpecialFunctions.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 4. Configuration -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Configuration"
+                        Command="{Binding ToggleConfigurationPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 5. Job Menu -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Job Menu"
+                        Command="{Binding ToggleJobMenuPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 6. Field Tools (includes Boundary) -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Field Tools"
+                        Command="{Binding ToggleFieldToolsPanelCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FieldTools.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 7. AutoSteer Config -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="AutoSteer Configuration">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerConf.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- 9. Data I/O -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Data I/O"
+                        Command="{Binding ShowDataIODialogCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgIO.png" Stretch="Uniform"/>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- All Sub-Panels - positioned relative to the nav bar -->
+
+        <!-- View Settings Panel -->
+        <controls:ViewSettingsPanel x:Name="ViewSettingsPanelControl"
+                                    Canvas.Left="102" Canvas.Top="100"
+                                    ZIndex="15"
+                                    DataContext="{Binding}"/>
+
+        <!-- File Menu Panel -->
+        <controls:FileMenuPanel x:Name="FileMenuPanelControl"
+                                Canvas.Left="102" Canvas.Top="100"
+                                ZIndex="15"
+                                DataContext="{Binding}"/>
+
+        <!-- Tools Panel -->
+        <controls:ToolsPanel x:Name="ToolsPanelControl"
+                             Canvas.Left="102" Canvas.Top="100"
+                             ZIndex="15"
+                             DataContext="{Binding}"/>
+
+        <!-- Configuration Panel -->
+        <controls:ConfigurationPanel x:Name="ConfigurationPanelControl"
+                                     Canvas.Left="102" Canvas.Top="100"
+                                     ZIndex="15"
+                                     DataContext="{Binding}"/>
+
+        <!-- Job Menu Panel -->
+        <controls:JobMenuPanel x:Name="JobMenuPanelControl"
+                               Canvas.Left="102" Canvas.Top="100"
+                               ZIndex="15"
+                               DataContext="{Binding}"/>
+
+        <!-- Field Tools Panel -->
+        <controls:FieldToolsPanel x:Name="FieldToolsPanelControl"
+                                  Canvas.Left="102" Canvas.Top="100"
+                                  ZIndex="15"
+                                  DataContext="{Binding}"/>
+
+        <!-- Simulator Panel -->
+        <controls:SimulatorPanel x:Name="SimulatorPanelControl"
+                                 Canvas.Left="102" Canvas.Top="250"
+                                 ZIndex="15"
+                                 DataContext="{Binding}"/>
+
+        <!-- Boundary Recording Panel -->
+        <controls:BoundaryRecordingPanel x:Name="BoundaryRecordingPanelControl"
+                                          Canvas.Left="212" Canvas.Top="150"
+                                          ZIndex="20"
+                                          DataContext="{Binding}"/>
+
+        <!-- Boundary Player Panel -->
+        <controls:BoundaryPlayerPanel x:Name="BoundaryPlayerPanelControl"
+                                       Canvas.Left="112" Canvas.Top="100"
+                                       ZIndex="25"
+                                       DataContext="{Binding}"/>
+    </Canvas>
+</UserControl>

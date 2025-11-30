@@ -16,6 +16,7 @@ using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Desktop.Controls;
+using AgValoniaGPS.Desktop.Controls.Panels;
 
 namespace AgValoniaGPS.Desktop.Views;
 
@@ -24,19 +25,7 @@ public partial class MainWindow : Window
     private MainViewModel? ViewModel => DataContext as MainViewModel;
     private IMapControl? MapControl;
     private bool _isDraggingSection = false;
-    private bool _isDraggingLeftPanel = false;
-    private bool _isDraggingFileMenu = false;
-    private bool _isDraggingViewSettings = false;
-    private bool _isDraggingTools = false;
-    private bool _isDraggingConfiguration = false;
-    private bool _isDraggingJobMenu = false;
-    private bool _isDraggingFieldTools = false;
-    private bool _isDraggingSimulator = false;
-    private bool _isDraggingBoundary = false;
-    private bool _isDraggingBoundaryPlayer = false;
     private Avalonia.Point _dragStartPoint;
-    private DateTime _leftPanelPressTime;
-    private const int TapTimeThresholdMs = 300;
     private const double TapDistanceThreshold = 5.0;
 
     public MainWindow()
@@ -69,6 +58,25 @@ public partial class MainWindow : Window
 
         // Save window settings on close
         this.Closing += MainWindow_Closing;
+
+        // Wire up shared LeftNavigationPanel drag events
+        // All sub-panels are now children of LeftNavPanel, so only one drag handler is needed
+        if (LeftNavPanel != null)
+        {
+            LeftNavPanel.DragMoved += LeftNavPanel_DragMoved;
+        }
+    }
+
+    private void MovePanel(Control panel, Vector delta)
+    {
+        double newLeft = Canvas.GetLeft(panel) + delta.X;
+        double newTop = Canvas.GetTop(panel) + delta.Y;
+        double maxLeft = Bounds.Width - panel.Bounds.Width;
+        double maxTop = Bounds.Height - panel.Bounds.Height;
+        newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
+        newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
+        Canvas.SetLeft(panel, newLeft);
+        Canvas.SetTop(panel, newTop);
     }
 
     private void CreateMapControl()
@@ -138,12 +146,8 @@ public partial class MainWindow : Window
             WindowState = WindowState.Maximized;
         }
 
-        // Apply simulator panel position if saved
-        if (SimulatorPanel != null && !double.IsNaN(settings.SimulatorPanelX) && !double.IsNaN(settings.SimulatorPanelY))
-        {
-            Canvas.SetLeft(SimulatorPanel, settings.SimulatorPanelX);
-            Canvas.SetTop(SimulatorPanel, settings.SimulatorPanelY);
-        }
+        // Note: SimulatorPanel is now a child of LeftNavigationPanel
+        // Panel positions are managed by the shared controls themselves
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -164,13 +168,8 @@ public partial class MainWindow : Window
             settings.WindowY = Position.Y;
         }
 
-        // Save simulator panel position
-        if (SimulatorPanel != null)
-        {
-            settings.SimulatorPanelX = Canvas.GetLeft(SimulatorPanel);
-            settings.SimulatorPanelY = Canvas.GetTop(SimulatorPanel);
-            settings.SimulatorPanelVisible = SimulatorPanel.IsVisible;
-        }
+        // Note: SimulatorPanel is now a child of LeftNavigationPanel
+        // Panel positions are managed by the shared controls
 
         // Save UI state
         if (ViewModel != null)
@@ -227,22 +226,22 @@ public partial class MainWindow : Window
             }
 
             // Constrain left panel to new window bounds
-            if (LeftNavigationPanel != null)
+            if (LeftNavPanel != null)
             {
-                double currentLeft = Canvas.GetLeft(LeftNavigationPanel);
-                double currentTop = Canvas.GetTop(LeftNavigationPanel);
+                double currentLeft = Canvas.GetLeft(LeftNavPanel);
+                double currentTop = Canvas.GetTop(LeftNavPanel);
 
                 if (double.IsNaN(currentLeft)) currentLeft = 20; // Default initial position
                 if (double.IsNaN(currentTop)) currentTop = 100;
 
-                double maxLeft = Bounds.Width - LeftNavigationPanel.Bounds.Width;
-                double maxTop = Bounds.Height - LeftNavigationPanel.Bounds.Height;
+                double maxLeft = Bounds.Width - LeftNavPanel.Bounds.Width;
+                double maxTop = Bounds.Height - LeftNavPanel.Bounds.Height;
 
                 double newLeft = Math.Clamp(currentLeft, 0, Math.Max(0, maxLeft));
                 double newTop = Math.Clamp(currentTop, 0, Math.Max(0, maxTop));
 
-                Canvas.SetLeft(LeftNavigationPanel, newLeft);
-                Canvas.SetTop(LeftNavigationPanel, newTop);
+                Canvas.SetLeft(LeftNavPanel, newLeft);
+                Canvas.SetTop(LeftNavPanel, newTop);
             }
         }
     }
@@ -448,597 +447,35 @@ public partial class MainWindow : Window
         }
     }
 
-    // Combined tap-to-rotate and hold-to-drag for Left Navigation Panel
-    private void LeftPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
+    // Handler for shared LeftNavigationPanel drag events
+    private void LeftNavPanel_DragMoved(object? sender, Vector delta)
     {
-        // Sender is the touch handle Grid
-        if (LeftNavigationPanel != null && sender is Grid touchHandle)
-        {
-            _leftPanelPressTime = DateTime.Now;
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(touchHandle);
+        if (LeftNavPanel == null) return;
 
-            // Close any open tooltips to prevent position issues during drag
-            ToolTip.SetIsOpen(touchHandle, false);
+        // Calculate new position
+        double currentLeft = Canvas.GetLeft(LeftNavPanel);
+        double currentTop = Canvas.GetTop(LeftNavPanel);
 
-            e.Handled = true; // Prevent map from handling this event
-        }
+        if (double.IsNaN(currentLeft)) currentLeft = 20;
+        if (double.IsNaN(currentTop)) currentTop = 100;
+
+        double newLeft = currentLeft + delta.X;
+        double newTop = currentTop + delta.Y;
+
+        // Constrain to window bounds
+        double maxLeft = Bounds.Width - LeftNavPanel.Bounds.Width;
+        double maxTop = Bounds.Height - LeftNavPanel.Bounds.Height;
+
+        newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
+        newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
+
+        // Update position
+        Canvas.SetLeft(LeftNavPanel, newLeft);
+        Canvas.SetTop(LeftNavPanel, newTop);
     }
 
-    private void LeftPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (LeftNavigationPanel != null && e.Pointer.Captured == sender && sender is Grid touchHandle)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Start dragging if moved beyond threshold
-            if (!_isDraggingLeftPanel && distance > TapDistanceThreshold)
-            {
-                _isDraggingLeftPanel = true;
-                // Ensure tooltip stays closed while dragging
-                ToolTip.SetIsOpen(touchHandle, false);
-            }
-
-            if (_isDraggingLeftPanel)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                // Calculate new position
-                double newLeft = Canvas.GetLeft(LeftNavigationPanel) + delta.X;
-                double newTop = Canvas.GetTop(LeftNavigationPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - LeftNavigationPanel.Bounds.Width;
-                double maxTop = Bounds.Height - LeftNavigationPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                // Update position
-                Canvas.SetLeft(LeftNavigationPanel, newLeft);
-                Canvas.SetTop(LeftNavigationPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void LeftPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (LeftNavigationPanel != null && e.Pointer.Captured == sender)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-            var elapsed = (DateTime.Now - _leftPanelPressTime).TotalMilliseconds;
-
-            // Detect tap: quick release with minimal movement
-            bool isTap = !_isDraggingLeftPanel &&
-                        elapsed < TapTimeThresholdMs &&
-                        distance < TapDistanceThreshold;
-
-            if (isTap)
-            {
-                // Tap detected - rotate the panel
-                if (LeftPanelStack != null)
-                {
-                    if (LeftPanelStack.Orientation == Avalonia.Layout.Orientation.Vertical)
-                    {
-                        LeftPanelStack.Orientation = Avalonia.Layout.Orientation.Horizontal;
-                    }
-                    else
-                    {
-                        LeftPanelStack.Orientation = Avalonia.Layout.Orientation.Vertical;
-                    }
-                }
-            }
-
-            // Reset state
-            _isDraggingLeftPanel = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-
-    // Event blockers for Left Panel Border - prevent events from reaching map overlay
-    // But DON'T block if the event comes from interactive children (buttons, drag handle, etc.)
-    private void LeftPanelBorder_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Only block if event originated from the Border itself (not a child control)
-        if (e.Source == sender)
-        {
-            e.Handled = true;
-        }
-    }
-
-    private void LeftPanelBorder_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        // Don't block - let children handle their own moves
-    }
-
-    private void LeftPanelBorder_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        // Only block if event originated from the Border itself (not a child control)
-        if (e.Source == sender)
-        {
-            e.Handled = true;
-        }
-    }
-
-    // File Menu Panel drag handlers
-    private void FileMenuPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Sender is the header Grid
-        if (FileMenuPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-
-            // Close any open tooltips to prevent position issues during drag
-            ToolTip.SetIsOpen(header, false);
-
-            e.Handled = true;
-        }
-    }
-
-    private void FileMenuPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (FileMenuPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Start dragging if moved beyond threshold
-            if (!_isDraggingFileMenu && distance > TapDistanceThreshold)
-            {
-                _isDraggingFileMenu = true;
-                // Ensure tooltip stays closed while dragging
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingFileMenu)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                // Calculate new position
-                double newLeft = Canvas.GetLeft(FileMenuPanel) + delta.X;
-                double newTop = Canvas.GetTop(FileMenuPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - FileMenuPanel.Bounds.Width;
-                double maxTop = Bounds.Height - FileMenuPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                // Update position
-                Canvas.SetLeft(FileMenuPanel, newLeft);
-                Canvas.SetTop(FileMenuPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void FileMenuPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (FileMenuPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingFileMenu = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // View Settings Panel drag handlers
-    private void ViewSettingsPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Sender is the header Grid
-        if (ViewSettingsPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-
-            // Close any open tooltips to prevent position issues during drag
-            ToolTip.SetIsOpen(header, false);
-
-            e.Handled = true;
-        }
-    }
-
-    private void ViewSettingsPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (ViewSettingsPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Start dragging if moved beyond threshold
-            if (!_isDraggingViewSettings && distance > TapDistanceThreshold)
-            {
-                _isDraggingViewSettings = true;
-                // Ensure tooltip stays closed while dragging
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingViewSettings)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                // Calculate new position
-                double newLeft = Canvas.GetLeft(ViewSettingsPanel) + delta.X;
-                double newTop = Canvas.GetTop(ViewSettingsPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - ViewSettingsPanel.Bounds.Width;
-                double maxTop = Bounds.Height - ViewSettingsPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                // Update position
-                Canvas.SetLeft(ViewSettingsPanel, newLeft);
-                Canvas.SetTop(ViewSettingsPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void ViewSettingsPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (ViewSettingsPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingViewSettings = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // Tools Panel drag handlers
-    private void ToolsPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Sender is the header Grid
-        if (ToolsPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-
-            // Close any open tooltips to prevent position issues during drag
-            ToolTip.SetIsOpen(header, false);
-
-            e.Handled = true;
-        }
-    }
-
-    private void ToolsPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (ToolsPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Start dragging if moved beyond threshold
-            if (!_isDraggingTools && distance > TapDistanceThreshold)
-            {
-                _isDraggingTools = true;
-                // Ensure tooltip stays closed while dragging
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingTools)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                // Calculate new position
-                double newLeft = Canvas.GetLeft(ToolsPanel) + delta.X;
-                double newTop = Canvas.GetTop(ToolsPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - ToolsPanel.Bounds.Width;
-                double maxTop = Bounds.Height - ToolsPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                // Update position
-                Canvas.SetLeft(ToolsPanel, newLeft);
-                Canvas.SetTop(ToolsPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void ToolsPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (ToolsPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingTools = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // Configuration Panel drag handlers
-    private void ConfigurationPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Sender is the header Grid
-        if (ConfigurationPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-
-            // Close any open tooltips to prevent position issues during drag
-            ToolTip.SetIsOpen(header, false);
-
-            e.Handled = true;
-        }
-    }
-
-    private void ConfigurationPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (ConfigurationPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Start dragging if moved beyond threshold
-            if (!_isDraggingConfiguration && distance > TapDistanceThreshold)
-            {
-                _isDraggingConfiguration = true;
-                // Ensure tooltip stays closed while dragging
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingConfiguration)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                // Calculate new position
-                double newLeft = Canvas.GetLeft(ConfigurationPanel) + delta.X;
-                double newTop = Canvas.GetTop(ConfigurationPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - ConfigurationPanel.Bounds.Width;
-                double maxTop = Bounds.Height - ConfigurationPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                // Update position
-                Canvas.SetLeft(ConfigurationPanel, newLeft);
-                Canvas.SetTop(ConfigurationPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void ConfigurationPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (ConfigurationPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingConfiguration = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // Job Menu Panel drag handlers
-    private void JobMenuPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (JobMenuPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-            // Suppress tooltip to prevent it from following during drag
-            ToolTip.SetIsOpen(header, false);
-            e.Handled = true;
-        }
-    }
-
-    private void JobMenuPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (JobMenuPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Only start dragging if moved beyond threshold
-            if (!_isDraggingJobMenu && distance > TapDistanceThreshold)
-            {
-                _isDraggingJobMenu = true;
-                // Suppress tooltip when dragging starts
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingJobMenu)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                double newLeft = Canvas.GetLeft(JobMenuPanel) + delta.X;
-                double newTop = Canvas.GetTop(JobMenuPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - JobMenuPanel.Bounds.Width;
-                double maxTop = Bounds.Height - JobMenuPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                Canvas.SetLeft(JobMenuPanel, newLeft);
-                Canvas.SetTop(JobMenuPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void JobMenuPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (JobMenuPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingJobMenu = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // Field Tools Panel drag handlers
-    private void FieldToolsPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (FieldToolsPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-            // Suppress tooltip to prevent it from following during drag
-            ToolTip.SetIsOpen(header, false);
-            e.Handled = true;
-        }
-    }
-
-    private void FieldToolsPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (FieldToolsPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Only start dragging if moved beyond threshold
-            if (!_isDraggingFieldTools && distance > TapDistanceThreshold)
-            {
-                _isDraggingFieldTools = true;
-                // Suppress tooltip when dragging starts
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingFieldTools)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                double newLeft = Canvas.GetLeft(FieldToolsPanel) + delta.X;
-                double newTop = Canvas.GetTop(FieldToolsPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - FieldToolsPanel.Bounds.Width;
-                double maxTop = Bounds.Height - FieldToolsPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                Canvas.SetLeft(FieldToolsPanel, newLeft);
-                Canvas.SetTop(FieldToolsPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void FieldToolsPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (FieldToolsPanel != null && e.Pointer.Captured == sender)
-        {
-            // Reset state
-            _isDraggingFieldTools = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    // Simulator Panel drag handlers
-    private void SimulatorPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (SimulatorPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-            // Suppress tooltip to prevent it from following during drag
-            ToolTip.SetIsOpen(header, false);
-            e.Handled = true;
-        }
-    }
-
-    private void SimulatorPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (SimulatorPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            // Only start dragging if moved beyond threshold
-            if (!_isDraggingSimulator && distance > TapDistanceThreshold)
-            {
-                _isDraggingSimulator = true;
-                // Suppress tooltip when dragging starts
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingSimulator)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                double newLeft = Canvas.GetLeft(SimulatorPanel) + delta.X;
-                double newTop = Canvas.GetTop(SimulatorPanel) + delta.Y;
-
-                // Constrain to window bounds
-                double maxLeft = Bounds.Width - SimulatorPanel.Bounds.Width;
-                double maxTop = Bounds.Height - SimulatorPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                Canvas.SetLeft(SimulatorPanel, newLeft);
-                Canvas.SetTop(SimulatorPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-                e.Handled = true;
-            }
-        }
-    }
-
-    private void SimulatorPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (SimulatorPanel != null)
-        {
-            // Always release capture and reset state, regardless of whether we were dragging
-            _isDraggingSimulator = false;
-            if (e.Pointer.Captured == sender)
-            {
-                e.Pointer.Capture(null);
-            }
-            e.Handled = true;
-        }
-    }
+    // NOTE: All panel drag handlers are now handled by shared controls
+    // via DragMoved events wired up in constructor
 
     // Helper method to check if pointer is over any UI panel
     private bool IsPointerOverUIPanel(PointerEventArgs e)
@@ -1046,15 +483,15 @@ public partial class MainWindow : Window
         var position = e.GetPosition(this);
 
         // Check left navigation panel
-        if (LeftNavigationPanel != null && LeftNavigationPanel.IsVisible && LeftNavigationPanel.Bounds.Width > 0 && LeftNavigationPanel.Bounds.Height > 0)
+        if (LeftNavPanel != null && LeftNavPanel.IsVisible && LeftNavPanel.Bounds.Width > 0 && LeftNavPanel.Bounds.Height > 0)
         {
-            double left = Canvas.GetLeft(LeftNavigationPanel);
-            double top = Canvas.GetTop(LeftNavigationPanel);
+            double left = Canvas.GetLeft(LeftNavPanel);
+            double top = Canvas.GetTop(LeftNavPanel);
 
             if (double.IsNaN(left)) left = 20;
             if (double.IsNaN(top)) top = 100;
 
-            var panelBounds = new Rect(left, top, LeftNavigationPanel.Bounds.Width, LeftNavigationPanel.Bounds.Height);
+            var panelBounds = new Rect(left, top, LeftNavPanel.Bounds.Width, LeftNavPanel.Bounds.Height);
 
             if (panelBounds.Contains(position))
             {
@@ -1079,141 +516,10 @@ public partial class MainWindow : Window
             }
         }
 
-        // Check file menu panel
-        if (FileMenuPanel != null && FileMenuPanel.IsVisible && FileMenuPanel.Bounds.Width > 0 && FileMenuPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(FileMenuPanel);
-            double top = Canvas.GetTop(FileMenuPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, FileMenuPanel.Bounds.Width, FileMenuPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check view settings panel
-        if (ViewSettingsPanel != null && ViewSettingsPanel.IsVisible && ViewSettingsPanel.Bounds.Width > 0 && ViewSettingsPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(ViewSettingsPanel);
-            double top = Canvas.GetTop(ViewSettingsPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 200;
-
-            var panelBounds = new Rect(left, top, ViewSettingsPanel.Bounds.Width, ViewSettingsPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check tools panel
-        if (ToolsPanel != null && ToolsPanel.IsVisible && ToolsPanel.Bounds.Width > 0 && ToolsPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(ToolsPanel);
-            double top = Canvas.GetTop(ToolsPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, ToolsPanel.Bounds.Width, ToolsPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check configuration panel
-        if (ConfigurationPanel != null && ConfigurationPanel.IsVisible && ConfigurationPanel.Bounds.Width > 0 && ConfigurationPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(ConfigurationPanel);
-            double top = Canvas.GetTop(ConfigurationPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, ConfigurationPanel.Bounds.Width, ConfigurationPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check job menu panel
-        if (JobMenuPanel != null && JobMenuPanel.IsVisible && JobMenuPanel.Bounds.Width > 0 && JobMenuPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(JobMenuPanel);
-            double top = Canvas.GetTop(JobMenuPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, JobMenuPanel.Bounds.Width, JobMenuPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check field tools panel
-        if (FieldToolsPanel != null && FieldToolsPanel.IsVisible && FieldToolsPanel.Bounds.Width > 0 && FieldToolsPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(FieldToolsPanel);
-            double top = Canvas.GetTop(FieldToolsPanel);
-
-            if (double.IsNaN(left)) left = 90;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, FieldToolsPanel.Bounds.Width, FieldToolsPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check simulator panel
-        if (SimulatorPanel != null && SimulatorPanel.IsVisible && SimulatorPanel.Bounds.Width > 0 && SimulatorPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(SimulatorPanel);
-            double top = Canvas.GetTop(SimulatorPanel);
-
-            if (double.IsNaN(left)) left = 400;
-            if (double.IsNaN(top)) top = 100;
-
-            var panelBounds = new Rect(left, top, SimulatorPanel.Bounds.Width, SimulatorPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
-
-        // Check boundary recording panel
-        if (BoundaryRecordingPanel != null && BoundaryRecordingPanel.IsVisible && BoundaryRecordingPanel.Bounds.Width > 0 && BoundaryRecordingPanel.Bounds.Height > 0)
-        {
-            double left = Canvas.GetLeft(BoundaryRecordingPanel);
-            double top = Canvas.GetTop(BoundaryRecordingPanel);
-
-            if (double.IsNaN(left)) left = 200;
-            if (double.IsNaN(top)) top = 150;
-
-            var panelBounds = new Rect(left, top, BoundaryRecordingPanel.Bounds.Width, BoundaryRecordingPanel.Bounds.Height);
-
-            if (panelBounds.Contains(position))
-            {
-                return true;
-            }
-        }
+        // NOTE: All sub-panels (FileMenu, ViewSettings, Tools, Configuration,
+        // JobMenu, FieldTools, Simulator, BoundaryRecording, BoundaryPlayer)
+        // are now children of LeftNavPanel, so checking LeftNavPanel bounds
+        // above is sufficient to cover all of them.
 
         return false;
     }
@@ -1583,120 +889,9 @@ public partial class MainWindow : Window
         }
     }
 
-    // Boundary Panel drag handlers
-    private void BoundaryPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (BoundaryRecordingPanel != null && sender is Grid header)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(header);
-            ToolTip.SetIsOpen(header, false);
-            e.Handled = true;
-        }
-    }
-
-    private void BoundaryPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (BoundaryRecordingPanel != null && e.Pointer.Captured == sender && sender is Grid header)
-        {
-            var currentPoint = e.GetPosition(this);
-            var distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-                                    Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            if (!_isDraggingBoundary && distance > TapDistanceThreshold)
-            {
-                _isDraggingBoundary = true;
-                ToolTip.SetIsOpen(header, false);
-            }
-
-            if (_isDraggingBoundary)
-            {
-                var delta = currentPoint - _dragStartPoint;
-
-                double newLeft = Canvas.GetLeft(BoundaryRecordingPanel) + delta.X;
-                double newTop = Canvas.GetTop(BoundaryRecordingPanel) + delta.Y;
-
-                double maxLeft = Bounds.Width - BoundaryRecordingPanel.Bounds.Width;
-                double maxTop = Bounds.Height - BoundaryRecordingPanel.Bounds.Height;
-
-                newLeft = Math.Clamp(newLeft, 0, Math.Max(0, maxLeft));
-                newTop = Math.Clamp(newTop, 0, Math.Max(0, maxTop));
-
-                Canvas.SetLeft(BoundaryRecordingPanel, newLeft);
-                Canvas.SetTop(BoundaryRecordingPanel, newTop);
-
-                _dragStartPoint = currentPoint;
-            }
-
-            e.Handled = true;
-        }
-    }
-
-    private void BoundaryPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (BoundaryRecordingPanel != null && e.Pointer.Captured == sender)
-        {
-            _isDraggingBoundary = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
-    #region BoundaryPlayerPanel Event Handlers
-
-    // Drag support for BoundaryPlayerPanel
-    private void BoundaryPlayerPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (BoundaryPlayerPanel != null)
-        {
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture((Control)sender!);
-            e.Handled = true;
-        }
-    }
-
-    private void BoundaryPlayerPanel_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (BoundaryPlayerPanel != null && e.Pointer.Captured == sender)
-        {
-            var currentPoint = e.GetPosition(this);
-            double distance = Math.Sqrt(Math.Pow(currentPoint.X - _dragStartPoint.X, 2) + Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
-
-            if (!_isDraggingBoundaryPlayer && distance > TapDistanceThreshold)
-            {
-                _isDraggingBoundaryPlayer = true;
-            }
-
-            if (_isDraggingBoundaryPlayer)
-            {
-                var offset = currentPoint - _dragStartPoint;
-                double currentLeft = Canvas.GetLeft(BoundaryPlayerPanel);
-                double currentTop = Canvas.GetTop(BoundaryPlayerPanel);
-
-                if (double.IsNaN(currentLeft)) currentLeft = 100;
-                if (double.IsNaN(currentTop)) currentTop = 100;
-
-                double newLeft = Math.Max(0, Math.Min(currentLeft + offset.X, Bounds.Width - BoundaryPlayerPanel.Bounds.Width));
-                double newTop = Math.Max(0, Math.Min(currentTop + offset.Y, Bounds.Height - BoundaryPlayerPanel.Bounds.Height));
-
-                Canvas.SetLeft(BoundaryPlayerPanel, newLeft);
-                Canvas.SetTop(BoundaryPlayerPanel, newTop);
-                _dragStartPoint = currentPoint;
-            }
-            e.Handled = true;
-        }
-    }
-
-    private void BoundaryPlayerPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (BoundaryPlayerPanel != null && e.Pointer.Captured == sender)
-        {
-            _isDraggingBoundaryPlayer = false;
-            e.Pointer.Capture(null);
-            e.Handled = true;
-        }
-    }
-
+    // NOTE: BoundaryRecordingPanel and BoundaryPlayerPanel drag handlers removed.
+    // These panels are now children of LeftNavigationPanel (shared control) and
+    // handle their own dragging internally.
 
     // BtnBoundaryRestart now handled by ViewModel's ClearBoundaryCommand
     // BtnBoundaryOffset now handled by ViewModel's ShowBoundaryOffsetDialogCommand
@@ -1731,6 +926,4 @@ public partial class MainWindow : Window
     }
 
     // BtnBoundaryAddPoint now handled by ViewModel's AddBoundaryPointCommand
-
-    #endregion
 }

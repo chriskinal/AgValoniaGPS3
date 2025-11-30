@@ -80,7 +80,7 @@
         <Border Grid.Row="0" Background="#34495E" CornerRadius="4,4,0,0" Padding="10,8">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Image Source="/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,10,0"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,10,0"/>
                     <TextBlock Text="Upload to AgShare" Foreground="#1ABC9C" FontWeight="Bold" FontSize="16"/>
                 </StackPanel>
                 <Button Grid.Column="2" Classes="SelectButton" Click="BtnSelectAll_Click" Margin="0,0,5,0">
@@ -139,7 +139,7 @@
             <Border Grid.Column="0"/>
             <Button Grid.Column="1" Classes="CancelButton" Width="60" Height="60" Margin="0,0,10,0"
                     Click="BtnCancel_Click" ToolTip.Tip="Cancel">
-                <Image Source="/Assets/Icons/FileClose.png" Width="40" Height="40"/>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="40" Height="40"/>
             </Button>
             <Button x:Name="BtnUpload" Grid.Column="2" Classes="OkButton" Width="140" Height="60"
                     Click="BtnUpload_Click" ToolTip.Tip="Upload selected fields" IsEnabled="False">

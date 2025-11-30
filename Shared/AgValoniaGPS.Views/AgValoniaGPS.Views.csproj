@@ -5,21 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
+  <!-- Avalonia is needed for avares:// resource compilation -->
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Labs.Controls" Version="11.3.1" />
-    <PackageReference Include="Avalonia.Skia" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Xaml.Interactivity" Version="11.3.0.6" />
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
   </ItemGroup>
 
+  <!-- Shared Assets: Icons and Images accessible by both Desktop and iOS -->
   <ItemGroup>
-    <ProjectReference Include="..\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
-    <ProjectReference Include="..\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
+    <AvaloniaResource Include="Assets\Icons\**\*.png" />
+    <AvaloniaResource Include="Assets\Images\**\*.png" />
   </ItemGroup>
 
 </Project>

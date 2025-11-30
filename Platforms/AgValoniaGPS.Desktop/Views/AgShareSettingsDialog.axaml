@@ -62,7 +62,7 @@
         <!-- Header -->
         <Border Grid.Row="0" Background="#34495E" CornerRadius="4,4,0,0" Padding="10,8">
             <StackPanel Orientation="Horizontal">
-                <Image Source="/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,10,0"/>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,10,0"/>
                 <TextBlock Text="AgShare Configuration" Foreground="#1ABC9C" FontWeight="Bold" FontSize="16"/>
             </StackPanel>
         </Border>
@@ -81,7 +81,7 @@
                     </Border>
                     <Button Grid.Column="1" Classes="ToolButton" Width="50" Height="40" Margin="5,0,0,0"
                             Click="BtnBackspaceServer_Click" ToolTip.Tip="Backspace">
-                        <Image Source="/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
                     </Button>
                 </Grid>
             </StackPanel>
@@ -105,7 +105,7 @@
                     </Button>
                     <Button Grid.Column="2" Classes="ToolButton" Width="50" Height="40" Margin="5,0,0,0"
                             Click="BtnBackspaceApiKey_Click" ToolTip.Tip="Backspace">
-                        <Image Source="/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BackSpace.png" Width="28" Height="28"/>
                     </Button>
                 </Grid>
                 <TextBlock Text="Get your API key from agshare.agopengps.com" Foreground="#BDC3C7" FontSize="11" Margin="0,3,0,0"/>
@@ -138,7 +138,7 @@
             <Border Grid.Column="0"/>
             <Button Grid.Column="1" Classes="CancelButton" Width="60" Height="60" Margin="0,0,10,0"
                     Click="BtnCancel_Click" ToolTip.Tip="Cancel">
-                <Image Source="/Assets/Icons/FileClose.png" Width="40" Height="40"/>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="40" Height="40"/>
             </Button>
             <Button x:Name="BtnOk" Grid.Column="2" Classes="OkButton" Width="60" Height="60"
                     Click="BtnOk_Click" ToolTip.Tip="Save settings">

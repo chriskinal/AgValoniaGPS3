@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Desktop.Controls.Panels.FileMenuPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsFileMenuPanelVisible}"
+             IsHitTestVisible="{Binding IsFileMenuPanelVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ModernButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ModernButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" MinWidth="200" IsVisible="{Binding IsFileMenuPanelVisible}">
+        <StackPanel Spacing="4">
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
+                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="File Menu" Foreground="White" FontSize="16" FontWeight="Bold"
+                           VerticalAlignment="Center" IsHitTestVisible="False"/>
+                <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
+                        Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
+                        Command="{Binding ToggleFileMenuPanelCommand}" Margin="8,0,8,0"/>
+            </Grid>
+
+            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+
+            <Button Classes="ModernButton" Content="New Profile" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Load Profile" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Simulator" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+                    Command="{Binding ToggleSimulatorPanelCommand}"/>
+            <Button Classes="ModernButton" Content="Enter Sim Coords" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+                    Command="{Binding ShowSimCoordsDialogCommand}"/>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <Button Classes="ModernButton" Content="Kiosk Mode" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Reset ALL" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <Button Classes="ModernButton" Content="About" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="AgShare API" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+                    Command="{Binding ShowAgShareSettingsDialogCommand}"/>
+            <Button Classes="ModernButton" Content="Help" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+        </StackPanel>
+    </Border>
+</UserControl>

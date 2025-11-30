@@ -7,7 +7,8 @@
         mc:Ignorable="d" d:DesignWidth="1194" d:DesignHeight="834"
         x:Class="AgValoniaGPS.iOS.Views.MainView"
         x:DataType="vm:MainViewModel"
-        Background="#1a1a1a">
+        Background="#1a1a1a"
+        ClipToBounds="False">
 
     <UserControl.Styles>
         <!-- Mobile-friendly button style -->
@@ -47,8 +48,8 @@
         </Style>
     </UserControl.Styles>
 
-    <!-- Full-screen layout -->
-    <Grid>
+    <!-- Full-screen layout using Panel to avoid clipping -->
+    <Panel ClipToBounds="False">
         <!-- FULL SCREEN MAP - Using Avalonia.Labs SKCanvasView -->
         <controls:SkiaMapControlLabs x:Name="MapControl" IsGridVisible="True" />
 
@@ -85,32 +86,12 @@
             </StackPanel>
         </Border>
 
-        <!-- LEFT SIDE: Main Controls -->
-        <StackPanel Orientation="Vertical" Spacing="12"
-                    Margin="20,0,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center">
-
-            <!-- Menu Button -->
-            <Button Classes="MobileButton" Command="{Binding ToggleFileMenuPanelCommand}">
-                <TextBlock Text="☰" FontSize="28" Foreground="White" HorizontalAlignment="Center"/>
-            </Button>
-
-            <!-- Fields Button -->
-            <Button Classes="MobileButton" Command="{Binding ShowFieldSelectionDialogCommand}">
-                <TextBlock Text="📁" FontSize="24" HorizontalAlignment="Center"/>
-            </Button>
-
-            <!-- Boundary Button -->
-            <Button Classes="MobileButton" Command="{Binding ToggleBoundaryPanelCommand}">
-                <TextBlock Text="⬡" FontSize="28" Foreground="#E74C3C" HorizontalAlignment="Center"/>
-            </Button>
-
-            <!-- Settings -->
-            <Button Classes="MobileButton">
-                <TextBlock Text="⚙" FontSize="26" Foreground="White" HorizontalAlignment="Center"/>
-            </Button>
-        </StackPanel>
+        <!-- LEFT SIDE: Main Navigation (shared control) -->
+        <!-- LeftNavigationPanel needs to fill entire screen to avoid clipping sub-panels on iOS -->
+        <controls:LeftNavigationPanel x:Name="LeftNavPanel"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      DataContext="{Binding}"/>
 
         <!-- RIGHT SIDE: View Controls -->
         <StackPanel Orientation="Vertical" Spacing="12"
@@ -179,64 +160,5 @@
             </Button>
         </StackPanel>
 
-        <!-- SLIDE-IN MENU (when visible) -->
-        <Border Background="#EE1a1a1a"
-                Width="280"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Stretch"
-                IsVisible="{Binding IsFileMenuPanelVisible}"
-                Padding="0,40,0,0">
-            <Grid RowDefinitions="Auto,*,Auto">
-                <!-- Header -->
-                <Border Grid.Row="0" Background="#2C3E50" Padding="20,15">
-                    <TextBlock Text="AgValoniaGPS" Foreground="White" FontSize="22" FontWeight="Bold"/>
-                </Border>
-
-                <!-- Menu Items -->
-                <StackPanel Grid.Row="1" Margin="0,20,0,0">
-                    <Button Background="Transparent" Padding="20,15" HorizontalContentAlignment="Left"
-                            Command="{Binding ShowFieldSelectionDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="15">
-                            <TextBlock Text="📂" FontSize="20"/>
-                            <TextBlock Text="Open Field" Foreground="White" FontSize="18" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" Padding="20,15" HorizontalContentAlignment="Left"
-                            Command="{Binding ResumeFieldCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="15">
-                            <TextBlock Text="▶️" FontSize="20"/>
-                            <TextBlock Text="Resume Last Field" Foreground="White" FontSize="18" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" Padding="20,15" HorizontalContentAlignment="Left"
-                            Command="{Binding CloseFieldCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="15">
-                            <TextBlock Text="✖️" FontSize="20"/>
-                            <TextBlock Text="Close Field" Foreground="White" FontSize="18" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Separator Background="#444" Margin="20,10"/>
-                    <Button Background="Transparent" Padding="20,15" HorizontalContentAlignment="Left">
-                        <StackPanel Orientation="Horizontal" Spacing="15">
-                            <TextBlock Text="⚙️" FontSize="20"/>
-                            <TextBlock Text="Settings" Foreground="White" FontSize="18" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Background="Transparent" Padding="20,15" HorizontalContentAlignment="Left">
-                        <StackPanel Orientation="Horizontal" Spacing="15">
-                            <TextBlock Text="📡" FontSize="20"/>
-                            <TextBlock Text="GPS Configuration" Foreground="White" FontSize="18" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-
-                <!-- Close Button -->
-                <Button Grid.Row="2" Background="#E74C3C" Padding="20,15" Margin="20"
-                        CornerRadius="8" HorizontalContentAlignment="Center"
-                        Command="{Binding ToggleFileMenuPanelCommand}">
-                    <TextBlock Text="Close Menu" Foreground="White" FontSize="18" FontWeight="Bold"/>
-                </Button>
-            </Grid>
-        </Border>
-    </Grid>
+    </Panel>
 </UserControl>
