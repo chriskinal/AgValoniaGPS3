@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AgOpenGPS - WebGL POC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            touch-action: none;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        /* Left Navigation Bar */
+        #nav-bar {
+            background: rgba(30, 42, 56, 0.87);
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            width: 56px;
+            height: 56px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(44, 62, 80, 0.87);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .nav-btn:active {
+            background: #1ABC9C;
+        }
+
+        /* Map Container */
+        #map-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Status Panels */
+        .status-panel {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            font-weight: bold;
+        }
+
+        #top-status {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        #top-status > * {
+            pointer-events: auto;
+        }
+
+        #gps-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #gps-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #2ecc71;
+        }
+
+        #speed-display {
+            font-size: 20px;
+        }
+
+        #speed-display span {
+            font-size: 12px;
+            color: #888;
+        }
+
+        #xte-display {
+            flex: 1;
+            text-align: center;
+        }
+
+        #xte-display .label {
+            color: #1ABC9C;
+            font-size: 14px;
+        }
+
+        #xte-display .value {
+            color: yellow;
+            font-size: 32px;
+        }
+
+        #xte-display .unit {
+            color: #888;
+            font-size: 14px;
+        }
+
+        #heading-display {
+            font-size: 20px;
+        }
+
+        #heading-display span {
+            color: #888;
+        }
+
+        /* Right Controls */
+        #right-controls {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(44, 62, 80, 0.87);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .control-btn:active {
+            background: #1ABC9C;
+        }
+
+        /* Bottom Status */
+        #bottom-status {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .coord-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .coord-value {
+            font-size: 16px;
+        }
+
+        #easting .coord-label { color: #3498DB; }
+        #northing .coord-label { color: #E74C3C; }
+
+        /* Simulator Panel */
+        #sim-panel {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .sim-btn {
+            height: 32px;
+            padding: 0 12px;
+            border: none;
+            border-radius: 6px;
+            background: #34495E;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sim-btn:active {
+            background: #1ABC9C;
+        }
+
+        .sim-btn.active {
+            background: #1ABC9C;
+        }
+
+        .sim-btn.danger {
+            background: #8B0000;
+        }
+
+        .sim-arrow {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Left Navigation -->
+        <nav id="nav-bar">
+            <button class="nav-btn" title="File Menu">&#128194;</button>
+            <button class="nav-btn" title="View Settings">&#128065;</button>
+            <button class="nav-btn" title="Tools">&#128295;</button>
+            <button class="nav-btn" title="Configuration">&#9881;</button>
+            <button class="nav-btn" title="Job Menu">&#128196;</button>
+            <button class="nav-btn" title="Field Tools">&#127793;</button>
+            <button class="nav-btn" title="AutoSteer">&#128663;</button>
+            <button class="nav-btn" title="Data I/O">&#128225;</button>
+        </nav>
+
+        <!-- Map Area -->
+        <div id="map-container">
+            <canvas id="map-canvas"></canvas>
+
+            <!-- Top Status Bar -->
+            <div id="top-status">
+                <div id="gps-status" class="status-panel">
+                    <div id="gps-dot"></div>
+                    <span id="fix-quality">RTK</span>
+                </div>
+                <div id="speed-display" class="status-panel">
+                    <span id="speed-value">0.0</span> <span>km/h</span>
+                </div>
+                <div id="xte-display" class="status-panel">
+                    <span class="label">XTE</span>
+                    <span class="value" id="xte-value">0.00</span>
+                    <span class="unit">m</span>
+                </div>
+                <div id="heading-display" class="status-panel">
+                    <span id="heading-value">0</span><span>°</span>
+                </div>
+            </div>
+
+            <!-- Right Controls -->
+            <div id="right-controls">
+                <button class="control-btn" id="zoom-in">+</button>
+                <button class="control-btn" id="toggle-3d">3D</button>
+                <button class="control-btn" id="zoom-out">−</button>
+            </div>
+
+            <!-- Bottom Position -->
+            <div id="bottom-status" class="status-panel">
+                <div id="easting">
+                    <span class="coord-label">E</span>
+                    <span class="coord-value" id="easting-value">0.0</span>
+                </div>
+                <div id="northing">
+                    <span class="coord-label">N</span>
+                    <span class="coord-value" id="northing-value">0.0</span>
+                </div>
+            </div>
+
+            <!-- Simulator Panel -->
+            <div id="sim-panel">
+                <button class="sim-btn" id="sim-toggle">Sim</button>
+                <button class="sim-btn sim-arrow" id="steer-left">&#9664;</button>
+                <button class="sim-btn" id="steer-zero">Zero</button>
+                <button class="sim-btn sim-arrow" id="steer-right">&#9654;</button>
+                <button class="sim-btn sim-arrow" id="accel">&#9650;</button>
+                <button class="sim-btn" id="stop">&#9632;</button>
+                <button class="sim-btn sim-arrow" id="decel">&#9660;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== WebGL Map Renderer =====
+        const canvas = document.getElementById('map-canvas');
+        const gl = canvas.getContext('webgl', { antialias: true, alpha: false });
+
+        if (!gl) {
+            alert('WebGL not supported - falling back to Canvas2D');
+        }
+
+        // State
+        let camera = { x: 0, y: 0, zoom: 1, rotation: 0 };
+        let vehicle = { x: 0, y: 0, heading: 0 };
+        let simulator = { enabled: false, speed: 0, steerAngle: 0 };
+        let boundary = [];
+        let lastTime = 0;
+
+        // Touch state
+        let touches = {};
+        let lastPinchDist = 0;
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+
+        // Resize handler
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // ===== Shaders =====
+        const vertexShaderSrc = `
+            attribute vec2 a_position;
+            uniform mat3 u_matrix;
+            void main() {
+                vec3 pos = u_matrix * vec3(a_position, 1.0);
+                gl_Position = vec4(pos.xy, 0.0, 1.0);
+                gl_PointSize = 4.0;
+            }
+        `;
+
+        const fragmentShaderSrc = `
+            precision mediump float;
+            uniform vec4 u_color;
+            void main() {
+                gl_FragColor = u_color;
+            }
+        `;
+
+        function createShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createProgram(vs, fs) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
+                return null;
+            }
+            return program;
+        }
+
+        const vs = createShader(gl.VERTEX_SHADER, vertexShaderSrc);
+        const fs = createShader(gl.FRAGMENT_SHADER, fragmentShaderSrc);
+        const program = createProgram(vs, fs);
+
+        const a_position = gl.getAttribLocation(program, 'a_position');
+        const u_matrix = gl.getUniformLocation(program, 'u_matrix');
+        const u_color = gl.getUniformLocation(program, 'u_color');
+
+        const positionBuffer = gl.createBuffer();
+
+        // ===== Transform Matrix =====
+        function getMatrix() {
+            const aspect = canvas.width / canvas.height;
+            const viewWidth = 200 / camera.zoom;
+            const viewHeight = viewWidth / aspect;
+
+            // Scale to clip space
+            const sx = 2 / viewWidth;
+            const sy = 2 / viewHeight;
+
+            // Translate (camera follows vehicle or pans)
+            const tx = -camera.x;
+            const ty = -camera.y;
+
+            // Rotation
+            const cos = Math.cos(-camera.rotation);
+            const sin = Math.sin(-camera.rotation);
+
+            // Combined matrix: scale * rotate * translate
+            return new Float32Array([
+                sx * cos, sx * sin, 0,
+                -sy * sin, sy * cos, 0,
+                (tx * cos - ty * sin) * sx, (tx * sin + ty * cos) * sy, 1
+            ]);
+        }
+
+        // ===== Drawing Functions =====
+        function drawLines(vertices, color, mode = gl.LINES) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+            gl.enableVertexAttribArray(a_position);
+            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+            gl.uniform4fv(u_color, color);
+            gl.drawArrays(mode, 0, vertices.length / 2);
+        }
+
+        function drawGrid() {
+            const gridSize = 500;
+            const spacing = 10;
+            const majorSpacing = 50;
+
+            // Minor grid lines
+            let minorLines = [];
+            for (let i = -gridSize; i <= gridSize; i += spacing) {
+                if (i % majorSpacing !== 0) {
+                    minorLines.push(-gridSize, i, gridSize, i); // horizontal
+                    minorLines.push(i, -gridSize, i, gridSize); // vertical
+                }
+            }
+            drawLines(minorLines, [0.4, 0.4, 0.4, 0.8]);
+
+            // Major grid lines
+            let majorLines = [];
+            for (let i = -gridSize; i <= gridSize; i += majorSpacing) {
+                majorLines.push(-gridSize, i, gridSize, i);
+                majorLines.push(i, -gridSize, i, gridSize);
+            }
+            drawLines(majorLines, [0.6, 0.6, 0.6, 1.0]);
+
+            // Axes
+            drawLines([-gridSize, 0, gridSize, 0], [1, 0, 0, 1]); // X axis (red)
+            drawLines([0, -gridSize, 0, gridSize], [0, 1, 0, 1]); // Y axis (green)
+        }
+
+        function drawVehicle() {
+            const size = 5;
+            const cos = Math.cos(vehicle.heading);
+            const sin = Math.sin(vehicle.heading);
+
+            // Triangle pointing in heading direction
+            const tip = [vehicle.x + sin * size, vehicle.y + cos * size];
+            const left = [vehicle.x - cos * size/3 - sin * size/2, vehicle.y + sin * size/3 - cos * size/2];
+            const right = [vehicle.x + cos * size/3 - sin * size/2, vehicle.y - sin * size/3 - cos * size/2];
+
+            drawLines([
+                tip[0], tip[1], left[0], left[1],
+                left[0], left[1], right[0], right[1],
+                right[0], right[1], tip[0], tip[1]
+            ], [0.2, 1, 0.2, 1]); // Lime green
+        }
+
+        function drawBoundary() {
+            if (boundary.length < 4) return;
+            drawLines(boundary, [1, 1, 0, 1]); // Yellow
+        }
+
+        // ===== Main Render Loop =====
+        function render(time) {
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+
+            // Update simulator
+            if (simulator.enabled) {
+                updateSimulator(dt);
+            }
+
+            // Camera follows vehicle
+            camera.x = vehicle.x;
+            camera.y = vehicle.y;
+
+            // Clear
+            gl.clearColor(0.1, 0.1, 0.1, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // Setup
+            gl.useProgram(program);
+            gl.uniformMatrix3fv(u_matrix, false, getMatrix());
+
+            // Draw
+            drawGrid();
+            drawBoundary();
+            drawVehicle();
+
+            // Update UI
+            updateUI();
+
+            requestAnimationFrame(render);
+        }
+
+        // ===== Simulator =====
+        function updateSimulator(dt) {
+            // Update heading based on steer angle and speed
+            const turnRate = simulator.steerAngle * 0.5 * (simulator.speed / 10);
+            vehicle.heading += turnRate * dt;
+
+            // Update position based on heading and speed
+            vehicle.x += Math.sin(vehicle.heading) * simulator.speed * dt;
+            vehicle.y += Math.cos(vehicle.heading) * simulator.speed * dt;
+        }
+
+        // ===== UI Updates =====
+        function updateUI() {
+            document.getElementById('speed-value').textContent = (simulator.speed * 3.6).toFixed(1);
+            document.getElementById('heading-value').textContent = ((vehicle.heading * 180 / Math.PI) % 360).toFixed(0);
+            document.getElementById('easting-value').textContent = vehicle.x.toFixed(1);
+            document.getElementById('northing-value').textContent = vehicle.y.toFixed(1);
+        }
+
+        // ===== Touch/Mouse Handlers =====
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let t of e.changedTouches) {
+                touches[t.identifier] = { x: t.clientX, y: t.clientY };
+            }
+            if (Object.keys(touches).length === 1) {
+                isPanning = true;
+                const t = e.touches[0];
+                panStart = { x: t.clientX, y: t.clientY };
+            } else if (Object.keys(touches).length === 2) {
+                const [t1, t2] = e.touches;
+                lastPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                // Pinch zoom
+                const [t1, t2] = e.touches;
+                const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                if (lastPinchDist > 0) {
+                    camera.zoom *= dist / lastPinchDist;
+                    camera.zoom = Math.max(0.1, Math.min(50, camera.zoom));
+                }
+                lastPinchDist = dist;
+            }
+            // Note: Pan disabled while simulator camera follows vehicle
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            for (let t of e.changedTouches) {
+                delete touches[t.identifier];
+            }
+            if (Object.keys(touches).length < 2) {
+                lastPinchDist = 0;
+            }
+            isPanning = false;
+        });
+
+        // Mouse wheel zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            camera.zoom *= factor;
+            camera.zoom = Math.max(0.1, Math.min(50, camera.zoom));
+        });
+
+        // ===== Button Handlers =====
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            camera.zoom *= 1.2;
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            camera.zoom *= 0.8;
+        });
+
+        document.getElementById('sim-toggle').addEventListener('click', (e) => {
+            simulator.enabled = !simulator.enabled;
+            e.target.classList.toggle('active', simulator.enabled);
+        });
+
+        document.getElementById('steer-left').addEventListener('click', () => {
+            simulator.steerAngle = Math.max(-45, simulator.steerAngle - 5);
+        });
+
+        document.getElementById('steer-right').addEventListener('click', () => {
+            simulator.steerAngle = Math.min(45, simulator.steerAngle + 5);
+        });
+
+        document.getElementById('steer-zero').addEventListener('click', () => {
+            simulator.steerAngle = 0;
+        });
+
+        document.getElementById('accel').addEventListener('click', () => {
+            simulator.speed = Math.min(15, simulator.speed + 1); // m/s
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            simulator.speed = 0;
+        });
+
+        document.getElementById('decel').addEventListener('click', () => {
+            simulator.speed = Math.max(-5, simulator.speed - 1);
+        });
+
+        // ===== Start =====
+        requestAnimationFrame(render);
+
+        console.log('AgOpenGPS WebGL POC loaded');
+    </script>
+</body>
+</html>
