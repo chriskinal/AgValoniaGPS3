@@ -308,7 +308,20 @@
     <script>
         // ===== WebGL Map Renderer =====
         const canvas = document.getElementById('map-canvas');
-        const gl = canvas.getContext('webgl', { antialias: true, alpha: false });
+        const gl = canvas.getContext('webgl', {
+            antialias: true,
+            alpha: false,
+            premultipliedAlpha: false,
+            preserveDrawingBuffer: false
+        });
+
+        // Enable line smoothing if available
+        if (gl) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            // Try to set line width (limited support, but helps where available)
+            gl.lineWidth(1.5);
+        }
 
         if (!gl) {
             alert('WebGL not supported - falling back to Canvas2D');
@@ -341,6 +354,7 @@
 
         // ===== Shaders =====
         const vertexShaderSrc = `
+            precision highp float;
             attribute vec2 a_position;
             uniform mat3 u_matrix;
             void main() {
@@ -351,10 +365,35 @@
         `;
 
         const fragmentShaderSrc = `
-            precision mediump float;
+            precision highp float;
             uniform vec4 u_color;
             void main() {
                 gl_FragColor = u_color;
+            }
+        `;
+
+        // Shader for thick anti-aliased lines (drawn as quads)
+        const thickLineVertexSrc = `
+            precision highp float;
+            attribute vec2 a_position;
+            attribute float a_edge; // 0.0 = center, 1.0 = edge (for AA)
+            uniform mat3 u_matrix;
+            varying float v_edge;
+            void main() {
+                vec3 pos = u_matrix * vec3(a_position, 1.0);
+                gl_Position = vec4(pos.xy, 0.0, 1.0);
+                v_edge = a_edge;
+            }
+        `;
+
+        const thickLineFragmentSrc = `
+            precision highp float;
+            uniform vec4 u_color;
+            varying float v_edge;
+            void main() {
+                // Smooth anti-aliasing at edges
+                float alpha = u_color.a * (1.0 - smoothstep(0.5, 1.0, v_edge));
+                gl_FragColor = vec4(u_color.rgb, alpha);
             }
         `;
 
@@ -392,6 +431,184 @@
 
         const positionBuffer = gl.createBuffer();
 
+        // Thick line program
+        const tlVs = createShader(gl.VERTEX_SHADER, thickLineVertexSrc);
+        const tlFs = createShader(gl.FRAGMENT_SHADER, thickLineFragmentSrc);
+        const thickLineProgram = createProgram(tlVs, tlFs);
+
+        const tl_a_position = gl.getAttribLocation(thickLineProgram, 'a_position');
+        const tl_a_edge = gl.getAttribLocation(thickLineProgram, 'a_edge');
+        const tl_u_matrix = gl.getUniformLocation(thickLineProgram, 'u_matrix');
+        const tl_u_color = gl.getUniformLocation(thickLineProgram, 'u_color');
+
+        const thickLineBuffer = gl.createBuffer();
+        const edgeBuffer = gl.createBuffer();
+
+        // ===== Grid Texture Cache =====
+        // Render grid to texture once, then scroll with linear filtering
+        const GRID_TEX_SIZE = 1024; // Texture size in pixels
+        const GRID_WORLD_SIZE = 400; // World units covered by texture (must be multiple of grid spacing)
+
+        // Create framebuffer for grid texture
+        const gridTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, gridTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, GRID_TEX_SIZE, GRID_TEX_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        // LINEAR filtering is key for smooth scrolling!
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+        const gridFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, gridFramebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, gridTexture, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // Texture shader for drawing the cached grid
+        const texVertexSrc = `
+            precision highp float;
+            attribute vec2 a_position;
+            attribute vec2 a_texcoord;
+            varying vec2 v_texcoord;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+                v_texcoord = a_texcoord;
+            }
+        `;
+        const texFragmentSrc = `
+            precision highp float;
+            uniform sampler2D u_texture;
+            varying vec2 v_texcoord;
+            void main() {
+                gl_FragColor = texture2D(u_texture, v_texcoord);
+            }
+        `;
+
+        const texVs = createShader(gl.VERTEX_SHADER, texVertexSrc);
+        const texFs = createShader(gl.FRAGMENT_SHADER, texFragmentSrc);
+        const texProgram = createProgram(texVs, texFs);
+        const tex_a_position = gl.getAttribLocation(texProgram, 'a_position');
+        const tex_a_texcoord = gl.getAttribLocation(texProgram, 'a_texcoord');
+        const tex_u_texture = gl.getUniformLocation(texProgram, 'u_texture');
+
+        const quadBuffer = gl.createBuffer();
+        const texcoordBuffer = gl.createBuffer();
+
+        // Fullscreen quad vertices
+        gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1, 1, -1, -1, 1,
+            -1, 1, 1, -1, 1, 1
+        ]), gl.STATIC_DRAW);
+
+        let gridTextureValid = false;
+
+        function renderGridToTexture() {
+            // Render grid pattern to texture (only needs to be done once or when zoom changes)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, gridFramebuffer);
+            gl.viewport(0, 0, GRID_TEX_SIZE, GRID_TEX_SIZE);
+            gl.clearColor(0.1, 0.1, 0.1, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(program);
+
+            // Set up matrix for texture rendering (centered at 0,0, covering GRID_WORLD_SIZE)
+            const texScale = 2 / GRID_WORLD_SIZE;
+            gl.uniformMatrix3fv(u_matrix, false, new Float32Array([
+                texScale, 0, 0,
+                0, texScale, 0,
+                0, 0, 1
+            ]));
+
+            const spacing = 20;
+            const majorSpacing = 100;
+            const halfSize = GRID_WORLD_SIZE / 2;
+
+            // Minor grid lines
+            let minorLines = [];
+            for (let x = -halfSize; x <= halfSize; x += spacing) {
+                if (x % majorSpacing !== 0) {
+                    minorLines.push(x, -halfSize, x, halfSize);
+                }
+            }
+            for (let y = -halfSize; y <= halfSize; y += spacing) {
+                if (y % majorSpacing !== 0) {
+                    minorLines.push(-halfSize, y, halfSize, y);
+                }
+            }
+            if (minorLines.length > 0) {
+                drawLines(minorLines, [0.28, 0.28, 0.28, 1.0]);
+            }
+
+            // Major grid lines
+            let majorLines = [];
+            for (let x = -halfSize; x <= halfSize; x += majorSpacing) {
+                majorLines.push(x, -halfSize, x, halfSize);
+            }
+            for (let y = -halfSize; y <= halfSize; y += majorSpacing) {
+                majorLines.push(-halfSize, y, halfSize, y);
+            }
+            if (majorLines.length > 0) {
+                drawLines(majorLines, [0.45, 0.45, 0.45, 1.0]);
+            }
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gridTextureValid = true;
+        }
+
+        function drawCachedGrid() {
+            if (!gridTextureValid) {
+                renderGridToTexture();
+            }
+
+            // Calculate texture coordinates based on camera position
+            // The texture tiles every GRID_WORLD_SIZE units
+            const aspect = canvas.width / canvas.height;
+            const viewWidth = 200 / camera.zoom;
+            const viewHeight = viewWidth / aspect;
+
+            // Texture coordinate offset (normalized 0-1, will wrap due to REPEAT)
+            const texOffsetX = camera.x / GRID_WORLD_SIZE;
+            const texOffsetY = camera.y / GRID_WORLD_SIZE;
+
+            // How much of the texture to show (based on zoom)
+            const texScaleX = viewWidth / GRID_WORLD_SIZE;
+            const texScaleY = viewHeight / GRID_WORLD_SIZE;
+
+            // Calculate texcoords for the quad corners
+            const left = texOffsetX - texScaleX / 2;
+            const right = texOffsetX + texScaleX / 2;
+            const bottom = texOffsetY - texScaleY / 2;
+            const top = texOffsetY + texScaleY / 2;
+
+            gl.useProgram(texProgram);
+
+            // Quad vertices (fullscreen)
+            gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+            gl.enableVertexAttribArray(tex_a_position);
+            gl.vertexAttribPointer(tex_a_position, 2, gl.FLOAT, false, 0, 0);
+
+            // Texcoords
+            gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                left, bottom, right, bottom, left, top,
+                left, top, right, bottom, right, top
+            ]), gl.DYNAMIC_DRAW);
+            gl.enableVertexAttribArray(tex_a_texcoord);
+            gl.vertexAttribPointer(tex_a_texcoord, 2, gl.FLOAT, false, 0, 0);
+
+            // Bind texture
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, gridTexture);
+            gl.uniform1i(tex_u_texture, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            // Switch back to main program
+            gl.useProgram(program);
+        }
+
         // ===== Transform Matrix =====
         function getMatrix() {
             const aspect = canvas.width / canvas.height;
@@ -402,7 +619,7 @@
             const sx = 2 / viewWidth;
             const sy = 2 / viewHeight;
 
-            // Translate (camera follows vehicle or pans)
+            // Direct camera position (no smoothing needed - grid uses texture now)
             const tx = -camera.x;
             const ty = -camera.y;
 
@@ -418,6 +635,10 @@
             ]);
         }
 
+        // For vehicle smoothing only
+        let smoothCamX = 0;
+        let smoothCamY = 0;
+
         // ===== Drawing Functions =====
         function drawLines(vertices, color, mode = gl.LINES) {
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -428,32 +649,209 @@
             gl.drawArrays(mode, 0, vertices.length / 2);
         }
 
-        function drawGrid() {
-            const gridSize = 500;
-            const spacing = 10;
-            const majorSpacing = 50;
+        // Draw thick anti-aliased lines as quads
+        // lineWidth is in world units (meters)
+        function drawThickLines(lineSegments, color, lineWidth = 0.5) {
+            if (lineSegments.length < 4) return;
 
-            // Minor grid lines
+            // Each line segment (x1,y1,x2,y2) becomes 2 triangles (6 vertices)
+            const positions = [];
+            const edges = [];
+
+            for (let i = 0; i < lineSegments.length; i += 4) {
+                const x1 = lineSegments[i];
+                const y1 = lineSegments[i + 1];
+                const x2 = lineSegments[i + 2];
+                const y2 = lineSegments[i + 3];
+
+                // Calculate perpendicular direction
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                if (len === 0) continue;
+
+                // Perpendicular unit vector
+                const px = -dy / len;
+                const py = dx / len;
+
+                // Half width offset
+                const hw = lineWidth / 2;
+
+                // 4 corners of the quad
+                const ax = x1 + px * hw, ay = y1 + py * hw;
+                const bx = x1 - px * hw, by = y1 - py * hw;
+                const cx = x2 + px * hw, cy = y2 + py * hw;
+                const dx2 = x2 - px * hw, dy2 = y2 - py * hw;
+
+                // Two triangles (6 vertices)
+                // Triangle 1: a, b, c
+                positions.push(ax, ay, bx, by, cx, cy);
+                edges.push(1, 1, 0); // edges at corners, center in middle
+
+                // Triangle 2: b, d, c
+                positions.push(bx, by, dx2, dy2, cx, cy);
+                edges.push(1, 1, 0);
+            }
+
+            if (positions.length === 0) return;
+
+            gl.useProgram(thickLineProgram);
+            gl.uniformMatrix3fv(tl_u_matrix, false, getMatrix());
+            gl.uniform4fv(tl_u_color, color);
+
+            // Position buffer
+            gl.bindBuffer(gl.ARRAY_BUFFER, thickLineBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+            gl.enableVertexAttribArray(tl_a_position);
+            gl.vertexAttribPointer(tl_a_position, 2, gl.FLOAT, false, 0, 0);
+
+            // Edge buffer (for AA)
+            gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edges), gl.DYNAMIC_DRAW);
+            gl.enableVertexAttribArray(tl_a_edge);
+            gl.vertexAttribPointer(tl_a_edge, 1, gl.FLOAT, false, 0, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, positions.length / 2);
+
+            // Switch back to simple program
+            gl.useProgram(program);
+            gl.disableVertexAttribArray(tl_a_edge);
+        }
+
+        function drawGrid() {
+            // AOG-style grid: 20m minor, 100m major
+            const spacing = 20;
+            const majorSpacing = 100;
+            const viewRange = 250;
+
+            // Use integer grid positions to avoid floating point issues
+            const camXGrid = Math.round(camera.x / spacing) * spacing;
+            const camYGrid = Math.round(camera.y / spacing) * spacing;
+
+            // Calculate visible grid range centered on snapped camera
+            const minX = camXGrid - viewRange;
+            const maxX = camXGrid + viewRange;
+            const minY = camYGrid - viewRange;
+            const maxY = camYGrid + viewRange;
+
+            // Minor grid lines (use exact integer positions)
             let minorLines = [];
-            for (let i = -gridSize; i <= gridSize; i += spacing) {
-                if (i % majorSpacing !== 0) {
-                    minorLines.push(-gridSize, i, gridSize, i); // horizontal
-                    minorLines.push(i, -gridSize, i, gridSize); // vertical
+            for (let x = minX; x <= maxX; x += spacing) {
+                if (x % majorSpacing !== 0) {
+                    minorLines.push(x, minY, x, maxY);
                 }
             }
-            drawLines(minorLines, [0.4, 0.4, 0.4, 0.8]);
+            for (let y = minY; y <= maxY; y += spacing) {
+                if (y % majorSpacing !== 0) {
+                    minorLines.push(minX, y, maxX, y);
+                }
+            }
+            if (minorLines.length > 0) {
+                drawLines(minorLines, [0.28, 0.28, 0.28, 1.0]);
+            }
 
             // Major grid lines
-            let majorLines = [];
-            for (let i = -gridSize; i <= gridSize; i += majorSpacing) {
-                majorLines.push(-gridSize, i, gridSize, i);
-                majorLines.push(i, -gridSize, i, gridSize);
-            }
-            drawLines(majorLines, [0.6, 0.6, 0.6, 1.0]);
+            const majorMinX = Math.floor(minX / majorSpacing) * majorSpacing;
+            const majorMaxX = Math.ceil(maxX / majorSpacing) * majorSpacing;
+            const majorMinY = Math.floor(minY / majorSpacing) * majorSpacing;
+            const majorMaxY = Math.ceil(maxY / majorSpacing) * majorSpacing;
 
-            // Axes
-            drawLines([-gridSize, 0, gridSize, 0], [1, 0, 0, 1]); // X axis (red)
-            drawLines([0, -gridSize, 0, gridSize], [0, 1, 0, 1]); // Y axis (green)
+            let majorLines = [];
+            for (let x = majorMinX; x <= majorMaxX; x += majorSpacing) {
+                majorLines.push(x, majorMinY, x, majorMaxY);
+            }
+            for (let y = majorMinY; y <= majorMaxY; y += majorSpacing) {
+                majorLines.push(majorMinX, y, majorMaxX, y);
+            }
+            if (majorLines.length > 0) {
+                drawLines(majorLines, [0.45, 0.45, 0.45, 1.0]);
+            }
+
+            // Axes (at world origin)
+            if (minY <= 0 && maxY >= 0) {
+                drawLines([minX, 0, maxX, 0], [0.8, 0.2, 0.2, 1]);
+            }
+            if (minX <= 0 && maxX >= 0) {
+                drawLines([0, minY, 0, maxY], [0.2, 0.8, 0.2, 1]);
+            }
+        }
+
+        // Smoothed values for stable rendering
+        let smoothedHeading = 0;
+        let lastHeading = 0;
+        let headingVelocity = 0; // radians per second
+        let lastHeadingTime = 0;
+
+        function drawVehicleScreenSpace() {
+            const now = performance.now();
+            const dt = lastHeadingTime > 0 ? (now - lastHeadingTime) / 1000 : 0.016;
+            lastHeadingTime = now;
+
+            // Detect heading changes and calculate angular velocity
+            let headingDelta = vehicle.heading - lastHeading;
+            if (headingDelta > Math.PI) headingDelta -= 2 * Math.PI;
+            if (headingDelta < -Math.PI) headingDelta += 2 * Math.PI;
+
+            if (Math.abs(headingDelta) > 0.001) {
+                // New heading received - update velocity estimate
+                headingVelocity = headingDelta / 0.1; // Assume 10Hz updates
+                lastHeading = vehicle.heading;
+            }
+
+            // Predict heading based on velocity (interpolate between updates)
+            let targetHeading = smoothedHeading + headingVelocity * dt;
+
+            // Also blend toward actual heading to prevent drift
+            let errorToActual = vehicle.heading - targetHeading;
+            if (errorToActual > Math.PI) errorToActual -= 2 * Math.PI;
+            if (errorToActual < -Math.PI) errorToActual += 2 * Math.PI;
+            targetHeading += errorToActual * 0.1;
+
+            // Smooth toward target
+            let delta = targetHeading - smoothedHeading;
+            if (delta > Math.PI) delta -= 2 * Math.PI;
+            if (delta < -Math.PI) delta += 2 * Math.PI;
+            smoothedHeading += delta * 0.3;
+
+            const size = 6;
+            const cos = Math.cos(smoothedHeading);
+            const sin = Math.sin(smoothedHeading);
+
+            // Get aspect and view dimensions to convert to clip space
+            const aspect = canvas.width / canvas.height;
+            const viewWidth = 200 / camera.zoom;
+            const viewHeight = viewWidth / aspect;
+            const sx = 2 / viewWidth;
+            const sy = 2 / viewHeight;
+
+            // Triangle vertices - use simple geometry
+            const frontDist = size;
+            const backDist = size * 0.5;
+            const sideDist = size * 0.4;
+
+            // Calculate in world coords then scale to clip
+            const tipX = sin * frontDist * sx;
+            const tipY = cos * frontDist * sy;
+            const leftX = (-cos * sideDist - sin * backDist) * sx;
+            const leftY = (sin * sideDist - cos * backDist) * sy;
+            const rightX = (cos * sideDist - sin * backDist) * sx;
+            const rightY = (-sin * sideDist - cos * backDist) * sy;
+
+            // Draw directly in clip space with identity matrix
+            gl.uniformMatrix3fv(u_matrix, false, new Float32Array([1,0,0, 0,1,0, 0,0,1]));
+
+            // Draw filled triangle
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                tipX, tipY, leftX, leftY, rightX, rightY
+            ]), gl.DYNAMIC_DRAW);
+            gl.enableVertexAttribArray(a_position);
+            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+            gl.uniform4fv(u_color, [0.2, 0.85, 0.2, 1.0]);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+            // Restore world matrix
+            gl.uniformMatrix3fv(u_matrix, false, getMatrix());
         }
 
         function drawVehicle() {
@@ -461,10 +859,14 @@
             const cos = Math.cos(vehicle.heading);
             const sin = Math.sin(vehicle.heading);
 
+            // Draw vehicle at camera position (center of view)
+            const cx = camera.x;
+            const cy = camera.y;
+
             // Triangle pointing in heading direction
-            const tip = [vehicle.x + sin * size, vehicle.y + cos * size];
-            const left = [vehicle.x - cos * size/3 - sin * size/2, vehicle.y + sin * size/3 - cos * size/2];
-            const right = [vehicle.x + cos * size/3 - sin * size/2, vehicle.y - sin * size/3 - cos * size/2];
+            const tip = [cx + sin * size, cy + cos * size];
+            const left = [cx - cos * size/3 - sin * size/2, cy + sin * size/3 - cos * size/2];
+            const right = [cx + cos * size/3 - sin * size/2, cy - sin * size/3 - cos * size/2];
 
             drawLines([
                 tip[0], tip[1], left[0], left[1],
@@ -500,10 +902,14 @@
             gl.useProgram(program);
             gl.uniformMatrix3fv(u_matrix, false, getMatrix());
 
-            // Draw
-            drawGrid();
+            // Draw cached grid (uses texture for smooth scrolling)
+            drawCachedGrid();
+
+            // Set up matrix for world-space objects
+            gl.useProgram(program);
+            gl.uniformMatrix3fv(u_matrix, false, getMatrix());
             drawBoundary();
-            drawVehicle();
+            drawVehicleScreenSpace(); // Use screen-space rendering for stable vehicle
 
             // Update UI
             updateUI();
@@ -588,39 +994,120 @@
             camera.zoom *= 0.8;
         });
 
+        // ===== WebSocket Connection =====
+        let ws = null;
+        let wsConnected = false;
+
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}/ws`;
+            console.log('Connecting to WebSocket:', wsUrl);
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                wsConnected = true;
+                document.getElementById('gps-dot').style.background = '#1ABC9C';
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                wsConnected = false;
+                document.getElementById('gps-dot').style.background = '#E74C3C';
+                // Reconnect after 2 seconds
+                setTimeout(connectWebSocket, 2000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+
+                if (msg.type === 'gps') {
+                    // Update vehicle from server GPS data
+                    vehicle.x = msg.data.easting;
+                    vehicle.y = msg.data.northing;
+                    vehicle.heading = msg.data.heading * Math.PI / 180; // degrees to radians
+                    simulator.speed = msg.data.speed / 3.6; // km/h to m/s
+                }
+                else if (msg.type === 'connected') {
+                    console.log('Connected to server, ID:', msg.connectionId);
+                    if (msg.simulator) {
+                        simulator.enabled = msg.simulator.running;
+                        document.getElementById('sim-toggle').classList.toggle('active', simulator.enabled);
+                    }
+                }
+                else if (msg.type === 'simulator') {
+                    console.log('Simulator message:', msg);
+                }
+            };
+        }
+
+        function sendWsMessage(msg) {
+            if (ws && wsConnected) {
+                ws.send(JSON.stringify(msg));
+            }
+        }
+
+        // Override simulator button handlers to send to server
         document.getElementById('sim-toggle').addEventListener('click', (e) => {
             simulator.enabled = !simulator.enabled;
             e.target.classList.toggle('active', simulator.enabled);
+            sendWsMessage({ type: 'simulator', action: simulator.enabled ? 'start' : 'stop' });
         });
 
         document.getElementById('steer-left').addEventListener('click', () => {
             simulator.steerAngle = Math.max(-45, simulator.steerAngle - 5);
+            sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
 
         document.getElementById('steer-right').addEventListener('click', () => {
             simulator.steerAngle = Math.min(45, simulator.steerAngle + 5);
+            sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
 
         document.getElementById('steer-zero').addEventListener('click', () => {
             simulator.steerAngle = 0;
+            sendWsMessage({ type: 'simulator', action: 'setSteer', value: 0 });
         });
 
         document.getElementById('accel').addEventListener('click', () => {
-            simulator.speed = Math.min(15, simulator.speed + 1); // m/s
+            // Speed in km/h, max 20 km/h, increment by 2 km/h
+            const currentKmh = simulator.speed * 3.6;
+            const newKmh = Math.min(20, currentKmh + 2);
+            simulator.speed = newKmh / 3.6;
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: newKmh });
         });
 
         document.getElementById('stop').addEventListener('click', () => {
             simulator.speed = 0;
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: 0 });
+            // Also reset position to origin
+            vehicle.x = 0;
+            vehicle.y = 0;
+            vehicle.heading = 0;
+            smoothCamX = 0;
+            smoothCamY = 0;
+            smoothedHeading = 0;
+            sendWsMessage({ type: 'simulator', action: 'setPosition', latitude: 40.7128, longitude: -74.0060 });
         });
 
         document.getElementById('decel').addEventListener('click', () => {
-            simulator.speed = Math.max(-5, simulator.speed - 1);
+            const currentKmh = simulator.speed * 3.6;
+            const newKmh = Math.max(0, currentKmh - 2);
+            simulator.speed = newKmh / 3.6;
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: newKmh });
         });
+
+        // Connect to WebSocket on load
+        connectWebSocket();
 
         // ===== Start =====
         requestAnimationFrame(render);
 
-        console.log('AgOpenGPS WebGL POC loaded');
+        console.log('AgOpenGPS WebGL POC loaded - with WebSocket');
     </script>
 </body>
 </html>

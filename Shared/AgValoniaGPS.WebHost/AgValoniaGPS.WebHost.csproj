@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AgValoniaGPS.WebHost</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
+    <ProjectReference Include="..\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
+  </ItemGroup>
+
+  <!-- Include WebUI files as wwwroot content -->
+  <ItemGroup>
+    <Content Include="..\..\WebUI-POC\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="wwwroot" />
+  </ItemGroup>
+
+</Project>
