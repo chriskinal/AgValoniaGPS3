@@ -741,6 +741,52 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
     }
 
+    // iOS Modal Sheet Visibility Properties
+    private bool _isFileMenuVisible;
+    public bool IsFileMenuVisible
+    {
+        get => _isFileMenuVisible;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isFileMenuVisible, value) && value)
+            {
+                // Close other sheets when opening this one
+                IsFieldToolsVisible = false;
+                IsSettingsVisible = false;
+            }
+        }
+    }
+
+    private bool _isFieldToolsVisible;
+    public bool IsFieldToolsVisible
+    {
+        get => _isFieldToolsVisible;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isFieldToolsVisible, value) && value)
+            {
+                // Close other sheets when opening this one
+                IsFileMenuVisible = false;
+                IsSettingsVisible = false;
+            }
+        }
+    }
+
+    private bool _isSettingsVisible;
+    public bool IsSettingsVisible
+    {
+        get => _isSettingsVisible;
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _isSettingsVisible, value) && value)
+            {
+                // Close other sheets when opening this one
+                IsFileMenuVisible = false;
+                IsFieldToolsVisible = false;
+            }
+        }
+    }
+
     private bool _isBoundaryPanelVisible;
     public bool IsBoundaryPanelVisible
     {
@@ -1054,6 +1100,11 @@ public class MainViewModel : ReactiveObject
     public ICommand? IncreaseBrightnessCommand { get; private set; }
     public ICommand? DecreaseBrightnessCommand { get; private set; }
 
+    // iOS Sheet Toggle Commands
+    public ICommand? ToggleFileMenuCommand { get; private set; }
+    public ICommand? ToggleFieldToolsCommand { get; private set; }
+    public ICommand? ToggleSettingsCommand { get; private set; }
+
     // Simulator Commands
     public ICommand? ToggleSimulatorPanelCommand { get; private set; }
     public ICommand? ResetSimulatorCommand { get; private set; }
@@ -1178,6 +1229,22 @@ public class MainViewModel : ReactiveObject
         DecreaseBrightnessCommand = new RelayCommand(() =>
         {
             Brightness -= 5;
+        });
+
+        // iOS Sheet toggle commands
+        ToggleFileMenuCommand = new RelayCommand(() =>
+        {
+            IsFileMenuVisible = !IsFileMenuVisible;
+        });
+
+        ToggleFieldToolsCommand = new RelayCommand(() =>
+        {
+            IsFieldToolsVisible = !IsFieldToolsVisible;
+        });
+
+        ToggleSettingsCommand = new RelayCommand(() =>
+        {
+            IsSettingsVisible = !IsSettingsVisible;
         });
 
         // Simulator commands

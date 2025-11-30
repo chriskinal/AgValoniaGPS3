@@ -3,30 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Platform;
-using Avalonia.Threading;
-using CoreGraphics;
+using Avalonia.Labs.Controls;
 using SkiaSharp;
-using SkiaSharp.Views.iOS;
-using UIKit;
 using AgValoniaGPS.Models;
-using AgValoniaGPS.Views.Controls;
 
 namespace AgValoniaGPS.iOS.Controls;
 
 /// <summary>
-/// Native iOS SKCanvasView-based map control using NativeControlHost.
-/// This control uses SkiaSharp.Views.iOS.SKCanvasView directly for proper DPI handling.
+/// iOS SkiaSharp-based map control using Avalonia.Labs.Controls.SKCanvasView.
+/// This provides proper DIP-to-pixel scaling and works correctly on iOS.
 /// </summary>
-public class NativeSkiaMapControl : NativeControlHost, IMapControl
+public class SkiaMapControl : SKCanvasView, IMapControl
 {
-    private SKCanvasView? _nativeView;
 
     // Avalonia property for grid visibility
     public static readonly StyledProperty<bool> IsGridVisibleProperty =
-        AvaloniaProperty.Register<NativeSkiaMapControl, bool>(
+        AvaloniaProperty.Register<SkiaMapControl, bool>(
             nameof(IsGridVisible),
             defaultValue: true);
 
@@ -62,201 +54,54 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
     private double _boundaryOffsetMeters = 0.0;
     private bool _showBoundaryOffsetIndicator = false;
 
-    // Paints
-    private SKPaint? _gridPaint;
-    private SKPaint? _gridMajorPaint;
-    private SKPaint? _axisXPaint;
-    private SKPaint? _axisYPaint;
-    private SKPaint? _boundaryOuterPaint;
-    private SKPaint? _boundaryInnerPaint;
-    private SKPaint? _recordingLinePaint;
-    private SKPaint? _recordingPointPaint;
-    private SKPaint? _offsetIndicatorPaint;
-    private SKPaint? _offsetArrowPaint;
-    private SKPaint? _vehiclePaint;
-
-    public NativeSkiaMapControl()
+    public SkiaMapControl()
     {
-        Console.WriteLine("[NativeSkiaMapControl] Constructor starting...");
-        InitializePaints();
-        Console.WriteLine("[NativeSkiaMapControl] Constructor completed.");
+        Console.WriteLine("[SkiaMapControl] Constructor starting (SKCanvasView based)...");
+
+        // IgnorePixelScaling = true gives us 1:1 pixel mapping for crisp lines
+        // We handle the coordinate scaling ourselves
+        IgnorePixelScaling = true;
+
+        // No continuous render timer - only redraw when data changes
+        // Call InvalidateSurface() from the update methods when needed
+
+        Console.WriteLine("[SkiaMapControl] Constructor completed.");
     }
 
-    private void InitializePaints()
+    protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
-        _gridPaint = new SKPaint
-        {
-            Color = new SKColor(76, 76, 76, 76),
-            StrokeWidth = 1,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
+        base.OnPaintSurface(e);
 
-        _gridMajorPaint = new SKPaint
-        {
-            Color = new SKColor(76, 76, 76, 128),
-            StrokeWidth = 1,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _axisXPaint = new SKPaint
-        {
-            Color = new SKColor(204, 51, 51, 204),
-            StrokeWidth = 2,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _axisYPaint = new SKPaint
-        {
-            Color = new SKColor(51, 204, 51, 204),
-            StrokeWidth = 2,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _boundaryOuterPaint = new SKPaint
-        {
-            Color = SKColors.Yellow,
-            StrokeWidth = 3,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _boundaryInnerPaint = new SKPaint
-        {
-            Color = SKColors.Red,
-            StrokeWidth = 3,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _recordingLinePaint = new SKPaint
-        {
-            Color = SKColors.Cyan,
-            StrokeWidth = 2,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _recordingPointPaint = new SKPaint
-        {
-            Color = new SKColor(255, 128, 0),
-            StrokeWidth = 4,
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill
-        };
-
-        _offsetIndicatorPaint = new SKPaint
-        {
-            Color = new SKColor(0, 204, 204),
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill
-        };
-
-        _offsetArrowPaint = new SKPaint
-        {
-            Color = new SKColor(255, 230, 0),
-            StrokeWidth = 2,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        _vehiclePaint = new SKPaint
-        {
-            Color = SKColors.LimeGreen,
-            IsAntialias = true,
-            Style = SKPaintStyle.Fill
-        };
-    }
-
-    protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
-    {
-        Console.WriteLine("[NativeSkiaMapControl] CreateNativeControlCore called");
-
-        // Create the native iOS SKCanvasView
-        _nativeView = new SKCanvasView
-        {
-            // Set IgnorePixelScaling = true to work in logical coordinates
-            // The native view handles DPI scaling automatically
-            IgnorePixelScaling = true,
-            BackgroundColor = UIColor.FromRGB(25, 25, 25)
-        };
-
-        // Wire up the paint event
-        _nativeView.PaintSurface += OnNativePaintSurface;
-
-        // Start a timer for continuous rendering
-        var timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        timer.Tick += (s, e) =>
-        {
-            _nativeView?.SetNeedsDisplay();
-        };
-        timer.Start();
-
-        Console.WriteLine($"[NativeSkiaMapControl] Native SKCanvasView created, IgnorePixelScaling={_nativeView.IgnorePixelScaling}");
-
-        return new NativeControlHandle(_nativeView.Handle);
-    }
-
-    protected override void DestroyNativeControlCore(IPlatformHandle control)
-    {
-        if (_nativeView != null)
-        {
-            _nativeView.PaintSurface -= OnNativePaintSurface;
-            _nativeView.Dispose();
-            _nativeView = null;
-        }
-
-        DisposePaints();
-        _backgroundBitmap?.Dispose();
-
-        base.DestroyNativeControlCore(control);
-    }
-
-    private void DisposePaints()
-    {
-        _gridPaint?.Dispose();
-        _gridMajorPaint?.Dispose();
-        _axisXPaint?.Dispose();
-        _axisYPaint?.Dispose();
-        _boundaryOuterPaint?.Dispose();
-        _boundaryInnerPaint?.Dispose();
-        _recordingLinePaint?.Dispose();
-        _recordingPointPaint?.Dispose();
-        _offsetIndicatorPaint?.Dispose();
-        _offsetArrowPaint?.Dispose();
-        _vehiclePaint?.Dispose();
-    }
-
-    private void OnNativePaintSurface(object? sender, SKPaintSurfaceEventArgs e)
-    {
         var canvas = e.Surface.Canvas;
         var info = e.Info;
 
-        // With IgnorePixelScaling = true, info contains logical dimensions
-        float width = info.Width;
-        float height = info.Height;
+        // With IgnorePixelScaling=true, we get DIP dimensions directly
+        int width = info.Width;
+        int height = info.Height;
 
         if (width <= 0 || height <= 0)
+        {
             return;
+        }
 
+        // Work in DIP coordinates with 1:1 pixel mapping
+        RenderMap(canvas, width, height);
+    }
+
+    private void RenderMap(SKCanvas canvas, int width, int height)
+    {
         // Clear background
         canvas.Clear(new SKColor(25, 25, 25));
 
         // Calculate view transformation
-        float aspect = width / height;
+        float aspect = (float)width / height;
         float viewWidth = 200.0f * aspect / (float)_zoom;
         float viewHeight = 200.0f / (float)_zoom;
 
         canvas.Save();
 
         // Center the canvas
-        canvas.Translate(width / 2, height / 2);
+        canvas.Translate(width / 2f, height / 2f);
 
         // Apply rotation
         canvas.RotateDegrees((float)(-_rotation * 180.0 / Math.PI));
@@ -325,8 +170,38 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
 
     private void DrawGrid(SKCanvas canvas, float viewWidth, float viewHeight)
     {
-        if (_gridPaint == null || _gridMajorPaint == null || _axisXPaint == null || _axisYPaint == null)
-            return;
+        // Use thin stroke widths for crisp lines (0.5 DIP = ~1 pixel on 2x display)
+        using var gridPaint = new SKPaint
+        {
+            Color = new SKColor(100, 100, 100, 200),
+            StrokeWidth = 0.5f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        using var gridMajorPaint = new SKPaint
+        {
+            Color = new SKColor(150, 150, 150, 255),
+            StrokeWidth = 0.75f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        using var axisXPaint = new SKPaint
+        {
+            Color = SKColors.Red,
+            StrokeWidth = 1.0f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        using var axisYPaint = new SKPaint
+        {
+            Color = SKColors.LimeGreen,
+            StrokeWidth = 1.0f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
 
         float gridSize = 500.0f;
         float spacing = 10.0f;
@@ -341,24 +216,40 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
 
         for (float x = startX; x <= maxX; x += spacing)
         {
-            var paint = (Math.Abs(x % 50.0f) < 0.1f) ? _gridMajorPaint : _gridPaint;
+            var paint = (Math.Abs(x % 50.0f) < 0.1f) ? gridMajorPaint : gridPaint;
             canvas.DrawLine(x, Math.Max(minY, -gridSize), x, Math.Min(maxY, gridSize), paint);
         }
 
         for (float y = startY; y <= maxY; y += spacing)
         {
-            var paint = (Math.Abs(y % 50.0f) < 0.1f) ? _gridMajorPaint : _gridPaint;
+            var paint = (Math.Abs(y % 50.0f) < 0.1f) ? gridMajorPaint : gridPaint;
             canvas.DrawLine(Math.Max(minX, -gridSize), y, Math.Min(maxX, gridSize), y, paint);
         }
 
-        canvas.DrawLine(-gridSize, 0, gridSize, 0, _axisXPaint);
-        canvas.DrawLine(0, -gridSize, 0, gridSize, _axisYPaint);
+        canvas.DrawLine(-gridSize, 0, gridSize, 0, axisXPaint);
+        canvas.DrawLine(0, -gridSize, 0, gridSize, axisYPaint);
     }
 
     private void DrawBoundary(SKCanvas canvas)
     {
-        if (_currentBoundary == null || _boundaryOuterPaint == null || _boundaryInnerPaint == null)
+        if (_currentBoundary == null)
             return;
+
+        using var outerPaint = new SKPaint
+        {
+            Color = SKColors.Yellow,
+            StrokeWidth = 1.0f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        using var innerPaint = new SKPaint
+        {
+            Color = SKColors.Red,
+            StrokeWidth = 1.0f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
 
         if (_currentBoundary.OuterBoundary != null && _currentBoundary.OuterBoundary.IsValid)
         {
@@ -372,7 +263,7 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
                     path.LineTo((float)points[i].Easting, (float)points[i].Northing);
                 }
                 path.Close();
-                canvas.DrawPath(path, _boundaryOuterPaint);
+                canvas.DrawPath(path, outerPaint);
             }
         }
 
@@ -390,7 +281,7 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
                         path.LineTo((float)points[i].Easting, (float)points[i].Northing);
                     }
                     path.Close();
-                    canvas.DrawPath(path, _boundaryInnerPaint);
+                    canvas.DrawPath(path, innerPaint);
                 }
             }
         }
@@ -398,10 +289,22 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
 
     private void DrawRecordingPoints(SKCanvas canvas)
     {
-        if (_recordingLinePaint == null || _recordingPointPaint == null)
-            return;
-
         if (_recordingPoints.Count == 0) return;
+
+        using var linePaint = new SKPaint
+        {
+            Color = SKColors.Cyan,
+            StrokeWidth = 0.75f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        using var pointPaint = new SKPaint
+        {
+            Color = new SKColor(255, 128, 0),
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill
+        };
 
         if (_recordingPoints.Count > 1)
         {
@@ -411,19 +314,24 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
             {
                 path.LineTo((float)_recordingPoints[i].Easting, (float)_recordingPoints[i].Northing);
             }
-            canvas.DrawPath(path, _recordingLinePaint);
+            canvas.DrawPath(path, linePaint);
         }
 
         float pointRadius = 0.5f;
         foreach (var point in _recordingPoints)
         {
-            canvas.DrawCircle((float)point.Easting, (float)point.Northing, pointRadius, _recordingPointPaint);
+            canvas.DrawCircle((float)point.Easting, (float)point.Northing, pointRadius, pointPaint);
         }
     }
 
     private void DrawVehicle(SKCanvas canvas)
     {
-        if (_vehiclePaint == null) return;
+        using var vehiclePaint = new SKPaint
+        {
+            Color = SKColors.LimeGreen,
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill
+        };
 
         float size = 5.0f;
 
@@ -438,13 +346,26 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
         path.LineTo(size / 3, -size / 2);
         path.Close();
 
-        canvas.DrawPath(path, _vehiclePaint);
+        canvas.DrawPath(path, vehiclePaint);
         canvas.Restore();
     }
 
     private void DrawBoundaryOffsetIndicator(SKCanvas canvas)
     {
-        if (_offsetIndicatorPaint == null || _offsetArrowPaint == null) return;
+        using var indicatorPaint = new SKPaint
+        {
+            Color = new SKColor(0, 204, 204),
+            IsAntialias = true,
+            Style = SKPaintStyle.Fill
+        };
+
+        using var arrowPaint = new SKPaint
+        {
+            Color = new SKColor(255, 230, 0),
+            StrokeWidth = 0.75f,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
 
         float refX = (float)_vehicleX;
         float refY = (float)_vehicleY;
@@ -454,11 +375,11 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
         float offsetY = refY + (float)(_boundaryOffsetMeters * Math.Cos(perpAngle));
 
         float squareSize = 0.3f;
-        canvas.DrawRect(refX - squareSize, refY - squareSize, squareSize * 2, squareSize * 2, _offsetIndicatorPaint);
+        canvas.DrawRect(refX - squareSize, refY - squareSize, squareSize * 2, squareSize * 2, indicatorPaint);
 
         if (Math.Abs(_boundaryOffsetMeters) > 0.01)
         {
-            canvas.DrawLine(refX, refY, offsetX, offsetY, _offsetArrowPaint);
+            canvas.DrawLine(refX, refY, offsetX, offsetY, arrowPaint);
 
             float arrowSize = 0.4f;
             float dx = offsetX - refX;
@@ -510,12 +431,14 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
     {
         _cameraX += deltaX;
         _cameraY += deltaY;
+        InvalidateSurface();
     }
 
     public void Zoom(double factor)
     {
         _zoom *= factor;
         _zoom = Math.Clamp(_zoom, 0.1, 100.0);
+        InvalidateSurface();
     }
 
     public double GetZoom() => _zoom;
@@ -526,11 +449,13 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
         _cameraY = y;
         _zoom = zoom;
         _rotation = rotation;
+        InvalidateSurface();
     }
 
     public void Rotate(double deltaRadians)
     {
         _rotation += deltaRadians;
+        InvalidateSurface();
     }
 
     public void StartPan(Point position) { }
@@ -541,6 +466,7 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
     public void SetBoundary(Boundary? boundary)
     {
         _currentBoundary = boundary;
+        InvalidateSurface();
     }
 
     public void SetVehiclePosition(double x, double y, double heading)
@@ -548,21 +474,25 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
         _vehicleX = x;
         _vehicleY = y;
         _vehicleHeading = heading;
+        InvalidateSurface();
     }
 
     public void SetGridVisible(bool visible)
     {
         IsGridVisible = visible;
+        InvalidateSurface();
     }
 
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)
     {
         _recordingPoints = points.ToList();
+        InvalidateSurface();
     }
 
     public void ClearRecordingPoints()
     {
         _recordingPoints.Clear();
+        InvalidateSurface();
     }
 
     public void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY)
@@ -579,6 +509,7 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
                 _backgroundMinY = minY;
                 _backgroundMaxY = maxY;
                 _hasBackgroundImage = true;
+                InvalidateSurface();
             }
         }
         catch (Exception ex)
@@ -592,27 +523,15 @@ public class NativeSkiaMapControl : NativeControlHost, IMapControl
         _backgroundBitmap?.Dispose();
         _backgroundBitmap = null;
         _hasBackgroundImage = false;
+        InvalidateSurface();
     }
 
     public void SetBoundaryOffsetIndicator(bool show, double offsetMeters = 0.0)
     {
         _showBoundaryOffsetIndicator = show;
         _boundaryOffsetMeters = offsetMeters;
+        InvalidateSurface();
     }
 
     #endregion
-}
-
-/// <summary>
-/// Helper class to wrap a native handle
-/// </summary>
-internal class NativeControlHandle : IPlatformHandle
-{
-    public NativeControlHandle(IntPtr handle)
-    {
-        Handle = handle;
-    }
-
-    public IntPtr Handle { get; }
-    public string HandleDescriptor => "HWND"; // Not actually HWND on iOS but required by interface
 }
