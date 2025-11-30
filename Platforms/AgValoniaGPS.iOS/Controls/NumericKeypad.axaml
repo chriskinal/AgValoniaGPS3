@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AgValoniaGPS.iOS.Controls.NumericKeypad"
+        Background="#DD2C3E50">
+
+    <UserControl.Styles>
+        <Style Selector="Button.KeypadButton">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="MinWidth" Value="50"/>
+            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.KeypadButton:pressed">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+
+        <Style Selector="Button.CancelButton">
+            <Setter Property="Background" Value="#C0392B"/>
+        </Style>
+        <Style Selector="Button.OkButton">
+            <Setter Property="Background" Value="#27AE60"/>
+        </Style>
+        <Style Selector="Button.ClearButton">
+            <Setter Property="Background" Value="#E67E22"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border CornerRadius="12" Padding="8" Background="#DD2C3E50">
+        <StackPanel Spacing="4">
+            <!-- Description and Display -->
+            <TextBlock x:Name="DescriptionLabel" Text="Enter value:" Foreground="#BDC3C7" FontSize="12" Margin="4,0"/>
+            <Border Background="#1A252F" CornerRadius="6" Padding="8" Margin="0,0,0,4">
+                <TextBlock x:Name="DisplayText" Text="0" Foreground="#1ABC9C" FontSize="28" FontWeight="Bold" HorizontalAlignment="Right"/>
+            </Border>
+
+            <!-- Keypad grid -->
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*,*,*">
+                <!-- Row 1: 7, 8, 9, Back -->
+                <Button Grid.Row="0" Grid.Column="0" Content="7" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="0" Grid.Column="1" Content="8" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="0" Grid.Column="2" Content="9" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="0" Grid.Column="3" Content="⌫" Classes="KeypadButton" Click="OnBackspaceClick"/>
+
+                <!-- Row 2: 4, 5, 6, Clear -->
+                <Button Grid.Row="1" Grid.Column="0" Content="4" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="1" Grid.Column="1" Content="5" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="1" Grid.Column="2" Content="6" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="1" Grid.Column="3" Content="C" Classes="KeypadButton ClearButton" Click="OnClearClick"/>
+
+                <!-- Row 3: 1, 2, 3, +/- -->
+                <Button Grid.Row="2" Grid.Column="0" Content="1" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="2" Grid.Column="1" Content="2" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="2" Grid.Column="2" Content="3" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button Grid.Row="2" Grid.Column="3" Content="±" Classes="KeypadButton" Click="OnNegateClick"/>
+
+                <!-- Row 4: 0, ., Cancel, OK -->
+                <Button Grid.Row="3" Grid.Column="0" Content="0" Classes="KeypadButton" Click="OnDigitClick"/>
+                <Button x:Name="DecimalButton" Grid.Row="3" Grid.Column="1" Content="." Classes="KeypadButton" Click="OnDecimalClick"/>
+                <Button Grid.Row="3" Grid.Column="2" Content="✕" Classes="KeypadButton CancelButton" Click="OnCancelClick"/>
+                <Button Grid.Row="3" Grid.Column="3" Content="✓" Classes="KeypadButton OkButton" Click="OnOkClick"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

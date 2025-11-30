@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.Views", "Shared\AgValoniaGPS.Views\AgValoniaGPS.Views.csproj", "{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.WebHost", "Shared\AgValoniaGPS.WebHost\AgValoniaGPS.WebHost.csproj", "{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,11 +103,24 @@ Global
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x64.Build.0 = Release|Any CPU
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x86.Build.0 = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|x64.Build.0 = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Debug|x86.Build.0 = Debug|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|x64.ActiveCfg = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|x64.Build.0 = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|x86.ActiveCfg = Release|Any CPU
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
+		{FD4480C9-CA30-4B12-A21A-CF9DCB21D24B} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
 	EndGlobalSection
 EndGlobal

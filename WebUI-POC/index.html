@@ -35,7 +35,7 @@
 
         /* Left Navigation Bar */
         #nav-bar {
-            background: rgba(30, 42, 56, 0.87);
+            background: rgba(30, 42, 56, 0.95);
             padding: 8px 4px;
             display: flex;
             flex-direction: column;
@@ -56,10 +56,116 @@
             align-items: center;
             justify-content: center;
             transition: background 0.15s;
+            padding: 8px;
         }
 
-        .nav-btn:active {
+        .nav-btn img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .nav-btn:active, .nav-btn.active {
             background: #1ABC9C;
+        }
+
+        .nav-btn:hover {
+            background: rgba(52, 73, 94, 0.95);
+        }
+
+        /* Floating Panels */
+        .floating-panel {
+            position: absolute;
+            left: 72px;
+            top: 60px;
+            background: rgba(30, 42, 56, 0.95);
+            border-radius: 12px;
+            padding: 0;
+            min-width: 280px;
+            max-width: 320px;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .floating-panel.visible {
+            display: block;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: move;
+        }
+
+        .panel-title {
+            color: #1ABC9C;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .panel-close {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel-close:hover {
+            background: #E74C3C;
+        }
+
+        .panel-content {
+            padding: 12px;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .panel-btn {
+            height: 48px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            text-align: left;
+        }
+
+        .panel-btn img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .panel-btn:hover {
+            background: rgba(52, 73, 94, 0.95);
+        }
+
+        .panel-btn:active {
+            background: #1ABC9C;
+        }
+
+        .panel-btn.full-width {
+            grid-column: span 2;
         }
 
         /* Map Container */
@@ -195,25 +301,55 @@
         #easting .coord-label { color: #3498DB; }
         #northing .coord-label { color: #E74C3C; }
 
-        /* Simulator Panel */
-        #sim-panel {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
+        /* Simulator Panel Controls */
+        .sim-controls {
             display: flex;
-            gap: 4px;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sim-row {
+            display: flex;
+            gap: 8px;
             align-items: center;
+            justify-content: center;
+        }
+
+        .sim-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sim-section label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .sim-value {
+            min-width: 50px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1ABC9C;
         }
 
         .sim-btn {
-            height: 32px;
-            padding: 0 12px;
+            height: 36px;
+            padding: 0 16px;
             border: none;
             border-radius: 6px;
             background: #34495E;
             color: white;
-            font-size: 12px;
+            font-size: 14px;
             cursor: pointer;
+            min-width: 60px;
+        }
+
+        .sim-btn:hover {
+            background: rgba(52, 73, 94, 0.95);
         }
 
         .sim-btn:active {
@@ -228,11 +364,36 @@
             background: #8B0000;
         }
 
+        .sim-btn.danger:hover {
+            background: #A00000;
+        }
+
         .sim-arrow {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             padding: 0;
-            font-size: 14px;
+            min-width: 36px;
+            font-size: 16px;
+        }
+
+        .sim-steer-indicator {
+            height: 8px;
+            background: #2C3E50;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sim-steer-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 10px;
+            background: #1ABC9C;
+            border-radius: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: left 0.1s ease-out;
         }
     </style>
 </head>
@@ -240,14 +401,14 @@
     <div id="app">
         <!-- Left Navigation -->
         <nav id="nav-bar">
-            <button class="nav-btn" title="File Menu">&#128194;</button>
-            <button class="nav-btn" title="View Settings">&#128065;</button>
-            <button class="nav-btn" title="Tools">&#128295;</button>
-            <button class="nav-btn" title="Configuration">&#9881;</button>
-            <button class="nav-btn" title="Job Menu">&#128196;</button>
-            <button class="nav-btn" title="Field Tools">&#127793;</button>
-            <button class="nav-btn" title="AutoSteer">&#128663;</button>
-            <button class="nav-btn" title="Data I/O">&#128225;</button>
+            <button class="nav-btn" id="btn-file" title="File Menu"><img src="icons/fileMenu.png" alt="File"></button>
+            <button class="nav-btn" id="btn-view" title="View Settings"><img src="icons/NavigationSettings.png" alt="View"></button>
+            <button class="nav-btn" id="btn-tools" title="Tools"><img src="icons/SpecialFunctions.png" alt="Tools"></button>
+            <button class="nav-btn" id="btn-config" title="Configuration"><img src="icons/Settings48.png" alt="Config"></button>
+            <button class="nav-btn" id="btn-job" title="Job Menu"><img src="icons/JobActive.png" alt="Job"></button>
+            <button class="nav-btn" id="btn-field" title="Field Tools"><img src="icons/FieldTools.png" alt="Field"></button>
+            <button class="nav-btn" id="btn-steer" title="AutoSteer"><img src="icons/AutoSteerConf.png" alt="Steer"></button>
+            <button class="nav-btn" id="btn-agio" title="Data I/O"><img src="icons/AgIO.png" alt="AgIO"></button>
         </nav>
 
         <!-- Map Area -->
@@ -292,15 +453,193 @@
                 </div>
             </div>
 
-            <!-- Simulator Panel -->
-            <div id="sim-panel">
-                <button class="sim-btn" id="sim-toggle">Sim</button>
-                <button class="sim-btn sim-arrow" id="steer-left">&#9664;</button>
-                <button class="sim-btn" id="steer-zero">Zero</button>
-                <button class="sim-btn sim-arrow" id="steer-right">&#9654;</button>
-                <button class="sim-btn sim-arrow" id="accel">&#9650;</button>
-                <button class="sim-btn" id="stop">&#9632;</button>
-                <button class="sim-btn sim-arrow" id="decel">&#9660;</button>
+            <!-- Simulator Control Panel (floating) -->
+            <div id="panel-simulator" class="floating-panel" style="top: auto; bottom: 80px; left: 72px; min-width: 200px;">
+                <div class="panel-header">
+                    <span class="panel-title">Simulator</span>
+                    <button class="panel-close" data-panel="simulator">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="sim-controls">
+                        <div class="sim-row">
+                            <button class="sim-btn" id="sim-toggle">Start</button>
+                            <button class="sim-btn danger" id="stop">Reset</button>
+                        </div>
+                        <div class="sim-section">
+                            <label>Speed</label>
+                            <div class="sim-row">
+                                <button class="sim-btn sim-arrow" id="decel">-</button>
+                                <span class="sim-value" id="sim-speed-display">0</span>
+                                <button class="sim-btn sim-arrow" id="accel">+</button>
+                            </div>
+                        </div>
+                        <div class="sim-section">
+                            <label>Steering</label>
+                            <div class="sim-row">
+                                <button class="sim-btn sim-arrow" id="steer-left">&#9664;</button>
+                                <button class="sim-btn" id="steer-zero">0</button>
+                                <button class="sim-btn sim-arrow" id="steer-right">&#9654;</button>
+                            </div>
+                            <div class="sim-steer-indicator">
+                                <div class="sim-steer-bar" id="steer-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Panels -->
+            <!-- File Menu Panel -->
+            <div id="panel-file" class="floating-panel">
+                <div class="panel-header">
+                    <span class="panel-title">File Menu</span>
+                    <button class="panel-close" data-panel="file">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn"><img src="icons/FileNew.png">New Profile</button>
+                        <button class="panel-btn"><img src="icons/FileOpen.png">Load Profile</button>
+                        <button class="panel-btn"><img src="icons/Settings48.png">Language</button>
+                        <button class="panel-btn" id="panel-sim-btn"><img src="icons/vehiclePageTractor.png">Simulator</button>
+                        <button class="panel-btn"><img src="icons/GPSQuality.png">Sim Coords</button>
+                        <button class="panel-btn"><img src="icons/ScreenShot.png">Kiosk Mode</button>
+                        <button class="panel-btn"><img src="icons/Reset_Default.png">Reset ALL</button>
+                        <button class="panel-btn"><img src="icons/AgShare.png">About</button>
+                        <button class="panel-btn full-width"><img src="icons/OK64.png">Help</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Settings Panel -->
+            <div id="panel-view" class="floating-panel" style="top: 120px;">
+                <div class="panel-header">
+                    <span class="panel-title">View Settings</span>
+                    <button class="panel-close" data-panel="view">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn">Tilt Down</button>
+                        <button class="panel-btn">Tilt Up</button>
+                        <button class="panel-btn" id="btn-2d3d">2D / 3D</button>
+                        <button class="panel-btn" id="btn-north">North Up</button>
+                        <button class="panel-btn" id="btn-grid-toggle">Grid</button>
+                        <button class="panel-btn" id="btn-daynight">Day/Night</button>
+                        <button class="panel-btn">Dim -</button>
+                        <button class="panel-btn">Bright +</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools Panel -->
+            <div id="panel-tools" class="floating-panel" style="top: 180px;">
+                <div class="panel-header">
+                    <span class="panel-title">Tools</span>
+                    <button class="panel-close" data-panel="tools">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn"><img src="icons/WizardWand.png">Steer Wizard</button>
+                        <button class="panel-btn"><img src="icons/Boundary.png">Boundary Tool</button>
+                        <button class="panel-btn"><img src="icons/AutoSteerOn.png">Steer Chart</button>
+                        <button class="panel-btn"><img src="icons/ABSmooth.png">Smooth AB</button>
+                        <button class="panel-btn"><img src="icons/ConS_SourcesHeading.png">Heading Chart</button>
+                        <button class="panel-btn"><img src="icons/TrashContourRef.png">Del Contours</button>
+                        <button class="panel-btn"><img src="icons/AutoManualIsAuto.png">XTE Chart</button>
+                        <button class="panel-btn"><img src="icons/YouTurnReverse.png">Offset Fix</button>
+                        <button class="panel-btn"><img src="icons/ConS_SourcesRoll.png">Roll Correction</button>
+                        <button class="panel-btn"><img src="icons/ABTracks.png">Log Viewer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div id="panel-config" class="floating-panel" style="top: 240px;">
+                <div class="panel-header">
+                    <span class="panel-title">Configuration</span>
+                    <button class="panel-close" data-panel="config">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn"><img src="icons/Settings48.png">Configuration</button>
+                        <button class="panel-btn"><img src="icons/GPSQuality.png">GPS Data</button>
+                        <button class="panel-btn"><img src="icons/AutoSteerOff.png">Auto Steer</button>
+                        <button class="panel-btn"><img src="icons/ColourPick.png">Colors</button>
+                        <button class="panel-btn"><img src="icons/ScreenShot.png">All Settings</button>
+                        <button class="panel-btn"><img src="icons/SectionMapping.png">Section Colors</button>
+                        <button class="panel-btn"><img src="icons/FileOpen.png">Directories</button>
+                        <button class="panel-btn"><img src="icons/ConD_KeyBoard.png">HotKeys</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Menu Panel -->
+            <div id="panel-job" class="floating-panel" style="top: 300px;">
+                <div class="panel-header">
+                    <span class="panel-title">Job Menu</span>
+                    <button class="panel-close" data-panel="job">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn"><img src="icons/ISOXML.png">ISO-XML</button>
+                        <button class="panel-btn"><img src="icons/FileClose.png">Close Field</button>
+                        <button class="panel-btn"><img src="icons/GoogleEarth.png">From KML</button>
+                        <button class="panel-btn"><img src="icons/SteerDriveOn.png">Drive In</button>
+                        <button class="panel-btn"><img src="icons/FileExisting.png">From Existing</button>
+                        <button class="panel-btn"><img src="icons/FileOpen.png">Open Field</button>
+                        <button class="panel-btn"><img src="icons/FileNew.png">New Default</button>
+                        <button class="panel-btn"><img src="icons/FilePrevious.png">Resume</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Field Tools Panel -->
+            <div id="panel-field" class="floating-panel" style="top: 360px;">
+                <div class="panel-header">
+                    <span class="panel-title">Field Tools</span>
+                    <button class="panel-close" data-panel="field">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn" id="btn-boundary"><img src="icons/Boundary.png">Boundary</button>
+                        <button class="panel-btn"><img src="icons/HeadlandBuild.png">Headland</button>
+                        <button class="panel-btn"><img src="icons/TramAll.png">Tram Lines</button>
+                        <button class="panel-btn"><img src="icons/Headache.png">Headland Build</button>
+                        <button class="panel-btn"><img src="icons/TrashApplied.png">Delete Applied</button>
+                        <button class="panel-btn"><img src="icons/TramMulti.png">Tram Build</button>
+                        <button class="panel-btn"><img src="icons/RecPath.png">Recorded Path</button>
+                        <button class="panel-btn"><img src="icons/BoundaryFromTracks.png">Import Tracks</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AutoSteer Panel -->
+            <div id="panel-steer" class="floating-panel" style="top: 420px;">
+                <div class="panel-header">
+                    <span class="panel-title">AutoSteer</span>
+                    <button class="panel-close" data-panel="steer">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn full-width"><img src="icons/AutoSteerConf.png">AutoSteer Config</button>
+                        <button class="panel-btn"><img src="icons/AutoSteerOn.png">Steer Enable</button>
+                        <button class="panel-btn"><img src="icons/AutoSteerOff.png">Steer Disable</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AgIO Panel -->
+            <div id="panel-agio" class="floating-panel" style="top: 480px;">
+                <div class="panel-header">
+                    <span class="panel-title">Data I/O</span>
+                    <button class="panel-close" data-panel="agio">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div class="panel-grid">
+                        <button class="panel-btn full-width"><img src="icons/AgIO.png">AgIO Connection</button>
+                        <button class="panel-btn"><img src="icons/FileOpen.png">Import</button>
+                        <button class="panel-btn"><img src="icons/AgShare.png">Export</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -330,7 +669,7 @@
         // State
         let camera = { x: 0, y: 0, zoom: 1, rotation: 0 };
         let vehicle = { x: 0, y: 0, heading: 0 };
-        let simulator = { enabled: false, speed: 0, steerAngle: 0 };
+        let simulator = { enabled: false, speed: 0, steerAngle: 0, targetSpeedKmh: 0 };
         let boundary = [];
         let lastTime = 0;
 
@@ -1036,7 +1375,9 @@
                     console.log('Connected to server, ID:', msg.connectionId);
                     if (msg.simulator) {
                         simulator.enabled = msg.simulator.running;
-                        document.getElementById('sim-toggle').classList.toggle('active', simulator.enabled);
+                        simulator.speed = msg.simulator.speed / 3.6; // km/h to m/s
+                        simulator.steerAngle = msg.simulator.steerAngle;
+                        // UI update will happen after updateSimulatorUI is defined
                     }
                 }
                 else if (msg.type === 'simulator') {
@@ -1051,63 +1392,302 @@
             }
         }
 
-        // Override simulator button handlers to send to server
-        document.getElementById('sim-toggle').addEventListener('click', (e) => {
+        // Simulator control handlers are set up after panel management section
+
+        // Connect to WebSocket on load
+        connectWebSocket();
+
+        // ===== Panel Management =====
+        const panels = {
+            file: document.getElementById('panel-file'),
+            view: document.getElementById('panel-view'),
+            tools: document.getElementById('panel-tools'),
+            config: document.getElementById('panel-config'),
+            job: document.getElementById('panel-job'),
+            field: document.getElementById('panel-field'),
+            steer: document.getElementById('panel-steer'),
+            agio: document.getElementById('panel-agio')
+        };
+
+        const navButtons = {
+            file: document.getElementById('btn-file'),
+            view: document.getElementById('btn-view'),
+            tools: document.getElementById('btn-tools'),
+            config: document.getElementById('btn-config'),
+            job: document.getElementById('btn-job'),
+            field: document.getElementById('btn-field'),
+            steer: document.getElementById('btn-steer'),
+            agio: document.getElementById('btn-agio')
+        };
+
+        let activePanel = null;
+
+        function togglePanel(panelName) {
+            // If clicking the same panel, close it
+            if (activePanel === panelName) {
+                panels[panelName].classList.remove('visible');
+                navButtons[panelName].classList.remove('active');
+                activePanel = null;
+                return;
+            }
+
+            // Close currently open panel
+            if (activePanel) {
+                panels[activePanel].classList.remove('visible');
+                navButtons[activePanel].classList.remove('active');
+            }
+
+            // Open new panel
+            panels[panelName].classList.add('visible');
+            navButtons[panelName].classList.add('active');
+            activePanel = panelName;
+        }
+
+        function closePanel(panelName) {
+            panels[panelName].classList.remove('visible');
+            navButtons[panelName].classList.remove('active');
+            if (activePanel === panelName) {
+                activePanel = null;
+            }
+        }
+
+        // Wire up nav buttons
+        Object.keys(navButtons).forEach(name => {
+            navButtons[name].addEventListener('click', () => togglePanel(name));
+        });
+
+        // Wire up close buttons
+        document.querySelectorAll('.panel-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const panelName = e.target.dataset.panel;
+                closePanel(panelName);
+            });
+        });
+
+        // Close panel when clicking outside
+        document.getElementById('map-container').addEventListener('click', (e) => {
+            // Only close if clicking directly on map-container or canvas
+            if (e.target.id === 'map-container' || e.target.id === 'map-canvas') {
+                if (activePanel) {
+                    closePanel(activePanel);
+                }
+            }
+        });
+
+        // Make panels draggable
+        document.querySelectorAll('.panel-header').forEach(header => {
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
+            const panel = header.parentElement;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('panel-close')) return;
+                isDragging = true;
+                const rect = panel.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const containerRect = document.getElementById('map-container').getBoundingClientRect();
+                let newX = e.clientX - containerRect.left - dragOffset.x;
+                let newY = e.clientY - containerRect.top - dragOffset.y;
+                // Keep within bounds
+                newX = Math.max(0, Math.min(containerRect.width - panel.offsetWidth, newX));
+                newY = Math.max(0, Math.min(containerRect.height - panel.offsetHeight, newY));
+                panel.style.left = newX + 'px';
+                panel.style.top = newY + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch support for dragging
+            header.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('panel-close')) return;
+                isDragging = true;
+                const touch = e.touches[0];
+                const rect = panel.getBoundingClientRect();
+                dragOffset.x = touch.clientX - rect.left;
+                dragOffset.y = touch.clientY - rect.top;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const containerRect = document.getElementById('map-container').getBoundingClientRect();
+                let newX = touch.clientX - containerRect.left - dragOffset.x;
+                let newY = touch.clientY - containerRect.top - dragOffset.y;
+                newX = Math.max(0, Math.min(containerRect.width - panel.offsetWidth, newX));
+                newY = Math.max(0, Math.min(containerRect.height - panel.offsetHeight, newY));
+                panel.style.left = newX + 'px';
+                panel.style.top = newY + 'px';
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        });
+
+        // ===== Simulator Panel =====
+        const simulatorPanel = document.getElementById('panel-simulator');
+        let simulatorPanelVisible = false;
+
+        function toggleSimulatorPanel() {
+            simulatorPanelVisible = !simulatorPanelVisible;
+            simulatorPanel.classList.toggle('visible', simulatorPanelVisible);
+            // Update menu button state
+            document.getElementById('panel-sim-btn').classList.toggle('active', simulatorPanelVisible);
+        }
+
+        function updateSimulatorUI() {
+            const simToggle = document.getElementById('sim-toggle');
+            simToggle.textContent = simulator.enabled ? 'Stop' : 'Start';
+            simToggle.classList.toggle('active', simulator.enabled);
+
+            // Update speed display - use targetSpeedKmh (not actual speed from GPS which can have timing drift)
+            document.getElementById('sim-speed-display').textContent = simulator.targetSpeedKmh.toFixed(0) + ' km/h';
+
+            // Update steer bar position (steerAngle is -45 to 45)
+            const steerPercent = 50 + (simulator.steerAngle / 45) * 40; // 10% to 90%
+            document.getElementById('steer-bar').style.left = steerPercent + '%';
+        }
+
+        // File Menu > Simulator button - opens/closes the simulator panel
+        document.getElementById('panel-sim-btn').addEventListener('click', () => {
+            closePanel('file');
+            toggleSimulatorPanel();
+        });
+
+        // Simulator panel close button
+        simulatorPanel.querySelector('.panel-close').addEventListener('click', () => {
+            simulatorPanelVisible = false;
+            simulatorPanel.classList.remove('visible');
+            document.getElementById('panel-sim-btn').classList.remove('active');
+        });
+
+        // Start/Stop button in simulator panel
+        document.getElementById('sim-toggle').addEventListener('click', () => {
             simulator.enabled = !simulator.enabled;
-            e.target.classList.toggle('active', simulator.enabled);
+            updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: simulator.enabled ? 'start' : 'stop' });
         });
 
+        // Speed controls - track speed in km/h on simulator object to avoid server sync issues
+        document.getElementById('accel').addEventListener('click', () => {
+            simulator.targetSpeedKmh = Math.min(25, simulator.targetSpeedKmh + 5);
+            updateSimulatorUI();
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: simulator.targetSpeedKmh });
+        });
+
+        document.getElementById('decel').addEventListener('click', () => {
+            simulator.targetSpeedKmh = Math.max(0, simulator.targetSpeedKmh - 5);
+            updateSimulatorUI();
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: simulator.targetSpeedKmh });
+        });
+
+        // Reset button
+        document.getElementById('stop').addEventListener('click', () => {
+            simulator.targetSpeedKmh = 0;
+            simulator.speed = 0;
+            simulator.steerAngle = 0;
+            simulator.enabled = false;
+            vehicle.x = 0;
+            vehicle.y = 0;
+            vehicle.heading = 0;
+            smoothedHeading = 0;
+            updateSimulatorUI();
+            sendWsMessage({ type: 'simulator', action: 'stop' });
+            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: 0 });
+            sendWsMessage({ type: 'simulator', action: 'setSteer', value: 0 });
+            sendWsMessage({ type: 'simulator', action: 'setPosition', latitude: 40.7128, longitude: -74.0060 });
+        });
+
+        // Steering controls
         document.getElementById('steer-left').addEventListener('click', () => {
             simulator.steerAngle = Math.max(-45, simulator.steerAngle - 5);
+            updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
 
         document.getElementById('steer-right').addEventListener('click', () => {
             simulator.steerAngle = Math.min(45, simulator.steerAngle + 5);
+            updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
 
         document.getElementById('steer-zero').addEventListener('click', () => {
             simulator.steerAngle = 0;
+            updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSteer', value: 0 });
         });
 
-        document.getElementById('accel').addEventListener('click', () => {
-            // Speed in km/h, max 20 km/h, increment by 2 km/h
-            const currentKmh = simulator.speed * 3.6;
-            const newKmh = Math.min(20, currentKmh + 2);
-            simulator.speed = newKmh / 3.6;
-            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: newKmh });
-        });
+        // Make simulator panel draggable
+        (function() {
+            const header = simulatorPanel.querySelector('.panel-header');
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
 
-        document.getElementById('stop').addEventListener('click', () => {
-            simulator.speed = 0;
-            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: 0 });
-            // Also reset position to origin
-            vehicle.x = 0;
-            vehicle.y = 0;
-            vehicle.heading = 0;
-            smoothCamX = 0;
-            smoothCamY = 0;
-            smoothedHeading = 0;
-            sendWsMessage({ type: 'simulator', action: 'setPosition', latitude: 40.7128, longitude: -74.0060 });
-        });
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('panel-close')) return;
+                isDragging = true;
+                const rect = simulatorPanel.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                e.preventDefault();
+            });
 
-        document.getElementById('decel').addEventListener('click', () => {
-            const currentKmh = simulator.speed * 3.6;
-            const newKmh = Math.max(0, currentKmh - 2);
-            simulator.speed = newKmh / 3.6;
-            sendWsMessage({ type: 'simulator', action: 'setSpeed', value: newKmh });
-        });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const containerRect = document.getElementById('map-container').getBoundingClientRect();
+                let newX = e.clientX - containerRect.left - dragOffset.x;
+                let newY = e.clientY - containerRect.top - dragOffset.y;
+                newX = Math.max(0, Math.min(containerRect.width - simulatorPanel.offsetWidth, newX));
+                newY = Math.max(0, Math.min(containerRect.height - simulatorPanel.offsetHeight, newY));
+                simulatorPanel.style.left = newX + 'px';
+                simulatorPanel.style.top = newY + 'px';
+                simulatorPanel.style.bottom = 'auto';
+            });
 
-        // Connect to WebSocket on load
-        connectWebSocket();
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch support
+            header.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('panel-close')) return;
+                isDragging = true;
+                const touch = e.touches[0];
+                const rect = simulatorPanel.getBoundingClientRect();
+                dragOffset.x = touch.clientX - rect.left;
+                dragOffset.y = touch.clientY - rect.top;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const containerRect = document.getElementById('map-container').getBoundingClientRect();
+                let newX = touch.clientX - containerRect.left - dragOffset.x;
+                let newY = touch.clientY - containerRect.top - dragOffset.y;
+                newX = Math.max(0, Math.min(containerRect.width - simulatorPanel.offsetWidth, newX));
+                newY = Math.max(0, Math.min(containerRect.height - simulatorPanel.offsetHeight, newY));
+                simulatorPanel.style.left = newX + 'px';
+                simulatorPanel.style.top = newY + 'px';
+                simulatorPanel.style.bottom = 'auto';
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        })();
 
         // ===== Start =====
         requestAnimationFrame(render);
 
-        console.log('AgOpenGPS WebGL POC loaded - with WebSocket');
+        console.log('AgOpenGPS WebGL POC loaded - with WebSocket and Panel Management');
     </script>
 </body>
 </html>

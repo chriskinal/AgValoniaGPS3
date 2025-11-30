@@ -824,6 +824,27 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
     }
 
+    private bool _isSimCoordsPanelVisible;
+    public bool IsSimCoordsPanelVisible
+    {
+        get => _isSimCoordsPanelVisible;
+        set => this.RaiseAndSetIfChanged(ref _isSimCoordsPanelVisible, value);
+    }
+
+    private string _simCoordsLatitudeText = "";
+    public string SimCoordsLatitudeText
+    {
+        get => _simCoordsLatitudeText;
+        set => this.RaiseAndSetIfChanged(ref _simCoordsLatitudeText, value);
+    }
+
+    private string _simCoordsLongitudeText = "";
+    public string SimCoordsLongitudeText
+    {
+        get => _simCoordsLongitudeText;
+        set => this.RaiseAndSetIfChanged(ref _simCoordsLongitudeText, value);
+    }
+
     // iOS Modal Sheet Visibility Properties
     private bool _isFileMenuVisible;
     public bool IsFileMenuVisible
@@ -1190,6 +1211,7 @@ public class MainViewModel : ReactiveObject
 
     // Simulator Commands
     public ICommand? ToggleSimulatorPanelCommand { get; private set; }
+    public ICommand? ShowSimulatorPanelCommand { get; private set; }  // Opens sim panel and closes menus
     public ICommand? ResetSimulatorCommand { get; private set; }
     public ICommand? ResetSteerAngleCommand { get; private set; }
     public ICommand? SimulatorForwardCommand { get; private set; }
@@ -1198,6 +1220,9 @@ public class MainViewModel : ReactiveObject
     public ICommand? SimulatorReverseDirectionCommand { get; private set; }
     public ICommand? SimulatorSteerLeftCommand { get; private set; }
     public ICommand? SimulatorSteerRightCommand { get; private set; }
+    public ICommand? ShowSimCoordsPanelCommand { get; private set; }
+    public ICommand? ApplySimCoordsCommand { get; private set; }
+    public ICommand? CancelSimCoordsCommand { get; private set; }
 
     // Dialog Commands
     public ICommand? ShowDataIODialogCommand { get; private set; }
@@ -1336,6 +1361,12 @@ public class MainViewModel : ReactiveObject
             IsSimulatorPanelVisible = !IsSimulatorPanelVisible;
         });
 
+        ShowSimulatorPanelCommand = new RelayCommand(() =>
+        {
+            IsSimulatorPanelVisible = true;
+            IsFileMenuVisible = false;  // Close file menu when opening simulator
+        });
+
         ResetSimulatorCommand = new RelayCommand(() =>
         {
             _simulatorService.Reset();
@@ -1394,6 +1425,43 @@ public class MainViewModel : ReactiveObject
         {
             SimulatorSteerAngle += 5.0; // 5 degree increments
             StatusMessage = $"Steer: {SimulatorSteerAngle:F1}°";
+        });
+
+        ShowSimCoordsPanelCommand = new RelayCommand(() =>
+        {
+            // Initialize text fields with current simulator position
+            var currentPos = GetSimulatorPosition();
+            SimCoordsLatitudeText = currentPos.Latitude.ToString("F7");
+            SimCoordsLongitudeText = currentPos.Longitude.ToString("F7");
+            IsSimCoordsPanelVisible = true;
+        });
+
+        ApplySimCoordsCommand = new RelayCommand(() =>
+        {
+            if (double.TryParse(SimCoordsLatitudeText, out double lat) &&
+                double.TryParse(SimCoordsLongitudeText, out double lon))
+            {
+                // Validate ranges
+                if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
+                {
+                    SetSimulatorCoordinates(lat, lon);
+                    IsSimCoordsPanelVisible = false;
+                    StatusMessage = $"Coordinates set: {lat:F5}, {lon:F5}";
+                }
+                else
+                {
+                    StatusMessage = "Invalid coordinates (lat: -90 to 90, lon: -180 to 180)";
+                }
+            }
+            else
+            {
+                StatusMessage = "Invalid number format";
+            }
+        });
+
+        CancelSimCoordsCommand = new RelayCommand(() =>
+        {
+            IsSimCoordsPanelVisible = false;
         });
 
         // Dialog Commands

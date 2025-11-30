@@ -68,13 +68,6 @@ public class SkiaMapControl : SKCanvasView, IMapControl
         Console.WriteLine("[SkiaMapControl] Constructor completed.");
     }
 
-    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        // Trigger initial render when attached to visual tree
-        InvalidateSurface();
-    }
-
     protected override void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
         base.OnPaintSurface(e);
@@ -86,17 +79,13 @@ public class SkiaMapControl : SKCanvasView, IMapControl
         int width = info.Width;
         int height = info.Height;
 
-        Console.WriteLine($"[SkiaMapControl] OnPaintSurface called: {width}x{height}");
-
         if (width <= 0 || height <= 0)
         {
-            Console.WriteLine("[SkiaMapControl] Invalid dimensions, skipping render");
             return;
         }
 
         // Work in DIP coordinates with 1:1 pixel mapping
         RenderMap(canvas, width, height);
-        Console.WriteLine("[SkiaMapControl] RenderMap completed");
     }
 
     private void RenderMap(SKCanvas canvas, int width, int height)
@@ -436,6 +425,7 @@ public class SkiaMapControl : SKCanvasView, IMapControl
     {
         _cameraX = x;
         _cameraY = y;
+        InvalidateSurface();
     }
 
     public void Pan(double deltaX, double deltaY)
@@ -485,6 +475,7 @@ public class SkiaMapControl : SKCanvasView, IMapControl
         _vehicleX = x;
         _vehicleY = y;
         _vehicleHeading = heading;
+        Console.WriteLine($"[SkiaMapControl] SetVehiclePosition: x={x:F2}, y={y:F2}, heading={heading:F2}");
         InvalidateSurface();
     }
 

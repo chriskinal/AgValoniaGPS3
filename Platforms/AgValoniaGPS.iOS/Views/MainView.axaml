@@ -4,26 +4,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:AgValoniaGPS.ViewModels"
         xmlns:controls="using:AgValoniaGPS.iOS.Controls"
-        mc:Ignorable="d" d:DesignWidth="1194" d:DesignHeight="834"
+        mc:Ignorable="d" d:DesignWidth="390" d:DesignHeight="844"
         x:Class="AgValoniaGPS.iOS.Views.MainView"
         x:DataType="vm:MainViewModel"
         Background="#1a1a1a">
 
     <UserControl.Styles>
-        <!-- Left Nav Icon Button -->
-        <Style Selector="Button.NavIconButton">
+        <!-- iOS Tab Bar Button -->
+        <Style Selector="Button.TabButton">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Width" Value="56"/>
-            <Setter Property="Height" Value="56"/>
-            <Setter Property="Padding" Value="8"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="MinWidth" Value="70"/>
+            <Setter Property="MinHeight" Value="50"/>
         </Style>
-        <Style Selector="Button.NavIconButton:pointerover">
-            <Setter Property="Background" Value="#44FFFFFF"/>
-        </Style>
-        <Style Selector="Button.NavIconButton:pressed">
-            <Setter Property="Background" Value="#1ABC9C"/>
+        <Style Selector="Button.TabButton:pressed">
+            <Setter Property="Background" Value="#333"/>
         </Style>
 
         <!-- Status panel style -->
@@ -33,42 +29,20 @@
             <Setter Property="Padding" Value="12,8"/>
         </Style>
 
-        <!-- Slide-in Panel -->
-        <Style Selector="Border.SlidePanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="CornerRadius" Value="0,12,12,0"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Width" Value="280"/>
-        </Style>
-
-        <!-- Panel Button -->
-        <Style Selector="Button.PanelButton">
-            <Setter Property="Background" Value="#44FFFFFF"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Height" Value="50"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-        </Style>
-        <Style Selector="Button.PanelButton:pressed">
-            <Setter Property="Background" Value="#1ABC9C"/>
-        </Style>
-
-        <!-- Section Button -->
-        <Style Selector="Button.SectionButton">
+        <!-- iOS Action Button -->
+        <Style Selector="Button.ActionButton">
+            <Setter Property="Width" Value="56"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="CornerRadius" Value="28"/>
             <Setter Property="Background" Value="#DD2C3E50"/>
-            <Setter Property="MinWidth" Value="60"/>
-            <Setter Property="Height" Value="44"/>
-            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Padding" Value="0"/>
         </Style>
-        <Style Selector="Button.SectionButton:pressed">
-            <Setter Property="Background" Value="#1ABC9C"/>
+        <Style Selector="Button.ActionButton:pressed">
+            <Setter Property="Background" Value="#DD1ABC9C"/>
         </Style>
 
-        <!-- Small Action Button -->
+        <!-- iOS Small Action Button -->
         <Style Selector="Button.SmallActionButton">
             <Setter Property="Width" Value="44"/>
             <Setter Property="Height" Value="44"/>
@@ -78,115 +52,137 @@
             <Setter Property="Padding" Value="0"/>
         </Style>
         <Style Selector="Button.SmallActionButton:pressed">
+            <Setter Property="Background" Value="#DD1ABC9C"/>
+        </Style>
+
+        <!-- Modal Sheet Style -->
+        <Style Selector="Border.ModalSheet">
+            <Setter Property="Background" Value="#1E2A38"/>
+            <Setter Property="CornerRadius" Value="20,20,0,0"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <!-- Sheet Button -->
+        <Style Selector="Button.SheetButton">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Height" Value="60"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+        <Style Selector="Button.SheetButton:pressed">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+
+        <!-- Compact Button for horizontal layouts -->
+        <Style Selector="Button.CompactButton">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+        </Style>
+        <Style Selector="Button.CompactButton:pressed">
             <Setter Property="Background" Value="#1ABC9C"/>
         </Style>
     </UserControl.Styles>
 
-    <!-- LANDSCAPE LAYOUT: Left Icons | Map | Right Status -->
-    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,*,Auto">
-
-        <!-- TOP STATUS BAR (spans all columns) -->
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#DD1E2A38" Padding="8,4">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
-                <!-- GPS Fix Status -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="60,0,0,0">
-                    <Ellipse Width="12" Height="12" Fill="{Binding FixQuality, Converter={StaticResource FixQualityToColorConverter}}"/>
-                    <TextBlock Text="{Binding FixQuality}" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Cross-Track Error (Center - Large) -->
-                <Border Grid.Column="1" HorizontalAlignment="Center" Background="#44000000" CornerRadius="6" Padding="16,4">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="←" Foreground="#3498DB" FontSize="18" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding CrossTrackError, StringFormat={}{0:F1}}" Foreground="White" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <TextBlock Text="cm" Foreground="#888" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="→" Foreground="#E74C3C" FontSize="18" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Speed -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" Margin="12,0">
-                    <TextBlock Text="{Binding Speed, StringFormat={}{0:F1}}" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="km/h" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Current Line -->
-                <Border Grid.Column="3" Background="#44000000" CornerRadius="4" Padding="8,2" Margin="8,0">
-                    <TextBlock Text="{Binding CurrentGuidanceLine, StringFormat={}↑{0}}" Foreground="#2ECC71" FontSize="16" FontWeight="Bold"/>
-                </Border>
-
-                <!-- Heading -->
-                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="2" Margin="8,0">
-                    <TextBlock Text="{Binding Heading, StringFormat={}{0:F0}}" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="°" Foreground="#888" FontSize="14" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Steer Status Indicator -->
-                <Border Grid.Column="5" Background="{Binding IsAutoSteerActive, Converter={StaticResource BoolToSteerColorConverter}}"
-                        CornerRadius="4" Padding="12,4" Margin="8,0,12,0">
-                    <TextBlock Text="{Binding IsAutoSteerActive, Converter={StaticResource BoolToSteerTextConverter}}"
-                               Foreground="White" FontSize="14" FontWeight="Bold"/>
-                </Border>
-            </Grid>
-        </Border>
+    <!-- LANDSCAPE LAYOUT: Left Nav Bar | Map Area -->
+    <Grid ColumnDefinitions="Auto,*">
 
         <!-- LEFT NAVIGATION BAR -->
-        <Border Grid.Row="1" Grid.Column="0" Grid.RowSpan="2" Background="#DD1E2A38" Padding="4" Width="64">
+        <Border Grid.Column="0" Background="#DD1E2A38" Padding="4" Width="64">
             <StackPanel Spacing="4" VerticalAlignment="Top" Margin="0,8,0,0">
-                <!-- File Menu -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleFileMenuCommand}" ToolTip.Tip="File Menu">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/fileMenu.png" Width="40" Height="40"/>
+                <!-- 1. File Menu -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleFileMenuCommand}" ToolTip.Tip="File Menu">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/fileMenu.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <!-- View Settings -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleViewSettingsPanelCommand}" ToolTip.Tip="View Settings">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/NavigationSettings.png" Width="40" Height="40"/>
+                <!-- 2. View Settings -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleViewSettingsPanelCommand}" ToolTip.Tip="View Settings">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/NavigationSettings.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <!-- Tools -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleToolsPanelCommand}" ToolTip.Tip="Tools">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SpecialFunctions.png" Width="40" Height="40"/>
+                <!-- 3. Tools -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleToolsPanelCommand}" ToolTip.Tip="Tools">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/SpecialFunctions.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <!-- Configuration -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleConfigurationPanelCommand}" ToolTip.Tip="Configuration">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Width="40" Height="40"/>
+                <!-- 4. Configuration -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleSettingsCommand}" ToolTip.Tip="Configuration">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/Settings48.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <Separator Background="#444" Height="1" Margin="4,8"/>
-
-                <!-- Job Menu -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleJobMenuPanelCommand}" ToolTip.Tip="Job Menu">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Width="40" Height="40"/>
+                <!-- 5. Job Menu -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleJobMenuPanelCommand}" ToolTip.Tip="Job Menu">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/JobActive.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <!-- Field Tools -->
-                <Button Classes="NavIconButton" Command="{Binding ToggleFieldToolsPanelCommand}" ToolTip.Tip="Field Tools">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FieldTools.png" Width="40" Height="40"/>
+                <!-- 6. Field Tools -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ToggleFieldToolsCommand}" ToolTip.Tip="Field Tools">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/FieldTools.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <Separator Background="#444" Height="1" Margin="4,8"/>
-
-                <!-- AutoSteer Config -->
-                <Button Classes="NavIconButton" ToolTip.Tip="AutoSteer Config">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerConf.png" Width="40" Height="40"/>
+                <!-- 7. AutoSteer Config -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" ToolTip.Tip="AutoSteer Config">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/AutoSteerConf.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
-
-                <!-- Data I/O -->
-                <Button Classes="NavIconButton" Command="{Binding ShowDataIODialogCommand}" ToolTip.Tip="Data I/O">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgIO.png" Width="40" Height="40"/>
+                <!-- 8. Data I/O -->
+                <Button Classes="SmallActionButton" Width="56" Height="56" Command="{Binding ShowDataIODialogCommand}" ToolTip.Tip="Data I/O">
+                    <Image Source="avares://AgValoniaGPS.iOS/Assets/Icons/AgIO.png" Width="40" Height="40" Stretch="Uniform"/>
                 </Button>
             </StackPanel>
         </Border>
 
-        <!-- MAP AREA -->
-        <Grid Grid.Row="1" Grid.Column="1" Background="#191919">
-            <controls:SkiaMapControl x:Name="MapControl" IsGridVisible="True"
-                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <!-- MAP AREA (Column 1) -->
+        <Grid Grid.Column="1">
+            <!-- SkiaSharp Map Control -->
+            <controls:SkiaMapControl x:Name="MapControl" IsGridVisible="True" />
 
-            <!-- Right Side: Zoom Controls -->
-            <StackPanel Orientation="Vertical" Spacing="8" Margin="0,0,12,0"
-                        HorizontalAlignment="Right" VerticalAlignment="Center">
+            <!-- TOP STATUS BAR -->
+            <Grid Margin="16,16,16,0" VerticalAlignment="Top" ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                <!-- GPS Status -->
+                <Border Grid.Column="0" Classes="StatusPanel">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="14" Height="14"
+                                 Fill="{Binding FixQuality, Converter={StaticResource FixQualityToColorConverter}}"/>
+                        <TextBlock Text="{Binding FixQuality}" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Speed Display -->
+                <Border Grid.Column="1" Classes="StatusPanel" Margin="8,0,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="{Binding Speed, StringFormat={}{0:F1}}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="km/h" Foreground="#888" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Cross-Track Error (Center - Large) -->
+                <Border Grid.Column="2" Classes="StatusPanel" HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="XTE" Foreground="#1ABC9C" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CrossTrackError, StringFormat={}{0:F2}}" Foreground="Yellow" FontSize="32" FontWeight="Bold"/>
+                        <TextBlock Text="m" Foreground="#888" FontSize="14" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Heading -->
+                <Border Grid.Column="3" Classes="StatusPanel" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <TextBlock Text="{Binding Heading, StringFormat={}{0:F0}}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="°" Foreground="#888" FontSize="16"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Steer Indicator -->
+                <Border Grid.Column="4" Classes="StatusPanel">
+                    <TextBlock Text="⟳" Foreground="#3498DB" FontSize="24" FontWeight="Bold"/>
+                </Border>
+            </Grid>
+
+            <!-- RIGHT SIDE: Zoom Controls -->
+            <StackPanel Orientation="Vertical" Spacing="8"
+                        Margin="0,0,16,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
                 <Button Classes="SmallActionButton" Command="{Binding ZoomInCommand}">
                     <TextBlock Text="+" FontSize="24" Foreground="White" HorizontalAlignment="Center"/>
                 </Button>
@@ -198,225 +194,172 @@
                 </Button>
             </StackPanel>
 
-            <!-- Simulator Controls (floating, when visible) -->
-            <Border Classes="StatusPanel" Margin="80,0,0,60" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+            <!-- BOTTOM-LEFT: Simulator Controls (when visible) - Single row -->
+            <Border Classes="StatusPanel"
+                    Margin="16,0,0,16"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
                     IsVisible="{Binding IsSimulatorPanelVisible}">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <!-- Sim ON/OFF -->
+                    <ToggleButton IsChecked="{Binding IsSimulatorEnabled}" Width="40" Height="32" CornerRadius="6" Padding="0">
+                        <ToggleButton.Styles>
+                            <Style Selector="ToggleButton">
+                                <Setter Property="Background" Value="#555"/>
+                            </Style>
+                            <Style Selector="ToggleButton:checked">
+                                <Setter Property="Background" Value="#1ABC9C"/>
+                            </Style>
+                        </ToggleButton.Styles>
+                        <TextBlock Text="Sim" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                    </ToggleButton>
+                    <!-- Coords -->
+                    <Button Classes="CompactButton" Height="32" Command="{Binding ShowSimCoordsPanelCommand}">
+                        <TextBlock Text="Coords" Foreground="White" FontSize="10"/>
+                    </Button>
+                    <!-- Reset -->
+                    <Button Classes="CompactButton" Height="32" Command="{Binding ResetSimulatorCommand}">
+                        <TextBlock Text="Reset" Foreground="White" FontSize="10"/>
+                    </Button>
+                    <!-- Turn Left -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Command="{Binding SimulatorSteerLeftCommand}">
+                        <TextBlock Text="◀" FontSize="14" Foreground="White"/>
+                    </Button>
+                    <!-- Zero Turn -->
+                    <Button Classes="CompactButton" Height="32" Command="{Binding ResetSteerAngleCommand}">
+                        <TextBlock Text="Zero" Foreground="White" FontSize="10"/>
+                    </Button>
+                    <!-- Turn Right -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Command="{Binding SimulatorSteerRightCommand}">
+                        <TextBlock Text="▶" FontSize="14" Foreground="White"/>
+                    </Button>
+                    <!-- Accel -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Command="{Binding SimulatorForwardCommand}">
+                        <TextBlock Text="▲" FontSize="14" Foreground="White"/>
+                    </Button>
+                    <!-- Stop -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Command="{Binding SimulatorStopCommand}">
+                        <TextBlock Text="■" FontSize="10" Foreground="White"/>
+                    </Button>
+                    <!-- Decel -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Command="{Binding SimulatorReverseCommand}">
+                        <TextBlock Text="▼" FontSize="14" Foreground="White"/>
+                    </Button>
+                    <!-- Close -->
+                    <Button Classes="SmallActionButton" Width="32" Height="32" Background="#8B0000" Command="{Binding ToggleSimulatorPanelCommand}">
+                        <TextBlock Text="✕" FontSize="10" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- BOTTOM-CENTER: Position Info -->
+            <Border Classes="StatusPanel"
+                    Margin="0,0,0,16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    IsVisible="{Binding !IsSimCoordsPanelVisible}">
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="E" Foreground="#3498DB" FontSize="14" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Easting, StringFormat={}{0:F1}}" Foreground="White" FontSize="16"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="N" Foreground="#E74C3C" FontSize="14" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Northing, StringFormat={}{0:F1}}" Foreground="White" FontSize="16"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- SIM COORDS PANEL - Inline coordinate entry with tappable fields -->
+            <Border Classes="StatusPanel"
+                    Margin="0,0,0,16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    IsVisible="{Binding IsSimCoordsPanelVisible}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Classes="SmallActionButton" Command="{Binding SimulatorSteerLeftCommand}">
-                        <TextBlock Text="◀" FontSize="18" Foreground="White"/>
+                    <TextBlock Text="Lat:" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+                    <Button x:Name="LatitudeButton" Classes="CompactButton" Width="110" Height="32" Padding="6,4" Click="OnLatitudeClick">
+                        <TextBlock Text="{Binding SimCoordsLatitudeText}" Foreground="White" FontSize="12"/>
                     </Button>
-                    <Button Classes="SmallActionButton" Command="{Binding SimulatorForwardCommand}">
-                        <TextBlock Text="▲" FontSize="18" Foreground="White"/>
+                    <TextBlock Text="Lon:" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+                    <Button x:Name="LongitudeButton" Classes="CompactButton" Width="110" Height="32" Padding="6,4" Click="OnLongitudeClick">
+                        <TextBlock Text="{Binding SimCoordsLongitudeText}" Foreground="White" FontSize="12"/>
                     </Button>
-                    <Button Classes="SmallActionButton" Command="{Binding SimulatorStopCommand}">
-                        <TextBlock Text="■" FontSize="14" Foreground="White"/>
+                    <Button Classes="CompactButton" Height="32" Command="{Binding ApplySimCoordsCommand}">
+                        <TextBlock Text="Set" Foreground="White" FontSize="11"/>
                     </Button>
-                    <Button Classes="SmallActionButton" Command="{Binding SimulatorSteerRightCommand}">
-                        <TextBlock Text="▶" FontSize="18" Foreground="White"/>
-                    </Button>
-                </StackPanel>
-            </Border>
-
-            <!-- SLIDE-IN PANELS (overlay on map) -->
-
-            <!-- File Menu Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsFileMenuVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/fileMenu.png" Width="24" Height="24"/>
-                            <TextBlock Text="File Menu" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleFileMenuCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
-                        </Button>
-                    </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <Button Classes="PanelButton" Command="{Binding ShowNewFieldDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="32" Height="32"/>
-                            <TextBlock Text="New Field" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding ShowFieldSelectionDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="32" Height="32"/>
-                            <TextBlock Text="Open Field" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding CloseFieldCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="32" Height="32"/>
-                            <TextBlock Text="Close Field" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding ResumeFieldCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileResume.png" Width="32" Height="32"/>
-                            <TextBlock Text="Resume Field" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
+                    <Button Classes="CompactButton" Height="32" Background="#8B0000" Command="{Binding CancelSimCoordsCommand}">
+                        <TextBlock Text="X" Foreground="White" FontSize="11"/>
                     </Button>
                 </StackPanel>
             </Border>
 
-            <!-- Field Tools Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsFieldToolsPanelVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
+            <!-- NUMERIC KEYPAD OVERLAY -->
+            <Border x:Name="KeypadOverlay"
+                    IsVisible="False"
+                    Background="#AA000000"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                <controls:NumericKeypad x:Name="NumericKeypad"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Width="240"/>
+            </Border>
+
+            <!-- FILE MENU SHEET (Button 1) - Single row compact layout -->
+            <Border Classes="ModalSheet" VerticalAlignment="Bottom" Padding="12,8" IsVisible="{Binding IsFileMenuVisible}">
+                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <TextBlock Text="File" Foreground="#888" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="New Profile" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="Load Profile" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="Language" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2" Command="{Binding ShowSimulatorPanelCommand}"><TextBlock Text="Simulator" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="Kiosk" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="Reset ALL" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="About" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2" Command="{Binding ShowAgShareSettingsDialogCommand}"><TextBlock Text="AgShare" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2"><TextBlock Text="Help" Foreground="White" FontSize="12"/></Button>
+                    <Button Classes="CompactButton" Margin="2,2,0,2" Background="#8B0000" Command="{Binding ToggleFileMenuCommand}"><TextBlock Text="✕" Foreground="White" FontSize="12"/></Button>
+                </WrapPanel>
+            </Border>
+
+            <!-- FIELD TOOLS SHEET - with commands -->
+            <Border Classes="ModalSheet" VerticalAlignment="Bottom" IsVisible="{Binding IsFieldToolsVisible}">
+                <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FieldTools.png" Width="24" Height="24"/>
-                            <TextBlock Text="Field Tools" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🔧" FontSize="20"/>
+                            <TextBlock Text="Field Tools" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleFieldToolsPanelCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
+                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleFieldToolsCommand}">
+                            <TextBlock Text="✕" FontSize="18" Foreground="White"/>
                         </Button>
                     </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <Button Classes="PanelButton" Command="{Binding StartBoundaryRecordingCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecord.png" Width="32" Height="32"/>
-                            <TextBlock Text="Record Boundary" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding DrawMapBoundaryCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryDraw.png" Width="32" Height="32"/>
-                            <TextBlock Text="Draw on Map" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding ShowKmlImportDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryLoadKML.png" Width="32" Height="32"/>
-                            <TextBlock Text="Import KML" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
+                    <Separator Background="#444" Height="1"/>
+                    <Button Classes="SheetButton" Command="{Binding StartBoundaryRecordingCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="⏺" FontSize="24"/><TextBlock Text="Record Boundary" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
+                    <Button Classes="SheetButton" Command="{Binding DrawMapBoundaryCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="✏️" FontSize="24"/><TextBlock Text="Draw on Map" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
+                    <Button Classes="SheetButton" Command="{Binding ShowKmlImportDialogCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="🌍" FontSize="24"/><TextBlock Text="Import KML" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
                 </StackPanel>
             </Border>
 
-            <!-- View Settings Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsViewSettingsPanelVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
+            <!-- SETTINGS SHEET - with commands -->
+            <Border Classes="ModalSheet" VerticalAlignment="Bottom" IsVisible="{Binding IsSettingsVisible}">
+                <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/NavigationSettings.png" Width="24" Height="24"/>
-                            <TextBlock Text="View Settings" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚙️" FontSize="20"/>
+                            <TextBlock Text="Settings" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleViewSettingsPanelCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
+                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleSettingsCommand}">
+                            <TextBlock Text="✕" FontSize="18" Foreground="White"/>
                         </Button>
                     </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <Button Classes="PanelButton" Command="{Binding ToggleGridCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/grid.png" Width="32" Height="32"/>
-                            <TextBlock Text="Toggle Grid" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="PanelButton" Command="{Binding ToggleSimulatorPanelCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Simulator.png" Width="32" Height="32"/>
-                            <TextBlock Text="Simulator" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Border>
-
-            <!-- Configuration Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsConfigurationPanelVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Width="24" Height="24"/>
-                            <TextBlock Text="Configuration" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleConfigurationPanelCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
-                        </Button>
-                    </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <Button Classes="PanelButton" Command="{Binding ShowDataIODialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgIO.png" Width="32" Height="32"/>
-                            <TextBlock Text="Data I/O" VerticalAlignment="Center" FontSize="16"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Border>
-
-            <!-- Tools Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsToolsPanelVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SpecialFunctions.png" Width="24" Height="24"/>
-                            <TextBlock Text="Tools" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleToolsPanelCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
-                        </Button>
-                    </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <TextBlock Text="Tools coming soon..." Foreground="#888" FontSize="14" Margin="8"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Job Menu Panel -->
-            <Border Classes="SlidePanel" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                    IsVisible="{Binding IsJobMenuPanelVisible}" Margin="64,0,0,0">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Width="24" Height="24"/>
-                            <TextBlock Text="Job Menu" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="SmallActionButton" Command="{Binding ToggleJobMenuPanelCommand}" Width="32" Height="32">
-                            <TextBlock Text="✕" FontSize="16" Foreground="White"/>
-                        </Button>
-                    </Grid>
-                    <Separator Background="#444" Height="1" Margin="0,4"/>
-                    <TextBlock Text="Job menu coming soon..." Foreground="#888" FontSize="14" Margin="8"/>
+                    <Separator Background="#444" Height="1"/>
+                    <Button Classes="SheetButton" Command="{Binding ShowDataIODialogCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="📡" FontSize="24"/><TextBlock Text="Data I/O" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
+                    <Button Classes="SheetButton" Command="{Binding ToggleSimulatorPanelCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="🚜" FontSize="24"/><TextBlock Text="Simulator" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
+                    <Button Classes="SheetButton" Command="{Binding ToggleGridCommand}"><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="📊" FontSize="24"/><TextBlock Text="Toggle Grid" VerticalAlignment="Center" FontSize="16"/></StackPanel></Button>
                 </StackPanel>
             </Border>
         </Grid>
-
-        <!-- BOTTOM SECTION CONTROL BAR -->
-        <Border Grid.Row="2" Grid.Column="1" Background="#DD1E2A38" Padding="8,6">
-            <Grid ColumnDefinitions="*,Auto">
-                <!-- Section Buttons -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                    <Button Classes="SectionButton" Background="{Binding Section1Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="1" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section2Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="2" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section3Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="3" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section4Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="4" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section5Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="5" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section6Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="6" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                    <Button Classes="SectionButton" Background="{Binding Section7Active, Converter={StaticResource BoolToSectionColorConverter}}">
-                        <TextBlock Text="7" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                    </Button>
-                </StackPanel>
-
-                <!-- Section Status -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" Margin="12,0">
-                    <TextBlock Text="{Binding ActiveSections, StringFormat={}{0}/7}" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Grid>
-        </Border>
     </Grid>
 </UserControl>
