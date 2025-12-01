@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using AgValoniaGPS.iOS.Views;
 using AgValoniaGPS.iOS.DependencyInjection;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AgValoniaGPS.iOS;
@@ -55,11 +56,15 @@ public partial class App : Avalonia.Application
 
             if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
             {
-                System.Diagnostics.Debug.WriteLine("[App] Creating MainView...");
+                System.Diagnostics.Debug.WriteLine("[App] Creating MainView with ViewModel...");
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
                 DisableAvaloniaDataAnnotationValidation();
 
-                singleViewPlatform.MainView = new MainView();
+                // Get MainViewModel from DI and create view with it
+                var viewModel = Services.GetRequiredService<MainViewModel>();
+                System.Diagnostics.Debug.WriteLine("[App] MainViewModel created from DI.");
+
+                singleViewPlatform.MainView = new MainView(viewModel);
                 System.Diagnostics.Debug.WriteLine("[App] MainView created and assigned.");
             }
 

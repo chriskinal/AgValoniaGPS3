@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-ios</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
@@ -10,6 +10,12 @@
   <!-- Avalonia is needed for avares:// resource compilation -->
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.9" />
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="..\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
+    <ProjectReference Include="..\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
   </ItemGroup>
 
   <!-- Shared Assets: Icons and Images accessible by both Desktop and iOS -->

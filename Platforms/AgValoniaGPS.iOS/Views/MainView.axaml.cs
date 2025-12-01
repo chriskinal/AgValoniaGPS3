@@ -1,51 +1,61 @@
 using System;
+using System.ComponentModel;
 using Avalonia.Controls;
-using Microsoft.Extensions.DependencyInjection;
 using AgValoniaGPS.ViewModels;
-using AgValoniaGPS.iOS.Controls;
+using AgValoniaGPS.Views.Controls;
 
 namespace AgValoniaGPS.iOS.Views;
 
 /// <summary>
-/// iOS MainView - Mobile-optimized full-screen GPS display with SkiaSharp map
-/// Uses bottom tab bar navigation with modal sheets for sub-panels
+/// iOS MainView with ViewModel - wires up map control to ViewModel commands
 /// </summary>
 public partial class MainView : UserControl
 {
-    private SkiaMapControl? _mapControl;
+    private DrawingContextMapControl? _mapControl;
+    private MainViewModel? _viewModel;
 
     public MainView()
     {
-        try
+        Console.WriteLine("[MainView] Constructor starting...");
+        InitializeComponent();
+        Console.WriteLine("[MainView] InitializeComponent completed.");
+
+        // Get reference to map control
+        _mapControl = this.FindControl<DrawingContextMapControl>("MapControl");
+    }
+
+    public MainView(MainViewModel viewModel) : this()
+    {
+        Console.WriteLine("[MainView] Setting DataContext to MainViewModel...");
+        DataContext = viewModel;
+        _viewModel = viewModel;
+
+        // Wire up zoom commands to map control
+        if (_mapControl != null)
         {
-            Console.WriteLine("[MainView] Constructor starting...");
-            InitializeComponent();
-            Console.WriteLine("[MainView] InitializeComponent completed.");
-
-            // Set DataContext from DI
-            if (App.Services != null)
-            {
-                Console.WriteLine("[MainView] Getting MainViewModel from DI...");
-                DataContext = App.Services.GetRequiredService<MainViewModel>();
-                Console.WriteLine("[MainView] DataContext set successfully.");
-
-                // Get map control reference
-                _mapControl = this.FindControl<SkiaMapControl>("MapControl");
-                if (_mapControl != null)
-                {
-                    Console.WriteLine("[MainView] Map control found.");
-                }
-            }
-            else
-            {
-                Console.WriteLine("[MainView] WARNING: App.Services is null!");
-            }
-
-            Console.WriteLine("[MainView] Constructor completed.");
+            viewModel.ZoomInRequested += () => _mapControl.Zoom(1.2);
+            viewModel.ZoomOutRequested += () => _mapControl.Zoom(0.8);
         }
-        catch (Exception ex)
+
+        // Wire up position updates - when ViewModel properties change, update map control
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        Console.WriteLine("[MainView] DataContext set.");
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Update vehicle position when Easting, Northing, or Heading changes
+        if (_mapControl != null && _viewModel != null)
         {
-            Console.WriteLine($"[MainView] Constructor FAILED: {ex}");
+            if (e.PropertyName == nameof(MainViewModel.Easting) ||
+                e.PropertyName == nameof(MainViewModel.Northing) ||
+                e.PropertyName == nameof(MainViewModel.Heading))
+            {
+                // Convert heading from degrees to radians (ViewModel stores degrees, map expects radians)
+                double headingRadians = _viewModel.Heading * Math.PI / 180.0;
+                _mapControl.SetVehiclePosition(_viewModel.Easting, _viewModel.Northing, headingRadians);
+            }
         }
     }
 }

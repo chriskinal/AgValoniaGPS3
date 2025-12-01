@@ -204,15 +204,25 @@ namespace AgValoniaGPS.Services
 
         /// <summary>
         /// Update step distance based on acceleration state
+        /// Speed range: -10 to +25 kph
+        /// stepDistance = speedKph / 40, so:
+        ///   +25 kph = 0.625 stepDistance
+        ///   -10 kph = -0.25 stepDistance
         /// </summary>
         private void UpdateAcceleration()
         {
+            const double MaxForwardStep = 0.625;   // 25 kph
+            const double MaxReverseStep = -0.25;   // -10 kph
+            const double AccelStep = 0.03;         // Faster acceleration
+            const double DecelStep = 0.02;         // Slightly slower deceleration
+
             if (_isAcceleratingForward)
             {
                 _isAcceleratingBackward = false;
-                _stepDistance += 0.02;
-                if (_stepDistance > 0.12)
+                _stepDistance += AccelStep;
+                if (_stepDistance > MaxForwardStep)
                 {
+                    _stepDistance = MaxForwardStep;
                     _isAcceleratingForward = false;
                 }
             }
@@ -220,9 +230,10 @@ namespace AgValoniaGPS.Services
             if (_isAcceleratingBackward)
             {
                 _isAcceleratingForward = false;
-                _stepDistance -= 0.01;
-                if (_stepDistance < -0.06)
+                _stepDistance -= DecelStep;
+                if (_stepDistance < MaxReverseStep)
                 {
+                    _stepDistance = MaxReverseStep;
                     _isAcceleratingBackward = false;
                 }
             }

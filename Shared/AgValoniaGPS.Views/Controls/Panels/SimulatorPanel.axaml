@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              mc:Ignorable="d"
-             x:Class="AgValoniaGPS.Desktop.Controls.Panels.SimulatorPanel"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.SimulatorPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding IsSimulatorPanelVisible}"
              IsHitTestVisible="{Binding IsSimulatorPanelVisible}">
@@ -67,7 +67,7 @@
                     <Button Grid.Column="1" Classes="ModernButton" Margin="4,0,0,0" ClickMode="Press"
                             Command="{Binding ResetSteerAngleCommand}"
                             ToolTip.Tip="Reset steering to 0 (straight ahead)">
-                        <TextBlock Text=">0&lt;" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="&gt;0&lt;" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
                     </Button>
                 </Grid>
 

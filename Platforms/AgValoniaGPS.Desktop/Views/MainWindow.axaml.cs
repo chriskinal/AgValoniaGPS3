@@ -17,13 +17,14 @@ using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Desktop.Controls;
 using AgValoniaGPS.Desktop.Controls.Panels;
+using AgValoniaGPS.Views.Controls;
 
 namespace AgValoniaGPS.Desktop.Views;
 
 public partial class MainWindow : Window
 {
     private MainViewModel? ViewModel => DataContext as MainViewModel;
-    private IMapControl? MapControl;
+    private ISharedMapControl? MapControl;
     private bool _isDraggingSection = false;
     private Avalonia.Point _dragStartPoint;
     private const double TapDistanceThreshold = 5.0;
@@ -81,23 +82,42 @@ public partial class MainWindow : Window
 
     private void CreateMapControl()
     {
+        // EXPERIMENT: Use DrawingContext-based rendering instead of OpenGL/SkiaSharp
+        // Set to true to test the shared DrawingContextMapControl
+        bool useDrawingContextRenderer = true;
+
         // Check if running on iOS/mobile platform - use SkiaMapControl
         // On desktop platforms, use OpenGLMapControl for better 3D support
         bool useSoftwareRenderer = OperatingSystem.IsIOS() || OperatingSystem.IsAndroid();
 
         Control mapControl;
-        if (useSoftwareRenderer)
+        ISharedMapControl sharedMapControl;
+
+        if (useDrawingContextRenderer)
+        {
+            // Use the shared DrawingContextMapControl (cross-platform)
+            var dcControl = new DrawingContextMapControl();
+            sharedMapControl = dcControl;
+            mapControl = dcControl;
+            Console.WriteLine("Using DrawingContextMapControl (cross-platform)");
+        }
+        else if (useSoftwareRenderer)
         {
             var skiaControl = new SkiaMapControl();
-            MapControl = skiaControl;
+            sharedMapControl = skiaControl;
             mapControl = skiaControl;
+            Console.WriteLine("Using SkiaMapControl");
         }
         else
         {
             var glControl = new OpenGLMapControl();
-            MapControl = glControl;
+            sharedMapControl = glControl;
             mapControl = glControl;
+            Console.WriteLine("Using OpenGLMapControl");
         }
+
+        // Use the shared interface directly
+        MapControl = sharedMapControl;
 
         // Set the map control as the content of the container
         MapControlContainer.Content = mapControl;

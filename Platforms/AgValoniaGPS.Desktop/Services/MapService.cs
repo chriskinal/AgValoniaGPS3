@@ -2,26 +2,27 @@ using System.Collections.Generic;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Desktop.Controls;
+using AgValoniaGPS.Views.Controls;
 
 namespace AgValoniaGPS.Desktop.Services;
 
 /// <summary>
 /// Desktop implementation of IMapService.
-/// Wraps the platform-specific IMapControl (OpenGL or Skia).
+/// Wraps the platform-specific map control (OpenGL, Skia, or DrawingContext).
 /// </summary>
 public class MapService : IMapService
 {
-    private IMapControl? _mapControl;
+    private ISharedMapControl? _mapControl;
 
     /// <summary>
     /// Set the underlying map control. Must be called after the control is created.
     /// </summary>
-    public void SetMapControl(IMapControl mapControl)
+    public void SetMapControl(ISharedMapControl mapControl)
     {
         _mapControl = mapControl;
     }
 
-    private IMapControl GetMapControl()
+    private ISharedMapControl GetMapControl()
     {
         if (_mapControl == null)
             throw new System.InvalidOperationException("Map control not set. Call SetMapControl first.");

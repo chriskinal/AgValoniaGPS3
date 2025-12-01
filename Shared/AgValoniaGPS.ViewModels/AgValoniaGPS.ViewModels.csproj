@@ -1,10 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-ios</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
+  </PropertyGroup>
+
+  <!-- Define IOS symbol for iOS builds -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('ios'))">
+    <DefineConstants>$(DefineConstants);IOS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

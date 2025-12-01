@@ -1063,6 +1063,33 @@ public class MainViewModel : ReactiveObject
 
     public string SimulatorSteerAngleDisplay => $"Steer Angle: {_simulatorSteerAngle:F1}°";
 
+    private double _simulatorSpeedKph;
+    /// <summary>
+    /// Simulator speed in kph. Range: -10 to +25 kph.
+    /// Converts to/from stepDistance using formula: speedKph = stepDistance * 40
+    /// </summary>
+    public double SimulatorSpeedKph
+    {
+        get => _simulatorSpeedKph;
+        set
+        {
+            // Clamp to valid range
+            value = Math.Max(-10, Math.Min(25, value));
+            this.RaiseAndSetIfChanged(ref _simulatorSpeedKph, value);
+            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+            if (_isSimulatorEnabled)
+            {
+                // Convert kph to stepDistance: stepDistance = speedKph / 40
+                _simulatorService.StepDistance = value / 40.0;
+                // Disable acceleration when manually setting speed
+                _simulatorService.IsAcceleratingForward = false;
+                _simulatorService.IsAcceleratingBackward = false;
+            }
+        }
+    }
+
+    public string SimulatorSpeedDisplay => $"Speed: {_simulatorSpeedKph:F1} kph";
+
     /// <summary>
     /// Set new starting coordinates for the simulator
     /// </summary>
@@ -1222,6 +1249,10 @@ public class MainViewModel : ReactiveObject
     public ICommand? ZoomInCommand { get; private set; }
     public ICommand? ZoomOutCommand { get; private set; }
 
+    // Events for views to wire up to map controls
+    public event Action? ZoomInRequested;
+    public event Action? ZoomOutRequested;
+
     // Boundary Recording Commands
     public ICommand? ToggleBoundaryPanelCommand { get; private set; }
     public ICommand? StartBoundaryRecordingCommand { get; private set; }
@@ -1362,6 +1393,9 @@ public class MainViewModel : ReactiveObject
             _simulatorService.IsAcceleratingForward = false;
             _simulatorService.IsAcceleratingBackward = false;
             _simulatorService.StepDistance = 0;  // Immediately stop movement
+            _simulatorSpeedKph = 0;  // Reset speed slider (use backing field to avoid triggering setter again)
+            this.RaisePropertyChanged(nameof(SimulatorSpeedKph));
+            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
             StatusMessage = "Sim: Stopped";
         });
 
@@ -1619,11 +1653,13 @@ public class MainViewModel : ReactiveObject
         ZoomInCommand = new RelayCommand(() =>
         {
             _mapService.Zoom(1.2);
+            ZoomInRequested?.Invoke();
         });
 
         ZoomOutCommand = new RelayCommand(() =>
         {
             _mapService.Zoom(0.8);
+            ZoomOutRequested?.Invoke();
         });
 
         // Boundary Recording Commands
