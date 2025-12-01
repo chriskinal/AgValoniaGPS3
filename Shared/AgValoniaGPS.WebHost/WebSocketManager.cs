@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.WebHost;
@@ -21,8 +23,11 @@ public class WebSocketManager
         WebSocket webSocket,
         IGpsSimulationService simulatorService,
         ISettingsService settingsService,
+        IFieldService fieldService,
+        string fieldsRootDirectory,
         Func<bool> getSimulatorRunning,
-        Action<bool> setSimulatorRunning)
+        Action<bool> setSimulatorRunning,
+        Action resetLocalPlane)
     {
         var connectionId = Guid.NewGuid().ToString();
         _connections.TryAdd(connectionId, webSocket);
@@ -32,6 +37,7 @@ public class WebSocketManager
         try
         {
             // Send initial state
+            var activeField = fieldService.ActiveField;
             await SendAsync(webSocket, new
             {
                 type = "connected",
@@ -41,7 +47,12 @@ public class WebSocketManager
                     running = getSimulatorRunning(),
                     speed = simulatorService.StepDistance * 10,
                     steerAngle = simulatorService.SteerAngle
-                }
+                },
+                field = activeField != null ? new
+                {
+                    name = activeField.Name,
+                    isOpen = true
+                } : null
             });
 
             // Handle incoming messages
@@ -61,7 +72,7 @@ public class WebSocketManager
                 {
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     await HandleMessageAsync(webSocket, message, simulatorService, settingsService,
-                        getSimulatorRunning, setSimulatorRunning);
+                        fieldService, fieldsRootDirectory, getSimulatorRunning, setSimulatorRunning, resetLocalPlane);
                 }
             }
         }
@@ -93,8 +104,11 @@ public class WebSocketManager
         string message,
         IGpsSimulationService simulatorService,
         ISettingsService settingsService,
+        IFieldService fieldService,
+        string fieldsRootDirectory,
         Func<bool> getSimulatorRunning,
-        Action<bool> setSimulatorRunning)
+        Action<bool> setSimulatorRunning,
+        Action resetLocalPlane)
     {
         try
         {
@@ -110,11 +124,15 @@ public class WebSocketManager
             {
                 case "simulator":
                     await HandleSimulatorMessage(webSocket, root, simulatorService,
-                        getSimulatorRunning, setSimulatorRunning);
+                        getSimulatorRunning, setSimulatorRunning, resetLocalPlane);
                     break;
 
                 case "settings":
                     await HandleSettingsMessage(webSocket, root, settingsService);
+                    break;
+
+                case "field":
+                    await HandleFieldMessage(webSocket, root, fieldService, fieldsRootDirectory);
                     break;
 
                 case "ping":
@@ -133,7 +151,8 @@ public class WebSocketManager
         JsonElement root,
         IGpsSimulationService simulatorService,
         Func<bool> getSimulatorRunning,
-        Action<bool> setSimulatorRunning)
+        Action<bool> setSimulatorRunning,
+        Action resetLocalPlane)
     {
         if (!root.TryGetProperty("action", out var actionElement))
             return;
@@ -180,6 +199,7 @@ public class WebSocketManager
                     var lat = latElement.GetDouble();
                     var lon = lonElement.GetDouble();
                     simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(lat, lon));
+                    resetLocalPlane(); // Reset so coordinates are recalculated relative to new position
                     await SendAsync(webSocket, new
                     {
                         type = "simulator",
@@ -226,6 +246,153 @@ public class WebSocketManager
             case "save":
                 settingsService.Save();
                 await SendAsync(webSocket, new { type = "settings", status = "saved" });
+                break;
+        }
+    }
+
+    private async Task HandleFieldMessage(
+        WebSocket webSocket,
+        JsonElement root,
+        IFieldService fieldService,
+        string fieldsRootDirectory)
+    {
+        if (!root.TryGetProperty("action", out var actionElement))
+            return;
+
+        var action = actionElement.GetString();
+
+        switch (action)
+        {
+            case "list":
+                var fields = fieldService.GetAvailableFields(fieldsRootDirectory);
+                await SendAsync(webSocket, new
+                {
+                    type = "field",
+                    action = "list",
+                    fields = fields
+                });
+                break;
+
+            case "open":
+                if (root.TryGetProperty("name", out var nameElement))
+                {
+                    var fieldName = nameElement.GetString();
+                    var fieldPath = Path.Combine(fieldsRootDirectory, fieldName!);
+                    try
+                    {
+                        var field = fieldService.LoadField(fieldPath);
+                        fieldService.SetActiveField(field);
+
+                        // Build boundary data for WebUI
+                        object? boundaryData = null;
+                        if (field.Boundary?.OuterBoundary?.Points != null && field.Boundary.OuterBoundary.Points.Count > 0)
+                        {
+                            boundaryData = new
+                            {
+                                outer = field.Boundary.OuterBoundary.Points.Select(p => new { e = p.Easting, n = p.Northing }).ToArray(),
+                                inner = field.Boundary.InnerBoundaries.Select(ib =>
+                                    ib.Points.Select(p => new { e = p.Easting, n = p.Northing }).ToArray()
+                                ).ToArray()
+                            };
+                        }
+
+                        // Include origin so client can move simulator to field
+                        var origin = field.Origin;
+
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "opened",
+                            name = field.Name,
+                            success = true,
+                            boundary = boundaryData,
+                            origin = new { latitude = origin.Latitude, longitude = origin.Longitude }
+                        });
+                        // Broadcast to all clients
+                        await BroadcastAsync(new
+                        {
+                            type = "field",
+                            action = "changed",
+                            name = field.Name,
+                            isOpen = true,
+                            boundary = boundaryData,
+                            origin = new { latitude = origin.Latitude, longitude = origin.Longitude }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "error",
+                            message = ex.Message
+                        });
+                    }
+                }
+                break;
+
+            case "close":
+                fieldService.SetActiveField(null);
+                await SendAsync(webSocket, new
+                {
+                    type = "field",
+                    action = "closed",
+                    success = true
+                });
+                await BroadcastAsync(new
+                {
+                    type = "field",
+                    action = "changed",
+                    name = (string?)null,
+                    isOpen = false
+                });
+                break;
+
+            case "create":
+                if (root.TryGetProperty("name", out var newNameElement))
+                {
+                    var fieldName = newNameElement.GetString();
+                    try
+                    {
+                        var originPosition = new AgValoniaGPS.Models.Position { Latitude = 40.7128, Longitude = -74.0060 };
+                        var field = fieldService.CreateField(fieldsRootDirectory, fieldName!, originPosition);
+                        fieldService.SetActiveField(field);
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "created",
+                            name = field.Name,
+                            success = true
+                        });
+                        await BroadcastAsync(new
+                        {
+                            type = "field",
+                            action = "changed",
+                            name = field.Name,
+                            isOpen = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "error",
+                            message = ex.Message
+                        });
+                    }
+                }
+                break;
+
+            case "getActive":
+                var activeField = fieldService.ActiveField;
+                await SendAsync(webSocket, new
+                {
+                    type = "field",
+                    action = "active",
+                    name = activeField?.Name,
+                    isOpen = activeField != null
+                });
                 break;
         }
     }

@@ -395,6 +395,94 @@
             transform: translateX(-50%);
             transition: left 0.1s ease-out;
         }
+
+        /* Current Field Display */
+        .current-field {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: rgba(39, 174, 96, 0.3);
+            border-radius: 6px;
+            border-left: 4px solid #27AE60;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .current-field.no-field {
+            background: rgba(127, 140, 141, 0.3);
+            border-left-color: #7F8C8D;
+            color: #95A5A6;
+        }
+
+        /* Field List Modal */
+        .field-list-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 42, 56, 0.98);
+            border-radius: 12px;
+            padding: 0;
+            min-width: 300px;
+            max-width: 400px;
+            max-height: 70vh;
+            z-index: 500;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            display: none;
+        }
+
+        .field-list-modal.visible {
+            display: block;
+        }
+
+        .field-list-modal .panel-content {
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .field-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-list-item {
+            padding: 12px 16px;
+            background: rgba(44, 62, 80, 0.8);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .field-list-item:hover {
+            background: rgba(52, 73, 94, 0.95);
+        }
+
+        .field-list-item:active {
+            background: #1ABC9C;
+        }
+
+        .field-list-empty {
+            padding: 20px;
+            text-align: center;
+            color: #7F8C8D;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 400;
+            display: none;
+        }
+
+        .modal-backdrop.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -477,8 +565,11 @@
                             <label>Steering</label>
                             <div class="sim-row">
                                 <button class="sim-btn sim-arrow" id="steer-left">&#9664;</button>
-                                <button class="sim-btn" id="steer-zero">0</button>
+                                <span class="sim-value" id="sim-steer-display">0°</span>
                                 <button class="sim-btn sim-arrow" id="steer-right">&#9654;</button>
+                            </div>
+                            <div class="sim-row" style="justify-content: center;">
+                                <button class="sim-btn" id="steer-zero">Center</button>
                             </div>
                             <div class="sim-steer-indicator">
                                 <div class="sim-steer-bar" id="steer-bar"></div>
@@ -573,21 +664,25 @@
             </div>
 
             <!-- Job Menu Panel -->
-            <div id="panel-job" class="floating-panel" style="top: 300px;">
+            <div id="panel-job" class="floating-panel" style="top: 300px; min-width: 320px;">
                 <div class="panel-header">
-                    <span class="panel-title">Job Menu</span>
+                    <span class="panel-title">Start New Field</span>
                     <button class="panel-close" data-panel="job">&times;</button>
                 </div>
                 <div class="panel-content">
                     <div class="panel-grid">
-                        <button class="panel-btn"><img src="icons/ISOXML.png">ISO-XML</button>
-                        <button class="panel-btn"><img src="icons/FileClose.png">Close Field</button>
-                        <button class="panel-btn"><img src="icons/GoogleEarth.png">From KML</button>
-                        <button class="panel-btn"><img src="icons/SteerDriveOn.png">Drive In</button>
-                        <button class="panel-btn"><img src="icons/FileExisting.png">From Existing</button>
-                        <button class="panel-btn"><img src="icons/FileOpen.png">Open Field</button>
-                        <button class="panel-btn"><img src="icons/FileNew.png">New Default</button>
-                        <button class="panel-btn"><img src="icons/FilePrevious.png">Resume</button>
+                        <button class="panel-btn" id="job-isoxml"><img src="icons/ISOXML.png">ISO-XML</button>
+                        <button class="panel-btn" id="job-close"><img src="icons/FileClose.png">Close</button>
+                        <button class="panel-btn" id="job-kml"><img src="icons/GoogleEarth.png">From KML</button>
+                        <button class="panel-btn" id="job-drivein"><img src="icons/SteerDriveOn.png">Drive In</button>
+                        <button class="panel-btn" id="job-existing"><img src="icons/FileExisting.png">From Existing</button>
+                        <button class="panel-btn" id="job-open"><img src="icons/FileOpen.png">Open</button>
+                        <button class="panel-btn" id="job-new"><img src="icons/FileNew.png">New Default</button>
+                        <button class="panel-btn" id="job-resume"><img src="icons/FilePrevious.png">Resume</button>
+                    </div>
+                    <!-- Current Field Display -->
+                    <div id="current-field-display" class="current-field" style="display: none;">
+                        <span id="current-field-name">No field open</span>
                     </div>
                 </div>
             </div>
@@ -638,6 +733,20 @@
                         <button class="panel-btn full-width"><img src="icons/AgIO.png">AgIO Connection</button>
                         <button class="panel-btn"><img src="icons/FileOpen.png">Import</button>
                         <button class="panel-btn"><img src="icons/AgShare.png">Export</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Field List Modal (for Open Field) -->
+            <div id="modal-backdrop" class="modal-backdrop"></div>
+            <div id="field-list-modal" class="field-list-modal">
+                <div class="panel-header">
+                    <span class="panel-title">Open Field</span>
+                    <button class="panel-close" id="field-list-close">&times;</button>
+                </div>
+                <div class="panel-content">
+                    <div id="field-list" class="field-list">
+                        <!-- Field items will be populated dynamically -->
                     </div>
                 </div>
             </div>
@@ -784,16 +893,20 @@
         const edgeBuffer = gl.createBuffer();
 
         // ===== Grid Texture Cache =====
-        // Render grid to texture once, then scroll with linear filtering
-        const GRID_TEX_SIZE = 1024; // Texture size in pixels
-        const GRID_WORLD_SIZE = 400; // World units covered by texture (must be multiple of grid spacing)
+        // Two modes:
+        // 1. No boundary: repeating grid texture (REPEAT wrap)
+        // 2. With boundary: field-sized texture with grid + boundary (CLAMP_TO_EDGE)
+        const GRID_TEX_SIZE = 2048; // Texture size in pixels
+        const GRID_WORLD_SIZE = 400; // World units for repeating grid (no boundary)
 
-        // Create framebuffer for grid texture
+        // Field texture extents (set when boundary is loaded)
+        let fieldExtents = null; // { minX, maxX, minY, maxY, width, height, centerX, centerY }
+
+        // Create framebuffer for grid/field texture
         const gridTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, gridTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, GRID_TEX_SIZE, GRID_TEX_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        // LINEAR filtering is key for smooth scrolling!
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
@@ -842,8 +955,80 @@
 
         let gridTextureValid = false;
 
+        // Sprite shader for rotated textured quads (tractor)
+        const spriteVertexSrc = `
+            precision highp float;
+            attribute vec2 a_position;
+            attribute vec2 a_texcoord;
+            uniform mat3 u_matrix;
+            varying vec2 v_texcoord;
+            void main() {
+                vec3 pos = u_matrix * vec3(a_position, 1.0);
+                gl_Position = vec4(pos.xy, 0.0, 1.0);
+                v_texcoord = a_texcoord;
+            }
+        `;
+        const spriteFragmentSrc = `
+            precision highp float;
+            uniform sampler2D u_texture;
+            varying vec2 v_texcoord;
+            void main() {
+                gl_FragColor = texture2D(u_texture, v_texcoord);
+            }
+        `;
+
+        const spriteVs = createShader(gl.VERTEX_SHADER, spriteVertexSrc);
+        const spriteFs = createShader(gl.FRAGMENT_SHADER, spriteFragmentSrc);
+        const spriteProgram = createProgram(spriteVs, spriteFs);
+        const sprite_a_position = gl.getAttribLocation(spriteProgram, 'a_position');
+        const sprite_a_texcoord = gl.getAttribLocation(spriteProgram, 'a_texcoord');
+        const sprite_u_matrix = gl.getUniformLocation(spriteProgram, 'u_matrix');
+        const sprite_u_texture = gl.getUniformLocation(spriteProgram, 'u_texture');
+
+        const spriteBuffer = gl.createBuffer();
+        const spriteTexcoordBuffer = gl.createBuffer();
+
+        // Load tractor texture
+        let tractorTexture = null;
+        let tractorTextureLoaded = false;
+        const tractorImage = new Image();
+        tractorImage.onload = function() {
+            tractorTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, tractorTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tractorImage);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            tractorTextureLoaded = true;
+            console.log('Tractor texture loaded');
+        };
+        tractorImage.src = 'icons/TractorAoG.png';
+
         function renderGridToTexture() {
-            // Render grid pattern to texture (only needs to be done once or when zoom changes)
+            // Determine world size and center based on whether we have a boundary
+            let worldSize, centerX, centerY;
+
+            if (fieldExtents) {
+                // Field mode: texture covers the field extents
+                worldSize = fieldExtents.size;
+                centerX = fieldExtents.centerX;
+                centerY = fieldExtents.centerY;
+                // Switch to CLAMP mode for field texture
+                gl.bindTexture(gl.TEXTURE_2D, gridTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            } else {
+                // No boundary: repeating grid pattern
+                worldSize = GRID_WORLD_SIZE;
+                centerX = 0;
+                centerY = 0;
+                // Use REPEAT mode for infinite grid
+                gl.bindTexture(gl.TEXTURE_2D, gridTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            }
+
             gl.bindFramebuffer(gl.FRAMEBUFFER, gridFramebuffer);
             gl.viewport(0, 0, GRID_TEX_SIZE, GRID_TEX_SIZE);
             gl.clearColor(0.1, 0.1, 0.1, 1);
@@ -851,48 +1036,97 @@
 
             gl.useProgram(program);
 
-            // Set up matrix for texture rendering (centered at 0,0, covering GRID_WORLD_SIZE)
-            const texScale = 2 / GRID_WORLD_SIZE;
+            // Set up matrix for texture rendering
+            const texScale = 2 / worldSize;
             gl.uniformMatrix3fv(u_matrix, false, new Float32Array([
                 texScale, 0, 0,
                 0, texScale, 0,
-                0, 0, 1
+                -centerX * texScale, -centerY * texScale, 1
             ]));
 
-            const spacing = 20;
             const majorSpacing = 100;
-            const halfSize = GRID_WORLD_SIZE / 2;
+            const halfSize = worldSize / 2;
 
-            // Minor grid lines
-            let minorLines = [];
-            for (let x = -halfSize; x <= halfSize; x += spacing) {
-                if (x % majorSpacing !== 0) {
-                    minorLines.push(x, -halfSize, x, halfSize);
-                }
+            // Grid extents in world coords
+            const minX = centerX - halfSize;
+            const maxX = centerX + halfSize;
+            const minY = centerY - halfSize;
+            const maxY = centerY + halfSize;
+
+            // Major grid lines only (100m spacing) - draw as thick quads for stability
+            const majorLineWidth = worldSize / GRID_TEX_SIZE * 2.5;
+            let majorQuads = [];
+
+            const majorMinX = Math.floor(minX / majorSpacing) * majorSpacing;
+            const majorMaxX = Math.ceil(maxX / majorSpacing) * majorSpacing;
+            const majorMinY = Math.floor(minY / majorSpacing) * majorSpacing;
+            const majorMaxY = Math.ceil(maxY / majorSpacing) * majorSpacing;
+
+            for (let x = majorMinX; x <= majorMaxX; x += majorSpacing) {
+                majorQuads.push(
+                    x - majorLineWidth/2, minY,
+                    x + majorLineWidth/2, minY,
+                    x + majorLineWidth/2, maxY,
+                    x - majorLineWidth/2, minY,
+                    x + majorLineWidth/2, maxY,
+                    x - majorLineWidth/2, maxY
+                );
             }
-            for (let y = -halfSize; y <= halfSize; y += spacing) {
-                if (y % majorSpacing !== 0) {
-                    minorLines.push(-halfSize, y, halfSize, y);
-                }
+            for (let y = majorMinY; y <= majorMaxY; y += majorSpacing) {
+                majorQuads.push(
+                    minX, y - majorLineWidth/2,
+                    maxX, y - majorLineWidth/2,
+                    maxX, y + majorLineWidth/2,
+                    minX, y - majorLineWidth/2,
+                    maxX, y + majorLineWidth/2,
+                    minX, y + majorLineWidth/2
+                );
             }
-            if (minorLines.length > 0) {
-                drawLines(minorLines, [0.28, 0.28, 0.28, 1.0]);
+            if (majorQuads.length > 0) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(majorQuads), gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(a_position);
+                gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+                gl.uniform4fv(u_color, [0.45, 0.45, 0.45, 1.0]);
+                gl.drawArrays(gl.TRIANGLES, 0, majorQuads.length / 2);
             }
 
-            // Major grid lines
-            let majorLines = [];
-            for (let x = -halfSize; x <= halfSize; x += majorSpacing) {
-                majorLines.push(x, -halfSize, x, halfSize);
-            }
-            for (let y = -halfSize; y <= halfSize; y += majorSpacing) {
-                majorLines.push(-halfSize, y, halfSize, y);
-            }
-            if (majorLines.length > 0) {
-                drawLines(majorLines, [0.45, 0.45, 0.45, 1.0]);
+            // Draw boundary into texture (if we have one)
+            if (boundary.length >= 4) {
+                const boundaryLineWidth = worldSize / GRID_TEX_SIZE * 3;
+                let boundaryQuads = [];
+                for (let i = 0; i < boundary.length; i += 4) {
+                    const x1 = boundary[i], y1 = boundary[i+1];
+                    const x2 = boundary[i+2], y2 = boundary[i+3];
+
+                    const dx = x2 - x1, dy = y2 - y1;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    if (len === 0) continue;
+                    const px = -dy/len * boundaryLineWidth/2;
+                    const py = dx/len * boundaryLineWidth/2;
+
+                    boundaryQuads.push(
+                        x1+px, y1+py, x1-px, y1-py, x2+px, y2+py,
+                        x1-px, y1-py, x2-px, y2-py, x2+px, y2+py
+                    );
+                }
+                if (boundaryQuads.length > 0) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boundaryQuads), gl.DYNAMIC_DRAW);
+                    gl.enableVertexAttribArray(a_position);
+                    gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+                    gl.uniform4fv(u_color, [1.0, 1.0, 0.0, 1.0]); // Yellow
+                    gl.drawArrays(gl.TRIANGLES, 0, boundaryQuads.length / 2);
+                }
             }
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             gl.viewport(0, 0, canvas.width, canvas.height);
+
+            // Generate mipmaps for smooth filtering
+            gl.bindTexture(gl.TEXTURE_2D, gridTexture);
+            gl.generateMipmap(gl.TEXTURE_2D);
+
             gridTextureValid = true;
         }
 
@@ -901,25 +1135,47 @@
                 renderGridToTexture();
             }
 
-            // Calculate texture coordinates based on camera position
-            // The texture tiles every GRID_WORLD_SIZE units
             const aspect = canvas.width / canvas.height;
             const viewWidth = 200 / camera.zoom;
             const viewHeight = viewWidth / aspect;
 
-            // Texture coordinate offset (normalized 0-1, will wrap due to REPEAT)
-            const texOffsetX = camera.x / GRID_WORLD_SIZE;
-            const texOffsetY = camera.y / GRID_WORLD_SIZE;
+            let left, right, bottom, top;
 
-            // How much of the texture to show (based on zoom)
-            const texScaleX = viewWidth / GRID_WORLD_SIZE;
-            const texScaleY = viewHeight / GRID_WORLD_SIZE;
+            if (fieldExtents) {
+                // Field mode: texture is in world coords, use camera position to calculate UV
+                // The texture covers fieldExtents.size centered at fieldExtents.center
+                const worldSize = fieldExtents.size;
+                const centerX = fieldExtents.centerX;
+                const centerY = fieldExtents.centerY;
 
-            // Calculate texcoords for the quad corners
-            const left = texOffsetX - texScaleX / 2;
-            const right = texOffsetX + texScaleX / 2;
-            const bottom = texOffsetY - texScaleY / 2;
-            const top = texOffsetY + texScaleY / 2;
+                // Convert camera view to texture coords (0-1 range)
+                // Texture left edge = centerX - worldSize/2, right = centerX + worldSize/2
+                const texMinX = centerX - worldSize / 2;
+                const texMinY = centerY - worldSize / 2;
+
+                // Camera view in world coords
+                const viewLeft = camera.x - viewWidth / 2;
+                const viewRight = camera.x + viewWidth / 2;
+                const viewBottom = camera.y - viewHeight / 2;
+                const viewTop = camera.y + viewHeight / 2;
+
+                // Convert to texture coords (0-1)
+                left = (viewLeft - texMinX) / worldSize;
+                right = (viewRight - texMinX) / worldSize;
+                bottom = (viewBottom - texMinY) / worldSize;
+                top = (viewTop - texMinY) / worldSize;
+            } else {
+                // No boundary: repeating grid pattern
+                const texOffsetX = camera.x / GRID_WORLD_SIZE;
+                const texOffsetY = camera.y / GRID_WORLD_SIZE;
+                const texScaleX = viewWidth / GRID_WORLD_SIZE;
+                const texScaleY = viewHeight / GRID_WORLD_SIZE;
+
+                left = texOffsetX - texScaleX / 2;
+                right = texOffsetX + texScaleX / 2;
+                bottom = texOffsetY - texScaleY / 2;
+                top = texOffsetY + texScaleY / 2;
+            }
 
             gl.useProgram(texProgram);
 
@@ -948,7 +1204,12 @@
             gl.useProgram(program);
         }
 
-        // ===== Transform Matrix =====
+        function drawBoundary() {
+            if (boundary.length < 4) return;
+            drawLines(boundary, [1, 1, 0, 1]); // Yellow
+        }
+
+        // ===== Transform Matrix (for screen-space rendering) =====
         function getMatrix() {
             const aspect = canvas.width / canvas.height;
             const viewWidth = 200 / camera.zoom;
@@ -958,7 +1219,7 @@
             const sx = 2 / viewWidth;
             const sy = 2 / viewHeight;
 
-            // Direct camera position (no smoothing needed - grid uses texture now)
+            // Translation (camera centered)
             const tx = -camera.x;
             const ty = -camera.y;
 
@@ -1152,10 +1413,6 @@
             if (delta < -Math.PI) delta += 2 * Math.PI;
             smoothedHeading += delta * 0.3;
 
-            const size = 6;
-            const cos = Math.cos(smoothedHeading);
-            const sin = Math.sin(smoothedHeading);
-
             // Get aspect and view dimensions to convert to clip space
             const aspect = canvas.width / canvas.height;
             const viewWidth = 200 / camera.zoom;
@@ -1163,31 +1420,84 @@
             const sx = 2 / viewWidth;
             const sy = 2 / viewHeight;
 
-            // Triangle vertices - use simple geometry
-            const frontDist = size;
-            const backDist = size * 0.5;
-            const sideDist = size * 0.4;
+            // Draw tractor sprite if texture is loaded, otherwise fallback to triangle
+            if (tractorTextureLoaded && tractorTexture) {
+                // Size of tractor in world units
+                const size = 8;
+                const halfW = size * 0.5 * sx;
+                const halfH = size * 0.5 * sy;
 
-            // Calculate in world coords then scale to clip
-            const tipX = sin * frontDist * sx;
-            const tipY = cos * frontDist * sy;
-            const leftX = (-cos * sideDist - sin * backDist) * sx;
-            const leftY = (sin * sideDist - cos * backDist) * sy;
-            const rightX = (cos * sideDist - sin * backDist) * sx;
-            const rightY = (-sin * sideDist - cos * backDist) * sy;
+                // Build rotation matrix (rotate around center)
+                // Negate heading for clockwise rotation (right turn = positive heading)
+                const cos = Math.cos(-smoothedHeading);
+                const sin = Math.sin(-smoothedHeading);
 
-            // Draw directly in clip space with identity matrix
-            gl.uniformMatrix3fv(u_matrix, false, new Float32Array([1,0,0, 0,1,0, 0,0,1]));
+                // Rotation matrix in column-major order for WebGL
+                // Rotate then scale
+                const matrix = new Float32Array([
+                    cos * halfW, sin * halfW, 0,
+                    -sin * halfH, cos * halfH, 0,
+                    0, 0, 1
+                ]);
 
-            // Draw filled triangle
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-                tipX, tipY, leftX, leftY, rightX, rightY
-            ]), gl.DYNAMIC_DRAW);
-            gl.enableVertexAttribArray(a_position);
-            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
-            gl.uniform4fv(u_color, [0.2, 0.85, 0.2, 1.0]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3);
+                gl.useProgram(spriteProgram);
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+                // Quad vertices (unit square centered at origin)
+                gl.bindBuffer(gl.ARRAY_BUFFER, spriteBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    -1, -1, 1, -1, -1, 1,
+                    -1, 1, 1, -1, 1, 1
+                ]), gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(sprite_a_position);
+                gl.vertexAttribPointer(sprite_a_position, 2, gl.FLOAT, false, 0, 0);
+
+                // Texcoords (flip Y for correct orientation)
+                gl.bindBuffer(gl.ARRAY_BUFFER, spriteTexcoordBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    0, 1, 1, 1, 0, 0,
+                    0, 0, 1, 1, 1, 0
+                ]), gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(sprite_a_texcoord);
+                gl.vertexAttribPointer(sprite_a_texcoord, 2, gl.FLOAT, false, 0, 0);
+
+                gl.uniformMatrix3fv(sprite_u_matrix, false, matrix);
+
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, tractorTexture);
+                gl.uniform1i(sprite_u_texture, 0);
+
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+                gl.disable(gl.BLEND);
+                gl.useProgram(program);
+            } else {
+                // Fallback: draw green triangle
+                const size = 6;
+                const cos = Math.cos(smoothedHeading);
+                const sin = Math.sin(smoothedHeading);
+                const frontDist = size;
+                const backDist = size * 0.5;
+                const sideDist = size * 0.4;
+
+                const tipX = sin * frontDist * sx;
+                const tipY = cos * frontDist * sy;
+                const leftX = (-cos * sideDist - sin * backDist) * sx;
+                const leftY = (sin * sideDist - cos * backDist) * sy;
+                const rightX = (cos * sideDist - sin * backDist) * sx;
+                const rightY = (-sin * sideDist - cos * backDist) * sy;
+
+                gl.uniformMatrix3fv(u_matrix, false, new Float32Array([1,0,0, 0,1,0, 0,0,1]));
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    tipX, tipY, leftX, leftY, rightX, rightY
+                ]), gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(a_position);
+                gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+                gl.uniform4fv(u_color, [0.2, 0.85, 0.2, 1.0]);
+                gl.drawArrays(gl.TRIANGLES, 0, 3);
+            }
 
             // Restore world matrix
             gl.uniformMatrix3fv(u_matrix, false, getMatrix());
@@ -1214,11 +1524,6 @@
             ], [0.2, 1, 0.2, 1]); // Lime green
         }
 
-        function drawBoundary() {
-            if (boundary.length < 4) return;
-            drawLines(boundary, [1, 1, 0, 1]); // Yellow
-        }
-
         // ===== Main Render Loop =====
         function render(time) {
             const dt = (time - lastTime) / 1000;
@@ -1237,18 +1542,12 @@
             gl.clearColor(0.1, 0.1, 0.1, 1);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
-            // Setup
-            gl.useProgram(program);
-            gl.uniformMatrix3fv(u_matrix, false, getMatrix());
-
-            // Draw cached grid (uses texture for smooth scrolling)
+            // Draw cached grid (texture-based, no shimmer)
+            // When a boundary is loaded, it's also baked into this texture
             drawCachedGrid();
 
-            // Set up matrix for world-space objects
-            gl.useProgram(program);
-            gl.uniformMatrix3fv(u_matrix, false, getMatrix());
-            drawBoundary();
-            drawVehicleScreenSpace(); // Use screen-space rendering for stable vehicle
+            // Draw vehicle on top (screen-space, always stable)
+            drawVehicleScreenSpace();
 
             // Update UI
             updateUI();
@@ -1379,9 +1678,17 @@
                         simulator.steerAngle = msg.simulator.steerAngle;
                         // UI update will happen after updateSimulatorUI is defined
                     }
+                    // Check for active field on connect
+                    if (msg.field && msg.field.isOpen) {
+                        activeField = msg.field.name;
+                        // updateFieldDisplay will be called later when function is defined
+                    }
                 }
                 else if (msg.type === 'simulator') {
                     console.log('Simulator message:', msg);
+                }
+                else if (msg.type === 'field') {
+                    handleFieldMessage(msg);
                 }
             };
         }
@@ -1551,6 +1858,9 @@
             // Update speed display - use targetSpeedKmh (not actual speed from GPS which can have timing drift)
             document.getElementById('sim-speed-display').textContent = simulator.targetSpeedKmh.toFixed(0) + ' km/h';
 
+            // Update steering angle display
+            document.getElementById('sim-steer-display').textContent = simulator.steerAngle.toFixed(0) + '°';
+
             // Update steer bar position (steerAngle is -45 to 45)
             const steerPercent = 50 + (simulator.steerAngle / 45) * 40; // 10% to 90%
             document.getElementById('steer-bar').style.left = steerPercent + '%';
@@ -1576,15 +1886,15 @@
             sendWsMessage({ type: 'simulator', action: simulator.enabled ? 'start' : 'stop' });
         });
 
-        // Speed controls - track speed in km/h on simulator object to avoid server sync issues
+        // Speed controls - 2 km/h increments, negative for reverse
         document.getElementById('accel').addEventListener('click', () => {
-            simulator.targetSpeedKmh = Math.min(25, simulator.targetSpeedKmh + 5);
+            simulator.targetSpeedKmh = Math.min(25, simulator.targetSpeedKmh + 2);
             updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSpeed', value: simulator.targetSpeedKmh });
         });
 
         document.getElementById('decel').addEventListener('click', () => {
-            simulator.targetSpeedKmh = Math.max(0, simulator.targetSpeedKmh - 5);
+            simulator.targetSpeedKmh = Math.max(-10, simulator.targetSpeedKmh - 2);
             updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSpeed', value: simulator.targetSpeedKmh });
         });
@@ -1598,7 +1908,11 @@
             vehicle.x = 0;
             vehicle.y = 0;
             vehicle.heading = 0;
+            // Reset all heading smoothing/prediction state
             smoothedHeading = 0;
+            lastHeading = 0;
+            headingVelocity = 0;
+            lastHeadingTime = 0;
             updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'stop' });
             sendWsMessage({ type: 'simulator', action: 'setSpeed', value: 0 });
@@ -1606,15 +1920,15 @@
             sendWsMessage({ type: 'simulator', action: 'setPosition', latitude: 40.7128, longitude: -74.0060 });
         });
 
-        // Steering controls
+        // Steering controls - 1 degree increments, +/-45 range
         document.getElementById('steer-left').addEventListener('click', () => {
-            simulator.steerAngle = Math.max(-45, simulator.steerAngle - 5);
+            simulator.steerAngle = Math.max(-45, simulator.steerAngle - 1);
             updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
 
         document.getElementById('steer-right').addEventListener('click', () => {
-            simulator.steerAngle = Math.min(45, simulator.steerAngle + 5);
+            simulator.steerAngle = Math.min(45, simulator.steerAngle + 1);
             updateSimulatorUI();
             sendWsMessage({ type: 'simulator', action: 'setSteer', value: simulator.steerAngle });
         });
@@ -1683,6 +1997,228 @@
                 isDragging = false;
             });
         })();
+
+        // ===== Job Menu / Field Management =====
+        let activeField = null;
+
+        function updateFieldDisplay() {
+            const display = document.getElementById('current-field-display');
+            const nameSpan = document.getElementById('current-field-name');
+
+            if (activeField) {
+                display.style.display = 'block';
+                display.classList.remove('no-field');
+                nameSpan.textContent = activeField;
+            } else {
+                display.style.display = 'none';
+            }
+        }
+
+        function showFieldListModal(fields) {
+            const modal = document.getElementById('field-list-modal');
+            const backdrop = document.getElementById('modal-backdrop');
+            const list = document.getElementById('field-list');
+
+            list.innerHTML = '';
+
+            if (fields.length === 0) {
+                list.innerHTML = '<div class="field-list-empty">No fields found</div>';
+            } else {
+                fields.forEach(fieldName => {
+                    const item = document.createElement('div');
+                    item.className = 'field-list-item';
+                    item.textContent = fieldName;
+                    item.addEventListener('click', () => {
+                        openField(fieldName);
+                        hideFieldListModal();
+                    });
+                    list.appendChild(item);
+                });
+            }
+
+            modal.classList.add('visible');
+            backdrop.classList.add('visible');
+        }
+
+        function hideFieldListModal() {
+            document.getElementById('field-list-modal').classList.remove('visible');
+            document.getElementById('modal-backdrop').classList.remove('visible');
+        }
+
+        function openField(fieldName) {
+            sendWsMessage({ type: 'field', action: 'open', name: fieldName });
+        }
+
+        function closeField() {
+            sendWsMessage({ type: 'field', action: 'close' });
+        }
+
+        function createNewField() {
+            const name = prompt('Enter new field name:');
+            if (name && name.trim()) {
+                sendWsMessage({ type: 'field', action: 'create', name: name.trim() });
+            }
+        }
+
+        function requestFieldList() {
+            sendWsMessage({ type: 'field', action: 'list' });
+        }
+
+        // Field list modal close handlers
+        document.getElementById('field-list-close').addEventListener('click', hideFieldListModal);
+        document.getElementById('modal-backdrop').addEventListener('click', hideFieldListModal);
+
+        // Job Menu button handlers
+        document.getElementById('job-open').addEventListener('click', () => {
+            closePanel('job');
+            requestFieldList();
+        });
+
+        document.getElementById('job-close').addEventListener('click', () => {
+            closePanel('job');
+            closeField();
+        });
+
+        document.getElementById('job-new').addEventListener('click', () => {
+            closePanel('job');
+            createNewField();
+        });
+
+        // Placeholder handlers for unimplemented features
+        document.getElementById('job-isoxml').addEventListener('click', () => {
+            alert('ISO-XML import not yet implemented');
+        });
+
+        document.getElementById('job-kml').addEventListener('click', () => {
+            alert('KML import not yet implemented');
+        });
+
+        document.getElementById('job-drivein').addEventListener('click', () => {
+            alert('Drive-In mode not yet implemented');
+        });
+
+        document.getElementById('job-existing').addEventListener('click', () => {
+            alert('From Existing not yet implemented');
+        });
+
+        document.getElementById('job-resume').addEventListener('click', () => {
+            alert('Resume not yet implemented');
+        });
+
+        // Handle field-related WebSocket messages
+        function handleFieldMessage(msg) {
+            console.log('Field message:', msg);
+
+            switch (msg.action) {
+                case 'list':
+                    showFieldListModal(msg.fields || []);
+                    break;
+                case 'opened':
+                case 'created':
+                    activeField = msg.name;
+                    updateFieldDisplay();
+                    if (msg.boundary) {
+                        setBoundary(msg.boundary);
+                    } else {
+                        clearBoundary();
+                    }
+                    // Move simulator to field origin if provided
+                    if (msg.origin && msg.origin.latitude && msg.origin.longitude) {
+                        console.log('Moving simulator to field origin:', msg.origin);
+                        sendWsMessage({ type: 'simulator', action: 'setPosition', latitude: msg.origin.latitude, longitude: msg.origin.longitude });
+                    }
+                    break;
+                case 'closed':
+                    activeField = null;
+                    updateFieldDisplay();
+                    clearBoundary();
+                    break;
+                case 'changed':
+                    activeField = msg.isOpen ? msg.name : null;
+                    updateFieldDisplay();
+                    if (msg.boundary) {
+                        setBoundary(msg.boundary);
+                    } else if (!msg.isOpen) {
+                        clearBoundary();
+                    }
+                    break;
+                case 'active':
+                    activeField = msg.isOpen ? msg.name : null;
+                    updateFieldDisplay();
+                    break;
+                case 'error':
+                    alert('Field error: ' + msg.message);
+                    break;
+            }
+        }
+
+        // Boundary storage and rendering
+        let fieldBoundary = null; // { outer: [{e, n}, ...], inner: [[{e, n}, ...], ...] }
+
+        function setBoundary(boundaryData) {
+            fieldBoundary = boundaryData;
+            console.log('Boundary set:', fieldBoundary);
+
+            // Convert to line segments for rendering
+            if (fieldBoundary && fieldBoundary.outer && fieldBoundary.outer.length > 0) {
+                boundary = [];
+                const pts = fieldBoundary.outer;
+
+                // Calculate field extents from boundary
+                let minX = Infinity, maxX = -Infinity;
+                let minY = Infinity, maxY = -Infinity;
+
+                for (let i = 0; i < pts.length; i++) {
+                    const next = (i + 1) % pts.length;
+                    boundary.push(pts[i].e, pts[i].n, pts[next].e, pts[next].n);
+
+                    // Track extents
+                    minX = Math.min(minX, pts[i].e);
+                    maxX = Math.max(maxX, pts[i].e);
+                    minY = Math.min(minY, pts[i].n);
+                    maxY = Math.max(maxY, pts[i].n);
+                }
+
+                // Add padding (20% on each side)
+                const width = maxX - minX;
+                const height = maxY - minY;
+                const padding = Math.max(width, height) * 0.2;
+                minX -= padding;
+                maxX += padding;
+                minY -= padding;
+                maxY += padding;
+
+                // Make square (use the larger dimension)
+                const size = Math.max(maxX - minX, maxY - minY);
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+
+                fieldExtents = {
+                    minX: centerX - size / 2,
+                    maxX: centerX + size / 2,
+                    minY: centerY - size / 2,
+                    maxY: centerY + size / 2,
+                    size: size,
+                    centerX: centerX,
+                    centerY: centerY
+                };
+
+                console.log('Field extents:', fieldExtents);
+                console.log('Boundary line segments:', boundary.length / 4);
+            } else {
+                fieldExtents = null;
+            }
+
+            // Invalidate grid cache so it re-renders with boundary
+            gridTextureValid = false;
+        }
+
+        function clearBoundary() {
+            fieldBoundary = null;
+            boundary = [];
+            fieldExtents = null;
+            gridTextureValid = false;
+        }
 
         // ===== Start =====
         requestAnimationFrame(render);

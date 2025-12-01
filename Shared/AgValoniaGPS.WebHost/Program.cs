@@ -54,7 +54,14 @@ app.UseWebSockets();
 var gpsService = app.Services.GetRequiredService<IGpsService>();
 var simulatorService = app.Services.GetRequiredService<IGpsSimulationService>();
 var settingsService = app.Services.GetRequiredService<ISettingsService>();
+var fieldService = app.Services.GetRequiredService<AgValoniaGPS.Services.IFieldService>();
 var wsManager = app.Services.GetRequiredService<AgValoniaGPS.WebHost.WebSocketManager>();
+
+// Fields directory - use Documents/AgValoniaGPS/Fields
+var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+var fieldsRootDirectory = Path.Combine(documentsPath, "AgValoniaGPS", "Fields");
+Directory.CreateDirectory(fieldsRootDirectory);
+Console.WriteLine($"Fields directory: {fieldsRootDirectory}");
 
 // Load settings
 settingsService.Load();
@@ -143,6 +150,7 @@ app.Map("/ws", async context =>
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         await wsManager.HandleConnectionAsync(webSocket, simulatorService, settingsService,
+            fieldService, fieldsRootDirectory,
             () => simulatorRunning,
             (running) => {
                 if (running && !simulatorRunning)
@@ -160,7 +168,8 @@ app.Map("/ws", async context =>
                     simulatorTimer = null;
                     simulatorRunning = false;
                 }
-            });
+            },
+            () => localPlane = null); // Reset local plane callback
     }
     else
     {
@@ -247,6 +256,69 @@ app.MapPost("/api/simulator/position", async (HttpContext context) =>
     return Results.BadRequest();
 });
 
+// Field API endpoints
+app.MapGet("/api/fields", () =>
+{
+    var fields = fieldService.GetAvailableFields(fieldsRootDirectory);
+    return new { fields };
+});
+
+app.MapGet("/api/fields/active", () =>
+{
+    var active = fieldService.ActiveField;
+    return new
+    {
+        name = active?.Name,
+        isOpen = active != null
+    };
+});
+
+app.MapPost("/api/fields/open", async (HttpContext context) =>
+{
+    var body = await context.Request.ReadFromJsonAsync<FieldRequest>();
+    if (body?.Name != null)
+    {
+        try
+        {
+            var fieldPath = Path.Combine(fieldsRootDirectory, body.Name);
+            var field = fieldService.LoadField(fieldPath);
+            fieldService.SetActiveField(field);
+            return Results.Ok(new { success = true, name = field.Name });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { success = false, error = ex.Message });
+        }
+    }
+    return Results.BadRequest(new { success = false, error = "Name required" });
+});
+
+app.MapPost("/api/fields/create", async (HttpContext context) =>
+{
+    var body = await context.Request.ReadFromJsonAsync<FieldRequest>();
+    if (body?.Name != null)
+    {
+        try
+        {
+            var originPosition = new AgValoniaGPS.Models.Position { Latitude = 40.7128, Longitude = -74.0060 };
+            var field = fieldService.CreateField(fieldsRootDirectory, body.Name, originPosition);
+            fieldService.SetActiveField(field);
+            return Results.Ok(new { success = true, name = field.Name });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { success = false, error = ex.Message });
+        }
+    }
+    return Results.BadRequest(new { success = false, error = "Name required" });
+});
+
+app.MapPost("/api/fields/close", () =>
+{
+    fieldService.SetActiveField(null);
+    return new { success = true };
+});
+
 Console.WriteLine("AgValoniaGPS WebHost starting...");
 Console.WriteLine("WebSocket: ws://localhost:5000/ws");
 Console.WriteLine("API: http://localhost:5000/api/");
@@ -258,3 +330,4 @@ app.Run("http://0.0.0.0:5000");
 record SpeedRequest(double Speed);
 record SteerRequest(double Angle);
 record PositionRequest(double Latitude, double Longitude);
+record FieldRequest(string Name);
