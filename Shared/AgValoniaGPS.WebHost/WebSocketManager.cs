@@ -394,8 +394,111 @@ public class WebSocketManager
                     isOpen = activeField != null
                 });
                 break;
+
+            case "findNearest":
+                // Drive-In: Find nearest field based on current GPS position
+                if (root.TryGetProperty("latitude", out var latEl) &&
+                    root.TryGetProperty("longitude", out var lonEl))
+                {
+                    var currentLat = latEl.GetDouble();
+                    var currentLon = lonEl.GetDouble();
+                    var maxDistanceKm = 5.0; // Maximum distance to consider
+
+                    string? nearestFieldName = null;
+                    double nearestDistance = double.MaxValue;
+
+                    var fieldNames = fieldService.GetAvailableFields(fieldsRootDirectory);
+                    foreach (var fieldName in fieldNames)
+                    {
+                        try
+                        {
+                            var fieldPath = Path.Combine(fieldsRootDirectory, fieldName);
+                            var field = fieldService.LoadField(fieldPath);
+                            var distance = HaversineDistance(currentLat, currentLon, field.Origin.Latitude, field.Origin.Longitude);
+
+                            if (distance < nearestDistance && distance <= maxDistanceKm)
+                            {
+                                nearestDistance = distance;
+                                nearestFieldName = fieldName;
+                            }
+                        }
+                        catch
+                        {
+                            // Skip fields that fail to load
+                        }
+                    }
+
+                    if (nearestFieldName != null)
+                    {
+                        // Auto-open the nearest field
+                        var fieldPath = Path.Combine(fieldsRootDirectory, nearestFieldName);
+                        var field = fieldService.LoadField(fieldPath);
+                        fieldService.SetActiveField(field);
+
+                        object? boundaryData = null;
+                        if (field.Boundary?.OuterBoundary?.Points != null && field.Boundary.OuterBoundary.Points.Count > 0)
+                        {
+                            boundaryData = new
+                            {
+                                outer = field.Boundary.OuterBoundary.Points.Select(p => new { e = p.Easting, n = p.Northing }).ToArray(),
+                                inner = field.Boundary.InnerBoundaries.Select(ib =>
+                                    ib.Points.Select(p => new { e = p.Easting, n = p.Northing }).ToArray()
+                                ).ToArray()
+                            };
+                        }
+
+                        var origin = field.Origin;
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "foundNearest",
+                            name = field.Name,
+                            distance = nearestDistance,
+                            success = true,
+                            boundary = boundaryData,
+                            origin = new { latitude = origin.Latitude, longitude = origin.Longitude }
+                        });
+                        await BroadcastAsync(new
+                        {
+                            type = "field",
+                            action = "changed",
+                            name = field.Name,
+                            isOpen = true,
+                            boundary = boundaryData,
+                            origin = new { latitude = origin.Latitude, longitude = origin.Longitude }
+                        });
+                    }
+                    else
+                    {
+                        await SendAsync(webSocket, new
+                        {
+                            type = "field",
+                            action = "foundNearest",
+                            success = false,
+                            message = $"No field found within {maxDistanceKm}km of current position"
+                        });
+                    }
+                }
+                break;
         }
     }
+
+    /// <summary>
+    /// Calculate distance between two lat/lon points using Haversine formula
+    /// </summary>
+    private static double HaversineDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371; // Earth's radius in km
+        var dLat = ToRadians(lat2 - lat1);
+        var dLon = ToRadians(lon2 - lon1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
+    }
+
+    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
 
     public async Task BroadcastAsync(object message)
     {

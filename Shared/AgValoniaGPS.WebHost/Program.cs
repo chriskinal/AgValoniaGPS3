@@ -205,7 +205,7 @@ app.MapPost("/api/simulator/start", () =>
 {
     if (!simulatorRunning)
     {
-        simulatorTimer = new System.Timers.Timer(100);
+        simulatorTimer = new System.Timers.Timer(100); // 10Hz
         simulatorTimer.Elapsed += (s, e) => simulatorService.Tick(simulatorService.SteerAngle);
         simulatorTimer.Start();
         simulatorRunning = true;

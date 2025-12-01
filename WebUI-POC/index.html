@@ -2094,7 +2094,14 @@
         });
 
         document.getElementById('job-drivein').addEventListener('click', () => {
-            alert('Drive-In mode not yet implemented');
+            closePanel('job');
+            // Send current GPS position to find nearest field
+            sendWsMessage({
+                type: 'field',
+                action: 'findNearest',
+                latitude: gpsState.latitude,
+                longitude: gpsState.longitude
+            });
         });
 
         document.getElementById('job-existing').addEventListener('click', () => {
@@ -2148,6 +2155,22 @@
                     break;
                 case 'error':
                     alert('Field error: ' + msg.message);
+                    break;
+                case 'foundNearest':
+                    if (msg.success) {
+                        // Field was found and opened
+                        activeField = msg.name;
+                        updateFieldDisplay();
+                        if (msg.boundary) {
+                            setBoundary(msg.boundary);
+                        } else {
+                            clearBoundary();
+                        }
+                        console.log(`Drive-In: Found field "${msg.name}" at ${msg.distance.toFixed(2)}km`);
+                    } else {
+                        // No field found nearby
+                        alert(msg.message || 'No field found near current position');
+                    }
                     break;
             }
         }
