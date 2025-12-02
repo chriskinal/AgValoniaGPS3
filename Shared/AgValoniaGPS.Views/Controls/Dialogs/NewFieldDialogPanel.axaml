@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.NewFieldDialogPanel"
+             IsVisible="{Binding IsNewFieldDialogVisible}"
+             IsHitTestVisible="{Binding IsNewFieldDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.DialogButton">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="MinWidth" Value="100"/>
+        </Style>
+        <Style Selector="Button.DialogButton:pointerover">
+            <Setter Property="Background" Value="#2980B9"/>
+        </Style>
+        <Style Selector="Button.DialogButton:pressed">
+            <Setter Property="Background" Value="#1F6391"/>
+        </Style>
+
+        <Style Selector="Button.CancelButton">
+            <Setter Property="Background" Value="#7F8C8D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="MinWidth" Value="100"/>
+        </Style>
+        <Style Selector="Button.CancelButton:pointerover">
+            <Setter Property="Background" Value="#95A5A6"/>
+        </Style>
+        <Style Selector="Button.CancelButton:pressed">
+            <Setter Property="Background" Value="#6B7B7C"/>
+        </Style>
+
+        <Style Selector="TextBox.DialogInput">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#7F8C8D"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="CaretBrush" Value="White"/>
+        </Style>
+        <Style Selector="TextBox.DialogInput:focus">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3498DB"/>
+        </Style>
+        <Style Selector="TextBox.DialogInput:pointerover">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <!-- Override the inner TextBlock for selection -->
+        <Style Selector="TextBox.DialogInput /template/ TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBox.DialogInput:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="#34495E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog panel -->
+        <Border Background="#2C3E50"
+                CornerRadius="12"
+                MaxWidth="450"
+                MaxHeight="380"
+                Margin="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                BoxShadow="0 8 32 #40000000">
+            <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+                <!-- Header -->
+                <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,20">
+                    <TextBlock Text="Create New Field"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="White"/>
+                    <TextBlock Text="Enter field name - origin will be set to current GPS position"
+                               Foreground="#BDC3C7"
+                               FontSize="14"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Form -->
+                <StackPanel Grid.Row="1" Spacing="16">
+                    <!-- Field Name -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Field Name:"
+                                   Foreground="White"
+                                   FontSize="16"/>
+                        <TextBox Classes="DialogInput"
+                                 Text="{Binding NewFieldName, Mode=TwoWay}"
+                                 Watermark="Enter field name"
+                                 Background="#34495E"
+                                 Foreground="White"
+                                 BorderBrush="#7F8C8D"
+                                 CornerRadius="6"
+                                 Padding="12,10"
+                                 FontSize="18"
+                                 CaretBrush="White"/>
+                    </StackPanel>
+
+                    <!-- GPS Position Display -->
+                    <Border Background="#34495E" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Current GPS Position:"
+                                       Foreground="#95A5A6"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                <TextBlock Foreground="White" FontSize="14">
+                                    <Run Text="Lat: " Foreground="#95A5A6"/>
+                                    <Run Text="{Binding NewFieldLatitude, StringFormat='{}{0:F6}'}"/>
+                                </TextBlock>
+                                <TextBlock Foreground="White" FontSize="14">
+                                    <Run Text="Lon: " Foreground="#95A5A6"/>
+                                    <Run Text="{Binding NewFieldLongitude, StringFormat='{}{0:F6}'}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Helper text -->
+                    <TextBlock Text="The field origin will be set to your current GPS position when you create the field."
+                               Foreground="#95A5A6"
+                               FontSize="13"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Buttons -->
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="12"
+                            Margin="0,24,0,0">
+                    <Button Classes="CancelButton"
+                            Content="Cancel"
+                            Command="{Binding CancelNewFieldDialogCommand}"/>
+                    <Button Classes="DialogButton"
+                            Content="Create"
+                            Command="{Binding ConfirmNewFieldDialogCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

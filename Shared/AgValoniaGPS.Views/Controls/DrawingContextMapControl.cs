@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using AgValoniaGPS.Models;
 
@@ -91,8 +93,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _showBoundaryOffsetIndicator = false;
     private double _boundaryOffsetMeters = 0.0;
 
-    // Background image (not implemented yet for DrawingContext - would need Bitmap loading)
+    // Background image
     private string? _backgroundImagePath;
+    private Bitmap? _backgroundImage;
+    private double _bgMinX, _bgMaxY, _bgMaxX, _bgMinY; // Geo-reference bounds (local coordinates)
 
     // Pens and brushes (reused for performance)
     private readonly Pen _gridPenMinor;
@@ -164,6 +168,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Save context state and apply camera transform
         using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
         {
+            // Draw background image first (under everything else)
+            if (_backgroundImage != null)
+            {
+                DrawBackgroundImage(context);
+            }
+
             // Draw grid (if visible)
             if (IsGridVisible)
             {
@@ -268,6 +278,24 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             Pen pen = isAxis ? _gridPenAxisX : (isMajor ? _gridPenMajor : _gridPenMinor);
             context.DrawLine(pen, new Point(Math.Max(minX, -gridSize), y), new Point(Math.Min(maxX, gridSize), y));
         }
+    }
+
+    private void DrawBackgroundImage(DrawingContext context)
+    {
+        if (_backgroundImage == null) return;
+
+        // Calculate the rectangle in world coordinates where the image should be drawn
+        // The bounds are: minX (west), maxY (north), maxX (east), minY (south)
+        double width = _bgMaxX - _bgMinX;
+        double height = _bgMaxY - _bgMinY;
+
+        // Create destination rectangle in world coordinates
+        // Note: In world coordinates, Y increases upward, but the image's origin is top-left
+        // So we use minY (south) as the bottom and maxY (north) as the top
+        var destRect = new Rect(_bgMinX, _bgMinY, width, height);
+
+        // Draw the image
+        context.DrawImage(_backgroundImage, destRect);
     }
 
     private void DrawBoundary(DrawingContext context)
@@ -598,15 +626,40 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY)
     {
-        // Background image not implemented yet for DrawingContext
-        // Would need to load a Bitmap and render it
         _backgroundImagePath = imagePath;
-        Console.WriteLine($"Background image not yet implemented for DrawingContext: {imagePath}");
+        _bgMinX = minX;
+        _bgMaxY = maxY;
+        _bgMaxX = maxX;
+        _bgMinY = minY;
+
+        // Load the bitmap
+        _backgroundImage?.Dispose();
+        _backgroundImage = null;
+
+        if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+        {
+            try
+            {
+                _backgroundImage = new Bitmap(imagePath);
+                Console.WriteLine($"[DrawingContextMapControl] Loaded background image: {imagePath} ({_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height})");
+                Console.WriteLine($"  Bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawingContextMapControl] Failed to load background image: {ex.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[DrawingContextMapControl] Background image path invalid or not found: {imagePath}");
+        }
     }
 
     public void ClearBackground()
     {
         _backgroundImagePath = null;
+        _backgroundImage?.Dispose();
+        _backgroundImage = null;
     }
 
     public void SetBoundaryOffsetIndicator(bool show, double offsetMeters = 0.0)

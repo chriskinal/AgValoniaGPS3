@@ -5,7 +5,7 @@
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              xmlns:controls="using:AgValoniaGPS.Views.Controls.Panels"
              mc:Ignorable="d"
-             x:Class="AgValoniaGPS.Desktop.Controls.Panels.LeftNavigationPanel"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.LeftNavigationPanel"
              x:DataType="vm:MainViewModel"
              ClipToBounds="False"
              Background="{x:Null}"

@@ -3,7 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 
-namespace AgValoniaGPS.Desktop.Controls.Panels;
+namespace AgValoniaGPS.Views.Controls.Panels;
 
 public partial class FileMenuPanel : UserControl
 {

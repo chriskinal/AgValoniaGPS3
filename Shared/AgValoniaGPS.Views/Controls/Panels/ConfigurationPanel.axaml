@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              mc:Ignorable="d"
-             x:Class="AgValoniaGPS.Desktop.Controls.Panels.ConfigurationPanel"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.ConfigurationPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding IsConfigurationPanelVisible}"
              IsHitTestVisible="{Binding IsConfigurationPanelVisible}">

@@ -3,9 +3,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 
-namespace AgValoniaGPS.Desktop.Controls.Panels;
+namespace AgValoniaGPS.Views.Controls.Panels;
 
-public partial class SimulatorPanel : UserControl
+public partial class FieldToolsPanel : UserControl
 {
     private bool _isDragging = false;
     private Point _lastScreenPoint;
@@ -14,7 +14,7 @@ public partial class SimulatorPanel : UserControl
     public event EventHandler<Vector>? DragMoved;
     public event EventHandler<PointerReleasedEventArgs>? DragEnded;
 
-    public SimulatorPanel()
+    public FieldToolsPanel()
     {
         InitializeComponent();
         var dragHandle = this.FindControl<Grid>("DragHandle");

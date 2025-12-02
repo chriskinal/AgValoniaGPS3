@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.FieldSelectionDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsFieldSelectionDialogVisible}"
+             IsHitTestVisible="{Binding IsFieldSelectionDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Header">
+            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style Selector="Button.DialogButton">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button.DialogButton:pointerover">
+            <Setter Property="Background" Value="#2980B9"/>
+        </Style>
+        <Style Selector="Button.CancelButton">
+            <Setter Property="Background" Value="#5D6D7E"/>
+        </Style>
+        <Style Selector="Button.CancelButton:pointerover">
+            <Setter Property="Background" Value="#4A5A6A"/>
+        </Style>
+        <Style Selector="Button.DangerButton">
+            <Setter Property="Background" Value="#E74C3C"/>
+        </Style>
+        <Style Selector="Button.DangerButton:pointerover">
+            <Setter Property="Background" Value="#C0392B"/>
+        </Style>
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="#1E2930"/>
+            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem:pointerover">
+            <Setter Property="Background" Value="#2C3E50"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected">
+            <Setter Property="Background" Value="#3498DB"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Semi-transparent overlay background -->
+    <Grid>
+        <!-- Backdrop that dims the rest of the UI -->
+        <Border Background="#80000000" IsHitTestVisible="True"
+                PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog panel -->
+        <Border Background="#2C3E50"
+                CornerRadius="12"
+                BorderBrush="#444"
+                BorderThickness="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MinWidth="380"
+                MaxWidth="500"
+                MaxHeight="500"
+                Padding="16">
+            <Grid RowDefinitions="Auto,Auto,*,Auto">
+                <!-- Header -->
+                <TextBlock Grid.Row="0" Classes="Header" Text="Select Field to Open"/>
+
+                <!-- Column Headers -->
+                <Border Grid.Row="1" Background="#34495E" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
+                    <Grid ColumnDefinitions="*,80,80">
+                        <TextBlock Grid.Column="0" Text="Field Name" Foreground="#BDC3C7" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="Distance" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="2" Text="Area (ha)" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- Fields ListBox -->
+                <ListBox x:Name="FieldsListBox"
+                         Grid.Row="2"
+                         SelectionMode="Single"
+                         MinHeight="200"
+                         MaxHeight="300"
+                         ItemsSource="{Binding AvailableFields}"
+                         SelectedItem="{Binding SelectedFieldInfo}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*,80,80">
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Distance, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Area, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Action Buttons -->
+                <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,12,0,0">
+                    <!-- Delete Field Button -->
+                    <Button Grid.Column="0" Classes="DialogButton DangerButton" Content="Delete"
+                            Command="{Binding DeleteSelectedFieldCommand}"/>
+
+                    <!-- Sort Button -->
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Sort A-Z"
+                            Command="{Binding SortFieldsCommand}" Margin="8,0,0,0"/>
+
+                    <!-- Spacer -->
+                    <Border Grid.Column="2"/>
+
+                    <!-- Cancel Button -->
+                    <Button Grid.Column="3" Classes="DialogButton CancelButton" Content="Cancel"
+                            Command="{Binding CancelFieldSelectionDialogCommand}"/>
+
+                    <!-- Open Button -->
+                    <Button Grid.Column="4" Classes="DialogButton" Content="Open"
+                            Command="{Binding ConfirmFieldSelectionDialogCommand}" Margin="8,0,0,0"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

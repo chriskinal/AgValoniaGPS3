@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              mc:Ignorable="d"
-             x:Class="AgValoniaGPS.Desktop.Controls.Panels.BoundaryPlayerPanel"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.BoundaryPlayerPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding IsBoundaryPlayerPanelVisible}"
              IsHitTestVisible="{Binding IsBoundaryPlayerPanelVisible}">

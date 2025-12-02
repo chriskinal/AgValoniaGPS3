@@ -5,57 +5,40 @@
         xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
         xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
         xmlns:panels="clr-namespace:AgValoniaGPS.Views.Controls.Panels;assembly=AgValoniaGPS.Views"
+        xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
         x:Class="AgValoniaGPS.iOS.Views.MainView"
         x:DataType="vm:MainViewModel"
         Background="#1a1a1a">
 
     <!-- iOS Main View with ViewModel -->
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Panel>
+        <!-- Main Content -->
+        <Grid RowDefinitions="Auto,*">
 
-        <!-- Top Status Bar -->
-        <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
-            <StackPanel Orientation="Horizontal" Spacing="20">
-                <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="16"/>
-                <TextBlock Text="{Binding FixQuality}" Foreground="#3498DB" FontSize="14"/>
-            </StackPanel>
-        </Border>
+            <!-- Top Status Bar -->
+            <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="16"
+                               TextTrimming="CharacterEllipsis" MaxWidth="600"/>
+                    <TextBlock Text="{Binding FixQuality}" Foreground="#3498DB" FontSize="14"/>
+                </StackPanel>
+            </Border>
 
-        <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
-        <Grid Grid.Row="1">
-            <controls:DrawingContextMapControl x:Name="MapControl" Margin="5"
-                                               IsGridVisible="{Binding IsGridOn}"/>
-            <!-- Simulator Panel overlay (same Grid cell for overlay effect) -->
-            <panels:SimulatorPanel x:Name="SimulatorPanel"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Top"
-                                   Margin="20"/>
+            <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
+            <Grid Grid.Row="1">
+                <controls:DrawingContextMapControl x:Name="MapControl" Margin="5"
+                                                   IsGridVisible="{Binding IsGridOn}"/>
+                <!-- Left Navigation Panel overlay (contains all sub-panels including SimulatorPanel) -->
+                <panels:LeftNavigationPanel x:Name="LeftNavPanel"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"/>
+            </Grid>
         </Grid>
 
-        <!-- Bottom Control Panel -->
-        <Border Grid.Row="2" Background="#2d2d2d" Padding="10">
-            <StackPanel Spacing="10">
-                <!-- Simulator Speed Control -->
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Column="0" Text="Speed:" Foreground="White" VerticalAlignment="Center"/>
-                    <Slider Grid.Column="1" Minimum="-10" Maximum="25"
-                            Value="{Binding SimulatorSpeedKph}" Margin="10,0"/>
-                    <TextBlock Grid.Column="2" Text="{Binding SimulatorSpeedKph, StringFormat='{}{0:F1} kph'}"
-                               Foreground="White" VerticalAlignment="Center" Width="70"/>
-                </Grid>
-
-                <!-- Control Buttons -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
-                    <Button Content="Grid" Command="{Binding ToggleGridCommand}"
-                            Background="#2ECC71" Foreground="White" Padding="15,8"/>
-                    <Button Content="Sim Panel" Command="{Binding ToggleSimulatorPanelCommand}"
-                            Background="#E67E22" Foreground="White" Padding="15,8"/>
-                    <Button Content="Zoom +" Command="{Binding ZoomInCommand}"
-                            Background="#3498DB" Foreground="White" Padding="15,8"/>
-                    <Button Content="Zoom -" Command="{Binding ZoomOutCommand}"
-                            Background="#3498DB" Foreground="White" Padding="15,8"/>
-                </StackPanel>
-            </StackPanel>
-        </Border>
-    </Grid>
+        <!-- Modal Dialog Overlays (rendered on top of everything) -->
+        <dialogs:SimCoordsDialogPanel/>
+        <dialogs:FieldSelectionDialogPanel/>
+        <dialogs:NewFieldDialogPanel/>
+    </Panel>
 </UserControl>

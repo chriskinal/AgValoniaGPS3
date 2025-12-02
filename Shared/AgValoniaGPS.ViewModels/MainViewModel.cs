@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using ReactiveUI;
 using AgValoniaGPS.Models;
@@ -824,6 +825,80 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
     }
 
+    // Panel-based dialog visibility and data properties
+    private bool _isSimCoordsDialogVisible;
+    public bool IsSimCoordsDialogVisible
+    {
+        get => _isSimCoordsDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isSimCoordsDialogVisible, value);
+    }
+
+    private decimal? _simCoordsDialogLatitude;
+    public decimal? SimCoordsDialogLatitude
+    {
+        get => _simCoordsDialogLatitude;
+        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLatitude, value);
+    }
+
+    private decimal? _simCoordsDialogLongitude;
+    public decimal? SimCoordsDialogLongitude
+    {
+        get => _simCoordsDialogLongitude;
+        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLongitude, value);
+    }
+
+    // Field Selection Dialog properties
+    private bool _isFieldSelectionDialogVisible;
+    public bool IsFieldSelectionDialogVisible
+    {
+        get => _isFieldSelectionDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isFieldSelectionDialogVisible, value);
+    }
+
+    public ObservableCollection<FieldSelectionItem> AvailableFields { get; } = new();
+
+    private FieldSelectionItem? _selectedFieldInfo;
+    public FieldSelectionItem? SelectedFieldInfo
+    {
+        get => _selectedFieldInfo;
+        set => this.RaiseAndSetIfChanged(ref _selectedFieldInfo, value);
+    }
+
+    private string _fieldSelectionDirectory = string.Empty;
+    private bool _fieldsSortedAZ = false;
+
+    // New Field Dialog properties
+    private bool _isNewFieldDialogVisible;
+    public bool IsNewFieldDialogVisible
+    {
+        get => _isNewFieldDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isNewFieldDialogVisible, value);
+    }
+
+    private string _newFieldName = string.Empty;
+    public string NewFieldName
+    {
+        get => _newFieldName;
+        set => this.RaiseAndSetIfChanged(ref _newFieldName, value);
+    }
+
+    private double _newFieldLatitude;
+    public double NewFieldLatitude
+    {
+        get => _newFieldLatitude;
+        set => this.RaiseAndSetIfChanged(ref _newFieldLatitude, value);
+    }
+
+    private double _newFieldLongitude;
+    public double NewFieldLongitude
+    {
+        get => _newFieldLongitude;
+        set => this.RaiseAndSetIfChanged(ref _newFieldLongitude, value);
+    }
+
+    public ICommand? CancelNewFieldDialogCommand { get; private set; }
+    public ICommand? ConfirmNewFieldDialogCommand { get; private set; }
+
     // iOS Modal Sheet Visibility Properties
     private bool _isFileMenuVisible;
     public bool IsFileMenuVisible
@@ -1108,7 +1183,7 @@ public class MainViewModel : ReactiveObject
         // Save coordinates to settings so they persist
         _settingsService.Settings.SimulatorLatitude = latitude;
         _settingsService.Settings.SimulatorLongitude = longitude;
-        _settingsService.Save();
+        var saved = _settingsService.Save();
 
         // Also update the Latitude/Longitude properties directly so that
         // the map boundary dialog uses the correct coordinates even if
@@ -1116,7 +1191,9 @@ public class MainViewModel : ReactiveObject
         Latitude = latitude;
         Longitude = longitude;
 
-        StatusMessage = $"Simulator reset to {latitude:F7}, {longitude:F7}";
+        StatusMessage = saved
+            ? $"Simulator reset to {latitude:F7}, {longitude:F7}"
+            : $"Reset to {latitude:F7}, {longitude:F7} (save failed: {_settingsService.GetSettingsFilePath()})";
     }
 
     /// <summary>
@@ -1229,7 +1306,13 @@ public class MainViewModel : ReactiveObject
     // Dialog Commands
     public ICommand? ShowDataIODialogCommand { get; private set; }
     public ICommand? ShowSimCoordsDialogCommand { get; private set; }
+    public ICommand? CancelSimCoordsDialogCommand { get; private set; }
+    public ICommand? ConfirmSimCoordsDialogCommand { get; private set; }
     public ICommand? ShowFieldSelectionDialogCommand { get; private set; }
+    public ICommand? CancelFieldSelectionDialogCommand { get; private set; }
+    public ICommand? ConfirmFieldSelectionDialogCommand { get; private set; }
+    public ICommand? DeleteSelectedFieldCommand { get; private set; }
+    public ICommand? SortFieldsCommand { get; private set; }
     public ICommand? ShowNewFieldDialogCommand { get; private set; }
     public ICommand? ShowFromExistingFieldDialogCommand { get; private set; }
     public ICommand? ShowIsoXmlImportDialogCommand { get; private set; }
@@ -1436,67 +1519,189 @@ public class MainViewModel : ReactiveObject
             await _dialogService.ShowDataIODialogAsync();
         });
 
-        ShowSimCoordsDialogCommand = new AsyncRelayCommand(async () =>
+        ShowSimCoordsDialogCommand = new RelayCommand(() =>
         {
             if (!IsSimulatorEnabled)
             {
-                await _dialogService.ShowMessageAsync("Simulator Not Enabled", "Please enable the simulator first.");
+                // Can't show message without await, just return
+                System.Diagnostics.Debug.WriteLine("[SimCoords] Simulator not enabled");
                 return;
             }
+            // Load current position into the dialog fields
             var currentPos = GetSimulatorPosition();
-            var result = await _dialogService.ShowSimCoordsDialogAsync(currentPos.Latitude, currentPos.Longitude);
-            if (result.HasValue)
-            {
-                SetSimulatorCoordinates(result.Value.Latitude, result.Value.Longitude);
-            }
+            SimCoordsDialogLatitude = (decimal)currentPos.Latitude;
+            SimCoordsDialogLongitude = (decimal)currentPos.Longitude;
+            // Show the panel-based dialog
+            IsSimCoordsDialogVisible = true;
         });
 
-        ShowFieldSelectionDialogCommand = new AsyncRelayCommand(async () =>
+        CancelSimCoordsDialogCommand = new RelayCommand(() =>
+        {
+            IsSimCoordsDialogVisible = false;
+        });
+
+        ConfirmSimCoordsDialogCommand = new RelayCommand(() =>
+        {
+            // Apply the coordinates from the dialog (convert from decimal? to double)
+            double lat = (double)(SimCoordsDialogLatitude ?? 0m);
+            double lon = (double)(SimCoordsDialogLongitude ?? 0m);
+            SetSimulatorCoordinates(lat, lon);
+            IsSimCoordsDialogVisible = false;
+        });
+
+        ShowFieldSelectionDialogCommand = new RelayCommand(() =>
         {
             // Use settings directory which defaults to ~/Documents/AgValoniaGPS/Fields
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
             if (string.IsNullOrWhiteSpace(fieldsDir))
             {
-                fieldsDir = System.IO.Path.Combine(
+                fieldsDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "AgValoniaGPS", "Fields");
             }
-            var result = await _dialogService.ShowFieldSelectionDialogAsync(fieldsDir);
-            if (result != null)
+            _fieldSelectionDirectory = fieldsDir;
+
+            // Populate the available fields list
+            PopulateAvailableFields(fieldsDir);
+
+            // Show the panel-based dialog
+            IsFieldSelectionDialogVisible = true;
+        });
+
+        CancelFieldSelectionDialogCommand = new RelayCommand(() =>
+        {
+            IsFieldSelectionDialogVisible = false;
+            SelectedFieldInfo = null;
+        });
+
+        ConfirmFieldSelectionDialogCommand = new RelayCommand(() =>
+        {
+            if (SelectedFieldInfo == null) return;
+
+            var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
+            FieldsRootDirectory = _fieldSelectionDirectory;
+            CurrentFieldName = SelectedFieldInfo.Name;
+            IsFieldOpen = true;
+
+            // Save as last opened field
+            _settingsService.Settings.LastOpenedField = SelectedFieldInfo.Name;
+            _settingsService.Save();
+
+            // Try to load boundary from field
+            var boundary = _boundaryFileService.LoadBoundary(fieldPath);
+            if (boundary != null)
             {
-                FieldsRootDirectory = fieldsDir;
-                CurrentFieldName = result.FieldName;
-                IsFieldOpen = true;
+                _mapService.SetBoundary(boundary);
+                CenterMapOnBoundary(boundary);
+            }
 
-                // Save as last opened field
-                _settingsService.Settings.LastOpenedField = result.FieldName;
-                _settingsService.Save();
+            IsFieldSelectionDialogVisible = false;
+            IsJobMenuPanelVisible = false;
+            StatusMessage = $"Opened field: {SelectedFieldInfo.Name}";
+            SelectedFieldInfo = null;
+        });
 
-                if (result.Boundary != null)
+        DeleteSelectedFieldCommand = new RelayCommand(() =>
+        {
+            if (SelectedFieldInfo == null) return;
+
+            var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
+            try
+            {
+                if (Directory.Exists(fieldPath))
                 {
-                    _mapService.SetBoundary(result.Boundary);
-                    CenterMapOnBoundary(result.Boundary);
+                    Directory.Delete(fieldPath, true);
+                    StatusMessage = $"Deleted field: {SelectedFieldInfo.Name}";
+                    PopulateAvailableFields(_fieldSelectionDirectory);
+                    SelectedFieldInfo = null;
                 }
-
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Opened field: {result.FieldName}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error deleting field: {ex.Message}";
             }
         });
 
-        ShowNewFieldDialogCommand = new AsyncRelayCommand(async () =>
+        SortFieldsCommand = new RelayCommand(() =>
         {
-            var currentPosition = new Position
+            _fieldsSortedAZ = !_fieldsSortedAZ;
+            var sorted = _fieldsSortedAZ
+                ? AvailableFields.OrderBy(f => f.Name).ToList()
+                : AvailableFields.OrderByDescending(f => f.Name).ToList();
+            AvailableFields.Clear();
+            foreach (var field in sorted)
             {
-                Latitude = Latitude != 0 ? Latitude : 40.7128,
-                Longitude = Longitude != 0 ? Longitude : -74.0060,
-                Altitude = 0
-            };
-            var result = await _dialogService.ShowNewFieldDialogAsync(currentPosition);
-            if (result != null)
+                AvailableFields.Add(field);
+            }
+        });
+
+        ShowNewFieldDialogCommand = new RelayCommand(() =>
+        {
+            // Initialize with current GPS position or defaults
+            NewFieldLatitude = Latitude != 0 ? Latitude : 40.7128;
+            NewFieldLongitude = Longitude != 0 ? Longitude : -74.0060;
+            NewFieldName = string.Empty;
+            IsNewFieldDialogVisible = true;
+        });
+
+        CancelNewFieldDialogCommand = new RelayCommand(() =>
+        {
+            IsNewFieldDialogVisible = false;
+            NewFieldName = string.Empty;
+        });
+
+        ConfirmNewFieldDialogCommand = new RelayCommand(() =>
+        {
+            if (string.IsNullOrWhiteSpace(NewFieldName))
             {
-                CurrentFieldName = result.FieldName;
+                StatusMessage = "Please enter a field name";
+                return;
+            }
+
+            // Get the fields directory
+            var fieldsDir = _settingsService.Settings.FieldsDirectory;
+            if (string.IsNullOrWhiteSpace(fieldsDir))
+            {
+                fieldsDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "AgValoniaGPS", "Fields");
+            }
+
+            // Create the field directory
+            var fieldPath = Path.Combine(fieldsDir, NewFieldName);
+            if (Directory.Exists(fieldPath))
+            {
+                StatusMessage = $"Field '{NewFieldName}' already exists";
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(fieldPath);
+
+                // Save the field origin coordinates
+                var originFile = Path.Combine(fieldPath, "field.origin");
+                File.WriteAllText(originFile, $"{NewFieldLatitude},{NewFieldLongitude}");
+
+                // Set as current field
+                CurrentFieldName = NewFieldName;
+                FieldsRootDirectory = fieldsDir;
                 IsFieldOpen = true;
-                StatusMessage = $"Created field: {result.FieldName}";
+
+                // Reset LocalPlane so it will be recreated with new origin
+                _simulatorLocalPlane = null;
+
+                // Save as last opened field
+                _settingsService.Settings.LastOpenedField = NewFieldName;
+                _settingsService.Save();
+
+                IsNewFieldDialogVisible = false;
+                IsJobMenuPanelVisible = false;
+                StatusMessage = $"Created field: {NewFieldName}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error creating field: {ex.Message}";
             }
         });
 
@@ -2096,6 +2301,42 @@ public class MainViewModel : ReactiveObject
             StatusMessage = "Boundary deleted";
         }
     }
+
+    /// <summary>
+    /// Populates the AvailableFields collection from the specified directory.
+    /// </summary>
+    private void PopulateAvailableFields(string fieldsDirectory)
+    {
+        AvailableFields.Clear();
+        _fieldsSortedAZ = false;
+
+        if (!Directory.Exists(fieldsDirectory))
+        {
+            Directory.CreateDirectory(fieldsDirectory);
+            return;
+        }
+
+        foreach (var dirPath in Directory.GetDirectories(fieldsDirectory))
+        {
+            var fieldName = Path.GetFileName(dirPath);
+            var item = new FieldSelectionItem
+            {
+                Name = fieldName,
+                DirectoryPath = dirPath
+            };
+
+            // Try to load boundary to calculate area
+            var boundary = _boundaryFileService.LoadBoundary(dirPath);
+            if (boundary?.OuterBoundary != null && boundary.OuterBoundary.IsValid)
+            {
+                // Calculate area in hectares
+                item.Area = boundary.OuterBoundary.AreaHectares;
+                // Distance is not calculated - boundary points are in local coordinates
+            }
+
+            AvailableFields.Add(item);
+        }
+    }
 }
 
 /// <summary>
@@ -2109,4 +2350,15 @@ public class BoundaryListItem
     public bool IsDriveThrough { get; set; }
     public string AreaDisplay => $"{AreaAcres:F2} Ac";
     public string DriveThruDisplay => IsDriveThrough ? "Yes" : "--";
+}
+
+/// <summary>
+/// View model item for field selection list display
+/// </summary>
+public class FieldSelectionItem
+{
+    public string Name { get; set; } = string.Empty;
+    public string DirectoryPath { get; set; } = string.Empty;
+    public double Distance { get; set; }
+    public double Area { get; set; }
 }

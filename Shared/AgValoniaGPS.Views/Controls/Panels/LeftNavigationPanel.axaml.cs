@@ -3,9 +3,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
-using AgValoniaGPS.Views.Controls.Panels;
 
-namespace AgValoniaGPS.Desktop.Controls.Panels;
+namespace AgValoniaGPS.Views.Controls.Panels;
 
 public partial class LeftNavigationPanel : UserControl
 {

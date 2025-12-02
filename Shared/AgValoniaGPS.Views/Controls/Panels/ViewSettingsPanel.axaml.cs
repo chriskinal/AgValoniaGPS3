@@ -3,9 +3,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 
-namespace AgValoniaGPS.Desktop.Controls.Panels;
+namespace AgValoniaGPS.Views.Controls.Panels;
 
-public partial class BoundaryRecordingPanel : UserControl
+public partial class ViewSettingsPanel : UserControl
 {
     private bool _isDragging = false;
     private Point _lastScreenPoint;
@@ -14,9 +14,10 @@ public partial class BoundaryRecordingPanel : UserControl
     public event EventHandler<Vector>? DragMoved;
     public event EventHandler<PointerReleasedEventArgs>? DragEnded;
 
-    public BoundaryRecordingPanel()
+    public ViewSettingsPanel()
     {
         InitializeComponent();
+
         var dragHandle = this.FindControl<Grid>("DragHandle");
         if (dragHandle != null)
         {
@@ -33,6 +34,7 @@ public partial class BoundaryRecordingPanel : UserControl
             var root = this.VisualRoot as Visual;
             _lastScreenPoint = root != null ? e.GetPosition(root) : e.GetPosition(this);
             e.Pointer.Capture(handle);
+            ToolTip.SetIsOpen(handle, false);
         }
     }
 
@@ -44,17 +46,21 @@ public partial class BoundaryRecordingPanel : UserControl
             var currentPoint = root != null ? e.GetPosition(root) : e.GetPosition(this);
             var distance = Math.Sqrt(Math.Pow(currentPoint.X - _lastScreenPoint.X, 2) +
                                     Math.Pow(currentPoint.Y - _lastScreenPoint.Y, 2));
+
             if (!_isDragging && distance > 5.0)
             {
                 _isDragging = true;
+                ToolTip.SetIsOpen(handle, false);
                 DragStarted?.Invoke(this, null!);
             }
+
             if (_isDragging)
             {
                 var delta = currentPoint - _lastScreenPoint;
                 DragMoved?.Invoke(this, delta);
                 _lastScreenPoint = currentPoint;
             }
+
             e.Handled = true;
         }
     }
@@ -63,7 +69,11 @@ public partial class BoundaryRecordingPanel : UserControl
     {
         if (sender is Grid handle && e.Pointer.Captured == handle)
         {
-            if (_isDragging) DragEnded?.Invoke(this, e);
+            if (_isDragging)
+            {
+                DragEnded?.Invoke(this, e);
+            }
+
             _isDragging = false;
             e.Pointer.Capture(null);
             e.Handled = true;

@@ -22,11 +22,23 @@ namespace AgValoniaGPS.Services
 
         public SettingsService()
         {
-            // Store settings in user's AppData\Local folder
-            _settingsDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "AgValoniaGPS");
+            // Store settings in Documents/AgValoniaGPS (same as Fields)
+            // This works consistently across Desktop, iOS, and Android
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
+            // Fallback to Personal if MyDocuments is empty (some platforms)
+            if (string.IsNullOrEmpty(documentsPath))
+            {
+                documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            }
+
+            // Last resort fallback
+            if (string.IsNullOrEmpty(documentsPath))
+            {
+                documentsPath = Environment.CurrentDirectory;
+            }
+
+            _settingsDirectory = Path.Combine(documentsPath, "AgValoniaGPS");
             _settingsFilePath = Path.Combine(_settingsDirectory, SettingsFileName);
 
             // Initialize with defaults
@@ -48,11 +60,12 @@ namespace AgValoniaGPS.Services
 
                 var json = File.ReadAllText(_settingsFilePath);
 
-                // Use same options as Save to match camelCase property names
+                // Use same options as Save to match camelCase property names and handle NaN/Infinity
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true // Add case-insensitive matching
+                    PropertyNameCaseInsensitive = true,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
                 };
 
                 var loadedSettings = JsonSerializer.Deserialize<AppSettings>(json, options);
@@ -115,28 +128,27 @@ namespace AgValoniaGPS.Services
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
                 };
 
                 var json = JsonSerializer.Serialize(Settings, options);
 
-                // Write to temp file first, then move (atomic operation)
-                var tempFile = _settingsFilePath + ".tmp";
-                File.WriteAllText(tempFile, json);
-
-                if (File.Exists(_settingsFilePath))
-                {
-                    File.Delete(_settingsFilePath);
-                }
-
-                File.Move(tempFile, _settingsFilePath);
+                // Write directly (simpler, works across all platforms)
+                File.WriteAllText(_settingsFilePath, json);
 
                 SettingsSaved?.Invoke(this, Settings);
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving settings: {ex.Message}");
+                // Write error to a debug file for diagnosis
+                try
+                {
+                    var errorPath = Path.Combine(_settingsDirectory, "save_error.txt");
+                    File.WriteAllText(errorPath, $"Path: {_settingsFilePath}\nError: {ex.Message}\n{ex.StackTrace}");
+                }
+                catch { }
                 return false;
             }
         }

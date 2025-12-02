@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.NumericKeyboardPanel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.KeypadButton">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="50"/>
+        </Style>
+        <Style Selector="Button.KeypadButton:pointerover">
+            <Setter Property="Background" Value="#4A6278"/>
+        </Style>
+        <Style Selector="Button.KeypadButton:pressed">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+
+        <Style Selector="Button.ClearButton">
+            <Setter Property="Background" Value="#E67E22"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.ClearButton:pointerover">
+            <Setter Property="Background" Value="#F39C12"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*" Background="#2C3E50">
+        <!-- Row 1: 1, 2, 3, Back -->
+        <Button Grid.Row="0" Grid.Column="0" Content="1" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="0" Grid.Column="1" Content="2" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="0" Grid.Column="2" Content="3" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="0" Grid.Column="3" Content="⌫" Classes="KeypadButton" Click="OnBackspaceClick"/>
+
+        <!-- Row 2: 4, 5, 6, Clear -->
+        <Button Grid.Row="1" Grid.Column="0" Content="4" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="1" Grid.Column="1" Content="5" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="1" Grid.Column="2" Content="6" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="1" Grid.Column="3" Content="C" Classes="KeypadButton ClearButton" Click="OnClearClick"/>
+
+        <!-- Row 3: 7, 8, 9, - -->
+        <Button Grid.Row="2" Grid.Column="0" Content="7" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="2" Grid.Column="1" Content="8" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button Grid.Row="2" Grid.Column="2" Content="9" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button x:Name="MinusButton" Grid.Row="2" Grid.Column="3" Content="-" Classes="KeypadButton" Click="OnMinusClick"/>
+
+        <!-- Row 4: 0, ., empty, empty -->
+        <Button Grid.Row="3" Grid.Column="0" Content="0" Classes="KeypadButton" Click="OnDigitClick"/>
+        <Button x:Name="DecimalButton" Grid.Row="3" Grid.Column="1" Content="." Classes="KeypadButton" Click="OnDecimalClick"/>
+        <!-- Columns 2 and 3 left empty - the parent dialog provides OK/Cancel -->
+    </Grid>
+</UserControl>
