@@ -58,5 +58,8 @@
         <dialogs:IsoXmlImportDialogPanel/>
         <dialogs:BoundaryMapDialogPanel/>
         <dialogs:NumericInputDialogPanel/>
+        <dialogs:AgShareSettingsDialogPanel/>
+        <dialogs:AgShareUploadDialogPanel/>
+        <dialogs:AgShareDownloadDialogPanel/>
     </Panel>
 </UserControl>

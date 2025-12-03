@@ -76,8 +76,21 @@ namespace AgValoniaGPS.Services
                     Settings.IsFirstRun = false;
                     Settings.LastRunDate = DateTime.Now;
 
-                    // Ensure fields directory is set
-                    if (string.IsNullOrEmpty(Settings.FieldsDirectory))
+                    // Ensure fields directory is set and points to current app container
+                    // On iOS, the app container path can change on reinstall, so we need to
+                    // verify the saved path is within the current Documents directory
+                    var currentDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    var needsReinit = string.IsNullOrEmpty(Settings.FieldsDirectory) ||
+                                      !Directory.Exists(Settings.FieldsDirectory);
+
+                    // Also reinit if the saved path is not under current Documents (iOS container changed)
+                    if (!needsReinit && !string.IsNullOrEmpty(currentDocuments) &&
+                        !Settings.FieldsDirectory.StartsWith(currentDocuments, StringComparison.OrdinalIgnoreCase))
+                    {
+                        needsReinit = true;
+                    }
+
+                    if (needsReinit)
                     {
                         InitializeFieldsDirectory();
                     }

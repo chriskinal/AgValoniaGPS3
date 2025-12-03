@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.AgShareDownloadDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsAgShareDownloadDialogVisible}"
+             IsHitTestVisible="{Binding IsAgShareDownloadDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.DialogButton">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog Content -->
+        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="400" MaxWidth="500" MaxHeight="600">
+            <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
+                <!-- Header -->
+                <TextBlock Grid.Row="0" Text="Download from AgShare"
+                           FontSize="20" FontWeight="Bold" Foreground="White"
+                           HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                <!-- Field List -->
+                <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="6"
+                        Padding="5" MinHeight="200" MaxHeight="350">
+                    <ScrollViewer>
+                        <ListBox x:Name="FieldListBox"
+                                 Background="Transparent"
+                                 SelectionChanged="FieldListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#34495E" CornerRadius="4" Padding="10" Margin="2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="White" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding AreaDisplay}"
+                                                       Foreground="#3498DB"
+                                                       VerticalAlignment="Center" FontSize="12"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Options -->
+                <StackPanel Grid.Row="2" Margin="0,10" Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Refresh" Click="Refresh_Click"
+                                Background="#3498DB" Foreground="White" Padding="10,5" CornerRadius="4"/>
+                        <Button x:Name="BtnDownloadAll" Content="Download All" Click="DownloadAll_Click"
+                                Background="#9B59B6" Foreground="White" Padding="10,5" CornerRadius="4"/>
+                    </StackPanel>
+                    <CheckBox x:Name="ForceOverwriteCheckBox" Content="Force overwrite existing fields"/>
+                </StackPanel>
+
+                <!-- Progress -->
+                <StackPanel Grid.Row="3" Margin="0,5">
+                    <ProgressBar x:Name="ProgressBar" IsVisible="False"
+                                 Height="8" Minimum="0" Maximum="100"
+                                 Foreground="#3498DB" Background="#1a1a1a"/>
+                    <TextBlock x:Name="StatusLabel" Text="Loading fields..."
+                               Foreground="#BDC3C7" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,5"/>
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0">
+                    <Button Grid.Column="1" x:Name="BtnDownload" Content="Download Selected"
+                            Classes="DialogButton" IsEnabled="False"
+                            Background="#27AE60" Foreground="White"
+                            Click="Download_Click" Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" Content="Cancel" Classes="DialogButton"
+                            Background="#7F8C8D" Foreground="White"
+                            Click="Cancel_Click"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

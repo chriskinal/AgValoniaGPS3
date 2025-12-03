@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:controls="using:AgValoniaGPS.Views.Controls"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.AgShareSettingsDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsAgShareSettingsDialogVisible}"
+             IsHitTestVisible="{Binding IsAgShareSettingsDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Label">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style Selector="TextBlock.Hint">
+            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+        <Style Selector="Border.InputField">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="40"/>
+        </Style>
+        <Style Selector="Border.InputField.Selected">
+            <Setter Property="BorderBrush" Value="#1ABC9C"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        <Style Selector="Button.DialogButton">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="24,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button.DialogButton:pointerover">
+            <Setter Property="Background" Value="#1084D8"/>
+        </Style>
+        <Style Selector="Button.CancelButton">
+            <Setter Property="Background" Value="#555"/>
+        </Style>
+        <Style Selector="Button.CancelButton:pointerover">
+            <Setter Property="Background" Value="#666"/>
+        </Style>
+        <Style Selector="Button.TestButton">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.TestButton:pointerover">
+            <Setter Property="Background" Value="#5DADE2"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Semi-transparent overlay background -->
+    <Grid>
+        <!-- Backdrop that dims the rest of the UI -->
+        <Border Background="#80000000" IsHitTestVisible="True"
+                PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog panel positioned near top for mobile -->
+        <Border Background="#1E1E1E"
+                CornerRadius="12"
+                BorderBrush="#444"
+                BorderThickness="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,20,0,0"
+                MinWidth="380"
+                MaxWidth="420"
+                Padding="16">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <!-- Title -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,8,0"/>
+                    <TextBlock Text="AgShare Settings"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#1ABC9C"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Server URL Field -->
+                <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                    <TextBlock Classes="Label" Text="Server URL"/>
+                    <Border x:Name="ServerUrlBorder" Classes="InputField"
+                            PointerPressed="ServerUrl_PointerPressed">
+                        <TextBlock x:Name="ServerUrlDisplay"
+                                   FontSize="14"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   Text="https://agshare.agopengps.com"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- API Key Field -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,8">
+                    <TextBlock Classes="Label" Text="API Key"/>
+                    <Border x:Name="ApiKeyBorder" Classes="InputField"
+                            PointerPressed="ApiKey_PointerPressed">
+                        <TextBlock x:Name="ApiKeyDisplay"
+                                   FontSize="14"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"
+                                   Text="(not set)"/>
+                    </Border>
+                    <TextBlock Classes="Hint" Text="Get your API key from agshare.agopengps.com"/>
+                </StackPanel>
+
+                <!-- Test Connection & Enable -->
+                <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                    <Button Grid.Column="0" Classes="TestButton" Click="TestConnection_Click">
+                        <TextBlock Text="Test Connection"/>
+                    </Button>
+                    <TextBlock x:Name="ConnectionStatusLabel" Grid.Column="1"
+                               Foreground="#BDC3C7" FontSize="12"
+                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Text=""/>
+                    <CheckBox x:Name="EnabledCheckBox" Grid.Column="2"
+                              Content="Enabled" Foreground="White"
+                              VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Alphanumeric Keyboard -->
+                <controls:AlphanumericKeyboardPanel x:Name="KeyboardPanel"
+                                                    Grid.Row="4"
+                                                    MaxLength="200"
+                                                    Margin="0,0,0,12"/>
+
+                <!-- Buttons -->
+                <Grid Grid.Row="5" ColumnDefinitions="*,*" Margin="0,4,0,0">
+                    <Button Grid.Column="0"
+                            Classes="DialogButton CancelButton"
+                            Content="Cancel"
+                            HorizontalAlignment="Stretch"
+                            Click="Cancel_Click"
+                            Margin="0,0,6,0"/>
+                    <Button Grid.Column="1"
+                            Classes="DialogButton"
+                            Content="Save"
+                            HorizontalAlignment="Stretch"
+                            Click="Save_Click"
+                            Margin="6,0,0,0"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

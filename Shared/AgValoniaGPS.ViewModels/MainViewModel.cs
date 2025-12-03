@@ -1209,6 +1209,56 @@ public class MainViewModel : ReactiveObject
     public ICommand? CancelNumericInputDialogCommand { get; private set; }
     public ICommand? ConfirmNumericInputDialogCommand { get; private set; }
 
+    // AgShare Settings Dialog properties
+    private bool _isAgShareSettingsDialogVisible;
+    public bool IsAgShareSettingsDialogVisible
+    {
+        get => _isAgShareSettingsDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isAgShareSettingsDialogVisible, value);
+    }
+
+    private string _agShareSettingsServerUrl = "https://agshare.agopengps.com";
+    public string AgShareSettingsServerUrl
+    {
+        get => _agShareSettingsServerUrl;
+        set => this.RaiseAndSetIfChanged(ref _agShareSettingsServerUrl, value);
+    }
+
+    private string _agShareSettingsApiKey = string.Empty;
+    public string AgShareSettingsApiKey
+    {
+        get => _agShareSettingsApiKey;
+        set => this.RaiseAndSetIfChanged(ref _agShareSettingsApiKey, value);
+    }
+
+    private bool _agShareSettingsEnabled;
+    public bool AgShareSettingsEnabled
+    {
+        get => _agShareSettingsEnabled;
+        set => this.RaiseAndSetIfChanged(ref _agShareSettingsEnabled, value);
+    }
+
+    public ICommand? CancelAgShareSettingsDialogCommand { get; private set; }
+    public ICommand? ConfirmAgShareSettingsDialogCommand { get; private set; }
+
+    // AgShare Upload Dialog properties
+    private bool _isAgShareUploadDialogVisible;
+    public bool IsAgShareUploadDialogVisible
+    {
+        get => _isAgShareUploadDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isAgShareUploadDialogVisible, value);
+    }
+    public ICommand? CancelAgShareUploadDialogCommand { get; private set; }
+
+    // AgShare Download Dialog properties
+    private bool _isAgShareDownloadDialogVisible;
+    public bool IsAgShareDownloadDialogVisible
+    {
+        get => _isAgShareDownloadDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isAgShareDownloadDialogVisible, value);
+    }
+    public ICommand? CancelAgShareDownloadDialogCommand { get; private set; }
+
     // iOS Modal Sheet Visibility Properties
     private bool _isFileMenuVisible;
     public bool IsFileMenuVisible
@@ -1865,16 +1915,20 @@ public class MainViewModel : ReactiveObject
         {
             // Use settings directory which defaults to ~/Documents/AgValoniaGPS/Fields
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
+            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Settings.FieldsDirectory = '{fieldsDir}'");
             if (string.IsNullOrWhiteSpace(fieldsDir))
             {
                 fieldsDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "AgValoniaGPS", "Fields");
+                System.Diagnostics.Debug.WriteLine($"[FieldSelection] Using fallback path: '{fieldsDir}'");
             }
             _fieldSelectionDirectory = fieldsDir;
+            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Directory exists: {Directory.Exists(fieldsDir)}");
 
             // Populate the available fields list
             PopulateAvailableFields(fieldsDir);
+            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Found {AvailableFields.Count} fields");
 
             // Show the panel-based dialog
             IsFieldSelectionDialogVisible = true;
@@ -1997,6 +2051,19 @@ public class MainViewModel : ReactiveObject
                 // Save the field origin coordinates
                 var originFile = Path.Combine(fieldPath, "field.origin");
                 File.WriteAllText(originFile, $"{NewFieldLatitude},{NewFieldLongitude}");
+
+                // Create Field.txt in AgOpenGPS format
+                var fieldTxtPath = Path.Combine(fieldPath, "Field.txt");
+                var fieldTxtContent = $"{DateTime.Now:yyyy-MMM-dd hh:mm:ss tt}\n" +
+                                      "$FieldDir\n" +
+                                      $"{NewFieldName}\n" +
+                                      "$Offsets\n" +
+                                      "0,0\n" +
+                                      "Convergence\n" +
+                                      "0\n" +
+                                      "StartFix\n" +
+                                      $"{NewFieldLatitude},{NewFieldLongitude}\n";
+                File.WriteAllText(fieldTxtPath, fieldTxtContent);
 
                 // Set as current field
                 CurrentFieldName = NewFieldName;
@@ -2564,40 +2631,50 @@ public class MainViewModel : ReactiveObject
             BoundaryMapResultPoints.Clear();
         });
 
-        ShowAgShareDownloadDialogCommand = new AsyncRelayCommand(async () =>
+        ShowAgShareDownloadDialogCommand = new RelayCommand(() =>
         {
-            var result = await _dialogService.ShowAgShareDownloadDialogAsync(
-                _settingsService.Settings.AgShareApiKey,
-                _settingsService.Settings.FieldsDirectory);
-            if (result != null)
-            {
-                CurrentFieldName = result.FieldName;
-                IsFieldOpen = true;
-                StatusMessage = $"Downloaded from AgShare: {result.FieldName}";
-            }
+            IsAgShareDownloadDialogVisible = true;
         });
 
-        ShowAgShareUploadDialogCommand = new AsyncRelayCommand(async () =>
+        CancelAgShareDownloadDialogCommand = new RelayCommand(() =>
         {
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                await _dialogService.ShowMessageAsync("No Field Open", "Please open a field first.");
-                return;
-            }
-            var fieldDir = System.IO.Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-            var success = await _dialogService.ShowAgShareUploadDialogAsync(
-                _settingsService.Settings.AgShareApiKey,
-                CurrentFieldName,
-                fieldDir);
-            if (success)
-            {
-                StatusMessage = $"Uploaded to AgShare: {CurrentFieldName}";
-            }
+            IsAgShareDownloadDialogVisible = false;
         });
 
-        ShowAgShareSettingsDialogCommand = new AsyncRelayCommand(async () =>
+        ShowAgShareUploadDialogCommand = new RelayCommand(() =>
         {
-            await _dialogService.ShowAgShareSettingsDialogAsync();
+            IsAgShareUploadDialogVisible = true;
+        });
+
+        CancelAgShareUploadDialogCommand = new RelayCommand(() =>
+        {
+            IsAgShareUploadDialogVisible = false;
+        });
+
+        ShowAgShareSettingsDialogCommand = new RelayCommand(() =>
+        {
+            // Load current settings from storage
+            AgShareSettingsServerUrl = _settingsService.Settings.AgShareServer;
+            AgShareSettingsApiKey = _settingsService.Settings.AgShareApiKey;
+            AgShareSettingsEnabled = _settingsService.Settings.AgShareEnabled;
+            IsAgShareSettingsDialogVisible = true;
+        });
+
+        CancelAgShareSettingsDialogCommand = new RelayCommand(() =>
+        {
+            IsAgShareSettingsDialogVisible = false;
+        });
+
+        ConfirmAgShareSettingsDialogCommand = new RelayCommand(() =>
+        {
+            // Save settings to storage
+            _settingsService.Settings.AgShareServer = AgShareSettingsServerUrl;
+            _settingsService.Settings.AgShareApiKey = AgShareSettingsApiKey;
+            _settingsService.Settings.AgShareEnabled = AgShareSettingsEnabled;
+            _settingsService.Save();
+
+            IsAgShareSettingsDialogVisible = false;
+            StatusMessage = "AgShare settings saved";
         });
 
         ShowBoundaryDialogCommand = new RelayCommand(() =>
