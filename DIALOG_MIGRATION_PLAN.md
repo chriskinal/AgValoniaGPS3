@@ -36,11 +36,13 @@ Convert Desktop's Window-based dialogs to shared UserControl-based panels that w
 - [ ] `BuildFromTracksDialogPanel` - Build boundary from AB lines/curves (blocked - needs BoundaryBuilder service, see MISSING_SERVICES.md)
 
 ### Pending (All needed for iOS/Android tablet replacement)
-- [ ] `BrowserMapDialogPanel` - Map browser for field location
 - [x] `AgShareUploadDialogPanel` - Cloud sync upload
 - [x] `AgShareDownloadDialogPanel` - Cloud sync download
 - [x] `AgShareSettingsDialogPanel` - Cloud sync configuration (with AlphanumericKeyboardPanel)
-- [ ] `DataIODialogPanel` - Data import/export operations
+
+### Not Needed (covered by other implementations)
+- `BrowserMapDialogPanel` - Was a web-based POC; replaced by `BoundaryMapDialogPanel` using Mapsui
+- `DataIODialogPanel` - AgIO communication services already integrated
 
 ### Shared Controls Created
 - `AlphanumericKeyboardPanel` - Reusable QWERTY keyboard for text input (URL, API keys, etc.)
