@@ -31,14 +31,19 @@ Convert Desktop's Window-based dialogs to shared UserControl-based panels that w
 - [x] `BoundaryMapDialogPanel` - Draw boundary on satellite map using Mapsui (Esri World Imagery tiles)
 
 ### In Progress
-- [ ] `BoundaryDialogPanel` - Record/edit boundary (may need platform-specific map)
+- [x] `BoundaryRecordingPanel` - Drive-around boundary recording (completed)
+- [x] `BoundaryPlayerPanel` - Boundary playback/editing (completed)
+- [ ] `BuildFromTracksDialogPanel` - Build boundary from AB lines/curves (blocked - needs BoundaryBuilder service, see MISSING_SERVICES.md)
 
 ### Pending (All needed for iOS/Android tablet replacement)
 - [ ] `BrowserMapDialogPanel` - Map browser for field location
-- [ ] `AgShareUploadDialogPanel` - Cloud sync upload
-- [ ] `AgShareDownloadDialogPanel` - Cloud sync download
-- [ ] `AgShareSettingsDialogPanel` - Cloud sync configuration
+- [x] `AgShareUploadDialogPanel` - Cloud sync upload
+- [x] `AgShareDownloadDialogPanel` - Cloud sync download
+- [x] `AgShareSettingsDialogPanel` - Cloud sync configuration (with AlphanumericKeyboardPanel)
 - [ ] `DataIODialogPanel` - Data import/export operations
+
+### Shared Controls Created
+- `AlphanumericKeyboardPanel` - Reusable QWERTY keyboard for text input (URL, API keys, etc.)
 
 ### Notes on Mobile Map Dialogs
 **UPDATE**: Mapsui.Avalonia 5.0.0 works on iOS with SkiaSharp 3.119.1. The BoundaryMapDialogPanel

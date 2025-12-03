@@ -1,0 +1,146 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.AlphanumericKeyboardPanel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.KeyButton">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="MinWidth" Value="32"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.KeyButton:pointerover">
+            <Setter Property="Background" Value="#4A6278"/>
+        </Style>
+        <Style Selector="Button.KeyButton:pressed">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+
+        <Style Selector="Button.WideButton">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.ShiftButton">
+            <Setter Property="Background" Value="#7F8C8D"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.ShiftButton:pointerover">
+            <Setter Property="Background" Value="#95A5A6"/>
+        </Style>
+        <Style Selector="Button.ShiftActive">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.BackButton">
+            <Setter Property="Background" Value="#E67E22"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.BackButton:pointerover">
+            <Setter Property="Background" Value="#F39C12"/>
+        </Style>
+
+        <Style Selector="Button.ClearButton">
+            <Setter Property="Background" Value="#E67E22"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.ClearButton:pointerover">
+            <Setter Property="Background" Value="#F39C12"/>
+        </Style>
+
+        <Style Selector="Button.SpaceButton">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.SpaceButton:pointerover">
+            <Setter Property="Background" Value="#4A6278"/>
+        </Style>
+
+        <Style Selector="Button.PasteButton">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.PasteButton:pointerover">
+            <Setter Property="Background" Value="#5DADE2"/>
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Spacing="2" Background="#2C3E50">
+        <!-- Number row -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="1" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="2" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="3" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="4" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="5" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="6" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="7" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="8" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="9" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="0" Classes="KeyButton" Click="OnKeyClick"/>
+        </StackPanel>
+
+        <!-- QWERTY row -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="KeyQ" Content="q" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyW" Content="w" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyE" Content="e" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyR" Content="r" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyT" Content="t" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyY" Content="y" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyU" Content="u" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyI" Content="i" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyO" Content="o" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyP" Content="p" Classes="KeyButton" Click="OnKeyClick"/>
+        </StackPanel>
+
+        <!-- ASDF row -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="KeyA" Content="a" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyS" Content="s" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyD" Content="d" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyF" Content="f" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyG" Content="g" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyH" Content="h" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyJ" Content="j" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyK" Content="k" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyL" Content="l" Classes="KeyButton" Click="OnKeyClick"/>
+        </StackPanel>
+
+        <!-- ZXCV row with Shift -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="ShiftButton" Content="Shift" Classes="WideButton ShiftButton" Width="50" Click="OnShiftClick"/>
+            <Button x:Name="KeyZ" Content="z" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyX" Content="x" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyC" Content="c" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyV" Content="v" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyB" Content="b" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyN" Content="n" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button x:Name="KeyM" Content="m" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="&#x232B;" Classes="WideButton BackButton" Width="50" Click="OnBackspaceClick"/>
+        </StackPanel>
+
+        <!-- Bottom row: special chars and space -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="-" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="_" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="." Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="/" Classes="KeyButton" Click="OnKeyClick"/>
+            <Button Content="Space" Classes="WideButton SpaceButton" Width="80" Click="OnSpaceClick"/>
+            <Button Content="Paste" Classes="WideButton PasteButton" Width="50" Click="OnPasteClick"/>
+            <Button Content="C" Classes="WideButton ClearButton" Width="50" Click="OnClearClick"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
