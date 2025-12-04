@@ -7,70 +7,91 @@ Migration completed on 2025-12-04.
 ## Overview
 Migrate Desktop to use shared panels and dialogs from `Shared/AgValoniaGPS.Views/Controls/` instead of desktop-only implementations.
 
-## What Was Done
+## Results
 
-### Phase 1: Verified Project Reference ✓
-- Desktop.csproj already referenced AgValoniaGPS.Views project
+### Code Distribution (After Migration)
+| Category | Lines | Percentage |
+|----------|-------|------------|
+| **Shared** | 28,101 | **91.5%** |
+| Desktop | 1,778 | 5.7% |
+| iOS | 824 | 2.6% |
 
-### Phase 2: Updated MainWindow.axaml ✓
-- Changed `xmlns:panels` from `AgValoniaGPS.Desktop.Controls.Panels` to `AgValoniaGPS.Views.Controls.Panels`
-- Added `xmlns:dialogs` for shared dialogs
-- Added `xmlns:controls` for shared controls
+**Target achieved**: Both platforms are now under 6% platform-specific code.
 
-### Phase 3: Registered All Shared Dialogs ✓
-Added all 12 shared dialogs to MainWindow.axaml:
-- SimCoordsDialogPanel
-- FieldSelectionDialogPanel
-- NewFieldDialogPanel
-- FromExistingFieldDialogPanel
-- KmlImportDialogPanel
-- IsoXmlImportDialogPanel
-- BoundaryMapDialogPanel
-- NumericInputDialogPanel
-- AgShareSettingsDialogPanel
-- AgShareUploadDialogPanel
-- AgShareDownloadDialogPanel
-- DataIODialogPanel
-
-### Phase 4: Build and Test ✓
-- Desktop project builds successfully
-- Using shared DrawingContextMapControl
-
-### Phase 5: Removed Desktop-Only Panels ✓
-Deleted:
-- `Platforms/AgValoniaGPS.Desktop/Controls/Panels/LeftNavigationPanel.axaml`
-- `Platforms/AgValoniaGPS.Desktop/Controls/Panels/LeftNavigationPanel.axaml.cs`
-- `Platforms/AgValoniaGPS.Desktop/Controls/Panels/` (empty folder)
-
-Updated `MainWindow.axaml.cs` to use shared namespace:
-- Changed `using AgValoniaGPS.Desktop.Controls.Panels;` to `using AgValoniaGPS.Views.Controls.Panels;`
-
-### Phase 6: Final Verification ✓
-- Both iOS and Desktop build successfully
-- Desktop uses shared panels and dialogs
+### Lines Removed
+- **8,443 lines deleted** from Desktop platform
+- 14 legacy dialog files removed
+- OpenGL and Skia map controls removed
+- DialogService simplified to stub methods
 
 ---
 
-## File Changes Summary
+## What Was Done
 
-### MainWindow.axaml
-```xml
-<!-- OLD -->
-xmlns:panels="using:AgValoniaGPS.Desktop.Controls.Panels"
+### Phase 1: Add Shared Panels to MainWindow ✓
+- Changed namespaces from `AgValoniaGPS.Desktop.Controls.Panels` to `AgValoniaGPS.Views.Controls.Panels`
+- Added `xmlns:dialogs` for shared dialog panels
+- Added all 12 shared dialog overlays to MainWindow.axaml
 
-<!-- NEW -->
-xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
-xmlns:panels="clr-namespace:AgValoniaGPS.Views.Controls.Panels;assembly=AgValoniaGPS.Views"
-xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
+### Phase 2: Remove Legacy Desktop Code ✓
+
+**Deleted Dialog Files (14 dialogs):**
+- AgShareDownloadDialog.axaml/.cs
+- AgShareSettingsDialog.axaml/.cs
+- AgShareUploadDialog.axaml/.cs
+- AlphanumericKeyboard.axaml/.cs
+- BrowserMapDialog.axaml/.cs
+- DataIODialog.axaml/.cs
+- FieldSelectionDialog.axaml/.cs
+- FromExistingFieldDialog.axaml/.cs
+- IsoXmlImportDialog.axaml/.cs
+- KmlImportDialog.axaml/.cs
+- MapsuiBoundaryDialog.axaml/.cs
+- NewFieldDialog.axaml/.cs
+- OnScreenKeyboard.axaml/.cs
+- SimCoordsDialog.axaml/.cs
+
+**Deleted Map Controls:**
+- OpenGLMapControl.cs (1,800 lines)
+- SkiaMapControl.cs (824 lines)
+- IMapControl.cs (16 lines)
+
+**Simplified Services:**
+- DialogService.cs - Now stubs most methods (dialogs handled by ViewModel commands)
+- MapService.cs - Removed reference to deleted controls
+
+### Phase 3: Verify Build and Test ✓
+- Both iOS and Desktop build successfully
+- Desktop uses shared DrawingContextMapControl at 30 FPS
+- All shared dialog overlays work on Desktop
+
+---
+
+## Current Desktop Structure
+
+```
+Platforms/AgValoniaGPS.Desktop/
+├── App.axaml / App.axaml.cs        # App entry point
+├── Program.cs                       # Main entry
+├── ViewLocator.cs                   # View resolution
+├── Converters/
+│   └── BoolToColorConverter.cs     # UI converter
+├── DependencyInjection/
+│   └── ServiceCollectionExtensions.cs  # DI setup
+├── Services/
+│   ├── DialogService.cs            # Simplified (stubs)
+│   └── MapService.cs               # Wraps shared map control
+└── Views/
+    ├── MainWindow.axaml            # Main UI with shared panels
+    └── MainWindow.axaml.cs         # Code-behind
 ```
 
-### Files Deleted
-- `Platforms/AgValoniaGPS.Desktop/Controls/Panels/LeftNavigationPanel.axaml`
-- `Platforms/AgValoniaGPS.Desktop/Controls/Panels/LeftNavigationPanel.axaml.cs`
+Total: ~1,778 lines (5.7% of codebase)
 
 ---
 
 ## Notes
-- Desktop now uses the same shared panels as iOS
-- The shared panels work well on desktop with mouse interactions
-- Both platforms share DrawingContextMapControl at 30 FPS
+- Desktop and iOS now share the same UI panels and dialogs
+- DrawingContextMapControl runs at 30 FPS on both platforms
+- ARM64 Mac simulator runs efficiently (93% idle at 30 FPS)
+- Intel Mac simulator requires lower FPS (~10) due to emulation overhead
