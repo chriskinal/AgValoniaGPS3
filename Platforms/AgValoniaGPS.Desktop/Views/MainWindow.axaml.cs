@@ -16,8 +16,8 @@ using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Desktop.Controls;
-using AgValoniaGPS.Desktop.Controls.Panels;
 using AgValoniaGPS.Views.Controls;
+using AgValoniaGPS.Views.Controls.Panels;
 
 namespace AgValoniaGPS.Desktop.Views;
 

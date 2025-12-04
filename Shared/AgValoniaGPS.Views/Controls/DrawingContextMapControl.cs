@@ -142,11 +142,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Load vehicle (tractor) image from embedded resources
         LoadVehicleImage();
 
-        // Render timer for continuous updates (10 FPS for iOS simulator compatibility)
-        // Note: iOS simulator has ARM64->x64 translation overhead; increase FPS when testing on real device
+        // Render timer for continuous updates (30 FPS)
+        // ARM64 Mac/iOS handles 60 FPS fine, but 30 FPS saves battery with no visible difference
+        // Intel Mac simulator needs ~10 FPS due to ARM emulation overhead
         _renderTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(100)
+            Interval = TimeSpan.FromMilliseconds(33)
         };
         _renderTimer.Tick += (s, e) => InvalidateVisual();
         _renderTimer.Start();

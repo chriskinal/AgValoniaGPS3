@@ -3,8 +3,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:AgValoniaGPS.ViewModels"
-        xmlns:controls="using:AgValoniaGPS.Desktop.Controls"
-        xmlns:panels="using:AgValoniaGPS.Desktop.Controls.Panels"
+        xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
+        xmlns:panels="clr-namespace:AgValoniaGPS.Views.Controls.Panels;assembly=AgValoniaGPS.Views"
+        xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
         mc:Ignorable="d" d:DesignWidth="1366" d:DesignHeight="768"
         x:Class="AgValoniaGPS.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -96,6 +97,8 @@
         </Style>
     </Window.Styles>
 
+    <!-- Main content with dialog overlays -->
+    <Panel>
     <!-- Main Grid with OpenGL as background -->
     <Grid>
         <!-- Map Render Area (fills entire window) with pointer events -->
@@ -220,4 +223,19 @@
         </Border>
         </Canvas>
     </Grid>
+
+    <!-- Modal Dialog Overlays (rendered on top of everything) -->
+    <dialogs:SimCoordsDialogPanel/>
+    <dialogs:FieldSelectionDialogPanel/>
+    <dialogs:NewFieldDialogPanel/>
+    <dialogs:FromExistingFieldDialogPanel/>
+    <dialogs:KmlImportDialogPanel/>
+    <dialogs:IsoXmlImportDialogPanel/>
+    <dialogs:BoundaryMapDialogPanel/>
+    <dialogs:NumericInputDialogPanel/>
+    <dialogs:AgShareSettingsDialogPanel/>
+    <dialogs:AgShareUploadDialogPanel/>
+    <dialogs:AgShareDownloadDialogPanel/>
+    <dialogs:DataIODialogPanel/>
+    </Panel>
 </Window>
