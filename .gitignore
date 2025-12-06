@@ -70,3 +70,4 @@ artifacts/
 
 # Azure Functions
 local.settings.json
+.claude/settings.local.json
