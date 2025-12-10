@@ -87,5 +87,18 @@ namespace AgValoniaGPS.Models.YouTurn
         /// List of worked tracks (for IgnoreWorkedTracks mode).
         /// </summary>
         public HashSet<int> WorkedTracks { get; set; } = new HashSet<int>();
+
+        /// <summary>
+        /// U-turn leg extension multiplier. The straight legs before/after the turn arc
+        /// are extended by this factor times the turn diameter.
+        /// Typical values are 2-3 (default 2.5).
+        /// </summary>
+        public double YouTurnLegExtensionMultiplier { get; set; } = 2.5;
+
+        /// <summary>
+        /// The headland width in meters. Used to ensure U-turn legs extend
+        /// far enough to guide the tractor through the entire headland area.
+        /// </summary>
+        public double HeadlandWidth { get; set; } = 20.0;
     }
 }

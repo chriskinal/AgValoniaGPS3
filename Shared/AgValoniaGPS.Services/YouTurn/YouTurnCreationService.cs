@@ -900,92 +900,83 @@ namespace AgValoniaGPS.Services.YouTurn
             if (!input.IsHeadingSameWay) head += Math.PI;
             if (head >= TWO_PI) head -= TWO_PI;
 
-            // We are doing an omega turn
-            switch (youTurnPhase)
+            // Phase 0: Find turn point and create Dubins path
+            // How far are we from any turn boundary
+            Vec3 onPurePoint = new Vec3(input.ABReferencePoint.Easting, input.ABReferencePoint.Northing, head);
+            FindABTurnPoint(input, onPurePoint);
+
+            // Or did we lose the turnLine
+            if (closestTurnPt.TurnLineIndex == -1)
             {
-                case 0:
-                    // How far are we from any turn boundary
-                    Vec3 onPurePoint = new Vec3(input.ABReferencePoint.Easting, input.ABReferencePoint.Northing, head);
-                    FindABTurnPoint(input, onPurePoint);
-
-                    // Or did we lose the turnLine
-                    if (closestTurnPt.TurnLineIndex == -1)
-                    {
-                        FailCreate();
-                        return false;
-                    }
-
-                    inClosestTurnPt = new TurnClosePoint(closestTurnPt);
-
-                    _dubinsService.TurningRadius = input.TurnRadius;
-
-                    Vec3 start = inClosestTurnPt.ClosePt;
-                    start.Heading = head;
-
-                    Vec3 goal = start;
-
-                    // Now we go the other way to turn round
-                    double invertedHead = head - Math.PI;
-                    if (invertedHead < 0) invertedHead += TWO_PI;
-                    if (invertedHead > TWO_PI) invertedHead -= TWO_PI;
-
-                    if (input.IsTurnLeft)
-                    {
-                        goal.Easting = goal.Easting + (Math.Cos(-invertedHead) * turnOffset);
-                        goal.Northing = goal.Northing + (Math.Sin(-invertedHead) * turnOffset);
-                    }
-                    else
-                    {
-                        goal.Easting = goal.Easting - (Math.Cos(-invertedHead) * turnOffset);
-                        goal.Northing = goal.Northing - (Math.Sin(-invertedHead) * turnOffset);
-                    }
-
-                    goal.Heading = invertedHead;
-
-                    // Generate the turn points
-                    ytList = _dubinsService.GeneratePath(start, goal);
-                    isOutOfBounds = true;
-
-                    if (ytList.Count == 0)
-                    {
-                        FailCreate();
-                        return false;
-                    }
-
-                    youTurnPhase = 1;
-
-                    double distance;
-                    int cnt = ytList.Count;
-                    for (int i = 1; i < cnt - 2; i++)
-                    {
-                        distance = DistanceSquared(ytList[i], ytList[i + 1]);
-                        if (distance < pointSpacing)
-                        {
-                            ytList.RemoveAt(i + 1);
-                            i--;
-                            cnt = ytList.Count;
-                        }
-                    }
-
-                    return true;
-
-                case 1:
-                    // Move out
-                    ytList = MoveTurnInsideTurnLine(input, ytList, head, false, false);
-
-                    if (ytList.Count == 0)
-                    {
-                        FailCreate();
-                        return false;
-                    }
-
-                    isOutOfBounds = false;
-                    youTurnPhase = 10;
-
-                    if (!AddABSequenceLines(input)) return false;
-
-                    return true;
+                FailCreate();
+                return false;
             }
+
+            inClosestTurnPt = new TurnClosePoint(closestTurnPt);
+
+            _dubinsService.TurningRadius = input.TurnRadius;
+
+            Vec3 start = inClosestTurnPt.ClosePt;
+            start.Heading = head;
+
+            Vec3 goal = start;
+
+            // Now we go the other way to turn round
+            double invertedHead = head - Math.PI;
+            if (invertedHead < 0) invertedHead += TWO_PI;
+            if (invertedHead > TWO_PI) invertedHead -= TWO_PI;
+
+            if (input.IsTurnLeft)
+            {
+                goal.Easting = goal.Easting + (Math.Cos(-invertedHead) * turnOffset);
+                goal.Northing = goal.Northing + (Math.Sin(-invertedHead) * turnOffset);
+            }
+            else
+            {
+                goal.Easting = goal.Easting - (Math.Cos(-invertedHead) * turnOffset);
+                goal.Northing = goal.Northing - (Math.Sin(-invertedHead) * turnOffset);
+            }
+
+            goal.Heading = invertedHead;
+
+            // Generate the turn points
+            ytList = _dubinsService.GeneratePath(start, goal);
+            isOutOfBounds = true;
+
+            if (ytList.Count == 0)
+            {
+                FailCreate();
+                return false;
+            }
+
+            // Clean up closely spaced points
+            double distance;
+            int cnt = ytList.Count;
+            for (int i = 1; i < cnt - 2; i++)
+            {
+                distance = DistanceSquared(ytList[i], ytList[i + 1]);
+                if (distance < pointSpacing)
+                {
+                    ytList.RemoveAt(i + 1);
+                    i--;
+                    cnt = ytList.Count;
+                }
+            }
+
+            // Phase 1: Move turn inside boundary and add sequence lines
+            ytList = MoveTurnInsideTurnLine(input, ytList, head, false, false);
+
+            if (ytList.Count == 0)
+            {
+                FailCreate();
+                return false;
+            }
+
+            isOutOfBounds = false;
+            youTurnPhase = 10;
+
+            // Add the entry and exit legs
+            if (!AddABSequenceLines(input)) return false;
 
             return true;
         }
@@ -1658,33 +1649,44 @@ namespace AgValoniaGPS.Services.YouTurn
 
         private bool AddCurveSequenceLines(YouTurnCreationInput input)
         {
-            // How many points straight out
-            double lenny = 5;
+            // Calculate leg length - use headland width as the base
+            double legLength = input.HeadlandWidth * input.YouTurnLegExtensionMultiplier;
+
+            // Ensure minimum leg length based on turn diameter
+            double minLegLength = input.TurnRadius * 2.0;
+            if (legLength < minLegLength) legLength = minLegLength;
+
+            // For curves, we add points from the curve itself
+            // Estimate how many curve points we need based on leg length and typical curve point spacing (~1m)
+            int numLegPoints = (int)(legLength / 1.0);
+            if (numLegPoints < 10) numLegPoints = 10;
+
             bool sameWay = input.IsHeadingSameWay;
             int a = sameWay ? -1 : 1;
 
-            for (int i = 0; i < lenny && i > -lenny; i += a)
+            // Add entry leg points from the curve
+            for (int i = 0; i < numLegPoints; i++)
             {
-                ytList.Insert(0, input.GuidancePoints[inClosestTurnPt.CurveIndex]);
-                inClosestTurnPt.CurveIndex += a;
                 if (inClosestTurnPt.CurveIndex < 2 || inClosestTurnPt.CurveIndex > input.GuidancePoints.Count - 3)
                 {
-                    FailCreate();
-                    return false;
+                    break;  // Stop if we run out of curve points
                 }
+                ytList.Insert(0, input.GuidancePoints[inClosestTurnPt.CurveIndex]);
+                inClosestTurnPt.CurveIndex += a;
             }
+
             if (isOutSameCurve) sameWay = !sameWay;
             a = sameWay ? -1 : 1;
 
-            for (int i = 0; i < lenny && i > -lenny; i += a)
+            // Add exit leg points from the next curve
+            for (int i = 0; i < numLegPoints; i++)
             {
+                if (outClosestTurnPt.CurveIndex < 2 || outClosestTurnPt.CurveIndex > nextCurve.Count - 3)
+                {
+                    break;  // Stop if we run out of curve points
+                }
                 ytList.Add(nextCurve[outClosestTurnPt.CurveIndex]);
                 outClosestTurnPt.CurveIndex += a;
-                if (outClosestTurnPt.CurveIndex < 2 || outClosestTurnPt.CurveIndex > input.GuidancePoints.Count - 3)
-                {
-                    FailCreate();
-                    return false;
-                }
             }
 
             return true;
@@ -1700,28 +1702,70 @@ namespace AgValoniaGPS.Services.YouTurn
             if (isOutSameCurve) outhead += Math.PI;
             if (outhead > TWO_PI) outhead -= TWO_PI;
 
-            // How many points straight out
-            double lenny = 15;
+            // Calculate leg length - use headland width as the base
+            // The legs need to extend at least the headland width to guide through the turn
+            // Plus some extra to ensure smooth entry/exit
+            double legLength = input.HeadlandWidth * input.YouTurnLegExtensionMultiplier;
 
-            for (int a = 0; a < lenny; a++)
+            // Ensure minimum leg length based on turn diameter
+            double minLegLength = input.TurnRadius * 2.0;
+            if (legLength < minLegLength) legLength = minLegLength;
+
+            // Use 1 meter spacing for leg points
+            double legPointSpacing = 1.0;
+            int numLegPoints = (int)(legLength / legPointSpacing);
+            if (numLegPoints < 10) numLegPoints = 10;  // Minimum 10 points (10 meters)
+
+            // Add entry leg (before the turn arc)
+            // Store the arc start point before we add entry leg points
+            Vec3 arcStart = ytList[0];
+            for (int a = 0; a < numLegPoints; a++)
             {
                 Vec3 pt = new Vec3
                 {
-                    Easting = ytList[0].Easting - (Math.Sin(inhead) * pointSpacing),
-                    Northing = ytList[0].Northing - (Math.Cos(inhead) * pointSpacing),
+                    Easting = ytList[0].Easting - (Math.Sin(inhead) * legPointSpacing),
+                    Northing = ytList[0].Northing - (Math.Cos(inhead) * legPointSpacing),
                     Heading = inhead
                 };
                 ytList.Insert(0, pt);
             }
 
-            int count = ytList.Count;
+            // The entry START point is now ytList[0] - this is in the cultivated area
+            Vec3 entryStart = ytList[0];
 
-            for (int i = 0; i <= lenny; i++)
+            // Calculate the turn offset (perpendicular distance to next track)
+            double turnOffset = (input.ToolWidth - input.ToolOverlap) * input.RowSkipsWidth
+                + (input.IsTurnLeft ? -input.ToolOffset * 2.0 : input.ToolOffset * 2.0);
+
+            // Calculate perpendicular angle based on TRAVEL heading and turn direction
+            // The turn goes perpendicular to travel direction (left or right based on IsTurnLeft)
+            double perpAngle = inhead + (input.IsTurnLeft ? -PI_BY_2 : PI_BY_2);
+            if (perpAngle < 0) perpAngle += TWO_PI;
+            if (perpAngle > TWO_PI) perpAngle -= TWO_PI;
+
+            // The EXIT END point should be in the cultivated area on the NEXT track
+            // It's the entry start point offset perpendicular by the turn offset
+            double exitEndE = entryStart.Easting + Math.Sin(perpAngle) * turnOffset;
+            double exitEndN = entryStart.Northing + Math.Cos(perpAngle) * turnOffset;
+            Vec3 exitEnd = new Vec3 { Easting = exitEndE, Northing = exitEndN, Heading = outhead };
+
+            int count = ytList.Count;
+            Vec3 arcEnd = ytList[count - 1];  // Last point of arc
+
+            // Calculate distance from arc end to exit end
+            double exitLegDist = Math.Sqrt(
+                (exitEnd.Easting - arcEnd.Easting) * (exitEnd.Easting - arcEnd.Easting) +
+                (exitEnd.Northing - arcEnd.Northing) * (exitEnd.Northing - arcEnd.Northing));
+
+            // Generate exit leg points from arc end to exit end
+            int exitLegPoints = Math.Max(10, (int)(exitLegDist / legPointSpacing));
+            for (int i = 1; i <= exitLegPoints; i++)
             {
+                double t = (double)i / exitLegPoints;
                 Vec3 pt = new Vec3
                 {
-                    Easting = ytList[count - 1].Easting - (Math.Sin(outhead) * i * pointSpacing),
-                    Northing = ytList[count - 1].Northing - (Math.Cos(outhead) * i * pointSpacing),
+                    Easting = arcEnd.Easting + (exitEnd.Easting - arcEnd.Easting) * t,
+                    Northing = arcEnd.Northing + (exitEnd.Northing - arcEnd.Northing) * t,
                     Heading = outhead
                 };
                 ytList.Add(pt);
