@@ -170,4 +170,27 @@ public class MapService : IMapService
     {
         _mapControl?.SetHeadlandVisible(visible);
     }
+
+    // YouTurn path visualization
+    public void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath)
+    {
+        _mapControl?.SetYouTurnPath(turnPath);
+    }
+
+    // AB Line visualization for U-turns
+    public void SetNextABLine(ABLine? abLine)
+    {
+        _mapControl?.SetNextABLine(abLine);
+    }
+
+    public void SetIsInYouTurn(bool isInTurn)
+    {
+        _mapControl?.SetIsInYouTurn(isInTurn);
+    }
+
+    // Active AB Line for guidance
+    public void SetActiveABLine(ABLine? abLine)
+    {
+        _mapControl?.SetActiveABLine(abLine);
+    }
 }

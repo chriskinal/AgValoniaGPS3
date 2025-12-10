@@ -107,7 +107,19 @@
                 </Panel>
             </Button>
 
-            <!-- 4. AutoSteer Toggle (3 states: Gray=disabled, Off=ready, On=active) -->
+            <!-- 4. YouTurn Toggle (only visible when track is active) -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="YouTurn Auto U-Turn"
+                    Command="{Binding ToggleYouTurnCommand}"
+                    IsVisible="{Binding IsAutoSteerAvailable}">
+                <Panel>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnYes.png" Stretch="Uniform"
+                           IsVisible="{Binding IsYouTurnEnabled}"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnNo.png" Stretch="Uniform"
+                           IsVisible="{Binding IsYouTurnEnabled, Converter={StaticResource InverseBoolConverter}}"/>
+                </Panel>
+            </Button>
+
+            <!-- 5. AutoSteer Toggle (3 states: Gray=disabled, Off=ready, On=active) -->
             <Button Classes="RightPanelButton" ToolTip.Tip="AutoSteer"
                     Command="{Binding ToggleAutoSteerCommand}"
                     IsEnabled="{Binding IsAutoSteerAvailable}">

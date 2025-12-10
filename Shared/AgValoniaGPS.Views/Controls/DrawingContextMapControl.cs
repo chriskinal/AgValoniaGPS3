@@ -57,6 +57,14 @@ public interface ISharedMapControl
     void SetHeadlandPreview(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? previewPoints);
     void SetHeadlandVisible(bool visible);
 
+    // YouTurn path visualization
+    void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath);
+
+    // AB Line visualization for U-turns
+    void SetNextABLine(AgValoniaGPS.Models.ABLine? abLine);
+    void SetIsInYouTurn(bool isInTurn);
+    void SetActiveABLine(AgValoniaGPS.Models.ABLine? abLine);
+
     // Grid visibility property
     bool IsGridVisible { get; set; }
 }
@@ -147,8 +155,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Clip path (for curved headland clipping - follows the headland curve)
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _clipPath;
 
+    // YouTurn path
+    private IReadOnlyList<(double Easting, double Northing)>? _youTurnPath;
+
     // AB Line data
     private AgValoniaGPS.Models.ABLine? _activeABLine;
+    private AgValoniaGPS.Models.ABLine? _nextABLine; // Next line to follow after U-turn
+    private bool _isInYouTurn; // When true, current line is dotted, next line is solid
     private AgValoniaGPS.Models.Position? _pendingPointA; // Point A while waiting for Point B
 
     // Pens and brushes (reused for performance)
@@ -296,6 +309,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_activeABLine != null || _pendingPointA != null)
             {
                 DrawABLine(context);
+            }
+
+            // Draw YouTurn path
+            if (_youTurnPath != null && _youTurnPath.Count > 1)
+            {
+                DrawYouTurnPath(context);
             }
 
             // Draw vehicle (can be hidden for headland editing mode)
@@ -617,6 +636,60 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         context.DrawGeometry(null, _headlandPreviewPen, geometry);
     }
 
+    private void DrawYouTurnPath(DrawingContext context)
+    {
+        if (_youTurnPath == null || _youTurnPath.Count < 2) return;
+
+        // Create a pen for the YouTurn path - orange color for path line
+        var youTurnPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), 1.0);
+
+        // Draw the path as connected line segments
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
+        {
+            ctx.BeginFigure(new Point(_youTurnPath[0].Easting, _youTurnPath[0].Northing), false);
+            for (int i = 1; i < _youTurnPath.Count; i++)
+            {
+                ctx.LineTo(new Point(_youTurnPath[i].Easting, _youTurnPath[i].Northing));
+            }
+            ctx.EndFigure(false);
+        }
+        context.DrawGeometry(null, youTurnPen, geometry);
+
+        // Draw path points as small squares (less distortion than circles when scaled)
+        var pathPointBrush = new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)); // Semi-transparent orange
+        double squareSize = 0.8; // meters (in world coordinates)
+        double halfSize = squareSize / 2.0;
+
+        // Draw every Nth point to avoid clutter (every 2 meters roughly)
+        int skipPoints = Math.Max(1, _youTurnPath.Count / 50);
+        for (int i = 0; i < _youTurnPath.Count; i += skipPoints)
+        {
+            var pt = _youTurnPath[i];
+            var rect = new Rect(pt.Easting - halfSize, pt.Northing - halfSize, squareSize, squareSize);
+            context.DrawRectangle(pathPointBrush, null, rect);
+        }
+
+        // Draw start point marker (green square - larger)
+        var startMarkerBrush = new SolidColorBrush(Color.FromRgb(0, 200, 0));
+        double markerSize = 2.0; // meters
+        double halfMarker = markerSize / 2.0;
+        var startRect = new Rect(
+            _youTurnPath[0].Easting - halfMarker,
+            _youTurnPath[0].Northing - halfMarker,
+            markerSize, markerSize);
+        context.DrawRectangle(startMarkerBrush, null, startRect);
+
+        // Draw end point marker (red square - larger)
+        var endMarkerBrush = new SolidColorBrush(Color.FromRgb(200, 0, 0));
+        var endPt = _youTurnPath[_youTurnPath.Count - 1];
+        var endRect = new Rect(
+            endPt.Easting - halfMarker,
+            endPt.Northing - halfMarker,
+            markerSize, markerSize);
+        context.DrawRectangle(endMarkerBrush, null, endRect);
+    }
+
     private void DrawSelectionMarkers(DrawingContext context)
     {
         if (_selectionMarkers == null || _selectionMarkers.Count == 0) return;
@@ -673,10 +746,22 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double lineThickness = 2 * worldPerPixel; // ~2 pixels for lines
         double labelOffset = 8 * worldPerPixel;   // Offset for A/B labels
 
-        // Create scaled pens
-        var abLinePenScaled = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness);
+        // Create scaled pens - solid and dotted versions
+        var abLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness);
+        var abLinePenDotted = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness)
+        {
+            DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
+        };
         var abLineExtendPenScaled = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5);
+        var abLineExtendPenDotted = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5)
+        {
+            DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
+        };
         var pointOutlinePen = new Pen(Brushes.White, lineThickness * 0.5);
+
+        // Next line pen (cyan/blue for visibility)
+        var nextLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(0, 200, 255)), lineThickness);
+        var nextLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 200, 255)), lineThickness * 0.5);
 
         // Draw pending Point A (green marker while waiting for Point B)
         if (_pendingPointA != null)
@@ -688,42 +773,64 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
         }
 
+        // Draw next AB line first (so current line renders on top)
+        if (_isInYouTurn && _nextABLine != null)
+        {
+            DrawSingleABLine(context, _nextABLine, nextLinePenSolid, nextLineExtendPen, pointOutlinePen,
+                pointRadius, labelOffset, worldPerPixel, "Next");
+        }
+
         // Draw active AB line
         if (_activeABLine != null)
         {
-            var pointA = new Point(_activeABLine.PointA.Easting, _activeABLine.PointA.Northing);
-            var pointB = new Point(_activeABLine.PointB.Easting, _activeABLine.PointB.Northing);
+            // When in U-turn, draw current line as dotted; otherwise solid
+            var mainPen = _isInYouTurn ? abLinePenDotted : abLinePenSolid;
+            var extendPen = _isInYouTurn ? abLineExtendPenDotted : abLineExtendPenScaled;
 
-            // Calculate heading and extend the line in both directions
-            double dx = pointB.X - pointA.X;
-            double dy = pointB.Y - pointA.Y;
-            double length = Math.Sqrt(dx * dx + dy * dy);
+            DrawSingleABLine(context, _activeABLine, mainPen, extendPen, pointOutlinePen,
+                pointRadius, labelOffset, worldPerPixel, "Current");
+        }
+    }
 
-            if (length > 0.01) // Avoid division by zero
-            {
-                // Normalize direction
-                double nx = dx / length;
-                double ny = dy / length;
+    private void DrawSingleABLine(DrawingContext context, AgValoniaGPS.Models.ABLine abLine,
+        Pen mainPen, Pen extendPen, Pen pointOutlinePen,
+        double pointRadius, double labelOffset, double worldPerPixel, string lineType)
+    {
+        var pointA = new Point(abLine.PointA.Easting, abLine.PointA.Northing);
+        var pointB = new Point(abLine.PointB.Easting, abLine.PointB.Northing);
 
-                // Extend line 500 meters in each direction
-                double extendDistance = 500.0;
-                var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
-                var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
+        // Calculate heading and extend the line in both directions
+        double dx = pointB.X - pointA.X;
+        double dy = pointB.Y - pointA.Y;
+        double length = Math.Sqrt(dx * dx + dy * dy);
 
-                // Draw extended line (semi-transparent)
-                context.DrawLine(abLineExtendPenScaled, extendA, extendB);
-            }
+        if (length > 0.01) // Avoid division by zero
+        {
+            // Normalize direction
+            double nx = dx / length;
+            double ny = dy / length;
 
-            // Draw main AB line (solid orange)
-            context.DrawLine(abLinePenScaled, pointA, pointB);
+            // Extend line 500 meters in each direction
+            double extendDistance = 500.0;
+            var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
+            var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
 
-            // Draw Point A marker (green)
-            context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
+            // Draw extended line (semi-transparent)
+            context.DrawLine(extendPen, extendA, extendB);
+        }
 
-            // Draw Point B marker (red)
-            context.DrawEllipse(_pointBBrush, pointOutlinePen, pointB, pointRadius, pointRadius);
+        // Draw main AB line
+        context.DrawLine(mainPen, pointA, pointB);
 
-            // Draw labels
+        // Draw Point A marker (green)
+        context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
+
+        // Draw Point B marker (red)
+        context.DrawEllipse(_pointBBrush, pointOutlinePen, pointB, pointRadius, pointRadius);
+
+        // Draw labels - only for current line to avoid clutter
+        if (lineType == "Current")
+        {
             DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
             DrawLabel(context, "B", pointB.X + labelOffset, pointB.Y, worldPerPixel, Brushes.Red);
         }
@@ -1004,6 +1111,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _isHeadlandVisible = visible;
     }
 
+    // YouTurn path visualization
+    public void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath)
+    {
+        _youTurnPath = turnPath;
+    }
+
     public void SetSelectionMarkers(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? markers)
     {
         _selectionMarkers = markers;
@@ -1030,6 +1143,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetActiveABLine(AgValoniaGPS.Models.ABLine? abLine)
     {
         _activeABLine = abLine;
+    }
+
+    public void SetNextABLine(AgValoniaGPS.Models.ABLine? abLine)
+    {
+        _nextABLine = abLine;
+    }
+
+    public void SetIsInYouTurn(bool isInTurn)
+    {
+        _isInYouTurn = isInTurn;
     }
 
     public void SetPendingPointA(AgValoniaGPS.Models.Position? pointA)

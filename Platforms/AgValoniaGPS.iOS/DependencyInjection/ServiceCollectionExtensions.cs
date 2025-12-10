@@ -3,6 +3,8 @@ using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
+using AgValoniaGPS.Services.Guidance;
+using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.iOS.Services;
@@ -44,6 +46,14 @@ public static class ServiceCollectionExtensions
         // Headland builder services
         services.AddSingleton<IPolygonOffsetService, PolygonOffsetService>();
         services.AddSingleton<IHeadlandBuilderService, HeadlandBuilderService>();
+        services.AddSingleton<ITurnAreaService, TurnAreaService>();
+
+        // Guidance algorithm services
+        services.AddSingleton<IPurePursuitGuidanceService, PurePursuitGuidanceService>();
+
+        // YouTurn services
+        services.AddSingleton<YouTurnCreationService>();
+        services.AddSingleton<YouTurnGuidanceService>();
 
         // iOS-specific services
         services.AddSingleton<IDialogService, DialogService>();

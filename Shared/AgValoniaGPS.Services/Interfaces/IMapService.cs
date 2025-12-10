@@ -58,4 +58,14 @@ public interface IMapService
     void SetHeadlandLine(IReadOnlyList<Vec3>? headlandPoints);
     void SetHeadlandPreview(IReadOnlyList<Vec2>? previewPoints);
     void SetHeadlandVisible(bool visible);
+
+    // YouTurn path visualization
+    void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath);
+
+    // AB Line visualization for U-turns
+    void SetNextABLine(ABLine? abLine);
+    void SetIsInYouTurn(bool isInTurn);
+
+    // Active AB Line for guidance
+    void SetActiveABLine(ABLine? abLine);
 }

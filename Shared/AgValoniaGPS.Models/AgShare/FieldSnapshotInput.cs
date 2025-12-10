@@ -57,9 +57,9 @@ namespace AgValoniaGPS.Models.AgShare
         public string Name { get; set; }
 
         /// <summary>
-        /// Track mode (AB or Curve)
+        /// Track mode (AB or Curve) - uses main TrackMode enum from AgValoniaGPS.Models
         /// </summary>
-        public TrackMode Mode { get; set; }
+        public Models.TrackMode Mode { get; set; }
 
         /// <summary>
         /// Point A (for AB lines)
@@ -75,14 +75,5 @@ namespace AgValoniaGPS.Models.AgShare
         /// Curve points (for curves)
         /// </summary>
         public List<Vec3> CurvePoints { get; set; } = new List<Vec3>();
-    }
-
-    /// <summary>
-    /// Track mode enumeration
-    /// </summary>
-    public enum TrackMode
-    {
-        AB = 2,
-        Curve = 4
     }
 }
