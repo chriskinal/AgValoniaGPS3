@@ -31,24 +31,6 @@ public class ConfigurationViewModel : ReactiveObject
 
     #endregion
 
-    #region Tab Navigation
-
-    private int _selectedTabIndex;
-    public int SelectedTabIndex
-    {
-        get => _selectedTabIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
-    }
-
-    private int _selectedSubTabIndex;
-    public int SelectedSubTabIndex
-    {
-        get => _selectedSubTabIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedSubTabIndex, value);
-    }
-
-    #endregion
-
     #region Profile Management
 
     public ObservableCollection<string> AvailableProfiles { get; } = new();
@@ -399,8 +381,6 @@ public class ConfigurationViewModel : ReactiveObject
 
     #region Commands
 
-    public ICommand SelectTabCommand { get; }  // Takes object, handles both int and string
-    public ICommand SelectSubTabCommand { get; }  // Takes object, handles both int and string
     public ICommand LoadProfileCommand { get; }
     public ICommand SaveProfileCommand { get; }
     public ICommand NewProfileCommand { get; }
@@ -426,17 +406,7 @@ public class ConfigurationViewModel : ReactiveObject
         _profileService = profileService;
         _settingsService = settingsService;
 
-        // Initialize commands - use string parameters since XAML CommandParameter is always string
-        SelectTabCommand = new RelayCommand<object>(param =>
-        {
-            if (param is int intVal) SelectedTabIndex = intVal;
-            else if (param is string strVal && int.TryParse(strVal, out var parsed)) SelectedTabIndex = parsed;
-        });
-        SelectSubTabCommand = new RelayCommand<object>(param =>
-        {
-            if (param is int intVal) SelectedSubTabIndex = intVal;
-            else if (param is string strVal && int.TryParse(strVal, out var parsed)) SelectedSubTabIndex = parsed;
-        });
+        // Initialize commands
         LoadProfileCommand = new RelayCommand<string>(LoadProfile);
         SaveProfileCommand = new RelayCommand(SaveProfile);
         NewProfileCommand = new RelayCommand<string>(CreateNewProfile);

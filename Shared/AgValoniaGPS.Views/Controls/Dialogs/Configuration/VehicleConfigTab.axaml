@@ -1,0 +1,330 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.VehicleConfigTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <!-- Sub-tab styling for left strip -->
+        <Style Selector="TabControl.VehicleSubTabs">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TabControl.VehicleSubTabs > TabItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="MinWidth" Value="56"/>
+            <Setter Property="MinHeight" Value="56"/>
+        </Style>
+        <Style Selector="TabControl.VehicleSubTabs > TabItem:selected">
+            <Setter Property="Background" Value="#DD4A9A7E"/>
+        </Style>
+        <Style Selector="TabControl.VehicleSubTabs > TabItem:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+
+        <!-- Value boxes -->
+        <Style Selector="Border.ValueBox">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinWidth" Value="80"/>
+        </Style>
+        <Style Selector="TextBlock.LargeValue">
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.UnitLabel">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.SectionLabel">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Nested TabControl for vehicle sub-sections -->
+    <TabControl Classes="VehicleSubTabs" TabStripPlacement="Left" Background="#DD2C3E50">
+        <!-- Summary Tab -->
+        <TabItem ToolTip.Tip="Vehicle Summary">
+            <TabItem.Header>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_VehicleMenu.png"
+                       Width="40" Height="40" Stretch="Uniform"/>
+            </TabItem.Header>
+            <ScrollViewer>
+                <StackPanel Spacing="8" Margin="16">
+                    <TextBlock Text="{Binding SelectedProfileName, StringFormat='Current: {0}'}"
+                               FontSize="24" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                    <!-- Summary grid -->
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          HorizontalAlignment="Center" Width="400">
+                        <TextBlock Grid.Row="0" Text="Units:" Foreground="#AAA" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16"/>
+
+                        <TextBlock Grid.Row="1" Text="Width:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ToolWidth, StringFormat='{}{0:F2} m'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="2" Text="Sections:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding NumSections}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="3" Text="Offset:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ToolOffset, StringFormat='{}{0:F2} m'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="4" Text="Overlap:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ToolOverlap, StringFormat='{}{0:F2} m'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="5" Text="Look Ahead:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LookAheadOn, StringFormat='{}{0:F1} s'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="6" Text="Nudge:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="7.9 in"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="7" Text="Tram Width:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding TrackWidth, StringFormat='{}{0:F2} m'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="8" Text="Wheelbase:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Wheelbase, StringFormat='{}{0:F2} m'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                    </Grid>
+
+                    <!-- Info banner -->
+                    <Border Background="#3498DB" CornerRadius="8" Padding="16,12" Margin="0,24,0,0"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="Vehicle settings are now called &quot;profiles&quot; and can be&#x0a;created/loaded in the main menu (top left)."
+                                   Foreground="White" TextAlignment="Center" FontSize="14"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Vehicle Type Tab -->
+        <TabItem ToolTip.Tip="Vehicle Type">
+            <TabItem.Header>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_VehicleConfig.png"
+                       Width="40" Height="40" Stretch="Uniform"/>
+            </TabItem.Header>
+            <ScrollViewer>
+                <StackPanel Spacing="16" Margin="16">
+                    <TextBlock Text="Select Vehicle Type" FontSize="18" FontWeight="SemiBold" Foreground="White"
+                               HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                    <!-- Vehicle type selector -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                        <!-- Harvester -->
+                        <Button Command="{Binding SetVehicleTypeCommand}" CommandParameter="Harvester"
+                                Width="160" Height="120" Padding="8" CornerRadius="8"
+                                BorderThickness="3"
+                                BorderBrush="{Binding VehicleType, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Harvester}">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="Background" Value="#DD34495E"/>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                </Style>
+                            </Button.Styles>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
+                                       Width="80" Height="60" Stretch="Uniform"/>
+                                <TextBlock Text="Harvester" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Tractor -->
+                        <Button Command="{Binding SetVehicleTypeCommand}" CommandParameter="Tractor"
+                                Width="160" Height="120" Padding="8" CornerRadius="8"
+                                BorderThickness="3"
+                                BorderBrush="{Binding VehicleType, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Tractor}">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="Background" Value="#DD34495E"/>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                </Style>
+                            </Button.Styles>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
+                                       Width="80" Height="60" Stretch="Uniform"/>
+                                <TextBlock Text="Tractor" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Articulated -->
+                        <Button Command="{Binding SetVehicleTypeCommand}" CommandParameter="FourWD"
+                                Width="160" Height="120" Padding="8" CornerRadius="8"
+                                BorderThickness="3"
+                                BorderBrush="{Binding VehicleType, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=FourWD}">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="Background" Value="#DD34495E"/>
+                                </Style>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                </Style>
+                            </Button.Styles>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
+                                       Width="80" Height="60" Stretch="Uniform"/>
+                                <TextBlock Text="Articulated" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Selection display -->
+                    <Border Background="#4A9A7E" CornerRadius="8" Padding="16,12"
+                            HorizontalAlignment="Center" Margin="0,24,0,0">
+                        <TextBlock Text="{Binding VehicleTypeDisplayName, StringFormat='Selected: {0}'}"
+                                   Foreground="White" FontWeight="Bold" FontSize="16"/>
+                    </Border>
+
+                    <TextBlock Text="Select your vehicle type to configure appropriate steering geometry and dimensions."
+                               Foreground="#AAA" FontSize="13" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" MaxWidth="500" TextAlignment="Center"
+                               Margin="0,16,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Hitch/Wheelbase/Track Tab -->
+        <TabItem ToolTip.Tip="Hitch, Wheelbase, Track">
+            <TabItem.Header>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ImplementHitch.png"
+                       Width="40" Height="40" Stretch="Uniform"/>
+            </TabItem.Header>
+            <Grid RowDefinitions="*,Auto" Margin="16">
+                <Image Grid.Row="0"
+                       Source="{Binding WheelbaseImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                       Stretch="Uniform" MaxHeight="280"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,16,0,0">
+                    <!-- Hitch Length -->
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                        <Border Classes="ValueBox">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding HitchLength, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                                <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                           Classes="UnitLabel" Margin="4,0,0,8"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Hitch Length" Classes="SectionLabel" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Wheelbase -->
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <Border Classes="ValueBox">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Wheelbase, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                                <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                           Classes="UnitLabel" Margin="4,0,0,8"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Wheelbase" Classes="SectionLabel" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Track -->
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                        <Border Classes="ValueBox">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding TrackWidth, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                                <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                           Classes="UnitLabel" Margin="4,0,0,8"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Track" Classes="SectionLabel" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </TabItem>
+
+        <!-- Antenna Position Tab -->
+        <TabItem ToolTip.Tip="Antenna Position">
+            <TabItem.Header>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ImplementAntenna.png"
+                       Width="40" Height="40" Stretch="Uniform"/>
+            </TabItem.Header>
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto" Margin="16">
+                <!-- Pivot Distance -->
+                <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Margin="0,0,0,8">
+                    <Border Classes="ValueBox">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding AntennaPivot, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                            <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                       Classes="UnitLabel" Margin="4,0,0,8"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="Pivot Distance" Classes="SectionLabel" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Main diagram -->
+                <Image Grid.Row="1" Grid.Column="0"
+                       Source="{Binding AntennaImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                       Stretch="Uniform" MaxHeight="260"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <!-- Antenna Height -->
+                <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" Margin="16,20,0,0">
+                    <Border Classes="ValueBox">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding AntennaHeight, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                            <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                       Classes="UnitLabel" Margin="4,0,0,8"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="Antenna Height" Classes="SectionLabel" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Antenna Offset -->
+                <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="10,8,0,0">
+                    <Border Classes="ValueBox" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding AntennaOffset, StringFormat='{}{0:F0}'}" Classes="LargeValue"/>
+                            <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='cm|in'}"
+                                       Classes="UnitLabel" Margin="4,0,0,8"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="Antenna Offset" Classes="SectionLabel" HorizontalAlignment="Left" Margin="0,4,0,0"/>
+
+                    <!-- Offset selector buttons -->
+                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Left Offset">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png" Stretch="Uniform"/>
+                        </Button>
+                        <Button Width="50" Height="36" Padding="4" Background="#4A9A7E" ToolTip.Tip="No Offset (Center)">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png" Stretch="Uniform"/>
+                        </Button>
+                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Right Offset">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png" Stretch="Uniform"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</UserControl>
