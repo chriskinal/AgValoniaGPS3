@@ -13,89 +13,7 @@
         Title="AgValoniaGPS"
         Background="#1a1a1a">
 
-    <Window.Styles>
-        <!-- Floating Panel Style -->
-        <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD2C3E50"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="15"/>
-            <Setter Property="BoxShadow" Value="0 4 16 2 #40000000"/>
-        </Style>
-
-        <!-- Modern Button Style -->
-        <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#3498DB"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#2980B9"/>
-        </Style>
-        <Style Selector="Button.ModernButton:pressed">
-            <Setter Property="Background" Value="#21618C"/>
-        </Style>
-
-        <!-- Toggle On Style - overrides ModernButton when active -->
-        <Style Selector="Button.ModernButton.ToggleOn">
-            <Setter Property="Background" Value="#1ABC9C"/>
-        </Style>
-        <Style Selector="Button.ModernButton.ToggleOn:pointerover">
-            <Setter Property="Background" Value="#16A085"/>
-        </Style>
-        <Style Selector="Button.ModernButton.ToggleOn:pressed">
-            <Setter Property="Background" Value="#138D75"/>
-        </Style>
-
-        <!-- Icon Button Style -->
-        <Style Selector="Button.IconButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Width" Value="48"/>
-            <Setter Property="Height" Value="48"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="Button.IconButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
-        </Style>
-
-        <!-- Left Panel Button Style (for image-based icons) -->
-        <Style Selector="Button.LeftPanelButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Width" Value="64"/>
-            <Setter Property="Height" Value="64"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.LeftPanelButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
-        </Style>
-        <Style Selector="Button.LeftPanelButton:pressed">
-            <Setter Property="Background" Value="#DD3E5872"/>
-        </Style>
-
-        <!-- Left Panel Separator -->
-        <Style Selector="Separator.LeftPanelSeparator">
-            <Setter Property="Background" Value="#444"/>
-            <Setter Property="Height" Value="2"/>
-            <Setter Property="Margin" Value="8,4"/>
-        </Style>
-
-        <!-- Status Indicator Style -->
-        <Style Selector="Border.StatusBox">
-            <Setter Property="Background" Value="#DD1E2930"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="10"/>
-        </Style>
-    </Window.Styles>
+    <!-- Styles are now in shared SharedStyles.axaml -->
 
     <!-- Main content with dialog overlays -->
     <Panel>
@@ -170,25 +88,7 @@
         </StackPanel>
     </Border>
 
-    <!-- Modal Dialog Overlays (rendered on top of everything) -->
-    <dialogs:SimCoordsDialogPanel/>
-    <dialogs:FieldSelectionDialogPanel/>
-    <dialogs:NewFieldDialogPanel/>
-    <dialogs:FromExistingFieldDialogPanel/>
-    <dialogs:KmlImportDialogPanel/>
-    <dialogs:IsoXmlImportDialogPanel/>
-    <dialogs:BoundaryMapDialogPanel/>
-    <dialogs:NumericInputDialogPanel/>
-    <dialogs:AgShareSettingsDialogPanel/>
-    <dialogs:AgShareUploadDialogPanel/>
-    <dialogs:AgShareDownloadDialogPanel/>
-    <dialogs:DataIODialogPanel/>
-    <dialogs:HeadlandBuilderDialogPanel/>
-    <dialogs:HeadlandDialogPanel/>
-    <dialogs:QuickABSelectorPanel/>
-    <dialogs:TracksDialogPanel/>
-    <dialogs:DrawABDialogPanel/>
-    <dialogs:ConfigurationDialog x:Name="ConfigDialog"
-                                 DataContext="{Binding ConfigurationViewModel}"/>
+    <!-- Modal Dialog Overlays (shared across platforms) -->
+    <controls:DialogOverlayHost DataContext="{Binding}"/>
     </Panel>
 </Window>

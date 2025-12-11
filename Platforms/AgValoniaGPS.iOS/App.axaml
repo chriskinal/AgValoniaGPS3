@@ -2,16 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AgValoniaGPS.iOS.App"
              xmlns:local="using:AgValoniaGPS.iOS"
-             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              RequestedThemeVariant="Default">
 
     <Application.Resources>
-        <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
-        <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
-        <converters:FixQualityToColorConverter x:Key="FixQualityToColorConverter"/>
-        <converters:BoolToSteerColorConverter x:Key="BoolToSteerColorConverter"/>
-        <converters:BoolToSteerTextConverter x:Key="BoolToSteerTextConverter"/>
-        <converters:BoolToSectionColorConverter x:Key="BoolToSectionColorConverter"/>
+        <!-- Include shared resources (converters) -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://AgValoniaGPS.Views/Styles/SharedResources.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.DataTemplates>
@@ -20,5 +19,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <!-- Include shared styles -->
+        <StyleInclude Source="avares://AgValoniaGPS.Views/Styles/SharedStyles.axaml"/>
     </Application.Styles>
 </Application>

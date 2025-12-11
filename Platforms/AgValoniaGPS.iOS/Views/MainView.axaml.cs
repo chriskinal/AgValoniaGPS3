@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Views.Controls;
+using AgValoniaGPS.Views.Behaviors;
 using AgValoniaGPS.iOS.Services;
 using AgValoniaGPS.Models;
 
@@ -17,14 +18,6 @@ public partial class MainView : UserControl
 {
     private DrawingContextMapControl? _mapControl;
     private MainViewModel? _viewModel;
-
-    // Section control drag state
-    private bool _isDraggingSection;
-    private Point _dragStartPoint;
-
-    // Bottom nav panel drag state
-    private bool _isDraggingBottomNav;
-    private Point _bottomNavDragStartPoint;
 
     public MainView()
     {
@@ -105,79 +98,39 @@ public partial class MainView : UserControl
         }
     }
 
-    // Section Control drag handlers
+    // Section Control drag handlers - use shared DragBehavior
     private void SectionControl_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Control control)
-        {
-            _isDraggingSection = true;
-            _dragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(control);
-        }
+            DragBehavior.OnPointerPressed(control, e);
     }
 
     private void SectionControl_PointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_isDraggingSection && sender is Control control)
-        {
-            var currentPoint = e.GetPosition(this);
-            var deltaX = currentPoint.X - _dragStartPoint.X;
-            var deltaY = currentPoint.Y - _dragStartPoint.Y;
-
-            var currentLeft = Canvas.GetLeft(control);
-            var currentTop = Canvas.GetTop(control);
-
-            Canvas.SetLeft(control, currentLeft + deltaX);
-            Canvas.SetTop(control, currentTop + deltaY);
-
-            _dragStartPoint = currentPoint;
-        }
+        if (sender is Control control)
+            DragBehavior.OnPointerMoved(control, this, e);
     }
 
     private void SectionControl_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender is Control control)
-        {
-            _isDraggingSection = false;
-            e.Pointer.Capture(null);
-        }
+        DragBehavior.OnPointerReleased(e);
     }
 
-    // Bottom Navigation Panel drag handlers
+    // Bottom Navigation Panel drag handlers - use shared DragBehavior
     private void BottomNavPanel_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Control control)
-        {
-            _isDraggingBottomNav = true;
-            _bottomNavDragStartPoint = e.GetPosition(this);
-            e.Pointer.Capture(control);
-        }
+            DragBehavior.OnPointerPressed(control, e);
     }
 
     private void BottomNavPanel_PointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_isDraggingBottomNav && sender is Control control)
-        {
-            var currentPoint = e.GetPosition(this);
-            var deltaX = currentPoint.X - _bottomNavDragStartPoint.X;
-            var deltaY = currentPoint.Y - _bottomNavDragStartPoint.Y;
-
-            var currentLeft = Canvas.GetLeft(control);
-            var currentTop = Canvas.GetTop(control);
-
-            Canvas.SetLeft(control, currentLeft + deltaX);
-            Canvas.SetTop(control, currentTop + deltaY);
-
-            _bottomNavDragStartPoint = currentPoint;
-        }
+        if (sender is Control control)
+            DragBehavior.OnPointerMoved(control, this, e);
     }
 
     private void BottomNavPanel_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender is Control control)
-        {
-            _isDraggingBottomNav = false;
-            e.Pointer.Capture(null);
-        }
+        DragBehavior.OnPointerReleased(e);
     }
 }

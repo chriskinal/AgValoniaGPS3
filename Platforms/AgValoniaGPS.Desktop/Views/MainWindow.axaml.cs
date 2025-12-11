@@ -342,16 +342,7 @@ public partial class MainWindow : Window
                 // Convert heading from degrees to radians
                 double headingRadians = ViewModel.Heading * Math.PI / 180.0;
                 MapControl.SetVehiclePosition(ViewModel.Easting, ViewModel.Northing, headingRadians);
-
-                // Add boundary point if recording
-                if (BoundaryRecordingService?.IsRecording == true)
-                {
-                    // Apply boundary offset
-                    var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(
-                        ViewModel.Easting, ViewModel.Northing, headingRadians);
-                    BoundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
-                    UpdateBoundaryStatusDisplay();
-                }
+                // NOTE: Boundary point recording is now handled by MainViewModel
             }
         }
         else if (e.PropertyName == nameof(MainViewModel.IsGridOn))
@@ -623,67 +614,14 @@ public partial class MainWindow : Window
     // These are now handled by ViewModel commands via IDialogService
 
     // ========== Boundary Recording Panel Handlers ==========
+    // NOTE: Boundary recording service is now handled entirely by MainViewModel via _mapService.
+    // The handlers below are legacy code-behind that should be migrated to ViewModel commands.
 
-    private IBoundaryRecordingService? _boundaryRecordingService;
     private BoundaryType _currentBoundaryType = BoundaryType.Outer;
 
-    private IBoundaryRecordingService BoundaryRecordingService
-    {
-        get
-        {
-            if (_boundaryRecordingService == null && App.Services != null)
-            {
-                _boundaryRecordingService = App.Services.GetRequiredService<IBoundaryRecordingService>();
-                // Subscribe to events for live boundary display
-                _boundaryRecordingService.PointAdded += BoundaryRecordingService_PointAdded;
-                _boundaryRecordingService.StateChanged += BoundaryRecordingService_StateChanged;
-            }
-            return _boundaryRecordingService!;
-        }
-    }
-
-    private void BoundaryRecordingService_PointAdded(object? sender, BoundaryPointAddedEventArgs e)
-    {
-        // Update the map display with the current recording points
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            UpdateRecordingDisplay();
-            // Display updated via ViewModel bindings
-        });
-    }
-
-    private void BoundaryRecordingService_StateChanged(object? sender, BoundaryRecordingStateChangedEventArgs e)
-    {
-        // Update the map display when state changes (includes point removal, clear, etc.)
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            if (e.State == BoundaryRecordingState.Idle)
-            {
-                MapControl?.ClearRecordingPoints();
-            }
-            else
-            {
-                // Update display for point count changes (e.g., when points are deleted)
-                UpdateRecordingDisplay();
-            }
-        });
-    }
-
-    private void UpdateRecordingDisplay()
-    {
-        if (MapControl == null || BoundaryRecordingService == null) return;
-
-        var points = BoundaryRecordingService.RecordedPoints;
-        if (points.Count > 0)
-        {
-            var pointsList = points.Select(p => (p.Easting, p.Northing)).ToList();
-            MapControl.SetRecordingPoints(pointsList);
-        }
-        else
-        {
-            MapControl.ClearRecordingPoints();
-        }
-    }
+    // Helper to get BoundaryRecordingService from DI (legacy - prefer ViewModel commands)
+    private IBoundaryRecordingService? GetBoundaryRecordingService()
+        => App.Services?.GetService<IBoundaryRecordingService>();
 
     // Add new boundary button - shows choice panel (kept for AddBoundaryChoicePanel)
     private void BtnAddBoundary_Click(object? sender, RoutedEventArgs e)
@@ -786,14 +724,14 @@ public partial class MainWindow : Window
     // Start/Resume recording boundary
     private void BtnRecordBoundary_Click(object? sender, RoutedEventArgs e)
     {
-        if (BoundaryRecordingService == null) return;
+        if (GetBoundaryRecordingService() == null) return;
 
-        var state = BoundaryRecordingService.State;
+        var state = GetBoundaryRecordingService().State;
         if (state == BoundaryRecordingState.Idle)
         {
             // Start new recording
             var boundaryType = GetSelectedBoundaryType();
-            BoundaryRecordingService.StartRecording(boundaryType);
+            GetBoundaryRecordingService().StartRecording(boundaryType);
             UpdateBoundaryStatusDisplay();
 
             // Show recording status panel
@@ -814,7 +752,7 @@ public partial class MainWindow : Window
         else if (state == BoundaryRecordingState.Paused)
         {
             // Resume recording
-            BoundaryRecordingService.ResumeRecording();
+            GetBoundaryRecordingService().ResumeRecording();
             UpdateBoundaryStatusDisplay();
             if (ViewModel != null)
             {
@@ -826,11 +764,11 @@ public partial class MainWindow : Window
     // Pause recording
     private void BtnPauseBoundary_Click(object? sender, RoutedEventArgs e)
     {
-        if (BoundaryRecordingService == null) return;
+        if (GetBoundaryRecordingService() == null) return;
 
-        if (BoundaryRecordingService.State == BoundaryRecordingState.Recording)
+        if (GetBoundaryRecordingService().State == BoundaryRecordingState.Recording)
         {
-            BoundaryRecordingService.PauseRecording();
+            GetBoundaryRecordingService().PauseRecording();
             UpdateBoundaryStatusDisplay();
             if (ViewModel != null)
             {
@@ -842,13 +780,13 @@ public partial class MainWindow : Window
     // Stop recording and save boundary
     private void BtnStopBoundary_Click(object? sender, RoutedEventArgs e)
     {
-        if (BoundaryRecordingService == null || App.Services == null || ViewModel == null) return;
+        if (GetBoundaryRecordingService() == null || App.Services == null || ViewModel == null) return;
 
-        if (BoundaryRecordingService.State != BoundaryRecordingState.Idle)
+        if (GetBoundaryRecordingService().State != BoundaryRecordingState.Idle)
         {
             // Get the current boundary type before stopping
-            var isOuter = BoundaryRecordingService.CurrentBoundaryType == BoundaryType.Outer;
-            var polygon = BoundaryRecordingService.StopRecording();
+            var isOuter = GetBoundaryRecordingService().CurrentBoundaryType == BoundaryType.Outer;
+            var polygon = GetBoundaryRecordingService().StopRecording();
 
             if (polygon != null && polygon.Points.Count >= 3)
             {
@@ -913,15 +851,16 @@ public partial class MainWindow : Window
     // Undo last boundary point
     private void BtnUndoBoundaryPoint_Click(object? sender, RoutedEventArgs e)
     {
-        if (BoundaryRecordingService == null) return;
+        var service = GetBoundaryRecordingService();
+        if (service == null) return;
 
-        if (BoundaryRecordingService.RemoveLastPoint())
+        if (service.RemoveLastPoint())
         {
             UpdateBoundaryStatusDisplay();
-            UpdateRecordingDisplay(); // Update map display
+            // Map display is updated by ViewModel via StateChanged event
             if (ViewModel != null)
             {
-                ViewModel.StatusMessage = $"Removed point ({BoundaryRecordingService.PointCount} remaining)";
+                ViewModel.StatusMessage = $"Removed point ({service.PointCount} remaining)";
             }
         }
     }
@@ -929,9 +868,9 @@ public partial class MainWindow : Window
     // Clear all boundary points
     private void BtnClearBoundary_Click(object? sender, RoutedEventArgs e)
     {
-        if (BoundaryRecordingService == null) return;
+        if (GetBoundaryRecordingService() == null) return;
 
-        BoundaryRecordingService.ClearPoints();
+        GetBoundaryRecordingService().ClearPoints();
         UpdateBoundaryStatusDisplay();
         if (ViewModel != null)
         {
@@ -942,7 +881,7 @@ public partial class MainWindow : Window
     // Update the boundary status display text blocks
     private void UpdateBoundaryStatusDisplay()
     {
-        if (BoundaryRecordingService == null) return;
+        if (GetBoundaryRecordingService() == null) return;
 
         var statusText = this.FindControl<TextBlock>("BoundaryStatusLabel");
         var pointsText = this.FindControl<TextBlock>("BoundaryPointsLabel");
@@ -950,17 +889,17 @@ public partial class MainWindow : Window
 
         if (statusText != null)
         {
-            statusText.Text = BoundaryRecordingService.State.ToString();
+            statusText.Text = GetBoundaryRecordingService().State.ToString();
         }
 
         if (pointsText != null)
         {
-            pointsText.Text = BoundaryRecordingService.PointCount.ToString();
+            pointsText.Text = GetBoundaryRecordingService().PointCount.ToString();
         }
 
         if (areaText != null)
         {
-            areaText.Text = $"{BoundaryRecordingService.AreaHectares:F2} Ha";
+            areaText.Text = $"{GetBoundaryRecordingService().AreaHectares:F2} Ha";
         }
 
         // Update button enabled states
@@ -968,7 +907,7 @@ public partial class MainWindow : Window
         var pauseBtn = this.FindControl<Button>("BtnPauseBoundary");
         var stopBtn = this.FindControl<Button>("BtnStopBoundary");
 
-        var state = BoundaryRecordingService.State;
+        var state = GetBoundaryRecordingService().State;
         if (recordBtn != null)
         {
             recordBtn.IsEnabled = state == BoundaryRecordingState.Idle || state == BoundaryRecordingState.Paused;
@@ -988,36 +927,12 @@ public partial class MainWindow : Window
     // handle their own dragging internally.
 
     // BtnBoundaryRestart now handled by ViewModel's ClearBoundaryCommand
-    // BtnBoundaryOffset now handled by ViewModel's ShowBoundaryOffsetDialogCommand
-    // BtnBoundarySectionControl now handled by ViewModel's IsBoundarySectionControlOn binding
-    // BtnBoundaryLeftRight now handled by ViewModel's ToggleBoundaryLeftRightCommand
-    // BtnBoundaryAntennaTool now handled by ViewModel's ToggleBoundaryAntennaToolCommand
-    // BtnBoundaryDeleteLast now handled by ViewModel's UndoBoundaryPointCommand
-
-    // Calculate offset position perpendicular to heading
-    // Returns (easting, northing) with offset applied
-    private (double easting, double northing) CalculateOffsetPosition(double easting, double northing, double headingRadians)
-    {
-        var boundaryOffset = ViewModel?.BoundaryOffset ?? 0;
-        if (boundaryOffset == 0)
-            return (easting, northing);
-
-        // Offset in meters (input is cm)
-        double offsetMeters = boundaryOffset / 100.0;
-
-        // If drawing on left side, negate the offset
-        if (ViewModel != null && !ViewModel.IsDrawRightSide)
-            offsetMeters = -offsetMeters;
-
-        // Calculate perpendicular offset (90 degrees to the right of heading)
-        // Right is +90 degrees (π/2 radians) from heading direction
-        double perpAngle = headingRadians + Math.PI / 2.0;
-
-        double offsetEasting = easting + offsetMeters * Math.Sin(perpAngle);
-        double offsetNorthing = northing + offsetMeters * Math.Cos(perpAngle);
-
-        return (offsetEasting, offsetNorthing);
-    }
-
-    // BtnBoundaryAddPoint now handled by ViewModel's AddBoundaryPointCommand
+    // Legacy button handlers above should be migrated to ViewModel commands:
+    // - BtnBoundaryOffset -> ViewModel's ShowBoundaryOffsetDialogCommand
+    // - BtnBoundarySectionControl -> ViewModel's IsBoundarySectionControlOn binding
+    // - BtnBoundaryLeftRight -> ViewModel's ToggleBoundaryLeftRightCommand
+    // - BtnBoundaryAntennaTool -> ViewModel's ToggleBoundaryAntennaToolCommand
+    // - BtnBoundaryDeleteLast -> ViewModel's UndoBoundaryPointCommand
+    // - BtnBoundaryAddPoint -> ViewModel's AddBoundaryPointCommand
+    // NOTE: CalculateOffsetPosition is now in MainViewModel
 }

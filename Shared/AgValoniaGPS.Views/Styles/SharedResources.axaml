@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views">
+
+    <!--
+    Shared resources (converters, etc.) used across all platforms.
+    Include this in each platform's App.axaml Application.Resources section.
+    -->
+
+    <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+    <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
+    <converters:FixQualityToColorConverter x:Key="FixQualityToColorConverter"/>
+    <converters:BoolToSteerColorConverter x:Key="BoolToSteerColorConverter"/>
+    <converters:BoolToSteerTextConverter x:Key="BoolToSteerTextConverter"/>
+    <converters:BoolToSectionColorConverter x:Key="BoolToSectionColorConverter"/>
+
+</ResourceDictionary>

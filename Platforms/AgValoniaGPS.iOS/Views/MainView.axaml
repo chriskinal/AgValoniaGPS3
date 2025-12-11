@@ -90,25 +90,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Modal Dialog Overlays (rendered on top of everything) -->
-        <dialogs:SimCoordsDialogPanel/>
-        <dialogs:FieldSelectionDialogPanel/>
-        <dialogs:NewFieldDialogPanel/>
-        <dialogs:FromExistingFieldDialogPanel/>
-        <dialogs:KmlImportDialogPanel/>
-        <dialogs:IsoXmlImportDialogPanel/>
-        <dialogs:BoundaryMapDialogPanel/>
-        <dialogs:NumericInputDialogPanel/>
-        <dialogs:AgShareSettingsDialogPanel/>
-        <dialogs:AgShareUploadDialogPanel/>
-        <dialogs:AgShareDownloadDialogPanel/>
-        <dialogs:DataIODialogPanel/>
-        <dialogs:HeadlandBuilderDialogPanel/>
-        <dialogs:HeadlandDialogPanel/>
-        <dialogs:QuickABSelectorPanel/>
-        <dialogs:TracksDialogPanel/>
-        <dialogs:DrawABDialogPanel/>
-        <dialogs:ConfigurationDialog x:Name="ConfigDialog"
-                                     DataContext="{Binding ConfigurationViewModel}"/>
+        <!-- Modal Dialog Overlays (shared across platforms) -->
+        <controls:DialogOverlayHost DataContext="{Binding}"/>
     </Panel>
 </UserControl>

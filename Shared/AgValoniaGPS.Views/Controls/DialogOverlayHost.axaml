@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.DialogOverlayHost"
+             x:DataType="vm:MainViewModel">
+
+    <!--
+    Shared DialogOverlayHost - Contains all modal dialog overlays.
+    Used by both Desktop and iOS to avoid duplication.
+    All dialogs are rendered on top of the main content.
+    -->
+    <Panel>
+        <dialogs:SimCoordsDialogPanel/>
+        <dialogs:FieldSelectionDialogPanel/>
+        <dialogs:NewFieldDialogPanel/>
+        <dialogs:FromExistingFieldDialogPanel/>
+        <dialogs:KmlImportDialogPanel/>
+        <dialogs:IsoXmlImportDialogPanel/>
+        <dialogs:BoundaryMapDialogPanel/>
+        <dialogs:NumericInputDialogPanel/>
+        <dialogs:AgShareSettingsDialogPanel/>
+        <dialogs:AgShareUploadDialogPanel/>
+        <dialogs:AgShareDownloadDialogPanel/>
+        <dialogs:DataIODialogPanel/>
+        <dialogs:HeadlandBuilderDialogPanel/>
+        <dialogs:HeadlandDialogPanel/>
+        <dialogs:QuickABSelectorPanel/>
+        <dialogs:TracksDialogPanel/>
+        <dialogs:DrawABDialogPanel/>
+        <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
+    </Panel>
+</UserControl>
