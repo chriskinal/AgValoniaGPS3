@@ -41,6 +41,7 @@ public class MainViewModel : ReactiveObject
     private readonly Services.Interfaces.ITurnAreaService _turnAreaService;
     private readonly YouTurnGuidanceService _youTurnGuidanceService;
     private readonly FieldPlaneFileService _fieldPlaneFileService;
+    private readonly IVehicleProfileService _vehicleProfileService;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
 
@@ -131,7 +132,8 @@ public class MainViewModel : ReactiveObject
         YouTurnCreationService youTurnCreationService,
         YouTurnGuidanceService youTurnGuidanceService,
         Services.Geometry.IPolygonOffsetService polygonOffsetService,
-        Services.Interfaces.ITurnAreaService turnAreaService)
+        Services.Interfaces.ITurnAreaService turnAreaService,
+        IVehicleProfileService vehicleProfileService)
     {
         _udpService = udpService;
         _gpsService = gpsService;
@@ -153,6 +155,7 @@ public class MainViewModel : ReactiveObject
         _youTurnGuidanceService = youTurnGuidanceService;
         _polygonOffsetService = polygonOffsetService;
         _turnAreaService = turnAreaService;
+        _vehicleProfileService = vehicleProfileService;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
 
@@ -200,6 +203,9 @@ public class MainViewModel : ReactiveObject
     {
         var settings = _settingsService.Settings;
 
+        // Restore vehicle profile settings
+        LoadDefaultVehicleProfile();
+
         // Restore NTRIP settings
         NtripCasterAddress = settings.NtripCasterIp;
         NtripCasterPort = settings.NtripCasterPort;
@@ -228,6 +234,59 @@ public class MainViewModel : ReactiveObject
             Longitude = settings.SimulatorLongitude;
 
             Console.WriteLine($"  Restored simulator: {settings.SimulatorLatitude},{settings.SimulatorLongitude}");
+        }
+    }
+
+    private void LoadDefaultVehicleProfile()
+    {
+        try
+        {
+            var profiles = _vehicleProfileService.GetAvailableProfiles();
+            if (profiles.Count == 0)
+            {
+                Console.WriteLine("No vehicle profiles found in Vehicles directory");
+                return;
+            }
+
+            // Try to load the last used profile first
+            var lastUsedProfile = _settingsService.Settings.LastUsedVehicleProfile;
+            string profileToLoad;
+
+            if (!string.IsNullOrEmpty(lastUsedProfile) && profiles.Contains(lastUsedProfile))
+            {
+                profileToLoad = lastUsedProfile;
+                Console.WriteLine($"Loading last used vehicle profile: {profileToLoad}");
+            }
+            else
+            {
+                // Fall back to first available profile
+                profileToLoad = profiles[0];
+                Console.WriteLine($"Loading first available vehicle profile: {profileToLoad}");
+            }
+
+            if (_vehicleProfileService.SetActiveProfile(profileToLoad))
+            {
+                var profile = _vehicleProfileService.ActiveProfile;
+                if (profile != null)
+                {
+                    Console.WriteLine($"Loaded vehicle profile: {profile.Name}");
+                    Console.WriteLine($"  Tool width: {profile.Tool.Width}m");
+                    Console.WriteLine($"  YouTurn radius: {profile.YouTurn.TurnRadius}m");
+                    Console.WriteLine($"  Wheelbase: {profile.Vehicle.Wheelbase}m");
+                    Console.WriteLine($"  Sections: {profile.NumSections}");
+
+                    // Save as last used profile
+                    _settingsService.Settings.LastUsedVehicleProfile = profileToLoad;
+                    _settingsService.Save();
+
+                    // Profile is now active and available via _vehicleProfileService.ActiveProfile
+                    // Services can access it through dependency injection
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading vehicle profile: {ex.Message}");
         }
     }
 
@@ -1355,9 +1414,9 @@ public class MainViewModel : ReactiveObject
             // Vehicle position and configuration
             PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
             ToolWidth = toolWidth,
-            ToolOverlap = 0.0,
-            ToolOffset = 0.0,
-            TurnRadius = 6.0, // Default turn radius in meters
+            ToolOverlap = _vehicleProfileService.ActiveProfile?.Tool.Overlap ?? 0.0,
+            ToolOffset = _vehicleProfileService.ActiveProfile?.Tool.Offset ?? 0.0,
+            TurnRadius = _vehicleProfileService.ActiveProfile?.YouTurn.TurnRadius ?? 8.0,
 
             // Turn parameters
             RowSkipsWidth = UTurnSkipRows + 1,
@@ -2500,12 +2559,88 @@ public class MainViewModel : ReactiveObject
     public string DataIOKeyboardText
     {
         get => _dataIOKeyboardText;
-        set => this.RaiseAndSetIfChanged(ref _dataIOKeyboardText, value);
+        set
+        {
+            var oldValue = _dataIOKeyboardText;
+            this.RaiseAndSetIfChanged(ref _dataIOKeyboardText, value);
+            if (oldValue != value && !string.IsNullOrEmpty(_activeDataIOField))
+            {
+                // Update the appropriate field based on active field
+                UpdateActiveDataIOField(value);
+            }
+        }
     }
 
-    public ICommand? ShowDataIODialogCommand { get; private set; }
+    private string _activeDataIOField = "";
+    public string ActiveDataIOField
+    {
+        get => _activeDataIOField;
+        set => this.RaiseAndSetIfChanged(ref _activeDataIOField, value);
+    }
 
-    public void SaveNtripSettings()
+    // Data I/O Commands
+    public ICommand? ShowDataIODialogCommand { get; private set; }
+    public ICommand? CloseDataIODialogCommand { get; private set; }
+    public ICommand? ConnectToNtripCommand { get; private set; }
+    public ICommand? DisconnectFromNtripCommand { get; private set; }
+    public ICommand? SaveNtripSettingsCommand { get; private set; }
+    public ICommand? SetActiveDataIOFieldCommand { get; private set; }
+
+    private void UpdateActiveDataIOField(string value)
+    {
+        switch (_activeDataIOField)
+        {
+            case "CasterAddress":
+                NtripCasterAddress = value;
+                break;
+            case "CasterPort":
+                if (int.TryParse(value, out int port))
+                    NtripCasterPort = port;
+                break;
+            case "MountPoint":
+                NtripMountPoint = value;
+                break;
+            case "Username":
+                NtripUsername = value;
+                break;
+            case "Password":
+                NtripPassword = value;
+                break;
+        }
+    }
+
+    private void SetActiveDataIOField(string? fieldName)
+    {
+        if (string.IsNullOrEmpty(fieldName))
+        {
+            IsDataIOKeyboardVisible = false;
+            ActiveDataIOField = "";
+            return;
+        }
+
+        ActiveDataIOField = fieldName;
+
+        // Set current value for the keyboard
+        DataIOKeyboardText = fieldName switch
+        {
+            "CasterAddress" => NtripCasterAddress,
+            "CasterPort" => NtripCasterPort.ToString(),
+            "MountPoint" => NtripMountPoint,
+            "Username" => NtripUsername,
+            "Password" => NtripPassword,
+            _ => ""
+        };
+
+        IsDataIOKeyboardVisible = true;
+    }
+
+    private void CloseDataIODialog()
+    {
+        IsDataIOKeyboardVisible = false;
+        IsDataIODialogVisible = false;
+    }
+
+    private void SaveNtripSettings()
     {
         var settings = _settingsService.Settings;
         settings.NtripCasterIp = NtripCasterAddress;
@@ -2697,6 +2832,24 @@ public class MainViewModel : ReactiveObject
 
         return (offsetEasting, offsetNorthing);
     }
+
+    // Configuration Dialog properties
+    private bool _isConfigurationDialogVisible;
+    public bool IsConfigurationDialogVisible
+    {
+        get => _isConfigurationDialogVisible;
+        set => this.RaiseAndSetIfChanged(ref _isConfigurationDialogVisible, value);
+    }
+
+    private ConfigurationViewModel? _configurationViewModel;
+    public ConfigurationViewModel? ConfigurationViewModel
+    {
+        get => _configurationViewModel;
+        set => this.RaiseAndSetIfChanged(ref _configurationViewModel, value);
+    }
+
+    public ICommand? ShowConfigurationDialogCommand { get; private set; }
+    public ICommand? CancelConfigurationDialogCommand { get; private set; }
 
     // Headland Builder properties
     private bool _isHeadlandBuilderDialogVisible;
@@ -3563,6 +3716,29 @@ public class MainViewModel : ReactiveObject
         ShowDataIODialogCommand = new RelayCommand(() =>
         {
             IsDataIODialogVisible = true;
+        });
+
+        CloseDataIODialogCommand = new RelayCommand(CloseDataIODialog);
+        ConnectToNtripCommand = new AsyncRelayCommand(ConnectToNtripAsync);
+        DisconnectFromNtripCommand = new AsyncRelayCommand(DisconnectFromNtripAsync);
+        SaveNtripSettingsCommand = new RelayCommand(SaveNtripSettings);
+        SetActiveDataIOFieldCommand = new RelayCommand<string>(SetActiveDataIOField);
+
+        // Configuration Dialog Commands
+        ShowConfigurationDialogCommand = new RelayCommand(() =>
+        {
+            ConfigurationViewModel = new ConfigurationViewModel(_vehicleProfileService, _settingsService);
+            ConfigurationViewModel.CloseRequested += (s, e) =>
+            {
+                ConfigurationViewModel.IsDialogVisible = false;
+            };
+            ConfigurationViewModel.IsDialogVisible = true;
+        });
+
+        CancelConfigurationDialogCommand = new RelayCommand(() =>
+        {
+            if (ConfigurationViewModel != null)
+                ConfigurationViewModel.IsDialogVisible = false;
         });
 
         ShowSimCoordsDialogCommand = new RelayCommand(() =>

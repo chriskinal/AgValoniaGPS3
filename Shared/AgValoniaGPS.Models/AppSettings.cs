@@ -60,5 +60,8 @@ namespace AgValoniaGPS.Models
         public string AgShareServer { get; set; } = "https://agshare.agopengps.com";
         public string AgShareApiKey { get; set; } = string.Empty;
         public bool AgShareEnabled { get; set; } = false;
+
+        // Vehicle profile settings
+        public string LastUsedVehicleProfile { get; set; } = string.Empty;
     }
 }

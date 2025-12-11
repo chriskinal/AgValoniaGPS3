@@ -87,7 +87,7 @@
 
                 <!-- 4. Configuration -->
                 <Button Classes="LeftPanelButton" ToolTip.Tip="Configuration"
-                        Command="{Binding ToggleConfigurationPanelCommand}">
+                        Command="{Binding ShowConfigurationDialogCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Stretch="Uniform"/>
                 </Button>
 

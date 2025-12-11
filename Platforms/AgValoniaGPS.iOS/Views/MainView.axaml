@@ -108,5 +108,7 @@
         <dialogs:QuickABSelectorPanel/>
         <dialogs:TracksDialogPanel/>
         <dialogs:DrawABDialogPanel/>
+        <dialogs:ConfigurationDialog x:Name="ConfigDialog"
+                                     DataContext="{Binding ConfigurationViewModel}"/>
     </Panel>
 </UserControl>

@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
     {
         // Register ViewModels
         services.AddTransient<MainViewModel>();
+        services.AddTransient<ConfigurationViewModel>();
 
         // Register Models (AOG_Dev integration)
         services.AddSingleton(sp => CreateDefaultVehicleConfiguration());
@@ -54,6 +55,9 @@ public static class ServiceCollectionExtensions
         // YouTurn services
         services.AddSingleton<YouTurnCreationService>();
         services.AddSingleton<YouTurnGuidanceService>();
+
+        // Vehicle profile service
+        services.AddSingleton<IVehicleProfileService, VehicleProfileService>();
 
         // Platform-specific services (Desktop implementations)
         services.AddSingleton<DialogService>();

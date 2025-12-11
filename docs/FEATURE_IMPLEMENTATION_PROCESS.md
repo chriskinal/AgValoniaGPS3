@@ -48,7 +48,36 @@ AgValoniaGPS3 is built on services ported from AgOpenGPS.Core. When implementing
    - What parameters are passed?
    - What side effects occur (UI updates, other state changes)?
 
-### Step 3: Verify Service Availability
+### Step 3: Design Avalonia-Idiomatic Solution
+
+Before implementing, research how to recreate the AgOpenGPS functionality using native Avalonia patterns. **We are replicating functionality, not copying the WinForms UI directly.**
+
+1. **Identify the UI pattern needed**:
+   - Is it a tabbed interface? → Use `TabControl`
+   - Is it a list with selection? → Use `ListBox` with `ItemTemplate`
+   - Is it a dialog with multiple pages? → Use `Carousel` or `TabControl`
+   - Is it a toolbar? → Use `ToolBar` or styled `ItemsControl`
+
+2. **Research Avalonia controls**:
+   - Check [Avalonia documentation](https://docs.avaloniaui.net/)
+   - Look at built-in controls before creating custom ones
+   - Consider `ContentControl` with `DataTemplate` for dynamic content
+
+3. **Avoid anti-patterns**:
+   - ❌ Manual `IsVisible` bindings to simulate tabs
+   - ❌ ViewLocator (not trim-safe)
+   - ❌ Code-behind for logic that belongs in ViewModel
+   - ❌ Hardcoded colors/styles (use Styles and resources)
+   - ✅ Use `TabControl`, `ListBox`, `ItemsControl` with templates
+   - ✅ Use `DataTemplate` for repeated UI patterns
+   - ✅ Use Styles for consistent theming
+
+4. **Cross-platform considerations**:
+   - Avoid platform-specific APIs in shared code
+   - Test touch interactions for iOS/tablet use
+   - Consider different screen sizes
+
+### Step 4: Verify Service Availability
 
 1. **Check if the service exists** in AgValoniaGPS.Services:
    ```bash
@@ -64,7 +93,7 @@ AgValoniaGPS3 is built on services ported from AgOpenGPS.Core. When implementing
    - `Platforms/AgValoniaGPS.Desktop/DependencyInjection/ServiceCollectionExtensions.cs`
    - `Platforms/AgValoniaGPS.iOS/DependencyInjection/ServiceCollectionExtensions.cs`
 
-### Step 4: Create Implementation Plan
+### Step 5: Create Implementation Plan
 
 Create a markdown file in `/docs/` documenting:
 
@@ -103,7 +132,7 @@ Document how to build input objects for service methods:
 - State changes: ...
 ```
 
-### Step 5: Implement in AgValoniaGPS
+### Step 6: Implement in AgValoniaGPS
 
 1. **ViewModel changes** (`MainViewModel.cs`):
    - Add backing fields for state
@@ -123,7 +152,7 @@ Document how to build input objects for service methods:
    - Handle output/results
    - Update UI state
 
-### Step 6: Build and Test
+### Step 7: Build and Test
 
 1. **Build**:
    ```bash
@@ -143,7 +172,7 @@ Document how to build input objects for service methods:
 
 4. **Check console output** for debug messages
 
-### Step 7: Debug Common Issues
+### Step 8: Debug Common Issues
 
 #### Service returns unexpected results
 - **Check input building**: Are boundaries/polygons in correct format?
@@ -183,6 +212,64 @@ Features like YouTurn have phases:
 4. Complete (reached end)
 
 Track state carefully and handle transitions.
+
+## MVVM Best Practices
+
+Strictly adhere to the MVVM pattern throughout the codebase:
+
+### View (XAML)
+- **DO**: Bind to ViewModel properties and commands
+- **DO**: Use `DataTemplate` for dynamic content
+- **DO**: Use Styles for visual consistency
+- **DON'T**: Put business logic in code-behind
+- **DON'T**: Directly manipulate ViewModel from code-behind (except initialization)
+
+### ViewModel
+- **DO**: Expose properties with `INotifyPropertyChanged` (use ReactiveUI's `RaiseAndSetIfChanged`)
+- **DO**: Use `ICommand` (RelayCommand) for user actions
+- **DO**: Inject services via constructor (DI)
+- **DO**: Keep ViewModels testable (no direct UI references)
+- **DON'T**: Reference Views or UI controls
+- **DON'T**: Use `MessageBox` or dialogs directly (use `IDialogService`)
+
+### Model/Services
+- **DO**: Keep business logic in services
+- **DO**: Define interfaces for all services
+- **DO**: Register services in DI container
+- **DON'T**: Put UI logic in services
+
+### Data Binding Patterns
+```xml
+<!-- Property binding -->
+<TextBlock Text="{Binding PropertyName}"/>
+
+<!-- Command binding -->
+<Button Command="{Binding DoSomethingCommand}"/>
+
+<!-- Two-way binding for inputs -->
+<TextBox Text="{Binding InputValue, Mode=TwoWay}"/>
+
+<!-- Binding with converter -->
+<Image Source="{Binding ImagePath, Converter={x:Static conv:StringToImageConverter.Instance}}"/>
+
+<!-- Collection binding with template -->
+<ItemsControl ItemsSource="{Binding Items}">
+    <ItemsControl.ItemTemplate>
+        <DataTemplate>
+            <TextBlock Text="{Binding Name}"/>
+        </DataTemplate>
+    </ItemsControl.ItemTemplate>
+</ItemsControl>
+```
+
+### Separation of Concerns
+```
+User Action → View (Button) → ViewModel (Command) → Service (Logic) → Model (Data)
+                    ↓                    ↓
+              UI Binding          Property Changed
+                    ↓                    ↓
+               View Updates      ViewModel Updates
+```
 
 ## Example: YouTurn Implementation
 

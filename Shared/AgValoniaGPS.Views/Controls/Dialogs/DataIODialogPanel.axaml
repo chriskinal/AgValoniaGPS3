@@ -36,15 +36,23 @@
             <Setter Property="Background" Value="#21618C"/>
         </Style>
 
-        <!-- Modern TextBox Style -->
-        <Style Selector="TextBox.DataIOInput">
+        <!-- Input Field Button Style (tappable fields that show keyboard) -->
+        <Style Selector="Button.DataIOInput">
             <Setter Property="Background" Value="#1E2930"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="MinHeight" Value="40"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.DataIOInput:pointerover">
+            <Setter Property="Background" Value="#2A3940"/>
+        </Style>
+        <Style Selector="Button.DataIOInput:pressed">
+            <Setter Property="Background" Value="#3A4950"/>
         </Style>
 
         <!-- Label Style -->
@@ -63,8 +71,11 @@
     </UserControl.Styles>
 
     <Grid>
-        <!-- Backdrop -->
-        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+        <!-- Backdrop - clicking closes the dialog -->
+        <Button Background="#80000000"
+                Command="{Binding CloseDataIODialogCommand}"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                BorderThickness="0" CornerRadius="0"/>
 
         <!-- Dialog Content -->
         <Border Background="#2C3E50" CornerRadius="12" Padding="0"
@@ -82,7 +93,7 @@
                             <TextBlock Text="Network, NTRIP, and GPS settings" Foreground="#BDC3C7" FontSize="13" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
-                                Click="Close_Click" Cursor="Hand" VerticalAlignment="Top">
+                                Command="{Binding CloseDataIODialogCommand}" Cursor="Hand" VerticalAlignment="Top">
                             <TextBlock Text="✕" Foreground="#BDC3C7" FontSize="20"/>
                         </Button>
                     </Grid>
@@ -146,48 +157,58 @@
                                 <Grid ColumnDefinitions="*,100" RowDefinitions="Auto,Auto">
                                     <StackPanel>
                                         <TextBlock Classes="Label" Text="Caster Address" Margin="0,0,0,4"/>
-                                        <TextBox x:Name="TxtCasterAddress" Classes="DataIOInput"
-                                                 Text="{Binding NtripCasterAddress}"
-                                                 GotFocus="CasterAddress_GotFocus"/>
+                                        <Button Classes="DataIOInput" HorizontalContentAlignment="Left"
+                                                Command="{Binding SetActiveDataIOFieldCommand}"
+                                                CommandParameter="CasterAddress">
+                                            <TextBlock Text="{Binding NtripCasterAddress}" Foreground="White"/>
+                                        </Button>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                         <TextBlock Classes="Label" Text="Port" Margin="0,0,0,4"/>
-                                        <TextBox x:Name="TxtCasterPort" Classes="DataIOInput"
-                                                 Text="{Binding NtripCasterPort}"
-                                                 GotFocus="CasterPort_GotFocus"/>
+                                        <Button Classes="DataIOInput" HorizontalContentAlignment="Left"
+                                                Command="{Binding SetActiveDataIOFieldCommand}"
+                                                CommandParameter="CasterPort">
+                                            <TextBlock Text="{Binding NtripCasterPort}" Foreground="White"/>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
 
                                 <!-- Mount Point -->
                                 <StackPanel>
                                     <TextBlock Classes="Label" Text="Mount Point" Margin="0,0,0,4"/>
-                                    <TextBox x:Name="TxtMountPoint" Classes="DataIOInput"
-                                             Text="{Binding NtripMountPoint}"
-                                             GotFocus="MountPoint_GotFocus"/>
+                                    <Button Classes="DataIOInput" HorizontalContentAlignment="Left"
+                                            Command="{Binding SetActiveDataIOFieldCommand}"
+                                            CommandParameter="MountPoint">
+                                        <TextBlock Text="{Binding NtripMountPoint}" Foreground="White"/>
+                                    </Button>
                                 </StackPanel>
 
                                 <!-- Username -->
                                 <StackPanel>
                                     <TextBlock Classes="Label" Text="Username" Margin="0,0,0,4"/>
-                                    <TextBox x:Name="TxtUsername" Classes="DataIOInput"
-                                             Text="{Binding NtripUsername}"
-                                             GotFocus="Username_GotFocus"/>
+                                    <Button Classes="DataIOInput" HorizontalContentAlignment="Left"
+                                            Command="{Binding SetActiveDataIOFieldCommand}"
+                                            CommandParameter="Username">
+                                        <TextBlock Text="{Binding NtripUsername}" Foreground="White"/>
+                                    </Button>
                                 </StackPanel>
 
                                 <!-- Password -->
                                 <StackPanel>
                                     <TextBlock Classes="Label" Text="Password" Margin="0,0,0,4"/>
-                                    <TextBox x:Name="TxtPassword" Classes="DataIOInput"
-                                             Text="{Binding NtripPassword}"
-                                             GotFocus="Password_GotFocus"/>
+                                    <Button Classes="DataIOInput" HorizontalContentAlignment="Left"
+                                            Command="{Binding SetActiveDataIOFieldCommand}"
+                                            CommandParameter="Password">
+                                        <TextBlock Text="{Binding NtripPassword}" Foreground="White"/>
+                                    </Button>
                                 </StackPanel>
 
                                 <!-- Connect/Disconnect Buttons -->
                                 <Grid ColumnDefinitions="*,*" Margin="0,5,0,0">
                                     <Button Classes="ModernButton" Content="Connect"
-                                            Click="BtnNtripConnect_Click" Margin="0,0,5,0"/>
+                                            Command="{Binding ConnectToNtripCommand}" Margin="0,0,5,0"/>
                                     <Button Grid.Column="1" Classes="ModernButton" Content="Disconnect"
-                                            Click="BtnNtripDisconnect_Click" Margin="5,0,0,0"
+                                            Command="{Binding DisconnectFromNtripCommand}" Margin="5,0,0,0"
                                             Background="#E67E22"/>
                                 </Grid>
 
@@ -241,15 +262,16 @@
                 <Border Grid.Row="2" Background="#34495E" CornerRadius="0,0,12,12" Padding="15">
                     <StackPanel Spacing="10">
                         <!-- Alphanumeric Keyboard -->
-                        <controls:AlphanumericKeyboardPanel x:Name="Keyboard"
-                                                            IsVisible="{Binding IsDataIOKeyboardVisible}"
+                        <controls:AlphanumericKeyboardPanel IsVisible="{Binding IsDataIOKeyboardVisible}"
                                                             Text="{Binding DataIOKeyboardText, Mode=TwoWay}"/>
 
                         <!-- Button Row -->
                         <Grid ColumnDefinitions="*,*">
-                            <Button Classes="ModernButton" Content="Save Settings" Click="Save_Click"
+                            <Button Classes="ModernButton" Content="Save Settings"
+                                    Command="{Binding SaveNtripSettingsCommand}"
                                     HorizontalAlignment="Stretch" Background="#3498DB" Margin="0,0,5,0"/>
-                            <Button Grid.Column="1" Classes="ModernButton" Content="Close" Click="Close_Click"
+                            <Button Grid.Column="1" Classes="ModernButton" Content="Close"
+                                    Command="{Binding CloseDataIODialogCommand}"
                                     HorizontalAlignment="Stretch" Background="#27AE60" Margin="5,0,0,0"/>
                         </Grid>
                     </StackPanel>
