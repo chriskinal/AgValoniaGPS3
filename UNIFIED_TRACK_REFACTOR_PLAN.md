@@ -438,11 +438,25 @@ Keep `TrackMode` enum for file compatibility, but `Track.Type` determines behavi
    - Closed loops (water pivot)
    - End-of-track behavior
 
-## Questions for Brian
+## Answers from Brian (AgOpenGPS Creator)
 
-1. Are there any edge cases in the original AgOpenGPS where AB line and curve guidance diverge significantly?
-2. How does water pivot mode differ - just closed loop, or other behavior changes?
-3. Any other hidden complexities in the "87 different guidance functions" that we should know about?
+**Q1: Are there any edge cases where AB line and curve guidance diverge?**
+
+> No, as long as all your lines are built out of segments. The quirk with AgOpenGPS is that the distance between the points need to be closer than the distance to the next line. So there is no difference between a curve and line from segmentation point of view.
+
+**Implementation note:** Ensure point spacing is always less than tool width. For AB lines (2 points), interpolate additional points if needed for long lines.
+
+**Q2: How does water pivot mode differ?**
+
+> Water pivot is just a closed loop, however it can be created via 3 points or a single point and radius. Otherwise it is just a looping segmented line.
+
+**Implementation note:** `Track.IsClosed = true` handles this. Optionally store `CreationMethod` (ThreePoint, CenterRadius) for UI/recreation purposes.
+
+**Q3: Any hidden complexities in the "87 different guidance functions"?**
+
+> Well there are - but only because each line type as they were added over the years required their own guidance function to match the structure of the line. Using a single line type - collection of segments - there is no need for multiple guidance functions, drawing functions, closest point functions, storage, or line classes.
+
+**Conclusion:** The duplication was historical accident, not technical necessity. A unified `Track` class with `List<Vec3>` points eliminates ALL of it.
 
 ## References
 
