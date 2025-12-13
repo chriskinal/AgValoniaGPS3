@@ -13,6 +13,7 @@ using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models.GPS;
+using AgValoniaGPS.Models.Configuration;
 using Avalonia.Threading;
 
 namespace AgValoniaGPS.ViewModels;
@@ -27,7 +28,6 @@ public class MainViewModel : ReactiveObject
     private readonly AgValoniaGPS.Services.Interfaces.IDisplaySettingsService _displaySettings;
     private readonly AgValoniaGPS.Services.Interfaces.IFieldStatisticsService _fieldStatistics;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsSimulationService _simulatorService;
-    private readonly VehicleConfiguration _vehicleConfig;
     private readonly ISettingsService _settingsService;
     private readonly IDialogService _dialogService;
     private readonly IMapService _mapService;
@@ -45,6 +45,12 @@ public class MainViewModel : ReactiveObject
     private readonly IConfigurationService _configurationService;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
+
+    // Convenience accessors for ConfigurationStore (replaces _vehicleConfig usage)
+    private static ConfigurationStore ConfigStore => ConfigurationStore.Instance;
+    private static VehicleConfig Vehicle => ConfigurationStore.Instance.Vehicle;
+    private static ToolConfig Tool => ConfigurationStore.Instance.Tool;
+    private static GuidanceConfig Guidance => ConfigurationStore.Instance.Guidance;
 
     // Current field origin (for map centering when GPS not active)
     private double _fieldOriginLatitude;
@@ -122,7 +128,6 @@ public class MainViewModel : ReactiveObject
         AgValoniaGPS.Services.Interfaces.IDisplaySettingsService displaySettings,
         AgValoniaGPS.Services.Interfaces.IFieldStatisticsService fieldStatistics,
         AgValoniaGPS.Services.Interfaces.IGpsSimulationService simulatorService,
-        VehicleConfiguration vehicleConfig,
         ISettingsService settingsService,
         IDialogService dialogService,
         IMapService mapService,
@@ -145,7 +150,6 @@ public class MainViewModel : ReactiveObject
         _displaySettings = displaySettings;
         _fieldStatistics = fieldStatistics;
         _simulatorService = simulatorService;
-        _vehicleConfig = vehicleConfig;
         _settingsService = settingsService;
         _dialogService = dialogService;
         _mapService = mapService;
@@ -798,7 +802,7 @@ public class MainViewModel : ReactiveObject
 
         // Calculate the perpendicular offset distance based on howManyPathsAway
         // This is the key insight from AgOpenGPS - the guidance line is dynamically calculated
-        double widthMinusOverlap = _vehicleConfig.TrackWidth; // Could subtract overlap if needed
+        double widthMinusOverlap = Vehicle.TrackWidth; // Could subtract overlap if needed
         double distAway = widthMinusOverlap * _howManyPathsAway;
 
         // Calculate the perpendicular direction (90 degrees from AB heading)
@@ -821,12 +825,12 @@ public class MainViewModel : ReactiveObject
 
         // Calculate dynamic look-ahead distance based on speed
         double speed = currentPosition.Speed * 3.6; // Convert m/s to km/h for look-ahead calc
-        double lookAhead = _vehicleConfig.GoalPointLookAheadHold;
+        double lookAhead = Guidance.GoalPointLookAheadHold;
         if (speed > 1)
         {
             lookAhead = Math.Max(
-                _vehicleConfig.MinLookAheadDistance,
-                _vehicleConfig.GoalPointLookAheadHold + (speed * _vehicleConfig.GoalPointLookAheadMult * 0.1)
+                Guidance.MinLookAheadDistance,
+                Guidance.GoalPointLookAheadHold + (speed * Guidance.GoalPointLookAheadMult * 0.1)
             );
         }
 
@@ -845,9 +849,9 @@ public class MainViewModel : ReactiveObject
             IsHeadingSameWay = isHeadingSameWay,
 
             // Vehicle configuration
-            Wheelbase = _vehicleConfig.Wheelbase,
-            MaxSteerAngle = _vehicleConfig.MaxSteerAngle,
-            PurePursuitIntegralGain = _vehicleConfig.PurePursuitIntegralGain,
+            Wheelbase = Vehicle.Wheelbase,
+            MaxSteerAngle = Vehicle.MaxSteerAngle,
+            PurePursuitIntegralGain = Guidance.PurePursuitIntegralGain,
             GoalPointDistance = lookAhead,
             SideHillCompFactor = 0, // No IMU roll compensation in simulator
 
@@ -1020,7 +1024,7 @@ public class MainViewModel : ReactiveObject
 
         // Calculate where the next line would be
         int rowSkipWidth = UTurnSkipRows + 1;
-        double offsetDistance = rowSkipWidth * _vehicleConfig.TrackWidth;
+        double offsetDistance = rowSkipWidth * Vehicle.TrackWidth;
 
         // Perpendicular offset direction
         double perpAngle = abHeading + (_isHeadingSameWay ? -Math.PI / 2 : Math.PI / 2);
@@ -1081,7 +1085,7 @@ public class MainViewModel : ReactiveObject
         int nextPathsAway = _howManyPathsAway + offsetChange;
 
         // Calculate the total offset for the next line
-        double widthMinusOverlap = _vehicleConfig.TrackWidth;
+        double widthMinusOverlap = Vehicle.TrackWidth;
         double nextDistAway = widthMinusOverlap * nextPathsAway;
 
         // Calculate the perpendicular direction (90 degrees from AB heading)
@@ -1146,7 +1150,7 @@ public class MainViewModel : ReactiveObject
 
         Console.WriteLine($"[YouTurn] Turn complete! Turn was {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading WAS {(_wasHeadingSameWayAtTurnStart ? "SAME" : "OPPOSITE")} at start");
         Console.WriteLine($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")} by {offsetChange}, now on path {_howManyPathsAway}");
-        Console.WriteLine($"[YouTurn] Total offset: {_vehicleConfig.TrackWidth * _howManyPathsAway:F1}m from reference line");
+        Console.WriteLine($"[YouTurn] Total offset: {Vehicle.TrackWidth * _howManyPathsAway:F1}m from reference line");
 
         // Remember this turn direction for alternating pattern
         _lastTurnWasLeft = _isTurnLeft;
@@ -1165,7 +1169,7 @@ public class MainViewModel : ReactiveObject
         _mapService.SetNextABLine(null);
         _mapService.SetIsInYouTurn(false);
 
-        StatusMessage = $"Following path {_howManyPathsAway} ({_vehicleConfig.TrackWidth * Math.Abs(_howManyPathsAway):F1}m offset)";
+        StatusMessage = $"Following path {_howManyPathsAway} ({Vehicle.TrackWidth * Math.Abs(_howManyPathsAway):F1}m offset)";
     }
 
     /// <summary>
@@ -1330,7 +1334,7 @@ public class MainViewModel : ReactiveObject
         }
 
         // Tool width (track width in our case)
-        double toolWidth = _vehicleConfig.TrackWidth;
+        double toolWidth = Vehicle.TrackWidth;
 
         // Total headland width from the headland multiplier setting
         double totalHeadlandWidth = HeadlandCalculatedWidth;
@@ -1479,7 +1483,7 @@ public class MainViewModel : ReactiveObject
         // Parameters
         double pointSpacing = 0.5; // meters between path points
         int rowSkipWidth = UTurnSkipRows + 1;
-        double trackWidth = _vehicleConfig.TrackWidth;
+        double trackWidth = Vehicle.TrackWidth;
         double turnOffset = trackWidth * rowSkipWidth; // Perpendicular distance to next track
 
         // Turn radius = half of turn offset so semicircle diameter = track spacing
@@ -1691,11 +1695,11 @@ public class MainViewModel : ReactiveObject
             TurnPath = _youTurnPath,
             PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
             SteerPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            Wheelbase = _vehicleConfig.Wheelbase,
-            MaxSteerAngle = _vehicleConfig.MaxSteerAngle,
+            Wheelbase = Vehicle.Wheelbase,
+            MaxSteerAngle = Vehicle.MaxSteerAngle,
             UseStanley = false, // Use Pure Pursuit for smoother turns
-            GoalPointDistance = _vehicleConfig.GoalPointLookAheadHold,
-            UTurnCompensation = _vehicleConfig.UTurnCompensation,
+            GoalPointDistance = Guidance.GoalPointLookAheadHold,
+            UTurnCompensation = Guidance.UTurnCompensation,
             FixHeading = headingRadians,
             AvgSpeed = speed,
             IsReverse = false,
@@ -1713,7 +1717,7 @@ public class MainViewModel : ReactiveObject
         else
         {
             // Apply steering from YouTurn guidance with compensation
-            SimulatorSteerAngle = output.SteerAngle * _vehicleConfig.UTurnCompensation;
+            SimulatorSteerAngle = output.SteerAngle * Guidance.UTurnCompensation;
             CrossTrackError = output.DistanceFromCurrentLine * 100;
         }
     }
@@ -1879,8 +1883,7 @@ public class MainViewModel : ReactiveObject
     public string? ActiveFieldName => ActiveField?.Name;
     public double? ActiveFieldArea => ActiveField?.TotalArea;
 
-    // AOG_Dev services - expose for UI/control access
-    public VehicleConfiguration VehicleConfig => _vehicleConfig;
+    // Services exposed for UI/control access
     public AgValoniaGPS.Services.Interfaces.IFieldStatisticsService FieldStatistics => _fieldStatistics;
 
     // Field statistics properties for UI binding
@@ -3056,12 +3059,12 @@ public class MainViewModel : ReactiveObject
             // Update distance based on tool width multiplier
             if (value > 0)
             {
-                HeadlandDistance = _vehicleConfig.TrackWidth * value;
+                HeadlandDistance = Vehicle.TrackWidth * value;
             }
         }
     }
 
-    public double HeadlandCalculatedWidth => _vehicleConfig.TrackWidth * _headlandToolWidthMultiplier;
+    public double HeadlandCalculatedWidth => Vehicle.TrackWidth * _headlandToolWidthMultiplier;
 
     // Headland point selection (for clipping headland via boundary points)
     // Each point is stored as (segmentIndex, t parameter 0-1, world position)
@@ -4131,7 +4134,7 @@ public class MainViewModel : ReactiveObject
 
         AppendVehicleNameCommand = new RelayCommand(() =>
         {
-            var vehicleName = _vehicleConfig?.Type.ToString() ?? "Vehicle";
+            var vehicleName = Vehicle.VehicleTypeDisplayName;
             if (!string.IsNullOrWhiteSpace(vehicleName))
             {
                 FromExistingFieldName = (FromExistingFieldName + " " + vehicleName).Trim();
@@ -4643,7 +4646,7 @@ public class MainViewModel : ReactiveObject
         {
             // Set headland distance to implement width (use track width * 2 as approximation)
             // TODO: Add actual tool/implement width to VehicleConfiguration
-            HeadlandDistance = _vehicleConfig.TrackWidth > 0 ? _vehicleConfig.TrackWidth * 2 : 12.0;
+            HeadlandDistance = Vehicle.TrackWidth > 0 ? Vehicle.TrackWidth * 2 : 12.0;
             UpdateHeadlandPreview();
         });
 

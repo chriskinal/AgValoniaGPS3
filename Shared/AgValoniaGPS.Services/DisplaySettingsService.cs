@@ -1,185 +1,183 @@
 using System;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 
-namespace AgValoniaGPS.Services
+namespace AgValoniaGPS.Services;
+
+/// <summary>
+/// Service for managing display and navigation settings.
+/// Delegates to ConfigurationStore.Instance.Display for state.
+/// </summary>
+public class DisplaySettingsService : IDisplaySettingsService
 {
-    /// <summary>
-    /// Service for managing display and navigation settings
-    /// </summary>
-    public class DisplaySettingsService : IDisplaySettingsService
+    private const double CameraPitchStep = 5.0;
+    private const int BrightnessStep = 5;
+
+    // Access display config directly from the store
+    private static DisplayConfig Display => ConfigurationStore.Instance.Display;
+
+    // Grid display - delegates to DisplayConfig
+    public bool IsGridOn
     {
-        private const double CameraPitchStep = 5.0;
-        private const int BrightnessStep = 5;
-
-        // Grid display
-        private bool _isGridOn = false;
-        public bool IsGridOn
+        get => Display.GridVisible;
+        set
         {
-            get => _isGridOn;
-            set
+            if (Display.GridVisible != value)
             {
-                if (_isGridOn != value)
-                {
-                    _isGridOn = value;
-                    GridVisibilityChanged?.Invoke(this, value);
-                }
+                Display.GridVisible = value;
+                GridVisibilityChanged?.Invoke(this, value);
             }
         }
-        public event EventHandler<bool>? GridVisibilityChanged;
+    }
+    public event EventHandler<bool>? GridVisibilityChanged;
 
-        // Day/Night mode
-        private bool _isDayMode = true;
-        public bool IsDayMode
+    // Day/Night mode - delegates to DisplayConfig
+    public bool IsDayMode
+    {
+        get => Display.IsDayMode;
+        set
         {
-            get => _isDayMode;
-            set
+            if (Display.IsDayMode != value)
             {
-                if (_isDayMode != value)
-                {
-                    _isDayMode = value;
-                    DayNightModeChanged?.Invoke(this, value);
-                }
+                Display.IsDayMode = value;
+                DayNightModeChanged?.Invoke(this, value);
             }
         }
-        public event EventHandler<bool>? DayNightModeChanged;
+    }
+    public event EventHandler<bool>? DayNightModeChanged;
 
-        // Camera settings
-        private double _cameraPitch = -62.0;
-        public double CameraPitch
+    // Camera settings - delegates to DisplayConfig
+    public double CameraPitch
+    {
+        get => Display.CameraPitch;
+        set
         {
-            get => _cameraPitch;
-            set
+            // Clamp pitch between -90 and -10 degrees
+            var clampedValue = Math.Max(-90, Math.Min(-10, value));
+            if (Math.Abs(Display.CameraPitch - clampedValue) > 0.01)
             {
-                // Clamp pitch between -90 and -10 degrees
-                var clampedValue = Math.Max(-90, Math.Min(-10, value));
-                if (Math.Abs(_cameraPitch - clampedValue) > 0.01)
-                {
-                    _cameraPitch = clampedValue;
-                    CameraPitchChanged?.Invoke(this, clampedValue);
-                }
+                Display.CameraPitch = clampedValue;
+                CameraPitchChanged?.Invoke(this, clampedValue);
             }
         }
-        public event EventHandler<double>? CameraPitchChanged;
+    }
+    public event EventHandler<double>? CameraPitchChanged;
 
-        private bool _is2DMode = false;
-        public bool Is2DMode
+    public bool Is2DMode
+    {
+        get => Display.Is2DMode;
+        set
         {
-            get => _is2DMode;
-            set
+            if (Display.Is2DMode != value)
             {
-                if (_is2DMode != value)
+                Display.Is2DMode = value;
+                // When switching to 2D, set pitch to -90 (straight down)
+                // When switching to 3D, restore previous pitch or default
+                if (value)
                 {
-                    _is2DMode = value;
-                    // When switching to 2D, set pitch to -90 (straight down)
-                    // When switching to 3D, restore previous pitch or default
-                    if (value)
-                    {
-                        CameraPitch = -90.0;
-                    }
-                    else
-                    {
-                        CameraPitch = -62.0; // Default 3D pitch
-                    }
-                    ViewModeChanged?.Invoke(this, value);
+                    CameraPitch = -90.0;
                 }
+                else
+                {
+                    CameraPitch = -62.0; // Default 3D pitch
+                }
+                ViewModeChanged?.Invoke(this, value);
             }
         }
+    }
 
-        private bool _isNorthUp = true;
-        public bool IsNorthUp
+    public bool IsNorthUp
+    {
+        get => Display.IsNorthUp;
+        set
         {
-            get => _isNorthUp;
-            set
+            if (Display.IsNorthUp != value)
             {
-                if (_isNorthUp != value)
-                {
-                    _isNorthUp = value;
-                    ViewModeChanged?.Invoke(this, value);
-                }
+                Display.IsNorthUp = value;
+                ViewModeChanged?.Invoke(this, value);
             }
         }
-        public event EventHandler<bool>? ViewModeChanged;
+    }
+    public event EventHandler<bool>? ViewModeChanged;
 
-        // Brightness control
-        private int _brightness = 50;
-        public int Brightness
+    // Brightness control - local state (platform-specific, not persisted)
+    private int _brightness = 50;
+    public int Brightness
+    {
+        get => _brightness;
+        set
         {
-            get => _brightness;
-            set
+            // Clamp between 0 and 100
+            var clampedValue = Math.Max(0, Math.Min(100, value));
+            if (_brightness != clampedValue)
             {
-                // Clamp between 0 and 100
-                var clampedValue = Math.Max(0, Math.Min(100, value));
-                if (_brightness != clampedValue)
-                {
-                    _brightness = clampedValue;
-                    BrightnessChanged?.Invoke(this, clampedValue);
-                }
+                _brightness = clampedValue;
+                BrightnessChanged?.Invoke(this, clampedValue);
             }
         }
-        public event EventHandler<int>? BrightnessChanged;
+    }
+    public event EventHandler<int>? BrightnessChanged;
 
-        // Brightness support depends on platform
-        // For now, we'll stub this - can implement platform-specific later
-        public bool IsBrightnessSupported => false;
+    // Brightness support depends on platform
+    // For now, we'll stub this - can implement platform-specific later
+    public bool IsBrightnessSupported => false;
 
-        public void IncreaseCameraPitch()
-        {
-            CameraPitch += CameraPitchStep;
-        }
+    public void IncreaseCameraPitch()
+    {
+        CameraPitch += CameraPitchStep;
+    }
 
-        public void DecreaseCameraPitch()
-        {
-            CameraPitch -= CameraPitchStep;
-        }
+    public void DecreaseCameraPitch()
+    {
+        CameraPitch -= CameraPitchStep;
+    }
 
-        public void IncreaseBrightness()
-        {
-            Brightness += BrightnessStep;
-        }
+    public void IncreaseBrightness()
+    {
+        Brightness += BrightnessStep;
+    }
 
-        public void DecreaseBrightness()
-        {
-            Brightness -= BrightnessStep;
-        }
+    public void DecreaseBrightness()
+    {
+        Brightness -= BrightnessStep;
+    }
 
-        public void ToggleGrid()
-        {
-            IsGridOn = !IsGridOn;
-        }
+    public void ToggleGrid()
+    {
+        IsGridOn = !IsGridOn;
+    }
 
-        public void ToggleDayNight()
-        {
-            IsDayMode = !IsDayMode;
-        }
+    public void ToggleDayNight()
+    {
+        IsDayMode = !IsDayMode;
+    }
 
-        public void Toggle2D3D()
-        {
-            Is2DMode = !Is2DMode;
-        }
+    public void Toggle2D3D()
+    {
+        Is2DMode = !Is2DMode;
+    }
 
-        public void ToggleNorthUp()
-        {
-            IsNorthUp = !IsNorthUp;
-        }
+    public void ToggleNorthUp()
+    {
+        IsNorthUp = !IsNorthUp;
+    }
 
-        public void LoadSettings()
-        {
-            // TODO: Implement settings persistence
-            // For now, use defaults - set fields directly without raising events
-            _isGridOn = false;
-            _isDayMode = true;
-            _cameraPitch = -62.0;
-            _is2DMode = false;
-            _isNorthUp = true;
-            _brightness = 50;
+    public void LoadSettings()
+    {
+        // Settings are now loaded via ConfigurationService.LoadAppSettings()
+        // This method exists for interface compatibility but doesn't need to do anything
+        // since DisplayConfig is populated when app settings are loaded.
 
-            // No events raised - these are just initial values
-        }
+        // Fire events to notify UI of current values
+        GridVisibilityChanged?.Invoke(this, Display.GridVisible);
+        DayNightModeChanged?.Invoke(this, Display.IsDayMode);
+        CameraPitchChanged?.Invoke(this, Display.CameraPitch);
+        ViewModeChanged?.Invoke(this, Display.Is2DMode);
+    }
 
-        public void SaveSettings()
-        {
-            // TODO: Implement settings persistence
-            // Will need to add settings file or database
-        }
+    public void SaveSettings()
+    {
+        // Settings are now saved via ConfigurationService.SaveAppSettings()
+        // This method exists for interface compatibility
     }
 }

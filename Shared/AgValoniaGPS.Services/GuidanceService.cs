@@ -1,5 +1,6 @@
 using System;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -7,10 +8,13 @@ namespace AgValoniaGPS.Services;
 /// <summary>
 /// Implementation of guidance calculation service
 /// Ported algorithms from AOG_Dev CVehicle.cs
+/// Uses ConfigurationStore for all configuration values.
 /// </summary>
 public class GuidanceService : IGuidanceService
 {
-    private readonly VehicleConfiguration _vehicleConfig;
+    // Access configuration directly from the store
+    private static VehicleConfig Vehicle => ConfigurationStore.Instance.Vehicle;
+    private static GuidanceConfig Guidance => ConfigurationStore.Instance.Guidance;
 
     // State tracking for dead zone
     private int _deadZoneDelayCounter = 0;
@@ -24,9 +28,9 @@ public class GuidanceService : IGuidanceService
 
     public bool IsActive { get; private set; }
 
-    public GuidanceService(VehicleConfiguration vehicleConfig)
+    public GuidanceService()
     {
-        _vehicleConfig = vehicleConfig;
+        // No injected configuration needed - uses ConfigurationStore.Instance
     }
 
     public void CalculateGuidance(Position currentPosition, ABLine abLine, Vehicle vehicle)
@@ -50,11 +54,16 @@ public class GuidanceService : IGuidanceService
         double steerAngle = 0;
         if (!_isInDeadZone)
         {
-            // Example using Pure Pursuit (would need goal point calculations)
-            // steerAngle = CalculatePurePursuitSteering(goalPointX, goalPointY);
-
-            // Or using Stanley
-            steerAngle = CalculateStanleySteering(xte, headingError, currentSpeed);
+            if (Guidance.IsPurePursuit)
+            {
+                // Example using Pure Pursuit (would need goal point calculations)
+                // steerAngle = CalculatePurePursuitSteering(goalPointX, goalPointY);
+            }
+            else
+            {
+                // Using Stanley
+                steerAngle = CalculateStanleySteering(xte, headingError, currentSpeed);
+            }
         }
 
         var guidanceData = new GuidanceData
@@ -77,15 +86,15 @@ public class GuidanceService : IGuidanceService
         double xTE = Math.Abs(crossTrackError);
 
         // Base goal point distance: speed * 0.05 * multiplier
-        double goalPointDistance = currentSpeed * 0.05 * _vehicleConfig.GoalPointLookAheadMult;
+        double goalPointDistance = currentSpeed * 0.05 * Guidance.GoalPointLookAheadMult;
 
-        double lookAheadHold = _vehicleConfig.GoalPointLookAheadHold;
-        double lookAheadAcquire = lookAheadHold * _vehicleConfig.GoalPointAcquireFactor;
+        double lookAheadHold = Guidance.GoalPointLookAheadHold;
+        double lookAheadAcquire = lookAheadHold * Guidance.GoalPointAcquireFactor;
 
         if (!isAutoSteerOn)
         {
             lookAheadHold = 5;
-            lookAheadAcquire = lookAheadHold * _vehicleConfig.GoalPointAcquireFactor;
+            lookAheadAcquire = lookAheadHold * Guidance.GoalPointAcquireFactor;
         }
 
         // Adjust look-ahead based on cross-track error
@@ -113,9 +122,9 @@ public class GuidanceService : IGuidanceService
         }
 
         // Enforce minimum
-        if (goalPointDistance < _vehicleConfig.MinLookAheadDistance)
+        if (goalPointDistance < Guidance.MinLookAheadDistance)
         {
-            goalPointDistance = _vehicleConfig.MinLookAheadDistance;
+            goalPointDistance = Guidance.MinLookAheadDistance;
         }
 
         return goalPointDistance;
@@ -126,11 +135,11 @@ public class GuidanceService : IGuidanceService
     /// </summary>
     private void UpdateDeadZone(double headingError)
     {
-        double deadZoneHeading = _vehicleConfig.DeadZoneHeading * 0.01; // Convert
+        double deadZoneHeading = Guidance.DeadZoneHeading * 0.01; // Convert
 
         if (Math.Abs(headingError) < deadZoneHeading)
         {
-            if (_deadZoneDelayCounter < _vehicleConfig.DeadZoneDelay)
+            if (_deadZoneDelayCounter < Guidance.DeadZoneDelay)
             {
                 _deadZoneDelayCounter++;
             }
@@ -155,9 +164,9 @@ public class GuidanceService : IGuidanceService
         if (speedMs < 0.1) speedMs = 0.1;
 
         double distanceComponent = Math.Atan(
-            _vehicleConfig.StanleyDistanceErrorGain * crossTrackError / speedMs);
+            Guidance.StanleyDistanceErrorGain * crossTrackError / speedMs);
 
-        double headingComponent = headingError * _vehicleConfig.StanleyHeadingErrorGain;
+        double headingComponent = headingError * Guidance.StanleyHeadingErrorGain;
 
         return headingComponent + distanceComponent;
     }
@@ -173,7 +182,7 @@ public class GuidanceService : IGuidanceService
         double alpha = Math.Atan2(goalPointY, goalPointX);
         double curvature = 2 * Math.Sin(alpha) / lookAheadDist;
 
-        return Math.Atan(curvature * _vehicleConfig.Wheelbase);
+        return Math.Atan(curvature * Vehicle.Wheelbase);
     }
 
     public void Start()
