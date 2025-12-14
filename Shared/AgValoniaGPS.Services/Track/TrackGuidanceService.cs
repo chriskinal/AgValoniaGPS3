@@ -301,7 +301,8 @@ public class TrackGuidanceService : ITrackGuidanceService
         double xteComponent = Math.Atan(
             input.StanleyDistanceErrorGain * output.DistanceFromLineSteer / speedMs);
 
-        output.SteerAngle = GeometryMath.ToDegrees(headingComponent + xteComponent);
+        // Stanley uses inverted angle (matches original AOG implementation)
+        output.SteerAngle = GeometryMath.ToDegrees((headingComponent + xteComponent) * -1.0);
 
         // Side hill compensation
         if (input.ImuRoll != 88888)
