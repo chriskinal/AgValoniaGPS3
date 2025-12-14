@@ -14,6 +14,7 @@ using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models.GPS;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Models.Track;
 using Avalonia.Threading;
 
 namespace AgValoniaGPS.ViewModels;
@@ -36,6 +37,7 @@ public class MainViewModel : ReactiveObject
     private readonly NmeaParserService _nmeaParser;
     private readonly Services.Headland.IHeadlandBuilderService _headlandBuilderService;
     private readonly IPurePursuitGuidanceService _purePursuitService;
+    private readonly ITrackGuidanceService _trackGuidanceService;
     private readonly YouTurnCreationService _youTurnCreationService;
     private readonly Services.Geometry.IPolygonOffsetService _polygonOffsetService;
     private readonly Services.Interfaces.ITurnAreaService _turnAreaService;
@@ -56,11 +58,8 @@ public class MainViewModel : ReactiveObject
     private double _fieldOriginLatitude;
     private double _fieldOriginLongitude;
 
-    // Pure Pursuit guidance state (carried between iterations)
-    private double _ppIntegral;
-    private double _ppPivotDistanceError;
-    private double _ppPivotDistanceErrorLast;
-    private int _ppCounter;
+    // Track guidance state (carried between iterations)
+    private TrackGuidanceState? _trackGuidanceState;
 
     // YouTurn state
     private bool _isYouTurnTriggered;
@@ -135,6 +134,7 @@ public class MainViewModel : ReactiveObject
         BoundaryFileService boundaryFileService,
         Services.Headland.IHeadlandBuilderService headlandBuilderService,
         IPurePursuitGuidanceService purePursuitService,
+        ITrackGuidanceService trackGuidanceService,
         YouTurnCreationService youTurnCreationService,
         YouTurnGuidanceService youTurnGuidanceService,
         Services.Geometry.IPolygonOffsetService polygonOffsetService,
@@ -157,6 +157,7 @@ public class MainViewModel : ReactiveObject
         _boundaryFileService = boundaryFileService;
         _headlandBuilderService = headlandBuilderService;
         _purePursuitService = purePursuitService;
+        _trackGuidanceService = trackGuidanceService;
         _youTurnCreationService = youTurnCreationService;
         _youTurnGuidanceService = youTurnGuidanceService;
         _polygonOffsetService = polygonOffsetService;
@@ -834,57 +835,60 @@ public class MainViewModel : ReactiveObject
             );
         }
 
-        // Build Pure Pursuit input with the dynamically calculated line
-        var input = new PurePursuitGuidanceInput
+        // Create a Track from the dynamically calculated line
+        var currentTrack = Models.Track.Track.FromABLine(
+            "CurrentGuidance",
+            new Vec3(currentPtAEasting, currentPtANorthing, abHeading),
+            new Vec3(currentPtBEasting, currentPtBNorthing, abHeading));
+
+        // Calculate steer axle position (ahead of pivot by wheelbase)
+        double steerEasting = currentPosition.Easting + Math.Sin(headingRadians) * Vehicle.Wheelbase;
+        double steerNorthing = currentPosition.Northing + Math.Cos(headingRadians) * Vehicle.Wheelbase;
+
+        // Build unified guidance input
+        var input = new TrackGuidanceInput
         {
-            // Vehicle position
+            Track = currentTrack,
             PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-
-            // DYNAMICALLY CALCULATED AB line endpoints based on _howManyPathsAway
-            CurrentLinePtA = new Vec3(currentPtAEasting, currentPtANorthing, 0),
-            CurrentLinePtB = new Vec3(currentPtBEasting, currentPtBNorthing, 0),
-
-            // AB line properties
-            ABHeading = abHeading,
+            SteerPosition = new Vec3(steerEasting, steerNorthing, headingRadians),
+            UseStanley = false, // Use Pure Pursuit
             IsHeadingSameWay = isHeadingSameWay,
 
             // Vehicle configuration
             Wheelbase = Vehicle.Wheelbase,
             MaxSteerAngle = Vehicle.MaxSteerAngle,
-            PurePursuitIntegralGain = Guidance.PurePursuitIntegralGain,
             GoalPointDistance = lookAhead,
             SideHillCompFactor = 0, // No IMU roll compensation in simulator
+
+            // Pure Pursuit gains
+            PurePursuitIntegralGain = Guidance.PurePursuitIntegralGain,
 
             // Vehicle state
             FixHeading = headingRadians,
             AvgSpeed = speed,
             IsReverse = false,
             IsAutoSteerOn = true,
+            IsYouTurnTriggered = _isYouTurnTriggered,
 
             // AHRS data (88888 = invalid/no IMU)
             ImuRoll = 88888,
 
             // Previous state for filtering/integration
-            PreviousIntegral = _ppIntegral,
-            PreviousPivotDistanceError = _ppPivotDistanceError,
-            PreviousPivotDistanceErrorLast = _ppPivotDistanceErrorLast,
-            PreviousCounter = _ppCounter
+            PreviousState = _trackGuidanceState,
+            FindGlobalNearest = _trackGuidanceState == null // Global search on first iteration
         };
 
-        // Calculate guidance
-        var output = _purePursuitService.CalculateGuidanceABLine(input);
+        // Calculate guidance using unified service
+        var output = _trackGuidanceService.CalculateGuidance(input);
 
         // Store state for next iteration
-        _ppIntegral = output.Integral;
-        _ppPivotDistanceError = output.PivotDistanceError;
-        _ppPivotDistanceErrorLast = output.PivotDistanceErrorLast;
-        _ppCounter = output.Counter;
+        _trackGuidanceState = output.State;
 
         // Apply calculated steering to simulator
         SimulatorSteerAngle = output.SteerAngle;
 
         // Update cross-track error for display (convert from meters to cm)
-        CrossTrackError = output.DistanceFromCurrentLinePivot * 100;
+        CrossTrackError = output.CrossTrackError * 100;
 
         // Update the map to show the current guidance line
         UpdateActiveLineVisualization(currentPtAEasting, currentPtANorthing, currentPtBEasting, currentPtBNorthing);

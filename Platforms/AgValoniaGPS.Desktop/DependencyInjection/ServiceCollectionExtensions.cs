@@ -4,6 +4,7 @@ using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
 using AgValoniaGPS.Services.Guidance;
+using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Models;
@@ -48,6 +49,7 @@ public static class ServiceCollectionExtensions
 
         // Guidance algorithm services
         services.AddSingleton<IPurePursuitGuidanceService, PurePursuitGuidanceService>();
+        services.AddSingleton<ITrackGuidanceService, TrackGuidanceService>();
 
         // YouTurn services
         services.AddSingleton<YouTurnCreationService>();
