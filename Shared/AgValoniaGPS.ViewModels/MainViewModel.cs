@@ -1025,6 +1025,10 @@ public class MainViewModel : ReactiveObject
             // Trigger when within 2 meters of turn start
             if (distToTurnStart <= 2.0)
             {
+                // Update centralized state
+                State.YouTurn.IsTriggered = true;
+                State.YouTurn.IsExecuting = true;
+
                 _isYouTurnTriggered = true;
                 _isInYouTurn = true;
                 StatusMessage = "YouTurn triggered!";
@@ -1189,6 +1193,13 @@ public class MainViewModel : ReactiveObject
         _lastTurnWasLeft = _isTurnLeft;
         _hasCompletedFirstTurn = true;
 
+        // Update centralized state
+        State.YouTurn.LastTurnWasLeft = _isTurnLeft;
+        State.YouTurn.HasCompletedFirstTurn = true;
+        State.YouTurn.IsTriggered = false;
+        State.YouTurn.IsExecuting = false;
+        State.YouTurn.TurnPath = null;
+
         // Clear the U-turn state
         _isYouTurnTriggered = false;
         _isInYouTurn = false;
@@ -1275,6 +1286,7 @@ public class MainViewModel : ReactiveObject
                 var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
                 if (fallbackPath != null && fallbackPath.Count > 10)
                 {
+                    State.YouTurn.TurnPath = fallbackPath;
                     _youTurnPath = fallbackPath;
                     _youTurnCounter = 0;
                     _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
@@ -1287,6 +1299,7 @@ public class MainViewModel : ReactiveObject
 
             if (output.Success && output.TurnPath != null && output.TurnPath.Count > 10)
             {
+                State.YouTurn.TurnPath = output.TurnPath;
                 _youTurnPath = output.TurnPath;
                 _youTurnCounter = 0;
                 StatusMessage = $"YouTurn path created ({output.TurnPath.Count} points)";
@@ -1302,6 +1315,7 @@ public class MainViewModel : ReactiveObject
                 var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
                 if (fallbackPath != null && fallbackPath.Count > 10)
                 {
+                    State.YouTurn.TurnPath = fallbackPath;
                     _youTurnPath = fallbackPath;
                     _youTurnCounter = 0;
                     _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
@@ -1317,6 +1331,7 @@ public class MainViewModel : ReactiveObject
                 var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
                 if (fallbackPath != null && fallbackPath.Count > 10)
                 {
+                    State.YouTurn.TurnPath = fallbackPath;
                     _youTurnPath = fallbackPath;
                     _youTurnCounter = 0;
                     _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
@@ -1785,6 +1800,12 @@ public class MainViewModel : ReactiveObject
     {
         Dispatcher.UIThread.Post(() =>
         {
+            // Update centralized state
+            State.BoundaryRec.PointCount = e.TotalPoints;
+            State.BoundaryRec.AreaHectares = e.AreaHectares;
+            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
+
+            // Legacy properties
             BoundaryPointCount = e.TotalPoints;
             BoundaryAreaHectares = e.AreaHectares;
 
@@ -1800,6 +1821,14 @@ public class MainViewModel : ReactiveObject
     {
         Dispatcher.UIThread.Post(() =>
         {
+            // Update centralized state
+            State.BoundaryRec.IsRecording = e.State == BoundaryRecordingState.Recording;
+            State.BoundaryRec.IsPaused = e.State == BoundaryRecordingState.Paused;
+            State.BoundaryRec.PointCount = e.PointCount;
+            State.BoundaryRec.AreaHectares = e.AreaHectares;
+            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
+
+            // Legacy properties
             IsBoundaryRecording = e.State == BoundaryRecordingState.Recording;
             BoundaryPointCount = e.PointCount;
             BoundaryAreaHectares = e.AreaHectares;
@@ -1807,6 +1836,7 @@ public class MainViewModel : ReactiveObject
             // Clear recording points from map when recording becomes idle
             if (e.State == BoundaryRecordingState.Idle)
             {
+                State.BoundaryRec.RecordingPoints.Clear();
                 _mapService.ClearRecordingPoints();
             }
             // Update map with current recorded points (for undo/clear operations)
@@ -1983,6 +2013,10 @@ public class MainViewModel : ReactiveObject
 
     private void UpdateActiveField(Field? field)
     {
+        // Update centralized state
+        State.Field.ActiveField = field;
+
+        // Legacy property
         ActiveField = field;
         this.RaisePropertyChanged(nameof(ActiveFieldName));
         this.RaisePropertyChanged(nameof(ActiveFieldArea));
@@ -2012,7 +2046,10 @@ public class MainViewModel : ReactiveObject
     {
         if (field == null || string.IsNullOrEmpty(field.DirectoryPath))
         {
-            // Clear headland if no field
+            // Clear headland if no field - update centralized state
+            State.Field.HeadlandLine = null;
+            State.Field.HeadlandDistance = 0;
+
             _currentHeadlandLine = null;
             _mapService.SetHeadlandLine(null);
             HasHeadland = false;
@@ -2026,6 +2063,10 @@ public class MainViewModel : ReactiveObject
 
             if (headlandLine.Tracks.Count > 0 && headlandLine.Tracks[0].TrackPoints.Count > 0)
             {
+                // Update centralized state
+                State.Field.HeadlandLine = headlandLine.Tracks[0].TrackPoints;
+                State.Field.HeadlandDistance = headlandLine.Tracks[0].MoveDistance;
+
                 // Use direct field assignment to avoid triggering save
                 _currentHeadlandLine = headlandLine.Tracks[0].TrackPoints;
                 _mapService.SetHeadlandLine(_currentHeadlandLine);
@@ -2039,6 +2080,9 @@ public class MainViewModel : ReactiveObject
             }
             else
             {
+                State.Field.HeadlandLine = null;
+                State.Field.HeadlandDistance = 0;
+
                 _currentHeadlandLine = null;
                 _mapService.SetHeadlandLine(null);
                 HasHeadland = false;
@@ -2049,6 +2093,9 @@ public class MainViewModel : ReactiveObject
         catch (System.Exception ex)
         {
             Console.WriteLine($"[Headland] Failed to load headland: {ex.Message}");
+            State.Field.HeadlandLine = null;
+            State.Field.HeadlandDistance = 0;
+
             _currentHeadlandLine = null;
             _mapService.SetHeadlandLine(null);
             HasHeadland = false;
@@ -3304,6 +3351,9 @@ public class MainViewModel : ReactiveObject
         {
             if (this.RaiseAndSetIfChanged(ref _isSimulatorEnabled, value))
             {
+                // Update centralized state
+                State.Simulator.IsEnabled = value;
+
                 // Save to settings
                 _settingsService.Settings.SimulatorEnabled = value;
                 _settingsService.Save();
@@ -3311,11 +3361,13 @@ public class MainViewModel : ReactiveObject
                 // Start or stop simulator timer based on enabled state
                 if (value)
                 {
+                    State.Simulator.IsRunning = true;
                     _simulatorTimer.Start();
                     StatusMessage = "Simulator ON";
                 }
                 else
                 {
+                    State.Simulator.IsRunning = false;
                     _simulatorTimer.Stop();
                     StatusMessage = "Simulator OFF";
                 }
@@ -3330,6 +3382,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             this.RaiseAndSetIfChanged(ref _simulatorSteerAngle, value);
+            State.Simulator.SteerAngle = value;
             this.RaisePropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
             if (_isSimulatorEnabled)
             {
@@ -3353,6 +3406,8 @@ public class MainViewModel : ReactiveObject
             // Clamp to valid range
             value = Math.Max(-10, Math.Min(25, value));
             this.RaiseAndSetIfChanged(ref _simulatorSpeedKph, value);
+            State.Simulator.Speed = value;
+            State.Simulator.TargetSpeed = value;
             this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
             if (_isSimulatorEnabled)
             {
@@ -6953,7 +7008,8 @@ public class MainViewModel : ReactiveObject
     /// </summary>
     private void LoadTracksFromField(Field? field)
     {
-        // Clear existing tracks
+        // Clear existing tracks from both state and legacy collection
+        State.Field.Tracks.Clear();
         SavedTracks.Clear();
 
         if (field == null || string.IsNullOrEmpty(field.DirectoryPath))
@@ -6976,7 +7032,9 @@ public class MainViewModel : ReactiveObject
                     if (loadedCount == 0)
                     {
                         track.IsActive = true;
+                        State.Field.ActiveTrack = track;
                     }
+                    State.Field.Tracks.Add(track);
                     SavedTracks.Add(track);
                     loadedCount++;
                 }
@@ -7037,6 +7095,11 @@ public class MainViewModel : ReactiveObject
                                 new Vec3(eastingB, northingB, headingRadians));
                             track.IsActive = loadedCount == 0;
 
+                            if (loadedCount == 0)
+                            {
+                                State.Field.ActiveTrack = track;
+                            }
+                            State.Field.Tracks.Add(track);
                             SavedTracks.Add(track);
                             loadedCount++;
                         }
