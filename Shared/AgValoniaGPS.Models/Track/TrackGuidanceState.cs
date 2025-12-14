@@ -1,0 +1,74 @@
+namespace AgValoniaGPS.Models.Track;
+
+/// <summary>
+/// Filter and integrator state for track guidance.
+/// Passed between guidance calculations to maintain continuity.
+/// </summary>
+public class TrackGuidanceState
+{
+    /// <summary>
+    /// Integral accumulator for PID control.
+    /// </summary>
+    public double Integral { get; set; }
+
+    /// <summary>
+    /// Pivot distance error (current frame).
+    /// </summary>
+    public double PivotDistanceError { get; set; }
+
+    /// <summary>
+    /// Pivot distance error (previous frame).
+    /// </summary>
+    public double PivotDistanceErrorLast { get; set; }
+
+    /// <summary>
+    /// Derivative of pivot distance error.
+    /// </summary>
+    public double PivotDerivative { get; set; }
+
+    /// <summary>
+    /// Frame counter for integral calculations.
+    /// </summary>
+    public int Counter { get; set; }
+
+    /// <summary>
+    /// Cross-track steer correction (Stanley).
+    /// </summary>
+    public double XTrackSteerCorrection { get; set; }
+
+    /// <summary>
+    /// Distance-based steer error (Stanley).
+    /// </summary>
+    public double DistSteerError { get; set; }
+
+    /// <summary>
+    /// Previous distance-based steer error (Stanley).
+    /// </summary>
+    public double LastDistSteerError { get; set; }
+
+    /// <summary>
+    /// Derivative of distance steer error (Stanley).
+    /// </summary>
+    public double DerivativeDistError { get; set; }
+
+    /// <summary>
+    /// Create a fresh state for starting guidance.
+    /// </summary>
+    public static TrackGuidanceState Initial() => new();
+
+    /// <summary>
+    /// Create a copy of this state.
+    /// </summary>
+    public TrackGuidanceState Clone() => new()
+    {
+        Integral = Integral,
+        PivotDistanceError = PivotDistanceError,
+        PivotDistanceErrorLast = PivotDistanceErrorLast,
+        PivotDerivative = PivotDerivative,
+        Counter = Counter,
+        XTrackSteerCorrection = XTrackSteerCorrection,
+        DistSteerError = DistSteerError,
+        LastDistSteerError = LastDistSteerError,
+        DerivativeDistError = DerivativeDistError
+    };
+}

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
+using AgValoniaGPS.Models.Track;
 
 namespace AgValoniaGPS.Services
 {
@@ -184,6 +186,34 @@ namespace AgValoniaGPS.Services
                 return false;
 
             return File.Exists(Path.Combine(fieldDirectory, FileName));
+        }
+
+        /// <summary>
+        /// Load tracks from TrackLines.txt file as unified Track objects.
+        /// </summary>
+        /// <param name="fieldDirectory">Path to the field directory</param>
+        /// <returns>List of Track objects</returns>
+        public static List<Models.Track.Track> LoadTracks(string fieldDirectory)
+        {
+            var abLines = Load(fieldDirectory);
+            return abLines.Select(Models.Track.Track.FromABLine).ToList();
+        }
+
+        /// <summary>
+        /// Save unified Track objects to TrackLines.txt file.
+        /// </summary>
+        /// <param name="fieldDirectory">Path to the field directory</param>
+        /// <param name="tracks">List of Track objects to save</param>
+        public static void SaveTracks(string fieldDirectory, IReadOnlyList<Models.Track.Track> tracks)
+        {
+            if (tracks == null || tracks.Count == 0)
+            {
+                Save(fieldDirectory, Array.Empty<ABLine>());
+                return;
+            }
+
+            var abLines = tracks.Select(t => t.ToABLine()).ToList();
+            Save(fieldDirectory, abLines);
         }
 
         private static string FormatDouble(double value, int decimalPlaces)
