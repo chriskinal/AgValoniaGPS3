@@ -9,7 +9,8 @@ AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built wi
 **What it does:**
 - Real-time GPS guidance for agricultural equipment
 - Field boundary management and recording
-- AB line and curve guidance
+- Unified track guidance (AB lines and curves use same system)
+- U-turn path generation and following
 - Section control for sprayers/planters
 - NTRIP RTK corrections support
 - Integration with AgOpenGPS ecosystem via UDP
@@ -89,6 +90,34 @@ Panels use Canvas positioning with pointer event handlers for dragging:
 - iOS: Handlers in `MainView.axaml.cs`
 - LeftNavigationPanel has built-in drag support for sub-panels
 
+### Unified Track Architecture
+**Key insight from AgOpenGPS creator Brian:** "An AB line is just a curve with 2 points."
+
+All guidance track types use a single `Track` model (`Shared/AgValoniaGPS.Models/Track/Track.cs`):
+
+```csharp
+public class Track
+{
+    public string Name { get; set; }
+    public List<Vec3> Points { get; set; }  // AB lines have 2 points, curves have N
+    public TrackMode Mode { get; set; }
+    public bool IsVisible { get; set; }
+    public double NudgeDistance { get; set; }
+
+    // Computed properties
+    public bool IsABLine => Points.Count == 2;
+    public bool IsCurve => Points.Count > 2;
+}
+```
+
+**Single guidance service** (`TrackGuidanceService`) handles both Pure Pursuit and Stanley algorithms for all track types. This replaced 4 separate guidance services and reduced ~2,100 lines of duplicated code.
+
+**Shared utilities** in `GeometryMath.cs`:
+- `Distance()`, `DistanceSquared()` - various overloads for Vec2/Vec3
+- `ToDegrees()`, `ToRadians()` - angle conversion
+- `IsPointInPolygon()` - boundary checks
+- `PIBy2`, `twoPI` - common constants
+
 ## Technology Stack
 
 - **.NET 10.0** - Target framework
@@ -103,19 +132,26 @@ Panels use Canvas positioning with pointer event handlers for dragging:
 | `Shared/AgValoniaGPS.ViewModels/MainViewModel.cs` | Main application state, commands, GPS data |
 | `Shared/AgValoniaGPS.Views/Controls/DrawingContextMapControl.cs` | Map rendering (30 FPS) |
 | `Shared/AgValoniaGPS.Views/Controls/Panels/LeftNavigationPanel.axaml` | Main navigation sidebar |
+| `Shared/AgValoniaGPS.Models/Track/Track.cs` | Unified track model (AB lines + curves) |
+| `Shared/AgValoniaGPS.Models/Base/GeometryMath.cs` | Shared geometry utilities |
+| `Shared/AgValoniaGPS.Services/Track/TrackGuidanceService.cs` | Pure Pursuit + Stanley guidance |
+| `Shared/AgValoniaGPS.Services/YouTurn/YouTurnGuidanceService.cs` | U-turn path following |
 | `Shared/AgValoniaGPS.Services/NtripClientService.cs` | NTRIP RTK corrections |
 | `Shared/AgValoniaGPS.Services/GpsService.cs` | GPS data processing |
 | `Platforms/AgValoniaGPS.Desktop/Views/MainWindow.axaml` | Desktop main window |
 | `Platforms/AgValoniaGPS.iOS/Views/MainView.axaml` | iOS main view |
+| `TestRunner/Program.cs` | Test harness for guidance algorithms |
 
 ## Service Interfaces
 
 Services use interface-based design in `Shared/AgValoniaGPS.Services/Interfaces/`:
+- `ITrackGuidanceService` - Unified guidance (Pure Pursuit + Stanley) for all track types
 - `IGpsService` - GPS data processing and position updates
 - `IUdpCommunicationService` - UDP communication with AgOpenGPS modules
 - `INtripClientService` - NTRIP caster connections for RTK
 - `IFieldService` - Field loading/saving/management
 - `IBoundaryRecordingService` - Recording field boundaries
+- `IMapService` - Map control registration and track/boundary rendering
 - `IDialogService` - Platform dialog abstractions
 
 ## Platform-Specific Code
@@ -181,3 +217,37 @@ User-Agent: NTRIP AgValoniaGPS
 - Keep platform code minimal - prefer shared code
 - Dialogs are overlay panels, not separate windows
 - Use dependency injection for services
+- Use shared `GeometryMath` utilities instead of duplicating distance/angle calculations
+
+## Testing
+
+Run guidance algorithm tests:
+```bash
+dotnet run --project TestRunner/TestRunner.csproj
+```
+
+Tests verify:
+- AB Line Pure Pursuit steering
+- Curve Pure Pursuit steering
+- AB Line Stanley steering
+- Vehicle on-line behavior (XTE ≈ 0)
+- Track model conversion (ABLine ↔ Track)
+
+## U-Turn System
+
+U-turns are generated in `MainViewModel.CreateSimpleUTurnPath()`:
+- Entry leg: straight line from cultivated area into headland
+- Arc: semicircle positioned so it fits within headland zone
+- Exit leg: straight line back to next track
+
+Key parameters:
+- `HeadlandDistance` - width of headland zone (green to yellow line)
+- `turnRadius` - half of track offset (based on implement width × row skip)
+- Arc positioning: `headlandLegLength = max(HeadlandDistance - turnRadius, 2.0)`
+
+The arc must fit between the headland boundary (green line) and outer boundary (yellow line). If the headland is too narrow for the turn radius, the arc will extend past the outer boundary.
+
+## Legacy Code
+
+- `ABLine.cs` - Marked `[Obsolete]`, retained only for AgOpenGPS file I/O compatibility
+- Use `Track` model for all new guidance code
