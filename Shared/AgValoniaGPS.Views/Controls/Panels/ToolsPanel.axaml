@@ -31,7 +31,7 @@
         </Style>
     </UserControl.Styles>
 
-    <Border Classes="FloatingPanel" MinWidth="400" IsVisible="{Binding IsToolsPanelVisible}">
+    <Border Classes="FloatingPanel" MinWidth="360" IsVisible="{Binding IsToolsPanelVisible}">
         <StackPanel Spacing="4">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
                   Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
@@ -46,68 +46,46 @@
 
             <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4">
-                <!-- Left Column -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
+                <!-- Row 0: Wizards -->
                 <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/WizardWand.png" Width="28" Height="28"/>
                         <TextBlock Text="Steer Wizard" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
+                <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="28" Height="28"/>
+                        <TextBlock Text="Log Viewer" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 1: Charts -->
                 <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png" Width="28" Height="28"/>
                         <TextBlock Text="Steer Chart" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
+                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConS_SourcesHeading.png" Width="28" Height="28"/>
                         <TextBlock Text="Heading Chart" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="0" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
+
+                <!-- Row 2: More Charts + Roll Correction -->
+                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoManualIsAuto.png" Width="28" Height="28"/>
                         <TextBlock Text="XTE Chart" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="0" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
+                <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConS_SourcesRoll.png" Width="28" Height="28"/>
                         <TextBlock Text="Roll Correction" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Right Column -->
-                <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="28" Height="28"/>
-                        <TextBlock Text="Boundary Tool" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSmooth.png" Width="28" Height="28"/>
-                        <TextBlock Text="Smooth AB Curve" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png" Width="28" Height="28"/>
-                        <TextBlock Text="Delete Contours" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="28" Height="28"/>
-                        <TextBlock Text="Offset Fix" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="28" Height="28"/>
-                        <TextBlock Text="Log Viewer" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
             </Grid>

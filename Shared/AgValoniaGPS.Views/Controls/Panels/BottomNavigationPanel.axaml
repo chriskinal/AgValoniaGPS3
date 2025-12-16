@@ -242,10 +242,17 @@
                 </Button>
 
                 <!-- Smooth -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Smooth AB Line"
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Smooth AB Curve"
                         Command="{Binding SmoothABLineCommand}"
                         IsVisible="{Binding HasActiveTrack}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSmooth.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Delete Contours -->
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Delete Contours"
+                        Command="{Binding DeleteContoursCommand}"
+                        IsVisible="{Binding HasActiveTrack}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png" Stretch="Uniform"/>
                 </Button>
 
                 <Separator Background="#444" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>

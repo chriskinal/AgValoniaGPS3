@@ -46,8 +46,8 @@
 
             <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
 
-            <!-- Menu Items: 2-column layout (5 rows x 2 columns) -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4" Background="Transparent">
+            <!-- Menu Items: 2-column layout (6 rows x 2 columns) -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4" Background="Transparent">
                 <!-- Row 0: ISO-XML, Close -->
                 <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ShowIsoXmlImportDialogCommand}">
@@ -126,6 +126,15 @@
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="28" Height="28"/>
                         <TextBlock Text="AgShare Upload" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 5: Offset Fix -->
+                <Button Grid.Column="0" Grid.Row="5" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="28" Height="28"/>
+                        <TextBlock Text="Offset Fix" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
             </Grid>

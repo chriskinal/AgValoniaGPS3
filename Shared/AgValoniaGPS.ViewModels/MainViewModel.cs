@@ -3777,17 +3777,17 @@ public class MainViewModel : ReactiveObject
 
         ShowSimCoordsDialogCommand = new RelayCommand(() =>
         {
-            if (!IsSimulatorEnabled)
+            if (IsSimulatorEnabled)
             {
-                // Can't show message without await, just return
-                System.Diagnostics.Debug.WriteLine("[SimCoords] Simulator not enabled");
+                // Don't allow changing coords while simulator is running
+                System.Diagnostics.Debug.WriteLine("[SimCoords] Disable simulator first to change coordinates");
                 return;
             }
             // Load current position into the dialog fields
-            // Round to 7 decimal places to avoid floating-point precision artifacts
+            // Round to 8 decimal places
             var currentPos = GetSimulatorPosition();
-            SimCoordsDialogLatitude = Math.Round((decimal)currentPos.Latitude, 7);
-            SimCoordsDialogLongitude = Math.Round((decimal)currentPos.Longitude, 7);
+            SimCoordsDialogLatitude = Math.Round((decimal)currentPos.Latitude, 8);
+            SimCoordsDialogLongitude = Math.Round((decimal)currentPos.Longitude, 8);
             // Show the panel-based dialog
             State.UI.ShowDialog(DialogType.SimCoords);
         });

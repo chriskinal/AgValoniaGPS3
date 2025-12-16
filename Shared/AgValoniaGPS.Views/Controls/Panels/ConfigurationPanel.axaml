@@ -31,13 +31,13 @@
         </Style>
     </UserControl.Styles>
 
-    <Border Classes="FloatingPanel" MinWidth="400" IsVisible="{Binding IsConfigurationPanelVisible}">
+    <Border Classes="FloatingPanel" MinWidth="360" IsVisible="{Binding IsConfigurationPanelVisible}">
         <StackPanel Spacing="4">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
                   Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Configuration" Foreground="White" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="Vehicle Configuration" Foreground="White" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
                         Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
@@ -46,71 +46,33 @@
 
             <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
 
-            <!-- Two Column Layout - 8 items (4 per column) -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="4">
-                <!-- Left Column: Main Settings (4 items) -->
-                <!-- Row 0: Configuration -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4">
+                <!-- Row 0: Profile Management -->
                 <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Width="28" Height="28"/>
-                        <TextBlock Text="Configuration" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
+                        <TextBlock Text="New Profile" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
-
-                <!-- Row 1: Auto Steer -->
-                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOff.png" Width="28" Height="28"/>
-                        <TextBlock Text="Auto Steer" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Row 2: View All Settings -->
-                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ScreenShot.png" Width="28" Height="28"/>
-                        <TextBlock Text="View All Settings" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Row 3: Directories -->
-                <Button Grid.Column="0" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
-                        <TextBlock Text="Directories" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Right Column: Data & Appearance (4 items) -->
-                <!-- Row 0: GPS Data -->
                 <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GPSQuality.png" Width="28" Height="28"/>
-                        <TextBlock Text="GPS Data" VerticalAlignment="Center" FontSize="12"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
+                        <TextBlock Text="Load Profile" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
-                <!-- Row 1: Colors -->
+                <!-- Row 1: Vehicle Settings -->
+                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press"
+                        Command="{Binding ShowConfigurationDialogCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Width="28" Height="28"/>
+                        <TextBlock Text="Vehicle Settings" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
                 <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ColourPick.png" Width="28" Height="28"/>
-                        <TextBlock Text="Colors" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Row 2: Multi-Section Colors -->
-                <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMapping.png" Width="28" Height="28"/>
-                        <TextBlock Text="Multi-Section Colors" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Row 3: HotKeys -->
-                <Button Grid.Column="1" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConD_KeyBoard.png" Width="28" Height="28"/>
-                        <TextBlock Text="HotKeys" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="Section Colors" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
             </Grid>

@@ -252,58 +252,13 @@ public partial class BoundaryMapDialogPanel : UserControl
             BtnDraw.Classes.Add("active");
             BtnDrawText.Text = "Stop";
             MapControl.Cursor = new Cursor(StandardCursorType.Cross);
-
-            // Add a crosshair marker at the exact viewport center for testing
-            AddCenterMarker();
         }
         else
         {
             BtnDraw.Classes.Remove("active");
             BtnDrawText.Text = "Draw";
             MapControl.Cursor = Cursor.Default;
-
-            // Remove center marker
-            RemoveCenterMarker();
         }
-    }
-
-    private WritableLayer? _centerMarkerLayer;
-
-    private void AddCenterMarker()
-    {
-        var viewport = MapControl.Map.Navigator.Viewport;
-        var centerWorld = viewport.ScreenToWorldXY(viewport.Width / 2, viewport.Height / 2);
-        var centerLatLon = SphericalMercator.ToLonLat(centerWorld.worldX, centerWorld.worldY);
-
-        Console.WriteLine($"[CenterMarker] Added at screen center -> World({centerWorld.worldX:F2}, {centerWorld.worldY:F2}) -> LatLon({centerLatLon.lat:F8}, {centerLatLon.lon:F8})");
-
-        // Create marker layer if needed
-        if (_centerMarkerLayer == null)
-        {
-            _centerMarkerLayer = new WritableLayer
-            {
-                Name = "CenterMarker",
-                Style = new SymbolStyle
-                {
-                    Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(0, 255, 255, 255)), // Cyan
-                    Outline = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(0, 0, 0, 255), 3),
-                    SymbolScale = 0.8
-                }
-            };
-            MapControl.Map.Layers.Add(_centerMarkerLayer);
-        }
-
-        _centerMarkerLayer.Clear();
-        var mercator = SphericalMercator.FromLonLat(centerLatLon.lon, centerLatLon.lat);
-        var point = new GeometryFeature(new NtsPoint(mercator.x, mercator.y));
-        _centerMarkerLayer.Add(point);
-        MapControl.Refresh();
-    }
-
-    private void RemoveCenterMarker()
-    {
-        _centerMarkerLayer?.Clear();
-        MapControl.Refresh();
     }
 
     private void BtnUndo_Click(object? sender, RoutedEventArgs e)

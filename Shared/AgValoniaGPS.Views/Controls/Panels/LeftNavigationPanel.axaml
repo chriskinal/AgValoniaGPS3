@@ -85,9 +85,9 @@
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SpecialFunctions.png" Stretch="Uniform"/>
                 </Button>
 
-                <!-- 4. Configuration -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Configuration"
-                        Command="{Binding ShowConfigurationDialogCommand}">
+                <!-- 4. Vehicle Configuration -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Vehicle Configuration"
+                        Command="{Binding ToggleConfigurationPanelCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Stretch="Uniform"/>
                 </Button>
 

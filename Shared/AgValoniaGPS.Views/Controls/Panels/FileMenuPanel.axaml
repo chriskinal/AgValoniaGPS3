@@ -37,7 +37,7 @@
                   Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="File Menu" Foreground="White" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="Application Settings" Foreground="White" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
                         Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
@@ -46,30 +46,32 @@
 
             <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
 
-            <Button Classes="ModernButton" Content="New Profile" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
-            <Button Classes="ModernButton" Content="Load Profile" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <!-- General Settings -->
+            <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Kiosk Mode" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Reset All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
 
             <Separator Height="1" Background="#444" Margin="0,4"/>
 
-            <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <!-- App Configuration -->
+            <Button Classes="ModernButton" Content="View All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="App Directories" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="App Colors" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Hotkeys" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+
+            <Separator Height="1" Background="#444" Margin="0,4"/>
+
+            <!-- Simulator -->
             <Button Classes="ModernButton" Content="Simulator" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ToggleSimulatorPanelCommand}"/>
-            <Button Classes="ModernButton" Content="Enter Sim Coords" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
-                    Command="{Binding ShowSimCoordsDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Data I/O" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
-                    Command="{Binding ShowDataIODialogCommand}"/>
 
             <Separator Height="1" Background="#444" Margin="0,4"/>
 
-            <Button Classes="ModernButton" Content="Kiosk Mode" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
-            <Button Classes="ModernButton" Content="Reset ALL" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
-
-            <Separator Height="1" Background="#444" Margin="0,4"/>
-
-            <Button Classes="ModernButton" Content="About" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <!-- Help & Info -->
             <Button Classes="ModernButton" Content="AgShare API" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowAgShareSettingsDialogCommand}"/>
             <Button Classes="ModernButton" Content="Help" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="About" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
         </StackPanel>
     </Border>
 </UserControl>
