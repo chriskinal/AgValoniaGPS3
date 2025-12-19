@@ -20,8 +20,9 @@
             <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
                 <StackPanel Orientation="Horizontal" Spacing="20">
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="16"
-                               TextTrimming="CharacterEllipsis" MaxWidth="600"/>
+                               TextTrimming="CharacterEllipsis" MaxWidth="400"/>
                     <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
                 </StackPanel>
             </Border>
 

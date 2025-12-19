@@ -55,6 +55,13 @@ public partial class MainWindow : Window
             ViewModel.SavedTracks.CollectionChanged += SavedTracks_CollectionChanged;
         }
 
+        // Subscribe to FPS updates from map control
+        DrawingContextMapControl.FpsUpdated += fps =>
+        {
+            if (ViewModel != null)
+                ViewModel.CurrentFps = fps;
+        };
+
         // Add keyboard shortcut for 3D mode toggle (F3)
         this.KeyDown += MainWindow_KeyDown;
 

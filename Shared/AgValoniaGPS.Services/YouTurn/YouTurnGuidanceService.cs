@@ -196,9 +196,20 @@ namespace AgValoniaGPS.Services.YouTurn
                 (B, A) = (A, B);
             }
 
+            // Ensure B is the next point after A (not some distant point that happens to be close)
+            // This fixes the issue where start and end of path are physically close (skip rows = 0)
+            if (B != A + 1 && A + 1 < ptCount)
+            {
+                B = A + 1;
+            }
+
             double distancePiv = Distance(input.TurnPath[A], pivot);
 
-            if ((A > 0 && distancePiv > 2) || (B >= ptCount - 1))
+            // Turn is complete when:
+            // - We're past the first point AND more than 2m from closest point, OR
+            // - We've reached the end of the path AND we're past the halfway point
+            int halfwayPoint = ptCount / 2;
+            if ((A > 0 && distancePiv > 2) || (B >= ptCount - 1 && A > halfwayPoint))
             {
                 output.IsTurnComplete = true;
                 return;

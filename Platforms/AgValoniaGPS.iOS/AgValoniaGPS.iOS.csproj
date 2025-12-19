@@ -13,6 +13,13 @@
     <ApplicationTitle>AgValoniaGPS</ApplicationTitle>
   </PropertyGroup>
 
+  <!-- iOS Device Signing Configuration -->
+  <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('ios-'))">
+    <CodesignKey>Apple Development</CodesignKey>
+    <CodesignProvision>Automatic</CodesignProvision>
+    <DevTeam>7LRC55SQS3</DevTeam>
+  </PropertyGroup>
+
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>

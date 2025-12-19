@@ -198,6 +198,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Render timer
     private readonly DispatcherTimer _renderTimer;
 
+    // FPS tracking
+    private static DateTime _lastFpsUpdate = DateTime.UtcNow;
+    private static int _frameCount;
+    private static double _currentFps;
+
+    /// <summary>
+    /// Current frames per second (updated every second)
+    /// </summary>
+    public static double CurrentFps => _currentFps;
+
+    /// <summary>
+    /// Event raised when FPS is updated (every second)
+    /// </summary>
+    public static event Action<double>? FpsUpdated;
+
     public DrawingContextMapControl()
     {
         Console.WriteLine("[DrawingContextMapControl] Constructor starting...");
@@ -238,7 +253,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             Interval = TimeSpan.FromMilliseconds(33)
         };
-        _renderTimer.Tick += (s, e) => InvalidateVisual();
+        _renderTimer.Tick += OnRenderTimerTick;
         _renderTimer.Start();
 
         // Wire up mouse events
@@ -246,6 +261,25 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerWheelChanged += OnPointerWheelChanged;
+    }
+
+    private void OnRenderTimerTick(object? sender, EventArgs e)
+    {
+        // Increment frame count and trigger render
+        _frameCount++;
+        InvalidateVisual();
+
+        // Check if it's time to update FPS (every second)
+        var now = DateTime.UtcNow;
+        var elapsed = (now - _lastFpsUpdate).TotalSeconds;
+        if (elapsed >= 1.0)
+        {
+            _currentFps = _frameCount / elapsed;
+            _frameCount = 0;
+            _lastFpsUpdate = now;
+            // Fire event - we're in timer callback, not Render(), so this is safe
+            FpsUpdated?.Invoke(_currentFps);
+        }
     }
 
     public override void Render(DrawingContext context)

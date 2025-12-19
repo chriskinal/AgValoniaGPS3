@@ -105,29 +105,21 @@
 
                 <!-- === AB LINE DEPENDENT BUTTONS (Hidden when no AB line) === -->
 
-                <!-- U-Turn Skip Rows Dropdown (0-9) - hidden when no AB line -->
-                <ComboBox x:Name="SkipRowsComboBox"
-                          Width="64" Height="64"
-                          SelectedIndex="{Binding UTurnSkipRows}"
-                          IsVisible="{Binding HasActiveTrack}"
-                          ToolTip.Tip="U-Turn Skip Rows (0-9)"
-                          HorizontalContentAlignment="Center"
-                          VerticalContentAlignment="Center"
-                          Background="#DD34495E"
-                          Foreground="White"
-                          FontSize="20"
-                          FontWeight="Bold">
-                    <ComboBoxItem Content="0"/>
-                    <ComboBoxItem Content="1"/>
-                    <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="3"/>
-                    <ComboBoxItem Content="4"/>
-                    <ComboBoxItem Content="5"/>
-                    <ComboBoxItem Content="6"/>
-                    <ComboBoxItem Content="7"/>
-                    <ComboBoxItem Content="8"/>
-                    <ComboBoxItem Content="9"/>
-                </ComboBox>
+                <!-- U-Turn Skip Rows (0-9) - tap to cycle - hidden when no AB line -->
+                <Button Width="64" Height="64"
+                        Command="{Binding CycleUTurnSkipRowsCommand}"
+                        IsVisible="{Binding HasActiveTrack}"
+                        ToolTip.Tip="U-Turn Skip Rows (tap to cycle 0-9)"
+                        Background="#DD34495E"
+                        CornerRadius="4"
+                        Padding="0">
+                    <TextBlock Text="{Binding UTurnSkipRows}"
+                               Foreground="White"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Button>
 
                 <!-- U-Turn Skip Rows On/Off - hidden when no AB line -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="U-Turn Skip Rows On/Off"

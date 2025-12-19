@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -51,6 +53,20 @@ public partial class MainView : UserControl
         // Wire up position updates - when ViewModel properties change, update map control
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
+        // Subscribe to track collection changes to update active track display
+        viewModel.SavedTracks.CollectionChanged += SavedTracks_CollectionChanged;
+
+        // Update active track immediately in case field was already loaded
+        UpdateActiveTrack();
+
+        // Subscribe to FPS updates from map control
+        // Note: Must check for null like Desktop does
+        DrawingContextMapControl.FpsUpdated += fps =>
+        {
+            if (viewModel != null)
+                viewModel.CurrentFps = fps;
+        };
+
         Console.WriteLine("[MainView] DataContext set.");
     }
 
@@ -74,6 +90,23 @@ public partial class MainView : UserControl
                 Northing = e.Northing
             };
             _viewModel.SetABPointCommand?.Execute(mapPosition);
+        }
+    }
+
+    private void SavedTracks_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        // When a new track is added, show the most recently active one
+        UpdateActiveTrack();
+    }
+
+    private void UpdateActiveTrack()
+    {
+        if (_mapControl != null && _viewModel != null)
+        {
+            // Find the active track (or the most recently added one)
+            var activeTrack = _viewModel.SavedTracks.FirstOrDefault(t => t.IsActive)
+                          ?? _viewModel.SavedTracks.LastOrDefault();
+            _mapControl.SetActiveTrack(activeTrack);
         }
     }
 

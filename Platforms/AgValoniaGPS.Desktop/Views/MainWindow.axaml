@@ -27,7 +27,7 @@
                         PointerReleased="MapOverlay_PointerReleased"
                         PointerWheelChanged="MapOverlay_PointerWheelChanged" />
 
-        <!-- TOP STATUS BAR: RTK Status -->
+        <!-- TOP STATUS BAR: RTK Status and FPS -->
         <Border Classes="FloatingPanel"
                 ZIndex="10"
                 Margin="20"
@@ -39,6 +39,8 @@
                 <Ellipse Width="12" Height="12"
                          Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
                 <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#2ECC71" FontSize="14" FontWeight="Bold"/>
             </StackPanel>
         </Border>
 

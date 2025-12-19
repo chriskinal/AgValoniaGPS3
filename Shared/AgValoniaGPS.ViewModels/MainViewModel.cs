@@ -89,6 +89,7 @@ public class MainViewModel : ReactiveObject
     private int _satelliteCount;
     private string _fixQuality = "No Fix";
     private string _networkStatus = "Disconnected";
+    private double _currentFps;
 
     // Guidance/Steering status
     private double _crossTrackError;
@@ -181,6 +182,9 @@ public class MainViewModel : ReactiveObject
         _simulatorService.GpsDataUpdated += OnSimulatorGpsDataUpdated;
         _boundaryRecordingService.PointAdded += OnBoundaryPointAdded;
         _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
+
+        // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
+        // since ViewModels cannot reference Views directly
 
         // Note: NOT subscribing to DisplaySettings events - using direct property access instead
         // to avoid threading issues with ReactiveUI
@@ -411,6 +415,15 @@ public class MainViewModel : ReactiveObject
     {
         get => _speed;
         set => this.RaiseAndSetIfChanged(ref _speed, value);
+    }
+
+    /// <summary>
+    /// Current rendering frames per second
+    /// </summary>
+    public double CurrentFps
+    {
+        get => _currentFps;
+        set => this.RaiseAndSetIfChanged(ref _currentFps, value);
     }
 
     public int SatelliteCount
@@ -1037,13 +1050,21 @@ public class MainViewModel : ReactiveObject
         // Check if U-turn is complete (vehicle reached end of turn path)
         if (_isInYouTurn && _youTurnPath != null && _youTurnPath.Count > 2)
         {
+            var startPoint = _youTurnPath[0];
             var endPoint = _youTurnPath[_youTurnPath.Count - 1];
+
+            double distToTurnStart = Math.Sqrt(
+                Math.Pow(currentPosition.Easting - startPoint.Easting, 2) +
+                Math.Pow(currentPosition.Northing - startPoint.Northing, 2));
             double distToTurnEnd = Math.Sqrt(
                 Math.Pow(currentPosition.Easting - endPoint.Easting, 2) +
                 Math.Pow(currentPosition.Northing - endPoint.Northing, 2));
 
-            // Complete turn when within 2 meters of turn end
-            if (distToTurnEnd <= 2.0)
+            // Complete turn when:
+            // 1. Within 2 meters of turn end, AND
+            // 2. Closer to end than to start (prevents immediate completion when start/end are close)
+            // 3. At least 5 meters from start (ensures we've actually traveled into the turn)
+            if (distToTurnEnd <= 2.0 && distToTurnEnd < distToTurnStart && distToTurnStart > 5.0)
             {
                 CompleteYouTurn();
             }
@@ -3596,6 +3617,7 @@ public class MainViewModel : ReactiveObject
     public ICommand? SnapToPivotCommand { get; private set; }
     public ICommand? ToggleYouSkipCommand { get; private set; }
     public ICommand? ToggleUTurnSkipRowsCommand { get; private set; }
+    public ICommand? CycleUTurnSkipRowsCommand { get; private set; }
 
     // Flags Commands
     public ICommand? PlaceRedFlagCommand { get; private set; }
@@ -5146,6 +5168,13 @@ public class MainViewModel : ReactiveObject
             StatusMessage = IsUTurnSkipRowsEnabled
                 ? $"U-Turn skip rows: ON ({UTurnSkipRows} rows)"
                 : "U-Turn skip rows: OFF";
+        });
+
+        CycleUTurnSkipRowsCommand = new RelayCommand(() =>
+        {
+            // Cycle through 0-9, wrap back to 0 after 9
+            UTurnSkipRows = (UTurnSkipRows + 1) % 10;
+            StatusMessage = $"Skip rows: {UTurnSkipRows}";
         });
 
         // Flags Commands
