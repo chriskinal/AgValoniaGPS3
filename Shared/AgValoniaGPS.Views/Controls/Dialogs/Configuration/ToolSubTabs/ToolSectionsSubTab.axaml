@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="700"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolSectionsSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.SettingRow">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+        <Style Selector="Button.SectionWidthBtn">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.SectionWidthBtn:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16">
+            <TextBlock Text="Section Configuration" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+
+            <!-- Mode Toggle -->
+            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="Section Mode" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <RadioButton Content="Individual Sections" GroupName="SectionMode"
+                                     IsChecked="{Binding Tool.IsSectionsNotZones}"
+                                     Foreground="White"/>
+                        <RadioButton Content="Symmetric Zones" GroupName="SectionMode"
+                                     Foreground="White"/>
+                    </StackPanel>
+                    <TextBlock Text="Individual: Each section has its own width. Zones: All sections same width, grouped into zones."
+                               Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Number of Sections -->
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Number of Sections" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Total implement sections (1-16)" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditNumSectionsCommand}">
+                        <TextBlock Text="{Binding Config.NumSections}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Default Section Width -->
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Default Section Width" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Width applied to new sections" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDefaultSectionWidthCommand}">
+                        <TextBlock Text="{Binding Tool.DefaultSectionWidth, StringFormat='{}{0:F0} cm'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Section Width Info -->
+            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,8,0,0"
+                    IsVisible="{Binding Tool.IsSectionsNotZones}">
+                <StackPanel>
+                    <TextBlock Text="Section Widths" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Individual section width editing will be available in a future update. Currently all sections use the default width."
+                               Foreground="#888" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Total Width Display (calculated from sections) -->
+            <Border Background="#DD1E8449" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Calculated Total Width" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="(sections × section width)" Foreground="#AAA" FontSize="11"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding CalculatedSectionTotal, StringFormat='{}{0:F2} m'}"
+                               Foreground="White" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Additional Settings -->
+            <TextBlock Text="Section Control Options" FontWeight="SemiBold" Foreground="White" Margin="0,16,0,8"/>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Section Off When Outside Boundary" Foreground="White"/>
+                        <TextBlock Text="Automatically turn off sections outside field boundary"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsSectionOffWhenOut}"
+                                  OnContent="On" OffContent="Off"/>
+                </Grid>
+            </Border>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Minimum Coverage" Foreground="White"/>
+                        <TextBlock Text="Minimum % of section in uncovered area to turn on"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditMinCoverageCommand}">
+                        <TextBlock Text="{Binding Tool.MinCoverage, StringFormat='{}{0} %'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Slow Speed Cutoff" Foreground="White"/>
+                        <TextBlock Text="Speed below which sections turn off"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditCutoffSpeedCommand}">
+                        <TextBlock Text="{Binding Tool.SlowSpeedCutoff, StringFormat='{}{0:F1} km/h'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

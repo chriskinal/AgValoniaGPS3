@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolTypeSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="RadioButton.TypeCard">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            BorderThickness="2"
+                            BorderBrush="Transparent"
+                            x:Name="PART_Border">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.TypeCard:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="#DD3C4E60"/>
+        </Style>
+        <Style Selector="RadioButton.TypeCard:checked /template/ Border#PART_Border">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16">
+            <TextBlock Text="Tool Attachment Type" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+            <TextBlock Text="Select how your implement is attached to the vehicle" Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+            <!-- Tool Type Selection Grid -->
+            <UniformGrid Columns="2" Rows="2">
+                <!-- Front Fixed -->
+                <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolFrontFixed}">
+                    <StackPanel>
+                        <TextBlock Text="Front Fixed" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Front-mounted implement (harvester header, front loader)"
+                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <Border Background="#1A1A2E" CornerRadius="4" Margin="0,8,0,0" Padding="8" Height="60">
+                            <TextBlock Text="[Front Fixed]" Foreground="#666"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </RadioButton>
+
+                <!-- Rear Fixed -->
+                <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolRearFixed}">
+                    <StackPanel>
+                        <TextBlock Text="Rear Fixed" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="3-point hitch mounted implement (cultivator, planter)"
+                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <Border Background="#1A1A2E" CornerRadius="4" Margin="0,8,0,0" Padding="8" Height="60">
+                            <TextBlock Text="[Rear Fixed]" Foreground="#666"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </RadioButton>
+
+                <!-- TBT (Tow Between Tanks) -->
+                <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolTBT}">
+                    <StackPanel>
+                        <TextBlock Text="TBT (Tow Between)" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Tool between tractor and tank trailer (sprayer setup)"
+                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <Border Background="#1A1A2E" CornerRadius="4" Margin="0,8,0,0" Padding="8" Height="60">
+                            <TextBlock Text="[TBT]" Foreground="#666"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </RadioButton>
+
+                <!-- Trailing -->
+                <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolTrailing}">
+                    <StackPanel>
+                        <TextBlock Text="Trailing" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Towed implement on drawbar (grain drill, air seeder)"
+                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <Border Background="#1A1A2E" CornerRadius="4" Margin="0,8,0,0" Padding="8" Height="60">
+                            <TextBlock Text="[Trailing]" Foreground="#666"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </RadioButton>
+            </UniformGrid>
+
+            <!-- Current Selection Display -->
+            <Border Background="#DD1E8449" CornerRadius="6" Padding="12" Margin="0,16,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Current:" Foreground="White" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Tool.CurrentToolType}" Foreground="White"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

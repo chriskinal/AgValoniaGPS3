@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolTimingSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.SettingRow">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16">
+            <TextBlock Text="Section Timing" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+            <TextBlock Text="Configure look-ahead timing for automatic section control"
+                       Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+            <!-- Diagram placeholder -->
+            <Border Background="#1A1A2E" CornerRadius="8" Height="120" Margin="0,0,0,16">
+                <TextBlock Text="[Section Timing Diagram]"
+                           Foreground="#666" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+
+            <!-- Look Ahead On -->
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Look Ahead On" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Time before entering coverage area to turn section ON"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditLookAheadOnCommand}">
+                        <TextBlock Text="{Binding Tool.LookAheadOnSetting, StringFormat='{}{0:F1} sec'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Look Ahead Off -->
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Look Ahead Off" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Time before leaving coverage area to turn section OFF"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditLookAheadOffCommand}">
+                        <TextBlock Text="{Binding Tool.LookAheadOffSetting, StringFormat='{}{0:F1} sec'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Turn Off Delay -->
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Turn Off Delay" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Additional delay before turning section OFF (alternative to Look Ahead Off)"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTurnOffDelayCommand}">
+                        <TextBlock Text="{Binding Tool.TurnOffDelay, StringFormat='{}{0:F1} sec'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Info box -->
+            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Timing Tips:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Look Ahead On"/>
+                        <Run Text=" - Increase for slow-responding equipment (spray valves)"/>
+                    </TextBlock>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Look Ahead Off"/>
+                        <Run Text=" - Cannot exceed 80% of Look Ahead On value"/>
+                    </TextBlock>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Turn Off Delay"/>
+                        <Run Text=" - Alternative to Look Ahead Off (one or the other, not both)"/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

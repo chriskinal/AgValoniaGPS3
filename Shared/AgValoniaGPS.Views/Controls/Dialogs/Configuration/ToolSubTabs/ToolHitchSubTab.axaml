@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolHitchSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.SettingRow">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16">
+            <TextBlock Text="Hitch Configuration" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+
+            <!-- Dynamic description based on tool type -->
+            <TextBlock Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,8">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="Configure hitch lengths for {0} tool type">
+                        <Binding Path="Tool.CurrentToolType"/>
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+
+            <!-- Diagram placeholder -->
+            <Border Background="#1A1A2E" CornerRadius="8" Height="150" Margin="0,0,0,16">
+                <TextBlock Text="[Hitch Diagram - changes based on tool type]"
+                           Foreground="#666" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+
+            <!-- Hitch Length (shown for Front/Rear Fixed) -->
+            <Border Classes="SettingRow" IsVisible="{Binding !Tool.IsToolTrailing}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Hitch Length" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolHitchLengthCommand}">
+                        <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Trailing Hitch Length (shown for Trailing/TBT) -->
+            <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTrailing}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Trailing Hitch Length" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
+                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Also show for TBT -->
+            <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTBT}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Trailing Hitch Length" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from hitch to implement" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
+                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Tank Hitch Length (shown only for TBT) -->
+            <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTBT}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Tank Trailing Hitch" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from implement to tank trailer" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTankHitchLengthCommand}">
+                        <TextBlock Text="{Binding Tool.TankTrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Info box -->
+            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Note:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Text="Values are entered as positive numbers. The system automatically applies the correct sign based on tool type (negative for rear, positive for front)."
+                               Foreground="#AAA" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

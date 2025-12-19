@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using ReactiveUI;
 using AgValoniaGPS.Models;
@@ -131,7 +132,8 @@ public class ConfigurationViewModel : ReactiveObject
             if (_numericInputCallback != null)
             {
                 // Parse from display text to get actual value
-                if (decimal.TryParse(NumericInputDisplayText, out var parsed))
+                // Use InvariantCulture to handle decimal point consistently
+                if (decimal.TryParse(NumericInputDisplayText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
                 {
                     var value = (double)parsed;
                     // Clamp to min/max
@@ -268,6 +270,11 @@ public class ConfigurationViewModel : ReactiveObject
     public DisplayConfig Display => Config.Display;
     public SimulatorConfig Simulator => Config.Simulator;
 
+    /// <summary>
+    /// Calculated total width from sections (NumSections × DefaultSectionWidth in meters)
+    /// </summary>
+    public double CalculatedSectionTotal => Config.NumSections * Tool.DefaultSectionWidth / 100.0;
+
     #endregion
 
     #region Profile Management
@@ -324,12 +331,17 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand EditToolOffsetCommand { get; private set; } = null!;
     public ICommand EditToolHitchLengthCommand { get; private set; } = null!;
     public ICommand EditTrailingHitchLengthCommand { get; private set; } = null!;
+    public ICommand EditTankHitchLengthCommand { get; private set; } = null!;
+    public ICommand EditToolPivotCommand { get; private set; } = null!;
 
     // Sections Tab Edit Commands
     public ICommand EditNumSectionsCommand { get; private set; } = null!;
     public ICommand EditLookAheadOnCommand { get; private set; } = null!;
     public ICommand EditLookAheadOffCommand { get; private set; } = null!;
     public ICommand EditTurnOffDelayCommand { get; private set; } = null!;
+    public ICommand EditDefaultSectionWidthCommand { get; private set; } = null!;
+    public ICommand EditMinCoverageCommand { get; private set; } = null!;
+    public ICommand EditCutoffSpeedCommand { get; private set; } = null!;
 
     // U-Turn Tab Edit Commands
     public ICommand EditUTurnRadiusCommand { get; private set; } = null!;
@@ -377,6 +389,20 @@ public class ConfigurationViewModel : ReactiveObject
             {
                 this.RaisePropertyChanged(nameof(HasUnsavedChanges));
             }
+            // Update calculated section total when NumSections changes
+            if (e.PropertyName == nameof(ConfigurationStore.NumSections))
+            {
+                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+            }
+        };
+
+        // Subscribe to tool changes for CalculatedSectionTotal
+        Tool.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ToolConfig.DefaultSectionWidth))
+            {
+                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+            }
         };
 
         // Load available profiles
@@ -402,7 +428,7 @@ public class ConfigurationViewModel : ReactiveObject
         EditHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Hitch Length", Tool.HitchLength,
                 v => Tool.HitchLength = v,
-                "m", integerOnly: false, allowNegative: true, min: -10, max: 5));
+                "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
 
         EditAntennaPivotCommand = new RelayCommand(() =>
             ShowNumericInput("Antenna Pivot", Vehicle.AntennaPivot,
@@ -431,7 +457,7 @@ public class ConfigurationViewModel : ReactiveObject
         EditToolOverlapCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Overlap", Tool.Overlap,
                 v => Tool.Overlap = v,
-                "m", integerOnly: false, allowNegative: true, min: -1, max: 1));
+                "m", integerOnly: false, allowNegative: true, min: -2, max: 2));
 
         EditToolOffsetCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Offset", Tool.Offset,
@@ -441,12 +467,22 @@ public class ConfigurationViewModel : ReactiveObject
         EditToolHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Hitch Length", Tool.HitchLength,
                 v => Tool.HitchLength = v,
-                "m", integerOnly: false, allowNegative: true, min: -10, max: 5));
+                "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
 
         EditTrailingHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Trailing Hitch Length", Tool.TrailingHitchLength,
                 v => Tool.TrailingHitchLength = v,
-                "m", integerOnly: false, allowNegative: true, min: -10, max: 0));
+                "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
+
+        EditTankHitchLengthCommand = new RelayCommand(() =>
+            ShowNumericInput("Tank Hitch Length", Tool.TankTrailingHitchLength,
+                v => Tool.TankTrailingHitchLength = v,
+                "m", integerOnly: false, allowNegative: false, min: 0, max: 15));
+
+        EditToolPivotCommand = new RelayCommand(() =>
+            ShowNumericInput("Tool Pivot Distance", Tool.TrailingToolToPivotLength,
+                v => Tool.TrailingToolToPivotLength = v,
+                "m", integerOnly: false, allowNegative: true, min: -10, max: 10));
     }
 
     private void InitializeSectionsEditCommands()
@@ -470,6 +506,21 @@ public class ConfigurationViewModel : ReactiveObject
             ShowNumericInput("Turn Off Delay", Tool.TurnOffDelay,
                 v => Tool.TurnOffDelay = v,
                 "s", integerOnly: false, allowNegative: false, min: 0, max: 5));
+
+        EditDefaultSectionWidthCommand = new RelayCommand(() =>
+            ShowNumericInput("Default Section Width", Tool.DefaultSectionWidth,
+                v => Tool.DefaultSectionWidth = v,
+                "cm", integerOnly: false, allowNegative: false, min: 10, max: 500));
+
+        EditMinCoverageCommand = new RelayCommand(() =>
+            ShowNumericInput("Minimum Coverage", Tool.MinCoverage,
+                v => Tool.MinCoverage = (int)v,
+                "%", integerOnly: true, allowNegative: false, min: 0, max: 100));
+
+        EditCutoffSpeedCommand = new RelayCommand(() =>
+            ShowNumericInput("Slow Speed Cutoff", Tool.SlowSpeedCutoff,
+                v => Tool.SlowSpeedCutoff = v,
+                "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
     }
 
     private void InitializeUTurnEditCommands()

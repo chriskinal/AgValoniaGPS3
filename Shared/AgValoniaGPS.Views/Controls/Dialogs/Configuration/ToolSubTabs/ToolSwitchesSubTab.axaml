@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="500"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolSwitchesSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.SettingRow">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+        <Style Selector="Border.SwitchGroup">
+            <Setter Property="Background" Value="#DD1A1A2E"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,8"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16">
+            <TextBlock Text="Switch Configuration" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+            <TextBlock Text="Configure work switch and steer switch inputs from hardware"
+                       Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+            <!-- Work Switch Section -->
+            <Border Classes="SwitchGroup">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Work Switch" Foreground="White" FontWeight="SemiBold" FontSize="14"/>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsWorkSwitchEnabled}"
+                                      OnContent="Enabled" OffContent="Disabled"/>
+                    </Grid>
+                    <TextBlock Text="Physical switch input to control sections"
+                               Foreground="#888" FontSize="12"/>
+
+                    <!-- Work switch options (visible when enabled) -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Tool.IsWorkSwitchEnabled}">
+                        <Border Background="#DD2C3E50" CornerRadius="4" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Active State" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <RadioButton Content="Active Low (Closed)" GroupName="WorkSwitchActive"
+                                                 IsChecked="{Binding Tool.IsWorkSwitchActiveLow}"
+                                                 Foreground="White"/>
+                                    <RadioButton Content="Active High (Open)" GroupName="WorkSwitchActive"
+                                                 IsChecked="{Binding !Tool.IsWorkSwitchActiveLow}"
+                                                 Foreground="White"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#DD2C3E50" CornerRadius="4" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Controls" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <RadioButton Content="Auto Sections" GroupName="WorkSwitchControl"
+                                                 IsChecked="{Binding !Tool.IsWorkSwitchManualSections}"
+                                                 Foreground="White"/>
+                                    <RadioButton Content="Manual Sections" GroupName="WorkSwitchControl"
+                                                 IsChecked="{Binding Tool.IsWorkSwitchManualSections}"
+                                                 Foreground="White"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Steer Switch Section -->
+            <Border Classes="SwitchGroup">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Steer Switch" Foreground="White" FontWeight="SemiBold" FontSize="14"/>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsSteerSwitchEnabled}"
+                                      OnContent="Enabled" OffContent="Disabled"/>
+                    </Grid>
+                    <TextBlock Text="Secondary switch input (often linked to autosteer)"
+                               Foreground="#888" FontSize="12"/>
+
+                    <!-- Steer switch options (visible when enabled) -->
+                    <StackPanel Spacing="8" IsVisible="{Binding Tool.IsSteerSwitchEnabled}">
+                        <Border Background="#DD2C3E50" CornerRadius="4" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Controls" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <RadioButton Content="Auto Sections" GroupName="SteerSwitchControl"
+                                                 IsChecked="{Binding !Tool.IsSteerSwitchManualSections}"
+                                                 Foreground="White"/>
+                                    <RadioButton Content="Manual Sections" GroupName="SteerSwitchControl"
+                                                 IsChecked="{Binding Tool.IsSteerSwitchManualSections}"
+                                                 Foreground="White"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Info box -->
+            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Switch Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Work Switch"/>
+                        <Run Text=" - Typically connected to implement hydraulic raise/lower sensor"/>
+                    </TextBlock>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Steer Switch"/>
+                        <Run Text=" - Secondary input, often tied to autosteer engagement"/>
+                    </TextBlock>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Active Low"/>
+                        <Run Text=" - Switch is ON when circuit is closed (grounded)"/>
+                    </TextBlock>
+                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                        <Run Text="Active High"/>
+                        <Run Text=" - Switch is ON when circuit is open"/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

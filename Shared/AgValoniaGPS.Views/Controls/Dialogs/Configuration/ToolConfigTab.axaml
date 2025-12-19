@@ -3,99 +3,63 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             xmlns:subtabs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs"
+             mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="600"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolConfigTab"
              x:DataType="vm:ConfigurationViewModel">
 
     <UserControl.Styles>
-        <Style Selector="Border.SettingRow">
+        <!-- Sub-tab styling - give TabControl a solid background -->
+        <Style Selector="TabControl.SubTabs">
+            <Setter Property="Background" Value="#DD253545"/>
+        </Style>
+        <Style Selector="TabControl.SubTabs > TabItem">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
             <Setter Property="Background" Value="#DD2C3E50"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="0,4"/>
+            <Setter Property="Foreground" Value="#AAA"/>
         </Style>
-        <Style Selector="Border.ValueBox">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="80"/>
+        <Style Selector="TabControl.SubTabs > TabItem:selected">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="120"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        <Style Selector="TabControl.SubTabs > TabItem:pointerover">
+            <Setter Property="Background" Value="#DD3C4E60"/>
         </Style>
     </UserControl.Styles>
 
-    <ScrollViewer>
-        <StackPanel Spacing="8" Margin="16">
-            <TextBlock Text="Tool/Implement Configuration" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,12"/>
-
-            <TextBlock Text="Tool Type" FontWeight="SemiBold" Foreground="White" Margin="0,8,0,8"/>
-            <WrapPanel>
-                <RadioButton Content="Front Fixed" GroupName="ToolType" Margin="0,0,16,0"
-                             IsChecked="{Binding Tool.IsToolFrontFixed}"/>
-                <RadioButton Content="Rear Fixed" GroupName="ToolType" Margin="0,0,16,0"
-                             IsChecked="{Binding Tool.IsToolRearFixed}"/>
-                <RadioButton Content="TBT" GroupName="ToolType" Margin="0,0,16,0"
-                             IsChecked="{Binding Tool.IsToolTBT}"/>
-                <RadioButton Content="Trailing" GroupName="ToolType"
-                             IsChecked="{Binding Tool.IsToolTrailing}"/>
-            </WrapPanel>
-
-            <TextBlock Text="Tool Dimensions" FontWeight="SemiBold" Foreground="White" Margin="0,16,0,8"/>
-            <Border Classes="SettingRow">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Tool Width" Foreground="White" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolWidthCommand}">
-                        <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
-                    </Button>
-                </Grid>
-            </Border>
-            <Border Classes="SettingRow">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Tool Overlap" Foreground="White" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolOverlapCommand}">
-                        <TextBlock Text="{Binding Tool.Overlap, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
-                    </Button>
-                </Grid>
-            </Border>
-            <Border Classes="SettingRow">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Tool Offset" Foreground="White" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolOffsetCommand}">
-                        <TextBlock Text="{Binding Tool.Offset, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
-                    </Button>
-                </Grid>
-            </Border>
-
-            <TextBlock Text="Hitch" FontWeight="SemiBold" Foreground="White" Margin="0,16,0,8"/>
-            <Border Classes="SettingRow">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Hitch Length" Foreground="White" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
-                    </Button>
-                </Grid>
-            </Border>
-            <Border Classes="SettingRow">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Trailing Hitch Length" Foreground="White" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
-                    </Button>
-                </Grid>
-            </Border>
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <StackPanel Margin="16,16,16,8">
+            <TextBlock Text="Tool/Implement Configuration" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+            <TextBlock Text="Configure your implement attachment, dimensions, sections, and switches"
+                       Foreground="#888" FontSize="12" Margin="0,4,0,0"/>
         </StackPanel>
-    </ScrollViewer>
+
+        <!-- Sub-Tab Control with solid background -->
+        <TabControl Grid.Row="1" Classes="SubTabs" Margin="8,0,8,8">
+            <TabItem Header="Type">
+                <subtabs:ToolTypeSubTab/>
+            </TabItem>
+            <TabItem Header="Hitch">
+                <subtabs:ToolHitchSubTab/>
+            </TabItem>
+            <TabItem Header="Timing">
+                <subtabs:ToolTimingSubTab/>
+            </TabItem>
+            <TabItem Header="Offset">
+                <subtabs:ToolOffsetSubTab/>
+            </TabItem>
+            <TabItem Header="Pivot">
+                <subtabs:ToolPivotSubTab/>
+            </TabItem>
+            <TabItem Header="Sections">
+                <subtabs:ToolSectionsSubTab/>
+            </TabItem>
+            <TabItem Header="Switches">
+                <subtabs:ToolSwitchesSubTab/>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

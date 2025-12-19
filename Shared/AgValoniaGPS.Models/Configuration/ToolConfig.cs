@@ -138,6 +138,71 @@ public class ToolConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSectionOffWhenOut, value);
     }
 
+    private bool _isSectionsNotZones = true;
+    public bool IsSectionsNotZones
+    {
+        get => _isSectionsNotZones;
+        set => this.RaiseAndSetIfChanged(ref _isSectionsNotZones, value);
+    }
+
+    private double _defaultSectionWidth = 100; // cm
+    public double DefaultSectionWidth
+    {
+        get => _defaultSectionWidth;
+        set => this.RaiseAndSetIfChanged(ref _defaultSectionWidth, value);
+    }
+
+    private double _slowSpeedCutoff = 0.5;
+    public double SlowSpeedCutoff
+    {
+        get => _slowSpeedCutoff;
+        set => this.RaiseAndSetIfChanged(ref _slowSpeedCutoff, value);
+    }
+
+    // Zone configuration
+    private int _zones = 2;
+    public int Zones
+    {
+        get => _zones;
+        set => this.RaiseAndSetIfChanged(ref _zones, value);
+    }
+
+    // Switch configuration
+    private bool _isWorkSwitchEnabled;
+    public bool IsWorkSwitchEnabled
+    {
+        get => _isWorkSwitchEnabled;
+        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchEnabled, value);
+    }
+
+    private bool _isWorkSwitchActiveLow;
+    public bool IsWorkSwitchActiveLow
+    {
+        get => _isWorkSwitchActiveLow;
+        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchActiveLow, value);
+    }
+
+    private bool _isWorkSwitchManualSections;
+    public bool IsWorkSwitchManualSections
+    {
+        get => _isWorkSwitchManualSections;
+        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchManualSections, value);
+    }
+
+    private bool _isSteerSwitchEnabled;
+    public bool IsSteerSwitchEnabled
+    {
+        get => _isSteerSwitchEnabled;
+        set => this.RaiseAndSetIfChanged(ref _isSteerSwitchEnabled, value);
+    }
+
+    private bool _isSteerSwitchManualSections;
+    public bool IsSteerSwitchManualSections
+    {
+        get => _isSteerSwitchManualSections;
+        set => this.RaiseAndSetIfChanged(ref _isSteerSwitchManualSections, value);
+    }
+
     /// <summary>
     /// Gets the current tool type as a string for display
     /// </summary>
