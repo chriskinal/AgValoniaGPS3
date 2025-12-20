@@ -939,6 +939,53 @@ namespace AgValoniaGPS.Services.YouTurn
 
             goal.Heading = invertedHead;
 
+            // Check if start and goal are in valid locations
+            int goalResult = input.IsPointInsideTurnArea(goal);
+
+            // If goal is outside boundary, try to adjust it
+            if (goalResult == -1)
+            {
+                // Calculate the perpendicular direction we used for offset
+                double perpDirE = input.IsTurnLeft ? Math.Cos(-invertedHead) : -Math.Cos(-invertedHead);
+                double perpDirN = input.IsTurnLeft ? Math.Sin(-invertedHead) : -Math.Sin(-invertedHead);
+
+                // Binary search to find maximum valid offset
+                double minOffset = 0;
+                double maxOffset = turnOffset;
+                double bestOffset = 0;
+
+                for (int i = 0; i < 10; i++) // 10 iterations gives ~0.1% precision
+                {
+                    double testOffset = (minOffset + maxOffset) / 2;
+                    Vec3 testGoal = new Vec3(
+                        start.Easting + perpDirE * testOffset,
+                        start.Northing + perpDirN * testOffset,
+                        invertedHead);
+
+                    int testResult = input.IsPointInsideTurnArea(testGoal);
+                    if (testResult != -1)
+                    {
+                        bestOffset = testOffset;
+                        minOffset = testOffset;
+                    }
+                    else
+                    {
+                        maxOffset = testOffset;
+                    }
+                }
+
+                if (bestOffset > 0.5) // Need at least 0.5m offset for a valid turn
+                {
+                    goal.Easting = start.Easting + perpDirE * bestOffset;
+                    goal.Northing = start.Northing + perpDirN * bestOffset;
+                }
+                else
+                {
+                    FailCreate();
+                    return false;
+                }
+            }
+
             // Generate the turn points
             ytList = _dubinsService.GeneratePath(start, goal);
             isOutOfBounds = true;
@@ -976,7 +1023,10 @@ namespace AgValoniaGPS.Services.YouTurn
             youTurnPhase = 10;
 
             // Add the entry and exit legs
-            if (!AddABSequenceLines(input)) return false;
+            if (!AddABSequenceLines(input))
+            {
+                return false;
+            }
 
             return true;
         }
@@ -1518,13 +1568,16 @@ namespace AgValoniaGPS.Services.YouTurn
 
             for (int j = 0; j < input.BoundaryTurnLines.Count; j++)
             {
-                for (int i = 0; i < input.BoundaryTurnLines[j].Points.Count - 1; i++)
+                var pts = input.BoundaryTurnLines[j].Points;
+                // Check all segments including the closing segment from last point back to first
+                for (int i = 0; i < pts.Count; i++)
                 {
+                    int nextI = (i + 1) % pts.Count;  // Wrap around to close polygon
                     int res = GetLineIntersection(
-                        input.BoundaryTurnLines[j].Points[i].Easting,
-                        input.BoundaryTurnLines[j].Points[i].Northing,
-                        input.BoundaryTurnLines[j].Points[i + 1].Easting,
-                        input.BoundaryTurnLines[j].Points[i + 1].Northing,
+                        pts[i].Easting,
+                        pts[i].Northing,
+                        pts[nextI].Easting,
+                        pts[nextI].Northing,
                         eP, nP, eAB, nAB, ref iE, ref iN
                     );
 
@@ -1535,8 +1588,8 @@ namespace AgValoniaGPS.Services.YouTurn
                         closePt.Easting = iE;
                         closePt.Northing = iN;
 
-                        double hed = Math.Atan2(input.BoundaryTurnLines[j].Points[i + 1].Easting - input.BoundaryTurnLines[j].Points[i].Easting,
-                            input.BoundaryTurnLines[j].Points[i + 1].Northing - input.BoundaryTurnLines[j].Points[i].Northing);
+                        double hed = Math.Atan2(pts[nextI].Easting - pts[i].Easting,
+                            pts[nextI].Northing - pts[i].Northing);
                         if (hed < 0) hed += TWO_PI;
                         closePt.Heading = hed;
                         cClose.ClosePt = closePt;
@@ -1595,7 +1648,8 @@ namespace AgValoniaGPS.Services.YouTurn
 
                 for (; j < cnt; j += 1)
                 {
-                    if (input.IsPointInsideTurnArea(arr2[j]) != 0)
+                    int result = input.IsPointInsideTurnArea(arr2[j]);
+                    if (result != 0)
                     {
                         pointOutOfBnd = true;
                         if (j > 0) j--;
@@ -1603,7 +1657,8 @@ namespace AgValoniaGPS.Services.YouTurn
                     }
                 }
 
-                if (stopIfWayOut == 1000 || Distance(arr2[0], input.PivotPosition) < 3)
+                double distToVehicle = Distance(arr2[0], input.PivotPosition);
+                if (stopIfWayOut == 1000 || distToVehicle < 3)
                 {
                     // For some reason it doesn't go inside boundary, return empty list
                     return uTurnList;
