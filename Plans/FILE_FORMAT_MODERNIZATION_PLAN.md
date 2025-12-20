@@ -2,11 +2,37 @@
 
 ## Overview
 
-Modernize AgValoniaGPS file formats from legacy AgOpenGPS text/XML formats to unified JSON, improving maintainability, flexibility, and developer experience while providing one-way import from legacy formats.
+Modernize AgValoniaGPS file formats from legacy AgOpenGPS text/XML formats to **GeoJSON (WGS84)** for geospatial data and **JSON** for configuration, improving maintainability, GIS interoperability, and developer experience while providing one-way import from legacy formats.
 
 ## Design Philosophy
 
 > AgValoniaGPS may use different/improved formats from AgOpenGPS when it benefits code simplicity or features. Provide one-way import from AgOpenGPS formats rather than maintaining full backwards compatibility.
+
+### Coordinate System Architecture
+
+**Storage Format:** GeoJSON with WGS84 coordinates (latitude/longitude in degrees)
+- Industry standard for geospatial data exchange
+- Compatible with GIS tools (QGIS, ArcGIS, Google Earth)
+- Portable between systems without reference point dependencies
+
+**Runtime Format:** Local plane geometry (meters)
+- Simpler math (no spherical trigonometry)
+- Better performance for real-time guidance calculations
+- Consistent with AgOpenGPS internal architecture
+
+**Conversion Strategy:**
+```
+┌─────────────┐     Load      ┌──────────────┐
+│  GeoJSON    │  ──────────►  │ Plane Coords │
+│  (WGS84)    │               │  (meters)    │
+│  on disk    │  ◄──────────  │  in memory   │
+└─────────────┘     Save      └──────────────┘
+```
+
+- Convert WGS84 → plane geometry on field load
+- All guidance calculations use plane geometry
+- Convert plane geometry → WGS84 on field save
+- Origin point stored in GeoJSON for reference
 
 ---
 
@@ -29,6 +55,7 @@ Modernize AgValoniaGPS file formats from legacy AgOpenGPS text/XML formats to un
 - Angles stored in radians, displayed in degrees
 - Duplicate `isDriveThru` line handling (legacy quirk)
 - No graceful handling of unknown fields
+- Not compatible with GIS tools
 
 ### Vehicle Profiles (XML)
 
@@ -62,100 +89,145 @@ Modernize AgValoniaGPS file formats from legacy AgOpenGPS text/XML formats to un
 
 ## Proposed New Formats
 
-### 1. Unified Field Format (`field.json`)
+### 1. Field Format: GeoJSON (`field.geojson`)
 
-Consolidate all field data into a single JSON file:
+Use standard GeoJSON (RFC 7946) with WGS84 coordinates. The field is a FeatureCollection containing boundaries, headland, and tracks as features.
 
 ```json
 {
-  "version": "1.0",
-  "name": "MyField",
-  "createdDate": "2025-12-19T10:30:00Z",
-  "lastModifiedDate": "2025-12-19T10:30:00Z",
-
-  "origin": {
-    "latitude": 40.7128,
-    "longitude": -74.0060,
-    "altitude": 0
-  },
-
-  "localCoordinates": {
-    "convergence": 0.5,
-    "offsetX": 0,
-    "offsetY": 0
-  },
-
-  "boundary": {
-    "outer": [
-      { "easting": 0, "northing": 0, "heading": 0 },
-      { "easting": 100, "northing": 0, "heading": 90 },
-      { "easting": 100, "northing": 100, "heading": 180 },
-      { "easting": 0, "northing": 100, "heading": 270 }
-    ],
-    "inner": [
-      {
-        "isDriveThrough": false,
-        "points": [...]
+  "type": "FeatureCollection",
+  "properties": {
+    "name": "MyField",
+    "version": "1.0",
+    "createdDate": "2025-12-19T10:30:00Z",
+    "lastModifiedDate": "2025-12-19T10:30:00Z",
+    "backgroundImage": {
+      "filename": "background.png",
+      "bounds": {
+        "west": -74.0070,
+        "east": -74.0050,
+        "south": 40.7120,
+        "north": 40.7140
       }
-    ]
+    }
   },
-
-  "headland": {
-    "distance": 15.0,
-    "points": [...]
-  },
-
-  "tracks": [
+  "features": [
     {
-      "name": "AB Line 1",
-      "points": [
-        { "easting": 0, "northing": 0, "heading": 0 },
-        { "easting": 100, "northing": 100, "heading": 45 }
-      ],
-      "nudgeDistance": 0,
-      "isVisible": true,
-      "isActive": false
+      "type": "Feature",
+      "id": "boundary-outer",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-74.0060, 40.7128],
+          [-74.0050, 40.7128],
+          [-74.0050, 40.7138],
+          [-74.0060, 40.7138],
+          [-74.0060, 40.7128]
+        ]]
+      },
+      "properties": {
+        "featureType": "boundary",
+        "boundaryType": "outer"
+      }
     },
     {
-      "name": "Curve 1",
-      "points": [...],
-      "nudgeDistance": 0,
-      "isVisible": true,
-      "isActive": false
+      "type": "Feature",
+      "id": "boundary-inner-1",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-74.0058, 40.7130],
+          [-74.0055, 40.7130],
+          [-74.0055, 40.7133],
+          [-74.0058, 40.7133],
+          [-74.0058, 40.7130]
+        ]]
+      },
+      "properties": {
+        "featureType": "boundary",
+        "boundaryType": "inner",
+        "isDriveThrough": false
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "headland",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-74.0059, 40.7129],
+          [-74.0051, 40.7129],
+          [-74.0051, 40.7137],
+          [-74.0059, 40.7137],
+          [-74.0059, 40.7129]
+        ]]
+      },
+      "properties": {
+        "featureType": "headland",
+        "distance": 15.0
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "track-1",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-74.0060, 40.7128],
+          [-74.0050, 40.7138]
+        ]
+      },
+      "properties": {
+        "featureType": "track",
+        "name": "AB Line 1",
+        "nudgeDistance": 0,
+        "isVisible": true,
+        "isActive": false
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "track-2",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-74.0060, 40.7128],
+          [-74.0057, 40.7131],
+          [-74.0054, 40.7135],
+          [-74.0050, 40.7138]
+        ]
+      },
+      "properties": {
+        "featureType": "track",
+        "name": "Curve 1",
+        "nudgeDistance": 0,
+        "isVisible": true,
+        "isActive": false
+      }
     }
-  ],
-
-  "backgroundImage": {
-    "enabled": true,
-    "filename": "background.png",
-    "bounds": {
-      "minEasting": 0,
-      "maxEasting": 500,
-      "minNorthing": 0,
-      "maxNorthing": 500
-    }
-  }
+  ]
 }
 ```
 
 **Key improvements:**
+- **GIS compatible**: Open in QGIS, ArcGIS, Google Earth, etc.
+- **WGS84 coordinates**: No origin point dependency
+- **Standard format**: RFC 7946 compliant GeoJSON
 - Single file instead of 5+ separate files
-- All angles in degrees (human-readable)
 - Schema version for future migrations
-- Unified track format (no ABLine vs Curve distinction in storage)
-- Optional fields supported naturally
+- Unified track format (AB lines have 2 points, curves have N)
 
 **Directory structure:**
 ```
 Fields/
 ├── MyField/
-│   ├── field.json        # All metadata, boundaries, tracks
-│   └── background.png    # Optional satellite image
+│   ├── field.geojson    # All metadata, boundaries, tracks (WGS84)
+│   └── background.png   # Optional satellite image
 ```
 
 ### 2. Vehicle/Tool Profile Format (`profile.json`)
 
-Hierarchical JSON replacing flat XML:
+Vehicle profiles remain as regular JSON (not GeoJSON) since they're configuration, not geospatial data:
 
 ```json
 {
@@ -239,40 +311,97 @@ Hierarchical JSON replacing flat XML:
 
 ---
 
+## Coordinate Conversion
+
+### WGS84 ↔ Plane Geometry
+
+The conversion uses a simple plane projection centered on the field origin:
+
+```csharp
+public class CoordinateConverter
+{
+    private readonly double _originLat;
+    private readonly double _originLon;
+    private readonly double _metersPerDegreeLat;
+    private readonly double _metersPerDegreeLon;
+
+    public CoordinateConverter(double originLat, double originLon)
+    {
+        _originLat = originLat;
+        _originLon = originLon;
+
+        // Meters per degree varies with latitude
+        _metersPerDegreeLat = 111132.92 - 559.82 * Math.Cos(2 * originLat * Math.PI / 180);
+        _metersPerDegreeLon = 111412.84 * Math.Cos(originLat * Math.PI / 180);
+    }
+
+    // WGS84 (lon, lat) → Plane (easting, northing) in meters
+    public (double Easting, double Northing) ToPlane(double lon, double lat)
+    {
+        double easting = (lon - _originLon) * _metersPerDegreeLon;
+        double northing = (lat - _originLat) * _metersPerDegreeLat;
+        return (easting, northing);
+    }
+
+    // Plane (easting, northing) → WGS84 (lon, lat)
+    public (double Lon, double Lat) ToWgs84(double easting, double northing)
+    {
+        double lon = _originLon + easting / _metersPerDegreeLon;
+        double lat = _originLat + northing / _metersPerDegreeLat;
+        return (lon, lat);
+    }
+}
+```
+
+### Origin Point Selection
+
+When loading a GeoJSON field:
+1. Use the centroid of the outer boundary as the origin
+2. Store this origin in memory for runtime conversions
+3. All points converted to plane coordinates relative to this origin
+
+When saving:
+1. Convert all plane coordinates back to WGS84 using stored origin
+2. Origin is implicit (centroid) - no need to store separately
+
+---
+
 ## Implementation Phases
 
-### Phase 1: JSON Infrastructure
+### Phase 1: GeoJSON Infrastructure
 
-1. Create `FieldJsonService` for new field format
-2. Create `ProfileJsonService` for new profile format
-3. Add JSON schema files for validation (optional)
+1. Create `GeoJsonFieldService` for new field format
+2. Create `CoordinateConverter` for WGS84 ↔ plane conversion
+3. Create `ProfileJsonService` for new profile format
 4. Keep legacy services unchanged
 
 **Files to create:**
-- `Shared/AgValoniaGPS.Services/Field/FieldJsonService.cs`
+- `Shared/AgValoniaGPS.Services/Field/GeoJsonFieldService.cs`
+- `Shared/AgValoniaGPS.Services/Coordinates/CoordinateConverter.cs`
 - `Shared/AgValoniaGPS.Services/Profile/ProfileJsonService.cs`
-- `Shared/AgValoniaGPS.Models/Field/FieldData.cs` (unified model)
 
 ### Phase 2: Auto-Detection & Import
 
-1. On field load: detect format (JSON vs legacy text)
-2. If legacy: import and convert to JSON
-3. Save only in new JSON format
+1. On field load: detect format (GeoJSON vs legacy text)
+2. If legacy: import, convert to plane geometry, then save as GeoJSON
+3. Save only in new GeoJSON format
 4. Same for profiles: detect XML vs JSON
 
 **Detection logic:**
 ```csharp
 public async Task<Field> LoadField(string path)
 {
-    var jsonPath = Path.Combine(path, "field.json");
-    if (File.Exists(jsonPath))
+    var geoJsonPath = Path.Combine(path, "field.geojson");
+    if (File.Exists(geoJsonPath))
     {
-        return await LoadJsonField(jsonPath);
+        return await LoadGeoJsonField(geoJsonPath);
     }
 
-    // Legacy import
+    // Legacy import - loads as plane coords using embedded origin
     var legacyField = await LoadLegacyField(path);
-    await SaveJsonField(legacyField, jsonPath);
+
+    // Convert plane → WGS84 and save as GeoJSON
+    await SaveGeoJsonField(legacyField, geoJsonPath);
     return legacyField;
 }
 ```
@@ -310,36 +439,46 @@ public async Task<Field> LoadField(string path)
 
 ## Compatibility Notes
 
+### GIS Tool Interoperability
+
+With GeoJSON format, AgValoniaGPS fields can be:
+- Opened directly in QGIS, ArcGIS, Google Earth
+- Edited in any GeoJSON editor
+- Visualized on web maps (Leaflet, Mapbox, etc.)
+- Converted to other formats (Shapefile, KML) using standard tools
+
 ### AgOpenGPS Interoperability
 
 After migration, AgValoniaGPS fields will NOT be directly readable by AgOpenGPS. Options:
 
 1. **Export feature**: Add "Export to AgOpenGPS format" menu option
-2. **Standalone converter**: Small utility to convert JSON → legacy text
+2. **Standalone converter**: Small utility to convert GeoJSON → legacy text
 3. **Documentation**: Clear notes that formats are incompatible
 
 ### Sharing Between AgValoniaGPS Users
 
-New JSON format is the standard for sharing between AgValoniaGPS installations.
+GeoJSON format is the standard for sharing between AgValoniaGPS installations.
 
 ---
 
 ## File Size Comparison (Estimated)
 
-| Data | Legacy | JSON | Change |
-|------|--------|------|--------|
-| Simple field (boundary + 1 track) | ~2 KB (5 files) | ~1.5 KB (1 file) | -25% |
-| Complex field (100 tracks) | ~50 KB (5 files) | ~45 KB (1 file) | -10% |
+| Data | Legacy | GeoJSON | Change |
+|------|--------|---------|--------|
+| Simple field (boundary + 1 track) | ~2 KB (5 files) | ~2 KB (1 file) | Same |
+| Complex field (100 tracks) | ~50 KB (5 files) | ~55 KB (1 file) | +10% |
 | Vehicle profile | ~15 KB (XML) | ~3 KB (JSON) | -80% |
 
-JSON is more compact than XML due to less verbose syntax.
+GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, but the GIS interoperability benefits outweigh the minimal size increase.
 
 ---
 
 ## Success Criteria
 
-- [ ] Fields load/save in JSON format
+- [ ] Fields load/save in GeoJSON format with WGS84 coordinates
 - [ ] Legacy AgOpenGPS fields import correctly
+- [ ] Coordinate conversion (WGS84 ↔ plane) works accurately
+- [ ] Fields can be opened in QGIS/ArcGIS
 - [ ] Vehicle profiles load/save in JSON format
 - [ ] Legacy XML profiles import correctly
 - [ ] No 17-section limit
@@ -355,10 +494,21 @@ JSON is more compact than XML due to less verbose syntax.
    - Recommendation: Keep separate (large files shouldn't bloat JSON)
 
 2. **Field sharing**: Support compressed `.agfield` package (zip)?
-   - Could bundle `field.json` + `background.png` for easy sharing
+   - Could bundle `field.geojson` + `background.png` for easy sharing
 
 3. **Schema validation**: Use JSON Schema for validation?
    - Nice to have, not required for MVP
 
 4. **Profile inheritance**: Allow profiles to extend base profiles?
    - Future enhancement, not in initial scope
+
+5. **GeoJSON extensions**: Use GeoJSON-T for timestamped track recording?
+   - Could enable track history/replay features
+
+---
+
+## References
+
+- [RFC 7946 - The GeoJSON Format](https://tools.ietf.org/html/rfc7946)
+- [GeoJSON.io - Online editor](https://geojson.io/)
+- [QGIS Documentation](https://qgis.org/)
