@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple GPS/tractor icon placeholder -->
+    <path
+        android:fillColor="#4A9A7E"
+        android:pathData="M54,10 L94,50 L74,50 L74,90 L34,90 L34,50 L14,50 Z" />
+    <path
+        android:fillColor="#2ECC71"
+        android:pathData="M54,25 L79,50 L69,50 L69,80 L39,80 L39,50 L29,50 Z" />
+</vector>

@@ -17,6 +17,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{4F52FD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.Views", "Shared\AgValoniaGPS.Views\AgValoniaGPS.Views.csproj", "{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{324791A1-5798-203D-0CA6-A8E0DAEC81C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.Android", "Platforms\AgValoniaGPS.Android\AgValoniaGPS.Android.csproj", "{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,11 +103,24 @@ Global
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x64.Build.0 = Release|Any CPU
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48}.Release|x86.Build.0 = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|x64.Build.0 = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Debug|x86.Build.0 = Debug|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|x64.ActiveCfg = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|x64.Build.0 = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|x86.ActiveCfg = Release|Any CPU
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6F3AAAFC-B9DA-4A0D-B7EF-117A8D79FE48} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
+		{567ED141-DCBE-4632-95FB-3D3C5ADBF84C} = {324791A1-5798-203D-0CA6-A8E0DAEC81C8}
 	EndGlobalSection
 EndGlobal

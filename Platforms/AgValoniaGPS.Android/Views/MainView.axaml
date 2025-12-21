@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+        xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
+        xmlns:panels="clr-namespace:AgValoniaGPS.Views.Controls.Panels;assembly=AgValoniaGPS.Views"
+        xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="AgValoniaGPS.Android.Views.MainView"
+        x:DataType="vm:MainViewModel"
+        Background="#1a1a1a">
+
+    <!-- Android Main View with ViewModel -->
+    <Panel>
+        <!-- Main Content -->
+        <Grid RowDefinitions="Auto,*">
+
+            <!-- Top Status Bar -->
+            <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="16"
+                               TextTrimming="CharacterEllipsis" MaxWidth="400"/>
+                    <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
+            <Grid Grid.Row="1">
+                <controls:DrawingContextMapControl x:Name="MapControl" Margin="5"
+                                                   IsGridVisible="{Binding IsGridOn}"/>
+                <!-- Left Navigation Panel overlay (contains all sub-panels including SimulatorPanel) -->
+                <panels:LeftNavigationPanel x:Name="LeftNavPanel"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"/>
+
+                <!-- RIGHT SIDEBAR: Guidance Control Panel -->
+                <panels:RightNavigationPanel x:Name="RightNavPanel"
+                                             HorizontalAlignment="Right"
+                                             VerticalAlignment="Top"
+                                             Margin="0,100,0,0"
+                                             DataContext="{Binding}"/>
+
+                <!-- Draggable Section Control -->
+                <Canvas>
+                    <panels:SectionControlPanel x:Name="SectionControlPanel"
+                                                Canvas.Left="200" Canvas.Top="500"
+                                                Cursor="Hand"
+                                                PointerPressed="SectionControl_PointerPressed"
+                                                PointerMoved="SectionControl_PointerMoved"
+                                                PointerReleased="SectionControl_PointerReleased"/>
+                </Canvas>
+
+                <!-- BOTTOM BAR: AB Line Guidance Panel (Draggable) -->
+                <Canvas>
+                    <panels:BottomNavigationPanel x:Name="BottomNavPanel"
+                                                  Canvas.Left="200" Canvas.Top="420"
+                                                  DataContext="{Binding}"
+                                                  PointerPressed="BottomNavPanel_PointerPressed"
+                                                  PointerMoved="BottomNavPanel_PointerMoved"
+                                                  PointerReleased="BottomNavPanel_PointerReleased"/>
+                </Canvas>
+
+                <!-- Zoom Controls - Bottom Right -->
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Margin="0,0,20,20" Spacing="10">
+                    <Button Content="+" Command="{Binding ZoomInCommand}"
+                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                    <Button Content="-" Command="{Binding ZoomOutCommand}"
+                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- AB Creation Instruction Banner -->
+        <Border Background="#CC000000" CornerRadius="8" Padding="16,8"
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"
+                IsVisible="{Binding IsCreatingABLine}">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="{Binding ABCreationInstructions}"
+                           Foreground="White" FontSize="16" VerticalAlignment="Center"/>
+                <Button Content="Cancel"
+                        Command="{Binding CancelABCreationCommand}"
+                        Background="#DD3333" Foreground="White"
+                        Padding="12,4"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Modal Dialog Overlays (shared across platforms) -->
+        <controls:DialogOverlayHost DataContext="{Binding}"/>
+    </Panel>
+</UserControl>
