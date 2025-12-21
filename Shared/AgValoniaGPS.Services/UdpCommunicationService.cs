@@ -13,6 +13,10 @@ namespace AgValoniaGPS.Services;
 /// UDP communication service for Teensy modules
 /// Eliminates unreliable USB serial connections
 /// Port 9999 for module communication
+///
+/// Zero-copy GPS path: When NMEA data arrives, AutoSteerService.ProcessGpsBuffer
+/// is called directly with the receive buffer (no copy). This is the critical
+/// path for low-latency GPS-to-PGN processing.
 /// </summary>
 public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 {
@@ -24,6 +28,9 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
     private EndPoint _remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
     private CancellationTokenSource? _cancellationTokenSource;
     private bool _isDisposed;
+
+    // AutoSteer service for zero-copy GPS processing
+    private IAutoSteerService? _autoSteerService;
 
     // Module broadcast endpoint (e.g., 192.168.5.255:8888)
     private IPEndPoint? _moduleEndpoint;
@@ -47,6 +54,16 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 
     public bool IsConnected { get; private set; }
     public string? LocalIPAddress { get; private set; }
+
+    /// <summary>
+    /// Register the AutoSteer service for zero-copy GPS processing.
+    /// When NMEA data arrives, it will be passed directly to the AutoSteer
+    /// service without copying, achieving minimum latency.
+    /// </summary>
+    public void SetAutoSteerService(IAutoSteerService autoSteerService)
+    {
+        _autoSteerService = autoSteerService;
+    }
 
     public async Task StartAsync()
     {
@@ -179,6 +196,16 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 
             if (bytesReceived > 0)
             {
+                // ZERO-COPY PATH: Check if this is NMEA data for AutoSteer
+                // Process directly from receive buffer before any copying
+                if (_receiveBuffer[0] == (byte)'$' && _autoSteerService != null)
+                {
+                    // Direct zero-copy call - this is the critical low-latency path
+                    // GPS → Parse → Guidance → PGN all happen here before we continue
+                    _autoSteerService.ProcessGpsBuffer(_receiveBuffer, bytesReceived);
+                }
+
+                // Now copy for other consumers (events, logging, etc.)
                 byte[] data = new byte[bytesReceived];
                 Array.Copy(_receiveBuffer, data, bytesReceived);
 

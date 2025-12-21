@@ -1,5 +1,7 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using AgValoniaGPS.Services;
+using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
@@ -52,6 +54,9 @@ public static class ServiceCollectionExtensions
         // Guidance algorithm services
         services.AddSingleton<ITrackGuidanceService, TrackGuidanceService>();
 
+        // AutoSteer pipeline service (zero-copy GPS→PGN path)
+        services.AddSingleton<IAutoSteerService, AutoSteerService>();
+
         // YouTurn services
         services.AddSingleton<YouTurnCreationService>();
         services.AddSingleton<YouTurnGuidanceService>();
@@ -69,5 +74,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMapService>(sp => sp.GetRequiredService<MapService>());
 
         return services;
+    }
+
+    /// <summary>
+    /// Wire up services that need cross-references after the container is built.
+    /// Call this after building the service provider.
+    /// </summary>
+    public static void WireUpServices(this IServiceProvider serviceProvider)
+    {
+        // Wire AutoSteerService into UdpCommunicationService for zero-copy GPS processing
+        var udpService = serviceProvider.GetRequiredService<IUdpCommunicationService>() as UdpCommunicationService;
+        var autoSteerService = serviceProvider.GetRequiredService<IAutoSteerService>();
+
+        udpService?.SetAutoSteerService(autoSteerService);
     }
 }

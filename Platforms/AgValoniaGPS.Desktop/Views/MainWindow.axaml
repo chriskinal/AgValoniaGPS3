@@ -41,6 +41,8 @@
                 <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="White" FontSize="14" FontWeight="Bold"/>
                 <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
                 <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#2ECC71" FontSize="14" FontWeight="Bold"/>
+                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
             </StackPanel>
         </Border>
 

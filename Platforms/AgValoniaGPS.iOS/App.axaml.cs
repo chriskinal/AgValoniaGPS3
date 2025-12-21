@@ -48,6 +48,10 @@ public partial class App : Avalonia.Application
             Services = _services;
             System.Diagnostics.Debug.WriteLine("[App] DI container built.");
 
+            // Wire up cross-referencing services (AutoSteer → UDP)
+            Services.WireUpServices();
+            System.Diagnostics.Debug.WriteLine("[App] Services wired up.");
+
             // Load settings
             System.Diagnostics.Debug.WriteLine("[App] Loading settings...");
             var settingsService = Services.GetRequiredService<ISettingsService>();

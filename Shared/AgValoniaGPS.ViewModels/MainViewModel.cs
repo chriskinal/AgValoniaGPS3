@@ -44,6 +44,7 @@ public class MainViewModel : ReactiveObject
     private readonly FieldPlaneFileService _fieldPlaneFileService;
     private readonly IVehicleProfileService _vehicleProfileService;
     private readonly IConfigurationService _configurationService;
+    private readonly IAutoSteerService _autoSteerService;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
@@ -90,6 +91,7 @@ public class MainViewModel : ReactiveObject
     private string _fixQuality = "No Fix";
     private string _networkStatus = "Disconnected";
     private double _currentFps;
+    private double _gpsToPgnLatencyMs;
 
     // Guidance/Steering status
     private double _crossTrackError;
@@ -146,6 +148,7 @@ public class MainViewModel : ReactiveObject
         Services.Interfaces.ITurnAreaService turnAreaService,
         IVehicleProfileService vehicleProfileService,
         IConfigurationService configurationService,
+        IAutoSteerService autoSteerService,
         ApplicationState appState)
     {
         _udpService = udpService;
@@ -168,6 +171,7 @@ public class MainViewModel : ReactiveObject
         _turnAreaService = turnAreaService;
         _vehicleProfileService = vehicleProfileService;
         _configurationService = configurationService;
+        _autoSteerService = autoSteerService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -175,6 +179,8 @@ public class MainViewModel : ReactiveObject
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
         _udpService.DataReceived += OnUdpDataReceived;
+        _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
+        _autoSteerService.Start(); // Enable zero-copy GPS pipeline
         _udpService.ModuleConnectionChanged += OnModuleConnectionChanged;
         _ntripService.ConnectionStatusChanged += OnNtripConnectionChanged;
         _ntripService.RtcmDataReceived += OnRtcmDataReceived;
@@ -424,6 +430,16 @@ public class MainViewModel : ReactiveObject
     {
         get => _currentFps;
         set => this.RaiseAndSetIfChanged(ref _currentFps, value);
+    }
+
+    /// <summary>
+    /// GPS-to-PGN pipeline latency in milliseconds.
+    /// This is the critical latency from GPS receipt to steering PGN send.
+    /// </summary>
+    public double GpsToPgnLatencyMs
+    {
+        get => _gpsToPgnLatencyMs;
+        set => this.RaiseAndSetIfChanged(ref _gpsToPgnLatencyMs, value);
     }
 
     public int SatelliteCount
@@ -683,6 +699,20 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _heading, value);
     }
 
+    private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot state)
+    {
+        // Update latency display from AutoSteer pipeline
+        // This fires at 10Hz from the GPS receive path
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            GpsToPgnLatencyMs = state.TotalLatencyMs;
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => GpsToPgnLatencyMs = state.TotalLatencyMs);
+        }
+    }
+
     private void OnGpsDataUpdated(object? sender, AgValoniaGPS.Models.GpsData data)
     {
         // Marshal to UI thread (use Invoke for synchronous execution to avoid modal dialog issues)
@@ -779,6 +809,13 @@ public class MainViewModel : ReactiveObject
 
         // Directly update GPS service (bypasses NMEA parsing like WinForms version does)
         _gpsService.UpdateGpsData(gpsData);
+
+        // Process through AutoSteer pipeline for latency measurement
+        _autoSteerService.ProcessSimulatedPosition(
+            position.Latitude, position.Longitude, position.Altitude,
+            position.Heading, position.Speed, gpsData.FixQuality,
+            gpsData.SatellitesInUse, gpsData.Hdop,
+            position.Easting, position.Northing);
 
         // Calculate autosteer guidance if engaged and we have an active track
         if (IsAutoSteerEngaged && HasActiveTrack && SelectedTrack != null)

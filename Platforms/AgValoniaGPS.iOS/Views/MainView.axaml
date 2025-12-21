@@ -23,6 +23,7 @@
                                TextTrimming="CharacterEllipsis" MaxWidth="400"/>
                     <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
                 </StackPanel>
             </Border>
 

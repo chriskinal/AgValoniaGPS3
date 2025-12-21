@@ -37,6 +37,9 @@ public partial class App : Application
 
         Services = _host.Services;
 
+        // Wire up cross-referencing services (AutoSteer → UDP)
+        Services.WireUpServices();
+
         // Load settings
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.Load();
