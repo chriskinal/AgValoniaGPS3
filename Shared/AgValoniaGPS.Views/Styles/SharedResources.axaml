@@ -10,9 +10,11 @@
     <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
     <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
     <converters:FixQualityToColorConverter x:Key="FixQualityToColorConverter"/>
+    <converters:FixQualityNameConverter x:Key="FixQualityNameConverter"/>
     <converters:BoolToSteerColorConverter x:Key="BoolToSteerColorConverter"/>
     <converters:BoolToSteerTextConverter x:Key="BoolToSteerTextConverter"/>
     <converters:BoolToSectionColorConverter x:Key="BoolToSectionColorConverter"/>
     <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
+    <converters:EqualityConverter x:Key="EqualityConverter"/>
 
 </ResourceDictionary>

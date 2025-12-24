@@ -3,14 +3,44 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             xmlns:subtabs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs"
+             mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="600"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesConfigTab"
              x:DataType="vm:ConfigurationViewModel">
 
-    <ScrollViewer>
-        <StackPanel Margin="16">
-            <TextBlock Text="Data Sources" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,12"/>
-            <TextBlock Text="Data source configuration coming soon..." Foreground="#AAA"/>
-        </StackPanel>
-    </ScrollViewer>
+    <UserControl.Styles>
+        <!-- Sub-tab styling -->
+        <Style Selector="TabControl.SubTabs">
+            <Setter Property="Background" Value="#DD253545"/>
+        </Style>
+        <Style Selector="TabControl.SubTabs > TabItem">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="Foreground" Value="#AAA"/>
+        </Style>
+        <Style Selector="TabControl.SubTabs > TabItem:selected">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TabControl.SubTabs > TabItem:pointerover">
+            <Setter Property="Background" Value="#DD3C4E60"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <TextBlock Text="GPS / Data Sources" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+
+        <!-- Sub-Tab Control -->
+        <TabControl Grid.Row="1" Classes="SubTabs" Margin="8,0,8,8">
+            <TabItem Header="GPS">
+                <subtabs:GpsSubTab/>
+            </TabItem>
+            <TabItem Header="Roll">
+                <subtabs:RollSubTab/>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

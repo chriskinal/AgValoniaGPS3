@@ -269,6 +269,8 @@ public class ConfigurationViewModel : ReactiveObject
     public GuidanceConfig Guidance => Config.Guidance;
     public DisplayConfig Display => Config.Display;
     public SimulatorConfig Simulator => Config.Simulator;
+    public ConnectionConfig Connections => Config.Connections;
+    public AhrsConfig Ahrs => Config.Ahrs;
 
     /// <summary>
     /// Calculated total width from sections based on mode.
@@ -477,6 +479,37 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand EditUTurnSkipWidthCommand { get; private set; } = null!;
     public ICommand EditUTurnSmoothingCommand { get; private set; } = null!;
 
+    // GPS Tab Commands
+    public ICommand SetSingleGpsCommand { get; private set; } = null!;
+    public ICommand SetDualGpsCommand { get; private set; } = null!;
+    public ICommand SetHeadingSourceCommand { get; private set; } = null!;
+    public ICommand EditFusionWeightCommand { get; private set; } = null!;
+    public ICommand EditMinFixQualityCommand { get; private set; } = null!;
+    public ICommand ToggleRtkAlarmCommand { get; private set; } = null!;
+    public ICommand SetRtkLostActionCommand { get; private set; } = null!;
+    public ICommand EditMaxDiffAgeCommand { get; private set; } = null!;
+    public ICommand EditMaxHdopCommand { get; private set; } = null!;
+    public ICommand SetGpsUpdateRateCommand { get; private set; } = null!;
+    public ICommand ToggleUseRtkCommand { get; private set; } = null!;
+
+    // Dual Antenna Settings Commands
+    public ICommand EditDualHeadingOffsetCommand { get; private set; } = null!;
+    public ICommand EditDualReverseDistanceCommand { get; private set; } = null!;
+    public ICommand ToggleAutoDualFixCommand { get; private set; } = null!;
+    public ICommand EditDualSwitchSpeedCommand { get; private set; } = null!;
+
+    // Single Antenna Settings Commands
+    public ICommand EditMinGpsStepCommand { get; private set; } = null!;
+    public ICommand EditFixToFixDistanceCommand { get; private set; } = null!;
+    public ICommand ToggleReverseDetectionCommand { get; private set; } = null!;
+    public ICommand ToggleAlarmStopsAutosteerCommand { get; private set; } = null!;
+
+    // Roll Tab Commands
+    public ICommand EditRollZeroCommand { get; private set; } = null!;
+    public ICommand EditRollFilterCommand { get; private set; } = null!;
+    public ICommand ToggleRollInvertCommand { get; private set; } = null!;
+    public ICommand SetRollZeroCommand { get; private set; } = null!;
+
     #endregion
 
     #region Events
@@ -508,6 +541,8 @@ public class ConfigurationViewModel : ReactiveObject
         InitializeToolEditCommands();
         InitializeSectionsEditCommands();
         InitializeUTurnEditCommands();
+        InitializeGpsEditCommands();
+        InitializeRollEditCommands();
 
         // Subscribe to config changes for HasUnsavedChanges notification
         Config.PropertyChanged += (_, e) =>
@@ -746,6 +781,155 @@ public class ConfigurationViewModel : ReactiveObject
             ShowNumericInput("Smoothing", Guidance.UTurnSmoothing,
                 v => Guidance.UTurnSmoothing = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 50));
+    }
+
+    private void InitializeGpsEditCommands()
+    {
+        // GPS Mode commands
+        SetSingleGpsCommand = new RelayCommand(() =>
+        {
+            Connections.IsDualGps = false;
+            Config.MarkChanged();
+        });
+
+        SetDualGpsCommand = new RelayCommand(() =>
+        {
+            Connections.IsDualGps = true;
+            Config.MarkChanged();
+        });
+
+        // Heading source command (parameter is source index as string)
+        SetHeadingSourceCommand = new RelayCommand<string>(source =>
+        {
+            if (int.TryParse(source, out var sourceIndex))
+            {
+                Connections.HeadingSource = sourceIndex;
+                Config.MarkChanged();
+            }
+        });
+
+        EditFusionWeightCommand = new RelayCommand(() =>
+            ShowNumericInput("Heading Fusion Weight", Connections.HeadingFusionWeight,
+                v => Connections.HeadingFusionWeight = v,
+                "", integerOnly: false, allowNegative: false, min: 0, max: 1));
+
+        EditMinFixQualityCommand = new RelayCommand(() =>
+            ShowNumericInput("Minimum Fix Quality", Connections.MinFixQuality,
+                v => Connections.MinFixQuality = (int)v,
+                "", integerOnly: true, allowNegative: false, min: 1, max: 5));
+
+        ToggleRtkAlarmCommand = new RelayCommand(() =>
+        {
+            Connections.RtkLostAlarm = !Connections.RtkLostAlarm;
+            Config.MarkChanged();
+        });
+
+        SetRtkLostActionCommand = new RelayCommand<string>(action =>
+        {
+            if (int.TryParse(action, out var actionIndex))
+            {
+                Connections.RtkLostAction = actionIndex;
+                Config.MarkChanged();
+            }
+        });
+
+        EditMaxDiffAgeCommand = new RelayCommand(() =>
+            ShowNumericInput("Max Differential Age", Connections.MaxDifferentialAge,
+                v => Connections.MaxDifferentialAge = v,
+                "sec", integerOnly: false, allowNegative: false, min: 1, max: 30));
+
+        EditMaxHdopCommand = new RelayCommand(() =>
+            ShowNumericInput("Max HDOP", Connections.MaxHdop,
+                v => Connections.MaxHdop = v,
+                "", integerOnly: false, allowNegative: false, min: 0.5, max: 10));
+
+        SetGpsUpdateRateCommand = new RelayCommand<string>(rate =>
+        {
+            if (int.TryParse(rate, out var rateHz))
+            {
+                Connections.GpsUpdateRate = rateHz;
+                Config.MarkChanged();
+            }
+        });
+
+        ToggleUseRtkCommand = new RelayCommand(() =>
+        {
+            Connections.UseRtk = !Connections.UseRtk;
+            Config.MarkChanged();
+        });
+
+        // Dual Antenna Settings
+        EditDualHeadingOffsetCommand = new RelayCommand(() =>
+            ShowNumericInput("Heading Offset", Connections.DualHeadingOffset,
+                v => Connections.DualHeadingOffset = v,
+                "°", integerOnly: false, allowNegative: false, min: 0, max: 360));
+
+        EditDualReverseDistanceCommand = new RelayCommand(() =>
+            ShowNumericInput("Reverse Distance", Connections.DualReverseDistance,
+                v => Connections.DualReverseDistance = v,
+                "m", integerOnly: false, allowNegative: false, min: 0, max: 5));
+
+        ToggleAutoDualFixCommand = new RelayCommand(() =>
+        {
+            Connections.AutoDualFix = !Connections.AutoDualFix;
+            Config.MarkChanged();
+        });
+
+        EditDualSwitchSpeedCommand = new RelayCommand(() =>
+            ShowNumericInput("Switch Speed", Connections.DualSwitchSpeed,
+                v => Connections.DualSwitchSpeed = v,
+                "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
+
+        // Single Antenna Settings
+        EditMinGpsStepCommand = new RelayCommand(() =>
+            ShowNumericInput("Minimum GPS Step", Connections.MinGpsStep,
+                v => Connections.MinGpsStep = v,
+                "m", integerOnly: false, allowNegative: false, min: 0.01, max: 1));
+
+        EditFixToFixDistanceCommand = new RelayCommand(() =>
+            ShowNumericInput("Fix to Fix Distance", Connections.FixToFixDistance,
+                v => Connections.FixToFixDistance = v,
+                "m", integerOnly: false, allowNegative: false, min: 0.1, max: 5));
+
+        ToggleReverseDetectionCommand = new RelayCommand(() =>
+        {
+            Connections.ReverseDetection = !Connections.ReverseDetection;
+            Config.MarkChanged();
+        });
+
+        ToggleAlarmStopsAutosteerCommand = new RelayCommand(() =>
+        {
+            // Toggle between RtkLostAction 0 (Warn) and 1 (Pause AutoSteer)
+            Connections.RtkLostAction = Connections.RtkLostAction == 1 ? 0 : 1;
+            Config.MarkChanged();
+        });
+    }
+
+    private void InitializeRollEditCommands()
+    {
+        EditRollZeroCommand = new RelayCommand(() =>
+            ShowNumericInput("Roll Zero Offset", Ahrs.RollZero,
+                v => Ahrs.RollZero = v,
+                "°", integerOnly: false, allowNegative: true, min: -20, max: 20));
+
+        EditRollFilterCommand = new RelayCommand(() =>
+            ShowNumericInput("Roll Filter", Ahrs.RollFilter,
+                v => Ahrs.RollFilter = v,
+                "", integerOnly: false, allowNegative: false, min: 0, max: 1));
+
+        ToggleRollInvertCommand = new RelayCommand(() =>
+        {
+            Ahrs.IsRollInvert = !Ahrs.IsRollInvert;
+            Config.MarkChanged();
+        });
+
+        // Set roll zero to current roll value (would need access to current sensor data)
+        // For now, this just resets to 0
+        SetRollZeroCommand = new RelayCommand(() =>
+        {
+            Ahrs.RollZero = 0;
+            Config.MarkChanged();
+        });
     }
 
     private void RefreshProfileList()

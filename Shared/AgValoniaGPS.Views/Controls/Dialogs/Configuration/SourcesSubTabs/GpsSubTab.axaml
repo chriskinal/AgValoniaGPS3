@@ -1,0 +1,257 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs.GpsSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <!-- Antenna Type Card Style -->
+        <Style Selector="Border.AntennaCard">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Border.AntennaCard:pointerover">
+            <Setter Property="Background" Value="#DD3C4E60"/>
+        </Style>
+        <Style Selector="Border.AntennaCard.Selected">
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+            <Setter Property="Background" Value="#DD2A4A3A"/>
+        </Style>
+
+        <!-- Section Header Style -->
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A9A7E"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- Section Header Disabled -->
+        <Style Selector="TextBlock.SectionHeaderDisabled">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- Settings Panel -->
+        <Style Selector="Border.SettingsPanel">
+            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12"/>
+        </Style>
+
+        <!-- Tappable Value Button Style -->
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+        <Style Selector="Button.TappableValue:disabled">
+            <Setter Property="Background" Value="#DD1A1A1A"/>
+            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="BorderBrush" Value="#333"/>
+        </Style>
+
+        <!-- Action Button Style -->
+        <Style Selector="Button.ActionButton">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ActionButton:pointerover">
+            <Setter Property="Background" Value="#DD3C4E60"/>
+        </Style>
+        <Style Selector="Button.ActionButton.Active">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+        <Style Selector="Button.ActionButton:disabled">
+            <Setter Property="Background" Value="#DD1A1A1A"/>
+            <Setter Property="Foreground" Value="#555"/>
+        </Style>
+
+        <!-- Toggle Switch Style -->
+        <Style Selector="ToggleSwitch">
+            <Setter Property="OnContent" Value=""/>
+            <Setter Property="OffContent" Value=""/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="16,8,16,16">
+
+            <!-- ANTENNA TYPE -->
+            <TextBlock Text="Antenna Type" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+
+            <Grid ColumnDefinitions="*,16,*">
+                <!-- Dual Antenna Card -->
+                <Border Grid.Column="0" Classes="AntennaCard"
+                        Classes.Selected="{Binding Connections.IsDualGps}"
+                        PointerPressed="OnDualGpsCardPressed">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesGPSDual.png"
+                               Width="80" Height="50" Stretch="Uniform"/>
+                        <TextBlock Text="Dual" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Single (Fix) Antenna Card -->
+                <Border Grid.Column="2" Classes="AntennaCard"
+                        Classes.Selected="{Binding !Connections.IsDualGps}"
+                        PointerPressed="OnSingleGpsCardPressed">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesGPSSingle.png"
+                               Width="80" Height="50" Stretch="Uniform"/>
+                        <TextBlock Text="Fix" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- TWO COLUMN SETTINGS -->
+            <Grid ColumnDefinitions="*,12,*">
+                <!-- DUAL ANTENNA SETTINGS (Left Column) -->
+                <Border Grid.Column="0" Classes="SettingsPanel">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Dual Antenna Settings"
+                                   Classes.SectionHeader="{Binding Connections.IsDualGps}"
+                                   Classes.SectionHeaderDisabled="{Binding !Connections.IsDualGps}"/>
+
+                        <!-- Dual Antenna Graphic -->
+                        <Border Background="#1A1A2E" CornerRadius="4" Padding="4" Height="80" HorizontalAlignment="Center"
+                                IsEnabled="{Binding Connections.IsDualGps}">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesHead.png" Stretch="Uniform"
+                                   Opacity="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=1|0.3}"/>
+                        </Border>
+
+                        <!-- Heading Offset -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Heading Offset (Degree)" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualHeadingOffsetCommand}" IsEnabled="{Binding Connections.IsDualGps}">
+                                <TextBlock Text="{Binding Connections.DualHeadingOffset, StringFormat='{}{0:F1}'}" Foreground="White" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Reverse Distance -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Reverse Distance" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualReverseDistanceCommand}" IsEnabled="{Binding Connections.IsDualGps}">
+                                <TextBlock Text="{Binding Connections.DualReverseDistance, StringFormat='{}{0:F2}'}" Foreground="White" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Auto Dual <> Fix -->
+                        <Button Classes="ActionButton" Classes.Active="{Binding Connections.AutoDualFix}"
+                                Command="{Binding ToggleAutoDualFixCommand}" IsEnabled="{Binding Connections.IsDualGps}"
+                                HorizontalAlignment="Stretch">
+                            <TextBlock Text="Auto Dual &lt;&gt; Fix" Foreground="White" HorizontalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Switch Speed -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Switch Speed" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualSwitchSpeedCommand}" IsEnabled="{Binding Connections.IsDualGps}">
+                                <TextBlock Text="{Binding Connections.DualSwitchSpeed, StringFormat='{}{0:F1}'}" Foreground="White" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- SINGLE ANTENNA SETTINGS (Right Column) -->
+                <Border Grid.Column="2" Classes="SettingsPanel">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Single Antenna Settings"
+                                   Classes.SectionHeader="{Binding !Connections.IsDualGps}"
+                                   Classes.SectionHeaderDisabled="{Binding Connections.IsDualGps}"/>
+
+                        <!-- Minimum GPS Step -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Minimum GPS Step" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditMinGpsStepCommand}" IsEnabled="{Binding !Connections.IsDualGps}">
+                                <TextBlock Text="{Binding Connections.MinGpsStep, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Fix to Fix Distance -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Fix to Fix Distance" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditFixToFixDistanceCommand}" IsEnabled="{Binding !Connections.IsDualGps}">
+                                <TextBlock Text="{Binding Connections.FixToFixDistance, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Fusion Slider -->
+                        <StackPanel Spacing="4" IsEnabled="{Binding !Connections.IsDualGps}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Text="IMU" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=#E74C3C|#555}" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="Fusion" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="GPS" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=#4A9A7E|#555}" FontSize="11"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Text="{Binding Connections.HeadingFusionWeight, StringFormat='{}{0:P0}'}" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontWeight="Bold" MinWidth="35"/>
+                                <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Connections.HeadingFusionWeight}"
+                                        IsEnabled="{Binding !Connections.IsDualGps}" Margin="8,0"/>
+                                <TextBlock Grid.Column="2" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontWeight="Bold" MinWidth="35" TextAlignment="Right">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0:P0}">
+                                            <Binding Path="Connections.HeadingFusionWeight" Converter="{StaticResource EqualityConverter}" ConverterParameter="invert"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Grid>
+                            <TextBlock Text="Default: 70%" Foreground="#555" FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Reverse Detection -->
+                        <Button Classes="ActionButton" Classes.Active="{Binding Connections.ReverseDetection}"
+                                Command="{Binding ToggleReverseDetectionCommand}" IsEnabled="{Binding !Connections.IsDualGps}"
+                                HorizontalAlignment="Stretch">
+                            <TextBlock Text="Reverse Detection" Foreground="White" HorizontalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- RTK SETTINGS (Always Active) -->
+            <Grid ColumnDefinitions="*,12,*">
+                <!-- RTK Fix Alarm -->
+                <Button Grid.Column="0" Classes="ActionButton" Classes.Active="{Binding Connections.RtkLostAlarm}"
+                        Command="{Binding ToggleRtkAlarmCommand}" HorizontalAlignment="Stretch" Height="70">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesRTKAlarm.png" Width="32" Height="32"/>
+                        <TextBlock Text="RTK Fix Alarm" Foreground="White" FontSize="11" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Alarm Stops Autosteer -->
+                <Button Grid.Column="2" Classes="ActionButton"
+                        Classes.Active="{Binding Connections.RtkLostAction, Converter={StaticResource EqualityConverter}, ConverterParameter=1}"
+                        Command="{Binding ToggleAlarmStopsAutosteerCommand}" HorizontalAlignment="Stretch" Height="70">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOff.png" Width="32" Height="32"/>
+                        <TextBlock Text="Alarm Stops Autosteer" Foreground="White" FontSize="11" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

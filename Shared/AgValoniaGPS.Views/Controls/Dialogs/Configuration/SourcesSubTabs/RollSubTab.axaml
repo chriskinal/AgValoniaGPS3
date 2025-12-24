@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs.RollSubTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <!-- Section Header Style -->
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A9A7E"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+        </Style>
+
+        <!-- Setting Row Style -->
+        <Style Selector="Border.SettingRow">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+
+        <!-- Tappable Value Button Style -->
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+
+        <!-- Action Button Style -->
+        <Style Selector="Button.ActionButton">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ActionButton:pointerover">
+            <Setter Property="Background" Value="#DD2A9A5A"/>
+        </Style>
+
+        <!-- Toggle Switch Style -->
+        <Style Selector="ToggleSwitch">
+            <Setter Property="OnContent" Value=""/>
+            <Setter Property="OffContent" Value=""/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Spacing="4" Margin="16,8,16,16">
+
+            <!-- ROLL CALIBRATION SECTION -->
+            <TextBlock Text="ROLL CALIBRATION" Classes="SectionHeader" Margin="0,0,0,8"/>
+
+            <!-- Roll Helper Graphic with explanation -->
+            <Grid ColumnDefinitions="Auto,*">
+                <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Width="160" Height="120" Margin="0,0,12,0">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_RollHelper.png" Stretch="Uniform"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Roll Correction" Foreground="White" FontWeight="SemiBold"/>
+                    <TextBlock Text="Adjust roll offset to compensate for IMU mounting angle. Park on level ground and use 'Set Zero' to calibrate."
+                               Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
+                    <Button Classes="ActionButton" Command="{Binding SetRollZeroCommand}" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Width="24" Height="24"/>
+                            <TextBlock Text="Set Zero" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Roll Zero Offset -->
+            <Border Classes="SettingRow" Margin="0,12,0,0">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Background="#1A1A2E" CornerRadius="4" Padding="4" Width="48" Height="48" Margin="0,0,12,0">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Roll Zero Offset" Foreground="White"/>
+                        <TextBlock Text="Manual offset adjustment" Foreground="#666" FontSize="10"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Classes="TappableValue" Command="{Binding EditRollZeroCommand}">
+                        <TextBlock Text="{Binding Ahrs.RollZero, StringFormat='{}{0:F1}°'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ROLL FILTERING SECTION -->
+            <TextBlock Text="ROLL FILTERING" Classes="SectionHeader"/>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Roll Filter" Foreground="White"/>
+                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="#666" FontSize="10"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditRollFilterCommand}">
+                        <TextBlock Text="{Binding Ahrs.RollFilter, StringFormat='{}{0:F2}'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ROLL INVERSION SECTION -->
+            <TextBlock Text="ROLL DIRECTION" Classes="SectionHeader"/>
+
+            <Grid ColumnDefinitions="Auto,*">
+                <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Width="100" Height="70" Margin="0,0,12,0">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_InvertRoll.png" Stretch="Uniform"/>
+                </Border>
+                <Border Grid.Column="1" Classes="SettingRow" VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                            <TextBlock Text="Invert Roll" Foreground="White"/>
+                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="#666" FontSize="10"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding Ahrs.IsRollInvert}" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
