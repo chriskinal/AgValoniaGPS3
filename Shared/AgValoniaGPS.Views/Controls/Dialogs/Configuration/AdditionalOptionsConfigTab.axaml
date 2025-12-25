@@ -1,0 +1,167 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="450"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.AdditionalOptionsConfigTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <!-- Toggle Button with custom template for instant feedback -->
+        <Style Selector="Button.ToggleButton">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Section Panel -->
+        <Style Selector="Border.SectionPanel">
+            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <!-- Section Header -->
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A9A7E"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <TextBlock Text="Additional Options" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="16" Margin="16,8,16,16">
+
+                <!-- Screen Buttons Section -->
+                <Border Classes="SectionPanel">
+                    <StackPanel>
+                        <TextBlock Text="Screen Buttons" Classes="SectionHeader"/>
+                        <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Center">
+                            <!-- U-Turn Button -->
+                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.UTurnButtonVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.UTurnButtonVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleUTurnButtonCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_UTurnMenu.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="U-Turn" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Lateral Button -->
+                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.LateralButtonVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.LateralButtonVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleLateralButtonCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSnapNudgeMenu.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="Lateral" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sounds Section -->
+                <Border Classes="SectionPanel">
+                    <StackPanel>
+                        <TextBlock Text="Sounds" Classes="SectionHeader"/>
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" HorizontalAlignment="Center">
+                            <!-- Auto Steer Sound -->
+                            <StackPanel Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.AutoSteerSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.AutoSteerSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleAutoSteerSoundCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SteerSound.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="Auto Steer" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- U-Turn Sound -->
+                            <StackPanel Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.UTurnSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.UTurnSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleUTurnSoundCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_TurnSound.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="U-Turn" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Hydraulic Sound -->
+                            <StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.HydraulicSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.HydraulicSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleHydraulicSoundCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_HydLiftSound.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="Hydraulic" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Sections Sound -->
+                            <StackPanel Grid.Column="3" Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.SectionsSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.SectionsSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleSectionsSoundCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SoundSections.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="Sections" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Hardware Messages Section -->
+                <Border Classes="SectionPanel">
+                    <StackPanel>
+                        <TextBlock Text="Hardware" Classes="SectionHeader"/>
+                        <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Center">
+                            <!-- Hardware Messages -->
+                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                <Button Classes="ToggleButton" Width="90" Height="90"
+                                        Background="{Binding Display.HardwareMessagesEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                        BorderBrush="{Binding Display.HardwareMessagesEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                        Command="{Binding ToggleHardwareMessagesCommand}">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ModulesMachine.png"
+                                           Width="60" Height="60" Stretch="Uniform"/>
+                                </Button>
+                                <TextBlock Text="Messages" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -37,7 +37,7 @@
                 CornerRadius="8"
                 Margin="20"
                 Width="900"
-                Height="650"
+                Height="720"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 BorderBrush="#444"
@@ -113,6 +113,15 @@
                                    Width="40" Height="40" Stretch="Uniform"/>
                         </TabItem.Header>
                         <config:DisplayConfigTab/>
+                    </TabItem>
+
+                    <!-- Additional Options Tab -->
+                    <TabItem ToolTip.Tip="Additional Options">
+                        <TabItem.Header>
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_FeatureMenu.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                        </TabItem.Header>
+                        <config:AdditionalOptionsConfigTab/>
                     </TabItem>
                 </TabControl>
 

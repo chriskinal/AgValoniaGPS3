@@ -223,4 +223,56 @@ public class DisplayConfig : ReactiveObject
         get => _sectionLinesVisible;
         set => this.RaiseAndSetIfChanged(ref _sectionLinesVisible, value);
     }
+
+    // Screen Buttons (visibility of UI buttons)
+    private bool _uTurnButtonVisible = true;
+    public bool UTurnButtonVisible
+    {
+        get => _uTurnButtonVisible;
+        set => this.RaiseAndSetIfChanged(ref _uTurnButtonVisible, value);
+    }
+
+    private bool _lateralButtonVisible = true;
+    public bool LateralButtonVisible
+    {
+        get => _lateralButtonVisible;
+        set => this.RaiseAndSetIfChanged(ref _lateralButtonVisible, value);
+    }
+
+    // Sounds
+    private bool _autoSteerSound = true;
+    public bool AutoSteerSound
+    {
+        get => _autoSteerSound;
+        set => this.RaiseAndSetIfChanged(ref _autoSteerSound, value);
+    }
+
+    private bool _uTurnSound = true;
+    public bool UTurnSound
+    {
+        get => _uTurnSound;
+        set => this.RaiseAndSetIfChanged(ref _uTurnSound, value);
+    }
+
+    private bool _hydraulicSound = true;
+    public bool HydraulicSound
+    {
+        get => _hydraulicSound;
+        set => this.RaiseAndSetIfChanged(ref _hydraulicSound, value);
+    }
+
+    private bool _sectionsSound = true;
+    public bool SectionsSound
+    {
+        get => _sectionsSound;
+        set => this.RaiseAndSetIfChanged(ref _sectionsSound, value);
+    }
+
+    // Hardware Messages
+    private bool _hardwareMessagesEnabled = true;
+    public bool HardwareMessagesEnabled
+    {
+        get => _hardwareMessagesEnabled;
+        set => this.RaiseAndSetIfChanged(ref _hardwareMessagesEnabled, value);
+    }
 }

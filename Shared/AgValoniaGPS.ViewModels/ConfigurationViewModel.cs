@@ -675,6 +675,15 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand SetMetricUnitsCommand { get; private set; } = null!;
     public ICommand SetImperialUnitsCommand { get; private set; } = null!;
 
+    // Additional Options Tab Commands
+    public ICommand ToggleUTurnButtonCommand { get; private set; } = null!;
+    public ICommand ToggleLateralButtonCommand { get; private set; } = null!;
+    public ICommand ToggleAutoSteerSoundCommand { get; private set; } = null!;
+    public ICommand ToggleUTurnSoundCommand { get; private set; } = null!;
+    public ICommand ToggleHydraulicSoundCommand { get; private set; } = null!;
+    public ICommand ToggleSectionsSoundCommand { get; private set; } = null!;
+    public ICommand ToggleHardwareMessagesCommand { get; private set; } = null!;
+
     #endregion
 
     #region Events
@@ -711,6 +720,7 @@ public class ConfigurationViewModel : ReactiveObject
         InitializeTramCommands();
         InitializeMachineCommands();
         InitializeDisplayCommands();
+        InitializeAdditionalOptionsCommands();
 
         // Subscribe to config changes for HasUnsavedChanges notification
         Config.PropertyChanged += (_, e) =>
@@ -1293,6 +1303,54 @@ public class ConfigurationViewModel : ReactiveObject
         SetImperialUnitsCommand = new RelayCommand(() =>
         {
             Config.IsMetric = false;
+            Config.MarkChanged();
+        });
+    }
+
+    private void InitializeAdditionalOptionsCommands()
+    {
+        // Screen Buttons
+        ToggleUTurnButtonCommand = new RelayCommand(() =>
+        {
+            Display.UTurnButtonVisible = !Display.UTurnButtonVisible;
+            Config.MarkChanged();
+        });
+
+        ToggleLateralButtonCommand = new RelayCommand(() =>
+        {
+            Display.LateralButtonVisible = !Display.LateralButtonVisible;
+            Config.MarkChanged();
+        });
+
+        // Sounds
+        ToggleAutoSteerSoundCommand = new RelayCommand(() =>
+        {
+            Display.AutoSteerSound = !Display.AutoSteerSound;
+            Config.MarkChanged();
+        });
+
+        ToggleUTurnSoundCommand = new RelayCommand(() =>
+        {
+            Display.UTurnSound = !Display.UTurnSound;
+            Config.MarkChanged();
+        });
+
+        ToggleHydraulicSoundCommand = new RelayCommand(() =>
+        {
+            Display.HydraulicSound = !Display.HydraulicSound;
+            Config.MarkChanged();
+        });
+
+        ToggleSectionsSoundCommand = new RelayCommand(() =>
+        {
+            Display.SectionsSound = !Display.SectionsSound;
+            Config.MarkChanged();
+        });
+
+        // Hardware Messages
+        ToggleHardwareMessagesCommand = new RelayCommand(() =>
+        {
+            Display.HardwareMessagesEnabled = !Display.HardwareMessagesEnabled;
             Config.MarkChanged();
         });
     }
