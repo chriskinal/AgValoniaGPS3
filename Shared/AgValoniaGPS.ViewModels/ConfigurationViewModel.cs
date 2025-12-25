@@ -637,6 +637,11 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand ToggleRollInvertCommand { get; private set; } = null!;
     public ICommand SetRollZeroCommand { get; private set; } = null!;
 
+    // Tram Lines Tab Commands
+    public ICommand EditTramPassesCommand { get; private set; } = null!;
+    public ICommand ToggleTramDisplayCommand { get; private set; } = null!;
+    public ICommand EditTramLineCommand { get; private set; } = null!;
+
     // Machine Control Tab Commands
     public ICommand ToggleHydraulicLiftCommand { get; private set; } = null!;
     public ICommand EditRaiseTimeCommand { get; private set; } = null!;
@@ -684,6 +689,7 @@ public class ConfigurationViewModel : ReactiveObject
         InitializeUTurnEditCommands();
         InitializeGpsEditCommands();
         InitializeRollEditCommands();
+        InitializeTramCommands();
         InitializeMachineCommands();
 
         // Subscribe to config changes for HasUnsavedChanges notification
@@ -1072,6 +1078,25 @@ public class ConfigurationViewModel : ReactiveObject
             Ahrs.RollZero = 0;
             Config.MarkChanged();
         });
+    }
+
+    private void InitializeTramCommands()
+    {
+        EditTramPassesCommand = new RelayCommand(() =>
+            ShowNumericInput("Tram Passes", Guidance.TramPasses,
+                v => Guidance.TramPasses = (int)v,
+                "", integerOnly: true, allowNegative: false, min: 1, max: 20));
+
+        ToggleTramDisplayCommand = new RelayCommand(() =>
+        {
+            Guidance.TramDisplay = !Guidance.TramDisplay;
+            Config.MarkChanged();
+        });
+
+        EditTramLineCommand = new RelayCommand(() =>
+            ShowNumericInput("Tram Line", Guidance.TramLine,
+                v => Guidance.TramLine = (int)v,
+                "", integerOnly: true, allowNegative: false, min: 1, max: 100));
     }
 
     private void InitializeMachineCommands()

@@ -154,6 +154,28 @@ public class GuidanceConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _uTurnSmoothing, Math.Clamp(value, 1, 50));
     }
 
+    // Tram Lines
+    private int _tramPasses = 3;
+    public int TramPasses
+    {
+        get => _tramPasses;
+        set => this.RaiseAndSetIfChanged(ref _tramPasses, Math.Max(1, value));
+    }
+
+    private bool _tramDisplay = true;
+    public bool TramDisplay
+    {
+        get => _tramDisplay;
+        set => this.RaiseAndSetIfChanged(ref _tramDisplay, value);
+    }
+
+    private int _tramLine = 1;
+    public int TramLine
+    {
+        get => _tramLine;
+        set => this.RaiseAndSetIfChanged(ref _tramLine, Math.Max(1, value));
+    }
+
     // Hydraulic lift look-ahead distances
     private double _hydLiftLookAheadDistanceLeft = 1.0;
     public double HydLiftLookAheadDistanceLeft

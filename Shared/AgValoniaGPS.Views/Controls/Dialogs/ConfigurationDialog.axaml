@@ -88,6 +88,15 @@
                         <config:MachineControlConfigTab/>
                     </TabItem>
 
+                    <!-- Tram Lines Tab -->
+                    <TabItem ToolTip.Tip="Tram Lines">
+                        <TabItem.Header>
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_TramMenu.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                        </TabItem.Header>
+                        <config:TramConfigTab/>
+                    </TabItem>
+
                     <!-- Data Sources Tab -->
                     <TabItem ToolTip.Tip="Data Sources">
                         <TabItem.Header>

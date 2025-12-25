@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.TramConfigTab"
+             x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Styles>
+        <!-- Tappable Value Button -->
+        <Style Selector="Button.TappableValue">
+            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.TappableValue:pointerover">
+            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+
+        <!-- Action Button -->
+        <Style Selector="Button.ActionButton">
+            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ActionButton:pointerover">
+            <Setter Property="Background" Value="#DD3C4E60"/>
+        </Style>
+        <Style Selector="Button.ActionButton.Active">
+            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="BorderBrush" Value="#4A9A7E"/>
+        </Style>
+
+        <!-- Parameter Card -->
+        <Style Selector="Border.ParamCard">
+            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <TextBlock Text="Tram Lines" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+
+        <ScrollViewer Grid.Row="1">
+            <!-- Two-column layout -->
+            <Grid ColumnDefinitions="*,*" Margin="16,8,16,16">
+
+                <!-- LEFT: Passes + Display -->
+                <Border Grid.Column="0" Classes="ParamCard" Margin="0,0,8,0">
+                    <StackPanel Spacing="16" HorizontalAlignment="Center">
+                        <!-- Graphic -->
+                        <Border Background="#1A1A2E" CornerRadius="6" Padding="12" Height="120">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConT_TramOverride.png" Stretch="Uniform"/>
+                        </Border>
+
+                        <!-- Passes Value -->
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock Text="Passes" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <Button Classes="TappableValue" Command="{Binding EditTramPassesCommand}" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Guidance.TramPasses}" Foreground="White" FontWeight="Bold" FontSize="24"/>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Display Toggle -->
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock Text="Display" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <Button Classes="ActionButton" Classes.Active="{Binding Guidance.TramDisplay}"
+                                    Command="{Binding ToggleTramDisplayCommand}"
+                                    Width="100" Height="80" HorizontalAlignment="Center">
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConT_TramOverrideDisplay.png"
+                                       Width="60" Height="60" Stretch="Uniform"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- RIGHT: Tram Line -->
+                <Border Grid.Column="1" Classes="ParamCard" Margin="8,0,0,0">
+                    <StackPanel Spacing="16" HorizontalAlignment="Center">
+                        <!-- Graphic -->
+                        <Border Background="#1A1A2E" CornerRadius="6" Padding="12" Height="120">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConT_TramSpacing.png" Stretch="Uniform"/>
+                        </Border>
+
+                        <!-- Tram Line Value -->
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock Text="Tram Line" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <Button Classes="TappableValue" Command="{Binding EditTramLineCommand}" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Guidance.TramLine}" Foreground="White" FontWeight="Bold" FontSize="24"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
