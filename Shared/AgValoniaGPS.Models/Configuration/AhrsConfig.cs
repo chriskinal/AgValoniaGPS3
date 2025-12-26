@@ -85,4 +85,14 @@ public class AhrsConfig : ReactiveObject
         get => _autoSwitchDualFixSpeed;
         set => this.RaiseAndSetIfChanged(ref _autoSwitchDualFixSpeed, value);
     }
+
+    /// <summary>
+    /// Whether alarms (like RTK lost) should automatically disengage AutoSteer.
+    /// </summary>
+    private bool _alarmStopsAutoSteer = true;
+    public bool AlarmStopsAutoSteer
+    {
+        get => _alarmStopsAutoSteer;
+        set => this.RaiseAndSetIfChanged(ref _alarmStopsAutoSteer, value);
+    }
 }

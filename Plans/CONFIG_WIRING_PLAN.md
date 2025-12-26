@@ -2,6 +2,24 @@
 
 This document tracks the wiring of UI configuration settings to AgValonia backend services.
 
+## ✅ Architecture Status (Complete)
+
+The core wiring architecture is **fully implemented**:
+
+1. **ConfigurationStore** - Singleton with reactive config models (VehicleConfig, ToolConfig, GuidanceConfig, etc.)
+2. **Config Models** - All use `ReactiveObject` with `RaiseAndSetIfChanged` for automatic UI updates
+3. **ConfigurationViewModel** - Exposes config via `Config => _configService.Store` with convenience accessors
+4. **MainViewModel** - Reads from `ConfigurationStore.Instance` for guidance calculations
+5. **ConfigurationService** - Handles profile load/save via `ApplyProfileToStore()` / `CreateProfileFromStore()`
+
+**Data flow:**
+```
+UI Tap → EditCommand → ShowNumericInput → Callback sets property →
+RaiseAndSetIfChanged → UI updates automatically → Services read on next tick
+```
+
+---
+
 ## UI Reorganization Notes
 
 **Data I/O Dialog Reorganization** (Planned):
@@ -38,135 +56,172 @@ Services access configuration via `ConfigurationStore.Instance.SubConfig.Propert
 
 ## Tab-by-Tab Wiring Checklist
 
-### 1. Vehicle Tab → VehicleConfig
+### 1. Vehicle Tab → VehicleConfig ✅ Wired
 **File**: `VehicleConfigTab.axaml`
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Vehicle Type | `Vehicle.Type` | Diagram display | ⬜ |
-| Wheelbase | `Vehicle.Wheelbase` | TrackGuidanceService, YouTurnGuidanceService | ⬜ |
-| Track Width | `Vehicle.TrackWidth` | Geometry calculations | ⬜ |
-| Antenna Height | `Vehicle.AntennaHeight` | GPS offset corrections | ⬜ |
-| Antenna Pivot | `Vehicle.AntennaPivot` | GPS position projection | ⬜ |
-| Antenna Offset | `Vehicle.AntennaOffset` | GPS lateral correction | ⬜ |
-| Max Steer Angle | `Vehicle.MaxSteerAngle` | TrackGuidanceService steering limits | ⬜ |
-| Max Angular Velocity | `Vehicle.MaxAngularVelocity` | Yaw rate limiting | ⬜ |
+| Vehicle Type | `Vehicle.Type` | Diagram display | ✅ |
+| Wheelbase | `Vehicle.Wheelbase` | TrackGuidanceService, YouTurnGuidanceService | ✅ |
+| Track Width | `Vehicle.TrackWidth` | Geometry calculations | ✅ |
+| Antenna Height | `Vehicle.AntennaHeight` | GPS offset corrections | ✅ |
+| Antenna Pivot | `Vehicle.AntennaPivot` | GPS position projection | ✅ |
+| Antenna Offset | `Vehicle.AntennaOffset` | GPS lateral correction | ✅ |
+| Max Steer Angle | `Vehicle.MaxSteerAngle` | TrackGuidanceService steering limits | 🔶 No UI |
+| Max Angular Velocity | `Vehicle.MaxAngularVelocity` | Yaw rate limiting | 🔶 No UI |
 
 **Wiring Notes**:
-- Vehicle dimensions affect steering geometry in TrackGuidanceService
-- Antenna offsets used in GPS position projection (local plane calculations)
-- Wheelbase directly affects minimum turning radius
+- ✅ All bindings use ReactiveUI - changes propagate automatically
+- ✅ MainViewModel reads `Vehicle.Wheelbase`, `Vehicle.MaxSteerAngle` for guidance input
+- ✅ ConfigurationService saves/loads all vehicle properties to profile
+- 🔶 MaxSteerAngle and MaxAngularVelocity need edit commands and UI (advanced settings)
 
 ---
 
-### 2. Tool Tab → ToolConfig
-**File**: `ToolConfigTab.axaml`
+### 2. Tool Tab → ToolConfig ✅ Wired
+**File**: `ToolConfigTab.axaml` (with sub-tabs: Type, Hitch, Timing, Offset, Pivot, Sections, Switches)
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Tool Width | `Tool.Width` | Section control, Tramline | ⬜ |
-| Overlap | `Tool.Overlap` | Section overlap compensation | ⬜ |
-| Lateral Offset | `Tool.Offset` | Tool lateral positioning | ⬜ |
-| Tool Type (4 modes) | `Tool.IsToolTrailing`, etc. | Hitch geometry | ⬜ |
-| Hitch Length | `Tool.HitchLength` | Tool position tracking | ⬜ |
-| Trailing Hitch | `Tool.TrailingHitchLength` | TBT tool geometry | ⬜ |
-| Look Ahead On | `Tool.LookAheadOnSetting` | Section auto-on distance | ⬜ |
-| Look Ahead Off | `Tool.LookAheadOffSetting` | Section auto-off distance | ⬜ |
-| Turn Off Delay | `Tool.TurnOffDelay` | Section shutoff timing | ⬜ |
-| Number of Sections | `NumSections` | Section control | ⬜ |
-| Section Widths | `Tool.SectionWidths[]` | Individual section sizes | ⬜ |
-| Zone Ranges | `Tool.ZoneRanges[]` | Zone grouping | ⬜ |
+| Tool Width | `Tool.Width` | Section control, Tramline | ✅ |
+| Overlap | `Tool.Overlap` | Section overlap compensation | ✅ |
+| Lateral Offset | `Tool.Offset` | Tool lateral positioning | ✅ |
+| Tool Type (4 modes) | `Tool.IsToolTrailing`, etc. | Hitch geometry | ✅ |
+| Hitch Length | `Tool.HitchLength` | Tool position tracking | ✅ |
+| Trailing Hitch | `Tool.TrailingHitchLength` | TBT tool geometry | ✅ |
+| Look Ahead On | `Tool.LookAheadOnSetting` | Section auto-on distance | ✅ |
+| Look Ahead Off | `Tool.LookAheadOffSetting` | Section auto-off distance | ✅ |
+| Turn Off Delay | `Tool.TurnOffDelay` | Section shutoff timing | ✅ |
+| Number of Sections | `NumSections` | Section control | ✅ |
+| Section Widths | `Tool.SectionWidths[]` | Individual section sizes | ✅ |
+| Zone Ranges | `Tool.ZoneRanges[]` | Zone grouping | ✅ |
 
 **Wiring Notes**:
-- Tool width is critical for tramline spacing calculations
-- Section widths stored as centimeters (int array, 16 elements)
-- Look ahead settings affect section on/off timing based on speed
+- ✅ Tool type selection uses RadioButtons with two-way binding
+- ✅ All numeric values have edit commands (ShowNumericInput pattern)
+- ✅ ConfigurationService saves/loads all tool properties to profile
 
 ---
 
-### 3. U-Turn Tab → GuidanceConfig
+### 3. U-Turn Tab → GuidanceConfig ✅ Wired
 **File**: `UTurnConfigTab.axaml`
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Turn Radius | `Guidance.UTurnRadius` | YouTurnGuidanceService | ⬜ |
-| Extension Length | `Guidance.UTurnExtension` | Entry/exit leg length | ⬜ |
-| Distance from Boundary | `Guidance.UTurnDistanceFromBoundary` | YouTurnCreationService | ⬜ |
-| U-Turn Style | `Guidance.UTurnStyle` | Path generation (0=normal, 1=K) | ⬜ |
-| Smoothing | `Guidance.UTurnSmoothing` | Spline smoothing (1-50) | ⬜ |
-| Compensation | `Guidance.UTurnCompensation` | Steering compensation | ⬜ |
-| Skip Width | `Guidance.UTurnSkipWidth` | Row skip on return | ⬜ |
+| Turn Radius | `Guidance.UTurnRadius` | YouTurnGuidanceService | ✅ |
+| Extension Length | `Guidance.UTurnExtension` | Entry/exit leg length | ✅ |
+| Distance from Boundary | `Guidance.UTurnDistanceFromBoundary` | YouTurnCreationService | ✅ |
+| U-Turn Style | `Guidance.UTurnStyle` | Path generation (0=normal, 1=K) | 🔶 No UI |
+| Smoothing | `Guidance.UTurnSmoothing` | Spline smoothing (1-50) | ✅ |
+| Compensation | `Guidance.UTurnCompensation` | Steering compensation | 🔶 No UI |
+| Skip Width | `Guidance.UTurnSkipWidth` | Row skip on return | 🔶 Command exists |
 
 **Wiring Notes**:
-- U-turn radius should default to 2x wheelbase minimum
-- Smoothing affects path curvature continuity
-- Skip width used for pattern skip (e.g., skip 1 row on wide implements)
+- ✅ Edit commands exist for all settings in ConfigurationViewModel
+- ✅ UI shows Radius, Extension, Distance, Smoothing with inline graphics
+- 🔶 UTurnStyle, UTurnCompensation, UTurnSkipWidth commands exist but not exposed in UI
 
 ---
 
-### 4. Machine Control Tab → MachineConfig
+### 4. Machine Control Tab → MachineConfig ✅ Fully Wired
 **Files**: `MachineControlConfigTab.axaml`, `MachineModuleSubTab.axaml`
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Machine Module On/Off | `Machine.MachineModuleEnabled` | UDP module comm | ⬜ |
-| Raise Time | `Machine.RaiseTime` | Hydraulic timing | ⬜ |
-| Lower Time | `Machine.LowerTime` | Hydraulic timing | ⬜ |
-| Look Ahead | `Machine.LookAhead` | Lift trigger distance | ⬜ |
-| Invert Relay | `Machine.InvertRelay` | Relay logic | ⬜ |
-| Pin Assignments (24) | `Machine.PinAssignments[]` | Relay control | ⬜ |
-| User Values (1-4) | `Machine.User1Value`, etc. | Custom module data | ⬜ |
-| Alarm Stops AutoSteer | `Ahrs.AlarmStopsAutoSteer` | AutoSteerService | ⬜ |
+| Machine Module On/Off | `Machine.MachineModuleEnabled` | ModuleCommunicationService | 🔶 UI Needed |
+| Raise Time | `Machine.RaiseTime` | ModuleCommunicationService | ✅ |
+| Lower Time | `Machine.LowerTime` | ModuleCommunicationService | ✅ |
+| Look Ahead | `Machine.LookAhead` | ModuleCommunicationService | ✅ |
+| Invert Relay | `Machine.InvertRelay` | ModuleCommunicationService | ✅ |
+| Pin Assignments (24) | `Machine.PinAssignments[]` | ConfigurationViewModel | ✅ |
+| User Values (1-4) | `Machine.User1Value`, etc. | ModuleCommunicationService | ✅ |
+| Alarm Stops AutoSteer | `Ahrs.AlarmStopsAutoSteer` | ModuleCommunicationService | ✅ |
 
-**Wiring Notes**:
-- Pin assignments map GPIO pins to functions (sections, hydraulics, tram)
-- Hydraulic timing in seconds (0.1 resolution)
-- User values sent to modules for custom implementations
+**Verification Notes** (2024-12):
+- ✅ MachineConfig model exists with all properties
+- ✅ ModuleCommunicationService.cs exists (migrated from AgOpenGPS)
+- ✅ IModuleCommunicationService interface exists
+- ✅ Service registered in DI container (Desktop, iOS, Android)
+- ✅ Service injected into MainViewModel
+- ✅ Service reads ToolConfig (work switch settings) from ConfigurationStore
+- ✅ Service reads MachineConfig (hydraulic settings, user values) from ConfigurationStore
+- ✅ Service reads AhrsConfig (AlarmStopsAutoSteer) from ConfigurationStore
+- ✅ Event handlers connected for AutoSteerToggle and SectionMasterToggle
+- ✅ Pin assignments wired via ConfigurationViewModel (Pin1Function through Pin24Function)
+- ✅ User values (1-4) accessible via ModuleCommunicationService
 
 ---
 
-### 5. Tram Lines Tab → GuidanceConfig
+### 5. Tram Lines Tab → GuidanceConfig ✅ Pattern OK
 **File**: `TramConfigTab.axaml`
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Tram Lines Enabled | `Guidance.TramLinesEnabled` | TramlineService | ⬜ |
-| Tram Line Style | `Guidance.TramLineStyle` | Rendering style | ⬜ |
-| Tram Passes | `Guidance.TramPasses` | Pass count between trams | ⬜ |
-| Seed Tram | `Guidance.SeedTram` | Seed drill mode | ⬜ |
-| Half Width Mode | `Guidance.TramHalfWidth` | Half-width tram mode | ⬜ |
-| Outer Tram | `Guidance.TramOuter` | Outer tram offset | ⬜ |
+| Tram Lines Enabled | `Guidance.TramLinesEnabled` | TramlineService | ✅ |
+| Tram Line Style | `Guidance.TramLineStyle` | Rendering style | ✅ |
+| Tram Passes | `Guidance.TramPasses` | Pass count between trams | ✅ |
+| Seed Tram | `Guidance.SeedTram` | Seed drill mode | ✅ |
+| Half Width Mode | `Guidance.TramHalfWidth` | Half-width tram mode | ✅ |
+| Outer Tram | `Guidance.TramOuter` | Outer tram offset | ✅ |
 
-**Wiring Notes**:
-- Tram passes = number of passes between tramlines
-- Half-width mode for implements narrower than vehicle
+**Verification Notes** (2024-12):
+- ✅ GuidanceConfig has all tram properties
+- ✅ TramlineService is pure computation - caller passes config values
+- ✅ EditTramPassesCommand etc. exist in ConfigurationViewModel
+- ✅ Pattern is intentional: service receives params, doesn't read config directly
 
 ---
 
 ### 6. Data Sources Tab → ConnectionConfig
 **Files**: `SourcesConfigTab.axaml`, `GpsSubTab.axaml`, `NtripSubTab.axaml`, `RollSubTab.axaml`
 
-#### GPS Settings (GpsSubTab)
+#### GPS Settings (GpsSubTab) ✅ Fully Wired
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Dual GPS Mode | `Connection.IsDualGps` | GpsService, heading calc | ⬜ |
-| GPS Update Rate | `Connection.GpsUpdateRate` | NMEA parse rate | ⬜ |
-| Min Fix Quality | `Connection.MinFixQuality` | Fix quality filter | ⬜ |
-| Dual Heading Offset | `Connection.DualHeadingOffset` | Dual antenna heading | ⬜ |
-| Dual Reverse Distance | `Connection.DualReverseDistance` | Reverse detection | ⬜ |
-| Single Min Step | `Connection.MinGpsStep` | Min movement threshold | ⬜ |
-| Fix-to-Fix Distance | `Connection.FixToFixDistance` | Position jump filter | ⬜ |
-| Heading Fusion Weight | `Connection.HeadingFusionWeight` | GPS/IMU blend | ⬜ |
+| Dual GPS Mode | `Connection.IsDualGps` | NmeaParserService | ✅ |
+| GPS Update Rate | `Connection.GpsUpdateRate` | UI display only | ✅ |
+| Min Fix Quality | `Connection.MinFixQuality` | NmeaParserService | ✅ |
+| Max HDOP | `Connection.MaxHdop` | NmeaParserService | ✅ |
+| Max Differential Age | `Connection.MaxDifferentialAge` | NmeaParserService | ✅ |
+| Dual Heading Offset | `Connection.DualHeadingOffset` | NmeaParserService | ✅ |
+| Dual Switch Speed | `Connection.DualSwitchSpeed` | NmeaParserService | ✅ |
+| Single Min Step | `Connection.MinGpsStep` | NmeaParserService | ✅ |
+| Fix-to-Fix Distance | `Connection.FixToFixDistance` | NmeaParserService | ✅ |
+| Heading Fusion Weight | `Connection.HeadingFusionWeight` | NmeaParserService | ✅ |
 
-#### NTRIP Settings (NtripSubTab) ✅ UI Complete
+**Verification Notes** (2024-12):
+- ✅ ConnectionConfig has all GPS properties defined
+- ✅ GpsService.cs exists (minimal - receives data and fires events)
+- ✅ NmeaParserService.cs reads from ConfigurationStore.Instance.Connections
+- ✅ MinFixQuality, MaxHdop, MaxDifferentialAge filtering implemented
+- ✅ FixQualityBelowMinimum event raised for UI notification
+- ✅ ConsecutiveBadFixes counter tracks rejected fixes
+- ✅ GpsData.IsValid can be overridden by parser for quality filtering
+- ✅ Dual GPS heading with DualHeadingOffset applied
+- ✅ DualSwitchSpeed threshold for using fix-to-fix at low speed
+- ✅ Single antenna fix-to-fix heading calculation
+- ✅ HeadingFusionWeight blending with IMU heading (SensorState)
+- ✅ GpsUpdateRate available for UI display (not rate limiting)
+- ✅ IMU data (roll, pitch, yaw rate) parsed to SensorState
+
+#### NTRIP Settings (NtripSubTab) ✅ Fully Wired
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Caster Host | `Connection.NtripCasterHost` | NtripClientService | ✅ UI |
-| Caster Port | `Connection.NtripCasterPort` | NtripClientService | ✅ UI |
-| Mount Point | `Connection.NtripMountPoint` | NtripClientService | ✅ UI |
-| Username | `Connection.NtripUsername` | NtripClientService | ✅ UI |
-| Password | `Connection.NtripPassword` | NtripClientService | ✅ UI |
-| Auto Connect | `Connection.NtripAutoConnect` | App startup | ✅ UI |
+| Caster Host | `Connection.NtripCasterHost` | NtripClientService | ✅ |
+| Caster Port | `Connection.NtripCasterPort` | NtripClientService | ✅ |
+| Mount Point | `Connection.NtripMountPoint` | NtripClientService | ✅ |
+| Username | `Connection.NtripUsername` | NtripClientService | ✅ |
+| Password | `Connection.NtripPassword` | NtripClientService | ✅ |
+| Auto Connect | `Connection.NtripAutoConnect` | App startup | ✅ |
+| Connect/Disconnect | N/A | NtripClientService | ✅ |
+| Connection Status | `IsNtripConnected` | Live from service | ✅ |
+| RTCM Bytes | `NtripBytesReceived` | Live from service | ✅ |
+
+**NTRIP Wiring Notes**:
+- ✅ Text input overlay for string fields (host, mount, user, password)
+- ✅ Numeric input for port
+- ✅ Live connection with Connect/Disconnect buttons
+- ✅ Real-time status indicator and RTCM byte counter
 
 #### RTK Monitoring
 | Setting | Property | Service(s) | Status |
@@ -190,32 +245,38 @@ Services access configuration via `ConfigurationStore.Instance.SubConfig.Propert
 
 ---
 
-### 7. Display Tab → DisplayConfig
+### 7. Display Tab → DisplayConfig ✅ Core Settings Wired
 **File**: `DisplayConfigTab.axaml`
 
 | Setting | Property | Service(s) | Status |
 |---------|----------|------------|--------|
-| Polygons Visible | `Display.PolygonsVisible` | Map rendering | ⬜ |
-| Speedometer Visible | `Display.SpeedometerVisible` | UI overlay | ⬜ |
-| Keyboard Enabled | `Display.KeyboardEnabled` | Input handling | ⬜ |
-| Headland Distance | `Display.HeadlandDistanceVisible` | UI overlay | ⬜ |
-| Auto Day/Night | `Display.AutoDayNight` | Time-based theme | ⬜ |
-| Svenn Arrow | `Display.SvennArrowVisible` | Map rendering | ⬜ |
-| Start Fullscreen | `Display.StartFullscreen` | Window manager | ⬜ |
-| Elevation Log | `Display.ElevationLogEnabled` | Data logging | ⬜ |
-| Field Texture | `Display.FieldTextureVisible` | Map rendering | ⬜ |
-| Grid Visible | `Display.GridVisible` | Map rendering | ⬜ |
-| Extra Guidelines | `Display.ExtraGuidelines` | Map rendering | ⬜ |
-| Guidelines Count | `Display.ExtraGuidelinesCount` | Map rendering | ⬜ |
-| Line Smooth | `Display.LineSmoothEnabled` | Map rendering | ⬜ |
-| Direction Markers | `Display.DirectionMarkersVisible` | Map rendering | ⬜ |
-| Section Lines | `Display.SectionLinesVisible` | Map rendering | ⬜ |
-| Units (Metric/Imperial) | `IsMetric` | All display conversions | ⬜ |
+| Grid Visible | `Display.GridVisible` | DisplaySettingsService → UI | ✅ |
+| Day/Night Mode | `Display.IsDayMode` | DisplaySettingsService → UI | ✅ |
+| Camera Pitch | `Display.CameraPitch` | DisplaySettingsService → UI | ✅ |
+| 2D/3D Mode | `Display.Is2DMode` | DisplaySettingsService → UI | ✅ |
+| North Up | `Display.IsNorthUp` | DisplaySettingsService → UI | ✅ |
+| Camera Zoom | `Display.CameraZoom` | Window state persistence | ✅ |
+| Polygons Visible | `Display.PolygonsVisible` | Map rendering | 🔶 Verify |
+| Speedometer Visible | `Display.SpeedometerVisible` | UI overlay | 🔶 Verify |
+| Keyboard Enabled | `Display.KeyboardEnabled` | Input handling | 🔶 Verify |
+| Headland Distance | `Display.HeadlandDistanceVisible` | UI overlay | 🔶 Verify |
+| Auto Day/Night | `Display.AutoDayNight` | Time-based theme | 🔶 Verify |
+| Svenn Arrow | `Display.SvennArrowVisible` | Map rendering | 🔶 Verify |
+| Start Fullscreen | `Display.StartFullscreen` | Window manager | 🔶 Verify |
+| Elevation Log | `Display.ElevationLogEnabled` | Data logging | 🔶 Verify |
+| Field Texture | `Display.FieldTextureVisible` | Map rendering | 🔶 Verify |
+| Extra Guidelines | `Display.ExtraGuidelines` | Map rendering | 🔶 Verify |
+| Guidelines Count | `Display.ExtraGuidelinesCount` | Map rendering | 🔶 Verify |
+| Line Smooth | `Display.LineSmoothEnabled` | Map rendering | 🔶 Verify |
+| Direction Markers | `Display.DirectionMarkersVisible` | Map rendering | 🔶 Verify |
+| Section Lines | `Display.SectionLinesVisible` | Map rendering | 🔶 Verify |
+| Units (Metric/Imperial) | `IsMetric` | All display conversions | ✅ |
 
-**Wiring Notes**:
-- Display settings affect DrawingContextMapControl rendering
-- Grid visibility fires `GridVisibilityChanged` event
-- Day/night mode affects color scheme throughout app
+**Verification Notes** (2024-12):
+- ✅ DisplaySettingsService delegates to ConfigurationStore.Instance.Display
+- ✅ MainViewModel forwards display properties to/from DisplaySettingsService
+- ✅ Grid, Day/Night, Camera, View mode all properly wired
+- 🔶 Other display settings exist in DisplayConfig but usage needs verification
 
 ---
 
@@ -249,21 +310,29 @@ Services access configuration via `ConfigurationStore.Instance.SubConfig.Propert
 
 ## Implementation Priority
 
-### Phase 1: Core Guidance (Critical for field operation)
-1. ⬜ Vehicle Tab → VehicleConfig (wheelbase, antenna)
-2. ⬜ Tool Tab → ToolConfig (width, sections)
-3. ⬜ U-Turn Tab → GuidanceConfig (turn parameters)
+### Phase 1: Core Guidance (Critical for field operation) ✅ Complete
+1. ✅ Vehicle Tab → VehicleConfig (wheelbase, antenna)
+2. ✅ Tool Tab → ToolConfig (width, sections)
+3. ✅ U-Turn Tab → GuidanceConfig (turn parameters)
 
-### Phase 2: Data Sources (Required for GPS/RTK)
-4. ⬜ Data Sources Tab → ConnectionConfig (GPS mode, NTRIP)
+### Phase 2: Data Sources (Required for GPS/RTK) ✅ Complete
+4. ✅ NTRIP → ConnectionConfig (fully wired with live connection)
+5. ✅ GPS Quality Filtering → ConnectionConfig (MinFixQuality, MaxHdop, MaxDifferentialAge)
+6. ✅ GPS Heading Processing → ConnectionConfig (Dual GPS, fix-to-fix, heading fusion)
+7. ✅ GPS Update Rate → ConnectionConfig (display/informational)
+8. ⬜ RTK Monitoring → ConnectionConfig (UI for RTK lost alarm/action)
 
-### Phase 3: Machine Control (Hardware integration)
-5. ⬜ Machine Control Tab → MachineConfig (relays, hydraulics)
-6. ⬜ Tram Lines Tab → GuidanceConfig (tramline settings)
+### Phase 3: Machine Control (Hardware integration) ✅ Complete
+8. ✅ Machine Control Tab → MachineConfig (hydraulics via ModuleCommunicationService)
+9. ✅ Work Switch / Steer Switch → ToolConfig (via ModuleCommunicationService)
+10. ✅ Pin Assignments → MachineConfig (via ConfigurationViewModel)
+11. ✅ User Values → MachineConfig (via ModuleCommunicationService)
+12. ✅ AlarmStopsAutoSteer → AhrsConfig (via ModuleCommunicationService)
+13. ✅ Tram Lines Tab → GuidanceConfig (pure computation pattern)
 
-### Phase 4: Display & Polish
-7. ⬜ Display Tab → DisplayConfig (visual settings)
-8. ⬜ Additional Options Tab → DisplayConfig (sounds, buttons)
+### Phase 4: Display & Polish ⬜ Not Started
+9. ⬜ Display Tab → DisplayConfig (visual settings)
+10. ⬜ Additional Options Tab → DisplayConfig (sounds, buttons)
 
 ---
 
@@ -300,26 +369,74 @@ profile.Vehicle.Wheelbase = ConfigurationStore.Instance.Vehicle.Wheelbase;
 
 ---
 
-## Current State Summary
+## Current State Summary (Updated 2024-12)
 
 | Tab | UI Complete | Bindings | Services | Profile Save |
 |-----|-------------|----------|----------|--------------|
-| Vehicle | ✅ | ⬜ | ⬜ | ⬜ |
-| Tool | ✅ | ⬜ | ⬜ | ⬜ |
-| U-Turn | ✅ | ⬜ | ⬜ | ⬜ |
-| Machine Control | ✅ | ⬜ | ⬜ | ⬜ |
-| Tram Lines | ✅ | ⬜ | ⬜ | ⬜ |
-| Data Sources | ✅ | ⬜ | ⬜ | ⬜ |
-| Display | ✅ | ⬜ | ⬜ | ⬜ |
-| Additional Options | ✅ | ⬜ | ⬜ | ⬜ |
+| Vehicle | ✅ | ✅ | ✅ | ✅ |
+| Tool | ✅ | ✅ | ✅ | ✅ |
+| U-Turn | ✅ | ✅ | ✅ | ✅ |
+| Machine Control | ✅ | ✅ | ✅ Fully wired | ✅ |
+| Tram Lines | ✅ | ✅ | ✅ Pure compute | ✅ |
+| Data Sources (NTRIP) | ✅ | ✅ | ✅ | ✅ |
+| Data Sources (GPS) | ✅ | ✅ | ✅ Fully wired | ✅ |
+| Display | ✅ | ✅ | ✅ Core wired | ✅ Core |
+| Additional Options | ✅ | 🔶 | ⬜ | ⬜ |
 
-**Legend**: ✅ Complete | ⬜ Not Started | 🔄 In Progress
+**Legend**: ✅ Complete | 🔶 Partial | ⬜ Not Started/Missing
+
+---
+
+## Remaining Work (Updated 2024-12)
+
+### ✅ Complete - Core Guidance (Phase 1)
+- [x] Vehicle Tab - fully wired, MainViewModel reads from ConfigurationStore
+- [x] Tool Tab - fully wired, all edit commands exist
+- [x] U-Turn Tab - core settings wired (Style/Compensation/SkipWidth commands exist but no UI)
+- [x] NTRIP - fully wired with live connection, status, byte counter
+
+### ✅ Complete - GPS Processing (All Features)
+- [x] NmeaParserService reads MinFixQuality, MaxHdop, MaxDifferentialAge from ConfigurationStore
+- [x] Fixes rejected if quality below minimum, HDOP too high, or differential age too old
+- [x] FixQualityBelowMinimum event for UI notification
+- [x] ConsecutiveBadFixes counter tracks rejected fixes
+- [x] GpsData.IsValid can be overridden by parser for quality filtering
+- [x] Dual GPS heading with DualHeadingOffset applied
+- [x] DualSwitchSpeed threshold switches to fix-to-fix at low speeds
+- [x] Single antenna fix-to-fix heading calculation using MinGpsStep and FixToFixDistance
+- [x] HeadingFusionWeight blending between GPS and IMU headings
+- [x] GpsUpdateRate available for UI display
+- [x] IMU data (roll, pitch, yaw rate) parsed from PANDA sentence to SensorState
+
+### ✅ Complete - Module Communication Service (All Features)
+- [x] Service file exists: `ModuleCommunicationService.cs`
+- [x] Interface exists: `IModuleCommunicationService.cs`
+- [x] Registered in DI container (Desktop, iOS, Android)
+- [x] Injected into MainViewModel
+- [x] Reads work switch settings from ToolConfig (IsWorkSwitchActiveLow, IsWorkSwitchEnabled, etc.)
+- [x] Reads hydraulic timing from MachineConfig (RaiseTime, LowerTime, LookAhead, InvertRelay)
+- [x] Reads user values from MachineConfig (User1Value through User4Value)
+- [x] Reads AlarmStopsAutoSteer from AhrsConfig
+- [x] AutoSteerToggleRequested and SectionMasterToggleRequested events connected
+- [x] Pin assignments wired via ConfigurationViewModel (Pin1Function through Pin24Function)
+
+### ✅ OK - Tram Lines (Pure Computation Pattern)
+TramlineService intentionally receives parameters rather than reading config - caller passes values
+
+### ✅ OK - Display Settings (Core)
+DisplaySettingsService properly delegates to ConfigurationStore.Instance.Display
 
 ---
 
 ## Notes
 
-- All config models use ReactiveUI (`RaiseAndSetIfChanged`) for automatic UI updates
-- Services access config via `ConfigurationStore.Instance` singleton
-- Profile persistence uses XML format via `VehicleProfileService`
-- Some services may need migration from direct property access to ConfigurationStore
+- ✅ All config models use ReactiveUI (`RaiseAndSetIfChanged`) for automatic UI updates
+- ✅ ConfigurationViewModel properly exposes config via `Config => _configService.Store`
+- ✅ MainViewModel uses `ConfigurationStore.Instance` for guidance input
+- ✅ Profile persistence via ConfigurationService `ApplyProfileToStore()` / `CreateProfileFromStore()`
+- ✅ NmeaParserService reads all GPS config (quality, dual, fusion)
+- ✅ ModuleCommunicationService reads ToolConfig, MachineConfig, and AhrsConfig
+- ✅ Pin assignments (24) fully wired via ConfigurationViewModel
+- ✅ User values (1-4) and AlarmStopsAutoSteer wired to ModuleCommunicationService
+- ✅ IMU data parsed from PANDA sentences to SensorState singleton
+- ✅ Heading fusion blends GPS with IMU when both available

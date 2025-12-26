@@ -1,6 +1,7 @@
 using System;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models.Communication;
+using AgValoniaGPS.Models.Configuration;
 
 namespace AgValoniaGPS.Services
 {
@@ -8,9 +9,14 @@ namespace AgValoniaGPS.Services
     /// Core module communication service.
     /// Handles work switch and steer switch logic, raising events when UI actions are needed.
     /// Replaces FormGPS.PerformClick() calls with clean event-based architecture.
+    /// Reads switch configuration from ConfigurationStore.Instance.Tool.
     /// </summary>
     public class ModuleCommunicationService : IModuleCommunicationService
     {
+        // Access config from ConfigurationStore
+        private static ToolConfig Tool => ConfigurationStore.Instance.Tool;
+        private static MachineConfig Machine => ConfigurationStore.Instance.Machine;
+
         // Section control data
         public byte[] SectionControlBytes { get; } = new byte[9];
         public byte[] PreviousSectionControlBytes { get; } = new byte[9];
@@ -35,15 +41,32 @@ namespace AgValoniaGPS.Services
         // Safety
         public bool IsOutOfBounds { get; set; } = true;
 
-        // Work switch configuration
-        public bool IsWorkSwitchActiveLow { get; set; } = true;
-        public bool IsRemoteWorkSystemOn { get; set; }
-        public bool IsWorkSwitchEnabled { get; set; }
-        public bool IsWorkSwitchManualSections { get; set; }
-        public bool IsSteerWorkSwitchManualSections { get; set; }
-        public bool IsSteerWorkSwitchEnabled { get; set; }
+        // Work switch configuration - read from ConfigurationStore
+        public bool IsWorkSwitchActiveLow => Tool.IsWorkSwitchActiveLow;
+        public bool IsRemoteWorkSystemOn { get; set; } // Runtime state, not persisted
+        public bool IsWorkSwitchEnabled => Tool.IsWorkSwitchEnabled;
+        public bool IsWorkSwitchManualSections => Tool.IsWorkSwitchManualSections;
+        public bool IsSteerWorkSwitchManualSections => Tool.IsSteerSwitchManualSections;
+        public bool IsSteerWorkSwitchEnabled => Tool.IsSteerSwitchEnabled;
 
-        // Switch states
+        // Machine config accessors for hydraulic control
+        public bool HydraulicLiftEnabled => Machine.HydraulicLiftEnabled;
+        public int RaiseTime => Machine.RaiseTime;
+        public int LowerTime => Machine.LowerTime;
+        public double LookAhead => Machine.LookAhead;
+        public bool InvertRelay => Machine.InvertRelay;
+
+        // User values (custom data sent to machine module)
+        public int User1Value => Machine.User1Value;
+        public int User2Value => Machine.User2Value;
+        public int User3Value => Machine.User3Value;
+        public int User4Value => Machine.User4Value;
+
+        // AHRS config accessor
+        private static AhrsConfig Ahrs => ConfigurationStore.Instance.Ahrs;
+        public bool AlarmStopsAutoSteer => Ahrs.AlarmStopsAutoSteer;
+
+        // Switch states (runtime, from hardware)
         public bool WorkSwitchHigh { get; set; }
         public bool SteerSwitchHigh { get; set; }
 

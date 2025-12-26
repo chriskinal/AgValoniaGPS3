@@ -1,19 +1,51 @@
 using System;
 using System.Globalization;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
 
 /// <summary>
 /// NMEA sentence parser for PANDA and PAOGI formats
-/// Based on AgIO NMEA parser
+/// Based on AgIO NMEA parser.
+/// Reads GPS configuration from ConfigurationStore for filtering and processing.
+/// Supports dual GPS heading, heading fusion, and rate limiting.
 /// </summary>
 public class NmeaParserService
 {
     private readonly IGpsService _gpsService;
 
+    // Access GPS config from ConfigurationStore
+    private static ConnectionConfig Connections => ConfigurationStore.Instance.Connections;
+
+    // Previous position for single-antenna heading calculation
+    private double _previousEasting;
+    private double _previousNorthing;
+    private double _previousHeading;
+    private bool _hasPreviousPosition;
+
+    /// <summary>
+    /// Raised when IMU data is received (roll, pitch, yaw rate).
+    /// </summary>
     public event EventHandler? ImuDataReceived;
+
+    /// <summary>
+    /// Raised when GPS fix quality is below the configured minimum.
+    /// The int parameter is the actual fix quality received.
+    /// </summary>
+    public event EventHandler<int>? FixQualityBelowMinimum;
+
+    /// <summary>
+    /// Count of consecutive fixes rejected due to low quality.
+    /// Resets when a good fix is received.
+    /// </summary>
+    public int ConsecutiveBadFixes { get; private set; }
+
+    /// <summary>
+    /// The final computed heading after fusion/dual processing.
+    /// </summary>
+    public double FusedHeading { get; private set; }
 
     public NmeaParserService(IGpsService gpsService)
     {
@@ -89,7 +121,8 @@ public class NmeaParserService
             }
 
             // Fix quality
-            if (byte.TryParse(words[6], NumberStyles.Float, CultureInfo.InvariantCulture, out byte fixQuality))
+            byte fixQuality = 0;
+            if (byte.TryParse(words[6], NumberStyles.Float, CultureInfo.InvariantCulture, out fixQuality))
             {
                 gpsData.FixQuality = fixQuality;
             }
@@ -101,7 +134,8 @@ public class NmeaParserService
             }
 
             // HDOP
-            if (double.TryParse(words[8], NumberStyles.Float, CultureInfo.InvariantCulture, out double hdop))
+            double hdop = 99.0;
+            if (double.TryParse(words[8], NumberStyles.Float, CultureInfo.InvariantCulture, out hdop))
             {
                 gpsData.Hdop = hdop;
             }
@@ -113,25 +147,84 @@ public class NmeaParserService
             }
 
             // Age of differential
-            if (double.TryParse(words[10], NumberStyles.Float, CultureInfo.InvariantCulture, out double age))
+            double age = 0;
+            if (double.TryParse(words[10], NumberStyles.Float, CultureInfo.InvariantCulture, out age))
             {
                 gpsData.DifferentialAge = age;
             }
 
             // Speed in knots - convert to m/s
+            double speedMs = 0;
             if (float.TryParse(words[11], NumberStyles.Float, CultureInfo.InvariantCulture, out float speedKnots))
             {
-                double speedMs = speedKnots * 0.514444; // knots to m/s
+                speedMs = speedKnots * 0.514444; // knots to m/s
                 gpsData.CurrentPosition = gpsData.CurrentPosition with { Speed = speedMs };
             }
 
-            // Heading
-            if (float.TryParse(words[12], NumberStyles.Float, CultureInfo.InvariantCulture, out float heading))
+            // Heading from GPS
+            double gpsHeading = 0;
+            if (double.TryParse(words[12], NumberStyles.Float, CultureInfo.InvariantCulture, out gpsHeading))
             {
-                gpsData.CurrentPosition = gpsData.CurrentPosition with { Heading = heading };
+                // Initial heading from GPS sentence
             }
 
+            // Parse IMU data (PANDA fields 13, 14, 15)
+            double roll = 0, pitch = 0, yawRate = 0;
+            if (words.Length > 13 && double.TryParse(words[13], NumberStyles.Float, CultureInfo.InvariantCulture, out roll))
+            {
+                SensorState.Instance.ImuRoll = roll;
+            }
+            if (words.Length > 14 && double.TryParse(words[14], NumberStyles.Float, CultureInfo.InvariantCulture, out pitch))
+            {
+                SensorState.Instance.ImuPitch = pitch;
+            }
+            if (words.Length > 15 && double.TryParse(words[15], NumberStyles.Float, CultureInfo.InvariantCulture, out yawRate))
+            {
+                SensorState.Instance.ImuYawRate = yawRate;
+            }
+
+            // Raise IMU event if we got data
+            if (words.Length > 15)
+            {
+                ImuDataReceived?.Invoke(this, EventArgs.Empty);
+            }
+
+            // Process heading based on configuration (dual GPS, fusion, etc.)
+            double finalHeading = ProcessHeading(gpsHeading, speedMs, gpsData.CurrentPosition.Easting, gpsData.CurrentPosition.Northing);
+            gpsData.CurrentPosition = gpsData.CurrentPosition with { Heading = finalHeading };
+            FusedHeading = finalHeading;
+
             gpsData.Timestamp = DateTime.Now;
+
+            // Check fix quality against configured minimum
+            int minFixQuality = Connections.MinFixQuality;
+            double maxHdop = Connections.MaxHdop;
+            double maxDiffAge = Connections.MaxDifferentialAge;
+
+            bool isFixAcceptable = fixQuality >= minFixQuality;
+            bool isHdopAcceptable = hdop <= maxHdop;
+            bool isDiffAgeAcceptable = age <= maxDiffAge || age == 0; // 0 means no differential
+
+            if (!isFixAcceptable || !isHdopAcceptable || !isDiffAgeAcceptable)
+            {
+                // Fix doesn't meet quality requirements
+                ConsecutiveBadFixes++;
+                gpsData.IsValid = false;
+
+                // Raise event for UI notification (only on first bad fix or periodically)
+                if (ConsecutiveBadFixes == 1 || ConsecutiveBadFixes % 10 == 0)
+                {
+                    FixQualityBelowMinimum?.Invoke(this, fixQuality);
+                }
+
+                // Still update GPS service so UI shows current (poor) status
+                _gpsService.UpdateGpsData(gpsData);
+                return;
+            }
+
+            // Good fix - reset counter and mark valid
+            ConsecutiveBadFixes = 0;
+            gpsData.IsValid = true;
 
             // Update GPS service with parsed data
             _gpsService.UpdateGpsData(gpsData);
@@ -222,4 +315,107 @@ public class NmeaParserService
 
         return false;
     }
+
+    /// <summary>
+    /// Process heading based on configuration (dual GPS, fusion, single antenna).
+    /// </summary>
+    /// <param name="gpsHeading">Raw heading from GPS sentence</param>
+    /// <param name="speedMs">Current speed in m/s</param>
+    /// <param name="easting">Current easting position</param>
+    /// <param name="northing">Current northing position</param>
+    /// <returns>Final processed heading in degrees</returns>
+    private double ProcessHeading(double gpsHeading, double speedMs, double easting, double northing)
+    {
+        double finalHeading = gpsHeading;
+
+        // Dual GPS mode - heading comes from dual antenna baseline
+        if (Connections.IsDualGps)
+        {
+            // Apply dual heading offset (antenna mounting angle)
+            finalHeading = gpsHeading + Connections.DualHeadingOffset;
+
+            // Normalize to 0-360
+            while (finalHeading < 0) finalHeading += 360;
+            while (finalHeading >= 360) finalHeading -= 360;
+
+            // Check if we should use fix-to-fix at low speeds
+            if (speedMs < Connections.DualSwitchSpeed && _hasPreviousPosition)
+            {
+                // At low speed, dual antenna heading may be unreliable
+                // Use fix-to-fix heading instead
+                double fixToFixHeading = CalculateFixToFixHeading(easting, northing);
+                if (fixToFixHeading >= 0)
+                {
+                    finalHeading = fixToFixHeading;
+                }
+            }
+        }
+        else
+        {
+            // Single antenna mode - may need fix-to-fix heading calculation
+            if (speedMs >= Connections.MinGpsStep && _hasPreviousPosition)
+            {
+                double fixToFixHeading = CalculateFixToFixHeading(easting, northing);
+                if (fixToFixHeading >= 0)
+                {
+                    // Use fix-to-fix heading when moving
+                    finalHeading = fixToFixHeading;
+                }
+            }
+        }
+
+        // Heading fusion with IMU (if IMU data is available and fusion is enabled)
+        double fusionWeight = Connections.HeadingFusionWeight;
+        if (fusionWeight > 0 && fusionWeight < 1.0 && SensorState.Instance.HasValidImu)
+        {
+            double imuHeading = SensorState.Instance.ImuHeading;
+
+            // Handle wrap-around when blending headings
+            double diff = imuHeading - finalHeading;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+
+            // Blend: fusionWeight = GPS weight, (1 - fusionWeight) = IMU weight
+            // Higher fusionWeight means more trust in GPS
+            finalHeading = finalHeading + diff * (1.0 - fusionWeight);
+
+            // Normalize to 0-360
+            while (finalHeading < 0) finalHeading += 360;
+            while (finalHeading >= 360) finalHeading -= 360;
+        }
+
+        // Store current position for next fix-to-fix calculation
+        _previousEasting = easting;
+        _previousNorthing = northing;
+        _previousHeading = finalHeading;
+        _hasPreviousPosition = true;
+
+        return finalHeading;
+    }
+
+    /// <summary>
+    /// Calculate heading from previous position to current position.
+    /// </summary>
+    /// <returns>Heading in degrees, or -1 if distance too small</returns>
+    private double CalculateFixToFixHeading(double easting, double northing)
+    {
+        double dx = easting - _previousEasting;
+        double dy = northing - _previousNorthing;
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+
+        // Only calculate if we've moved enough (FixToFixDistance threshold)
+        if (distance < Connections.FixToFixDistance)
+        {
+            return -1; // Not enough movement
+        }
+
+        // Calculate heading from delta
+        double heading = Math.Atan2(dx, dy) * 180.0 / Math.PI;
+
+        // Normalize to 0-360
+        if (heading < 0) heading += 360;
+
+        return heading;
+    }
+
 }

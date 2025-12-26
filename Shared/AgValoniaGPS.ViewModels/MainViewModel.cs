@@ -16,6 +16,7 @@ using AgValoniaGPS.Models.GPS;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.Models.State;
+using AgValoniaGPS.Models.Communication;
 using Avalonia.Threading;
 
 namespace AgValoniaGPS.ViewModels;
@@ -45,6 +46,7 @@ public class MainViewModel : ReactiveObject
     private readonly IVehicleProfileService _vehicleProfileService;
     private readonly IConfigurationService _configurationService;
     private readonly IAutoSteerService _autoSteerService;
+    private readonly IModuleCommunicationService _moduleCommunicationService;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
@@ -149,6 +151,7 @@ public class MainViewModel : ReactiveObject
         IVehicleProfileService vehicleProfileService,
         IConfigurationService configurationService,
         IAutoSteerService autoSteerService,
+        IModuleCommunicationService moduleCommunicationService,
         ApplicationState appState)
     {
         _udpService = udpService;
@@ -172,6 +175,7 @@ public class MainViewModel : ReactiveObject
         _vehicleProfileService = vehicleProfileService;
         _configurationService = configurationService;
         _autoSteerService = autoSteerService;
+        _moduleCommunicationService = moduleCommunicationService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -188,6 +192,8 @@ public class MainViewModel : ReactiveObject
         _simulatorService.GpsDataUpdated += OnSimulatorGpsDataUpdated;
         _boundaryRecordingService.PointAdded += OnBoundaryPointAdded;
         _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
+        _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
+        _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -1900,6 +1906,27 @@ public class MainViewModel : ReactiveObject
                     .ToList();
                 _mapService.SetRecordingPoints(points);
             }
+        });
+    }
+
+    private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            // Toggle autosteer when requested by module communication service
+            // (e.g., from work switch or steer switch)
+            ToggleAutoSteerCommand?.Execute(null);
+        });
+    }
+
+    private void OnSectionMasterToggleRequested(object? sender, SectionMasterToggleEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            // Toggle section master when requested by module communication service
+            // This replaces the direct PerformClick() calls from the WinForms implementation
+            // TODO: When separate Auto/Manual section buttons are implemented, handle them individually
+            ToggleSectionMasterCommand?.Execute(null);
         });
     }
 

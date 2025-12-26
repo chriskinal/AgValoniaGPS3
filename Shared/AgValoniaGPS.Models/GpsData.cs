@@ -35,7 +35,12 @@ public class GpsData
     public DateTime Timestamp { get; set; } = DateTime.Now;
 
     /// <summary>
-    /// Whether GPS data is currently valid
+    /// Whether GPS data is currently valid (can be overridden by parser for quality filtering)
     /// </summary>
-    public bool IsValid => FixQuality > 0 && SatellitesInUse >= 4;
+    private bool? _isValidOverride;
+    public bool IsValid
+    {
+        get => _isValidOverride ?? (FixQuality > 0 && SatellitesInUse >= 4);
+        set => _isValidOverride = value;
+    }
 }

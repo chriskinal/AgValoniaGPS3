@@ -6,6 +6,7 @@ namespace AgValoniaGPS.Services.Interfaces
     /// <summary>
     /// Service for handling module communication switch logic.
     /// Raises events when UI actions are needed instead of directly triggering button clicks.
+    /// Configuration is read from ConfigurationStore (Tool and Machine configs).
     /// </summary>
     public interface IModuleCommunicationService
     {
@@ -22,15 +23,31 @@ namespace AgValoniaGPS.Services.Interfaces
         // Safety
         bool IsOutOfBounds { get; set; }
 
-        // Work switch configuration
-        bool IsWorkSwitchActiveLow { get; set; }
-        bool IsRemoteWorkSystemOn { get; set; }
-        bool IsWorkSwitchEnabled { get; set; }
-        bool IsWorkSwitchManualSections { get; set; }
-        bool IsSteerWorkSwitchManualSections { get; set; }
-        bool IsSteerWorkSwitchEnabled { get; set; }
+        // Work switch configuration (read from ConfigurationStore.Tool)
+        bool IsWorkSwitchActiveLow { get; }
+        bool IsRemoteWorkSystemOn { get; set; } // Runtime state
+        bool IsWorkSwitchEnabled { get; }
+        bool IsWorkSwitchManualSections { get; }
+        bool IsSteerWorkSwitchManualSections { get; }
+        bool IsSteerWorkSwitchEnabled { get; }
 
-        // Switch states
+        // Machine config (read from ConfigurationStore.Machine)
+        bool HydraulicLiftEnabled { get; }
+        int RaiseTime { get; }
+        int LowerTime { get; }
+        double LookAhead { get; }
+        bool InvertRelay { get; }
+
+        // User values (custom data sent to machine module)
+        int User1Value { get; }
+        int User2Value { get; }
+        int User3Value { get; }
+        int User4Value { get; }
+
+        // AHRS config (read from ConfigurationStore.Ahrs)
+        bool AlarmStopsAutoSteer { get; }
+
+        // Switch states (runtime, from hardware)
         bool WorkSwitchHigh { get; set; }
         bool SteerSwitchHigh { get; set; }
 

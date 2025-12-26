@@ -57,6 +57,9 @@ public static class ServiceCollectionExtensions
         // AutoSteer pipeline service (zero-copy GPS→PGN path)
         services.AddSingleton<IAutoSteerService, AutoSteerService>();
 
+        // Module communication service (work switch, steer switch logic)
+        services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
+
         // YouTurn services
         services.AddSingleton<YouTurnCreationService>();
         services.AddSingleton<YouTurnGuidanceService>();
