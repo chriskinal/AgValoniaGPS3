@@ -21,7 +21,7 @@ using Avalonia.Threading;
 
 namespace AgValoniaGPS.ViewModels;
 
-public class MainViewModel : ReactiveObject
+public partial class MainViewModel : ReactiveObject
 {
     private readonly IUdpCommunicationService _udpService;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsService _gpsService;
@@ -29,7 +29,6 @@ public class MainViewModel : ReactiveObject
     private readonly INtripClientService _ntripService;
     private readonly AgValoniaGPS.Services.Interfaces.IDisplaySettingsService _displaySettings;
     private readonly AgValoniaGPS.Services.Interfaces.IFieldStatisticsService _fieldStatistics;
-    private readonly AgValoniaGPS.Services.Interfaces.IGpsSimulationService _simulatorService;
     private readonly ISettingsService _settingsService;
     private readonly IDialogService _dialogService;
     private readonly IMapService _mapService;
@@ -38,18 +37,44 @@ public class MainViewModel : ReactiveObject
     private readonly NmeaParserService _nmeaParser;
     private readonly Services.Headland.IHeadlandBuilderService _headlandBuilderService;
     private readonly ITrackGuidanceService _trackGuidanceService;
-    private readonly YouTurnCreationService _youTurnCreationService;
     private readonly Services.Geometry.IPolygonOffsetService _polygonOffsetService;
     private readonly Services.Interfaces.ITurnAreaService _turnAreaService;
-    private readonly YouTurnGuidanceService _youTurnGuidanceService;
     private readonly FieldPlaneFileService _fieldPlaneFileService;
     private readonly IVehicleProfileService _vehicleProfileService;
     private readonly IConfigurationService _configurationService;
     private readonly IAutoSteerService _autoSteerService;
     private readonly IModuleCommunicationService _moduleCommunicationService;
     private readonly ApplicationState _appState;
-    private readonly DispatcherTimer _simulatorTimer;
-    private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
+
+    /// <summary>
+    /// Simulator ViewModel - exposes simulator UI state and commands.
+    /// Use this for XAML bindings to simulator controls.
+    /// </summary>
+    public SimulatorViewModel Simulator { get; }
+
+    /// <summary>
+    /// YouTurn ViewModel - handles U-turn path creation, triggering, and guidance.
+    /// Use this for YouTurn-related functionality.
+    /// </summary>
+    public YouTurnViewModel YouTurn { get; }
+
+    /// <summary>
+    /// Boundary Recording ViewModel - handles boundary recording state and settings.
+    /// Use this for boundary recording functionality.
+    /// </summary>
+    public BoundaryRecordingViewModel BoundaryRecording { get; }
+
+    /// <summary>
+    /// Section Control ViewModel - handles section master state and individual section control.
+    /// Use this for section control functionality.
+    /// </summary>
+    public SectionControlViewModel Sections { get; }
+
+    /// <summary>
+    /// Track Management ViewModel - handles track list, AB line creation, and nudge commands.
+    /// Use this for track management functionality.
+    /// </summary>
+    public TrackManagementViewModel Tracks { get; }
 
     /// <summary>
     /// Centralized application state - single source of truth for all runtime state.
@@ -70,21 +95,6 @@ public class MainViewModel : ReactiveObject
     // Track guidance state (carried between iterations)
     private TrackGuidanceState? _trackGuidanceState;
 
-    // YouTurn state
-    private bool _isYouTurnTriggered;
-    private bool _isInYouTurn; // True when executing the U-turn
-    private List<Vec3>? _youTurnPath;
-    private int _youTurnCounter;
-    private double _distanceToHeadland;
-    private bool _isHeadingSameWay;
-    private bool _isTurnLeft; // Direction of the current/pending U-turn
-    private bool _wasHeadingSameWayAtTurnStart; // Heading direction when turn was created (for offset calc)
-    private bool _lastTurnWasLeft; // Track last turn direction to alternate
-    private bool _hasCompletedFirstTurn; // Track if we've done at least one turn
-    private Track? _nextTrack; // The next track to switch to after U-turn completes
-    private int _howManyPathsAway; // Which parallel offset line we're on (like AgOpenGPS)
-    private Vec2? _lastTurnCompletionPosition; // Position where last U-turn completed - used to prevent immediate re-triggering
-
     private string _statusMessage = "Starting...";
     private double _latitude;
     private double _longitude;
@@ -99,16 +109,9 @@ public class MainViewModel : ReactiveObject
     private double _crossTrackError;
     private string _currentGuidanceLine = "1L";
     private bool _isAutoSteerActive;
-    private int _activeSections;
 
-    // Section states
-    private bool _section1Active;
-    private bool _section2Active;
-    private bool _section3Active;
-    private bool _section4Active;
-    private bool _section5Active;
-    private bool _section6Active;
-    private bool _section7Active;
+    // Note: Section fields (_activeSections, _section1Active-_section7Active) moved to SectionControlViewModel
+
     // Hello status (connection health)
     private bool _isAutoSteerHelloOk;
     private bool _isMachineHelloOk;
@@ -160,7 +163,6 @@ public class MainViewModel : ReactiveObject
         _ntripService = ntripService;
         _displaySettings = displaySettings;
         _fieldStatistics = fieldStatistics;
-        _simulatorService = simulatorService;
         _settingsService = settingsService;
         _dialogService = dialogService;
         _mapService = mapService;
@@ -168,8 +170,6 @@ public class MainViewModel : ReactiveObject
         _boundaryFileService = boundaryFileService;
         _headlandBuilderService = headlandBuilderService;
         _trackGuidanceService = trackGuidanceService;
-        _youTurnCreationService = youTurnCreationService;
-        _youTurnGuidanceService = youTurnGuidanceService;
         _polygonOffsetService = polygonOffsetService;
         _turnAreaService = turnAreaService;
         _vehicleProfileService = vehicleProfileService;
@@ -180,6 +180,38 @@ public class MainViewModel : ReactiveObject
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
 
+        // Create SimulatorViewModel (handles simulator UI and commands)
+        Simulator = new SimulatorViewModel(simulatorService, settingsService, appState);
+        Simulator.SimulatedGpsDataReceived += OnSimulatorGpsDataReceived;
+
+        // Create YouTurnViewModel (handles U-turn path creation, triggering, and guidance)
+        YouTurn = new YouTurnViewModel(
+            youTurnCreationService,
+            youTurnGuidanceService,
+            mapService,
+            polygonOffsetService,
+            vehicleProfileService,
+            appState);
+        YouTurn.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+        YouTurn.SteerAngleChanged += (s, angle) => SimulatorSteerAngle = angle;
+        YouTurn.TurnCompleted += (s, e) => { /* Additional turn completion logic if needed */ };
+
+        // Create BoundaryRecordingViewModel (handles boundary recording state and events)
+        BoundaryRecording = new BoundaryRecordingViewModel(boundaryRecordingService, mapService, appState);
+        BoundaryRecording.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+        BoundaryRecording.RecordingFinished += OnBoundaryRecordingFinished;
+
+        // Create SectionControlViewModel (handles section master and individual section states)
+        Sections = new SectionControlViewModel(moduleCommunicationService, appState);
+        Sections.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+
+        // Create TrackManagementViewModel (handles track list, AB line creation, nudge)
+        Tracks = new TrackManagementViewModel(fieldService, appState);
+        Tracks.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+        Tracks.TrackActivated += (s, e) => IsAutoSteerAvailable = true;
+        Tracks.CloseDialogRequested += (s, e) => State.UI.CloseDialog();
+        Tracks.GetCurrentPosition = () => (Latitude, Longitude, Easting, Northing, Heading);
+
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
         _udpService.DataReceived += OnUdpDataReceived;
@@ -189,11 +221,10 @@ public class MainViewModel : ReactiveObject
         _ntripService.ConnectionStatusChanged += OnNtripConnectionChanged;
         _ntripService.RtcmDataReceived += OnRtcmDataReceived;
         _fieldService.ActiveFieldChanged += OnActiveFieldChanged;
-        _simulatorService.GpsDataUpdated += OnSimulatorGpsDataUpdated;
-        _boundaryRecordingService.PointAdded += OnBoundaryPointAdded;
-        _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
+        // Note: Simulator GPS events handled via SimulatorViewModel.SimulatedGpsDataReceived
+        // Note: Boundary recording events handled via BoundaryRecordingViewModel
+        // Note: Section master toggle events handled via SectionControlViewModel
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
-        _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -201,16 +232,7 @@ public class MainViewModel : ReactiveObject
         // Note: NOT subscribing to DisplaySettings events - using direct property access instead
         // to avoid threading issues with ReactiveUI
 
-        // Initialize simulator service with default position (will be updated when GPS gets fix)
-        _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(40.7128, -74.0060)); // Default to NYC coordinates
-        _simulatorService.StepDistance = 0; // Stationary initially
-
-        // Create simulator timer (100ms tick rate, matching WinForms implementation)
-        _simulatorTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(100)
-        };
-        _simulatorTimer.Tick += OnSimulatorTick;
+        // Note: Simulator initialization handled by SimulatorViewModel
 
         // Initialize commands immediately (with MainThreadScheduler they're thread-safe)
         InitializeCommands();
@@ -248,19 +270,13 @@ public class MainViewModel : ReactiveObject
         // (setting _displaySettings directly doesn't trigger property change notification)
         this.RaisePropertyChanged(nameof(IsGridOn));
 
-        // Restore simulator settings
+        // Restore simulator settings via SimulatorViewModel
+        Simulator.RestoreSettings();
         if (settings.SimulatorEnabled)
         {
-            // Initialize simulator with saved coordinates
-            _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
-                settings.SimulatorLatitude,
-                settings.SimulatorLongitude));
-            _simulatorService.StepDistance = settings.SimulatorSpeed;
-
             // Also set Latitude/Longitude so map dialogs work correctly at startup
             Latitude = settings.SimulatorLatitude;
             Longitude = settings.SimulatorLongitude;
-
             Console.WriteLine($"  Restored simulator: {settings.SimulatorLatitude},{settings.SimulatorLongitude}");
         }
     }
@@ -485,53 +501,56 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isAutoSteerActive, value);
     }
 
+    /// <summary>
+    /// Delegates to Sections.ActiveCount for backward compatibility.
+    /// </summary>
     public int ActiveSections
     {
-        get => _activeSections;
-        set => this.RaiseAndSetIfChanged(ref _activeSections, value);
+        get => Sections.ActiveCount;
+        set => Sections.ActiveCount = value;
     }
 
-    // Section states
+    // Section state properties - delegate to Sections ViewModel for backward compatibility
     public bool Section1Active
     {
-        get => _section1Active;
-        set => this.RaiseAndSetIfChanged(ref _section1Active, value);
+        get => Sections.Section1Active;
+        set => Sections.Section1Active = value;
     }
 
     public bool Section2Active
     {
-        get => _section2Active;
-        set => this.RaiseAndSetIfChanged(ref _section2Active, value);
+        get => Sections.Section2Active;
+        set => Sections.Section2Active = value;
     }
 
     public bool Section3Active
     {
-        get => _section3Active;
-        set => this.RaiseAndSetIfChanged(ref _section3Active, value);
+        get => Sections.Section3Active;
+        set => Sections.Section3Active = value;
     }
 
     public bool Section4Active
     {
-        get => _section4Active;
-        set => this.RaiseAndSetIfChanged(ref _section4Active, value);
+        get => Sections.Section4Active;
+        set => Sections.Section4Active = value;
     }
 
     public bool Section5Active
     {
-        get => _section5Active;
-        set => this.RaiseAndSetIfChanged(ref _section5Active, value);
+        get => Sections.Section5Active;
+        set => Sections.Section5Active = value;
     }
 
     public bool Section6Active
     {
-        get => _section6Active;
-        set => this.RaiseAndSetIfChanged(ref _section6Active, value);
+        get => Sections.Section6Active;
+        set => Sections.Section6Active = value;
     }
 
     public bool Section7Active
     {
-        get => _section7Active;
-        set => this.RaiseAndSetIfChanged(ref _section7Active, value);
+        get => Sections.Section7Active;
+        set => Sections.Section7Active = value;
     }
 
     // AutoSteer Hello and Data properties
@@ -549,28 +568,31 @@ public class MainViewModel : ReactiveObject
 
     // Right Navigation Panel Properties
     private bool _isContourModeOn;
-    private bool _isManualSectionMode;
-    private bool _isSectionMasterOn = false; // Default off
+    // Note: _isManualSectionMode and _isSectionMasterOn moved to SectionControlViewModel
     private bool _isAutoSteerAvailable;
     private bool _isAutoSteerEngaged;
-    private bool _isYouTurnEnabled; // YouTurn auto U-turn feature
-
     public bool IsContourModeOn
     {
         get => _isContourModeOn;
         set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
     }
 
+    /// <summary>
+    /// Delegates to Sections.IsManualMode for backward compatibility.
+    /// </summary>
     public bool IsManualSectionMode
     {
-        get => _isManualSectionMode;
-        set => this.RaiseAndSetIfChanged(ref _isManualSectionMode, value);
+        get => Sections.IsManualMode;
+        set => Sections.IsManualMode = value;
     }
 
+    /// <summary>
+    /// Delegates to Sections.IsMasterOn for backward compatibility.
+    /// </summary>
     public bool IsSectionMasterOn
     {
-        get => _isSectionMasterOn;
-        set => this.RaiseAndSetIfChanged(ref _isSectionMasterOn, value);
+        get => Sections.IsMasterOn;
+        set => Sections.IsMasterOn = value;
     }
 
     public bool IsAutoSteerAvailable
@@ -585,10 +607,13 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isAutoSteerEngaged, value);
     }
 
+    /// <summary>
+    /// Delegates to YouTurn.IsYouTurnEnabled for backward compatibility.
+    /// </summary>
     public bool IsYouTurnEnabled
     {
-        get => _isYouTurnEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isYouTurnEnabled, value);
+        get => YouTurn.IsYouTurnEnabled;
+        set => YouTurn.IsYouTurnEnabled = value;
     }
 
     // Machine Hello and Data properties
@@ -757,61 +782,23 @@ public class MainViewModel : ReactiveObject
         Northing = data.CurrentPosition.Northing;
         Heading = data.CurrentPosition.Heading;
 
-        // Add boundary point if recording is active
-        if (_boundaryRecordingService.IsRecording)
+        // Add boundary point if recording is active (through BoundaryRecordingViewModel)
+        if (BoundaryRecording.IsRecording)
         {
             double headingRadians = data.CurrentPosition.Heading * Math.PI / 180.0;
-            var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(
+            BoundaryRecording.AddPoint(
                 data.CurrentPosition.Easting,
                 data.CurrentPosition.Northing,
                 headingRadians);
-            _boundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
         }
     }
 
-    // Simulator event handlers
-    private void OnSimulatorTick(object? sender, EventArgs e)
+    /// <summary>
+    /// Handles simulated GPS data from SimulatorViewModel.
+    /// </summary>
+    private void OnSimulatorGpsDataReceived(object? sender, GpsData gpsData)
     {
-        // Call simulator Tick with current steer angle
-        _simulatorService.Tick(SimulatorSteerAngle);
-    }
-
-    private void OnSimulatorGpsDataUpdated(object? sender, GpsSimulationEventArgs e)
-    {
-        var simulatedData = e.Data;
-
-        // Create LocalPlane if not yet created (using simulator's initial position as origin)
-        if (_simulatorLocalPlane == null)
-        {
-            var sharedProps = new AgValoniaGPS.Models.SharedFieldProperties();
-            _simulatorLocalPlane = new AgValoniaGPS.Models.LocalPlane(simulatedData.Position, sharedProps);
-        }
-
-        // Convert WGS84 to local coordinates (Northing/Easting)
-        var localCoord = _simulatorLocalPlane.ConvertWgs84ToGeoCoord(simulatedData.Position);
-
-        // Build Position object with both WGS84 and UTM coordinates
-        var position = new AgValoniaGPS.Models.Position
-        {
-            Latitude = simulatedData.Position.Latitude,
-            Longitude = simulatedData.Position.Longitude,
-            Altitude = simulatedData.Altitude,
-            Easting = localCoord.Easting,
-            Northing = localCoord.Northing,
-            Heading = simulatedData.HeadingDegrees,
-            Speed = simulatedData.SpeedKmh / 3.6  // Convert km/h to m/s
-        };
-
-        // Build GpsData object
-        var gpsData = new AgValoniaGPS.Models.GpsData
-        {
-            CurrentPosition = position,
-            FixQuality = 4,  // RTK Fixed
-            SatellitesInUse = simulatedData.SatellitesTracked,
-            Hdop = simulatedData.Hdop,
-            DifferentialAge = 0.0,
-            Timestamp = DateTime.Now
-        };
+        var position = gpsData.CurrentPosition;
 
         // Directly update GPS service (bypasses NMEA parsing like WinForms version does)
         _gpsService.UpdateGpsData(gpsData);
@@ -826,19 +813,20 @@ public class MainViewModel : ReactiveObject
         // Calculate autosteer guidance if engaged and we have an active track
         if (IsAutoSteerEngaged && HasActiveTrack && SelectedTrack != null)
         {
-            // Increment YouTurn counter (used for throttling)
-            _youTurnCounter++;
-
             // Check for YouTurn execution or create path if approaching headland
             if (IsYouTurnEnabled && _currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
             {
-                ProcessYouTurn(position);
+                YouTurn.ProcessYouTurn(position, SelectedTrack, _currentHeadlandLine,
+                    _currentBoundary, HeadlandDistance, HeadlandCalculatedWidth);
             }
 
             // If we're in a YouTurn, use YouTurn guidance; otherwise use AB line guidance
-            if (_isYouTurnTriggered && _youTurnPath != null && _youTurnPath.Count > 0)
+            if (YouTurn.ShouldUseYouTurnGuidance())
             {
-                CalculateYouTurnGuidance(position);
+                if (YouTurn.CalculateYouTurnGuidance(position, out double xte))
+                {
+                    CrossTrackError = xte;
+                }
             }
             else
             {
@@ -849,7 +837,7 @@ public class MainViewModel : ReactiveObject
 
     /// <summary>
     /// Calculate steering guidance using Pure Pursuit algorithm and apply to simulator.
-    /// Uses _howManyPathsAway to dynamically calculate which parallel line to follow.
+    /// Uses YouTurn.HowManyPathsAway to dynamically calculate which parallel line to follow.
     /// </summary>
     private void CalculateAutoSteerGuidance(AgValoniaGPS.Models.Position currentPosition)
     {
@@ -874,7 +862,8 @@ public class MainViewModel : ReactiveObject
         // Calculate the perpendicular offset distance based on howManyPathsAway
         // This is the key insight from AgOpenGPS - the guidance line is dynamically calculated
         double widthMinusOverlap = Vehicle.TrackWidth; // Could subtract overlap if needed
-        double distAway = widthMinusOverlap * _howManyPathsAway;
+        int howManyPathsAway = YouTurn.HowManyPathsAway;
+        double distAway = widthMinusOverlap * howManyPathsAway;
 
         // Calculate the perpendicular direction (90 degrees from AB heading)
         double perpAngle = abHeading + Math.PI / 2; // Always use same perpendicular reference
@@ -886,13 +875,6 @@ public class MainViewModel : ReactiveObject
         double currentPtANorthing = track.PointA.Northing + offsetNorthing;
         double currentPtBEasting = track.PointB.Easting + offsetEasting;
         double currentPtBNorthing = track.PointB.Northing + offsetNorthing;
-
-        // Debug: log which offset we're following every second (30 frames at 30fps)
-        if (_youTurnCounter % 30 == 0)
-        {
-            Console.WriteLine($"[AutoSteer] Following path {_howManyPathsAway}, offset {distAway:F1}m, heading {(isHeadingSameWay ? "same" : "opposite")}");
-            Console.WriteLine($"[AutoSteer] Current line: A({currentPtAEasting:F1},{currentPtANorthing:F1}) B({currentPtBEasting:F1},{currentPtBNorthing:F1})");
-        }
 
         // Calculate dynamic look-ahead distance based on speed
         double speed = currentPosition.Speed * 3.6; // Convert m/s to km/h for look-ahead calc
@@ -938,7 +920,7 @@ public class MainViewModel : ReactiveObject
             AvgSpeed = speed,
             IsReverse = false,
             IsAutoSteerOn = true,
-            IsYouTurnTriggered = _isYouTurnTriggered,
+            IsYouTurnTriggered = YouTurn.IsYouTurnTriggered,
 
             // AHRS data (88888 = invalid/no IMU)
             ImuRoll = 88888,
@@ -982,931 +964,12 @@ public class MainViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Process YouTurn - check distance to headland, create turn path if needed, trigger turn.
+    /// Handle boundary recording finished - save the boundary to the field.
     /// </summary>
-    private void ProcessYouTurn(AgValoniaGPS.Models.Position currentPosition)
+    private void OnBoundaryRecordingFinished(object? sender, Boundary? boundary)
     {
-        var track = SelectedTrack;
-        if (track == null || track.Points.Count < 2 || _currentHeadlandLine == null) return;
-
-        var trackPointA = track.Points[0];
-        var trackPointB = track.Points[track.Points.Count - 1];
-
-        double headingRadians = currentPosition.Heading * Math.PI / 180.0;
-
-        // Calculate track heading to determine direction
-        double abDx = trackPointB.Easting - trackPointA.Easting;
-        double abDy = trackPointB.Northing - trackPointA.Northing;
-        double abHeading = Math.Atan2(abDx, abDy);
-
-        // Determine if vehicle is heading the same way as the AB line
-        double headingDiff = headingRadians - abHeading;
-        while (headingDiff > Math.PI) headingDiff -= 2 * Math.PI;
-        while (headingDiff < -Math.PI) headingDiff += 2 * Math.PI;
-        _isHeadingSameWay = Math.Abs(headingDiff) < Math.PI / 2;
-
-        // Check if vehicle is aligned with AB line (not mid-turn)
-        // We need to be within ~20 degrees of the AB line direction (either forward or reverse)
-        // Math.Abs(headingDiff) < PI/2 means heading same way, > PI/2 means opposite
-        // We want to check alignment to either direction of the AB line
-        double alignmentTolerance = Math.PI / 9;  // ~20 degrees
-        bool alignedForward = Math.Abs(headingDiff) < alignmentTolerance;
-        bool alignedReverse = Math.Abs(headingDiff) > (Math.PI - alignmentTolerance);
-        bool isAlignedWithABLine = alignedForward || alignedReverse;
-
-        // Only calculate distance to headland when aligned with the AB line
-        // This prevents creating turns while mid-turn when heading changes rapidly
-        if (isAlignedWithABLine)
-        {
-            // IMPORTANT: Calculate distance using the travel heading (AB heading adjusted for direction),
-            // not the vehicle heading. This ensures the raycast direction matches the path construction
-            // direction, preventing arc positioning errors when vehicle heading differs from AB heading.
-            double travelHeading = abHeading;
-            if (!_isHeadingSameWay)
-            {
-                travelHeading += Math.PI;
-                if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
-            }
-            _distanceToHeadland = CalculateDistanceToHeadland(currentPosition, travelHeading);
-        }
-        else
-        {
-            _distanceToHeadland = double.MaxValue;  // Don't detect headland if not aligned
-        }
-
-        // Create U-turn path when approaching the headland ahead
-        // The raycast already looks in the direction we're heading, so it finds the headland in front
-        // We only need to check if we're within a reasonable trigger distance (not too close, not too far)
-        double minDistanceToCreate = 30.0;  // meters - don't create if we're already too close (in the turn zone)
-
-        // The headland must be ahead of us (raycast found something) and not too close
-        // AND we must be aligned with the AB line (not mid-turn)
-        bool headlandAhead = _distanceToHeadland > minDistanceToCreate &&
-                             _distanceToHeadland < double.MaxValue &&
-                             isAlignedWithABLine;
-
-        // Debug: Log status periodically
-        if (_youTurnPath == null && !_isInYouTurn && _youTurnCounter % 60 == 0)
-        {
-            Console.WriteLine($"[YouTurn] Status: distToHeadland={_distanceToHeadland:F1}m, headlandAhead={headlandAhead}, aligned={isAlignedWithABLine}, counter={_youTurnCounter}");
-        }
-
-        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead)
-        {
-            // First check if a U-turn would put us outside the boundary
-            if (WouldNextLineBeInsideBoundary(track, abHeading))
-            {
-                Console.WriteLine($"[YouTurn] Creating turn path - dist ahead: {_distanceToHeadland:F1}m");
-                CreateYouTurnPath(currentPosition, headingRadians, abHeading);
-            }
-            else
-            {
-                Console.WriteLine("[YouTurn] Next line would be outside boundary - stopping U-turns");
-                StatusMessage = "End of field reached";
-            }
-        }
-        // If we have a valid path and distance is close, trigger the turn
-        else if (_youTurnPath != null && _youTurnPath.Count > 2 && !_isYouTurnTriggered && !_isInYouTurn)
-        {
-            // Calculate distance to turn start point
-            double distToTurnStart = Math.Sqrt(
-                Math.Pow(currentPosition.Easting - _youTurnPath[0].Easting, 2) +
-                Math.Pow(currentPosition.Northing - _youTurnPath[0].Northing, 2));
-
-            // Trigger when within 2 meters of turn start
-            if (distToTurnStart <= 2.0)
-            {
-                // Update centralized state
-                State.YouTurn.IsTriggered = true;
-                State.YouTurn.IsExecuting = true;
-
-                _isYouTurnTriggered = true;
-                _isInYouTurn = true;
-                StatusMessage = "YouTurn triggered!";
-                Console.WriteLine($"[YouTurn] Triggered at distance {distToTurnStart:F2}m from turn start");
-
-                // Compute the next track (offset by row skip width)
-                ComputeNextTrack(track, abHeading);
-            }
-        }
-
-        // Check if U-turn is complete (vehicle reached end of turn path)
-        if (_isInYouTurn && _youTurnPath != null && _youTurnPath.Count > 2)
-        {
-            var startPoint = _youTurnPath[0];
-            var endPoint = _youTurnPath[_youTurnPath.Count - 1];
-
-            double distToTurnStart = Math.Sqrt(
-                Math.Pow(currentPosition.Easting - startPoint.Easting, 2) +
-                Math.Pow(currentPosition.Northing - startPoint.Northing, 2));
-            double distToTurnEnd = Math.Sqrt(
-                Math.Pow(currentPosition.Easting - endPoint.Easting, 2) +
-                Math.Pow(currentPosition.Northing - endPoint.Northing, 2));
-
-            // Complete turn when:
-            // 1. Within 2 meters of turn end, AND
-            // 2. Closer to end than to start (prevents immediate completion when start/end are close)
-            // 3. At least 5 meters from start (ensures we've actually traveled into the turn)
-            if (distToTurnEnd <= 2.0 && distToTurnEnd < distToTurnStart && distToTurnStart > 5.0)
-            {
-                CompleteYouTurn();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Check if the next track (after a U-turn) would be inside the field boundary.
-    /// </summary>
-    private bool WouldNextLineBeInsideBoundary(Track currentTrack, double abHeading)
-    {
-        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
-            return true; // No boundary, assume OK
-
-        if (currentTrack.Points.Count < 2)
-            return true; // Invalid track, assume OK
-
-        var pointA = currentTrack.Points[0];
-        var pointB = currentTrack.Points[currentTrack.Points.Count - 1];
-
-        // Calculate where the next line would be
-        int rowSkipWidth = UTurnSkipRows + 1;
-        double offsetDistance = rowSkipWidth * Vehicle.TrackWidth;
-
-        // Perpendicular offset direction
-        double perpAngle = abHeading + (_isHeadingSameWay ? -Math.PI / 2 : Math.PI / 2);
-        double offsetEasting = Math.Sin(perpAngle) * offsetDistance;
-        double offsetNorthing = Math.Cos(perpAngle) * offsetDistance;
-
-        // Check if midpoint of next line would be inside boundary
-        double midEasting = (pointA.Easting + pointB.Easting) / 2 + offsetEasting;
-        double midNorthing = (pointA.Northing + pointB.Northing) / 2 + offsetNorthing;
-
-        return IsPointInsideBoundary(midEasting, midNorthing);
-    }
-
-    /// <summary>
-    /// Check if a point is inside the outer boundary.
-    /// </summary>
-    private bool IsPointInsideBoundary(double easting, double northing)
-    {
-        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
-            return true;
-
-        var points = _currentBoundary.OuterBoundary.Points;
-        int n = points.Count;
-        bool inside = false;
-
-        for (int i = 0, j = n - 1; i < n; j = i++)
-        {
-            var pi = points[i];
-            var pj = points[j];
-
-            if (((pi.Northing > northing) != (pj.Northing > northing)) &&
-                (easting < (pj.Easting - pi.Easting) * (northing - pi.Northing) / (pj.Northing - pi.Northing) + pi.Easting))
-            {
-                inside = !inside;
-            }
-        }
-
-        return inside;
-    }
-
-    /// <summary>
-    /// Compute the next track offset perpendicular to the current line.
-    /// </summary>
-    private void ComputeNextTrack(Track referenceTrack, double abHeading)
-    {
-        if (referenceTrack.Points.Count < 2)
-            return;
-
-        var refPointA = referenceTrack.Points[0];
-        var refPointB = referenceTrack.Points[referenceTrack.Points.Count - 1];
-
-        // Following AgOpenGPS approach exactly:
-        // howManyPathsAway += (isTurnLeft ^ isHeadingSameWay) ? rowSkipsWidth : -rowSkipsWidth
-        // XOR truth table:
-        //   turnLeft=true,  sameWay=true  -> true  -> positive offset (left of AB when facing A->B)
-        //   turnLeft=true,  sameWay=false -> false -> negative offset
-        //   turnLeft=false, sameWay=true  -> false -> negative offset
-        //   turnLeft=false, sameWay=false -> true  -> positive offset
-        int rowSkipWidth = UTurnSkipRows + 1;
-
-        // Calculate offset direction using XOR like AgOpenGPS
-        bool positiveOffset = _isTurnLeft ^ _isHeadingSameWay;
-        int offsetChange = positiveOffset ? rowSkipWidth : -rowSkipWidth;
-        int nextPathsAway = _howManyPathsAway + offsetChange;
-
-        // Calculate the total offset for the next line
-        double widthMinusOverlap = Vehicle.TrackWidth;
-        double nextDistAway = widthMinusOverlap * nextPathsAway;
-
-        // Calculate the perpendicular direction (90 degrees from AB heading)
-        // Positive offset is to the LEFT of the AB line (when looking from A to B)
-        double perpAngle = abHeading + Math.PI / 2;
-        double offsetEasting = Math.Sin(perpAngle) * nextDistAway;
-        double offsetNorthing = Math.Cos(perpAngle) * nextDistAway;
-
-        // Create the next track for visualization (relative to reference track)
-        _nextTrack = Track.FromABLine(
-            $"Path {nextPathsAway}",
-            new Vec3(refPointA.Easting + offsetEasting, refPointA.Northing + offsetNorthing, abHeading),
-            new Vec3(refPointB.Easting + offsetEasting, refPointB.Northing + offsetNorthing, abHeading));
-        _nextTrack.IsActive = false;
-
-        Console.WriteLine($"[YouTurn] Turn {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading {(_isHeadingSameWay ? "SAME" : "OPPOSITE")} way");
-        Console.WriteLine($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")}: path {_howManyPathsAway} -> {nextPathsAway} ({nextDistAway:F1}m)");
-
-        // Update map visualization
-        _mapService.SetNextTrack(_nextTrack);
-        _mapService.SetIsInYouTurn(true);
-    }
-
-    /// <summary>
-    /// Complete the U-turn: switch to the next line and reset state.
-    /// </summary>
-    private void CompleteYouTurn()
-    {
-        // Save the turn completion position (end of turn path) to prevent immediate re-triggering
-        if (_youTurnPath != null && _youTurnPath.Count > 0)
-        {
-            var endPoint = _youTurnPath[_youTurnPath.Count - 1];
-            _lastTurnCompletionPosition = new Vec2(endPoint.Easting, endPoint.Northing);
-        }
-
-        // Following AgOpenGPS approach exactly:
-        // howManyPathsAway += (isTurnLeft ^ isHeadingSameWay) ? rowSkipsWidth : -rowSkipsWidth
-        int rowSkipWidth = UTurnSkipRows + 1;
-
-        // Calculate offset direction using XOR like AgOpenGPS
-        // IMPORTANT: Use _wasHeadingSameWayAtTurnStart (saved at turn creation), NOT _isHeadingSameWay
-        // (which has now flipped because we completed a 180° turn)
-        bool positiveOffset = _isTurnLeft ^ _wasHeadingSameWayAtTurnStart;
-        int offsetChange = positiveOffset ? rowSkipWidth : -rowSkipWidth;
-        _howManyPathsAway += offsetChange;
-
-        Console.WriteLine($"[YouTurn] Turn complete! Turn was {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading WAS {(_wasHeadingSameWayAtTurnStart ? "SAME" : "OPPOSITE")} at start");
-        Console.WriteLine($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")} by {offsetChange}, now on path {_howManyPathsAway}");
-        Console.WriteLine($"[YouTurn] Total offset: {Vehicle.TrackWidth * _howManyPathsAway:F1}m from reference line");
-
-        // Remember this turn direction for alternating pattern
-        _lastTurnWasLeft = _isTurnLeft;
-        _hasCompletedFirstTurn = true;
-
-        // Update centralized state
-        State.YouTurn.LastTurnWasLeft = _isTurnLeft;
-        State.YouTurn.HasCompletedFirstTurn = true;
-        State.YouTurn.IsTriggered = false;
-        State.YouTurn.IsExecuting = false;
-        State.YouTurn.TurnPath = null;
-
-        // Clear the U-turn state
-        _isYouTurnTriggered = false;
-        _isInYouTurn = false;
-        _youTurnPath = null;
-        _nextTrack = null;
-        _youTurnCounter = 10; // Keep high so next U-turn path is created when conditions are met
-
-        // Update map visualization - clear the old turn path and next line
-        // The active line will be updated by UpdateActiveLineVisualization in CalculateAutoSteerGuidance
-        _mapService.SetYouTurnPath(null);
-        _mapService.SetNextTrack(null);
-        _mapService.SetIsInYouTurn(false);
-
-        StatusMessage = $"Following path {_howManyPathsAway} ({Vehicle.TrackWidth * Math.Abs(_howManyPathsAway):F1}m offset)";
-    }
-
-    /// <summary>
-    /// Calculate distance from current position to the headland boundary in the direction of travel.
-    /// </summary>
-    private double CalculateDistanceToHeadland(AgValoniaGPS.Models.Position currentPosition, double headingRadians)
-    {
-        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
-            return double.MaxValue;
-
-        // Use a simple raycast approach
-        double minDistance = double.MaxValue;
-        Vec2 pos = new Vec2(currentPosition.Easting, currentPosition.Northing);
-        Vec2 dir = new Vec2(Math.Sin(headingRadians), Math.Cos(headingRadians));
-
-        int n = _currentHeadlandLine.Count;
-        for (int i = 0; i < n; i++)
-        {
-            var p1 = _currentHeadlandLine[i];
-            var p2 = _currentHeadlandLine[(i + 1) % n];
-
-            // Ray-segment intersection
-            Vec2 edge = new Vec2(p2.Easting - p1.Easting, p2.Northing - p1.Northing);
-            Vec2 toP1 = new Vec2(p1.Easting - pos.Easting, p1.Northing - pos.Northing);
-
-            double cross = dir.Easting * edge.Northing - dir.Northing * edge.Easting;
-            if (Math.Abs(cross) < 1e-10) continue; // Parallel
-
-            double t = (toP1.Easting * edge.Northing - toP1.Northing * edge.Easting) / cross;
-            double u = (toP1.Easting * dir.Northing - toP1.Northing * dir.Easting) / cross;
-
-            if (t > 0 && u >= 0 && u <= 1)
-            {
-                if (t < minDistance)
-                    minDistance = t;
-            }
-        }
-
-        return minDistance;
-    }
-
-    /// <summary>
-    /// Create a YouTurn path when approaching headland.
-    /// Uses a simplified direct approach that creates entry leg, semicircle, and exit leg.
-    /// </summary>
-    private void CreateYouTurnPath(AgValoniaGPS.Models.Position currentPosition, double headingRadians, double abHeading)
-    {
-        var track = SelectedTrack;
-        if (track == null || _currentHeadlandLine == null) return;
-
-        // Determine turn direction for zig-zag pattern across field
-        // The turn direction depends on whether we're incrementing tracks (_howManyPathsAway increasing)
-        // For zig-zag pattern:
-        // - When going A→B (same way): turn LEFT to increment track
-        // - When going B→A (opposite way): turn RIGHT to increment track
-        // This creates alternating left/right turns as we traverse the field
-        bool turnLeft = _isHeadingSameWay;  // Same direction = turn left, opposite = turn right
-        _isTurnLeft = turnLeft;
-        _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
-
-        Console.WriteLine($"[YouTurn] Creating turn with YouTurnCreationService: direction={(_isTurnLeft ? "LEFT" : "RIGHT")}, isHeadingSameWay={_isHeadingSameWay}, pathsAway={_howManyPathsAway}");
-
-        try
-        {
-            // Build the YouTurnCreationInput with proper boundary wiring
-            var input = BuildYouTurnCreationInput(currentPosition, headingRadians, abHeading, turnLeft);
-            if (input == null)
-            {
-                Console.WriteLine($"[YouTurn] Failed to build creation input - using simple fallback");
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
-                {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                }
-                return;
-            }
-
-            // Use the YouTurnCreationService to create the path
-            var output = _youTurnCreationService.CreateTurn(input);
-
-            if (output.Success && output.TurnPath != null && output.TurnPath.Count > 10)
-            {
-                State.YouTurn.TurnPath = output.TurnPath;
-                _youTurnPath = output.TurnPath;
-                _youTurnCounter = 0;
-                StatusMessage = $"YouTurn path created ({output.TurnPath.Count} points)";
-                Console.WriteLine($"[YouTurn] Service path created with {output.TurnPath.Count} points, distToTurnLine={output.DistancePivotToTurnLine:F1}m");
-
-                // Update map to show the turn path
-                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-            }
-            else
-            {
-                Console.WriteLine($"[YouTurn] Service creation failed: {output.FailureReason ?? "unknown"}, using simple fallback");
-                // Fall back to simple geometric approach
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
-                {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[YouTurn] Exception creating path: {ex.Message}");
-            // Fall back to simple geometric approach
-            try
-            {
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
-                {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                }
-            }
-            catch { }
-        }
-    }
-
-    /// <summary>
-    /// Build the YouTurnCreationInput with proper boundary wiring.
-    ///
-    /// The IsPointInsideTurnArea delegate must return:
-    /// - 0 = point is in the FIELD (safe to drive, inside headland boundary)
-    /// - != 0 = point is in the TURN AREA (headland zone, where turn arc should be)
-    ///
-    /// We set this up with:
-    /// - turnAreaPolygons[0] = outer field boundary (outer limit)
-    /// - turnAreaPolygons[1] = headland boundary (inner limit, marks the field)
-    ///
-    /// So points between outer and headland return 0 (in outer but not in inner = headland zone... wait, that's wrong)
-    /// Actually TurnAreaService returns 0 if in outer and NOT in any inner.
-    /// So we need to INVERT the logic or structure it differently.
-    ///
-    /// Simpler approach: Create a custom delegate that directly tests:
-    /// - If point is OUTSIDE outer boundary -> return 1 (out of bounds)
-    /// - If point is INSIDE headland boundary (in the field) -> return 0 (safe)
-    /// - Otherwise (in headland zone) -> return 1 (turn area)
-    /// </summary>
-    private YouTurnCreationInput? BuildYouTurnCreationInput(
-        AgValoniaGPS.Models.Position currentPosition,
-        double headingRadians,
-        double abHeading,
-        bool turnLeft)
-    {
-        // Need boundary to create turn boundaries
-        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
-        {
-            Console.WriteLine($"[YouTurn] No valid outer boundary available");
-            return null;
-        }
-
-        var track = SelectedTrack;
-        if (track == null)
-        {
-            Console.WriteLine($"[YouTurn] No track selected");
-            return null;
-        }
-
-        // Tool width (track width in our case)
-        double toolWidth = Vehicle.TrackWidth;
-
-        // Total headland width from the headland multiplier setting
-        double totalHeadlandWidth = HeadlandCalculatedWidth;
-
-        // Create outer boundary Vec3 list
-        var outerPoints = _currentBoundary.OuterBoundary.Points
-            .Select(p => new Vec2(p.Easting, p.Northing))
-            .ToList();
-        var outerBoundaryVec3 = _polygonOffsetService.CalculatePointHeadings(outerPoints);
-
-        // Create turn boundary: outer boundary offset inward by 1 tool width
-        // This is the line that the turn arc should tangent
-        var turnBoundaryVec2 = _polygonOffsetService.CreateInwardOffset(outerPoints, toolWidth);
-        if (turnBoundaryVec2 == null || turnBoundaryVec2.Count < 3)
-        {
-            Console.WriteLine($"[YouTurn] Failed to create turn boundary (1 tool width offset)");
-            return null;
-        }
-        var turnBoundaryVec3 = _polygonOffsetService.CalculatePointHeadings(turnBoundaryVec2);
-
-        // Create headland boundary: outer boundary offset inward by total headland width
-        // This marks the inner edge of the turn zone (where the field starts)
-        var headlandBoundaryVec2 = _polygonOffsetService.CreateInwardOffset(outerPoints, totalHeadlandWidth);
-        if (headlandBoundaryVec2 == null || headlandBoundaryVec2.Count < 3)
-        {
-            Console.WriteLine($"[YouTurn] Failed to create headland boundary");
-            return null;
-        }
-        var headlandBoundaryVec3 = _polygonOffsetService.CalculatePointHeadings(headlandBoundaryVec2);
-
-        // Create the BoundaryTurnLine for the target turn boundary (where turn tangents)
-        var boundaryTurnLines = new List<BoundaryTurnLine>
-        {
-            new BoundaryTurnLine
-            {
-                Points = turnBoundaryVec3,
-                BoundaryIndex = 0
-            }
-        };
-
-        // HeadlandWidth = distance from headland boundary to turn boundary
-        double headlandWidthForTurn = Math.Max(totalHeadlandWidth - toolWidth, toolWidth);
-
-        // Create IsPointInsideTurnArea delegate
-        // Returns: 0 = inside field (OK), != 0 = in turn area or out of bounds
-        Func<Vec3, int> isPointInsideTurnArea = (point) =>
-        {
-            // Check if outside outer boundary (completely out of bounds)
-            if (!GeometryMath.IsPointInPolygon(outerBoundaryVec3, point))
-            {
-                return -1; // Outside field entirely
-            }
-
-            // Check if inside headland boundary (in the working field)
-            if (GeometryMath.IsPointInPolygon(headlandBoundaryVec3, point))
-            {
-                return 0; // In the field - safe to drive
-            }
-
-            // Point is between outer and headland = in the turn zone
-            return 1; // In turn area
-        };
-
-        // Build the input
-        var input = new YouTurnCreationInput
-        {
-            TurnType = YouTurnType.AlbinStyle,
-            IsTurnLeft = turnLeft,
-            GuidanceType = GuidanceLineType.ABLine,
-
-            // Boundary data - the turn line the path should tangent
-            BoundaryTurnLines = boundaryTurnLines,
-
-            // Custom delegate for turn area testing
-            IsPointInsideTurnArea = isPointInsideTurnArea,
-
-            // AB line guidance data
-            ABHeading = abHeading,
-            // Calculate reference point on the CURRENT track (not the original AB line)
-            // Offset PointA perpendicular to the AB heading by howManyPathsAway * trackWidth
-            ABReferencePoint = CalculateCurrentTrackReferencePoint(track, toolWidth, abHeading),
-            IsHeadingSameWay = _isHeadingSameWay,
-
-            // Vehicle position and configuration
-            PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            ToolWidth = toolWidth,
-            ToolOverlap = _vehicleProfileService.ActiveProfile?.Tool.Overlap ?? 0.0,
-            ToolOffset = _vehicleProfileService.ActiveProfile?.Tool.Offset ?? 0.0,
-            TurnRadius = _vehicleProfileService.ActiveProfile?.YouTurn.TurnRadius ?? 8.0,
-
-            // Turn parameters
-            RowSkipsWidth = UTurnSkipRows + 1,
-            TurnStartOffset = 0,
-            HowManyPathsAway = _howManyPathsAway,
-            NudgeDistance = 0.0,
-            TrackMode = 0, // Standard mode
-
-            // State machine
-            MakeUTurnCounter = _youTurnCounter + 10, // Ensure we pass the throttle check
-
-            // Leg extension - this is key for proper leg length through headland
-            YouTurnLegExtensionMultiplier = 2.5,
-            HeadlandWidth = headlandWidthForTurn
-        };
-
-        Console.WriteLine($"[YouTurn] Input built: toolWidth={toolWidth:F1}m, totalHeadland={totalHeadlandWidth:F1}m, headlandWidthForTurn={headlandWidthForTurn:F1}m, turnBoundaryPoints={turnBoundaryVec3.Count}, headlandPoints={headlandBoundaryVec3.Count}");
-
-        return input;
-    }
-
-    /// <summary>
-    /// Calculate a reference point on the current track (offset from the original AB line).
-    /// The track number is determined by _howManyPathsAway.
-    /// </summary>
-    private Vec2 CalculateCurrentTrackReferencePoint(Track track, double toolWidth, double abHeading)
-    {
-        if (track.Points.Count == 0)
-            return new Vec2(0, 0);
-
-        // Start with the first point on the original track
-        double baseEasting = track.Points[0].Easting;
-        double baseNorthing = track.Points[0].Northing;
-
-        // Calculate perpendicular offset to get to the current track
-        // The perpendicular direction is 90° from the AB heading
-        double perpAngle = abHeading + Math.PI / 2.0;
-
-        // The offset distance is howManyPathsAway * toolWidth
-        double offsetDistance = _howManyPathsAway * toolWidth;
-
-        // Apply the offset perpendicular to the AB line
-        double offsetEasting = baseEasting + Math.Sin(perpAngle) * offsetDistance;
-        double offsetNorthing = baseNorthing + Math.Cos(perpAngle) * offsetDistance;
-
-        Console.WriteLine($"[YouTurn] Reference point: howManyPathsAway={_howManyPathsAway}, offset={offsetDistance:F2}m, perpAngle={perpAngle * 180 / Math.PI:F1}°");
-
-        return new Vec2(offsetEasting, offsetNorthing);
-    }
-
-    /// <summary>
-    /// Create a simple U-turn path directly using geometry.
-    /// This creates a SYMMETRICAL U-turn by calculating exact endpoint positions first,
-    /// then building the path to connect them.
-    /// </summary>
-    private List<Vec3> CreateSimpleUTurnPath(AgValoniaGPS.Models.Position currentPosition, double headingRadians, double abHeading, bool turnLeft)
-    {
-        var path = new List<Vec3>();
-
-        // Parameters
-        double pointSpacing = 0.5; // meters between path points
-        int rowSkipWidth = UTurnSkipRows + 1;
-        double trackWidth = Vehicle.TrackWidth;
-        double turnOffset = trackWidth * rowSkipWidth; // Perpendicular distance to next track
-
-        // Turn radius = half of turn offset so semicircle diameter = track spacing
-        double turnRadius = turnOffset / 2.0;
-
-        // Minimum turn radius constraint
-        double minTurnRadius = 4.0;
-        if (turnRadius < minTurnRadius)
-        {
-            turnRadius = minTurnRadius;
-        }
-
-        // Get the heading we're traveling (adjusted for same/opposite to AB)
-        double travelHeading = abHeading;
-        if (!_isHeadingSameWay)
-        {
-            travelHeading += Math.PI;
-            if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
-        }
-
-        // Exit heading is 180° opposite (going back toward field)
-        double exitHeading = travelHeading + Math.PI;
-        if (exitHeading >= Math.PI * 2) exitHeading -= Math.PI * 2;
-
-        // Perpendicular direction (toward next track)
-        double perpAngle = turnLeft ? (travelHeading - Math.PI / 2) : (travelHeading + Math.PI / 2);
-
-        // Calculate the headland boundary point on CURRENT track
-        double distToHeadland = _distanceToHeadland;
-        double headlandBoundaryEasting = currentPosition.Easting + Math.Sin(travelHeading) * distToHeadland;
-        double headlandBoundaryNorthing = currentPosition.Northing + Math.Cos(travelHeading) * distToHeadland;
-
-        // Leg lengths
-        // The arc extends turnRadius beyond the arc start (toward the outer boundary)
-        // So: arc_top_position = headlandLegLength + turnRadius
-        // We want arc_top to be at HeadlandDistance (at the outer boundary)
-        // Therefore: headlandLegLength = HeadlandDistance - turnRadius
-        // But ensure arc start is at least a small margin past the headland boundary
-        double minArcStartMargin = 2.0; // meters past headland boundary
-        double headlandLegLength = Math.Max(HeadlandDistance - turnRadius, minArcStartMargin);
-
-        // How far path extends into cultivated area (entry/exit legs)
-        double fieldLegLength = Math.Max(HeadlandDistance * 0.5, turnRadius);
-
-        Console.WriteLine($"[YouTurn] HeadlandBoundary: E={headlandBoundaryEasting:F1}, N={headlandBoundaryNorthing:F1}");
-        Console.WriteLine($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m, turnRadius={turnRadius:F1}m, turnOffset={turnOffset:F1}m");
-        Console.WriteLine($"[YouTurn] Arc will extend to {headlandLegLength + turnRadius:F1}m past headland boundary (headland zone is {HeadlandDistance:F1}m)");
-
-        // ============================================
-        // CALCULATE KEY WAYPOINTS IN ABSOLUTE COORDINATES
-        // ============================================
-        // The U-turn connects two parallel AB lines separated by turnOffset.
-        // Entry start and exit end must BOTH be in the cultivated area (outside headland).
-        // The arc happens deep in the headland.
-
-        // STEP 1: Calculate the ENTRY START position (green marker)
-        // This is on the CURRENT track, fieldLegLength BEHIND the headland boundary
-        double entryStartE = headlandBoundaryEasting - Math.Sin(travelHeading) * fieldLegLength;
-        double entryStartN = headlandBoundaryNorthing - Math.Cos(travelHeading) * fieldLegLength;
-
-        // STEP 2: Calculate the ARC START position
-        // This is on the CURRENT track, deep in the headland
-        double arcStartE = headlandBoundaryEasting + Math.Sin(travelHeading) * headlandLegLength;
-        double arcStartN = headlandBoundaryNorthing + Math.Cos(travelHeading) * headlandLegLength;
-
-        // STEP 3: Calculate the ARC CENTER (center of semicircle)
-        // Perpendicular from arc start by turnRadius
-        double arcCenterE = arcStartE + Math.Sin(perpAngle) * turnRadius;
-        double arcCenterN = arcStartN + Math.Cos(perpAngle) * turnRadius;
-
-        // STEP 4: Calculate the ARC END position
-        // Arc end is where the semicircle ends: diameter = 2 * turnRadius from arcStart
-        // (This may differ from turnOffset when turnRadius is clamped to minTurnRadius)
-        double arcDiameter = 2.0 * turnRadius;
-        double arcEndE = arcStartE + Math.Sin(perpAngle) * arcDiameter;
-        double arcEndN = arcStartN + Math.Cos(perpAngle) * arcDiameter;
-
-        // STEP 5: Calculate the EXIT END position (red marker)
-        // The exit end must be on the NEXT track, at the same distance from headland as entry start
-        // Since perpAngle already points toward the next track (based on turnLeft and travelHeading),
-        // we just need to offset by turnOffset in that direction
-        double exitEndE = entryStartE + Math.Sin(perpAngle) * turnOffset;
-        double exitEndN = entryStartN + Math.Cos(perpAngle) * turnOffset;
-        Console.WriteLine($"[YouTurn] ExitEnd calc: entryStart({entryStartE:F1},{entryStartN:F1}) + perpAngle({perpAngle * 180 / Math.PI:F1}°) * {turnOffset:F1}m = ({exitEndE:F1},{exitEndN:F1})");
-        Console.WriteLine($"[YouTurn] perpAngle direction: turnLeft={turnLeft}, travelHeading={travelHeading * 180 / Math.PI:F1}°");
-
-        Console.WriteLine($"[YouTurn] turnOffset={turnOffset:F1}m, arcDiameter={arcDiameter:F1}m (2*turnRadius)");
-        Console.WriteLine($"[YouTurn] EntryStart (green): E={entryStartE:F1}, N={entryStartN:F1}");
-        Console.WriteLine($"[YouTurn] ExitEnd (red): E={exitEndE:F1}, N={exitEndN:F1} = entryStart + perpOffset({turnOffset:F1}m)");
-        Console.WriteLine($"[YouTurn] ArcStart: E={arcStartE:F1}, N={arcStartN:F1}");
-        Console.WriteLine($"[YouTurn] ArcEnd: E={arcEndE:F1}, N={arcEndN:F1} = arcStart + perpOffset({arcDiameter:F1}m)");
-
-        // ============================================
-        // BUILD PATH: Entry Leg
-        // ============================================
-        double totalEntryLength = fieldLegLength + headlandLegLength;
-        int totalEntryPoints = (int)(totalEntryLength / pointSpacing);
-
-        for (int i = 0; i <= totalEntryPoints; i++)
-        {
-            double dist = i * pointSpacing;
-            Vec3 pt = new Vec3
-            {
-                Easting = entryStartE + Math.Sin(travelHeading) * dist,
-                Northing = entryStartN + Math.Cos(travelHeading) * dist,
-                Heading = travelHeading
-            };
-            path.Add(pt);
-        }
-
-        // ============================================
-        // BUILD PATH: Semicircle Arc
-        // ============================================
-        // Generate arc points from arcStart to arcEnd around arcCenter
-        int arcPoints = Math.Max((int)(Math.PI * turnRadius / pointSpacing), 20);
-
-        for (int i = 1; i <= arcPoints; i++)
-        {
-            // Fraction around the arc (0 to 1)
-            double t = (double)i / arcPoints;
-
-            // Angle: start pointing back toward entry leg, sweep 180° toward exit leg
-            // Start angle: direction from center to arcStart
-            double startAngle = Math.Atan2(arcStartE - arcCenterE, arcStartN - arcCenterN);
-
-            // Sweep direction in Easting/Northing coordinate system where:
-            //   Easting = sin(angle), Northing = cos(angle)
-            //   angle=0 is north, angle=π/2 is east, angle=π is south, angle=3π/2 is west
-            // For left turn: arc center is to the left of travel direction
-            //   We want to sweep AWAY from field (into headland), which means DECREASING angle
-            // For right turn: arc center is to the right of travel direction
-            //   We want to sweep AWAY from field (into headland), which means INCREASING angle
-            double sweepAngle = turnLeft ? (-Math.PI * t) : (Math.PI * t);
-            double currentAngle = startAngle + sweepAngle;
-
-            // Point on arc
-            double ptE = arcCenterE + Math.Sin(currentAngle) * turnRadius;
-            double ptN = arcCenterN + Math.Cos(currentAngle) * turnRadius;
-
-            // Heading is tangent to circle (perpendicular to radius)
-            // For left turn (decreasing angle/clockwise), tangent is +90° from radius
-            // For right turn (increasing angle/counter-clockwise), tangent is -90° from radius
-            double tangentHeading = currentAngle + (turnLeft ? -Math.PI / 2 : Math.PI / 2);
-            if (tangentHeading < 0) tangentHeading += Math.PI * 2;
-            if (tangentHeading >= Math.PI * 2) tangentHeading -= Math.PI * 2;
-
-            Vec3 pt = new Vec3
-            {
-                Easting = ptE,
-                Northing = ptN,
-                Heading = tangentHeading
-            };
-            path.Add(pt);
-        }
-
-        // ============================================
-        // BUILD PATH: Exit Leg
-        // ============================================
-        // Exit leg goes from arcEnd to exitEnd (the pre-calculated symmetric endpoint)
-        // Calculate the actual distance from arcEnd to exitEnd
-        double exitLegDeltaE = exitEndE - arcEndE;
-        double exitLegDeltaN = exitEndN - arcEndN;
-        double actualExitLength = Math.Sqrt(exitLegDeltaE * exitLegDeltaE + exitLegDeltaN * exitLegDeltaN);
-        int totalExitPoints = Math.Max((int)(actualExitLength / pointSpacing), 10);
-
-        for (int i = 1; i <= totalExitPoints; i++)
-        {
-            // Interpolate from arcEnd to exitEnd
-            double t = (double)i / totalExitPoints;
-            Vec3 pt = new Vec3
-            {
-                Easting = arcEndE + exitLegDeltaE * t,
-                Northing = arcEndN + exitLegDeltaN * t,
-                Heading = exitHeading
-            };
-            path.Add(pt);
-        }
-
-        Console.WriteLine($"[YouTurn] Path has {path.Count} points: {totalEntryPoints + 1} entry, {arcPoints} arc, {totalExitPoints} exit");
-        Console.WriteLine($"[YouTurn] Actual entry start: E={path[0].Easting:F1}, N={path[0].Northing:F1}");
-        Console.WriteLine($"[YouTurn] Actual exit end: E={path[path.Count - 1].Easting:F1}, N={path[path.Count - 1].Northing:F1}");
-
-        return path;
-    }
-
-    /// <summary>
-    /// Check if a point is inside the headland boundary.
-    /// </summary>
-    private bool IsPointInsideHeadland(Vec3 point)
-    {
-        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
-            return false;
-
-        // Use ray casting algorithm
-        int n = _currentHeadlandLine.Count;
-        bool inside = false;
-
-        for (int i = 0, j = n - 1; i < n; j = i++)
-        {
-            var pi = _currentHeadlandLine[i];
-            var pj = _currentHeadlandLine[j];
-
-            if (((pi.Northing > point.Northing) != (pj.Northing > point.Northing)) &&
-                (point.Easting < (pj.Easting - pi.Easting) * (point.Northing - pi.Northing) / (pj.Northing - pi.Northing) + pi.Easting))
-            {
-                inside = !inside;
-            }
-        }
-
-        return inside;
-    }
-
-    /// <summary>
-    /// Calculate steering guidance while following the YouTurn path.
-    /// </summary>
-    private void CalculateYouTurnGuidance(AgValoniaGPS.Models.Position currentPosition)
-    {
-        if (_youTurnPath == null || _youTurnPath.Count == 0) return;
-
-        double headingRadians = currentPosition.Heading * Math.PI / 180.0;
-        double speed = currentPosition.Speed * 3.6; // km/h
-
-        var input = new YouTurnGuidanceInput
-        {
-            TurnPath = _youTurnPath,
-            PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            SteerPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            Wheelbase = Vehicle.Wheelbase,
-            MaxSteerAngle = Vehicle.MaxSteerAngle,
-            UseStanley = false, // Use Pure Pursuit for smoother turns
-            GoalPointDistance = Guidance.GoalPointLookAheadHold,
-            UTurnCompensation = Guidance.UTurnCompensation,
-            FixHeading = headingRadians,
-            AvgSpeed = speed,
-            IsReverse = false,
-            UTurnStyle = 0 // Albin style
-        };
-
-        var output = _youTurnGuidanceService.CalculateGuidance(input);
-
-        if (output.IsTurnComplete)
-        {
-            // Turn complete - switch to next line and reset state
-            Console.WriteLine("[YouTurn] Guidance detected turn complete, calling CompleteYouTurn");
-            CompleteYouTurn();
-        }
-        else
-        {
-            // Apply steering from YouTurn guidance with compensation
-            SimulatorSteerAngle = output.SteerAngle * Guidance.UTurnCompensation;
-
-            // Update centralized guidance state
-            State.Guidance.CrossTrackError = output.DistanceFromCurrentLine;
-            State.Guidance.SteerAngle = output.SteerAngle;
-
-            // Legacy property (for existing bindings - display in cm)
-            CrossTrackError = output.DistanceFromCurrentLine * 100;
-        }
-    }
-
-    // Boundary recording event handlers
-    private void OnBoundaryPointAdded(object? sender, BoundaryPointAddedEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Update centralized state
-            State.BoundaryRec.PointCount = e.TotalPoints;
-            State.BoundaryRec.AreaHectares = e.AreaHectares;
-            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
-
-            // Legacy properties
-            BoundaryPointCount = e.TotalPoints;
-            BoundaryAreaHectares = e.AreaHectares;
-
-            // Update map with recorded points
-            var points = _boundaryRecordingService.RecordedPoints
-                .Select(p => (p.Easting, p.Northing))
-                .ToList();
-            _mapService.SetRecordingPoints(points);
-        });
-    }
-
-    private void OnBoundaryStateChanged(object? sender, BoundaryRecordingStateChangedEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Update centralized state
-            State.BoundaryRec.IsRecording = e.State == BoundaryRecordingState.Recording;
-            State.BoundaryRec.IsPaused = e.State == BoundaryRecordingState.Paused;
-            State.BoundaryRec.PointCount = e.PointCount;
-            State.BoundaryRec.AreaHectares = e.AreaHectares;
-            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
-
-            // Legacy properties
-            IsBoundaryRecording = e.State == BoundaryRecordingState.Recording;
-            BoundaryPointCount = e.PointCount;
-            BoundaryAreaHectares = e.AreaHectares;
-
-            // Clear recording points from map when recording becomes idle
-            if (e.State == BoundaryRecordingState.Idle)
-            {
-                State.BoundaryRec.RecordingPoints.Clear();
-                _mapService.ClearRecordingPoints();
-            }
-            // Update map with current recorded points (for undo/clear operations)
-            else if (e.PointCount >= 0)
-            {
-                var points = _boundaryRecordingService.RecordedPoints
-                    .Select(p => (p.Easting, p.Northing))
-                    .ToList();
-                _mapService.SetRecordingPoints(points);
-            }
-        });
+        // This is handled via StopBoundaryRecordingCommand which saves the boundary
+        // Additional post-recording logic can be added here if needed
     }
 
     private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
@@ -1916,17 +979,6 @@ public class MainViewModel : ReactiveObject
             // Toggle autosteer when requested by module communication service
             // (e.g., from work switch or steer switch)
             ToggleAutoSteerCommand?.Execute(null);
-        });
-    }
-
-    private void OnSectionMasterToggleRequested(object? sender, SectionMasterToggleEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Toggle section master when requested by module communication service
-            // This replaces the direct PerformClick() calls from the WinForms implementation
-            // TODO: When separate Auto/Manual section buttons are implemented, handle them individually
-            ToggleSectionMasterCommand?.Execute(null);
         });
     }
 
@@ -2116,7 +1168,7 @@ public class MainViewModel : ReactiveObject
         LoadHeadlandFromField(field);
 
         // Load AB lines from field directory if available
-        LoadTracksFromField(field);
+        Tracks.LoadTracksFromField(field);
     }
 
     /// <summary>
@@ -2227,27 +1279,14 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isFieldToolsPanelVisible, value);
     }
 
-    private bool _isSimulatorPanelVisible;
     public bool IsSimulatorPanelVisible
     {
-        get => _isSimulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+        get => Simulator.IsPanelVisible;
+        set => Simulator.IsPanelVisible = value;
     }
 
-    // Panel-based dialog data properties (visibility now managed by State.UI)
-    private decimal? _simCoordsDialogLatitude;
-    public decimal? SimCoordsDialogLatitude
-    {
-        get => _simCoordsDialogLatitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLatitude, value);
-    }
-
-    private decimal? _simCoordsDialogLongitude;
-    public decimal? SimCoordsDialogLongitude
-    {
-        get => _simCoordsDialogLongitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLongitude, value);
-    }
+    // Note: SimCoordsDialogLatitude/Longitude delegate to Simulator.DialogLatitude/Longitude
+    // (see delegating properties in Simulator section below)
 
     // Field Selection Dialog properties (visibility managed by State.UI)
     public ObservableCollection<FieldSelectionItem> AvailableFields { get; } = new();
@@ -2262,82 +1301,52 @@ public class MainViewModel : ReactiveObject
     private string _fieldSelectionDirectory = string.Empty;
     private bool _fieldsSortedAZ = false;
 
-    // AB Line Creation Mode state (dialog visibility managed by State.UI)
-    private ABCreationMode _currentABCreationMode = ABCreationMode.None;
+    // AB Line Creation Mode state - delegates to TrackManagementViewModel
+    /// <summary>
+    /// Delegates to Tracks.CurrentABCreationMode for backward compatibility.
+    /// </summary>
     public ABCreationMode CurrentABCreationMode
     {
-        get => _currentABCreationMode;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _currentABCreationMode, value);
-            this.RaisePropertyChanged(nameof(IsCreatingABLine));
-            this.RaisePropertyChanged(nameof(EnableABClickSelection));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
-        }
+        get => Tracks.CurrentABCreationMode;
+        set => Tracks.CurrentABCreationMode = value;
     }
 
-    private ABPointStep _currentABPointStep = ABPointStep.None;
+    /// <summary>
+    /// Delegates to Tracks.CurrentABPointStep for backward compatibility.
+    /// </summary>
     public ABPointStep CurrentABPointStep
     {
-        get => _currentABPointStep;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _currentABPointStep, value);
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
-        }
+        get => Tracks.CurrentABPointStep;
+        set => Tracks.CurrentABPointStep = value;
     }
 
-    // Temporary storage for Point A during AB creation
-    private Position? _pendingPointA;
+    /// <summary>
+    /// Delegates to Tracks.PendingPointA for backward compatibility.
+    /// </summary>
     public Position? PendingPointA
     {
-        get => _pendingPointA;
-        set => this.RaiseAndSetIfChanged(ref _pendingPointA, value);
+        get => Tracks.PendingPointA;
+        set => Tracks.PendingPointA = value;
     }
 
-    // Computed properties for UI binding
-    public bool IsCreatingABLine => CurrentABCreationMode != ABCreationMode.None;
+    // Computed properties for UI binding - delegate to Tracks
+    public bool IsCreatingABLine => Tracks.IsCreatingABLine;
+    public bool EnableABClickSelection => Tracks.EnableABClickSelection;
+    public string ABCreationInstructions => Tracks.ABCreationInstructions;
 
-    public bool EnableABClickSelection => CurrentABCreationMode == ABCreationMode.DrawAB ||
-                                          CurrentABCreationMode == ABCreationMode.DriveAB;
+    // Tracks Dialog data properties - delegate to Tracks
+    /// <summary>
+    /// Delegates to Tracks.SavedTracks for backward compatibility.
+    /// </summary>
+    public ObservableCollection<Track> SavedTracks => Tracks.SavedTracks;
 
-    public string ABCreationInstructions
-    {
-        get
-        {
-            return (CurrentABCreationMode, CurrentABPointStep) switch
-            {
-                (ABCreationMode.DriveAB, ABPointStep.SettingPointA) => "Tap screen to set Point A at current position",
-                (ABCreationMode.DriveAB, ABPointStep.SettingPointB) => "Drive to B, then tap screen to set Point B",
-                (ABCreationMode.DrawAB, ABPointStep.SettingPointA) => "Tap on map to place Point A",
-                (ABCreationMode.DrawAB, ABPointStep.SettingPointB) => "Tap on map to place Point B",
-                (ABCreationMode.Curve, _) => "Drive along curve path, then tap to finish",
-                _ => string.Empty
-            };
-        }
-    }
-
-    // Tracks Dialog data properties
-    public ObservableCollection<Track> SavedTracks { get; } = new();
-
-    private Track? _selectedTrack;
+    /// <summary>
+    /// Delegates to Tracks.SelectedTrack for backward compatibility.
+    /// </summary>
     public Track? SelectedTrack
     {
-        get => _selectedTrack;
-        set
-        {
-            var oldValue = _selectedTrack;
-            if (this.RaiseAndSetIfChanged(ref _selectedTrack, value) != oldValue)
-            {
-                var oldA = oldValue?.Points.FirstOrDefault();
-                var oldB = oldValue?.Points.LastOrDefault();
-                var newA = value?.Points.FirstOrDefault();
-                var newB = value?.Points.LastOrDefault();
-                Console.WriteLine($"[SelectedTrack] Changed from A({oldA?.Easting:F1},{oldA?.Northing:F1}) B({oldB?.Easting:F1},{oldB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack]       to A({newA?.Easting:F1},{newA?.Northing:F1}) B({newB?.Easting:F1},{newB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack] Stack trace: {Environment.StackTrace}");
-            }
-        }
+        get => Tracks.SelectedTrack;
+        set => Tracks.SelectedTrack = value;
     }
 
     // Track management commands
@@ -2821,114 +1830,95 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _selectedBoundaryIndex, value);
     }
 
-    private bool _isBoundaryPlayerPanelVisible;
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsPlayerPanelVisible for backward compatibility.
+    /// </summary>
     public bool IsBoundaryPlayerPanelVisible
     {
-        get => _isBoundaryPlayerPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryPlayerPanelVisible, value);
-    }
-
-    private bool _isBoundaryRecording;
-    public bool IsBoundaryRecording
-    {
-        get => _isBoundaryRecording;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryRecording, value);
-    }
-
-    private int _boundaryPointCount;
-    public int BoundaryPointCount
-    {
-        get => _boundaryPointCount;
-        set => this.RaiseAndSetIfChanged(ref _boundaryPointCount, value);
-    }
-
-    private double _boundaryAreaHectares;
-    public double BoundaryAreaHectares
-    {
-        get => _boundaryAreaHectares;
-        set => this.RaiseAndSetIfChanged(ref _boundaryAreaHectares, value);
-    }
-
-    // Boundary Player settings
-    private bool _isBoundarySectionControlOn;
-    public bool IsBoundarySectionControlOn
-    {
-        get => _isBoundarySectionControlOn;
-        set
-        {
-            if (this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value) != value) return;
-            StatusMessage = value ? "Boundary records when section is on" : "Boundary section control off";
-        }
-    }
-
-    private bool _isDrawRightSide = true;
-    public bool IsDrawRightSide
-    {
-        get => _isDrawRightSide;
-        set
-        {
-            if (this.RaiseAndSetIfChanged(ref _isDrawRightSide, value) != value) return;
-            StatusMessage = value ? "Boundary on right side" : "Boundary on left side";
-            UpdateBoundaryOffsetIndicator();
-        }
-    }
-
-    private bool _isDrawAtPivot;
-    public bool IsDrawAtPivot
-    {
-        get => _isDrawAtPivot;
-        set
-        {
-            if (this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value) != value) return;
-            StatusMessage = value ? "Recording at pivot point" : "Recording at tool";
-        }
-    }
-
-    private double _boundaryOffset;
-    public double BoundaryOffset
-    {
-        get => _boundaryOffset;
-        set
-        {
-            if (this.RaiseAndSetIfChanged(ref _boundaryOffset, value) != value) return;
-            UpdateBoundaryOffsetIndicator();
-        }
-    }
-
-    private void UpdateBoundaryOffsetIndicator()
-    {
-        // Apply direction: right side = positive offset, left side = negative offset
-        double signedOffsetMeters = _boundaryOffset / 100.0;
-        if (!_isDrawRightSide)
-        {
-            signedOffsetMeters = -signedOffsetMeters;
-        }
-        _mapService.SetBoundaryOffsetIndicator(true, signedOffsetMeters);
+        get => BoundaryRecording.IsPlayerPanelVisible;
+        set => BoundaryRecording.IsPlayerPanelVisible = value;
     }
 
     /// <summary>
-    /// Calculate offset position perpendicular to heading.
-    /// Returns (easting, northing) with offset applied.
+    /// Delegates to BoundaryRecording.IsRecording for backward compatibility.
     /// </summary>
-    private (double easting, double northing) CalculateOffsetPosition(double easting, double northing, double headingRadians)
+    public bool IsBoundaryRecording
     {
-        if (_boundaryOffset == 0)
-            return (easting, northing);
+        get => BoundaryRecording.IsRecording;
+        set { } // Read-only, state managed by BoundaryRecordingViewModel
+    }
 
-        // Offset in meters (input is cm)
-        double offsetMeters = _boundaryOffset / 100.0;
+    /// <summary>
+    /// Delegates to BoundaryRecording.PointCount for backward compatibility.
+    /// </summary>
+    public int BoundaryPointCount
+    {
+        get => BoundaryRecording.PointCount;
+        set { } // Read-only, state managed by BoundaryRecordingViewModel
+    }
 
-        // If drawing on left side, negate the offset
-        if (!_isDrawRightSide)
-            offsetMeters = -offsetMeters;
+    /// <summary>
+    /// Delegates to BoundaryRecording.AreaHectares for backward compatibility.
+    /// </summary>
+    public double BoundaryAreaHectares
+    {
+        get => BoundaryRecording.AreaHectares;
+        set { } // Read-only, state managed by BoundaryRecordingViewModel
+    }
 
-        // Calculate perpendicular offset (90 degrees to the right of heading)
-        double perpAngle = headingRadians + Math.PI / 2.0;
+    // Boundary Player settings - delegate to BoundaryRecording
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsSectionControlOn for backward compatibility.
+    /// </summary>
+    public bool IsBoundarySectionControlOn
+    {
+        get => BoundaryRecording.IsSectionControlOn;
+        set => BoundaryRecording.IsSectionControlOn = value;
+    }
 
-        double offsetEasting = easting + offsetMeters * Math.Sin(perpAngle);
-        double offsetNorthing = northing + offsetMeters * Math.Cos(perpAngle);
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsDrawRightSide for backward compatibility.
+    /// </summary>
+    public bool IsDrawRightSide
+    {
+        get => BoundaryRecording.IsDrawRightSide;
+        set => BoundaryRecording.IsDrawRightSide = value;
+    }
 
-        return (offsetEasting, offsetNorthing);
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsDrawAtPivot for backward compatibility.
+    /// </summary>
+    public bool IsDrawAtPivot
+    {
+        get => BoundaryRecording.IsDrawAtPivot;
+        set => BoundaryRecording.IsDrawAtPivot = value;
+    }
+
+    /// <summary>
+    /// Delegates to BoundaryRecording.Offset for backward compatibility.
+    /// </summary>
+    public double BoundaryOffset
+    {
+        get => BoundaryRecording.Offset;
+        set => BoundaryRecording.Offset = value;
+    }
+
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsOffsetRight for backward compatibility.
+    /// </summary>
+    public bool IsBoundaryOffsetRight
+    {
+        get => BoundaryRecording.IsOffsetRight;
+        set => BoundaryRecording.IsOffsetRight = value;
+    }
+
+    /// <summary>
+    /// Delegates to BoundaryRecording.IsAntennaMode for backward compatibility.
+    /// </summary>
+    public bool IsBoundaryAntennaMode
+    {
+        get => BoundaryRecording.IsAntennaMode;
+        set => BoundaryRecording.IsAntennaMode = value;
     }
 
     // Configuration Dialog properties
@@ -2986,34 +1976,32 @@ public class MainViewModel : ReactiveObject
         }
     }
 
-    private bool _isSectionControlInHeadland;
     /// <summary>
-    /// When true, section control remains active in headland area
+    /// When true, section control remains active in headland area.
+    /// Delegates to Sections.IsControlInHeadland for backward compatibility.
     /// </summary>
     public bool IsSectionControlInHeadland
     {
-        get => _isSectionControlInHeadland;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlInHeadland, value);
+        get => Sections.IsControlInHeadland;
+        set => Sections.IsControlInHeadland = value;
     }
 
-    private int _uTurnSkipRows;
     /// <summary>
-    /// Number of rows to skip during U-turn (0-9)
+    /// Number of rows to skip during U-turn (0-9). Delegates to YouTurn.
     /// </summary>
     public int UTurnSkipRows
     {
-        get => _uTurnSkipRows;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSkipRows, Math.Max(0, Math.Min(9, value)));
+        get => YouTurn.UTurnSkipRows;
+        set => YouTurn.UTurnSkipRows = value;
     }
 
-    private bool _isUTurnSkipRowsEnabled;
     /// <summary>
-    /// When true, U-turn skip rows feature is enabled
+    /// When true, U-turn skip rows feature is enabled. Delegates to YouTurn.
     /// </summary>
     public bool IsUTurnSkipRowsEnabled
     {
-        get => _isUTurnSkipRowsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isUTurnSkipRowsEnabled, value);
+        get => YouTurn.IsUTurnSkipRowsEnabled;
+        set => YouTurn.IsUTurnSkipRowsEnabled = value;
     }
 
     private double _headlandDistance = 12.0;
@@ -3061,14 +2049,14 @@ public class MainViewModel : ReactiveObject
     }
 
     // Bottom strip state properties (matching AgOpenGPS conditional button visibility)
-    private bool _hasActiveTrack;
     /// <summary>
-    /// True when an AB line or track is active for guidance (equivalent to AgOpenGPS trk.idx > -1)
+    /// True when an AB line or track is active for guidance.
+    /// Delegates to Tracks.HasActiveTrack for backward compatibility.
     /// </summary>
     public bool HasActiveTrack
     {
-        get => _hasActiveTrack;
-        set => this.RaiseAndSetIfChanged(ref _hasActiveTrack, value);
+        get => Tracks.HasActiveTrack;
+        set => Tracks.HasActiveTrack = value;
     }
 
     private bool _hasBoundary;
@@ -3081,14 +2069,14 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _hasBoundary, value);
     }
 
-    private bool _isNudgeEnabled;
     /// <summary>
-    /// True when AB line nudging is enabled (controls visibility of snap/adjust buttons)
+    /// True when AB line nudging is enabled.
+    /// Delegates to Tracks.IsNudgeEnabled for backward compatibility.
     /// </summary>
     public bool IsNudgeEnabled
     {
-        get => _isNudgeEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isNudgeEnabled, value);
+        get => Tracks.IsNudgeEnabled;
+        set => Tracks.IsNudgeEnabled = value;
     }
 
     /// <summary>
@@ -3141,11 +2129,14 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isHeadlandZoomMode, value);
     }
 
-    private bool _isHeadlandSectionControlled = true;
+    /// <summary>
+    /// Whether headland controls sections.
+    /// Delegates to Sections.IsHeadlandControlled for backward compatibility.
+    /// </summary>
     public bool IsHeadlandSectionControlled
     {
-        get => _isHeadlandSectionControlled;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControlled, value);
+        get => Sections.IsHeadlandControlled;
+        set => Sections.IsHeadlandControlled = value;
     }
 
     private int _headlandToolWidthMultiplier = 1;
@@ -3346,130 +2337,61 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _currentFieldName, value);
     }
 
-    // Simulator properties
-    private bool _isSimulatorEnabled;
+    // Simulator properties - delegate to SimulatorViewModel
     public bool IsSimulatorEnabled
     {
-        get => _isSimulatorEnabled;
+        get => Simulator.IsEnabled;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isSimulatorEnabled, value))
-            {
-                // Update centralized state
-                State.Simulator.IsEnabled = value;
-
-                // Save to settings
-                _settingsService.Settings.SimulatorEnabled = value;
-                _settingsService.Save();
-
-                // Start or stop simulator timer based on enabled state
-                if (value)
-                {
-                    // Initialize simulator with saved coordinates
-                    var settings = _settingsService.Settings;
-                    _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
-                        settings.SimulatorLatitude,
-                        settings.SimulatorLongitude));
-
-                    State.Simulator.IsRunning = true;
-                    _simulatorTimer.Start();
-                    StatusMessage = $"Simulator ON at {settings.SimulatorLatitude:F8}, {settings.SimulatorLongitude:F8}";
-                }
-                else
-                {
-                    State.Simulator.IsRunning = false;
-                    _simulatorTimer.Stop();
-                    StatusMessage = "Simulator OFF";
-                }
-            }
+            Simulator.IsEnabled = value;
+            StatusMessage = value ? "Simulator ON" : "Simulator OFF";
         }
     }
 
-    private double _simulatorSteerAngle;
     public double SimulatorSteerAngle
     {
-        get => _simulatorSteerAngle;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _simulatorSteerAngle, value);
-            State.Simulator.SteerAngle = value;
-            this.RaisePropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
-            if (_isSimulatorEnabled)
-            {
-                _simulatorService.SteerAngle = value;
-            }
-        }
+        get => Simulator.SteerAngle;
+        set => Simulator.SteerAngle = value;
     }
 
-    public string SimulatorSteerAngleDisplay => $"Steer Angle: {_simulatorSteerAngle:F1}°";
+    public string SimulatorSteerAngleDisplay => Simulator.SteerAngleDisplay;
 
-    private double _simulatorSpeedKph;
-    /// <summary>
-    /// Simulator speed in kph. Range: -10 to +25 kph.
-    /// Converts to/from stepDistance using formula: speedKph = stepDistance * 40
-    /// </summary>
     public double SimulatorSpeedKph
     {
-        get => _simulatorSpeedKph;
-        set
-        {
-            // Clamp to valid range
-            value = Math.Max(-10, Math.Min(25, value));
-            this.RaiseAndSetIfChanged(ref _simulatorSpeedKph, value);
-            State.Simulator.Speed = value;
-            State.Simulator.TargetSpeed = value;
-            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
-            if (_isSimulatorEnabled)
-            {
-                // Convert kph to stepDistance: stepDistance = speedKph / 40
-                _simulatorService.StepDistance = value / 40.0;
-                // Disable acceleration when manually setting speed
-                _simulatorService.IsAcceleratingForward = false;
-                _simulatorService.IsAcceleratingBackward = false;
-            }
-        }
+        get => Simulator.SpeedKph;
+        set => Simulator.SpeedKph = value;
     }
 
-    public string SimulatorSpeedDisplay => $"Speed: {_simulatorSpeedKph:F1} kph";
+    public string SimulatorSpeedDisplay => Simulator.SpeedDisplay;
+
+    public decimal? SimCoordsDialogLatitude
+    {
+        get => Simulator.DialogLatitude;
+        set => Simulator.DialogLatitude = value;
+    }
+
+    public decimal? SimCoordsDialogLongitude
+    {
+        get => Simulator.DialogLongitude;
+        set => Simulator.DialogLongitude = value;
+    }
 
     /// <summary>
     /// Set new starting coordinates for the simulator
     /// </summary>
     public void SetSimulatorCoordinates(double latitude, double longitude)
     {
-        // Reinitialize simulator with new coordinates
-        _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(latitude, longitude));
-        _simulatorService.StepDistance = 0;
-
-        // Clear LocalPlane so it will be recreated with new origin on next GPS data update
-        _simulatorLocalPlane = null;
-
-        // Reset steering
-        SimulatorSteerAngle = 0;
-
-        // Save coordinates to settings so they persist
-        _settingsService.Settings.SimulatorLatitude = latitude;
-        _settingsService.Settings.SimulatorLongitude = longitude;
-        var saved = _settingsService.Save();
-
-        // Also update the Latitude/Longitude properties directly so that
-        // the map boundary dialog uses the correct coordinates even if
-        // the simulator timer hasn't ticked yet
+        Simulator.SetCoordinates(latitude, longitude);
+        // Also update the Latitude/Longitude properties directly for map dialog
         Latitude = latitude;
         Longitude = longitude;
-
-        StatusMessage = saved
-            ? $"Simulator reset to {latitude:F8}, {longitude:F8}"
-            : $"Reset to {latitude:F8}, {longitude:F8} (save failed: {_settingsService.GetSettingsFilePath()})";
+        StatusMessage = $"Simulator reset to {latitude:F8}, {longitude:F8}";
     }
 
     /// <summary>
     /// Get current simulator position
     /// </summary>
-    public AgValoniaGPS.Models.Wgs84 GetSimulatorPosition()
-    {
-        return _simulatorService.CurrentPosition;
-    }
+    public AgValoniaGPS.Models.Wgs84 GetSimulatorPosition() => Simulator.GetPosition();
 
     // Navigation settings properties (forwarded from service)
     public bool IsGridOn
@@ -3696,2066 +2618,20 @@ public class MainViewModel : ReactiveObject
     public ICommand? ToggleYouTurnCommand { get; private set; }
     public ICommand? ToggleAutoSteerCommand { get; private set; }
 
+    /// <summary>
+    /// Initializes all commands by calling partial initialization methods.
+    /// Commands are organized by category in separate partial class files.
+    /// </summary>
     private void InitializeCommands()
     {
-        // Use simple RelayCommand to avoid ReactiveCommand threading issues
-        // Use property setters instead of service methods to ensure PropertyChanged fires
-        ToggleViewSettingsPanelCommand = new RelayCommand(() =>
-        {
-            IsViewSettingsPanelVisible = !IsViewSettingsPanelVisible;
-        });
-
-        ToggleFileMenuPanelCommand = new RelayCommand(() =>
-        {
-            IsFileMenuPanelVisible = !IsFileMenuPanelVisible;
-        });
-
-        ToggleToolsPanelCommand = new RelayCommand(() =>
-        {
-            IsToolsPanelVisible = !IsToolsPanelVisible;
-        });
-
-        ToggleConfigurationPanelCommand = new RelayCommand(() =>
-        {
-            IsConfigurationPanelVisible = !IsConfigurationPanelVisible;
-        });
-
-        ToggleJobMenuPanelCommand = new RelayCommand(() =>
-        {
-            IsJobMenuPanelVisible = !IsJobMenuPanelVisible;
-        });
-
-        ToggleFieldToolsPanelCommand = new RelayCommand(() =>
-        {
-            IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
-        });
-
-        ToggleGridCommand = new RelayCommand(() =>
-        {
-            IsGridOn = !IsGridOn;
-        });
-
-        ToggleDayNightCommand = new RelayCommand(() =>
-        {
-            IsDayMode = !IsDayMode;
-        });
-
-        Toggle2D3DCommand = new RelayCommand(() =>
-        {
-            Is2DMode = !Is2DMode;
-        });
-
-        ToggleNorthUpCommand = new RelayCommand(() =>
-        {
-            IsNorthUp = !IsNorthUp;
-        });
-
-        IncreaseCameraPitchCommand = new RelayCommand(() =>
-        {
-            CameraPitch += 5.0;
-        });
-
-        DecreaseCameraPitchCommand = new RelayCommand(() =>
-        {
-            CameraPitch -= 5.0;
-        });
-
-        IncreaseBrightnessCommand = new RelayCommand(() =>
-        {
-            Brightness += 5; // Match the step from DisplaySettingsService
-        });
-
-        DecreaseBrightnessCommand = new RelayCommand(() =>
-        {
-            Brightness -= 5;
-        });
-
-        // iOS Sheet toggle commands
-        ToggleFileMenuCommand = new RelayCommand(() =>
-        {
-            IsFileMenuVisible = !IsFileMenuVisible;
-        });
-
-        ToggleFieldToolsCommand = new RelayCommand(() =>
-        {
-            IsFieldToolsVisible = !IsFieldToolsVisible;
-        });
-
-        ToggleSettingsCommand = new RelayCommand(() =>
-        {
-            IsSettingsVisible = !IsSettingsVisible;
-        });
-
-        // Simulator commands
-        ToggleSimulatorPanelCommand = new RelayCommand(() =>
-        {
-            IsSimulatorPanelVisible = !IsSimulatorPanelVisible;
-        });
-
-        ResetSimulatorCommand = new RelayCommand(() =>
-        {
-            _simulatorService.Reset();
-            SimulatorSteerAngle = 0;
-            StatusMessage = "Simulator Reset";
-        });
-
-        ResetSteerAngleCommand = new RelayCommand(() =>
-        {
-            SimulatorSteerAngle = 0;
-            StatusMessage = "Steer Angle Reset to 0°";
-        });
-
-        SimulatorForwardCommand = new RelayCommand(() =>
-        {
-            _simulatorService.StepDistance = 0;  // Reset speed before accelerating
-            _simulatorService.IsAcceleratingForward = true;
-            _simulatorService.IsAcceleratingBackward = false;
-            StatusMessage = "Sim: Accelerating Forward";
-        });
-
-        SimulatorStopCommand = new RelayCommand(() =>
-        {
-            _simulatorService.IsAcceleratingForward = false;
-            _simulatorService.IsAcceleratingBackward = false;
-            _simulatorService.StepDistance = 0;  // Immediately stop movement
-            _simulatorSpeedKph = 0;  // Reset speed slider (use backing field to avoid triggering setter again)
-            this.RaisePropertyChanged(nameof(SimulatorSpeedKph));
-            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
-            StatusMessage = "Sim: Stopped";
-        });
-
-        SimulatorReverseCommand = new RelayCommand(() =>
-        {
-            _simulatorService.StepDistance = 0;  // Reset speed before accelerating
-            _simulatorService.IsAcceleratingBackward = true;
-            _simulatorService.IsAcceleratingForward = false;
-            StatusMessage = "Sim: Accelerating Reverse";
-        });
-
-        SimulatorReverseDirectionCommand = new RelayCommand(() =>
-        {
-            // Reverse direction by adding 180 degrees to current heading
-            var newHeading = _simulatorService.HeadingRadians + Math.PI;
-            // Normalize to 0-2π range
-            if (newHeading > Math.PI * 2)
-                newHeading -= Math.PI * 2;
-            _simulatorService.SetHeading(newHeading);
-            StatusMessage = "Sim: Direction Reversed";
-        });
-
-        SimulatorSteerLeftCommand = new RelayCommand(() =>
-        {
-            SimulatorSteerAngle -= 5.0; // 5 degree increments
-            StatusMessage = $"Steer: {SimulatorSteerAngle:F1}°";
-        });
-
-        SimulatorSteerRightCommand = new RelayCommand(() =>
-        {
-            SimulatorSteerAngle += 5.0; // 5 degree increments
-            StatusMessage = $"Steer: {SimulatorSteerAngle:F1}°";
-        });
-
-        // Dialog Commands
-        ShowDataIODialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.DataIO);
-        });
-
-        CloseDataIODialogCommand = new RelayCommand(CloseDataIODialog);
-        ConnectToNtripCommand = new AsyncRelayCommand(ConnectToNtripAsync);
-        DisconnectFromNtripCommand = new AsyncRelayCommand(DisconnectFromNtripAsync);
-        SaveNtripSettingsCommand = new RelayCommand(SaveNtripSettings);
-        SetActiveDataIOFieldCommand = new RelayCommand<string>(SetActiveDataIOField);
-
-        // Configuration Dialog Commands
-        ShowConfigurationDialogCommand = new RelayCommand(() =>
-        {
-            ConfigurationViewModel = new ConfigurationViewModel(_configurationService, _ntripService);
-            ConfigurationViewModel.CloseRequested += (s, e) =>
-            {
-                ConfigurationViewModel.IsDialogVisible = false;
-            };
-            ConfigurationViewModel.IsDialogVisible = true;
-        });
-
-        CancelConfigurationDialogCommand = new RelayCommand(() =>
-        {
-            if (ConfigurationViewModel != null)
-                ConfigurationViewModel.IsDialogVisible = false;
-        });
-
-        ShowLoadProfileDialogCommand = new RelayCommand(() =>
-        {
-            // Refresh available profiles
-            AvailableProfiles.Clear();
-            foreach (var profile in _configurationService.GetAvailableProfiles())
-            {
-                AvailableProfiles.Add(profile);
-            }
-            SelectedProfile = _configurationService.Store.ActiveProfileName;
-            IsProfileSelectionVisible = true;
-        });
-
-        LoadSelectedProfileCommand = new RelayCommand(() =>
-        {
-            if (!string.IsNullOrEmpty(SelectedProfile))
-            {
-                _configurationService.LoadProfile(SelectedProfile);
-                _settingsService.Settings.LastUsedVehicleProfile = SelectedProfile;
-                _settingsService.Save();
-                this.RaisePropertyChanged(nameof(CurrentProfileName));
-            }
-            IsProfileSelectionVisible = false;
-        });
-
-        CancelProfileSelectionCommand = new RelayCommand(() =>
-        {
-            IsProfileSelectionVisible = false;
-        });
-
-        ShowNewProfileDialogCommand = new RelayCommand(() =>
-        {
-            // Generate a unique profile name
-            var baseName = "New Profile";
-            var profileName = baseName;
-            var counter = 1;
-            var existingProfiles = _configurationService.GetAvailableProfiles();
-            while (existingProfiles.Contains(profileName))
-            {
-                profileName = $"{baseName} {counter++}";
-            }
-
-            _configurationService.CreateProfile(profileName);
-            _settingsService.Settings.LastUsedVehicleProfile = profileName;
-            _settingsService.Save();
-            this.RaisePropertyChanged(nameof(CurrentProfileName));
-        });
-
-        ShowSimCoordsDialogCommand = new RelayCommand(() =>
-        {
-            if (IsSimulatorEnabled)
-            {
-                // Don't allow changing coords while simulator is running
-                System.Diagnostics.Debug.WriteLine("[SimCoords] Disable simulator first to change coordinates");
-                return;
-            }
-            // Load current position into the dialog fields
-            // Round to 8 decimal places
-            var currentPos = GetSimulatorPosition();
-            SimCoordsDialogLatitude = Math.Round((decimal)currentPos.Latitude, 8);
-            SimCoordsDialogLongitude = Math.Round((decimal)currentPos.Longitude, 8);
-            // Show the panel-based dialog
-            State.UI.ShowDialog(DialogType.SimCoords);
-        });
-
-        CancelSimCoordsDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        ConfirmSimCoordsDialogCommand = new RelayCommand(() =>
-        {
-            // Apply the coordinates from the dialog (convert from decimal? to double)
-            double lat = (double)(SimCoordsDialogLatitude ?? 0m);
-            double lon = (double)(SimCoordsDialogLongitude ?? 0m);
-            SetSimulatorCoordinates(lat, lon);
-            State.UI.CloseDialog();
-        });
-
-        ShowFieldSelectionDialogCommand = new RelayCommand(() =>
-        {
-            // Use settings directory which defaults to ~/Documents/AgValoniaGPS/Fields
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Settings.FieldsDirectory = '{fieldsDir}'");
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-                System.Diagnostics.Debug.WriteLine($"[FieldSelection] Using fallback path: '{fieldsDir}'");
-            }
-            _fieldSelectionDirectory = fieldsDir;
-            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Directory exists: {Directory.Exists(fieldsDir)}");
-
-            // Populate the available fields list
-            PopulateAvailableFields(fieldsDir);
-            System.Diagnostics.Debug.WriteLine($"[FieldSelection] Found {AvailableFields.Count} fields");
-
-            // Show the panel-based dialog
-            State.UI.ShowDialog(DialogType.FieldSelection);
-        });
-
-        CancelFieldSelectionDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            SelectedFieldInfo = null;
-        });
-
-        ConfirmFieldSelectionDialogCommand = new RelayCommand(() =>
-        {
-            if (SelectedFieldInfo == null) return;
-
-            var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
-            FieldsRootDirectory = _fieldSelectionDirectory;
-            CurrentFieldName = SelectedFieldInfo.Name;
-            IsFieldOpen = true;
-
-            // Save as last opened field
-            _settingsService.Settings.LastOpenedField = SelectedFieldInfo.Name;
-            _settingsService.Save();
-
-            // Load field origin from Field.txt (for map centering)
-            try
-            {
-                var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                if (fieldInfo.Origin != null)
-                {
-                    _fieldOriginLatitude = fieldInfo.Origin.Latitude;
-                    _fieldOriginLongitude = fieldInfo.Origin.Longitude;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Field] Could not load Field.txt origin: {ex.Message}");
-            }
-
-            // Try to load boundary from field
-            var boundary = _boundaryFileService.LoadBoundary(fieldPath);
-            if (boundary != null)
-            {
-                SetCurrentBoundary(boundary);
-                CenterMapOnBoundary(boundary);
-            }
-
-            // Try to load background image from field
-            LoadBackgroundImage(fieldPath, boundary);
-
-            // Set the active field so headland and other field-specific data loads
-            var field = new Field
-            {
-                Name = SelectedFieldInfo.Name,
-                DirectoryPath = fieldPath,
-                Boundary = boundary
-            };
-            _fieldService.SetActiveField(field);
-
-            State.UI.CloseDialog();
-            IsJobMenuPanelVisible = false;
-            StatusMessage = $"Opened field: {SelectedFieldInfo.Name}";
-            SelectedFieldInfo = null;
-        });
-
-        DeleteSelectedFieldCommand = new RelayCommand(() =>
-        {
-            if (SelectedFieldInfo == null) return;
-
-            var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
-            try
-            {
-                if (Directory.Exists(fieldPath))
-                {
-                    Directory.Delete(fieldPath, true);
-                    StatusMessage = $"Deleted field: {SelectedFieldInfo.Name}";
-                    PopulateAvailableFields(_fieldSelectionDirectory);
-                    SelectedFieldInfo = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error deleting field: {ex.Message}";
-            }
-        });
-
-        SortFieldsCommand = new RelayCommand(() =>
-        {
-            _fieldsSortedAZ = !_fieldsSortedAZ;
-            var sorted = _fieldsSortedAZ
-                ? AvailableFields.OrderBy(f => f.Name).ToList()
-                : AvailableFields.OrderByDescending(f => f.Name).ToList();
-            AvailableFields.Clear();
-            foreach (var field in sorted)
-            {
-                AvailableFields.Add(field);
-            }
-        });
-
-        ShowNewFieldDialogCommand = new RelayCommand(() =>
-        {
-            // Initialize with current GPS position or defaults
-            NewFieldLatitude = Latitude != 0 ? Latitude : 40.7128;
-            NewFieldLongitude = Longitude != 0 ? Longitude : -74.0060;
-            NewFieldName = string.Empty;
-            State.UI.ShowDialog(DialogType.NewField);
-        });
-
-        CancelNewFieldDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            NewFieldName = string.Empty;
-        });
-
-        ConfirmNewFieldDialogCommand = new RelayCommand(() =>
-        {
-            if (string.IsNullOrWhiteSpace(NewFieldName))
-            {
-                StatusMessage = "Please enter a field name";
-                return;
-            }
-
-            // Get the fields directory
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-
-            // Create the field directory
-            var fieldPath = Path.Combine(fieldsDir, NewFieldName);
-            if (Directory.Exists(fieldPath))
-            {
-                StatusMessage = $"Field '{NewFieldName}' already exists";
-                return;
-            }
-
-            try
-            {
-                Directory.CreateDirectory(fieldPath);
-
-                // Save the field origin coordinates
-                var originFile = Path.Combine(fieldPath, "field.origin");
-                File.WriteAllText(originFile, $"{NewFieldLatitude},{NewFieldLongitude}");
-
-                // Create Field.txt in AgOpenGPS format
-                var fieldTxtPath = Path.Combine(fieldPath, "Field.txt");
-                var fieldTxtContent = $"{DateTime.Now:yyyy-MMM-dd hh:mm:ss tt}\n" +
-                                      "$FieldDir\n" +
-                                      $"{NewFieldName}\n" +
-                                      "$Offsets\n" +
-                                      "0,0\n" +
-                                      "Convergence\n" +
-                                      "0\n" +
-                                      "StartFix\n" +
-                                      $"{NewFieldLatitude},{NewFieldLongitude}\n";
-                File.WriteAllText(fieldTxtPath, fieldTxtContent);
-
-                // Set as current field
-                CurrentFieldName = NewFieldName;
-                FieldsRootDirectory = fieldsDir;
-                IsFieldOpen = true;
-
-                // Reset LocalPlane so it will be recreated with new origin
-                _simulatorLocalPlane = null;
-
-                // Save as last opened field
-                _settingsService.Settings.LastOpenedField = NewFieldName;
-                _settingsService.Save();
-
-                State.UI.CloseDialog();
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Created field: {NewFieldName}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error creating field: {ex.Message}";
-            }
-        });
-
-        ShowFromExistingFieldDialogCommand = new RelayCommand(() =>
-        {
-            // Populate fields list (reuse same list as field selection)
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-            _fieldSelectionDirectory = fieldsDir;
-            PopulateAvailableFields(fieldsDir);
-
-            // Reset copy options
-            CopyFlags = true;
-            CopyMapping = true;
-            CopyHeadland = true;
-            CopyLines = true;
-            FromExistingFieldName = string.Empty;
-            FromExistingSelectedField = null;
-
-            // Pre-select first field if available
-            if (AvailableFields.Count > 0)
-            {
-                FromExistingSelectedField = AvailableFields[0];
-            }
-
-            State.UI.ShowDialog(DialogType.FromExistingField);
-        });
-
-        CancelFromExistingFieldDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            FromExistingSelectedField = null;
-            FromExistingFieldName = string.Empty;
-        });
-
-        ConfirmFromExistingFieldDialogCommand = new RelayCommand(() =>
-        {
-            if (FromExistingSelectedField == null)
-            {
-                StatusMessage = "Please select a field to copy from";
-                return;
-            }
-
-            var newFieldName = FromExistingFieldName.Trim();
-            if (string.IsNullOrWhiteSpace(newFieldName))
-            {
-                StatusMessage = "Please enter a field name";
-                return;
-            }
-
-            // Get the fields directory
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-
-            var sourcePath = Path.Combine(fieldsDir, FromExistingSelectedField.Name);
-            var newFieldPath = Path.Combine(fieldsDir, newFieldName);
-
-            // Check if field already exists (unless same name as source)
-            if (Directory.Exists(newFieldPath) && newFieldName != FromExistingSelectedField.Name)
-            {
-                StatusMessage = $"Field '{newFieldName}' already exists";
-                return;
-            }
-
-            try
-            {
-                // Create the new field directory
-                Directory.CreateDirectory(newFieldPath);
-
-                // Copy field.origin if exists
-                var originFile = Path.Combine(sourcePath, "field.origin");
-                if (File.Exists(originFile))
-                {
-                    File.Copy(originFile, Path.Combine(newFieldPath, "field.origin"), true);
-                }
-
-                // Copy boundary
-                var boundaryFile = Path.Combine(sourcePath, "boundary.json");
-                if (File.Exists(boundaryFile))
-                {
-                    File.Copy(boundaryFile, Path.Combine(newFieldPath, "boundary.json"), true);
-                }
-
-                // Copy flags if enabled
-                if (CopyFlags)
-                {
-                    var flagsFile = Path.Combine(sourcePath, "flags.json");
-                    if (File.Exists(flagsFile))
-                    {
-                        File.Copy(flagsFile, Path.Combine(newFieldPath, "flags.json"), true);
-                    }
-                }
-
-                // Copy mapping if enabled
-                if (CopyMapping)
-                {
-                    var mappingFile = Path.Combine(sourcePath, "mapping.json");
-                    if (File.Exists(mappingFile))
-                    {
-                        File.Copy(mappingFile, Path.Combine(newFieldPath, "mapping.json"), true);
-                    }
-                }
-
-                // Copy headland if enabled
-                if (CopyHeadland)
-                {
-                    var headlandFile = Path.Combine(sourcePath, "headland.json");
-                    if (File.Exists(headlandFile))
-                    {
-                        File.Copy(headlandFile, Path.Combine(newFieldPath, "headland.json"), true);
-                    }
-                }
-
-                // Copy lines if enabled
-                if (CopyLines)
-                {
-                    var linesFile = Path.Combine(sourcePath, "lines.json");
-                    if (File.Exists(linesFile))
-                    {
-                        File.Copy(linesFile, Path.Combine(newFieldPath, "lines.json"), true);
-                    }
-                    var abLinesFile = Path.Combine(sourcePath, "ablines.json");
-                    if (File.Exists(abLinesFile))
-                    {
-                        File.Copy(abLinesFile, Path.Combine(newFieldPath, "ablines.json"), true);
-                    }
-                }
-
-                // Set as current field
-                CurrentFieldName = newFieldName;
-                FieldsRootDirectory = fieldsDir;
-                IsFieldOpen = true;
-
-                // Save as last opened field
-                _settingsService.Settings.LastOpenedField = newFieldName;
-                _settingsService.Save();
-
-                State.UI.CloseDialog();
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Created field from existing: {newFieldName}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error creating field: {ex.Message}";
-            }
-        });
-
-        AppendVehicleNameCommand = new RelayCommand(() =>
-        {
-            var vehicleName = Vehicle.VehicleTypeDisplayName;
-            if (!string.IsNullOrWhiteSpace(vehicleName))
-            {
-                FromExistingFieldName = (FromExistingFieldName + " " + vehicleName).Trim();
-            }
-        });
-
-        AppendDateCommand = new RelayCommand(() =>
-        {
-            var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
-            FromExistingFieldName = (FromExistingFieldName + " " + dateStr).Trim();
-        });
-
-        AppendTimeCommand = new RelayCommand(() =>
-        {
-            var timeStr = DateTime.Now.ToString("HH-mm");
-            FromExistingFieldName = (FromExistingFieldName + " " + timeStr).Trim();
-        });
-
-        BackspaceFieldNameCommand = new RelayCommand(() =>
-        {
-            if (FromExistingFieldName.Length > 0)
-            {
-                FromExistingFieldName = FromExistingFieldName.Substring(0, FromExistingFieldName.Length - 1);
-            }
-        });
-
-        ToggleCopyFlagsCommand = new RelayCommand(() => CopyFlags = !CopyFlags);
-        ToggleCopyMappingCommand = new RelayCommand(() => CopyMapping = !CopyMapping);
-        ToggleCopyHeadlandCommand = new RelayCommand(() => CopyHeadland = !CopyHeadland);
-        ToggleCopyLinesCommand = new RelayCommand(() => CopyLines = !CopyLines);
-
-        // KML Import Dialog
-        ShowKmlImportDialogCommand = new RelayCommand(() =>
-        {
-            PopulateAvailableKmlFiles();
-            KmlImportFieldName = string.Empty;
-            KmlBoundaryPointCount = 0;
-            KmlCenterLatitude = 0;
-            KmlCenterLongitude = 0;
-            _kmlBoundaryPoints.Clear();
-            SelectedKmlFile = null;
-
-            // Pre-select first file if available
-            if (AvailableKmlFiles.Count > 0)
-            {
-                SelectedKmlFile = AvailableKmlFiles[0];
-            }
-
-            State.UI.ShowDialog(DialogType.KmlImport);
-        });
-
-        CancelKmlImportDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            SelectedKmlFile = null;
-            KmlImportFieldName = string.Empty;
-        });
-
-        ConfirmKmlImportDialogCommand = new RelayCommand(() =>
-        {
-            if (SelectedKmlFile == null)
-            {
-                StatusMessage = "Please select a KML file";
-                return;
-            }
-
-            var newFieldName = KmlImportFieldName.Trim();
-            if (string.IsNullOrWhiteSpace(newFieldName))
-            {
-                StatusMessage = "Please enter a field name";
-                return;
-            }
-
-            if (_kmlBoundaryPoints.Count < 3)
-            {
-                StatusMessage = "KML file must contain at least 3 boundary points";
-                return;
-            }
-
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-
-            var newFieldPath = Path.Combine(fieldsDir, newFieldName);
-            if (Directory.Exists(newFieldPath))
-            {
-                StatusMessage = $"Field '{newFieldName}' already exists";
-                return;
-            }
-
-            try
-            {
-                // Create field directory
-                Directory.CreateDirectory(newFieldPath);
-
-                // Save origin coordinates
-                var originFile = Path.Combine(newFieldPath, "field.origin");
-                File.WriteAllText(originFile, $"{KmlCenterLatitude},{KmlCenterLongitude}");
-
-                // Create and save boundary
-                var origin = new Wgs84(KmlCenterLatitude, KmlCenterLongitude);
-                var sharedProps = new SharedFieldProperties();
-                var localPlane = new LocalPlane(origin, sharedProps);
-
-                var outerPolygon = new BoundaryPolygon();
-                foreach (var (lat, lon) in _kmlBoundaryPoints)
-                {
-                    var wgs84 = new Wgs84(lat, lon);
-                    var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                    outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                }
-
-                var boundary = new Boundary { OuterBoundary = outerPolygon };
-                _boundaryFileService.SaveBoundary(boundary, newFieldPath);
-
-                CurrentFieldName = newFieldName;
-                FieldsRootDirectory = fieldsDir;
-                IsFieldOpen = true;
-
-                _settingsService.Settings.LastOpenedField = newFieldName;
-                _settingsService.Save();
-
-                State.UI.CloseDialog();
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Imported KML: {newFieldName}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error importing KML: {ex.Message}";
-            }
-        });
-
-        KmlAppendDateCommand = new RelayCommand(() =>
-        {
-            var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
-            KmlImportFieldName = (KmlImportFieldName + " " + dateStr).Trim();
-        });
-
-        KmlAppendTimeCommand = new RelayCommand(() =>
-        {
-            var timeStr = DateTime.Now.ToString("HH-mm");
-            KmlImportFieldName = (KmlImportFieldName + " " + timeStr).Trim();
-        });
-
-        KmlBackspaceFieldNameCommand = new RelayCommand(() =>
-        {
-            if (KmlImportFieldName.Length > 0)
-            {
-                KmlImportFieldName = KmlImportFieldName.Substring(0, KmlImportFieldName.Length - 1);
-            }
-        });
-
-        // ISO-XML Import Dialog
-        ShowIsoXmlImportDialogCommand = new RelayCommand(() =>
-        {
-            PopulateAvailableIsoXmlFiles();
-            IsoXmlImportFieldName = string.Empty;
-            SelectedIsoXmlFile = null;
-
-            if (AvailableIsoXmlFiles.Count > 0)
-            {
-                SelectedIsoXmlFile = AvailableIsoXmlFiles[0];
-            }
-
-            State.UI.ShowDialog(DialogType.IsoXmlImport);
-        });
-
-        CancelIsoXmlImportDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            SelectedIsoXmlFile = null;
-            IsoXmlImportFieldName = string.Empty;
-        });
-
-        ConfirmIsoXmlImportDialogCommand = new RelayCommand(() =>
-        {
-            if (SelectedIsoXmlFile == null)
-            {
-                StatusMessage = "Please select an ISO-XML folder";
-                return;
-            }
-
-            var newFieldName = IsoXmlImportFieldName.Trim();
-            if (string.IsNullOrWhiteSpace(newFieldName))
-            {
-                StatusMessage = "Please enter a field name";
-                return;
-            }
-
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrWhiteSpace(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-
-            var newFieldPath = Path.Combine(fieldsDir, newFieldName);
-            if (Directory.Exists(newFieldPath))
-            {
-                StatusMessage = $"Field '{newFieldName}' already exists";
-                return;
-            }
-
-            try
-            {
-                // TODO: Implement ISO-XML parsing when needed
-                // For now, just create the field directory
-                Directory.CreateDirectory(newFieldPath);
-
-                CurrentFieldName = newFieldName;
-                FieldsRootDirectory = fieldsDir;
-                IsFieldOpen = true;
-
-                _settingsService.Settings.LastOpenedField = newFieldName;
-                _settingsService.Save();
-
-                State.UI.CloseDialog();
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Imported ISO-XML: {newFieldName}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error importing ISO-XML: {ex.Message}";
-            }
-        });
-
-        IsoXmlAppendDateCommand = new RelayCommand(() =>
-        {
-            var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
-            IsoXmlImportFieldName = (IsoXmlImportFieldName + " " + dateStr).Trim();
-        });
-
-        IsoXmlAppendTimeCommand = new RelayCommand(() =>
-        {
-            var timeStr = DateTime.Now.ToString("HH-mm");
-            IsoXmlImportFieldName = (IsoXmlImportFieldName + " " + timeStr).Trim();
-        });
-
-        IsoXmlBackspaceFieldNameCommand = new RelayCommand(() =>
-        {
-            if (IsoXmlImportFieldName.Length > 0)
-            {
-                IsoXmlImportFieldName = IsoXmlImportFieldName.Substring(0, IsoXmlImportFieldName.Length - 1);
-            }
-        });
-
-        // Boundary Map Dialog Commands (for satellite map boundary drawing)
-        ShowBoundaryMapDialogCommand = new RelayCommand(() =>
-        {
-            // Set center: prefer field origin, then GPS position, then 0,0
-            if (_fieldOriginLatitude != 0 || _fieldOriginLongitude != 0)
-            {
-                // Use field origin from Field.txt
-                BoundaryMapCenterLatitude = _fieldOriginLatitude;
-                BoundaryMapCenterLongitude = _fieldOriginLongitude;
-            }
-            else if (Latitude != 0 || Longitude != 0)
-            {
-                // Fall back to current GPS position
-                BoundaryMapCenterLatitude = Latitude;
-                BoundaryMapCenterLongitude = Longitude;
-            }
-            // else: leave as 0,0 (will show default location)
-
-            BoundaryMapPointCount = 0;
-            BoundaryMapCanSave = false;
-            BoundaryMapCoordinateText = string.Empty;
-            BoundaryMapResultPoints.Clear();
-            State.UI.ShowDialog(DialogType.BoundaryMap);
-        });
-
-        CancelBoundaryMapDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            BoundaryMapResultPoints.Clear();
-        });
-
-        ConfirmBoundaryMapDialogCommand = new RelayCommand(() =>
-        {
-            Console.WriteLine($"[BoundaryMap] ConfirmBoundaryMapDialogCommand called");
-            Console.WriteLine($"[BoundaryMap] Points: {BoundaryMapResultPoints.Count}, IsFieldOpen: {IsFieldOpen}, CurrentFieldName: {CurrentFieldName}");
-
-            if (BoundaryMapResultPoints.Count >= 3 && IsFieldOpen && !string.IsNullOrEmpty(CurrentFieldName))
-            {
-                try
-                {
-                    var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-                    Console.WriteLine($"[BoundaryMap] Field path: {fieldPath}");
-                    Console.WriteLine($"[BoundaryMap] Directory exists: {Directory.Exists(fieldPath)}");
-
-                    // Load existing boundary or create new one
-                    var boundary = _boundaryFileService.LoadBoundary(fieldPath) ?? new Boundary();
-
-                    // Calculate origin for LocalPlane
-                    // IMPORTANT: If we have a background image, use its center as the origin
-                    // This ensures the boundary aligns with landmarks in the image
-                    // The user drew the boundary on specific landmarks in the viewport,
-                    // so we need to use the same reference point for both
-                    double centerLat, centerLon;
-                    if (!string.IsNullOrEmpty(BoundaryMapResultBackgroundPath))
-                    {
-                        // Use image (viewport) center as origin - this is where the user was looking when drawing
-                        centerLat = (BoundaryMapResultNwLat + BoundaryMapResultSeLat) / 2;
-                        centerLon = (BoundaryMapResultNwLon + BoundaryMapResultSeLon) / 2;
-                        Console.WriteLine($"[BoundaryMap] Using image center as origin: ({centerLat:F8}, {centerLon:F8})");
-                    }
-                    else
-                    {
-                        // No background image - use boundary center as origin
-                        centerLat = BoundaryMapResultPoints.Average(p => p.Latitude);
-                        centerLon = BoundaryMapResultPoints.Average(p => p.Longitude);
-                        Console.WriteLine($"[BoundaryMap] Using boundary center as origin: ({centerLat:F8}, {centerLon:F8})");
-                    }
-
-                    // Convert WGS84 boundary points to local coordinates
-                    var origin = new Wgs84(centerLat, centerLon);
-                    var sharedProps = new SharedFieldProperties();
-                    var localPlane = new LocalPlane(origin, sharedProps);
-
-                    var outerPolygon = new BoundaryPolygon();
-
-                    Console.WriteLine($"[BoundaryMap] Converting boundary points with origin ({centerLat:F8}, {centerLon:F8})");
-                    foreach (var (lat, lon) in BoundaryMapResultPoints)
-                    {
-                        var wgs84 = new Wgs84(lat, lon);
-                        var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                        outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                        Console.WriteLine($"[BoundaryMap]   WGS84 ({lat:F8}, {lon:F8}) -> Local E={geoCoord.Easting:F1}, N={geoCoord.Northing:F1}");
-                    }
-
-                    boundary.OuterBoundary = outerPolygon;
-
-                    // Save boundary
-                    _boundaryFileService.SaveBoundary(boundary, fieldPath);
-
-                    // Update Field.txt with the origin used for this boundary
-                    // This ensures background images load with the same coordinate system
-                    _fieldOriginLatitude = centerLat;
-                    _fieldOriginLongitude = centerLon;
-                    try
-                    {
-                        var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                        fieldInfo.Origin = new Position { Latitude = centerLat, Longitude = centerLon };
-                        _fieldPlaneFileService.SaveField(fieldInfo, fieldPath);
-                        Console.WriteLine($"[BoundaryMap] Updated Field.txt origin to ({centerLat:F8}, {centerLon:F8})");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[BoundaryMap] Could not update Field.txt: {ex.Message}");
-                    }
-
-                    // Update map
-                    SetCurrentBoundary(boundary);
-
-                    // Center camera on the boundary and set appropriate zoom
-                    if (outerPolygon.Points.Count > 0)
-                    {
-                        // Calculate boundary center and extent
-                        double minE = double.MaxValue, maxE = double.MinValue;
-                        double minN = double.MaxValue, maxN = double.MinValue;
-                        foreach (var pt in outerPolygon.Points)
-                        {
-                            minE = Math.Min(minE, pt.Easting);
-                            maxE = Math.Max(maxE, pt.Easting);
-                            minN = Math.Min(minN, pt.Northing);
-                            maxN = Math.Max(maxN, pt.Northing);
-                        }
-                        double centerE = (minE + maxE) / 2.0;
-                        double centerN = (minN + maxN) / 2.0;
-                        double extentE = maxE - minE;
-                        double extentN = maxN - minN;
-                        double maxExtent = Math.Max(extentE, extentN);
-
-                        // Pan to center
-                        _mapService.PanTo(centerE, centerN);
-
-                        // Calculate zoom to fit boundary (viewHeight = 200/zoom, so zoom = 200/viewHeight)
-                        // Add 20% padding
-                        double desiredView = maxExtent * 1.2;
-                        if (desiredView > 0)
-                        {
-                            double newZoom = 200.0 / desiredView;
-                            newZoom = Math.Clamp(newZoom, 0.1, 10.0);
-                            _mapService.SetCamera(centerE, centerN, newZoom, 0);
-                        }
-
-                        Console.WriteLine($"[BoundaryMap] Saved boundary with {outerPolygon.Points.Count} points");
-                        Console.WriteLine($"[BoundaryMap] Center: ({centerE:F1}, {centerN:F1}), Extent: {maxExtent:F1}m");
-                    }
-
-                    // Handle background image if captured
-                    if (!string.IsNullOrEmpty(BoundaryMapResultBackgroundPath))
-                    {
-                        SaveBackgroundImage(BoundaryMapResultBackgroundPath, fieldPath,
-                            BoundaryMapResultNwLat, BoundaryMapResultNwLon,
-                            BoundaryMapResultSeLat, BoundaryMapResultSeLon);
-                    }
-
-                    // Refresh the boundary list
-                    RefreshBoundaryList();
-
-                    StatusMessage = $"Boundary created with {BoundaryMapResultPoints.Count} points";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error creating boundary: {ex.Message}";
-                }
-            }
-
-            State.UI.CloseDialog();
-            IsBoundaryPanelVisible = false;
-            BoundaryMapResultPoints.Clear();
-        });
-
-        ShowAgShareDownloadDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.AgShareDownload);
-        });
-
-        CancelAgShareDownloadDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        ShowAgShareUploadDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.AgShareUpload);
-        });
-
-        CancelAgShareUploadDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        ShowAgShareSettingsDialogCommand = new RelayCommand(() =>
-        {
-            // Load current settings from storage
-            AgShareSettingsServerUrl = _settingsService.Settings.AgShareServer;
-            AgShareSettingsApiKey = _settingsService.Settings.AgShareApiKey;
-            AgShareSettingsEnabled = _settingsService.Settings.AgShareEnabled;
-            State.UI.ShowDialog(DialogType.AgShareSettings);
-        });
-
-        CancelAgShareSettingsDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        ConfirmAgShareSettingsDialogCommand = new RelayCommand(() =>
-        {
-            // Save settings to storage
-            _settingsService.Settings.AgShareServer = AgShareSettingsServerUrl;
-            _settingsService.Settings.AgShareApiKey = AgShareSettingsApiKey;
-            _settingsService.Settings.AgShareEnabled = AgShareSettingsEnabled;
-            _settingsService.Save();
-
-            State.UI.CloseDialog();
-            StatusMessage = "AgShare settings saved";
-        });
-
-        ShowBoundaryDialogCommand = new RelayCommand(() =>
-        {
-            // Toggle boundary panel visibility - this shows the panel where user can
-            // choose how to create the boundary (KML import, drive around, etc.)
-            IsBoundaryPanelVisible = !IsBoundaryPanelVisible;
-        });
-
-        // Headland Commands
-        ShowHeadlandBuilderCommand = new RelayCommand(() =>
-        {
-            if (!IsFieldOpen)
-            {
-                StatusMessage = "Open a field first";
-                return;
-            }
-            State.UI.ShowDialog(DialogType.HeadlandBuilder);
-            // Trigger initial preview
-            UpdateHeadlandPreview();
-        });
-
-        ToggleHeadlandCommand = new RelayCommand(() =>
-        {
-            if (!HasHeadland)
-            {
-                StatusMessage = "No headland defined";
-                return;
-            }
-            IsHeadlandOn = !IsHeadlandOn;
-        });
-
-        ToggleSectionInHeadlandCommand = new RelayCommand(() =>
-        {
-            IsSectionControlInHeadland = !IsSectionControlInHeadland;
-            StatusMessage = IsSectionControlInHeadland ? "Section control in headland: ON" : "Section control in headland: OFF";
-        });
-
-        ResetToolHeadingCommand = new RelayCommand(() =>
-        {
-            // Reset tool heading to be directly behind tractor
-            StatusMessage = "Tool heading reset";
-        });
-
-        BuildHeadlandCommand = new RelayCommand(() =>
-        {
-            BuildHeadlandFromBoundary();
-        });
-
-        ClearHeadlandCommand = new RelayCommand(() =>
-        {
-            CurrentHeadlandLine = null;
-            HeadlandPreviewLine = null;
-            HasHeadland = false;
-            IsHeadlandOn = false;
-            StatusMessage = "Headland cleared";
-        });
-
-        CloseHeadlandBuilderCommand = new RelayCommand(() =>
-        {
-            HeadlandPreviewLine = null;
-            State.UI.CloseDialog();
-        });
-
-        SetHeadlandToToolWidthCommand = new RelayCommand(() =>
-        {
-            // Set headland distance to implement width (use track width * 2 as approximation)
-            // TODO: Add actual tool/implement width to VehicleConfiguration
-            HeadlandDistance = Vehicle.TrackWidth > 0 ? Vehicle.TrackWidth * 2 : 12.0;
-            UpdateHeadlandPreview();
-        });
-
-        PreviewHeadlandCommand = new RelayCommand(() =>
-        {
-            UpdateHeadlandPreview();
-        });
-
-        IncrementHeadlandDistanceCommand = new RelayCommand(() =>
-        {
-            HeadlandDistance = Math.Min(HeadlandDistance + 0.5, 100.0);
-            UpdateHeadlandPreview();
-        });
-
-        DecrementHeadlandDistanceCommand = new RelayCommand(() =>
-        {
-            HeadlandDistance = Math.Max(HeadlandDistance - 0.5, 0.5);
-            UpdateHeadlandPreview();
-        });
-
-        IncrementHeadlandPassesCommand = new RelayCommand(() =>
-        {
-            HeadlandPasses = Math.Min(HeadlandPasses + 1, 10);
-            UpdateHeadlandPreview();
-        });
-
-        DecrementHeadlandPassesCommand = new RelayCommand(() =>
-        {
-            HeadlandPasses = Math.Max(HeadlandPasses - 1, 1);
-            UpdateHeadlandPreview();
-        });
-
-        // Headland Dialog (FormHeadLine) commands
-        ShowHeadlandDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.Headland);
-            UpdateHeadlandPreview();
-        });
-
-        CloseHeadlandDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            HeadlandPreviewLine = null;
-        });
-
-        ExtendHeadlandACommand = new RelayCommand(() =>
-        {
-            // TODO: Extend headland at point A
-            StatusMessage = "Extend A - not yet implemented";
-        });
-
-        ExtendHeadlandBCommand = new RelayCommand(() =>
-        {
-            // TODO: Extend headland at point B
-            StatusMessage = "Extend B - not yet implemented";
-        });
-
-        ShrinkHeadlandACommand = new RelayCommand(() =>
-        {
-            // TODO: Shrink headland at point A
-            StatusMessage = "Shrink A - not yet implemented";
-        });
-
-        ShrinkHeadlandBCommand = new RelayCommand(() =>
-        {
-            // TODO: Shrink headland at point B
-            StatusMessage = "Shrink B - not yet implemented";
-        });
-
-        ResetHeadlandCommand = new RelayCommand(() =>
-        {
-            ClearHeadlandCommand?.Execute(null);
-            StatusMessage = "Headland reset";
-        });
-
-        ClipHeadlandLineCommand = new RelayCommand(() =>
-        {
-            if (!HeadlandPointsSelected)
-            {
-                StatusMessage = "Select 2 points on the boundary first";
-                return;
-            }
-
-            // Check if we have a headland to clip (either built headland or preview)
-            var headlandToClip = CurrentHeadlandLine ?? ConvertPreviewToVec3(HeadlandPreviewLine);
-            if (headlandToClip == null || headlandToClip.Count < 3)
-            {
-                StatusMessage = "No headland to clip - use Build first";
-                return;
-            }
-
-            // Clip the headland using the clip line (between the two selected points)
-            ClipHeadlandAtLine(headlandToClip);
-        });
-
-        UndoHeadlandCommand = new RelayCommand(() =>
-        {
-            // TODO: Undo headland changes
-            StatusMessage = "Undo - not yet implemented";
-        });
-
-        TurnOffHeadlandCommand = new RelayCommand(() =>
-        {
-            IsHeadlandOn = false;
-            HasHeadland = false;
-            CurrentHeadlandLine = null;
-            HeadlandPreviewLine = null;
-            StatusMessage = "Headland turned off";
-        });
-
-        // AB Line Guidance Commands - Bottom Bar
-        SnapLeftCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Snap to Left Track - not yet implemented";
-        });
-
-        SnapRightCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Snap to Right Track - not yet implemented";
-        });
-
-        StopGuidanceCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Guidance Stopped";
-        });
-
-        UTurnCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "U-Turn - not yet implemented";
-        });
-
-        // AB Line Guidance Commands - Flyout Menu
-        ShowTracksDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.Tracks);
-        });
-
-        CloseTracksDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        // Track management commands
-        DeleteSelectedTrackCommand = new RelayCommand(() =>
-        {
-            if (SelectedTrack != null)
-            {
-                SavedTracks.Remove(SelectedTrack);
-                SelectedTrack = null;
-                SaveTracksToFile(); // Persist deletion to disk
-                StatusMessage = "Track deleted";
-            }
-        });
-
-        SwapABPointsCommand = new RelayCommand(() =>
-        {
-            if (SelectedTrack != null && SelectedTrack.Points.Count >= 2)
-            {
-                // Reverse the points list to swap A and B
-                SelectedTrack.Points.Reverse();
-                StatusMessage = $"Swapped A/B points for {SelectedTrack.Name}";
-            }
-        });
-
-        SelectTrackAsActiveCommand = new RelayCommand(() =>
-        {
-            if (SelectedTrack != null)
-            {
-                // Deactivate all tracks first
-                foreach (var track in SavedTracks)
-                {
-                    track.IsActive = false;
-                }
-                // Activate the selected track
-                SelectedTrack.IsActive = true;
-                HasActiveTrack = true;
-                IsAutoSteerAvailable = true;
-                StatusMessage = $"Activated track: {SelectedTrack.Name}";
-                State.UI.CloseDialog();
-            }
-        });
-
-        ShowQuickABSelectorCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.QuickABSelector);
-        });
-
-        CloseQuickABSelectorCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        ShowDrawABDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.ShowDialog(DialogType.DrawAB);
-        });
-
-        CloseDrawABDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-        });
-
-        StartNewABLineCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Starting new AB Line - not yet implemented";
-        });
-
-        StartNewABCurveCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Starting new AB Curve - not yet implemented";
-        });
-
-        // Quick AB Mode Commands
-        StartAPlusLineCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            StatusMessage = "A+ Line mode: Line created from current position and heading";
-            // TODO: Create AB line from current position using current heading
-        });
-
-        StartDriveABCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            CurrentABCreationMode = ABCreationMode.DriveAB;
-            CurrentABPointStep = ABPointStep.SettingPointA;
-            PendingPointA = null;
-            StatusMessage = ABCreationInstructions;
-        });
-
-        StartCurveRecordingCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            StatusMessage = "Curve mode: Start driving to record curve path";
-            // TODO: Start curve recording mode
-        });
-
-        StartDrawABModeCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            CurrentABCreationMode = ABCreationMode.DrawAB;
-            CurrentABPointStep = ABPointStep.SettingPointA;
-            PendingPointA = null;
-            StatusMessage = ABCreationInstructions;
-        });
-
-        // SetABPointCommand is called when user taps during AB creation mode
-        // For DriveAB mode: uses current GPS position
-        // For DrawAB mode: uses the tapped map coordinates (passed as parameter)
-        SetABPointCommand = new RelayCommand<object?>(param =>
-        {
-            System.Console.WriteLine($"[SetABPointCommand] Called with param={param?.GetType().Name ?? "null"}, Mode={CurrentABCreationMode}, Step={CurrentABPointStep}");
-
-            if (CurrentABCreationMode == ABCreationMode.None)
-            {
-                System.Console.WriteLine("[SetABPointCommand] Mode is None, returning");
-                return;
-            }
-
-            Position pointToSet;
-
-            if (CurrentABCreationMode == ABCreationMode.DriveAB)
-            {
-                // Use current GPS position
-                pointToSet = new Position
-                {
-                    Latitude = Latitude,
-                    Longitude = Longitude,
-                    Easting = Easting,
-                    Northing = Northing,
-                    Heading = Heading
-                };
-                System.Console.WriteLine($"[SetABPointCommand] DriveAB - GPS position: E={Easting:F2}, N={Northing:F2}");
-            }
-            else if (CurrentABCreationMode == ABCreationMode.DrawAB && param is Position mapPos)
-            {
-                // Use the tapped map position
-                pointToSet = mapPos;
-                System.Console.WriteLine($"[SetABPointCommand] DrawAB - Map position: E={mapPos.Easting:F2}, N={mapPos.Northing:F2}");
-            }
-            else
-            {
-                System.Console.WriteLine($"[SetABPointCommand] Invalid state - returning");
-                return; // Invalid state
-            }
-
-            if (CurrentABPointStep == ABPointStep.SettingPointA)
-            {
-                // Store Point A and move to Point B
-                PendingPointA = pointToSet;
-                CurrentABPointStep = ABPointStep.SettingPointB;
-                StatusMessage = ABCreationInstructions;
-                System.Console.WriteLine($"[SetABPointCommand] Set Point A: E={pointToSet.Easting:F2}, N={pointToSet.Northing:F2}");
-            }
-            else if (CurrentABPointStep == ABPointStep.SettingPointB)
-            {
-                // Create the AB line with Point A and Point B
-                if (PendingPointA != null)
-                {
-                    var heading = CalculateHeading(PendingPointA, pointToSet);
-                    var headingRadians = heading * Math.PI / 180.0;
-                    var newTrack = Track.FromABLine(
-                        $"AB_{heading:F1}° {DateTime.Now:HH:mm:ss}",
-                        new Vec3(PendingPointA.Easting, PendingPointA.Northing, headingRadians),
-                        new Vec3(pointToSet.Easting, pointToSet.Northing, headingRadians));
-                    newTrack.IsActive = true;
-
-                    SavedTracks.Add(newTrack);
-                    SaveTracksToFile(); // Persist to disk
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                    StatusMessage = $"Created AB line: {newTrack.Name} ({heading:F1}°)";
-                    System.Console.WriteLine($"[SetABPointCommand] Created AB Line: {newTrack.Name}, A=({PendingPointA.Easting:F2},{PendingPointA.Northing:F2}), B=({pointToSet.Easting:F2},{pointToSet.Northing:F2}), Heading={heading:F1}°");
-
-                    // Reset state
-                    CurrentABCreationMode = ABCreationMode.None;
-                    CurrentABPointStep = ABPointStep.None;
-                    PendingPointA = null;
-                }
-            }
-        });
-
-        CancelABCreationCommand = new RelayCommand(() =>
-        {
-            CurrentABCreationMode = ABCreationMode.None;
-            CurrentABPointStep = ABPointStep.None;
-            PendingPointA = null;
-            StatusMessage = "AB line creation cancelled";
-        });
-
-        CycleABLinesCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Cycle AB Lines - not yet implemented";
-        });
-
-        SmoothABLineCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Smooth AB Line - not yet implemented";
-        });
-
-        NudgeLeftCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Nudge Left - not yet implemented";
-        });
-
-        NudgeRightCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Nudge Right - not yet implemented";
-        });
-
-        FineNudgeLeftCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Fine Nudge Left - not yet implemented";
-        });
-
-        FineNudgeRightCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Fine Nudge Right - not yet implemented";
-        });
-
-        // Bottom Strip Commands (matching AgOpenGPS panelBottom)
-        ChangeMappingColorCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Section Mapping Color - not yet implemented";
-        });
-
-        SnapToPivotCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Snap to Pivot - not yet implemented";
-        });
-
-        ToggleYouSkipCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "YouSkip Toggle - not yet implemented";
-        });
-
-        ToggleUTurnSkipRowsCommand = new RelayCommand(() =>
-        {
-            IsUTurnSkipRowsEnabled = !IsUTurnSkipRowsEnabled;
-            StatusMessage = IsUTurnSkipRowsEnabled
-                ? $"U-Turn skip rows: ON ({UTurnSkipRows} rows)"
-                : "U-Turn skip rows: OFF";
-        });
-
-        CycleUTurnSkipRowsCommand = new RelayCommand(() =>
-        {
-            // Cycle through 0-9, wrap back to 0 after 9
-            UTurnSkipRows = (UTurnSkipRows + 1) % 10;
-            StatusMessage = $"Skip rows: {UTurnSkipRows}";
-        });
-
-        // Flags Commands
-        PlaceRedFlagCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Place Red Flag - not yet implemented";
-        });
-
-        PlaceGreenFlagCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Place Green Flag - not yet implemented";
-        });
-
-        PlaceYellowFlagCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Place Yellow Flag - not yet implemented";
-        });
-
-        DeleteAllFlagsCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Delete All Flags - not yet implemented";
-        });
-
-        // Right Navigation Panel Commands
-        ToggleContourModeCommand = new RelayCommand(() =>
-        {
-            IsContourModeOn = !IsContourModeOn;
-            StatusMessage = IsContourModeOn ? "Contour mode ON" : "Contour mode OFF";
-        });
-
-        ToggleManualModeCommand = new RelayCommand(() =>
-        {
-            IsManualSectionMode = !IsManualSectionMode;
-            StatusMessage = IsManualSectionMode ? "Manual section mode ON" : "Manual section mode OFF";
-        });
-
-        ToggleSectionMasterCommand = new RelayCommand(() =>
-        {
-            IsSectionMasterOn = !IsSectionMasterOn;
-            StatusMessage = IsSectionMasterOn ? "Section master ON" : "Section master OFF";
-        });
-
-        ToggleYouTurnCommand = new RelayCommand(() =>
-        {
-            IsYouTurnEnabled = !IsYouTurnEnabled;
-            StatusMessage = IsYouTurnEnabled ? "YouTurn enabled" : "YouTurn disabled";
-        });
-
-        ToggleAutoSteerCommand = new RelayCommand(() =>
-        {
-            if (!IsAutoSteerAvailable)
-            {
-                StatusMessage = "AutoSteer not available - no active track";
-                return;
-            }
-            IsAutoSteerEngaged = !IsAutoSteerEngaged;
-            StatusMessage = IsAutoSteerEngaged ? "AutoSteer ENGAGED" : "AutoSteer disengaged";
-        });
-
-        // Field Commands
-        CloseFieldCommand = new RelayCommand(() =>
-        {
-            CurrentFieldName = string.Empty;
-            IsFieldOpen = false;
-            SetCurrentBoundary(null);
-            StatusMessage = "Field closed";
-        });
-
-        DriveInCommand = new RelayCommand(() =>
-        {
-            // Start a new field at current GPS position
-            if (Latitude != 0 && Longitude != 0)
-            {
-                StatusMessage = "Drive-in field started";
-            }
-        });
-
-        ResumeFieldCommand = new RelayCommand(() =>
-        {
-            var lastField = _settingsService.Settings.LastOpenedField;
-            if (string.IsNullOrEmpty(lastField))
-            {
-                StatusMessage = "No previous field to resume";
-                return;
-            }
-
-            // Get fields directory from settings (same pattern as ConfirmFieldSelectionDialogCommand)
-            var fieldsDir = _settingsService.Settings.FieldsDirectory;
-            if (string.IsNullOrEmpty(fieldsDir))
-            {
-                fieldsDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "AgValoniaGPS", "Fields");
-            }
-
-            var fieldPath = Path.Combine(fieldsDir, lastField);
-
-            if (!Directory.Exists(fieldPath))
-            {
-                StatusMessage = $"Field not found: {lastField}";
-                return;
-            }
-
-            try
-            {
-                FieldsRootDirectory = fieldsDir;
-                CurrentFieldName = lastField;
-                IsFieldOpen = true;
-
-                // Load field origin from Field.txt (for coordinate conversions)
-                try
-                {
-                    var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                    if (fieldInfo.Origin != null)
-                    {
-                        _fieldOriginLatitude = fieldInfo.Origin.Latitude;
-                        _fieldOriginLongitude = fieldInfo.Origin.Longitude;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[Field] Could not load Field.txt origin: {ex.Message}");
-                }
-
-                // Load boundary from field (same pattern as ConfirmFieldSelectionDialogCommand)
-                var boundary = _boundaryFileService.LoadBoundary(fieldPath);
-                if (boundary != null)
-                {
-                    SetCurrentBoundary(boundary);
-                    CenterMapOnBoundary(boundary);
-
-                    // Debug: show boundary extents
-                    if (boundary.OuterBoundary?.Points.Count > 0)
-                    {
-                        var pts = boundary.OuterBoundary.Points;
-                        double minE = pts.Min(p => p.Easting);
-                        double maxE = pts.Max(p => p.Easting);
-                        double minN = pts.Min(p => p.Northing);
-                        double maxN = pts.Max(p => p.Northing);
-                        Console.WriteLine($"[Boundary] Extents (local): E({minE:F1} to {maxE:F1}), N({minN:F1} to {maxN:F1})");
-                    }
-                }
-
-                // Load background image from field
-                LoadBackgroundImage(fieldPath, boundary);
-
-                // Set the active field so headland and other field-specific data loads
-                var field = new Field
-                {
-                    Name = lastField,
-                    DirectoryPath = fieldPath,
-                    Boundary = boundary
-                };
-                _fieldService.SetActiveField(field);
-
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Resumed field: {lastField}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Failed to load field: {ex.Message}";
-            }
-        });
-
-        // Map Commands
-        Toggle3DModeCommand = new RelayCommand(() =>
-        {
-            _mapService.Toggle3DMode();
-            Is2DMode = !_mapService.Is3DMode;
-        });
-
-        ZoomInCommand = new RelayCommand(() =>
-        {
-            _mapService.Zoom(1.2);
-            ZoomInRequested?.Invoke();
-        });
-
-        ZoomOutCommand = new RelayCommand(() =>
-        {
-            _mapService.Zoom(0.8);
-            ZoomOutRequested?.Invoke();
-        });
-
-        // Boundary Recording Commands
-        ToggleBoundaryPanelCommand = new RelayCommand(() =>
-        {
-            IsBoundaryPanelVisible = !IsBoundaryPanelVisible;
-        });
-
-        StartBoundaryRecordingCommand = new RelayCommand(() =>
-        {
-            _boundaryRecordingService.StartRecording(BoundaryType.Outer);
-            StatusMessage = "Boundary recording started";
-        });
-
-        PauseBoundaryRecordingCommand = new RelayCommand(() =>
-        {
-            _boundaryRecordingService.PauseRecording();
-            IsBoundaryRecording = false;
-            StatusMessage = "Boundary recording paused";
-        });
-
-        StopBoundaryRecordingCommand = new RelayCommand(() =>
-        {
-            var polygon = _boundaryRecordingService.StopRecording();
-
-            if (polygon != null && polygon.Points.Count >= 3)
-            {
-                // Save to current field
-                if (!string.IsNullOrEmpty(CurrentFieldName))
-                {
-                    var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-                    var boundary = _boundaryFileService.LoadBoundary(fieldPath) ?? new Boundary();
-                    boundary.OuterBoundary = polygon;
-                    _boundaryFileService.SaveBoundary(boundary, fieldPath);
-                    SetCurrentBoundary(boundary);
-                    RefreshBoundaryList();
-                    StatusMessage = $"Boundary saved with {polygon.Points.Count} points, Area: {polygon.AreaHectares:F2} Ha";
-                }
-                else
-                {
-                    StatusMessage = "Cannot save boundary - no field is open";
-                }
-            }
-            else
-            {
-                StatusMessage = "Boundary not saved - need at least 3 points";
-            }
-
-            // Hide the player panel
-            IsBoundaryPlayerPanelVisible = false;
-            IsBoundaryRecording = false;
-        });
-
-        ToggleRecordingCommand = new RelayCommand(() =>
-        {
-            if (IsBoundaryRecording)
-            {
-                _boundaryRecordingService.PauseRecording();
-                IsBoundaryRecording = false;
-                StatusMessage = "Recording paused";
-            }
-            else
-            {
-                _boundaryRecordingService.ResumeRecording();
-                IsBoundaryRecording = true;
-                StatusMessage = "Recording boundary - drive around the perimeter";
-            }
-        });
-
-        UndoBoundaryPointCommand = new RelayCommand(() =>
-        {
-            _boundaryRecordingService.RemoveLastPoint();
-        });
-
-        ClearBoundaryCommand = new RelayCommand(() =>
-        {
-            _boundaryRecordingService.ClearPoints();
-            StatusMessage = "Boundary cleared";
-        });
-
-        AddBoundaryPointCommand = new RelayCommand(() =>
-        {
-            double headingRadians = Heading * Math.PI / 180.0;
-            var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(Easting, Northing, headingRadians);
-            _boundaryRecordingService.AddPointManual(offsetEasting, offsetNorthing, headingRadians);
-            StatusMessage = $"Point added ({_boundaryRecordingService.PointCount} total)";
-        });
-
-        ToggleBoundaryLeftRightCommand = new RelayCommand(() =>
-        {
-            IsDrawRightSide = !IsDrawRightSide;
-        });
-
-        ToggleBoundaryAntennaToolCommand = new RelayCommand(() =>
-        {
-            IsDrawAtPivot = !IsDrawAtPivot;
-        });
-
-        ShowBoundaryOffsetDialogCommand = new RelayCommand(() =>
-        {
-            // Show numeric input dialog for boundary offset
-            NumericInputDialogTitle = "Boundary Offset (cm)";
-            NumericInputDialogValue = (decimal)BoundaryOffset;
-            NumericInputDialogDisplayText = BoundaryOffset.ToString("F0");
-            NumericInputDialogIntegerOnly = true;
-            NumericInputDialogAllowNegative = false;
-            _numericInputDialogCallback = (value) =>
-            {
-                BoundaryOffset = value;
-                StatusMessage = $"Boundary offset set to {BoundaryOffset:F0} cm";
-            };
-            State.UI.ShowDialog(DialogType.NumericInput);
-        });
-
-        CancelNumericInputDialogCommand = new RelayCommand(() =>
-        {
-            State.UI.CloseDialog();
-            _numericInputDialogCallback = null;
-        });
-
-        ConfirmNumericInputDialogCommand = new RelayCommand(() =>
-        {
-            if (NumericInputDialogValue.HasValue && _numericInputDialogCallback != null)
-            {
-                _numericInputDialogCallback((double)NumericInputDialogValue.Value);
-            }
-            State.UI.CloseDialog();
-            _numericInputDialogCallback = null;
-        });
-
-        DeleteBoundaryCommand = new RelayCommand(DeleteSelectedBoundary);
-
-        ImportKmlBoundaryCommand = new AsyncRelayCommand(async () =>
-        {
-            // Must have a field open
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                StatusMessage = "Open a field first before importing a boundary";
-                return;
-            }
-
-            var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-            var result = await _dialogService.ShowKmlImportDialogAsync(_settingsService.Settings.FieldsDirectory, fieldPath);
-
-            if (result != null && result.BoundaryPoints.Count > 0)
-            {
-                try
-                {
-                    // Load existing boundary or create new one
-                    var boundary = _boundaryFileService.LoadBoundary(fieldPath) ?? new Boundary();
-
-                    // Convert WGS84 boundary points to local coordinates
-                    var origin = new Wgs84(result.CenterLatitude, result.CenterLongitude);
-                    var sharedProps = new SharedFieldProperties();
-                    var localPlane = new LocalPlane(origin, sharedProps);
-
-                    var outerPolygon = new BoundaryPolygon();
-
-                    foreach (var (lat, lon) in result.BoundaryPoints)
-                    {
-                        var wgs84 = new Wgs84(lat, lon);
-                        var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                        outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                    }
-
-                    boundary.OuterBoundary = outerPolygon;
-
-                    // Save boundary
-                    _boundaryFileService.SaveBoundary(boundary, fieldPath);
-
-                    // Update map
-                    SetCurrentBoundary(boundary);
-
-                    // Refresh the boundary list
-                    RefreshBoundaryList();
-
-                    StatusMessage = $"Boundary imported from KML ({outerPolygon.Points.Count} points)";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error importing KML boundary: {ex.Message}";
-                }
-            }
-        });
-
-        DrawMapBoundaryCommand = new RelayCommand(() =>
-        {
-            // Must have a field open
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                StatusMessage = "Open a field first to add boundary";
-                return;
-            }
-
-            // Use the shared panel-based dialog (works on iOS and Desktop)
-            ShowBoundaryMapDialogCommand?.Execute(null);
-        });
-
-        // Keep Desktop-only async version for IDialogService integration
-        DrawMapBoundaryDesktopCommand = new AsyncRelayCommand(async () =>
-        {
-            // Must have a field open
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                StatusMessage = "Open a field first to add boundary";
-                return;
-            }
-
-            var result = await _dialogService.ShowMapBoundaryDialogAsync(Latitude, Longitude);
-
-            if (result != null && (result.BoundaryPoints.Count >= 3 || result.HasBackgroundImage))
-            {
-                try
-                {
-                    var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-                    LocalPlane? localPlane = null;
-
-                    if (result.BoundaryPoints.Count >= 3)
-                    {
-                        // Calculate center of boundary points
-                        double sumLat = 0, sumLon = 0;
-                        foreach (var point in result.BoundaryPoints)
-                        {
-                            sumLat += point.Latitude;
-                            sumLon += point.Longitude;
-                        }
-                        double centerLat = sumLat / result.BoundaryPoints.Count;
-                        double centerLon = sumLon / result.BoundaryPoints.Count;
-
-                        var origin = new Wgs84(centerLat, centerLon);
-                        var sharedProps = new SharedFieldProperties();
-                        localPlane = new LocalPlane(origin, sharedProps);
-                    }
-                    else if (result.HasBackgroundImage)
-                    {
-                        // Use background image center as origin
-                        double centerLat = (result.NorthWestLat + result.SouthEastLat) / 2;
-                        double centerLon = (result.NorthWestLon + result.SouthEastLon) / 2;
-
-                        var origin = new Wgs84(centerLat, centerLon);
-                        var sharedProps = new SharedFieldProperties();
-                        localPlane = new LocalPlane(origin, sharedProps);
-                    }
-
-                    // Process boundary points if present
-                    if (result.BoundaryPoints.Count >= 3 && localPlane != null)
-                    {
-                        var boundary = new Boundary();
-                        var outerPolygon = new BoundaryPolygon();
-
-                        foreach (var point in result.BoundaryPoints)
-                        {
-                            var wgs84 = new Wgs84(point.Latitude, point.Longitude);
-                            var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                            outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                        }
-
-                        boundary.OuterBoundary = outerPolygon;
-
-                        // Save boundary
-                        _boundaryFileService.SaveBoundary(boundary, fieldPath);
-
-                        // Update Field.txt with the origin used for this boundary
-                        double originLat = localPlane.Origin.Latitude;
-                        double originLon = localPlane.Origin.Longitude;
-                        _fieldOriginLatitude = originLat;
-                        _fieldOriginLongitude = originLon;
-                        try
-                        {
-                            var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                            fieldInfo.Origin = new Position { Latitude = originLat, Longitude = originLon };
-                            _fieldPlaneFileService.SaveField(fieldInfo, fieldPath);
-                            Console.WriteLine($"[MapBoundary] Updated Field.txt origin to ({originLat:F8}, {originLon:F8})");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"[MapBoundary] Could not update Field.txt: {ex.Message}");
-                        }
-
-                        // Update map
-                        SetCurrentBoundary(boundary);
-                        CenterMapOnBoundary(boundary);
-
-                        // Refresh the boundary list
-                        RefreshBoundaryList();
-                    }
-
-                    // Process background image if present
-                    if (result.HasBackgroundImage && !string.IsNullOrEmpty(result.BackgroundImagePath))
-                    {
-                        SaveBackgroundImage(result.BackgroundImagePath, fieldPath,
-                            result.NorthWestLat, result.NorthWestLon,
-                            result.SouthEastLat, result.SouthEastLon);
-                    }
-
-                    // Build status message
-                    var msgParts = new System.Collections.Generic.List<string>();
-                    if (result.BoundaryPoints.Count >= 3)
-                        msgParts.Add($"boundary ({result.BoundaryPoints.Count} pts)");
-                    if (result.HasBackgroundImage)
-                        msgParts.Add("background image");
-
-                    StatusMessage = $"Imported from satellite map: {string.Join(" + ", msgParts)}";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error importing: {ex.Message}";
-                }
-            }
-        });
-
-        BuildFromTracksCommand = new RelayCommand(() =>
-        {
-            StatusMessage = "Build boundary from tracks not yet implemented";
-        });
-
-        DriveAroundFieldCommand = new RelayCommand(() =>
-        {
-            // Must have a field open
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                StatusMessage = "Open a field first before recording a boundary";
-                return;
-            }
-
-            // Hide boundary panel, show the player panel
-            IsBoundaryPanelVisible = false;
-            IsBoundaryPlayerPanelVisible = true;
-
-            // Initialize recording service for a new boundary (paused state)
-            _boundaryRecordingService.StartRecording(BoundaryType.Outer);
-            _boundaryRecordingService.PauseRecording();
-
-            StatusMessage = "Drive around the field boundary. Click Record to start.";
-        });
+        InitializeNavigationCommands();
+        InitializeSimulatorCommands();
+        InitializeConfigurationCommands();
+        InitializeFieldCommands();
+        InitializeBoundaryCommands();
+        InitializeTrackCommands();
     }
+
 
     private void CenterMapOnBoundary(Boundary boundary)
     {
@@ -7114,151 +3990,7 @@ public class MainViewModel : ReactiveObject
         }
     }
 
-    /// <summary>
-    /// Save tracks to TrackLines.txt in the active field directory.
-    /// Uses WinForms-compatible format via TrackFilesService.
-    /// </summary>
-    private void SaveTracksToFile()
-    {
-        var activeField = _fieldService.ActiveField;
-        if (activeField == null || string.IsNullOrEmpty(activeField.DirectoryPath))
-        {
-            return; // No active field to save to
-        }
-
-        try
-        {
-            Services.TrackFilesService.SaveTracks(activeField.DirectoryPath, SavedTracks.ToList());
-            Console.WriteLine($"[TrackFiles] Saved {SavedTracks.Count} tracks to TrackLines.txt");
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine($"[TrackFiles] Failed to save tracks: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Load tracks from field directory.
-    /// Supports WinForms TrackLines.txt format (primary) and legacy ABLines.txt format (fallback).
-    /// </summary>
-    private void LoadTracksFromField(Field? field)
-    {
-        // Clear existing tracks from both state and legacy collection
-        State.Field.Tracks.Clear();
-        SavedTracks.Clear();
-
-        if (field == null || string.IsNullOrEmpty(field.DirectoryPath))
-        {
-            Console.WriteLine("[TrackFiles] No field directory to load from");
-            return;
-        }
-
-        try
-        {
-            // Try TrackLines.txt first (WinForms format)
-            if (Services.TrackFilesService.Exists(field.DirectoryPath))
-            {
-                var tracks = Services.TrackFilesService.LoadTracks(field.DirectoryPath);
-                int loadedCount = 0;
-
-                foreach (var track in tracks)
-                {
-                    // First track is active by default
-                    if (loadedCount == 0)
-                    {
-                        track.IsActive = true;
-                        State.Field.ActiveTrack = track;
-                    }
-                    State.Field.Tracks.Add(track);
-                    SavedTracks.Add(track);
-                    loadedCount++;
-                }
-
-                Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from TrackLines.txt");
-
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
-                return;
-            }
-
-            // Fallback to legacy ABLines.txt format
-            var legacyFilePath = System.IO.Path.Combine(field.DirectoryPath, "ABLines.txt");
-            if (System.IO.File.Exists(legacyFilePath))
-            {
-                Console.WriteLine($"[TrackFiles] TrackLines.txt not found, trying legacy ABLines.txt");
-                var lines = System.IO.File.ReadAllLines(legacyFilePath);
-                int loadedCount = 0;
-
-                foreach (var line in lines)
-                {
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    var parts = line.Split(',');
-                    if (parts.Length >= 4)
-                    {
-                        // Parse legacy: Name,Heading,PointA_Easting,PointA_Northing[,PointB_Easting,PointB_Northing]
-                        var name = parts[0];
-                        if (double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var heading) &&
-                            double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var eastingA) &&
-                            double.TryParse(parts[3], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var northingA))
-                        {
-                            double eastingB, northingB;
-
-                            if (parts.Length >= 6 &&
-                                double.TryParse(parts[4], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out eastingB) &&
-                                double.TryParse(parts[5], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out northingB))
-                            {
-                                // Use stored Point B
-                            }
-                            else
-                            {
-                                // Calculate Point B from Point A and heading
-                                var headingRad = heading * Math.PI / 180.0;
-                                var lineLength = 100.0;
-                                eastingB = eastingA + Math.Sin(headingRad) * lineLength;
-                                northingB = northingA + Math.Cos(headingRad) * lineLength;
-                            }
-
-                            var headingRadians = heading * Math.PI / 180.0;
-                            var track = Track.FromABLine(
-                                name,
-                                new Vec3(eastingA, northingA, headingRadians),
-                                new Vec3(eastingB, northingB, headingRadians));
-                            track.IsActive = loadedCount == 0;
-
-                            if (loadedCount == 0)
-                            {
-                                State.Field.ActiveTrack = track;
-                            }
-                            State.Field.Tracks.Add(track);
-                            SavedTracks.Add(track);
-                            loadedCount++;
-                        }
-                    }
-                }
-
-                Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from legacy ABLines.txt");
-
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[TrackFiles] No track files found in {field.DirectoryPath}");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine($"[TrackFiles] Failed to load tracks: {ex.Message}");
-        }
-    }
+    // Note: Track file loading/saving methods moved to TrackManagementViewModel
 }
 
 /// <summary>
