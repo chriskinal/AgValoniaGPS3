@@ -254,9 +254,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _abLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), 1.5); // Semi-transparent extended line
         _pointABrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)); // Green Point A
         _pointBBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0)); // Red Point B
-        _toolBrush = new SolidColorBrush(Color.FromArgb(180, 50, 50, 180)); // Semi-transparent blue tool body
-        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(100, 100, 220)), 0.3); // Blue outline
-        _hitchPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 200, 0)), 0.2); // Yellow/orange hitch line
+        _toolBrush = new SolidColorBrush(Color.FromArgb(150, 255, 100, 50)); // Semi-transparent orange/red tool body
+        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 150, 0)), 1.0); // Orange outline
+        _hitchPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 0)), 1.0); // Bright yellow hitch line
 
         // Load vehicle (tractor) image from embedded resources
         LoadVehicleImage();

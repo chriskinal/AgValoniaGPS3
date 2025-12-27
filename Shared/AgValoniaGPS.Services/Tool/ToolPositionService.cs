@@ -46,10 +46,19 @@ public class ToolPositionService : IToolPositionService
         var tool = ConfigurationStore.Instance.Tool;
 
         // Calculate hitch point on vehicle
-        // HitchLength: positive = front, negative = rear
+        // HitchLength is stored as positive distance; sign determined by tool type
+        // Front tools: positive direction (ahead of pivot)
+        // Rear tools: negative direction (behind pivot)
+        double hitchDistance = Math.Abs(tool.HitchLength);
+        if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+        {
+            hitchDistance = -hitchDistance; // Behind the vehicle
+        }
+        // Front fixed keeps positive (ahead of vehicle)
+
         _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(vehicleHeading) * tool.HitchLength,
-            vehiclePivot.Northing + Math.Cos(vehicleHeading) * tool.HitchLength,
+            vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
+            vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
             vehicleHeading
         );
 

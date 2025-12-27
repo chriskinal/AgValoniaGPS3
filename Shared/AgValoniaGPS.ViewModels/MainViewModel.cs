@@ -787,15 +787,28 @@ public class MainViewModel : ReactiveObject
 
     private void UpdateToolPositionProperties(Services.Interfaces.ToolPositionUpdatedEventArgs e)
     {
-        ToolEasting = e.ToolPosition.Easting;
-        ToolNorthing = e.ToolPosition.Northing;
-        ToolHeadingRadians = e.ToolHeading;
-        ToolWidth = Models.Configuration.ConfigurationStore.Instance.Tool.Width;
+        var config = Models.Configuration.ConfigurationStore.Instance;
+
+        // Calculate actual tool width from active sections (section widths are in cm)
+        double totalWidthMeters = 0;
+        int numSections = config.NumSections;
+        for (int i = 0; i < numSections && i < 16; i++)
+        {
+            totalWidthMeters += config.Tool.GetSectionWidth(i) / 100.0; // cm to meters
+        }
 
         // Get hitch position from the service
         var hitchPos = _toolPositionService.HitchPosition;
+
+        // Set all properties BEFORE ToolEasting (which triggers the view update)
+        ToolNorthing = e.ToolPosition.Northing;
+        ToolHeadingRadians = e.ToolHeading;
+        ToolWidth = totalWidthMeters; // Use calculated width from sections
         HitchEasting = hitchPos.Easting;
         HitchNorthing = hitchPos.Northing;
+
+        // Set ToolEasting LAST - this triggers the PropertyChanged that updates the map
+        ToolEasting = e.ToolPosition.Easting;
     }
 
     private void OnGpsDataUpdated(object? sender, AgValoniaGPS.Models.GpsData data)
