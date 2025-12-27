@@ -71,6 +71,12 @@ public partial class MainViewModel : ReactiveObject
     public SectionControlViewModel Sections { get; }
 
     /// <summary>
+    /// Track Management ViewModel - handles track list, AB line creation, and nudge commands.
+    /// Use this for track management functionality.
+    /// </summary>
+    public TrackManagementViewModel Tracks { get; }
+
+    /// <summary>
     /// Centralized application state - single source of truth for all runtime state.
     /// Use this for new code. Existing properties will gradually migrate to use State.
     /// </summary>
@@ -198,6 +204,13 @@ public partial class MainViewModel : ReactiveObject
         // Create SectionControlViewModel (handles section master and individual section states)
         Sections = new SectionControlViewModel(moduleCommunicationService, appState);
         Sections.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+
+        // Create TrackManagementViewModel (handles track list, AB line creation, nudge)
+        Tracks = new TrackManagementViewModel(fieldService, appState);
+        Tracks.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+        Tracks.TrackActivated += (s, e) => IsAutoSteerAvailable = true;
+        Tracks.CloseDialogRequested += (s, e) => State.UI.CloseDialog();
+        Tracks.GetCurrentPosition = () => (Latitude, Longitude, Easting, Northing, Heading);
 
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
@@ -1155,7 +1168,7 @@ public partial class MainViewModel : ReactiveObject
         LoadHeadlandFromField(field);
 
         // Load AB lines from field directory if available
-        LoadTracksFromField(field);
+        Tracks.LoadTracksFromField(field);
     }
 
     /// <summary>
@@ -1288,82 +1301,52 @@ public partial class MainViewModel : ReactiveObject
     private string _fieldSelectionDirectory = string.Empty;
     private bool _fieldsSortedAZ = false;
 
-    // AB Line Creation Mode state (dialog visibility managed by State.UI)
-    private ABCreationMode _currentABCreationMode = ABCreationMode.None;
+    // AB Line Creation Mode state - delegates to TrackManagementViewModel
+    /// <summary>
+    /// Delegates to Tracks.CurrentABCreationMode for backward compatibility.
+    /// </summary>
     public ABCreationMode CurrentABCreationMode
     {
-        get => _currentABCreationMode;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _currentABCreationMode, value);
-            this.RaisePropertyChanged(nameof(IsCreatingABLine));
-            this.RaisePropertyChanged(nameof(EnableABClickSelection));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
-        }
+        get => Tracks.CurrentABCreationMode;
+        set => Tracks.CurrentABCreationMode = value;
     }
 
-    private ABPointStep _currentABPointStep = ABPointStep.None;
+    /// <summary>
+    /// Delegates to Tracks.CurrentABPointStep for backward compatibility.
+    /// </summary>
     public ABPointStep CurrentABPointStep
     {
-        get => _currentABPointStep;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _currentABPointStep, value);
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
-        }
+        get => Tracks.CurrentABPointStep;
+        set => Tracks.CurrentABPointStep = value;
     }
 
-    // Temporary storage for Point A during AB creation
-    private Position? _pendingPointA;
+    /// <summary>
+    /// Delegates to Tracks.PendingPointA for backward compatibility.
+    /// </summary>
     public Position? PendingPointA
     {
-        get => _pendingPointA;
-        set => this.RaiseAndSetIfChanged(ref _pendingPointA, value);
+        get => Tracks.PendingPointA;
+        set => Tracks.PendingPointA = value;
     }
 
-    // Computed properties for UI binding
-    public bool IsCreatingABLine => CurrentABCreationMode != ABCreationMode.None;
+    // Computed properties for UI binding - delegate to Tracks
+    public bool IsCreatingABLine => Tracks.IsCreatingABLine;
+    public bool EnableABClickSelection => Tracks.EnableABClickSelection;
+    public string ABCreationInstructions => Tracks.ABCreationInstructions;
 
-    public bool EnableABClickSelection => CurrentABCreationMode == ABCreationMode.DrawAB ||
-                                          CurrentABCreationMode == ABCreationMode.DriveAB;
+    // Tracks Dialog data properties - delegate to Tracks
+    /// <summary>
+    /// Delegates to Tracks.SavedTracks for backward compatibility.
+    /// </summary>
+    public ObservableCollection<Track> SavedTracks => Tracks.SavedTracks;
 
-    public string ABCreationInstructions
-    {
-        get
-        {
-            return (CurrentABCreationMode, CurrentABPointStep) switch
-            {
-                (ABCreationMode.DriveAB, ABPointStep.SettingPointA) => "Tap screen to set Point A at current position",
-                (ABCreationMode.DriveAB, ABPointStep.SettingPointB) => "Drive to B, then tap screen to set Point B",
-                (ABCreationMode.DrawAB, ABPointStep.SettingPointA) => "Tap on map to place Point A",
-                (ABCreationMode.DrawAB, ABPointStep.SettingPointB) => "Tap on map to place Point B",
-                (ABCreationMode.Curve, _) => "Drive along curve path, then tap to finish",
-                _ => string.Empty
-            };
-        }
-    }
-
-    // Tracks Dialog data properties
-    public ObservableCollection<Track> SavedTracks { get; } = new();
-
-    private Track? _selectedTrack;
+    /// <summary>
+    /// Delegates to Tracks.SelectedTrack for backward compatibility.
+    /// </summary>
     public Track? SelectedTrack
     {
-        get => _selectedTrack;
-        set
-        {
-            var oldValue = _selectedTrack;
-            if (this.RaiseAndSetIfChanged(ref _selectedTrack, value) != oldValue)
-            {
-                var oldA = oldValue?.Points.FirstOrDefault();
-                var oldB = oldValue?.Points.LastOrDefault();
-                var newA = value?.Points.FirstOrDefault();
-                var newB = value?.Points.LastOrDefault();
-                Console.WriteLine($"[SelectedTrack] Changed from A({oldA?.Easting:F1},{oldA?.Northing:F1}) B({oldB?.Easting:F1},{oldB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack]       to A({newA?.Easting:F1},{newA?.Northing:F1}) B({newB?.Easting:F1},{newB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack] Stack trace: {Environment.StackTrace}");
-            }
-        }
+        get => Tracks.SelectedTrack;
+        set => Tracks.SelectedTrack = value;
     }
 
     // Track management commands
@@ -2066,14 +2049,14 @@ public partial class MainViewModel : ReactiveObject
     }
 
     // Bottom strip state properties (matching AgOpenGPS conditional button visibility)
-    private bool _hasActiveTrack;
     /// <summary>
-    /// True when an AB line or track is active for guidance (equivalent to AgOpenGPS trk.idx > -1)
+    /// True when an AB line or track is active for guidance.
+    /// Delegates to Tracks.HasActiveTrack for backward compatibility.
     /// </summary>
     public bool HasActiveTrack
     {
-        get => _hasActiveTrack;
-        set => this.RaiseAndSetIfChanged(ref _hasActiveTrack, value);
+        get => Tracks.HasActiveTrack;
+        set => Tracks.HasActiveTrack = value;
     }
 
     private bool _hasBoundary;
@@ -2086,14 +2069,14 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _hasBoundary, value);
     }
 
-    private bool _isNudgeEnabled;
     /// <summary>
-    /// True when AB line nudging is enabled (controls visibility of snap/adjust buttons)
+    /// True when AB line nudging is enabled.
+    /// Delegates to Tracks.IsNudgeEnabled for backward compatibility.
     /// </summary>
     public bool IsNudgeEnabled
     {
-        get => _isNudgeEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isNudgeEnabled, value);
+        get => Tracks.IsNudgeEnabled;
+        set => Tracks.IsNudgeEnabled = value;
     }
 
     /// <summary>
@@ -4007,151 +3990,7 @@ public partial class MainViewModel : ReactiveObject
         }
     }
 
-    /// <summary>
-    /// Save tracks to TrackLines.txt in the active field directory.
-    /// Uses WinForms-compatible format via TrackFilesService.
-    /// </summary>
-    private void SaveTracksToFile()
-    {
-        var activeField = _fieldService.ActiveField;
-        if (activeField == null || string.IsNullOrEmpty(activeField.DirectoryPath))
-        {
-            return; // No active field to save to
-        }
-
-        try
-        {
-            Services.TrackFilesService.SaveTracks(activeField.DirectoryPath, SavedTracks.ToList());
-            Console.WriteLine($"[TrackFiles] Saved {SavedTracks.Count} tracks to TrackLines.txt");
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine($"[TrackFiles] Failed to save tracks: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Load tracks from field directory.
-    /// Supports WinForms TrackLines.txt format (primary) and legacy ABLines.txt format (fallback).
-    /// </summary>
-    private void LoadTracksFromField(Field? field)
-    {
-        // Clear existing tracks from both state and legacy collection
-        State.Field.Tracks.Clear();
-        SavedTracks.Clear();
-
-        if (field == null || string.IsNullOrEmpty(field.DirectoryPath))
-        {
-            Console.WriteLine("[TrackFiles] No field directory to load from");
-            return;
-        }
-
-        try
-        {
-            // Try TrackLines.txt first (WinForms format)
-            if (Services.TrackFilesService.Exists(field.DirectoryPath))
-            {
-                var tracks = Services.TrackFilesService.LoadTracks(field.DirectoryPath);
-                int loadedCount = 0;
-
-                foreach (var track in tracks)
-                {
-                    // First track is active by default
-                    if (loadedCount == 0)
-                    {
-                        track.IsActive = true;
-                        State.Field.ActiveTrack = track;
-                    }
-                    State.Field.Tracks.Add(track);
-                    SavedTracks.Add(track);
-                    loadedCount++;
-                }
-
-                Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from TrackLines.txt");
-
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
-                return;
-            }
-
-            // Fallback to legacy ABLines.txt format
-            var legacyFilePath = System.IO.Path.Combine(field.DirectoryPath, "ABLines.txt");
-            if (System.IO.File.Exists(legacyFilePath))
-            {
-                Console.WriteLine($"[TrackFiles] TrackLines.txt not found, trying legacy ABLines.txt");
-                var lines = System.IO.File.ReadAllLines(legacyFilePath);
-                int loadedCount = 0;
-
-                foreach (var line in lines)
-                {
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    var parts = line.Split(',');
-                    if (parts.Length >= 4)
-                    {
-                        // Parse legacy: Name,Heading,PointA_Easting,PointA_Northing[,PointB_Easting,PointB_Northing]
-                        var name = parts[0];
-                        if (double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var heading) &&
-                            double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var eastingA) &&
-                            double.TryParse(parts[3], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var northingA))
-                        {
-                            double eastingB, northingB;
-
-                            if (parts.Length >= 6 &&
-                                double.TryParse(parts[4], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out eastingB) &&
-                                double.TryParse(parts[5], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out northingB))
-                            {
-                                // Use stored Point B
-                            }
-                            else
-                            {
-                                // Calculate Point B from Point A and heading
-                                var headingRad = heading * Math.PI / 180.0;
-                                var lineLength = 100.0;
-                                eastingB = eastingA + Math.Sin(headingRad) * lineLength;
-                                northingB = northingA + Math.Cos(headingRad) * lineLength;
-                            }
-
-                            var headingRadians = heading * Math.PI / 180.0;
-                            var track = Track.FromABLine(
-                                name,
-                                new Vec3(eastingA, northingA, headingRadians),
-                                new Vec3(eastingB, northingB, headingRadians));
-                            track.IsActive = loadedCount == 0;
-
-                            if (loadedCount == 0)
-                            {
-                                State.Field.ActiveTrack = track;
-                            }
-                            State.Field.Tracks.Add(track);
-                            SavedTracks.Add(track);
-                            loadedCount++;
-                        }
-                    }
-                }
-
-                Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from legacy ABLines.txt");
-
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[TrackFiles] No track files found in {field.DirectoryPath}");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine($"[TrackFiles] Failed to load tracks: {ex.Message}");
-        }
-    }
+    // Note: Track file loading/saving methods moved to TrackManagementViewModel
 }
 
 /// <summary>
