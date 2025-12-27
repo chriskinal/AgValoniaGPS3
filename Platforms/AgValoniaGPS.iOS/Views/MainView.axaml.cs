@@ -123,6 +123,17 @@ public partial class MainView : UserControl
                 double headingRadians = _viewModel.Heading * Math.PI / 180.0;
                 _mapControl.SetVehiclePosition(_viewModel.Easting, _viewModel.Northing, headingRadians);
             }
+            else if (e.PropertyName == nameof(MainViewModel.ToolEasting))
+            {
+                // Tool position updated - update map control
+                _mapControl.SetToolPosition(
+                    _viewModel.ToolEasting,
+                    _viewModel.ToolNorthing,
+                    _viewModel.ToolHeadingRadians,
+                    _viewModel.ToolWidth,
+                    _viewModel.HitchEasting,
+                    _viewModel.HitchNorthing);
+            }
             else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
             {
                 // Update map control click selection mode

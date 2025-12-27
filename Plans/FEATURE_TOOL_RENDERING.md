@@ -59,12 +59,14 @@ From `ConfigurationStore.Instance.Tool`:
 
 ## Implementation Steps
 
-### Phase 1: Basic Tool Rectangle (MVP)
-1. [ ] Add `IToolPositionService` injection to `DrawingContextMapControl`
-2. [ ] Add `DrawTool()` method to `DrawingContextMapControl`
-3. [ ] Draw simple rectangle representing tool width at tool position
-4. [ ] Call `DrawTool()` before `DrawVehicle()` in render loop
-5. [ ] Test with fixed rear tool configuration
+### Phase 1: Basic Tool Rectangle (MVP) ✅ COMPLETE
+1. [x] Add tool position properties to `MainViewModel` (ToolEasting, ToolNorthing, ToolHeadingRadians, ToolWidth, HitchEasting, HitchNorthing)
+2. [x] Subscribe to `IToolPositionService.PositionUpdated` event in MainViewModel
+3. [x] Add `SetToolPosition()` method to `DrawingContextMapControl` and `ISharedMapControl`
+4. [x] Add `DrawTool()` method to `DrawingContextMapControl`
+5. [x] Draw simple rectangle representing tool width at tool position with hitch line
+6. [x] Call `DrawTool()` before `DrawVehicle()` in render loop
+7. [x] Wire platform views (Desktop/iOS/Android) to call `SetToolPosition` on property changes
 
 ### Phase 2: Hitch Lines
 1. [ ] Draw hitch line from vehicle pivot to hitch point

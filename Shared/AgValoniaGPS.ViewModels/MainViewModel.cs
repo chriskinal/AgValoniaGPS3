@@ -127,6 +127,14 @@ public class MainViewModel : ReactiveObject
     private double _northing;
     private double _heading;
 
+    // Tool position (for rendering)
+    private double _toolEasting;
+    private double _toolNorthing;
+    private double _toolHeading;
+    private double _toolWidth;
+    private double _hitchEasting;
+    private double _hitchNorthing;
+
     // Field properties
     private Field? _activeField;
     private string _fieldsRootDirectory = string.Empty;
@@ -200,6 +208,7 @@ public class MainViewModel : ReactiveObject
         _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
+        _toolPositionService.PositionUpdated += OnToolPositionUpdated;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -711,6 +720,43 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _heading, value);
     }
 
+    // Tool position properties (for map rendering)
+    public double ToolEasting
+    {
+        get => _toolEasting;
+        set => this.RaiseAndSetIfChanged(ref _toolEasting, value);
+    }
+
+    public double ToolNorthing
+    {
+        get => _toolNorthing;
+        set => this.RaiseAndSetIfChanged(ref _toolNorthing, value);
+    }
+
+    public double ToolHeadingRadians
+    {
+        get => _toolHeading;
+        set => this.RaiseAndSetIfChanged(ref _toolHeading, value);
+    }
+
+    public double ToolWidth
+    {
+        get => _toolWidth;
+        set => this.RaiseAndSetIfChanged(ref _toolWidth, value);
+    }
+
+    public double HitchEasting
+    {
+        get => _hitchEasting;
+        set => this.RaiseAndSetIfChanged(ref _hitchEasting, value);
+    }
+
+    public double HitchNorthing
+    {
+        get => _hitchNorthing;
+        set => this.RaiseAndSetIfChanged(ref _hitchNorthing, value);
+    }
+
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot state)
     {
         // Update latency display from AutoSteer pipeline
@@ -723,6 +769,33 @@ public class MainViewModel : ReactiveObject
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() => GpsToPgnLatencyMs = state.TotalLatencyMs);
         }
+    }
+
+    private void OnToolPositionUpdated(object? sender, Services.Interfaces.ToolPositionUpdatedEventArgs e)
+    {
+        // Update tool position properties for map rendering
+        // This fires after each GPS update when ToolPositionService.Update() is called
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            UpdateToolPositionProperties(e);
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateToolPositionProperties(e));
+        }
+    }
+
+    private void UpdateToolPositionProperties(Services.Interfaces.ToolPositionUpdatedEventArgs e)
+    {
+        ToolEasting = e.ToolPosition.Easting;
+        ToolNorthing = e.ToolPosition.Northing;
+        ToolHeadingRadians = e.ToolHeading;
+        ToolWidth = Models.Configuration.ConfigurationStore.Instance.Tool.Width;
+
+        // Get hitch position from the service
+        var hitchPos = _toolPositionService.HitchPosition;
+        HitchEasting = hitchPos.Easting;
+        HitchNorthing = hitchPos.Northing;
     }
 
     private void OnGpsDataUpdated(object? sender, AgValoniaGPS.Models.GpsData data)
