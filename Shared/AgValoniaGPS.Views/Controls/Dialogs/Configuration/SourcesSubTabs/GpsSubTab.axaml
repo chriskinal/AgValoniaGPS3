@@ -157,7 +157,7 @@
                         <Border Background="#1A1A2E" CornerRadius="4" Padding="4" Height="80" HorizontalAlignment="Center"
                                 IsEnabled="{Binding Connections.IsDualGps}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesHead.png" Stretch="Uniform"
-                                   Opacity="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=1|0.3}"/>
+                                   Opacity="{Binding Connections.IsDualGps, Converter={x:Static conv:BoolToOpacityConverter.Instance}, ConverterParameter=1|0.3}"/>
                         </Border>
 
                         <!-- Heading Offset -->

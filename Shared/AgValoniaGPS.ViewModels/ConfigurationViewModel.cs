@@ -754,6 +754,9 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand EditTrailingHitchLengthCommand { get; private set; } = null!;
     public ICommand EditTankHitchLengthCommand { get; private set; } = null!;
     public ICommand EditToolPivotCommand { get; private set; } = null!;
+    public ICommand SetPivotBehindCommand { get; private set; } = null!;
+    public ICommand SetPivotAheadCommand { get; private set; } = null!;
+    public ICommand ZeroToolPivotCommand { get; private set; } = null!;
 
     // Sections Tab Edit Commands
     public ICommand EditNumSectionsCommand { get; private set; } = null!;
@@ -1052,6 +1055,25 @@ public class ConfigurationViewModel : ReactiveObject
             ShowNumericInput("Tool Pivot Distance", Tool.TrailingToolToPivotLength,
                 v => Tool.TrailingToolToPivotLength = v,
                 "m", integerOnly: false, allowNegative: true, min: -10, max: 10));
+
+        SetPivotBehindCommand = new RelayCommand(() =>
+        {
+            // If current value is negative, make it positive (behind pivot)
+            if (Tool.TrailingToolToPivotLength < 0)
+                Tool.TrailingToolToPivotLength = Math.Abs(Tool.TrailingToolToPivotLength);
+        });
+
+        SetPivotAheadCommand = new RelayCommand(() =>
+        {
+            // If current value is positive, make it negative (ahead of pivot)
+            if (Tool.TrailingToolToPivotLength > 0)
+                Tool.TrailingToolToPivotLength = -Math.Abs(Tool.TrailingToolToPivotLength);
+        });
+
+        ZeroToolPivotCommand = new RelayCommand(() =>
+        {
+            Tool.TrailingToolToPivotLength = 0;
+        });
     }
 
     private void InitializeSectionsEditCommands()

@@ -378,14 +378,14 @@
                         <!-- Units display -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
                             <TextBlock Text="Units:" Foreground="#AAA" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
+                            <TextBlock Text="{Binding Display.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
                                        Foreground="#4A9" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Width display -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
                             <TextBlock Text="Width:" Foreground="#AAA" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ToolWidth, StringFormat='{}{0:F2} m'}"
+                            <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
                                        Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 

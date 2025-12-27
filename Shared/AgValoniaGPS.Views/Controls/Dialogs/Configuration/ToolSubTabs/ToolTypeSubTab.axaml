@@ -86,14 +86,6 @@
                     </StackPanel>
                 </RadioButton>
             </UniformGrid>
-
-            <!-- Current Selection Display -->
-            <Border Background="#DD1E8449" CornerRadius="6" Padding="12" Margin="0,16,0,0">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="Current:" Foreground="White" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding Tool.CurrentToolType}" Foreground="White"/>
-                </StackPanel>
-            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

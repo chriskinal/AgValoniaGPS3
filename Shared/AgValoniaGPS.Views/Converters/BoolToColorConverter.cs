@@ -416,3 +416,36 @@ public class StringToImageConverter : IValueConverter
         return BindingOperations.DoNothing;
     }
 }
+
+/// <summary>
+/// Converts bool to opacity value (double).
+/// Parameter format: "trueOpacity|falseOpacity" e.g. "1|0.3"
+/// </summary>
+public class BoolToOpacityConverter : IValueConverter
+{
+    public static readonly BoolToOpacityConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        bool boolValue = value is bool b && b;
+
+        if (parameter is string param && param.Contains('|'))
+        {
+            var parts = param.Split('|');
+            if (parts.Length == 2 &&
+                double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double trueOpacity) &&
+                double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double falseOpacity))
+            {
+                return boolValue ? trueOpacity : falseOpacity;
+            }
+        }
+
+        // Default: 1.0 for true, 0.3 for false
+        return boolValue ? 1.0 : 0.3;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return BindingOperations.DoNothing;
+    }
+}

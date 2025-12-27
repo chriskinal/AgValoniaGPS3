@@ -148,11 +148,8 @@
                             <!-- Status Row -->
                             <TextBlock Text="Status:" Foreground="#AAA" FontSize="12" VerticalAlignment="Center"/>
                             <Ellipse Grid.Column="1" Width="10" Height="10" Margin="8,0"
-                                     VerticalAlignment="Center">
-                                <Ellipse.Fill>
-                                    <SolidColorBrush Color="{Binding IsNtripConnected, Converter={StaticResource BoolToColorConverter}}"/>
-                                </Ellipse.Fill>
-                            </Ellipse>
+                                     VerticalAlignment="Center"
+                                     Fill="{Binding IsNtripConnected, Converter={StaticResource BoolToColorConverter}}"/>
                             <TextBlock Grid.Column="2" Text="{Binding NtripStatus}"
                                        Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
