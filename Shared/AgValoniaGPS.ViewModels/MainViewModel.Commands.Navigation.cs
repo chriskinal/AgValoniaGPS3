@@ -106,17 +106,10 @@ public partial class MainViewModel
             StatusMessage = IsContourModeOn ? "Contour Mode: ON" : "Contour Mode: OFF";
         });
 
-        ToggleManualModeCommand = new RelayCommand(() =>
-        {
-            IsManualSectionMode = !IsManualSectionMode;
-            StatusMessage = IsManualSectionMode ? "Manual Section Mode: ON" : "Auto Section Mode";
-        });
+        // Delegate to SectionControlViewModel commands (they handle status messages via events)
+        ToggleManualModeCommand = Sections.ToggleManualModeCommand;
 
-        ToggleSectionMasterCommand = new RelayCommand(() =>
-        {
-            IsSectionMasterOn = !IsSectionMasterOn;
-            StatusMessage = IsSectionMasterOn ? "Section Master: ON" : "Section Master: OFF";
-        });
+        ToggleSectionMasterCommand = Sections.ToggleMasterCommand;
 
         ToggleYouTurnCommand = new RelayCommand(() =>
         {

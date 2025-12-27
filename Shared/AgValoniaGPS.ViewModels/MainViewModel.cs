@@ -65,6 +65,12 @@ public partial class MainViewModel : ReactiveObject
     public BoundaryRecordingViewModel BoundaryRecording { get; }
 
     /// <summary>
+    /// Section Control ViewModel - handles section master state and individual section control.
+    /// Use this for section control functionality.
+    /// </summary>
+    public SectionControlViewModel Sections { get; }
+
+    /// <summary>
     /// Centralized application state - single source of truth for all runtime state.
     /// Use this for new code. Existing properties will gradually migrate to use State.
     /// </summary>
@@ -97,16 +103,9 @@ public partial class MainViewModel : ReactiveObject
     private double _crossTrackError;
     private string _currentGuidanceLine = "1L";
     private bool _isAutoSteerActive;
-    private int _activeSections;
 
-    // Section states
-    private bool _section1Active;
-    private bool _section2Active;
-    private bool _section3Active;
-    private bool _section4Active;
-    private bool _section5Active;
-    private bool _section6Active;
-    private bool _section7Active;
+    // Note: Section fields (_activeSections, _section1Active-_section7Active) moved to SectionControlViewModel
+
     // Hello status (connection health)
     private bool _isAutoSteerHelloOk;
     private bool _isMachineHelloOk;
@@ -196,6 +195,10 @@ public partial class MainViewModel : ReactiveObject
         BoundaryRecording.StatusMessageChanged += (s, msg) => StatusMessage = msg;
         BoundaryRecording.RecordingFinished += OnBoundaryRecordingFinished;
 
+        // Create SectionControlViewModel (handles section master and individual section states)
+        Sections = new SectionControlViewModel(moduleCommunicationService, appState);
+        Sections.StatusMessageChanged += (s, msg) => StatusMessage = msg;
+
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
         _udpService.DataReceived += OnUdpDataReceived;
@@ -207,8 +210,8 @@ public partial class MainViewModel : ReactiveObject
         _fieldService.ActiveFieldChanged += OnActiveFieldChanged;
         // Note: Simulator GPS events handled via SimulatorViewModel.SimulatedGpsDataReceived
         // Note: Boundary recording events handled via BoundaryRecordingViewModel
+        // Note: Section master toggle events handled via SectionControlViewModel
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
-        _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -485,53 +488,56 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isAutoSteerActive, value);
     }
 
+    /// <summary>
+    /// Delegates to Sections.ActiveCount for backward compatibility.
+    /// </summary>
     public int ActiveSections
     {
-        get => _activeSections;
-        set => this.RaiseAndSetIfChanged(ref _activeSections, value);
+        get => Sections.ActiveCount;
+        set => Sections.ActiveCount = value;
     }
 
-    // Section states
+    // Section state properties - delegate to Sections ViewModel for backward compatibility
     public bool Section1Active
     {
-        get => _section1Active;
-        set => this.RaiseAndSetIfChanged(ref _section1Active, value);
+        get => Sections.Section1Active;
+        set => Sections.Section1Active = value;
     }
 
     public bool Section2Active
     {
-        get => _section2Active;
-        set => this.RaiseAndSetIfChanged(ref _section2Active, value);
+        get => Sections.Section2Active;
+        set => Sections.Section2Active = value;
     }
 
     public bool Section3Active
     {
-        get => _section3Active;
-        set => this.RaiseAndSetIfChanged(ref _section3Active, value);
+        get => Sections.Section3Active;
+        set => Sections.Section3Active = value;
     }
 
     public bool Section4Active
     {
-        get => _section4Active;
-        set => this.RaiseAndSetIfChanged(ref _section4Active, value);
+        get => Sections.Section4Active;
+        set => Sections.Section4Active = value;
     }
 
     public bool Section5Active
     {
-        get => _section5Active;
-        set => this.RaiseAndSetIfChanged(ref _section5Active, value);
+        get => Sections.Section5Active;
+        set => Sections.Section5Active = value;
     }
 
     public bool Section6Active
     {
-        get => _section6Active;
-        set => this.RaiseAndSetIfChanged(ref _section6Active, value);
+        get => Sections.Section6Active;
+        set => Sections.Section6Active = value;
     }
 
     public bool Section7Active
     {
-        get => _section7Active;
-        set => this.RaiseAndSetIfChanged(ref _section7Active, value);
+        get => Sections.Section7Active;
+        set => Sections.Section7Active = value;
     }
 
     // AutoSteer Hello and Data properties
@@ -549,8 +555,7 @@ public partial class MainViewModel : ReactiveObject
 
     // Right Navigation Panel Properties
     private bool _isContourModeOn;
-    private bool _isManualSectionMode;
-    private bool _isSectionMasterOn = false; // Default off
+    // Note: _isManualSectionMode and _isSectionMasterOn moved to SectionControlViewModel
     private bool _isAutoSteerAvailable;
     private bool _isAutoSteerEngaged;
     public bool IsContourModeOn
@@ -559,16 +564,22 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
     }
 
+    /// <summary>
+    /// Delegates to Sections.IsManualMode for backward compatibility.
+    /// </summary>
     public bool IsManualSectionMode
     {
-        get => _isManualSectionMode;
-        set => this.RaiseAndSetIfChanged(ref _isManualSectionMode, value);
+        get => Sections.IsManualMode;
+        set => Sections.IsManualMode = value;
     }
 
+    /// <summary>
+    /// Delegates to Sections.IsMasterOn for backward compatibility.
+    /// </summary>
     public bool IsSectionMasterOn
     {
-        get => _isSectionMasterOn;
-        set => this.RaiseAndSetIfChanged(ref _isSectionMasterOn, value);
+        get => Sections.IsMasterOn;
+        set => Sections.IsMasterOn = value;
     }
 
     public bool IsAutoSteerAvailable
@@ -955,17 +966,6 @@ public partial class MainViewModel : ReactiveObject
             // Toggle autosteer when requested by module communication service
             // (e.g., from work switch or steer switch)
             ToggleAutoSteerCommand?.Execute(null);
-        });
-    }
-
-    private void OnSectionMasterToggleRequested(object? sender, SectionMasterToggleEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Toggle section master when requested by module communication service
-            // This replaces the direct PerformClick() calls from the WinForms implementation
-            // TODO: When separate Auto/Manual section buttons are implemented, handle them individually
-            ToggleSectionMasterCommand?.Execute(null);
         });
     }
 
@@ -1993,14 +1993,14 @@ public partial class MainViewModel : ReactiveObject
         }
     }
 
-    private bool _isSectionControlInHeadland;
     /// <summary>
-    /// When true, section control remains active in headland area
+    /// When true, section control remains active in headland area.
+    /// Delegates to Sections.IsControlInHeadland for backward compatibility.
     /// </summary>
     public bool IsSectionControlInHeadland
     {
-        get => _isSectionControlInHeadland;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlInHeadland, value);
+        get => Sections.IsControlInHeadland;
+        set => Sections.IsControlInHeadland = value;
     }
 
     /// <summary>
@@ -2146,11 +2146,14 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isHeadlandZoomMode, value);
     }
 
-    private bool _isHeadlandSectionControlled = true;
+    /// <summary>
+    /// Whether headland controls sections.
+    /// Delegates to Sections.IsHeadlandControlled for backward compatibility.
+    /// </summary>
     public bool IsHeadlandSectionControlled
     {
-        get => _isHeadlandSectionControlled;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControlled, value);
+        get => Sections.IsHeadlandControlled;
+        set => Sections.IsHeadlandControlled = value;
     }
 
     private int _headlandToolWidthMultiplier = 1;

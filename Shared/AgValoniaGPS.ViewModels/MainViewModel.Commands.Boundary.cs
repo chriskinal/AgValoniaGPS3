@@ -415,11 +415,8 @@ public partial class MainViewModel
             IsHeadlandOn = !IsHeadlandOn;
         });
 
-        ToggleSectionInHeadlandCommand = new RelayCommand(() =>
-        {
-            IsSectionControlInHeadland = !IsSectionControlInHeadland;
-            StatusMessage = IsSectionControlInHeadland ? "Section control in headland: ON" : "Section control in headland: OFF";
-        });
+        // Delegate to SectionControlViewModel command (handles status message via events)
+        ToggleSectionInHeadlandCommand = Sections.ToggleHeadlandControlCommand;
 
         ResetToolHeadingCommand = new RelayCommand(() =>
         {
