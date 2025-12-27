@@ -1,5 +1,6 @@
 using System;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -42,13 +43,54 @@ public class GpsService : IGpsService
 
     /// <summary>
     /// Update GPS data directly (called by NMEA parser)
+    /// Applies antenna-to-pivot transformation before storing
     /// </summary>
     public void UpdateGpsData(GpsData newData)
     {
+        // Apply antenna-to-pivot transformation
+        TransformAntennaToPivot(newData);
+
         CurrentData = newData;
         _lastGpsDataReceived = DateTime.Now;
         IsConnected = newData.IsValid;
         GpsDataUpdated?.Invoke(this, CurrentData);
+    }
+
+    /// <summary>
+    /// Transform GPS antenna position to vehicle pivot point using configured offsets.
+    /// The GPS antenna is typically mounted above and behind the pivot point.
+    /// </summary>
+    private void TransformAntennaToPivot(GpsData gpsData)
+    {
+        var vehicle = ConfigurationStore.Instance.Vehicle;
+
+        // Skip transformation if no offsets configured
+        if (Math.Abs(vehicle.AntennaPivot) < 0.001 && Math.Abs(vehicle.AntennaOffset) < 0.001)
+            return;
+
+        // Convert heading to radians
+        double headingRadians = gpsData.CurrentPosition.Heading * Math.PI / 180.0;
+
+        // Transform antenna position to pivot position
+        // Pivot is behind antenna by AntennaPivot distance (positive = antenna ahead of pivot)
+        double pivotEasting = gpsData.CurrentPosition.Easting - Math.Sin(headingRadians) * vehicle.AntennaPivot;
+        double pivotNorthing = gpsData.CurrentPosition.Northing - Math.Cos(headingRadians) * vehicle.AntennaPivot;
+
+        // Apply lateral offset if antenna is not on centerline
+        // Positive AntennaOffset = antenna is to the right of centerline
+        if (Math.Abs(vehicle.AntennaOffset) > 0.001)
+        {
+            double perpHeading = headingRadians + Math.PI / 2.0;
+            pivotEasting -= Math.Sin(perpHeading) * vehicle.AntennaOffset;
+            pivotNorthing -= Math.Cos(perpHeading) * vehicle.AntennaOffset;
+        }
+
+        // Create new Position with transformed coordinates (Position is a record with init-only props)
+        gpsData.CurrentPosition = gpsData.CurrentPosition with
+        {
+            Easting = pivotEasting,
+            Northing = pivotNorthing
+        };
     }
 
     /// <summary>

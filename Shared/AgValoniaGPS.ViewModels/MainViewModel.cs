@@ -873,7 +873,7 @@ public class MainViewModel : ReactiveObject
 
         // Calculate the perpendicular offset distance based on howManyPathsAway
         // This is the key insight from AgOpenGPS - the guidance line is dynamically calculated
-        double widthMinusOverlap = Vehicle.TrackWidth; // Could subtract overlap if needed
+        double widthMinusOverlap = Tool.Width - Tool.Overlap; // Implement width minus overlap
         double distAway = widthMinusOverlap * _howManyPathsAway;
 
         // Calculate the perpendicular direction (90 degrees from AB heading)
@@ -1130,7 +1130,7 @@ public class MainViewModel : ReactiveObject
 
         // Calculate where the next line would be (use config skip width)
         int rowSkipWidth = Guidance.UTurnSkipWidth;
-        double offsetDistance = rowSkipWidth * Vehicle.TrackWidth;
+        double offsetDistance = rowSkipWidth * (Tool.Width - Tool.Overlap);
 
         // Perpendicular offset direction
         double perpAngle = abHeading + (_isHeadingSameWay ? -Math.PI / 2 : Math.PI / 2);
@@ -1197,7 +1197,7 @@ public class MainViewModel : ReactiveObject
         int nextPathsAway = _howManyPathsAway + offsetChange;
 
         // Calculate the total offset for the next line
-        double widthMinusOverlap = Vehicle.TrackWidth;
+        double widthMinusOverlap = Tool.Width - Tool.Overlap;
         double nextDistAway = widthMinusOverlap * nextPathsAway;
 
         // Calculate the perpendicular direction (90 degrees from AB heading)
@@ -1246,7 +1246,7 @@ public class MainViewModel : ReactiveObject
 
         Console.WriteLine($"[YouTurn] Turn complete! Turn was {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading WAS {(_wasHeadingSameWayAtTurnStart ? "SAME" : "OPPOSITE")} at start");
         Console.WriteLine($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")} by {offsetChange}, now on path {_howManyPathsAway}");
-        Console.WriteLine($"[YouTurn] Total offset: {Vehicle.TrackWidth * _howManyPathsAway:F1}m from reference line");
+        Console.WriteLine($"[YouTurn] Total offset: {(Tool.Width - Tool.Overlap) * _howManyPathsAway:F1}m from reference line");
 
         // Remember this turn direction for alternating pattern
         _lastTurnWasLeft = _isTurnLeft;
@@ -1272,7 +1272,7 @@ public class MainViewModel : ReactiveObject
         _mapService.SetNextTrack(null);
         _mapService.SetIsInYouTurn(false);
 
-        StatusMessage = $"Following path {_howManyPathsAway} ({Vehicle.TrackWidth * Math.Abs(_howManyPathsAway):F1}m offset)";
+        StatusMessage = $"Following path {_howManyPathsAway} ({(Tool.Width - Tool.Overlap) * Math.Abs(_howManyPathsAway):F1}m offset)";
     }
 
     /// <summary>
@@ -1449,8 +1449,8 @@ public class MainViewModel : ReactiveObject
             return null;
         }
 
-        // Tool width (track width in our case)
-        double toolWidth = Vehicle.TrackWidth;
+        // Tool/implement width from configuration
+        double toolWidth = Tool.Width;
 
         // Total headland width from the headland multiplier setting
         double totalHeadlandWidth = HeadlandCalculatedWidth;
@@ -1602,7 +1602,7 @@ public class MainViewModel : ReactiveObject
         // Parameters - use ConfigurationStore values
         double pointSpacing = 0.5; // meters between path points
         int rowSkipWidth = Guidance.UTurnSkipWidth; // From config (1 = no skip, 2 = skip 1 row, etc.)
-        double trackWidth = Vehicle.TrackWidth;
+        double trackWidth = Tool.Width - Tool.Overlap; // Implement width minus overlap
         double turnOffset = trackWidth * rowSkipWidth; // Perpendicular distance to next track
 
         // Turn radius from config, with fallback calculation
@@ -3201,12 +3201,12 @@ public class MainViewModel : ReactiveObject
             // Update distance based on tool width multiplier
             if (value > 0)
             {
-                HeadlandDistance = Vehicle.TrackWidth * value;
+                HeadlandDistance = Tool.Width * value;
             }
         }
     }
 
-    public double HeadlandCalculatedWidth => Vehicle.TrackWidth * _headlandToolWidthMultiplier;
+    public double HeadlandCalculatedWidth => Tool.Width * _headlandToolWidthMultiplier;
 
     // Headland point selection (for clipping headland via boundary points)
     // Each point is stored as (segmentIndex, t parameter 0-1, world position)
@@ -4890,9 +4890,8 @@ public class MainViewModel : ReactiveObject
 
         SetHeadlandToToolWidthCommand = new RelayCommand(() =>
         {
-            // Set headland distance to implement width (use track width * 2 as approximation)
-            // TODO: Add actual tool/implement width to VehicleConfiguration
-            HeadlandDistance = Vehicle.TrackWidth > 0 ? Vehicle.TrackWidth * 2 : 12.0;
+            // Set headland distance to implement width
+            HeadlandDistance = Tool.Width > 0 ? Tool.Width * 2 : 12.0;
             UpdateHeadlandPreview();
         });
 
