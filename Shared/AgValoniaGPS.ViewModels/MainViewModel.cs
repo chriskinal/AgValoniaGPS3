@@ -48,6 +48,7 @@ public class MainViewModel : ReactiveObject
     private readonly IAutoSteerService _autoSteerService;
     private readonly IModuleCommunicationService _moduleCommunicationService;
     private readonly IToolPositionService _toolPositionService;
+    private readonly ICoverageMapService _coverageMapService;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
@@ -154,6 +155,7 @@ public class MainViewModel : ReactiveObject
         IAutoSteerService autoSteerService,
         IModuleCommunicationService moduleCommunicationService,
         IToolPositionService toolPositionService,
+        ICoverageMapService coverageMapService,
         ApplicationState appState)
     {
         _udpService = udpService;
@@ -179,6 +181,7 @@ public class MainViewModel : ReactiveObject
         _autoSteerService = autoSteerService;
         _moduleCommunicationService = moduleCommunicationService;
         _toolPositionService = toolPositionService;
+        _coverageMapService = coverageMapService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -3749,6 +3752,7 @@ public class MainViewModel : ReactiveObject
 
     // Right Navigation Panel Commands
     public ICommand? ToggleContourModeCommand { get; private set; }
+    public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? ToggleManualModeCommand { get; private set; }
     public ICommand? ToggleSectionMasterCommand { get; private set; }
     public ICommand? ToggleYouTurnCommand { get; private set; }
@@ -5324,6 +5328,12 @@ public class MainViewModel : ReactiveObject
         {
             IsContourModeOn = !IsContourModeOn;
             StatusMessage = IsContourModeOn ? "Contour mode ON" : "Contour mode OFF";
+        });
+
+        DeleteContoursCommand = new RelayCommand(() =>
+        {
+            _coverageMapService.ClearAll();
+            StatusMessage = "Coverage/contours cleared";
         });
 
         ToggleManualModeCommand = new RelayCommand(() =>

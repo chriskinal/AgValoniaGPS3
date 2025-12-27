@@ -372,7 +372,7 @@
                 <Border Grid.Row="2" Background="#DD2C3E50" Padding="16,12">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
                         <!-- Current profile -->
-                        <TextBlock Text="{Binding SelectedProfileName, StringFormat='Current: {0}'}"
+                        <TextBlock Text="{Binding Config.ActiveProfileName, StringFormat='Profile: {0}'}"
                                    Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
 
                         <!-- Units display -->
