@@ -1128,8 +1128,8 @@ public class MainViewModel : ReactiveObject
         var pointA = currentTrack.Points[0];
         var pointB = currentTrack.Points[currentTrack.Points.Count - 1];
 
-        // Calculate where the next line would be
-        int rowSkipWidth = UTurnSkipRows + 1;
+        // Calculate where the next line would be (use config skip width)
+        int rowSkipWidth = Guidance.UTurnSkipWidth;
         double offsetDistance = rowSkipWidth * Vehicle.TrackWidth;
 
         // Perpendicular offset direction
@@ -1189,7 +1189,7 @@ public class MainViewModel : ReactiveObject
         //   turnLeft=true,  sameWay=false -> false -> negative offset
         //   turnLeft=false, sameWay=true  -> false -> negative offset
         //   turnLeft=false, sameWay=false -> true  -> positive offset
-        int rowSkipWidth = UTurnSkipRows + 1;
+        int rowSkipWidth = UTurnSkipRows;  // Use runtime property from bottom nav button
 
         // Calculate offset direction using XOR like AgOpenGPS
         bool positiveOffset = _isTurnLeft ^ _isHeadingSameWay;
@@ -1235,7 +1235,7 @@ public class MainViewModel : ReactiveObject
 
         // Following AgOpenGPS approach exactly:
         // howManyPathsAway += (isTurnLeft ^ isHeadingSameWay) ? rowSkipsWidth : -rowSkipsWidth
-        int rowSkipWidth = UTurnSkipRows + 1;
+        int rowSkipWidth = UTurnSkipRows;  // Use runtime property from bottom nav button
 
         // Calculate offset direction using XOR like AgOpenGPS
         // IMPORTANT: Use _wasHeadingSameWayAtTurnStart (saved at turn creation), NOT _isHeadingSameWay
@@ -1288,6 +1288,7 @@ public class MainViewModel : ReactiveObject
         Vec2 pos = new Vec2(currentPosition.Easting, currentPosition.Northing);
         Vec2 dir = new Vec2(Math.Sin(headingRadians), Math.Cos(headingRadians));
 
+        int intersectionCount = 0;
         int n = _currentHeadlandLine.Count;
         for (int i = 0; i < n; i++)
         {
@@ -1306,9 +1307,17 @@ public class MainViewModel : ReactiveObject
 
             if (t > 0 && u >= 0 && u <= 1)
             {
+                intersectionCount++;
                 if (t < minDistance)
                     minDistance = t;
             }
+        }
+
+        // Debug: Log periodically to see what's happening
+        if (_youTurnCounter % 120 == 0)
+        {
+            double headingDeg = headingRadians * 180.0 / Math.PI;
+            Console.WriteLine($"[Headland] Raycast: pos=({pos.Easting:F1},{pos.Northing:F1}), heading={headingDeg:F0}°, intersections={intersectionCount}, minDist={minDistance:F1}m, isHeadingSameWay={_isHeadingSameWay}");
         }
 
         return minDistance;
@@ -1528,12 +1537,12 @@ public class MainViewModel : ReactiveObject
             // Vehicle position and configuration
             PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
             ToolWidth = toolWidth,
-            ToolOverlap = _vehicleProfileService.ActiveProfile?.Tool.Overlap ?? 0.0,
-            ToolOffset = _vehicleProfileService.ActiveProfile?.Tool.Offset ?? 0.0,
-            TurnRadius = _vehicleProfileService.ActiveProfile?.YouTurn.TurnRadius ?? 8.0,
+            ToolOverlap = Tool.Overlap,
+            ToolOffset = Tool.Offset,
+            TurnRadius = Guidance.UTurnRadius,
 
-            // Turn parameters
-            RowSkipsWidth = UTurnSkipRows + 1,
+            // Turn parameters - use runtime UTurnSkipRows (controlled by bottom nav button)
+            RowSkipsWidth = UTurnSkipRows,
             TurnStartOffset = 0,
             HowManyPathsAway = _howManyPathsAway,
             NudgeDistance = 0.0,
@@ -1590,16 +1599,23 @@ public class MainViewModel : ReactiveObject
     {
         var path = new List<Vec3>();
 
-        // Parameters
+        // Parameters - use ConfigurationStore values
         double pointSpacing = 0.5; // meters between path points
-        int rowSkipWidth = UTurnSkipRows + 1;
+        int rowSkipWidth = Guidance.UTurnSkipWidth; // From config (1 = no skip, 2 = skip 1 row, etc.)
         double trackWidth = Vehicle.TrackWidth;
         double turnOffset = trackWidth * rowSkipWidth; // Perpendicular distance to next track
 
-        // Turn radius = half of turn offset so semicircle diameter = track spacing
-        double turnRadius = turnOffset / 2.0;
+        // Turn radius from config, with fallback calculation
+        double turnRadius = Guidance.UTurnRadius;
 
-        // Minimum turn radius constraint
+        // If config radius is too small for the track offset, use geometric minimum
+        double geometricMinRadius = turnOffset / 2.0;
+        if (turnRadius < geometricMinRadius)
+        {
+            turnRadius = geometricMinRadius;
+        }
+
+        // Absolute minimum turn radius constraint
         double minTurnRadius = 4.0;
         if (turnRadius < minTurnRadius)
         {
@@ -1626,17 +1642,17 @@ public class MainViewModel : ReactiveObject
         double headlandBoundaryEasting = currentPosition.Easting + Math.Sin(travelHeading) * distToHeadland;
         double headlandBoundaryNorthing = currentPosition.Northing + Math.Cos(travelHeading) * distToHeadland;
 
-        // Leg lengths
+        // Leg lengths - use config values
         // The arc extends turnRadius beyond the arc start (toward the outer boundary)
         // So: arc_top_position = headlandLegLength + turnRadius
         // We want arc_top to be at HeadlandDistance (at the outer boundary)
         // Therefore: headlandLegLength = HeadlandDistance - turnRadius
         // But ensure arc start is at least a small margin past the headland boundary
-        double minArcStartMargin = 2.0; // meters past headland boundary
-        double headlandLegLength = Math.Max(HeadlandDistance - turnRadius, minArcStartMargin);
+        double distanceFromBoundary = Guidance.UTurnDistanceFromBoundary;
+        double headlandLegLength = Math.Max(HeadlandDistance - turnRadius - distanceFromBoundary, 2.0);
 
-        // How far path extends into cultivated area (entry/exit legs)
-        double fieldLegLength = Math.Max(HeadlandDistance * 0.5, turnRadius);
+        // How far path extends into cultivated area (entry/exit legs) - use UTurnExtension from config
+        double fieldLegLength = Guidance.UTurnExtension;
 
         Console.WriteLine($"[YouTurn] HeadlandBoundary: E={headlandBoundaryEasting:F1}, N={headlandBoundaryNorthing:F1}");
         Console.WriteLine($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m, turnRadius={turnRadius:F1}m, turnOffset={turnOffset:F1}m");
@@ -1752,22 +1768,23 @@ public class MainViewModel : ReactiveObject
         // ============================================
         // BUILD PATH: Exit Leg
         // ============================================
-        // Exit leg goes from arcEnd to exitEnd (the pre-calculated symmetric endpoint)
-        // Calculate the actual distance from arcEnd to exitEnd
-        double exitLegDeltaE = exitEndE - arcEndE;
-        double exitLegDeltaN = exitEndN - arcEndN;
-        double actualExitLength = Math.Sqrt(exitLegDeltaE * exitLegDeltaE + exitLegDeltaN * exitLegDeltaN);
-        int totalExitPoints = Math.Max((int)(actualExitLength / pointSpacing), 10);
+        // Exit leg goes straight from the ACTUAL last arc point in exitHeading direction
+        // Use same length as entry leg to ensure symmetry
+        var lastArcPoint = path[path.Count - 1];
+        double actualArcEndE = lastArcPoint.Easting;
+        double actualArcEndN = lastArcPoint.Northing;
+        double actualExitHeading = lastArcPoint.Heading; // Use the tangent heading from arc end
+
+        int totalExitPoints = (int)(totalEntryLength / pointSpacing);
 
         for (int i = 1; i <= totalExitPoints; i++)
         {
-            // Interpolate from arcEnd to exitEnd
-            double t = (double)i / totalExitPoints;
+            double dist = i * pointSpacing;
             Vec3 pt = new Vec3
             {
-                Easting = arcEndE + exitLegDeltaE * t,
-                Northing = arcEndN + exitLegDeltaN * t,
-                Heading = exitHeading
+                Easting = actualArcEndE + Math.Sin(actualExitHeading) * dist,
+                Northing = actualArcEndN + Math.Cos(actualExitHeading) * dist,
+                Heading = actualExitHeading
             };
             path.Add(pt);
         }
@@ -1775,6 +1792,31 @@ public class MainViewModel : ReactiveObject
         Console.WriteLine($"[YouTurn] Path has {path.Count} points: {totalEntryPoints + 1} entry, {arcPoints} arc, {totalExitPoints} exit");
         Console.WriteLine($"[YouTurn] Actual entry start: E={path[0].Easting:F1}, N={path[0].Northing:F1}");
         Console.WriteLine($"[YouTurn] Actual exit end: E={path[path.Count - 1].Easting:F1}, N={path[path.Count - 1].Northing:F1}");
+
+        // Apply smoothing passes from config (1-50)
+        int smoothingPasses = Guidance.UTurnSmoothing;
+        if (smoothingPasses > 1 && path.Count > 4)
+        {
+            for (int pass = 0; pass < smoothingPasses; pass++)
+            {
+                // Smooth interior points only (preserve start and end)
+                for (int i = 2; i < path.Count - 2; i++)
+                {
+                    var prev = path[i - 1];
+                    var curr = path[i];
+                    var next = path[i + 1];
+
+                    // Average position with neighbors
+                    path[i] = new Vec3
+                    {
+                        Easting = (prev.Easting + curr.Easting + next.Easting) / 3.0,
+                        Northing = (prev.Northing + curr.Northing + next.Northing) / 3.0,
+                        Heading = curr.Heading // Preserve heading
+                    };
+                }
+            }
+            Console.WriteLine($"[YouTurn] Applied {smoothingPasses} smoothing passes");
+        }
 
         return path;
     }

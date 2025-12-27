@@ -942,48 +942,18 @@ namespace AgValoniaGPS.Services.YouTurn
             // Check if start and goal are in valid locations
             int goalResult = input.IsPointInsideTurnArea(goal);
 
-            // If goal is outside boundary, try to adjust it
+            Console.WriteLine($"[YouTurn] OmegaTurn: turnOffset={turnOffset:F2}m, skipRows={input.RowSkipsWidth}, goalResult={goalResult}");
+            Console.WriteLine($"[YouTurn] Goal position: E={goal.Easting:F2}, N={goal.Northing:F2}");
+
+            // If goal is outside boundary (-1), we previously reduced the offset.
+            // But for U-turns, we WANT to reach the next track even if it means
+            // the arc goes through the headland/turn area. Only fail if truly invalid.
+            // The turn arc going through headland is expected behavior.
             if (goalResult == -1)
             {
-                // Calculate the perpendicular direction we used for offset
-                double perpDirE = input.IsTurnLeft ? Math.Cos(-invertedHead) : -Math.Cos(-invertedHead);
-                double perpDirN = input.IsTurnLeft ? Math.Sin(-invertedHead) : -Math.Sin(-invertedHead);
-
-                // Binary search to find maximum valid offset
-                double minOffset = 0;
-                double maxOffset = turnOffset;
-                double bestOffset = 0;
-
-                for (int i = 0; i < 10; i++) // 10 iterations gives ~0.1% precision
-                {
-                    double testOffset = (minOffset + maxOffset) / 2;
-                    Vec3 testGoal = new Vec3(
-                        start.Easting + perpDirE * testOffset,
-                        start.Northing + perpDirN * testOffset,
-                        invertedHead);
-
-                    int testResult = input.IsPointInsideTurnArea(testGoal);
-                    if (testResult != -1)
-                    {
-                        bestOffset = testOffset;
-                        minOffset = testOffset;
-                    }
-                    else
-                    {
-                        maxOffset = testOffset;
-                    }
-                }
-
-                if (bestOffset > 0.5) // Need at least 0.5m offset for a valid turn
-                {
-                    goal.Easting = start.Easting + perpDirE * bestOffset;
-                    goal.Northing = start.Northing + perpDirN * bestOffset;
-                }
-                else
-                {
-                    FailCreate();
-                    return false;
-                }
+                Console.WriteLine($"[YouTurn] WARNING: Goal at turnOffset={turnOffset:F2}m is outside boundary - proceeding anyway for skip rows");
+                // Don't adjust the offset - let the turn reach the correct track
+                // The arc will go through the headland area which is expected
             }
 
             // Generate the turn points
@@ -1497,14 +1467,16 @@ namespace AgValoniaGPS.Services.YouTurn
                 return false;
             }
 
-            // Find exact intersection with turn line
-            for (int i = 0; i < input.BoundaryTurnLines[turnNum].Points.Count - 1; i++)
+            // Find exact intersection with turn line (including closing segment)
+            var turnLinePoints = input.BoundaryTurnLines[turnNum].Points;
+            for (int i = 0; i < turnLinePoints.Count; i++)
             {
+                int nextI = (i + 1) % turnLinePoints.Count;  // Wrap around for closing segment
                 int res = GetLineIntersection(
-                        input.BoundaryTurnLines[turnNum].Points[i].Easting,
-                        input.BoundaryTurnLines[turnNum].Points[i].Northing,
-                        input.BoundaryTurnLines[turnNum].Points[i + 1].Easting,
-                        input.BoundaryTurnLines[turnNum].Points[i + 1].Northing,
+                        turnLinePoints[i].Easting,
+                        turnLinePoints[i].Northing,
+                        turnLinePoints[nextI].Easting,
+                        turnLinePoints[nextI].Northing,
 
                         input.GuidancePoints[closestTurnPt.CurveIndex].Easting,
                         input.GuidancePoints[closestTurnPt.CurveIndex].Northing,
@@ -1521,8 +1493,8 @@ namespace AgValoniaGPS.Services.YouTurn
 
                     if (useAlternateHeading)
                     {
-                        double hed = Math.Atan2(input.BoundaryTurnLines[turnNum].Points[i + 1].Easting - input.BoundaryTurnLines[turnNum].Points[i].Easting,
-                            input.BoundaryTurnLines[turnNum].Points[i + 1].Northing - input.BoundaryTurnLines[turnNum].Points[i].Northing);
+                        double hed = Math.Atan2(turnLinePoints[nextI].Easting - turnLinePoints[i].Easting,
+                            turnLinePoints[nextI].Northing - turnLinePoints[i].Northing);
                         if (hed < 0) hed += TWO_PI;
                         closePt.Heading = hed;
                         closestTurnPt.ClosePt = closePt;
@@ -1534,7 +1506,7 @@ namespace AgValoniaGPS.Services.YouTurn
                         closestTurnPt.ClosePt = closePt;
                         closestTurnPt.TurnLineIndex = i;
                         closestTurnPt.TurnLineNum = turnNum;
-                        closestTurnPt.TurnLineHeading = input.BoundaryTurnLines[turnNum].Points[i].Heading;
+                        closestTurnPt.TurnLineHeading = turnLinePoints[i].Heading;
                         if (!input.IsHeadingSameWay && closestTurnPt.CurveIndex > 0) closestTurnPt.CurveIndex--;
                     }
                     break;
@@ -1753,9 +1725,12 @@ namespace AgValoniaGPS.Services.YouTurn
             if (!input.IsHeadingSameWay) inhead += Math.PI;
             if (inhead > TWO_PI) inhead -= TWO_PI;
 
-            double outhead = inhead;
-            if (isOutSameCurve) outhead += Math.PI;
+            // After a U-turn, exit direction is opposite to entry (180° turn)
+            // Unless isOutSameCurve, in which case we continue in same direction
+            double outhead = inhead + Math.PI;  // Default: opposite direction after U-turn
+            if (isOutSameCurve) outhead = inhead;  // Same direction if exiting same curve
             if (outhead > TWO_PI) outhead -= TWO_PI;
+            if (outhead < 0) outhead += TWO_PI;
 
             // Calculate leg length - use headland width as the base
             // The legs need to extend at least the headland width to guide through the turn
@@ -1807,20 +1782,14 @@ namespace AgValoniaGPS.Services.YouTurn
             int count = ytList.Count;
             Vec3 arcEnd = ytList[count - 1];  // Last point of arc
 
-            // Calculate distance from arc end to exit end
-            double exitLegDist = Math.Sqrt(
-                (exitEnd.Easting - arcEnd.Easting) * (exitEnd.Easting - arcEnd.Easting) +
-                (exitEnd.Northing - arcEnd.Northing) * (exitEnd.Northing - arcEnd.Northing));
-
-            // Generate exit leg points from arc end to exit end
-            int exitLegPoints = Math.Max(10, (int)(exitLegDist / legPointSpacing));
-            for (int i = 1; i <= exitLegPoints; i++)
+            // Generate exit leg points going straight from arc end in outhead direction
+            // This ensures exit leg is parallel to entry leg
+            for (int i = 1; i <= numLegPoints; i++)
             {
-                double t = (double)i / exitLegPoints;
                 Vec3 pt = new Vec3
                 {
-                    Easting = arcEnd.Easting + (exitEnd.Easting - arcEnd.Easting) * t,
-                    Northing = arcEnd.Northing + (exitEnd.Northing - arcEnd.Northing) * t,
+                    Easting = arcEnd.Easting + Math.Sin(outhead) * i * legPointSpacing,
+                    Northing = arcEnd.Northing + Math.Cos(outhead) * i * legPointSpacing,
                     Heading = outhead
                 };
                 ytList.Add(pt);
@@ -1886,13 +1855,15 @@ namespace AgValoniaGPS.Services.YouTurn
             }
             else
             {
-                for (int i = 0; i < turnLine.Count - 1; i++)
+                // Iterate through all segments including the closing segment
+                for (int i = 0; i < turnLine.Count; i++)
                 {
+                    int nextI = (i + 1) % turnLine.Count;  // Wrap around for closing segment
                     int res = GetLineIntersection(
                         fromPt.Easting, fromPt.Northing,
                         fromPt.Easting + (sin * 1000), fromPt.Northing + (cos * 1000),
                         turnLine[i].Easting, turnLine[i].Northing,
-                        turnLine[i + 1].Easting, turnLine[i + 1].Northing,
+                        turnLine[nextI].Easting, turnLine[nextI].Northing,
                         ref iE, ref iN);
 
                     if (res == 1)
@@ -1945,16 +1916,18 @@ namespace AgValoniaGPS.Services.YouTurn
                 return false;
             }
 
-            // Find exact intersection
+            // Find exact intersection (including closing segment)
             if (turnNum >= _currentInput.BoundaryTurnLines.Count) return false;
 
-            for (int i = 0; i < _currentInput.BoundaryTurnLines[turnNum].Points.Count - 1; i++)
+            var turnLinePoints = _currentInput.BoundaryTurnLines[turnNum].Points;
+            for (int i = 0; i < turnLinePoints.Count; i++)
             {
+                int nextI = (i + 1) % turnLinePoints.Count;  // Wrap around for closing segment
                 int res = GetLineIntersection(
-                    _currentInput.BoundaryTurnLines[turnNum].Points[i].Easting,
-                    _currentInput.BoundaryTurnLines[turnNum].Points[i].Northing,
-                    _currentInput.BoundaryTurnLines[turnNum].Points[i + 1].Easting,
-                    _currentInput.BoundaryTurnLines[turnNum].Points[i + 1].Northing,
+                    turnLinePoints[i].Easting,
+                    turnLinePoints[i].Northing,
+                    turnLinePoints[nextI].Easting,
+                    turnLinePoints[nextI].Northing,
                     nextCurve[closestTurnPt.CurveIndex].Easting,
                     nextCurve[closestTurnPt.CurveIndex].Northing,
                     nextCurve[closestTurnPt.CurveIndex + count].Easting,
@@ -1970,7 +1943,7 @@ namespace AgValoniaGPS.Services.YouTurn
                     closestTurnPt.ClosePt = closePt;
                     closestTurnPt.TurnLineIndex = i;
                     closestTurnPt.TurnLineNum = turnNum;
-                    closestTurnPt.TurnLineHeading = _currentInput.BoundaryTurnLines[turnNum].Points[i].Heading;
+                    closestTurnPt.TurnLineHeading = turnLinePoints[i].Heading;
 
                     // Check if we're going out the same curve
                     if (closestTurnPt.TurnLineNum == startPt.TurnLineNum &&
