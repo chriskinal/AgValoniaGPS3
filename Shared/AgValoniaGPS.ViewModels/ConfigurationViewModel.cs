@@ -343,6 +343,126 @@ public class ConfigurationViewModel : ReactiveObject
 
     #endregion
 
+    #region Color Picker Dialog
+
+    private bool _isColorPickerVisible;
+    public bool IsColorPickerVisible
+    {
+        get => _isColorPickerVisible;
+        set => this.RaiseAndSetIfChanged(ref _isColorPickerVisible, value);
+    }
+
+    private string _colorPickerTitle = "Select Color";
+    public string ColorPickerTitle
+    {
+        get => _colorPickerTitle;
+        set => this.RaiseAndSetIfChanged(ref _colorPickerTitle, value);
+    }
+
+    // -1 = single coverage color, 0-15 = section index
+    private int _colorPickerTargetSection = -1;
+
+    // Preset color palette (16 colors)
+    public uint[] PresetColors { get; } = new uint[]
+    {
+        0x00FF00, // Green
+        0xFF0000, // Red
+        0x0000FF, // Blue
+        0xFFFF00, // Yellow
+        0xFF00FF, // Magenta
+        0x00FFFF, // Cyan
+        0xFF8000, // Orange
+        0x8000FF, // Purple
+        0x80FF00, // Lime
+        0xFF0080, // Pink
+        0x0080FF, // Sky Blue
+        0x98FB98, // Pale Green (default single color)
+        0xFFFFFF, // White
+        0x808080, // Gray
+        0x800000, // Dark Red
+        0x008000  // Dark Green
+    };
+
+    public ICommand SelectPresetColorCommand { get; private set; } = null!;
+    public ICommand CancelColorPickerCommand { get; private set; } = null!;
+    public ICommand EditSingleCoverageColorCommand { get; private set; } = null!;
+    public ICommand EditSectionColorCommand { get; private set; } = null!;
+
+    private void ShowColorPicker(string title, int targetSection)
+    {
+        ColorPickerTitle = title;
+        _colorPickerTargetSection = targetSection;
+        IsColorPickerVisible = true;
+    }
+
+    private void InitializeColorPickerCommands()
+    {
+        SelectPresetColorCommand = new RelayCommand<object>(param =>
+        {
+            if (param is uint color)
+            {
+                ApplySelectedColor(color);
+            }
+            else if (param is string colorStr && uint.TryParse(colorStr, out uint parsedColor))
+            {
+                ApplySelectedColor(parsedColor);
+            }
+            IsColorPickerVisible = false;
+        });
+
+        CancelColorPickerCommand = new RelayCommand(() =>
+        {
+            IsColorPickerVisible = false;
+        });
+
+        EditSingleCoverageColorCommand = new RelayCommand(() =>
+        {
+            ShowColorPicker("Coverage Color", -1);
+        });
+
+        EditSectionColorCommand = new RelayCommand<object>(param =>
+        {
+            int sectionIndex = 0;
+            if (param is int intVal)
+                sectionIndex = intVal;
+            else if (param is string strVal && int.TryParse(strVal, out var parsed))
+                sectionIndex = parsed;
+
+            ShowColorPicker($"Section {sectionIndex + 1} Color", sectionIndex);
+        });
+    }
+
+    private void ApplySelectedColor(uint color)
+    {
+        if (_colorPickerTargetSection < 0)
+        {
+            // Single coverage color
+            Tool.SingleCoverageColor = color;
+            this.RaisePropertyChanged(nameof(SingleCoverageColor));
+        }
+        else
+        {
+            // Section color
+            Tool.SetSectionColor(_colorPickerTargetSection, color);
+            RefreshSectionColorProperties();
+        }
+        Config.MarkChanged();
+    }
+
+    private void RefreshSectionColorProperties()
+    {
+        this.RaisePropertyChanged(nameof(SectionColor1));
+        this.RaisePropertyChanged(nameof(SectionColor2));
+        this.RaisePropertyChanged(nameof(SectionColor3));
+        this.RaisePropertyChanged(nameof(SectionColor4));
+        this.RaisePropertyChanged(nameof(SectionColor5));
+        this.RaisePropertyChanged(nameof(SectionColor6));
+        this.RaisePropertyChanged(nameof(SectionColor7));
+        this.RaisePropertyChanged(nameof(SectionColor8));
+    }
+
+    #endregion
+
     #region NTRIP Connection State
 
     private bool _isNtripConnected;
@@ -644,6 +764,21 @@ public class ConfigurationViewModel : ReactiveObject
     public double Section15Width => Tool.GetSectionWidth(14);
     public double Section16Width => Tool.GetSectionWidth(15);
 
+    // Section color properties (for color preview display)
+    public uint SectionColor1 => Tool.GetSectionColor(0);
+    public uint SectionColor2 => Tool.GetSectionColor(1);
+    public uint SectionColor3 => Tool.GetSectionColor(2);
+    public uint SectionColor4 => Tool.GetSectionColor(3);
+    public uint SectionColor5 => Tool.GetSectionColor(4);
+    public uint SectionColor6 => Tool.GetSectionColor(5);
+    public uint SectionColor7 => Tool.GetSectionColor(6);
+    public uint SectionColor8 => Tool.GetSectionColor(7);
+
+    /// <summary>
+    /// Single coverage color when multi-colored sections is disabled.
+    /// </summary>
+    public uint SingleCoverageColor => Tool.SingleCoverageColor;
+
     /// <summary>
     /// Refreshes all section width properties after a change.
     /// </summary>
@@ -916,6 +1051,7 @@ public class ConfigurationViewModel : ReactiveObject
         // Initialize numeric input commands
         InitializeNumericInputCommands();
         InitializeTextInputCommands();
+        InitializeColorPickerCommands();
 
         // Initialize edit commands for all tabs
         InitializeVehicleEditCommands();

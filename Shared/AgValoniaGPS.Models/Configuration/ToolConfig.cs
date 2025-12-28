@@ -131,11 +131,82 @@ public class ToolConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isMultiColoredSections, value);
     }
 
+    // Section colors (RGB values stored as 0xRRGGBB)
+    // Default colors match AgOpenGPS preset palette
+    private uint[] _sectionColors = new uint[16]
+    {
+        0x00FF00, // Green
+        0xFF0000, // Red
+        0x0000FF, // Blue
+        0xFFFF00, // Yellow
+        0xFF00FF, // Magenta
+        0x00FFFF, // Cyan
+        0xFF8000, // Orange
+        0x8000FF, // Purple
+        0x80FF00, // Lime
+        0xFF0080, // Pink
+        0x0080FF, // Sky Blue
+        0x80FF80, // Light Green
+        0xFF8080, // Light Red
+        0x8080FF, // Light Blue
+        0xFFFF80, // Light Yellow
+        0xFF80FF  // Light Magenta
+    };
+
+    /// <summary>
+    /// Section colors as RGB values (0xRRGGBB format).
+    /// </summary>
+    public uint[] SectionColors
+    {
+        get => _sectionColors;
+        set => this.RaiseAndSetIfChanged(ref _sectionColors, value);
+    }
+
+    /// <summary>
+    /// Gets a section color by index.
+    /// </summary>
+    public uint GetSectionColor(int index)
+    {
+        if (index < 0 || index >= 16) return _sectionColors[0];
+        return _sectionColors[index];
+    }
+
+    /// <summary>
+    /// Sets a section color by index.
+    /// </summary>
+    public void SetSectionColor(int index, uint color)
+    {
+        if (index < 0 || index >= 16) return;
+        _sectionColors[index] = color;
+        this.RaisePropertyChanged(nameof(SectionColors));
+    }
+
+    /// <summary>
+    /// Single coverage color used when IsMultiColoredSections is false (0xRRGGBB).
+    /// Default is pale green.
+    /// </summary>
+    private uint _singleCoverageColor = 0x98FB98; // Pale green (152, 251, 152)
+    public uint SingleCoverageColor
+    {
+        get => _singleCoverageColor;
+        set => this.RaiseAndSetIfChanged(ref _singleCoverageColor, value);
+    }
+
     private bool _isSectionOffWhenOut;
     public bool IsSectionOffWhenOut
     {
         get => _isSectionOffWhenOut;
         set => this.RaiseAndSetIfChanged(ref _isSectionOffWhenOut, value);
+    }
+
+    /// <summary>
+    /// When true, sections automatically turn off when in headland zone.
+    /// </summary>
+    private bool _isHeadlandSectionControl = true;
+    public bool IsHeadlandSectionControl
+    {
+        get => _isHeadlandSectionControl;
+        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControl, value);
     }
 
     private bool _isSectionsNotZones = true;

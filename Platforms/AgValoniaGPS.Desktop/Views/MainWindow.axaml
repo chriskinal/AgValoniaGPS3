@@ -46,6 +46,37 @@
             </StackPanel>
         </Border>
 
+        <!-- TOP RIGHT: Field Statistics Panel -->
+        <Border Classes="FloatingPanel"
+                ZIndex="10"
+                Margin="20"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                IsHitTestVisible="True"
+                IsVisible="{Binding HasActiveField}">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Field:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                </StackPanel>
+                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Done:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
+                </StackPanel>
+                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Left:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F1}%'}" Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
+                </StackPanel>
+                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Rate:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="{Binding WorkRateDisplay}" Foreground="#3498DB" FontSize="13" FontWeight="Bold"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <!-- All Draggable Panels in single Canvas (must be in same Canvas for consistent drag bounds) -->
         <Canvas ZIndex="10">
             <!-- LEFT SIDEBAR: Main Navigation Panel (Draggable & Rotatable) -->

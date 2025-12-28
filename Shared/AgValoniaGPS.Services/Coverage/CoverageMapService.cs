@@ -239,6 +239,18 @@ public class CoverageMapService : ICoverageMapService
     {
         var filename = Path.Combine(fieldDirectory, "Sections.txt");
 
+        // First, finalize any active patches (sections still painting when field closes)
+        foreach (var kvp in _activePatches.ToList())
+        {
+            var patch = kvp.Value;
+            patch.IsActive = false;
+            if (patch.Vertices.Count > 4)
+            {
+                _patchSaveList.Add(patch);
+            }
+        }
+        _activePatches.Clear();
+
         // Append new patches to file
         using var writer = new StreamWriter(filename, true);
 
@@ -336,7 +348,8 @@ public class CoverageMapService : ICoverageMapService
     }
 
     /// <summary>
-    /// Get default color for a zone (supports multi-colored sections)
+    /// Get color for a zone/section from configuration.
+    /// Uses single color or per-section colors based on IsMultiColoredSections setting.
     /// </summary>
     private CoverageColor GetZoneColor(int zoneIndex)
     {
@@ -344,22 +357,21 @@ public class CoverageMapService : ICoverageMapService
 
         if (!tool.IsMultiColoredSections)
         {
-            return CoverageColor.Default;
+            // Use single coverage color
+            uint color = tool.SingleCoverageColor;
+            return new CoverageColor(
+                (byte)((color >> 16) & 0xFF),
+                (byte)((color >> 8) & 0xFF),
+                (byte)(color & 0xFF)
+            );
         }
 
-        // Predefined section colors (matching AgOpenGPS)
-        var colors = new CoverageColor[]
-        {
-            new(0, 255, 0),     // Green
-            new(255, 0, 0),     // Red
-            new(0, 0, 255),     // Blue
-            new(255, 255, 0),   // Yellow
-            new(255, 0, 255),   // Magenta
-            new(0, 255, 255),   // Cyan
-            new(255, 128, 0),   // Orange
-            new(128, 0, 255),   // Purple
-        };
-
-        return colors[zoneIndex % colors.Length];
+        // Use per-section color from configuration
+        uint sectionColor = tool.GetSectionColor(zoneIndex);
+        return new CoverageColor(
+            (byte)((sectionColor >> 16) & 0xFF),
+            (byte)((sectionColor >> 8) & 0xFF),
+            (byte)(sectionColor & 0xFF)
+        );
     }
 }

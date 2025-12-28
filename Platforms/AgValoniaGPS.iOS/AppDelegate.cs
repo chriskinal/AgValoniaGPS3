@@ -3,6 +3,9 @@ using Avalonia;
 using Avalonia.iOS;
 using Foundation;
 using UIKit;
+using Microsoft.Extensions.DependencyInjection;
+using AgValoniaGPS.Services;
+using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.iOS;
 
@@ -33,5 +36,38 @@ public partial class AppDelegate : AvaloniaAppDelegate<App>
     public UIInterfaceOrientationMask GetSupportedInterfaceOrientations(UIApplication application, UIWindow forWindow)
     {
         return UIInterfaceOrientationMask.Landscape;
+    }
+
+    [Export("applicationDidEnterBackground:")]
+    public void OnDidEnterBackground(UIApplication application)
+    {
+        SaveCoverageToActiveField();
+    }
+
+    [Export("applicationWillTerminate:")]
+    public void OnWillTerminate(UIApplication application)
+    {
+        SaveCoverageToActiveField();
+    }
+
+    private void SaveCoverageToActiveField()
+    {
+        try
+        {
+            if (App.Services == null) return;
+
+            var fieldService = App.Services.GetRequiredService<IFieldService>();
+            var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
+
+            if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+            {
+                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
+                Console.WriteLine($"[Coverage] Saved coverage on app background/terminate to {fieldService.ActiveField.DirectoryPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Coverage] Error saving coverage: {ex.Message}");
+        }
     }
 }

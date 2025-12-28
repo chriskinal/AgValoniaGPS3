@@ -3,9 +3,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="800"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolSectionsSubTab"
              x:DataType="vm:ConfigurationViewModel">
+
+    <UserControl.Resources>
+        <converters:UintToBrushConverter x:Key="UintToBrush"/>
+        <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <Style Selector="Border.SettingRow">
@@ -341,6 +347,96 @@
                 </Grid>
             </Border>
 
+            <!-- Coverage Color Settings -->
+            <TextBlock Text="Coverage Colors" FontWeight="SemiBold" Foreground="White" Margin="0,16,0,8"/>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Multi-Colored Sections" Foreground="White"/>
+                        <TextBlock Text="Each section paints a different color on the map"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsMultiColoredSections}"
+                                  OnContent="On" OffContent="Off"/>
+                </Grid>
+            </Border>
+
+            <!-- Section Color Preview (only shown when multi-colored is enabled) -->
+            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,4,0,0"
+                    IsVisible="{Binding Tool.IsMultiColoredSections}">
+                <StackPanel>
+                    <TextBlock Text="Section Colors" Foreground="White" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Tap a color to change it"
+                               Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
+                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <!-- Section color buttons - tappable to change color -->
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor1, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="0"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0}">
+                            <TextBlock Text="1" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor2, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="1"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=1}">
+                            <TextBlock Text="2" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor3, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="2"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=2}">
+                            <TextBlock Text="3" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor4, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="3"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=3}">
+                            <TextBlock Text="4" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor5, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="4"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=4}">
+                            <TextBlock Text="5" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor6, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="5"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=5}">
+                            <TextBlock Text="6" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor7, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="6"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=6}">
+                            <TextBlock Text="7" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                        <Button Width="40" Height="40" CornerRadius="4" Margin="3" Cursor="Hand"
+                                Background="{Binding SectionColor8, Converter={StaticResource UintToBrush}}"
+                                Command="{Binding EditSectionColorCommand}" CommandParameter="7"
+                                IsVisible="{Binding Config.NumSections, Converter={StaticResource GreaterThanConverter}, ConverterParameter=7}">
+                            <TextBlock Text="8" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Single Color Display (when multi-colored is disabled) -->
+            <Border Classes="SettingRow" IsVisible="{Binding !Tool.IsMultiColoredSections}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Coverage Color" Foreground="White"/>
+                        <TextBlock Text="Tap to change the color used for all sections" Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="60" Height="32" CornerRadius="4" Cursor="Hand"
+                            Background="{Binding SingleCoverageColor, Converter={StaticResource UintToBrush}}"
+                            BorderBrush="#555" BorderThickness="1"
+                            Command="{Binding EditSingleCoverageColorCommand}"/>
+                </Grid>
+            </Border>
+
             <!-- Additional Settings -->
             <TextBlock Text="Section Control Options" FontWeight="SemiBold" Foreground="White" Margin="0,16,0,8"/>
 
@@ -352,6 +448,18 @@
                                    Foreground="#888" FontSize="12"/>
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsSectionOffWhenOut}"
+                                  OnContent="On" OffContent="Off"/>
+                </Grid>
+            </Border>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Section Off In Headland" Foreground="White"/>
+                        <TextBlock Text="Automatically turn off sections when entering headland zone"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Tool.IsHeadlandSectionControl}"
                                   OnContent="On" OffContent="Off"/>
                 </Grid>
             </Border>

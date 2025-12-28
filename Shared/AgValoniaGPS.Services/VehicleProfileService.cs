@@ -196,6 +196,7 @@ public class VehicleProfileService : IVehicleProfileService
             MinCoverage = GetInt(settings, "setVehicle_minCoverage", 100),
             IsSectionsNotZones = GetBool(settings, "setTool_isSectionsNotZones", true),
             IsSectionOffWhenOut = GetBool(settings, "setTool_isSectionOffWhenOut", true),
+            IsHeadlandSectionControl = GetBool(settings, "setTool_isHeadlandSectionControl", true),
             LookAheadOnSetting = GetDouble(settings, "setVehicle_toolLookAheadOn", 1.0),
             LookAheadOffSetting = GetDouble(settings, "setVehicle_toolLookAheadOff", 0.5),
             TurnOffDelay = GetDouble(settings, "setVehicle_toolOffDelay", 0.0)
@@ -297,6 +298,7 @@ public class VehicleProfileService : IVehicleProfileService
         yield return CreateSetting("setVehicle_minCoverage", t.MinCoverage);
         yield return CreateSetting("setTool_isSectionsNotZones", t.IsSectionsNotZones);
         yield return CreateSetting("setTool_isSectionOffWhenOut", t.IsSectionOffWhenOut);
+        yield return CreateSetting("setTool_isHeadlandSectionControl", t.IsHeadlandSectionControl);
         yield return CreateSetting("setVehicle_toolLookAheadOn", t.LookAheadOnSetting);
         yield return CreateSetting("setVehicle_toolLookAheadOff", t.LookAheadOffSetting);
         yield return CreateSetting("setVehicle_toolOffDelay", t.TurnOffDelay);

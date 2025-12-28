@@ -9,6 +9,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Coverage;
 using AgValoniaGPS.Models.Track;
 
 // For loading embedded resources
@@ -67,6 +68,9 @@ public interface ISharedMapControl
     void SetNextTrack(AgValoniaGPS.Models.Track.Track? track);
     void SetIsInYouTurn(bool isInTurn);
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+
+    // Coverage visualization
+    void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches);
 
     // Grid visibility property
     bool IsGridVisible { get; set; }
@@ -184,6 +188,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // YouTurn path
     private IReadOnlyList<(double Easting, double Northing)>? _youTurnPath;
+
+    // Coverage patches for worked area display
+    private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
@@ -352,6 +359,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_headlandPreview != null && _headlandPreview.Count > 2)
             {
                 DrawHeadlandPreview(context);
+            }
+
+            // Draw coverage (worked area) - drawn early so it's under everything else
+            if (_coveragePatches.Count > 0)
+            {
+                DrawCoverage(context);
             }
 
             // Draw recording points
@@ -546,6 +559,46 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 }
                 context.DrawGeometry(null, _boundaryPenInner, geometry);
             }
+        }
+    }
+
+    private void DrawCoverage(DrawingContext context)
+    {
+        if (_coveragePatches.Count == 0) return;
+
+        foreach (var patch in _coveragePatches)
+        {
+            if (!patch.IsRenderable) continue;
+
+            // Get vertices (skip first which is color)
+            var vertices = patch.Vertices;
+            if (vertices.Count < 4) continue; // Need at least color + 3 points for 1 triangle
+
+            // Create brush from patch color with 60% alpha (matching AgOpenGPS)
+            var color = Color.FromArgb(152, patch.Color.R, patch.Color.G, patch.Color.B);
+            var brush = new SolidColorBrush(color);
+
+            // Draw triangle strip as individual triangles
+            // Vertices: [0]=color, [1]=first left, [2]=first right, [3]=second left, [4]=second right, ...
+            // Triangles: (1,2,3), (2,3,4), (3,4,5), ...
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                for (int i = 1; i <= vertices.Count - 3; i++)
+                {
+                    var v1 = vertices[i];
+                    var v2 = vertices[i + 1];
+                    var v3 = vertices[i + 2];
+
+                    // Draw triangle
+                    ctx.BeginFigure(new Point(v1.Easting, v1.Northing), true);
+                    ctx.LineTo(new Point(v2.Easting, v2.Northing));
+                    ctx.LineTo(new Point(v3.Easting, v3.Northing));
+                    ctx.EndFigure(true);
+                }
+            }
+
+            context.DrawGeometry(brush, null, geometry);
         }
     }
 
@@ -1422,6 +1475,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetPendingPointA(AgValoniaGPS.Models.Position? pointA)
     {
         _pendingPointA = pointA;
+    }
+
+    // Coverage visualization
+    public void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches)
+    {
+        _coveragePatches = patches;
     }
 
     // Mouse interaction support (for external control)

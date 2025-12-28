@@ -485,3 +485,28 @@ public class BoolToOpacityConverter : IValueConverter
         return BindingOperations.DoNothing;
     }
 }
+
+/// <summary>
+/// Converts a uint color value (0xRRGGBB) to an Avalonia SolidColorBrush.
+/// </summary>
+public class UintToBrushConverter : IValueConverter
+{
+    public static readonly UintToBrushConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is uint colorValue)
+        {
+            byte r = (byte)((colorValue >> 16) & 0xFF);
+            byte g = (byte)((colorValue >> 8) & 0xFF);
+            byte b = (byte)(colorValue & 0xFF);
+            return new SolidColorBrush(Color.FromRgb(r, g, b));
+        }
+        return Brushes.Gray;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return BindingOperations.DoNothing;
+    }
+}

@@ -10,6 +10,7 @@ using AgValoniaGPS.Views.Controls;
 using AgValoniaGPS.Views.Behaviors;
 using AgValoniaGPS.iOS.Services;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.iOS.Views;
 
@@ -31,7 +32,7 @@ public partial class MainView : UserControl
         _mapControl = this.FindControl<DrawingContextMapControl>("MapControl");
     }
 
-    public MainView(MainViewModel viewModel, MapService mapService) : this()
+    public MainView(MainViewModel viewModel, MapService mapService, ICoverageMapService coverageService) : this()
     {
         Console.WriteLine("[MainView] Setting DataContext to MainViewModel...");
         DataContext = viewModel;
@@ -48,6 +49,18 @@ public partial class MainView : UserControl
 
             // Wire up MapClicked event for AB line creation
             _mapControl.MapClicked += OnMapClicked;
+
+            // Wire up coverage updates
+            coverageService.CoverageUpdated += (sender, args) =>
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _mapControl?.SetCoveragePatches(coverageService.GetPatches());
+                    _viewModel?.RefreshCoverageStatistics();
+                });
+            };
+            // Set initial coverage (in case field was already loaded)
+            _mapControl.SetCoveragePatches(coverageService.GetPatches());
         }
 
         // Wire up position updates - when ViewModel properties change, update map control

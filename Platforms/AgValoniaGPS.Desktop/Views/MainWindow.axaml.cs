@@ -117,6 +117,19 @@ public partial class MainWindow : Window
         {
             var mapService = App.Services.GetRequiredService<AgValoniaGPS.Desktop.Services.MapService>();
             mapService.SetMapControl(MapControl);
+
+            // Wire up coverage updates
+            var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
+            coverageService.CoverageUpdated += (sender, args) =>
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    MapControl?.SetCoveragePatches(coverageService.GetPatches());
+                    ViewModel?.RefreshCoverageStatistics();
+                });
+            };
+            // Set initial coverage (in case field was already loaded)
+            MapControl.SetCoveragePatches(coverageService.GetPatches());
         }
 
         // Wire up MapClicked event for AB line creation
@@ -210,6 +223,22 @@ public partial class MainWindow : Window
         {
             settings.SimulatorEnabled = ViewModel.IsSimulatorEnabled;
             settings.GridVisible = ViewModel.IsGridOn;
+        }
+
+        // Save coverage to active field before closing
+        var fieldService = App.Services.GetRequiredService<IFieldService>();
+        var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
+        if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+        {
+            try
+            {
+                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
+                Console.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
+            }
         }
 
         // Settings will be saved automatically by App.Exit handler

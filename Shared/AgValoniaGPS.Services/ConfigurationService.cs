@@ -178,6 +178,7 @@ public class ConfigurationService : IConfigurationService
         store.Tool.MinCoverage = profile.Tool.MinCoverage;
         store.Tool.IsMultiColoredSections = profile.Tool.IsMultiColoredSections;
         store.Tool.IsSectionOffWhenOut = profile.Tool.IsSectionOffWhenOut;
+        store.Tool.IsHeadlandSectionControl = profile.Tool.IsHeadlandSectionControl;
 
         // Section config
         store.NumSections = profile.NumSections;
@@ -256,6 +257,7 @@ public class ConfigurationService : IConfigurationService
         profile.Tool.MinCoverage = store.Tool.MinCoverage;
         profile.Tool.IsMultiColoredSections = store.Tool.IsMultiColoredSections;
         profile.Tool.IsSectionOffWhenOut = store.Tool.IsSectionOffWhenOut;
+        profile.Tool.IsHeadlandSectionControl = store.Tool.IsHeadlandSectionControl;
 
         // YouTurn configuration
         profile.YouTurn.TurnRadius = store.Guidance.UTurnRadius;

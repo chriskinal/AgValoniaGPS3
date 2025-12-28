@@ -30,6 +30,10 @@
         </Style>
     </UserControl.Styles>
 
+    <UserControl.Resources>
+        <conv:UintToBrushConverter x:Key="UintToBrush"/>
+    </UserControl.Resources>
+
     <!-- Full screen modal overlay -->
     <Grid Background="#80000000">
         <!-- Main dialog container - fixed size to prevent resizing on tab switch -->
@@ -364,6 +368,83 @@
                                     <TextBlock Text="OK"/>
                                 </Button>
                             </Grid>
+                        </Grid>
+                    </Border>
+                </Border>
+
+                <!-- Color Picker Overlay -->
+                <Border Grid.Row="1" Background="#CC000000"
+                        IsVisible="{Binding IsColorPickerVisible}"
+                        ZIndex="100">
+                    <Border Background="#DD1E2A38" CornerRadius="12" Padding="20"
+                            Width="340" Height="360"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            BorderBrush="#555" BorderThickness="1">
+                        <Grid RowDefinitions="Auto,*,Auto">
+                            <!-- Title -->
+                            <TextBlock Grid.Row="0" Text="{Binding ColorPickerTitle}"
+                                       FontSize="20" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+                            <!-- Color Grid (4x4) -->
+                            <UniformGrid Grid.Row="1" Rows="4" Columns="4" Margin="0,0,0,16">
+                                <Button Background="{Binding PresetColors[0], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="65280"/>
+                                <Button Background="{Binding PresetColors[1], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16711680"/>
+                                <Button Background="{Binding PresetColors[2], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="255"/>
+                                <Button Background="{Binding PresetColors[3], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16776960"/>
+                                <Button Background="{Binding PresetColors[4], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16711935"/>
+                                <Button Background="{Binding PresetColors[5], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="65535"/>
+                                <Button Background="{Binding PresetColors[6], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16744448"/>
+                                <Button Background="{Binding PresetColors[7], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="8388863"/>
+                                <Button Background="{Binding PresetColors[8], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="8453888"/>
+                                <Button Background="{Binding PresetColors[9], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16711808"/>
+                                <Button Background="{Binding PresetColors[10], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="33023"/>
+                                <Button Background="{Binding PresetColors[11], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="10025880"/>
+                                <Button Background="{Binding PresetColors[12], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="16777215"/>
+                                <Button Background="{Binding PresetColors[13], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="8421504"/>
+                                <Button Background="{Binding PresetColors[14], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="8388608"/>
+                                <Button Background="{Binding PresetColors[15], Converter={StaticResource UintToBrush}}"
+                                        Width="60" Height="60" CornerRadius="8" Margin="4"
+                                        Command="{Binding SelectPresetColorCommand}" CommandParameter="32768"/>
+                            </UniformGrid>
+
+                            <!-- Cancel Button -->
+                            <Button Grid.Row="2" Background="#E74C3C" Foreground="White"
+                                    FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
+                                    Command="{Binding CancelColorPickerCommand}"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                                <TextBlock Text="Cancel"/>
+                            </Button>
                         </Grid>
                     </Border>
                 </Border>

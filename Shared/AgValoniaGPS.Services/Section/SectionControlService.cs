@@ -80,6 +80,16 @@ public class SectionControlService : ISectionControlService
 
         // Calculate initial section positions
         RecalculateSectionPositions();
+
+        // Listen for configuration changes to recalculate section positions
+        ConfigurationStore.Instance.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ConfigurationStore.NumSections) ||
+                e.PropertyName == nameof(ConfigurationStore.Tool))
+            {
+                RecalculateSectionPositions();
+            }
+        };
     }
 
     public void Update(Vec3 toolPosition, double toolHeading, double speed)
@@ -313,7 +323,12 @@ public class SectionControlService : ISectionControlService
     private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge)
     {
         var section = _sectionStates[index];
-        if (section.IsMappingOn)
+        if (!section.IsMappingOn)
+        {
+            // Mapping hasn't started yet - continue the startup timer
+            StartMapping(index, leftEdge, rightEdge);
+        }
+        else
         {
             int zoneIndex = GetZoneIndex(index);
             _coverageMapService.AddCoveragePoint(zoneIndex, leftEdge, rightEdge);
@@ -388,6 +403,12 @@ public class SectionControlService : ISectionControlService
     /// </summary>
     private bool IsPointInHeadland(Vec2 point)
     {
+        var tool = ConfigurationStore.Instance.Tool;
+
+        // Check if headland section control is enabled
+        if (!tool.IsHeadlandSectionControl)
+            return false; // Headland control disabled
+
         var headlandLine = _state.Field.HeadlandLine;
         if (headlandLine == null || headlandLine.Count < 3)
             return false; // No headland = never in headland

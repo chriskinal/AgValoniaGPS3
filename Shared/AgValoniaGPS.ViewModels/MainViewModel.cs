@@ -909,8 +909,60 @@ public class MainViewModel : ReactiveObject
         HitchEasting = hitchPos.Easting;
         HitchNorthing = hitchPos.Northing;
 
+        // Update section control - determines which sections should be on/off in Auto mode
+        _sectionControlService.Update(e.ToolPosition, e.ToolHeading, Speed);
+
+        // Update coverage painting - paint when sections are active and moving
+        UpdateCoveragePainting(e.ToolPosition, e.ToolHeading);
+
         // Set ToolEasting LAST - this triggers the PropertyChanged that updates the map
         ToolEasting = e.ToolPosition.Easting;
+    }
+
+    /// <summary>
+    /// Update coverage painting based on section states.
+    /// Paints triangle strips when sections are active and vehicle is moving.
+    /// </summary>
+    private void UpdateCoveragePainting(Vec3 toolPosition, double toolHeading)
+    {
+        // Minimum speed to paint coverage (0.3 m/s ≈ 1 km/h) - don't paint when stationary
+        const double MinPaintingSpeed = 0.3;
+        if (Speed < MinPaintingSpeed)
+        {
+            // Stop all mapping if vehicle is stationary
+            for (int i = 0; i < _sectionControlService.NumSections; i++)
+            {
+                if (_coverageMapService.IsZoneMapping(i))
+                {
+                    _coverageMapService.StopMapping(i);
+                }
+            }
+            return;
+        }
+
+        // Update each section's coverage based on its state
+        var states = _sectionControlService.SectionStates;
+        for (int i = 0; i < states.Count; i++)
+        {
+            var state = states[i];
+            var (left, right) = _sectionControlService.GetSectionWorldPosition(i, toolPosition, toolHeading);
+
+            if (state.IsOn && !_coverageMapService.IsZoneMapping(i))
+            {
+                // Section just turned on - start mapping
+                _coverageMapService.StartMapping(i, left, right);
+            }
+            else if (!state.IsOn && _coverageMapService.IsZoneMapping(i))
+            {
+                // Section just turned off - stop mapping
+                _coverageMapService.StopMapping(i);
+            }
+            else if (state.IsOn && _coverageMapService.IsZoneMapping(i))
+            {
+                // Section still on - add coverage point
+                _coverageMapService.AddCoveragePoint(i, left, right);
+            }
+        }
     }
 
     private void OnSectionStateChanged(object? sender, SectionStateChangedEventArgs e)
@@ -2389,16 +2441,58 @@ public class MainViewModel : ReactiveObject
 
     public string? ActiveFieldName => ActiveField?.Name;
     public double? ActiveFieldArea => ActiveField?.TotalArea;
+    public bool HasActiveField => ActiveField != null;
 
     // Services exposed for UI/control access
     public AgValoniaGPS.Services.Interfaces.IFieldStatisticsService FieldStatistics => _fieldStatistics;
 
     // Field statistics properties for UI binding
-    public string WorkedAreaDisplay => FormatArea(_fieldStatistics.Statistics.WorkedAreaTotal);
-    public string BoundaryAreaDisplay => FormatArea(_fieldStatistics.Statistics.AreaOuterBoundary);
-    public double RemainingPercent => _fieldStatistics.Statistics.AreaBoundaryOuterLessInner > 0
-        ? ((_fieldStatistics.Statistics.AreaBoundaryOuterLessInner - _fieldStatistics.Statistics.WorkedAreaTotal) * 100 / _fieldStatistics.Statistics.AreaBoundaryOuterLessInner)
-        : 0;
+    public string WorkedAreaDisplay => FormatArea(_coverageMapService.TotalWorkedArea);
+
+    public string BoundaryAreaDisplay
+    {
+        get
+        {
+            // Use CurrentBoundary area directly (more reliable than pre-calculated field.TotalArea)
+            var boundary = State.Field.CurrentBoundary;
+            if (boundary != null && boundary.IsValid)
+            {
+                return $"{boundary.AreaHectares:F2} ha";
+            }
+            return "0.00 ha";
+        }
+    }
+
+    public double RemainingPercent
+    {
+        get
+        {
+            var boundary = State.Field.CurrentBoundary;
+            double boundaryArea = boundary?.AreaHectares ?? 0;
+            double boundaryAreaSqM = boundaryArea * 10000; // Convert back to sq meters for comparison
+            if (boundaryAreaSqM > 0)
+            {
+                double workedArea = _coverageMapService.TotalWorkedArea;
+                return ((boundaryAreaSqM - workedArea) * 100 / boundaryAreaSqM);
+            }
+            return 100;
+        }
+    }
+
+    // Instantaneous work rate based on current speed and tool width
+    public string WorkRateDisplay
+    {
+        get
+        {
+            // Rate = Speed (m/h) × Tool Width (m) = m²/h
+            // Convert: Speed is in m/s, need m/h; result in ha/hr
+            double speedMetersPerHour = Speed * 3600; // m/s to m/h
+            double toolWidthMeters = ToolWidth; // Already in meters
+            double squareMetersPerHour = speedMetersPerHour * toolWidthMeters;
+            double hectaresPerHour = squareMetersPerHour / 10000.0;
+            return $"{hectaresPerHour:F1} ha/hr";
+        }
+    }
 
     // Helper method to format area
     private string FormatArea(double squareMeters)
@@ -2406,6 +2500,16 @@ public class MainViewModel : ReactiveObject
         // Convert to hectares
         double hectares = squareMeters * 0.0001;
         return $"{hectares:F2} ha";
+    }
+
+    /// <summary>
+    /// Called when coverage is updated to refresh UI statistics
+    /// </summary>
+    public void RefreshCoverageStatistics()
+    {
+        this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
+        this.RaisePropertyChanged(nameof(RemainingPercent));
+        this.RaisePropertyChanged(nameof(WorkRateDisplay));
     }
 
     private void OnActiveFieldChanged(object? sender, Field? field)
@@ -2423,6 +2527,24 @@ public class MainViewModel : ReactiveObject
 
     private void UpdateActiveField(Field? field)
     {
+        // Save coverage to previous field before switching
+        var previousField = ActiveField;
+        if (previousField != null && !string.IsNullOrEmpty(previousField.DirectoryPath))
+        {
+            try
+            {
+                _coverageMapService.SaveToFile(previousField.DirectoryPath);
+                Console.WriteLine($"[Coverage] Saved coverage to {previousField.DirectoryPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Coverage] Error saving coverage: {ex.Message}");
+            }
+        }
+
+        // Clear coverage when switching fields
+        _coverageMapService.ClearAll();
+
         // Update centralized state
         State.Field.ActiveField = field;
 
@@ -2430,16 +2552,25 @@ public class MainViewModel : ReactiveObject
         ActiveField = field;
         this.RaisePropertyChanged(nameof(ActiveFieldName));
         this.RaisePropertyChanged(nameof(ActiveFieldArea));
+        this.RaisePropertyChanged(nameof(HasActiveField));
 
         // Update field statistics service with new boundary
         if (field?.Boundary != null)
         {
+            // Sync boundary to State.Field.CurrentBoundary for section control and stats
+            SetCurrentBoundary(field.Boundary);
+
             // Calculate boundary area and pass as list (outer boundary only for now)
-            var boundaryAreas = new List<double> { field.TotalArea };
+            var boundaryAreas = new List<double> { field.Boundary.AreaHectares * 10000 }; // Convert ha to sq meters
             _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
             this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
             this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
             this.RaisePropertyChanged(nameof(RemainingPercent));
+        }
+        else
+        {
+            // No boundary - clear it
+            SetCurrentBoundary(null);
         }
 
         // Load headland from field directory if available
@@ -2447,6 +2578,23 @@ public class MainViewModel : ReactiveObject
 
         // Load AB lines from field directory if available
         LoadTracksFromField(field);
+
+        // Load coverage from field directory if available
+        if (field != null && !string.IsNullOrEmpty(field.DirectoryPath))
+        {
+            try
+            {
+                _coverageMapService.LoadFromFile(field.DirectoryPath);
+                Console.WriteLine($"[Coverage] Loaded coverage from {field.DirectoryPath}");
+
+                // Refresh coverage statistics and notify UI
+                RefreshCoverageStatistics();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Coverage] Error loading coverage: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -3369,6 +3517,9 @@ public class MainViewModel : ReactiveObject
             this.RaiseAndSetIfChanged(ref _currentHeadlandLine, value);
             _mapService.SetHeadlandLine(value);
             SaveHeadlandToFile(value);
+
+            // Sync to FieldState for section control headland detection
+            State.Field.HeadlandLine = value;
         }
     }
 
@@ -5616,6 +5767,12 @@ public class MainViewModel : ReactiveObject
         ToggleSectionMasterCommand = new RelayCommand(() =>
         {
             IsSectionMasterOn = !IsSectionMasterOn;
+
+            // Update section control service master state
+            _sectionControlService.MasterState = IsSectionMasterOn
+                ? SectionMasterState.Auto
+                : SectionMasterState.Off;
+
             StatusMessage = IsSectionMasterOn ? "Section master ON" : "Section master OFF";
         });
 
@@ -6329,6 +6486,9 @@ public class MainViewModel : ReactiveObject
     {
         _mapService.SetBoundary(boundary);
         CurrentBoundary = boundary;
+
+        // Sync to FieldState for section control boundary/headland detection
+        State.Field.CurrentBoundary = boundary;
     }
 
     /// <summary>

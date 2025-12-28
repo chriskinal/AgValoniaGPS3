@@ -47,6 +47,7 @@ namespace AgValoniaGPS.Models.Tool
         public int MinCoverage { get; set; }
         public bool IsMultiColoredSections { get; set; }
         public bool IsSectionOffWhenOut { get; set; }
+        public bool IsHeadlandSectionControl { get; set; } = true;
         public bool IsSectionsNotZones { get; set; }
 
         // Headland detection
