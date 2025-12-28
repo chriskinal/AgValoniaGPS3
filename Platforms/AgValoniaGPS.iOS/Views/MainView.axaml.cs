@@ -134,6 +134,22 @@ public partial class MainView : UserControl
                     _viewModel.ToolWidth,
                     _viewModel.HitchEasting,
                     _viewModel.HitchNorthing);
+                // Also update section states for rendering
+                _mapControl.SetSectionStates(
+                    _viewModel.GetSectionStates(),
+                    _viewModel.GetSectionWidths(),
+                    _viewModel.NumSections,
+                    _viewModel.GetSectionButtonStates());
+            }
+            else if (e.PropertyName?.StartsWith("Section") == true &&
+                     (e.PropertyName.EndsWith("Active") || e.PropertyName.EndsWith("ColorCode")))
+            {
+                // Section state or color code changed - update map control
+                _mapControl.SetSectionStates(
+                    _viewModel.GetSectionStates(),
+                    _viewModel.GetSectionWidths(),
+                    _viewModel.NumSections,
+                    _viewModel.GetSectionButtonStates());
             }
             else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
             {

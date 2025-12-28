@@ -365,6 +365,25 @@ public partial class MainWindow : Window
                     ViewModel.ToolWidth,
                     ViewModel.HitchEasting,
                     ViewModel.HitchNorthing);
+                // Also update section states for rendering
+                MapControl.SetSectionStates(
+                    ViewModel.GetSectionStates(),
+                    ViewModel.GetSectionWidths(),
+                    ViewModel.NumSections,
+                    ViewModel.GetSectionButtonStates());
+            }
+        }
+        else if (e.PropertyName?.StartsWith("Section") == true &&
+                 (e.PropertyName.EndsWith("Active") || e.PropertyName.EndsWith("ColorCode")))
+        {
+            // Section state or color code changed - update map control
+            if (ViewModel != null && MapControl != null)
+            {
+                MapControl.SetSectionStates(
+                    ViewModel.GetSectionStates(),
+                    ViewModel.GetSectionWidths(),
+                    ViewModel.NumSections,
+                    ViewModel.GetSectionButtonStates());
             }
         }
         else if (e.PropertyName == nameof(MainViewModel.IsGridOn))

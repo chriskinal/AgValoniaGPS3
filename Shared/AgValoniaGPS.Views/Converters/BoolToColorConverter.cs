@@ -418,6 +418,42 @@ public class StringToImageConverter : IValueConverter
 }
 
 /// <summary>
+/// Converts section color code to background brush for section buttons.
+/// Color codes: 0=Red (Off), 1=Yellow (Manual On), 2=Green (Auto On), 3=Gray (Auto Off)
+/// </summary>
+public class SectionColorCodeToBackgroundConverter : IValueConverter
+{
+    public static readonly SectionColorCodeToBackgroundConverter Instance = new();
+
+    // Match the exact colors used in DrawingContextMapControl
+    private static readonly IBrush RedBrush = new SolidColorBrush(Color.FromRgb(242, 51, 51));     // #F23333 - Off
+    private static readonly IBrush YellowBrush = new SolidColorBrush(Color.FromRgb(247, 247, 0)); // #F7F700 - Manual On
+    private static readonly IBrush GreenBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // #00F200 - Auto On
+    private static readonly IBrush GrayBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // #646464 - Auto Off
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int colorCode)
+        {
+            return colorCode switch
+            {
+                0 => RedBrush,    // Off
+                1 => YellowBrush, // Manual On
+                2 => GreenBrush,  // Auto On
+                3 => GrayBrush,   // Auto Off
+                _ => GrayBrush
+            };
+        }
+        return GrayBrush;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return BindingOperations.DoNothing;
+    }
+}
+
+/// <summary>
 /// Converts bool to opacity value (double).
 /// Parameter format: "trueOpacity|falseOpacity" e.g. "1|0.3"
 /// </summary>

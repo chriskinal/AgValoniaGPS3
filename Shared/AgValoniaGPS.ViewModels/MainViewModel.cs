@@ -49,6 +49,7 @@ public class MainViewModel : ReactiveObject
     private readonly IModuleCommunicationService _moduleCommunicationService;
     private readonly IToolPositionService _toolPositionService;
     private readonly ICoverageMapService _coverageMapService;
+    private readonly ISectionControlService _sectionControlService;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
     private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
@@ -117,6 +118,14 @@ public class MainViewModel : ReactiveObject
     private bool _section5Active;
     private bool _section6Active;
     private bool _section7Active;
+
+    // Section color codes (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
+    private int _section1ColorCode;
+    private int _section2ColorCode;
+    private int _section3ColorCode;
+    private int _section4ColorCode;
+    private int _section5ColorCode;
+    private int _section6ColorCode;
     // Hello status (connection health)
     private bool _isAutoSteerHelloOk;
     private bool _isMachineHelloOk;
@@ -170,6 +179,7 @@ public class MainViewModel : ReactiveObject
         IModuleCommunicationService moduleCommunicationService,
         IToolPositionService toolPositionService,
         ICoverageMapService coverageMapService,
+        ISectionControlService sectionControlService,
         ApplicationState appState)
     {
         _udpService = udpService;
@@ -196,6 +206,7 @@ public class MainViewModel : ReactiveObject
         _moduleCommunicationService = moduleCommunicationService;
         _toolPositionService = toolPositionService;
         _coverageMapService = coverageMapService;
+        _sectionControlService = sectionControlService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -215,6 +226,7 @@ public class MainViewModel : ReactiveObject
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
         _toolPositionService.PositionUpdated += OnToolPositionUpdated;
+        _sectionControlService.SectionStateChanged += OnSectionStateChanged;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -555,6 +567,90 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _section7Active, value);
     }
 
+    // Section color codes for panel buttons (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
+    public int Section1ColorCode
+    {
+        get => _section1ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section1ColorCode, value);
+    }
+
+    public int Section2ColorCode
+    {
+        get => _section2ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section2ColorCode, value);
+    }
+
+    public int Section3ColorCode
+    {
+        get => _section3ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section3ColorCode, value);
+    }
+
+    public int Section4ColorCode
+    {
+        get => _section4ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section4ColorCode, value);
+    }
+
+    public int Section5ColorCode
+    {
+        get => _section5ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section5ColorCode, value);
+    }
+
+    public int Section6ColorCode
+    {
+        get => _section6ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section6ColorCode, value);
+    }
+
+    /// <summary>
+    /// Get section on/off states for map rendering.
+    /// </summary>
+    public bool[] GetSectionStates()
+    {
+        var states = _sectionControlService.SectionStates;
+        var result = new bool[16];
+        for (int i = 0; i < Math.Min(states.Count, 16); i++)
+        {
+            result[i] = states[i].IsOn;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Get section button states (Off=0, Auto=1, On=2) for 3-state rendering.
+    /// </summary>
+    public int[] GetSectionButtonStates()
+    {
+        var states = _sectionControlService.SectionStates;
+        var result = new int[16];
+        for (int i = 0; i < Math.Min(states.Count, 16); i++)
+        {
+            result[i] = (int)states[i].ButtonState; // Off=0, Auto=1, On=2
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Get section widths in meters for map rendering.
+    /// </summary>
+    public double[] GetSectionWidths()
+    {
+        var config = Models.Configuration.ConfigurationStore.Instance;
+        var result = new double[16];
+        for (int i = 0; i < 16; i++)
+        {
+            result[i] = config.Tool.GetSectionWidth(i) / 100.0; // cm to meters
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Number of configured sections for map rendering.
+    /// </summary>
+    public int NumSections => Models.Configuration.ConfigurationStore.Instance.NumSections;
+
     // AutoSteer Hello and Data properties
     public bool IsAutoSteerHelloOk
     {
@@ -815,6 +911,56 @@ public class MainViewModel : ReactiveObject
 
         // Set ToolEasting LAST - this triggers the PropertyChanged that updates the map
         ToolEasting = e.ToolPosition.Easting;
+    }
+
+    private void OnSectionStateChanged(object? sender, SectionStateChangedEventArgs e)
+    {
+        // Marshal to UI thread
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            UpdateSectionActiveProperties();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateSectionActiveProperties);
+        }
+    }
+
+    private void UpdateSectionActiveProperties()
+    {
+        // Sync Section*Active properties with service state
+        var states = _sectionControlService.SectionStates;
+        Section1Active = states.Count > 0 && states[0].IsOn;
+        Section2Active = states.Count > 1 && states[1].IsOn;
+        Section3Active = states.Count > 2 && states[2].IsOn;
+        Section4Active = states.Count > 3 && states[3].IsOn;
+        Section5Active = states.Count > 4 && states[4].IsOn;
+        Section6Active = states.Count > 5 && states[5].IsOn;
+        Section7Active = states.Count > 6 && states[6].IsOn;
+
+        // Update color codes for panel buttons (matching map rendering colors)
+        // 0=Red (Off), 1=Yellow (Manual On), 2=Green (Auto On), 3=Gray (Auto Off)
+        Section1ColorCode = states.Count > 0 ? GetSectionColorCode(states[0]) : 0;
+        Section2ColorCode = states.Count > 1 ? GetSectionColorCode(states[1]) : 0;
+        Section3ColorCode = states.Count > 2 ? GetSectionColorCode(states[2]) : 0;
+        Section4ColorCode = states.Count > 3 ? GetSectionColorCode(states[3]) : 0;
+        Section5ColorCode = states.Count > 4 ? GetSectionColorCode(states[4]) : 0;
+        Section6ColorCode = states.Count > 5 ? GetSectionColorCode(states[5]) : 0;
+    }
+
+    /// <summary>
+    /// Calculate color code for a section state (matches map rendering logic).
+    /// </summary>
+    private static int GetSectionColorCode(SectionControlState state)
+    {
+        // 3-state model: Off=Red, Auto=Green, On=Yellow
+        return state.ButtonState switch
+        {
+            SectionButtonState.Off => 0,  // Red - manually off
+            SectionButtonState.On => 1,   // Yellow - manually on
+            SectionButtonState.Auto => 2, // Green - automatic mode
+            _ => 0
+        };
     }
 
     private void OnGpsDataUpdated(object? sender, AgValoniaGPS.Models.GpsData data)
@@ -3878,6 +4024,7 @@ public class MainViewModel : ReactiveObject
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? ToggleManualModeCommand { get; private set; }
     public ICommand? ToggleSectionMasterCommand { get; private set; }
+    public ICommand? ToggleSectionCommand { get; private set; }
     public ICommand? ToggleYouTurnCommand { get; private set; }
     public ICommand? ToggleAutoSteerCommand { get; private set; }
 
@@ -5470,6 +5617,36 @@ public class MainViewModel : ReactiveObject
         {
             IsSectionMasterOn = !IsSectionMasterOn;
             StatusMessage = IsSectionMasterOn ? "Section master ON" : "Section master OFF";
+        });
+
+        // Parameterized command for toggling individual sections (0-based index)
+        // Parameter comes as string from XAML CommandParameter, so we parse it
+        ToggleSectionCommand = new RelayCommand<object>(param =>
+        {
+            if (param == null) return;
+
+            int sectionIndex;
+            if (param is int intVal)
+                sectionIndex = intVal;
+            else if (param is string strVal && int.TryParse(strVal, out var parsed))
+                sectionIndex = parsed;
+            else
+                return;
+
+            if (sectionIndex < 0 || sectionIndex >= _sectionControlService.NumSections)
+                return;
+
+            var currentState = _sectionControlService.SectionStates[sectionIndex].ButtonState;
+            // Cycle through: Off -> Auto -> On -> Off
+            var newState = currentState switch
+            {
+                SectionButtonState.Off => SectionButtonState.Auto,
+                SectionButtonState.Auto => SectionButtonState.On,
+                SectionButtonState.On => SectionButtonState.Off,
+                _ => SectionButtonState.Off
+            };
+            _sectionControlService.SetSectionState(sectionIndex, newState);
+            StatusMessage = $"Section {sectionIndex + 1}: {newState}";
         });
 
         ToggleYouTurnCommand = new RelayCommand(() =>

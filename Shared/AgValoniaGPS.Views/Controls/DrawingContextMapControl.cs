@@ -45,6 +45,7 @@ public interface ISharedMapControl
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double x, double y, double heading);
     void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY);
+    void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null);
     void SetGridVisible(bool visible);
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();
@@ -142,6 +143,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _toolWidth = 0.0;
     private double _hitchX = 0.0;
     private double _hitchY = 0.0;
+
+    // Section state for individual section rendering
+    private bool[] _sectionOn = new bool[16];
+    private int[] _sectionButtonState = new int[16]; // 0=Off, 1=Auto, 2=On
+    private double[] _sectionWidths = new double[16]; // Width of each section in meters
+    private double[] _sectionLeft = new double[16];   // Left edge position relative to tool center
+    private double[] _sectionRight = new double[16];  // Right edge position relative to tool center
+    private int _numSections = 0;
 
     // Mouse interaction
     private bool _isPanning = false;
@@ -584,27 +593,70 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
+    // Section color brushes (matching AgOpenGPS)
+    // ButtonState: 0=Off, 1=Auto, 2=On (manual)
+    private static readonly SolidColorBrush _sectionOffBrush = new SolidColorBrush(Color.FromRgb(242, 51, 51));     // Red - manually off
+    private static readonly SolidColorBrush _sectionManualOnBrush = new SolidColorBrush(Color.FromRgb(247, 247, 0)); // Yellow - manually on
+    private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
+    private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
+    private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
+
     private void DrawTool(DrawingContext context)
     {
         // Don't draw if tool has no width (not configured or zero width)
         if (_toolWidth < 0.1) return;
 
-        double halfWidth = _toolWidth / 2.0;
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
         // Draw hitch line from vehicle to tool center
-        // Use vehicle position as start (not hitch point) because for fixed tools,
-        // hitch point equals tool point which gives a zero-length line
         context.DrawLine(_hitchPen, new Point(_vehicleX, _vehicleY), new Point(_toolX, _toolY));
 
-        // Draw tool rectangle centered at tool position, rotated to tool heading
+        // Draw individual sections centered at tool position, rotated to tool heading
         using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
         using (context.PushTransform(Matrix.CreateRotation(-_toolHeading))) // Negated for screen coordinates
         {
-            // Tool rectangle: width extends left/right, depth extends front/back
-            // In local coordinates: X is perpendicular (width), Y is along heading (depth)
-            var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
-            context.DrawRectangle(_toolBrush, _toolPen, toolRect);
+            if (_numSections > 0)
+            {
+                // Draw each section individually
+                double sectionGap = 0.05; // Small gap between sections (5cm)
+
+                for (int i = 0; i < _numSections; i++)
+                {
+                    // Get section bounds (with small inset for gap)
+                    double left = _sectionLeft[i] + sectionGap / 2;
+                    double right = _sectionRight[i] - sectionGap / 2;
+                    double width = right - left;
+
+                    if (width < 0.01) continue; // Skip if section too narrow
+
+                    // Choose brush based on button state
+                    // 3-state model: 0=Off (Red), 1=Auto (Green), 2=On (Yellow)
+                    IBrush brush;
+                    switch (_sectionButtonState[i])
+                    {
+                        case 0: // Off - manually forced off
+                            brush = _sectionOffBrush; // Red
+                            break;
+                        case 2: // On - manually forced on
+                            brush = _sectionManualOnBrush; // Yellow
+                            break;
+                        default: // Auto (1) - automatic mode
+                            brush = _sectionAutoOnBrush; // Green
+                            break;
+                    }
+
+                    // Draw section rectangle
+                    var sectionRect = new Rect(left, -toolDepth / 2, width, toolDepth);
+                    context.DrawRectangle(brush, _sectionOutlinePen, sectionRect);
+                }
+            }
+            else
+            {
+                // Fallback: draw single tool rectangle if no sections configured
+                double halfWidth = _toolWidth / 2.0;
+                var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
+                context.DrawRectangle(_toolBrush, _toolPen, toolRect);
+            }
 
             // Draw a center marker line to show tool heading direction
             var centerLine = new Pen(Brushes.White, 0.1);
@@ -1154,6 +1206,37 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _toolWidth = width;
         _hitchX = hitchX;
         _hitchY = hitchY;
+    }
+
+    public void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null)
+    {
+        _numSections = Math.Min(numSections, 16);
+
+        // Copy state, button states, and widths
+        for (int i = 0; i < _numSections; i++)
+        {
+            _sectionOn[i] = i < sectionOn.Length && sectionOn[i];
+            _sectionButtonState[i] = buttonStates != null && i < buttonStates.Length ? buttonStates[i] : 1; // Default to Auto
+            _sectionWidths[i] = i < sectionWidths.Length ? sectionWidths[i] : 1.0;
+        }
+
+        // Calculate total width and section positions
+        // Sections are distributed left-to-right, centered on tool position
+        double totalWidth = 0;
+        for (int i = 0; i < _numSections; i++)
+        {
+            totalWidth += _sectionWidths[i];
+        }
+
+        // Calculate left/right positions for each section
+        // Left edge of first section is at -totalWidth/2
+        double runningPosition = -totalWidth / 2.0;
+        for (int i = 0; i < _numSections; i++)
+        {
+            _sectionLeft[i] = runningPosition;
+            _sectionRight[i] = runningPosition + _sectionWidths[i];
+            runningPosition += _sectionWidths[i];
+        }
     }
 
     /// <summary>

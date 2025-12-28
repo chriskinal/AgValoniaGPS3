@@ -3,22 +3,46 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="60"
              x:Class="AgValoniaGPS.Views.Controls.Panels.SectionControlPanel"
              x:DataType="vm:MainViewModel">
 
+    <UserControl.Resources>
+        <converters:SectionColorCodeToBackgroundConverter x:Key="SectionColorCodeToBackground"/>
+    </UserControl.Resources>
+
     <UserControl.Styles>
-        <Style Selector="Border.SectionButton">
+        <!-- Custom Button template that preserves bound Background on all states -->
+        <Style Selector="Button.SectionButton">
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Width" Value="45"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
         </Style>
-        <Style Selector="Border.SectionButton.Active">
-            <Setter Property="Background" Value="#2ECC71"/>
+        <Style Selector="Button.SectionButton:pointerover">
+            <Setter Property="Opacity" Value="0.85"/>
         </Style>
-        <Style Selector="Border.SectionButton > TextBlock">
+        <Style Selector="Button.SectionButton:pressed">
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        <Style Selector="Button.SectionButton > TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Foreground" Value="White"/>
@@ -37,26 +61,39 @@
             <TextBlock Text="Sections" Foreground="White" FontSize="12" FontWeight="Bold"
                        VerticalAlignment="Center" Margin="0,0,8,0"/>
 
-            <!-- Section buttons - bind to ViewModel section states -->
+            <!-- Section buttons - tap to cycle Off -> Auto -> On -> Off -->
+            <!-- Background color matches map section color via converter -->
             <StackPanel Orientation="Horizontal" Spacing="4">
-                <Border Classes="SectionButton" Classes.Active="{Binding Section1Active}">
+                <Button Classes="SectionButton"
+                        Background="{Binding Section1ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="0">
                     <TextBlock Text="1"/>
-                </Border>
-                <Border Classes="SectionButton" Classes.Active="{Binding Section2Active}">
+                </Button>
+                <Button Classes="SectionButton"
+                        Background="{Binding Section2ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="1">
                     <TextBlock Text="2"/>
-                </Border>
-                <Border Classes="SectionButton" Classes.Active="{Binding Section3Active}">
+                </Button>
+                <Button Classes="SectionButton"
+                        Background="{Binding Section3ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="2">
                     <TextBlock Text="3"/>
-                </Border>
-                <Border Classes="SectionButton" Classes.Active="{Binding Section4Active}">
+                </Button>
+                <Button Classes="SectionButton"
+                        Background="{Binding Section4ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="3">
                     <TextBlock Text="4"/>
-                </Border>
-                <Border Classes="SectionButton" Classes.Active="{Binding Section5Active}">
+                </Button>
+                <Button Classes="SectionButton"
+                        Background="{Binding Section5ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="4">
                     <TextBlock Text="5"/>
-                </Border>
-                <Border Classes="SectionButton" Classes.Active="{Binding Section6Active}">
+                </Button>
+                <Button Classes="SectionButton"
+                        Background="{Binding Section6ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                        Command="{Binding ToggleSectionCommand}" CommandParameter="5">
                     <TextBlock Text="6"/>
-                </Border>
+                </Button>
             </StackPanel>
         </StackPanel>
     </Border>

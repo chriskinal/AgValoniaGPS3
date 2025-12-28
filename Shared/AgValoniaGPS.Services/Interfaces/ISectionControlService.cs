@@ -151,7 +151,7 @@ public class SectionControlState
     public int MappingOffTimer { get; set; }
 
     /// <summary>Manual button state (Off, Auto, On)</summary>
-    public SectionButtonState ButtonState { get; set; } = SectionButtonState.Auto;
+    public SectionButtonState ButtonState { get; set; } = SectionButtonState.Off;
 
     /// <summary>Section left edge position relative to tool center (negative = left)</summary>
     public double PositionLeft { get; set; }

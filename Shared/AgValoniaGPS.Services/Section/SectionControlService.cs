@@ -434,6 +434,13 @@ public class SectionControlService : ISectionControlService
 
         _sectionStates[sectionIndex].ButtonState = state;
 
+        // For immediate UI feedback, set IsOn directly for manual states
+        if (state == SectionButtonState.On)
+            _sectionStates[sectionIndex].IsOn = true;
+        else if (state == SectionButtonState.Off)
+            _sectionStates[sectionIndex].IsOn = false;
+        // Auto state will be determined by Update() based on boundaries
+
         SectionStateChanged?.Invoke(this, new SectionStateChangedEventArgs
         {
             SectionIndex = sectionIndex,
