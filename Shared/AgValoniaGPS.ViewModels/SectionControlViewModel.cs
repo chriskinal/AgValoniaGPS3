@@ -11,10 +11,12 @@ namespace AgValoniaGPS.ViewModels;
 /// <summary>
 /// ViewModel for section control functionality.
 /// Handles section master state, individual section states, and section-related settings.
+/// Integrates with ISectionControlService for 3-state section control (Off/Auto/On).
 /// </summary>
 public class SectionControlViewModel : ReactiveObject
 {
     private readonly IModuleCommunicationService _moduleCommunicationService;
+    private readonly ISectionControlService _sectionControlService;
     private readonly ApplicationState _appState;
 
     // Events for MainViewModel to subscribe to
@@ -22,13 +24,18 @@ public class SectionControlViewModel : ReactiveObject
 
     public SectionControlViewModel(
         IModuleCommunicationService moduleCommunicationService,
+        ISectionControlService sectionControlService,
         ApplicationState appState)
     {
         _moduleCommunicationService = moduleCommunicationService;
+        _sectionControlService = sectionControlService;
         _appState = appState;
 
         // Subscribe to module communication events
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
+
+        // Subscribe to section control service events
+        _sectionControlService.SectionStateChanged += OnSectionStateChanged;
 
         InitializeCommands();
     }
@@ -134,6 +141,59 @@ public class SectionControlViewModel : ReactiveObject
 
     #endregion
 
+    #region Section Color Codes (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
+
+    private int _section1ColorCode;
+    public int Section1ColorCode
+    {
+        get => _section1ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section1ColorCode, value);
+    }
+
+    private int _section2ColorCode;
+    public int Section2ColorCode
+    {
+        get => _section2ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section2ColorCode, value);
+    }
+
+    private int _section3ColorCode;
+    public int Section3ColorCode
+    {
+        get => _section3ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section3ColorCode, value);
+    }
+
+    private int _section4ColorCode;
+    public int Section4ColorCode
+    {
+        get => _section4ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section4ColorCode, value);
+    }
+
+    private int _section5ColorCode;
+    public int Section5ColorCode
+    {
+        get => _section5ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section5ColorCode, value);
+    }
+
+    private int _section6ColorCode;
+    public int Section6ColorCode
+    {
+        get => _section6ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section6ColorCode, value);
+    }
+
+    private int _section7ColorCode;
+    public int Section7ColorCode
+    {
+        get => _section7ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section7ColorCode, value);
+    }
+
+    #endregion
+
     #region Headland Section Control
 
     private bool _isControlInHeadland;
@@ -165,6 +225,7 @@ public class SectionControlViewModel : ReactiveObject
     public ICommand? ToggleHeadlandControlCommand { get; private set; }
     public ICommand? SetAllSectionsCommand { get; private set; }
     public ICommand? ClearAllSectionsCommand { get; private set; }
+    public ICommand? ToggleSectionCommand { get; private set; }
 
     private void InitializeCommands()
     {
@@ -217,6 +278,39 @@ public class SectionControlViewModel : ReactiveObject
             UpdateActiveCount();
             StatusMessageChanged?.Invoke(this, "All sections OFF");
         });
+
+        // Toggle section through 3-state cycle: Off -> Auto -> On -> Off
+        ToggleSectionCommand = new RelayCommand<object>(param =>
+        {
+            if (param is string indexStr && int.TryParse(indexStr, out int sectionIndex))
+            {
+                CycleSectionState(sectionIndex);
+            }
+            else if (param is int index)
+            {
+                CycleSectionState(index);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Cycle section state through Off -> Auto -> On -> Off
+    /// </summary>
+    private void CycleSectionState(int sectionIndex)
+    {
+        if (sectionIndex < 0 || sectionIndex >= _sectionControlService.NumSections)
+            return;
+
+        var currentState = _sectionControlService.SectionStates[sectionIndex].ButtonState;
+        var newState = currentState switch
+        {
+            SectionButtonState.Off => SectionButtonState.Auto,
+            SectionButtonState.Auto => SectionButtonState.On,
+            SectionButtonState.On => SectionButtonState.Off,
+            _ => SectionButtonState.Auto
+        };
+
+        _sectionControlService.SetSectionState(sectionIndex, newState);
     }
 
     #endregion
@@ -305,6 +399,95 @@ public class SectionControlViewModel : ReactiveObject
             ToggleMasterCommand?.Execute(null);
         });
     }
+
+    private void OnSectionStateChanged(object? sender, SectionStateChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            // Update section active states from service
+            var states = _sectionControlService.SectionStates;
+            if (states.Count > 0) Section1Active = states[0].IsOn;
+            if (states.Count > 1) Section2Active = states[1].IsOn;
+            if (states.Count > 2) Section3Active = states[2].IsOn;
+            if (states.Count > 3) Section4Active = states[3].IsOn;
+            if (states.Count > 4) Section5Active = states[4].IsOn;
+            if (states.Count > 5) Section6Active = states[5].IsOn;
+            if (states.Count > 6) Section7Active = states[6].IsOn;
+
+            // Update color codes
+            Section1ColorCode = states.Count > 0 ? GetSectionColorCode(states[0]) : 0;
+            Section2ColorCode = states.Count > 1 ? GetSectionColorCode(states[1]) : 0;
+            Section3ColorCode = states.Count > 2 ? GetSectionColorCode(states[2]) : 0;
+            Section4ColorCode = states.Count > 3 ? GetSectionColorCode(states[3]) : 0;
+            Section5ColorCode = states.Count > 4 ? GetSectionColorCode(states[4]) : 0;
+            Section6ColorCode = states.Count > 5 ? GetSectionColorCode(states[5]) : 0;
+            Section7ColorCode = states.Count > 6 ? GetSectionColorCode(states[6]) : 0;
+
+            UpdateActiveCount();
+        });
+    }
+
+    /// <summary>
+    /// Get color code for section state.
+    /// 0=Red (Off), 1=Yellow (Manual On), 2=Green (Auto On), 3=Gray (Auto Off)
+    /// </summary>
+    private static int GetSectionColorCode(SectionControlState state)
+    {
+        return state.ButtonState switch
+        {
+            SectionButtonState.Off => 0,  // Red - manually off
+            SectionButtonState.On => 1,   // Yellow - manually on
+            SectionButtonState.Auto => state.IsOn ? 2 : 3,  // Green if on, Gray if off
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Get section on/off states for map rendering.
+    /// </summary>
+    public bool[] GetSectionStates()
+    {
+        var states = _sectionControlService.SectionStates;
+        var result = new bool[16];
+        for (int i = 0; i < Math.Min(states.Count, 16); i++)
+        {
+            result[i] = states[i].IsOn;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Get section button states for map rendering (0=Off, 1=Auto, 2=On).
+    /// </summary>
+    public int[] GetSectionButtonStates()
+    {
+        var states = _sectionControlService.SectionStates;
+        var result = new int[16];
+        for (int i = 0; i < Math.Min(states.Count, 16); i++)
+        {
+            result[i] = (int)states[i].ButtonState;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Get section widths for map rendering.
+    /// </summary>
+    public double[] GetSectionWidths()
+    {
+        var states = _sectionControlService.SectionStates;
+        var result = new double[16];
+        for (int i = 0; i < Math.Min(states.Count, 16); i++)
+        {
+            result[i] = states[i].Width;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Number of configured sections.
+    /// </summary>
+    public int NumSections => _sectionControlService.NumSections;
 
     #endregion
 }

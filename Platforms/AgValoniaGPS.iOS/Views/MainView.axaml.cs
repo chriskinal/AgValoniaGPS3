@@ -133,6 +133,13 @@ public partial class MainView : UserControl
                     _viewModel.ToolWidth,
                     _viewModel.HitchEasting,
                     _viewModel.HitchNorthing);
+
+                // Update section data for individual section rendering
+                _mapControl.UpdateSectionData(
+                    _viewModel.GetSectionStates(),
+                    _viewModel.GetSectionButtonStates(),
+                    _viewModel.GetSectionWidths(),
+                    _viewModel.NumSections);
             }
             else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
             {

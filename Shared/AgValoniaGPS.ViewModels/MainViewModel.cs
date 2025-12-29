@@ -228,7 +228,7 @@ public partial class MainViewModel : ReactiveObject
         BoundaryRecording.RecordingFinished += OnBoundaryRecordingFinished;
 
         // Create SectionControlViewModel (handles section master and individual section states)
-        Sections = new SectionControlViewModel(moduleCommunicationService, appState);
+        Sections = new SectionControlViewModel(moduleCommunicationService, sectionControlService, appState);
         Sections.StatusMessageChanged += (s, msg) => StatusMessage = msg;
 
         // Create TrackManagementViewModel (handles track list, AB line creation, nudge)
@@ -579,6 +579,35 @@ public partial class MainViewModel : ReactiveObject
         get => Sections.Section7Active;
         set => Sections.Section7Active = value;
     }
+
+    // Section color codes (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
+    public int Section1ColorCode => Sections.Section1ColorCode;
+    public int Section2ColorCode => Sections.Section2ColorCode;
+    public int Section3ColorCode => Sections.Section3ColorCode;
+    public int Section4ColorCode => Sections.Section4ColorCode;
+    public int Section5ColorCode => Sections.Section5ColorCode;
+    public int Section6ColorCode => Sections.Section6ColorCode;
+    public int Section7ColorCode => Sections.Section7ColorCode;
+
+    /// <summary>
+    /// Get section on/off states for map rendering.
+    /// </summary>
+    public bool[] GetSectionStates() => Sections.GetSectionStates();
+
+    /// <summary>
+    /// Get section button states for map rendering (0=Off, 1=Auto, 2=On).
+    /// </summary>
+    public int[] GetSectionButtonStates() => Sections.GetSectionButtonStates();
+
+    /// <summary>
+    /// Get section widths for map rendering.
+    /// </summary>
+    public double[] GetSectionWidths() => Sections.GetSectionWidths();
+
+    /// <summary>
+    /// Number of configured sections.
+    /// </summary>
+    public int NumSections => Sections.NumSections;
 
     // AutoSteer Hello and Data properties
     public bool IsAutoSteerHelloOk
@@ -2720,6 +2749,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? ToggleManualModeCommand { get; private set; }
     public ICommand? ToggleSectionMasterCommand { get; private set; }
+    public ICommand? ToggleSectionCommand => Sections.ToggleSectionCommand;
     public ICommand? ToggleYouTurnCommand { get; private set; }
     public ICommand? ToggleAutoSteerCommand { get; private set; }
 

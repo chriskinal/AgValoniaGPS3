@@ -143,6 +143,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _hitchX = 0.0;
     private double _hitchY = 0.0;
 
+    // Section state for individual section rendering
+    private bool[] _sectionOn = new bool[16];
+    private int[] _sectionButtonState = new int[16]; // 0=Off, 1=Auto, 2=On
+    private double[] _sectionWidths = new double[16]; // Width of each section in meters
+    private double[] _sectionLeft = new double[16];   // Left edge position relative to tool center
+    private double[] _sectionRight = new double[16];  // Right edge position relative to tool center
+    private int _numSections = 0;
+
+    // Section colors for 3-state rendering
+    private static readonly SolidColorBrush _sectionOffBrush = new SolidColorBrush(Color.FromRgb(242, 51, 51));     // Red - manually off
+    private static readonly SolidColorBrush _sectionManualOnBrush = new SolidColorBrush(Color.FromRgb(247, 247, 0)); // Yellow - manually on
+    private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
+    private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
+    private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
+
     // Mouse interaction
     private bool _isPanning = false;
     private bool _isRotating = false;
@@ -589,20 +604,54 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Don't draw if tool has no width (not configured or zero width)
         if (_toolWidth < 0.1) return;
 
-        double halfWidth = _toolWidth / 2.0;
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
         // Draw hitch line from vehicle hitch point to tool center
         context.DrawLine(_hitchPen, new Point(_hitchX, _hitchY), new Point(_toolX, _toolY));
 
-        // Draw tool rectangle centered at tool position, rotated to tool heading
+        // Draw individual sections centered at tool position, rotated to tool heading
         using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
         using (context.PushTransform(Matrix.CreateRotation(-_toolHeading))) // Negated for screen coordinates
         {
-            // Tool rectangle: width extends left/right, depth extends front/back
-            // In local coordinates: X is perpendicular (width), Y is along heading (depth)
-            var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
-            context.DrawRectangle(_toolBrush, _toolPen, toolRect);
+            // Draw each section with color based on button state
+            double sectionGap = 0.05; // Small gap between sections
+            for (int i = 0; i < _numSections; i++)
+            {
+                if (_sectionWidths[i] < 0.01) continue;
+
+                double left = _sectionLeft[i] + sectionGap / 2;
+                double right = _sectionRight[i] - sectionGap / 2;
+                double width = right - left;
+                if (width < 0.01) continue;
+
+                var sectionRect = new Rect(left, -toolDepth / 2, width, toolDepth);
+
+                // Choose color based on button state and on/off status
+                IBrush brush;
+                switch (_sectionButtonState[i])
+                {
+                    case 0: // Off
+                        brush = _sectionOffBrush; // Red
+                        break;
+                    case 2: // On (manual)
+                        brush = _sectionManualOnBrush; // Yellow
+                        break;
+                    case 1: // Auto
+                    default:
+                        brush = _sectionOn[i] ? _sectionAutoOnBrush : _sectionAutoOffBrush; // Green or Gray
+                        break;
+                }
+
+                context.DrawRectangle(brush, _sectionOutlinePen, sectionRect);
+            }
+
+            // If no sections configured, draw as single rectangle (fallback)
+            if (_numSections == 0)
+            {
+                double halfWidth = _toolWidth / 2.0;
+                var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
+                context.DrawRectangle(_toolBrush, _toolPen, toolRect);
+            }
 
             // Draw a center marker line to show tool heading direction
             var centerLine = new Pen(Brushes.White, 0.1);
@@ -1152,6 +1201,41 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _toolWidth = width;
         _hitchX = hitchX;
         _hitchY = hitchY;
+    }
+
+    /// <summary>
+    /// Update section data for individual section rendering.
+    /// </summary>
+    /// <param name="sectionOn">Array of section on/off states</param>
+    /// <param name="buttonStates">Array of button states (0=Off, 1=Auto, 2=On)</param>
+    /// <param name="sectionWidths">Array of section widths in meters</param>
+    /// <param name="numSections">Number of configured sections</param>
+    public void UpdateSectionData(bool[] sectionOn, int[]? buttonStates, double[] sectionWidths, int numSections)
+    {
+        _numSections = Math.Min(numSections, 16);
+
+        // Copy section data
+        for (int i = 0; i < 16; i++)
+        {
+            _sectionOn[i] = i < sectionOn.Length && sectionOn[i];
+            _sectionButtonState[i] = buttonStates != null && i < buttonStates.Length ? buttonStates[i] : 1; // Default to Auto
+            _sectionWidths[i] = i < sectionWidths.Length ? sectionWidths[i] : 1.0;
+        }
+
+        // Calculate section positions (left/right edges relative to tool center)
+        double totalWidth = 0;
+        for (int i = 0; i < _numSections; i++)
+        {
+            totalWidth += _sectionWidths[i];
+        }
+
+        double runningPosition = -totalWidth / 2.0;
+        for (int i = 0; i < _numSections; i++)
+        {
+            _sectionLeft[i] = runningPosition;
+            _sectionRight[i] = runningPosition + _sectionWidths[i];
+            runningPosition += _sectionWidths[i];
+        }
     }
 
     /// <summary>

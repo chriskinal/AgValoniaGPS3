@@ -364,6 +364,13 @@ public partial class MainWindow : Window
                     ViewModel.ToolWidth,
                     ViewModel.HitchEasting,
                     ViewModel.HitchNorthing);
+
+                // Update section data for individual section rendering
+                MapControl.UpdateSectionData(
+                    ViewModel.GetSectionStates(),
+                    ViewModel.GetSectionButtonStates(),
+                    ViewModel.GetSectionWidths(),
+                    ViewModel.NumSections);
             }
         }
         else if (e.PropertyName == nameof(MainViewModel.IsGridOn))
