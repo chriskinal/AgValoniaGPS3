@@ -4,6 +4,8 @@ using Android.OS;
 using Android.Views;
 using Avalonia;
 using Avalonia.Android;
+using Microsoft.Extensions.DependencyInjection;
+using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Android;
 
@@ -29,6 +31,42 @@ public class MainActivity : AvaloniaMainActivity<App>
 
         // Re-enable immersive mode when returning to the app
         EnableImmersiveMode();
+    }
+
+    protected override void OnPause()
+    {
+        base.OnPause();
+
+        // Save app state when going to background
+        SaveAppState();
+    }
+
+    protected override void OnStop()
+    {
+        base.OnStop();
+
+        // Also save on stop in case OnPause wasn't enough
+        SaveAppState();
+    }
+
+    private void SaveAppState()
+    {
+        try
+        {
+            // Save panel positions from MainView
+            App.MainView?.SavePanelPositions();
+
+            // Save settings to ConfigurationStore and disk
+            if (App.Services != null)
+            {
+                var configService = App.Services.GetService<IConfigurationService>();
+                configService?.SaveAppSettings();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainActivity] Error saving app state: {ex.Message}");
+        }
     }
 
     public override void OnWindowFocusChanged(bool hasFocus)

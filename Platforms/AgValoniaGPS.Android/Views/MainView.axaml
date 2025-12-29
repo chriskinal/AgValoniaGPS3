@@ -18,13 +18,31 @@
 
             <!-- Top Status Bar -->
             <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
-                <StackPanel Orientation="Horizontal" Spacing="20">
-                    <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="16"
-                               TextTrimming="CharacterEllipsis" MaxWidth="400"/>
-                    <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="14"/>
-                    <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <!-- Left: Status and GPS info - use MinWidth to prevent layout shifts -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="14"
+                                   TextTrimming="CharacterEllipsis" Width="180"/>
+                        <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="12"
+                                   MinWidth="70"/>
+                        <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="12"
+                                   MinWidth="55"/>
+                        <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F1}ms'}" Foreground="#F39C12" FontSize="12"
+                                   MinWidth="75"/>
+                    </StackPanel>
+
+                    <!-- Right: Field Statistics (when field is active) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10"
+                                IsVisible="{Binding HasActiveField}">
+                        <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="White" FontSize="12" MinWidth="60"/>
+                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
+                        <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="12" FontWeight="Bold" MinWidth="60"/>
+                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
+                        <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F0}%'}" Foreground="#F39C12" FontSize="12" MinWidth="35"/>
+                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
+                        <TextBlock Text="{Binding WorkRateDisplay}" Foreground="#3498DB" FontSize="12" MinWidth="65"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->

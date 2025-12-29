@@ -15,6 +15,9 @@ public partial class App : Avalonia.Application
 {
     private IServiceProvider? _serviceProvider;
 
+    public static IServiceProvider? Services { get; private set; }
+    public static MainView? MainView { get; private set; }
+
     public override void Initialize()
     {
         Console.WriteLine("[App] Initializing...");
@@ -30,21 +33,51 @@ public partial class App : Avalonia.Application
         var services = new ServiceCollection();
         services.AddAgValoniaServices();
         _serviceProvider = services.BuildServiceProvider();
+        Services = _serviceProvider;
 
         // Wire up services that need cross-references
         _serviceProvider.WireUpServices();
 
         Console.WriteLine("[App] Services configured.");
 
+        // Load settings and sync to ConfigurationStore
+        var settingsService = Services.GetRequiredService<ISettingsService>();
+        settingsService.Load();
+        try
+        {
+            var configService = Services.GetRequiredService<IConfigurationService>();
+            configService.LoadAppSettings();
+            Console.WriteLine("[App] Settings loaded and synced to ConfigurationStore.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[App] Error syncing settings: {ex.Message}");
+        }
+
         if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
         {
             Console.WriteLine("[App] Creating MainView...");
 
-            var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
-            var mapService = (MapService)_serviceProvider.GetRequiredService<IMapService>();
+            try
+            {
+                Console.WriteLine("[App] Getting MainViewModel...");
+                var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
+                Console.WriteLine("[App] Getting MapService...");
+                var mapService = (MapService)_serviceProvider.GetRequiredService<IMapService>();
+                Console.WriteLine("[App] Getting CoverageMapService...");
+                var coverageService = _serviceProvider.GetRequiredService<ICoverageMapService>();
+                Console.WriteLine("[App] All services retrieved, creating MainView...");
 
-            singleViewLifetime.MainView = new MainView(viewModel, mapService);
-            Console.WriteLine("[App] MainView created and assigned.");
+                var mainView = new MainView(viewModel, mapService, coverageService);
+                singleViewLifetime.MainView = mainView;
+                MainView = mainView;
+                Console.WriteLine("[App] MainView created and assigned.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[App] Error creating MainView: {ex}");
+                throw;
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
