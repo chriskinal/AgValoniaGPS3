@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 using ReactiveUI;
 using Avalonia.Threading;
+using AgValoniaGPS.Models.Communication;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Services.Interfaces;
 

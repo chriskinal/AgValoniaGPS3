@@ -106,6 +106,12 @@ public partial class MainViewModel
             StatusMessage = IsContourModeOn ? "Contour Mode: ON" : "Contour Mode: OFF";
         });
 
+        DeleteContoursCommand = new RelayCommand(() =>
+        {
+            _coverageMapService.ClearAll();
+            StatusMessage = "Coverage/contours cleared";
+        });
+
         // Delegate to SectionControlViewModel commands (they handle status messages via events)
         ToggleManualModeCommand = Sections.ToggleManualModeCommand;
 

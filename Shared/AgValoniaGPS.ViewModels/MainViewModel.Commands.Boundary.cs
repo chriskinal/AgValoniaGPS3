@@ -47,14 +47,15 @@ public partial class MainViewModel
                 return;
             }
 
-            var boundary = BoundaryRecording.FinishRecording();
-            if (boundary != null && IsFieldOpen && !string.IsNullOrEmpty(CurrentFieldName))
+            var boundaryPolygon = BoundaryRecording.FinishRecording();
+            if (boundaryPolygon != null && IsFieldOpen && !string.IsNullOrEmpty(CurrentFieldName))
             {
+                var boundary = new Boundary { OuterBoundary = boundaryPolygon };
                 var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
                 _boundaryFileService.SaveBoundary(boundary, fieldPath);
                 SetCurrentBoundary(boundary);
                 RefreshBoundaryList();
-                StatusMessage = $"Boundary saved with {boundary.OuterBoundary?.Points.Count ?? 0} points";
+                StatusMessage = $"Boundary saved with {boundaryPolygon.Points.Count} points";
             }
             else
             {
@@ -277,7 +278,7 @@ public partial class MainViewModel
 
             try
             {
-                var result = await _dialogService.ShowBoundaryMapDialogAsync(centerLat, centerLon);
+                var result = await _dialogService.ShowMapBoundaryDialogAsync(centerLat, centerLon);
 
                 if (result?.BoundaryPoints != null && result.BoundaryPoints.Count >= 3)
                 {
@@ -446,8 +447,8 @@ public partial class MainViewModel
 
         SetHeadlandToToolWidthCommand = new RelayCommand(() =>
         {
-            // Set headland distance to implement width (use track width * 2 as approximation)
-            HeadlandDistance = Vehicle.TrackWidth > 0 ? Vehicle.TrackWidth * 2 : 12.0;
+            // Set headland distance to implement width
+            HeadlandDistance = Tool.Width > 0 ? Tool.Width * 2 : 12.0;
             UpdateHeadlandPreview();
         });
 

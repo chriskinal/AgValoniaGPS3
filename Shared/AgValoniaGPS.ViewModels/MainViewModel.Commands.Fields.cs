@@ -200,7 +200,7 @@ public partial class MainViewModel
                 IsFieldOpen = true;
 
                 // Reset LocalPlane so it will be recreated with new origin
-                _simulatorLocalPlane = null;
+                Simulator.ResetLocalPlane();
 
                 // Save as last opened field
                 _settingsService.Settings.LastOpenedField = NewFieldName;
@@ -428,7 +428,7 @@ public partial class MainViewModel
             IsHeadlandOn = false;
 
             // Clear tracks
-            CurrentTrack = null;
+            Tracks.SelectedTrack = null;
 
             // Clear the active field in service
             _fieldService.SetActiveField(null);

@@ -44,6 +44,7 @@ public interface ISharedMapControl
     // Content
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double x, double y, double heading);
+    void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY);
     void SetGridVisible(bool visible);
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();
@@ -134,6 +135,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _vehicleY = 0.0;
     private double _vehicleHeading = 0.0;
 
+    // Tool state
+    private double _toolX = 0.0;
+    private double _toolY = 0.0;
+    private double _toolHeading = 0.0;
+    private double _toolWidth = 0.0;
+    private double _hitchX = 0.0;
+    private double _hitchY = 0.0;
+
     // Mouse interaction
     private bool _isPanning = false;
     private bool _isRotating = false;
@@ -194,6 +203,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private readonly IBrush _pointABrush;
     private readonly IBrush _pointBBrush;
     private IImage? _vehicleImage;
+    private readonly IBrush _toolBrush;
+    private readonly Pen _toolPen;
+    private readonly Pen _hitchPen;
 
     // Render timer
     private readonly DispatcherTimer _renderTimer;
@@ -242,6 +254,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _abLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), 1.5); // Semi-transparent extended line
         _pointABrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)); // Green Point A
         _pointBBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0)); // Red Point B
+        _toolBrush = new SolidColorBrush(Color.FromArgb(150, 255, 100, 50)); // Semi-transparent orange/red tool body
+        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 150, 0)), 1.0); // Orange outline
+        _hitchPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 0)), 1.0); // Bright yellow hitch line
 
         // Load vehicle (tractor) image from embedded resources
         LoadVehicleImage();
@@ -358,6 +373,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_youTurnPath != null && _youTurnPath.Count > 1)
             {
                 DrawYouTurnPath(context);
+            }
+
+            // Draw tool BEFORE vehicle (so vehicle appears on top)
+            if (ShowVehicle && _toolWidth > 0.1)
+            {
+                DrawTool(context);
             }
 
             // Draw vehicle (can be hidden for headland editing mode)
@@ -560,6 +581,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             Console.WriteLine($"[DrawingContextMapControl] Failed to load tractor image: {ex.Message}");
             // Fallback to triangle drawing if image fails to load
+        }
+    }
+
+    private void DrawTool(DrawingContext context)
+    {
+        // Don't draw if tool has no width (not configured or zero width)
+        if (_toolWidth < 0.1) return;
+
+        double halfWidth = _toolWidth / 2.0;
+        double toolDepth = 2.0; // Tool depth in meters (front to back)
+
+        // Draw hitch line from vehicle hitch point to tool center
+        context.DrawLine(_hitchPen, new Point(_hitchX, _hitchY), new Point(_toolX, _toolY));
+
+        // Draw tool rectangle centered at tool position, rotated to tool heading
+        using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
+        using (context.PushTransform(Matrix.CreateRotation(-_toolHeading))) // Negated for screen coordinates
+        {
+            // Tool rectangle: width extends left/right, depth extends front/back
+            // In local coordinates: X is perpendicular (width), Y is along heading (depth)
+            var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
+            context.DrawRectangle(_toolBrush, _toolPen, toolRect);
+
+            // Draw a center marker line to show tool heading direction
+            var centerLine = new Pen(Brushes.White, 0.1);
+            context.DrawLine(centerLine, new Point(0, -toolDepth / 2), new Point(0, toolDepth / 2));
         }
     }
 
@@ -1095,6 +1142,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             ApplyAutoPan();
         }
+    }
+
+    public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY)
+    {
+        _toolX = x;
+        _toolY = y;
+        _toolHeading = heading;
+        _toolWidth = width;
+        _hitchX = hitchX;
+        _hitchY = hitchY;
     }
 
     /// <summary>

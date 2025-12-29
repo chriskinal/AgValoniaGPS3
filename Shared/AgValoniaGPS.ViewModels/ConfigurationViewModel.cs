@@ -742,6 +742,9 @@ public class ConfigurationViewModel : ReactiveObject
     public ICommand EditAntennaPivotCommand { get; private set; } = null!;
     public ICommand EditAntennaHeightCommand { get; private set; } = null!;
     public ICommand EditAntennaOffsetCommand { get; private set; } = null!;
+    public ICommand SetAntennaOffsetLeftCommand { get; private set; } = null!;
+    public ICommand SetAntennaOffsetCenterCommand { get; private set; } = null!;
+    public ICommand SetAntennaOffsetRightCommand { get; private set; } = null!;
 
     // Tool Tab Edit Commands
     public ICommand EditToolWidthCommand { get; private set; } = null!;
@@ -990,6 +993,29 @@ public class ConfigurationViewModel : ReactiveObject
             ShowNumericInput("Antenna Offset", Vehicle.AntennaOffset,
                 v => Vehicle.AntennaOffset = v,
                 "m", integerOnly: false, allowNegative: true, min: -5, max: 5));
+
+        // Antenna offset direction buttons - set the SIGN of the current offset
+        // Left = antenna is LEFT of tractor center = negative offset
+        // Center = antenna is on centerline = zero offset
+        // Right = antenna is RIGHT of tractor center = positive offset
+        SetAntennaOffsetLeftCommand = new RelayCommand(() =>
+        {
+            Vehicle.AntennaOffset = -Math.Abs(Vehicle.AntennaOffset);
+            if (Math.Abs(Vehicle.AntennaOffset) < 0.01)
+                Vehicle.AntennaOffset = -0.5; // Default to 0.5m if currently zero
+        });
+
+        SetAntennaOffsetCenterCommand = new RelayCommand(() =>
+        {
+            Vehicle.AntennaOffset = 0;
+        });
+
+        SetAntennaOffsetRightCommand = new RelayCommand(() =>
+        {
+            Vehicle.AntennaOffset = Math.Abs(Vehicle.AntennaOffset);
+            if (Math.Abs(Vehicle.AntennaOffset) < 0.01)
+                Vehicle.AntennaOffset = 0.5; // Default to 0.5m if currently zero
+        });
     }
 
     private void InitializeToolEditCommands()

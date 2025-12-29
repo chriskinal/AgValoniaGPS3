@@ -7,6 +7,10 @@ using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
 using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
+using AgValoniaGPS.Services.Tool;
+using AgValoniaGPS.Services.Coverage;
+using AgValoniaGPS.Services.Section;
+using AgValoniaGPS.Services.Tram;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
@@ -63,6 +67,22 @@ public static class ServiceCollectionExtensions
         // YouTurn services
         services.AddSingleton<YouTurnCreationService>();
         services.AddSingleton<YouTurnGuidanceService>();
+
+        // Tool position service (for trailing implements)
+        services.AddSingleton<IToolPositionService, ToolPositionService>();
+
+        // Worked area calculation service
+        services.AddSingleton<IWorkedAreaService, WorkedAreaService>();
+
+        // Coverage map service (tracks worked area as triangle strips)
+        services.AddSingleton<ICoverageMapService, CoverageMapService>();
+
+        // Section control service (automatic section on/off based on coverage, boundaries, headlands)
+        services.AddSingleton<ISectionControlService, SectionControlService>();
+
+        // Tram line services (controlled traffic farming)
+        services.AddSingleton<ITramLineOffsetService, TramLineOffsetService>();
+        services.AddSingleton<ITramLineService, TramLineService>();
 
         // Vehicle profile service
         services.AddSingleton<IVehicleProfileService, VehicleProfileService>();

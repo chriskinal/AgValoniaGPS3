@@ -328,7 +328,7 @@ public class SimulatorViewModel : ReactiveObject
         var gpsData = new GpsData
         {
             CurrentPosition = position,
-            FixQuality = simulatedData.FixQuality,
+            FixQuality = 4, // RTK Fix (simulator always reports RTK)
             SatellitesInUse = simulatedData.SatellitesTracked,
             Hdop = simulatedData.Hdop,
             IsValid = true,

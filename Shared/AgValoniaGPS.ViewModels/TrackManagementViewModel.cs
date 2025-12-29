@@ -7,6 +7,7 @@ using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Track;
+using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels;

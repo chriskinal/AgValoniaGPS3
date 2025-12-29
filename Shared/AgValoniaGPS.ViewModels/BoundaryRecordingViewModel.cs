@@ -22,7 +22,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
 
     // Events for MainViewModel to subscribe to
     public event EventHandler<string>? StatusMessageChanged;
-    public event EventHandler<Boundary?>? RecordingFinished;
+    public event EventHandler<BoundaryPolygon?>? RecordingFinished;
 
     public BoundaryRecordingViewModel(
         IBoundaryRecordingService recordingService,
@@ -165,7 +165,8 @@ public class BoundaryRecordingViewModel : ReactiveObject
         get => _offset;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _offset, value))
+            this.RaiseAndSetIfChanged(ref _offset, value);
+            if (true)
             {
                 UpdateOffsetIndicator();
             }
@@ -239,7 +240,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
 
         ResumeRecordingCommand = new RelayCommand(() =>
         {
-            if (_recordingService.IsPaused)
+            if (_recordingService.State == BoundaryRecordingState.Paused)
             {
                 _recordingService.ResumeRecording();
                 StatusMessageChanged?.Invoke(this, "Boundary recording resumed");
@@ -248,7 +249,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
 
         ToggleRecordingCommand = new RelayCommand(() =>
         {
-            if (_recordingService.IsPaused)
+            if (_recordingService.State == BoundaryRecordingState.Paused)
             {
                 _recordingService.ResumeRecording();
                 StatusMessageChanged?.Invoke(this, "Recording resumed");
@@ -309,7 +310,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
     /// Finish recording and return the boundary.
     /// </summary>
     /// <returns>The completed boundary, or null if recording failed.</returns>
-    public Boundary? FinishRecording()
+    public BoundaryPolygon? FinishRecording()
     {
         if (!_recordingService.IsRecording)
         {
@@ -317,7 +318,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
             return null;
         }
 
-        var boundary = _recordingService.FinishRecording();
+        var boundary = _recordingService.StopRecording();
         IsPlayerPanelVisible = false;
 
         if (boundary != null)
@@ -335,7 +336,7 @@ public class BoundaryRecordingViewModel : ReactiveObject
     /// <summary>
     /// Check if recording is active (either recording or paused).
     /// </summary>
-    public bool IsActive => _recordingService.IsRecording || _recordingService.IsPaused;
+    public bool IsActive => _recordingService.IsRecording || _recordingService.State == BoundaryRecordingState.Paused;
 
     #endregion
 

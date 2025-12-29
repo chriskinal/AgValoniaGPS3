@@ -318,15 +318,18 @@
                     </Button>
                     <TextBlock Text="Antenna Offset" Classes="SectionLabel" HorizontalAlignment="Left" Margin="0,4,0,0"/>
 
-                    <!-- Offset selector buttons -->
+                    <!-- Offset selector buttons: Left = antenna left of center (negative), Right = antenna right of center (positive) -->
                     <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Left" Margin="0,8,0,0">
-                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Left Offset">
+                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Antenna Left of Center"
+                                Command="{Binding SetAntennaOffsetLeftCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png" Stretch="Uniform"/>
                         </Button>
-                        <Button Width="50" Height="36" Padding="4" Background="#4A9A7E" ToolTip.Tip="No Offset (Center)">
+                        <Button Width="50" Height="36" Padding="4" Background="#4A9A7E" ToolTip.Tip="Antenna on Centerline"
+                                Command="{Binding SetAntennaOffsetCenterCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png" Stretch="Uniform"/>
                         </Button>
-                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Right Offset">
+                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Antenna Right of Center"
+                                Command="{Binding SetAntennaOffsetRightCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png" Stretch="Uniform"/>
                         </Button>
                     </StackPanel>

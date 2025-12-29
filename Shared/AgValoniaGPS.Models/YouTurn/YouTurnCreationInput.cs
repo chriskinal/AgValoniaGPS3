@@ -63,6 +63,13 @@ namespace AgValoniaGPS.Models.YouTurn
         public int TurnStartOffset { get; set; }  // How far before/after boundary to start turn
 
         /// <summary>
+        /// Pre-calculated turn offset in meters (perpendicular distance to next track).
+        /// When set (> 0), this value is used directly instead of calculating from RowSkipsWidth.
+        /// This ensures the U-turn arc matches the cyan next-track line exactly.
+        /// </summary>
+        public double TurnOffset { get; set; }
+
+        /// <summary>
         /// How many paths away from current line (negative or positive).
         /// </summary>
         public int HowManyPathsAway { get; set; }

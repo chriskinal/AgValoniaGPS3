@@ -32,6 +32,7 @@ public class ConfigurationStore : ReactiveObject
     public ConnectionConfig Connections { get; } = new();
     public AhrsConfig Ahrs { get; } = new();
     public MachineConfig Machine { get; } = new();
+    public TramConfig Tram { get; } = new();
 
     // Profile management
     private string _activeProfileName = "Default";
@@ -70,6 +71,23 @@ public class ConfigurationStore : ReactiveObject
     {
         get => _numSections;
         set => this.RaiseAndSetIfChanged(ref _numSections, Math.Clamp(value, 1, 16));
+    }
+
+    /// <summary>
+    /// Calculates actual tool width from active sections (in meters).
+    /// Use this for guidance calculations instead of Tool.Width.
+    /// </summary>
+    public double ActualToolWidth
+    {
+        get
+        {
+            double total = 0;
+            for (int i = 0; i < _numSections && i < 16; i++)
+            {
+                total += Tool.GetSectionWidth(i) / 100.0; // cm to meters
+            }
+            return total > 0 ? total : Tool.Width; // Fallback to stored width if no sections
+        }
     }
 
     private double[] _sectionPositions = new double[17];

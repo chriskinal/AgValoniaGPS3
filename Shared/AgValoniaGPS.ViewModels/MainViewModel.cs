@@ -44,6 +44,8 @@ public partial class MainViewModel : ReactiveObject
     private readonly IConfigurationService _configurationService;
     private readonly IAutoSteerService _autoSteerService;
     private readonly IModuleCommunicationService _moduleCommunicationService;
+    private readonly IToolPositionService _toolPositionService;
+    private readonly ICoverageMapService _coverageMapService;
     private readonly ApplicationState _appState;
 
     /// <summary>
@@ -128,6 +130,14 @@ public partial class MainViewModel : ReactiveObject
     private double _northing;
     private double _heading;
 
+    // Tool position (for rendering)
+    private double _toolEasting;
+    private double _toolNorthing;
+    private double _toolHeading;
+    private double _toolWidth;
+    private double _hitchEasting;
+    private double _hitchNorthing;
+
     // Field properties
     private Field? _activeField;
     private string _fieldsRootDirectory = string.Empty;
@@ -155,6 +165,8 @@ public partial class MainViewModel : ReactiveObject
         IConfigurationService configurationService,
         IAutoSteerService autoSteerService,
         IModuleCommunicationService moduleCommunicationService,
+        IToolPositionService toolPositionService,
+        ICoverageMapService coverageMapService,
         ApplicationState appState)
     {
         _udpService = udpService;
@@ -176,6 +188,8 @@ public partial class MainViewModel : ReactiveObject
         _configurationService = configurationService;
         _autoSteerService = autoSteerService;
         _moduleCommunicationService = moduleCommunicationService;
+        _toolPositionService = toolPositionService;
+        _coverageMapService = coverageMapService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -183,6 +197,18 @@ public partial class MainViewModel : ReactiveObject
         // Create SimulatorViewModel (handles simulator UI and commands)
         Simulator = new SimulatorViewModel(simulatorService, settingsService, appState);
         Simulator.SimulatedGpsDataReceived += OnSimulatorGpsDataReceived;
+        // Forward property changes from Simulator to MainViewModel delegating properties
+        Simulator.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(SimulatorViewModel.IsPanelVisible))
+                this.RaisePropertyChanged(nameof(IsSimulatorPanelVisible));
+            else if (e.PropertyName == nameof(SimulatorViewModel.IsEnabled))
+                this.RaisePropertyChanged(nameof(IsSimulatorEnabled));
+            else if (e.PropertyName == nameof(SimulatorViewModel.SteerAngle))
+                this.RaisePropertyChanged(nameof(SimulatorSteerAngle));
+            else if (e.PropertyName == nameof(SimulatorViewModel.SpeedKph))
+                this.RaisePropertyChanged(nameof(SimulatorSpeedKph));
+        };
 
         // Create YouTurnViewModel (handles U-turn path creation, triggering, and guidance)
         YouTurn = new YouTurnViewModel(
@@ -225,6 +251,7 @@ public partial class MainViewModel : ReactiveObject
         // Note: Boundary recording events handled via BoundaryRecordingViewModel
         // Note: Section master toggle events handled via SectionControlViewModel
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
+        _toolPositionService.PositionUpdated += OnToolPositionUpdated;
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -730,6 +757,83 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _heading, value);
     }
 
+    // Tool position properties (for map rendering)
+    public double ToolEasting
+    {
+        get => _toolEasting;
+        set => this.RaiseAndSetIfChanged(ref _toolEasting, value);
+    }
+
+    public double ToolNorthing
+    {
+        get => _toolNorthing;
+        set => this.RaiseAndSetIfChanged(ref _toolNorthing, value);
+    }
+
+    public double ToolHeadingRadians
+    {
+        get => _toolHeading;
+        set => this.RaiseAndSetIfChanged(ref _toolHeading, value);
+    }
+
+    public double ToolWidth
+    {
+        get => _toolWidth;
+        set => this.RaiseAndSetIfChanged(ref _toolWidth, value);
+    }
+
+    public double HitchEasting
+    {
+        get => _hitchEasting;
+        set => this.RaiseAndSetIfChanged(ref _hitchEasting, value);
+    }
+
+    public double HitchNorthing
+    {
+        get => _hitchNorthing;
+        set => this.RaiseAndSetIfChanged(ref _hitchNorthing, value);
+    }
+
+    private void OnToolPositionUpdated(object? sender, Services.Interfaces.ToolPositionUpdatedEventArgs e)
+    {
+        // Update tool position properties for map rendering
+        // This fires after each GPS update when ToolPositionService.Update() is called
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            UpdateToolPositionProperties(e);
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateToolPositionProperties(e));
+        }
+    }
+
+    private void UpdateToolPositionProperties(Services.Interfaces.ToolPositionUpdatedEventArgs e)
+    {
+        var config = Models.Configuration.ConfigurationStore.Instance;
+
+        // Calculate actual tool width from active sections (section widths are in cm)
+        double totalWidthMeters = 0;
+        int numSections = config.NumSections;
+        for (int i = 0; i < numSections && i < 16; i++)
+        {
+            totalWidthMeters += config.Tool.GetSectionWidth(i) / 100.0; // cm to meters
+        }
+
+        // Get hitch position from the service
+        var hitchPos = _toolPositionService.HitchPosition;
+
+        // Set all properties BEFORE ToolEasting (which triggers the view update)
+        ToolNorthing = e.ToolPosition.Northing;
+        ToolHeadingRadians = e.ToolHeading;
+        ToolWidth = totalWidthMeters; // Use calculated width from sections
+        HitchEasting = hitchPos.Easting;
+        HitchNorthing = hitchPos.Northing;
+
+        // Set ToolEasting LAST - this triggers the PropertyChanged that updates the map
+        ToolEasting = e.ToolPosition.Easting;
+    }
+
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot state)
     {
         // Update latency display from AutoSteer pipeline
@@ -966,7 +1070,7 @@ public partial class MainViewModel : ReactiveObject
     /// <summary>
     /// Handle boundary recording finished - save the boundary to the field.
     /// </summary>
-    private void OnBoundaryRecordingFinished(object? sender, Boundary? boundary)
+    private void OnBoundaryRecordingFinished(object? sender, BoundaryPolygon? boundaryPolygon)
     {
         // This is handled via StopBoundaryRecordingCommand which saves the boundary
         // Additional post-recording logic can be added here if needed
@@ -2613,6 +2717,7 @@ public partial class MainViewModel : ReactiveObject
 
     // Right Navigation Panel Commands
     public ICommand? ToggleContourModeCommand { get; private set; }
+    public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? ToggleManualModeCommand { get; private set; }
     public ICommand? ToggleSectionMasterCommand { get; private set; }
     public ICommand? ToggleYouTurnCommand { get; private set; }
