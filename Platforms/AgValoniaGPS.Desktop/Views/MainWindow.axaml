@@ -93,6 +93,7 @@
             <panels:SectionControlPanel x:Name="SectionControlPanel"
                                         Canvas.Left="900" Canvas.Top="600"
                                         Cursor="Hand"
+                                        DataContext="{Binding}"
                                         PointerPressed="SectionControl_PointerPressed"
                                         PointerMoved="SectionControl_PointerMoved"
                                         PointerReleased="SectionControl_PointerReleased"/>

@@ -118,6 +118,15 @@ public class MainViewModel : ReactiveObject
     private bool _section5Active;
     private bool _section6Active;
     private bool _section7Active;
+    private bool _section8Active;
+    private bool _section9Active;
+    private bool _section10Active;
+    private bool _section11Active;
+    private bool _section12Active;
+    private bool _section13Active;
+    private bool _section14Active;
+    private bool _section15Active;
+    private bool _section16Active;
 
     // Section color codes (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
     private int _section1ColorCode;
@@ -126,6 +135,20 @@ public class MainViewModel : ReactiveObject
     private int _section4ColorCode;
     private int _section5ColorCode;
     private int _section6ColorCode;
+    private int _section7ColorCode;
+    private int _section8ColorCode;
+    private int _section9ColorCode;
+    private int _section10ColorCode;
+    private int _section11ColorCode;
+    private int _section12ColorCode;
+    private int _section13ColorCode;
+    private int _section14ColorCode;
+    private int _section15ColorCode;
+    private int _section16ColorCode;
+
+    // Cached section count for binding
+    private int _numSections;
+
     // Hello status (connection health)
     private bool _isAutoSteerHelloOk;
     private bool _isMachineHelloOk;
@@ -227,6 +250,16 @@ public class MainViewModel : ReactiveObject
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
         _toolPositionService.PositionUpdated += OnToolPositionUpdated;
         _sectionControlService.SectionStateChanged += OnSectionStateChanged;
+
+        // Subscribe to ConfigurationStore changes to update NumSections
+        _numSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
+        Models.Configuration.ConfigurationStore.Instance.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(Models.Configuration.ConfigurationStore.NumSections))
+            {
+                NumSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
+            }
+        };
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
@@ -567,6 +600,60 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _section7Active, value);
     }
 
+    public bool Section8Active
+    {
+        get => _section8Active;
+        set => this.RaiseAndSetIfChanged(ref _section8Active, value);
+    }
+
+    public bool Section9Active
+    {
+        get => _section9Active;
+        set => this.RaiseAndSetIfChanged(ref _section9Active, value);
+    }
+
+    public bool Section10Active
+    {
+        get => _section10Active;
+        set => this.RaiseAndSetIfChanged(ref _section10Active, value);
+    }
+
+    public bool Section11Active
+    {
+        get => _section11Active;
+        set => this.RaiseAndSetIfChanged(ref _section11Active, value);
+    }
+
+    public bool Section12Active
+    {
+        get => _section12Active;
+        set => this.RaiseAndSetIfChanged(ref _section12Active, value);
+    }
+
+    public bool Section13Active
+    {
+        get => _section13Active;
+        set => this.RaiseAndSetIfChanged(ref _section13Active, value);
+    }
+
+    public bool Section14Active
+    {
+        get => _section14Active;
+        set => this.RaiseAndSetIfChanged(ref _section14Active, value);
+    }
+
+    public bool Section15Active
+    {
+        get => _section15Active;
+        set => this.RaiseAndSetIfChanged(ref _section15Active, value);
+    }
+
+    public bool Section16Active
+    {
+        get => _section16Active;
+        set => this.RaiseAndSetIfChanged(ref _section16Active, value);
+    }
+
     // Section color codes for panel buttons (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
     public int Section1ColorCode
     {
@@ -602,6 +689,66 @@ public class MainViewModel : ReactiveObject
     {
         get => _section6ColorCode;
         set => this.RaiseAndSetIfChanged(ref _section6ColorCode, value);
+    }
+
+    public int Section7ColorCode
+    {
+        get => _section7ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section7ColorCode, value);
+    }
+
+    public int Section8ColorCode
+    {
+        get => _section8ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section8ColorCode, value);
+    }
+
+    public int Section9ColorCode
+    {
+        get => _section9ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section9ColorCode, value);
+    }
+
+    public int Section10ColorCode
+    {
+        get => _section10ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section10ColorCode, value);
+    }
+
+    public int Section11ColorCode
+    {
+        get => _section11ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section11ColorCode, value);
+    }
+
+    public int Section12ColorCode
+    {
+        get => _section12ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section12ColorCode, value);
+    }
+
+    public int Section13ColorCode
+    {
+        get => _section13ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section13ColorCode, value);
+    }
+
+    public int Section14ColorCode
+    {
+        get => _section14ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section14ColorCode, value);
+    }
+
+    public int Section15ColorCode
+    {
+        get => _section15ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section15ColorCode, value);
+    }
+
+    public int Section16ColorCode
+    {
+        get => _section16ColorCode;
+        set => this.RaiseAndSetIfChanged(ref _section16ColorCode, value);
     }
 
     /// <summary>
@@ -649,7 +796,11 @@ public class MainViewModel : ReactiveObject
     /// <summary>
     /// Number of configured sections for map rendering.
     /// </summary>
-    public int NumSections => Models.Configuration.ConfigurationStore.Instance.NumSections;
+    public int NumSections
+    {
+        get => _numSections;
+        private set => this.RaiseAndSetIfChanged(ref _numSections, value);
+    }
 
     // AutoSteer Hello and Data properties
     public bool IsAutoSteerHelloOk
@@ -666,8 +817,7 @@ public class MainViewModel : ReactiveObject
 
     // Right Navigation Panel Properties
     private bool _isContourModeOn;
-    private bool _isManualSectionMode;
-    private bool _isSectionMasterOn = false; // Default off
+    // IsManualSectionMode and IsSectionMasterOn are now computed from _sectionControlService.MasterState
     private bool _isAutoSteerAvailable;
     private bool _isAutoSteerEngaged;
     private bool _isYouTurnEnabled; // YouTurn auto U-turn feature
@@ -678,16 +828,20 @@ public class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
     }
 
+    // Button state tracking - these just track what the convenience buttons last did
+    private bool _isManualAllOn;
+    private bool _isAutoAllOn;
+
     public bool IsManualSectionMode
     {
-        get => _isManualSectionMode;
-        set => this.RaiseAndSetIfChanged(ref _isManualSectionMode, value);
+        get => _isManualAllOn;
+        set => this.RaiseAndSetIfChanged(ref _isManualAllOn, value);
     }
 
     public bool IsSectionMasterOn
     {
-        get => _isSectionMasterOn;
-        set => this.RaiseAndSetIfChanged(ref _isSectionMasterOn, value);
+        get => _isAutoAllOn;
+        set => this.RaiseAndSetIfChanged(ref _isAutoAllOn, value);
     }
 
     public bool IsAutoSteerAvailable
@@ -989,6 +1143,15 @@ public class MainViewModel : ReactiveObject
         Section5Active = states.Count > 4 && states[4].IsOn;
         Section6Active = states.Count > 5 && states[5].IsOn;
         Section7Active = states.Count > 6 && states[6].IsOn;
+        Section8Active = states.Count > 7 && states[7].IsOn;
+        Section9Active = states.Count > 8 && states[8].IsOn;
+        Section10Active = states.Count > 9 && states[9].IsOn;
+        Section11Active = states.Count > 10 && states[10].IsOn;
+        Section12Active = states.Count > 11 && states[11].IsOn;
+        Section13Active = states.Count > 12 && states[12].IsOn;
+        Section14Active = states.Count > 13 && states[13].IsOn;
+        Section15Active = states.Count > 14 && states[14].IsOn;
+        Section16Active = states.Count > 15 && states[15].IsOn;
 
         // Update color codes for panel buttons (matching map rendering colors)
         // 0=Red (Off), 1=Yellow (Manual On), 2=Green (Auto On), 3=Gray (Auto Off)
@@ -998,6 +1161,16 @@ public class MainViewModel : ReactiveObject
         Section4ColorCode = states.Count > 3 ? GetSectionColorCode(states[3]) : 0;
         Section5ColorCode = states.Count > 4 ? GetSectionColorCode(states[4]) : 0;
         Section6ColorCode = states.Count > 5 ? GetSectionColorCode(states[5]) : 0;
+        Section7ColorCode = states.Count > 6 ? GetSectionColorCode(states[6]) : 0;
+        Section8ColorCode = states.Count > 7 ? GetSectionColorCode(states[7]) : 0;
+        Section9ColorCode = states.Count > 8 ? GetSectionColorCode(states[8]) : 0;
+        Section10ColorCode = states.Count > 9 ? GetSectionColorCode(states[9]) : 0;
+        Section11ColorCode = states.Count > 10 ? GetSectionColorCode(states[10]) : 0;
+        Section12ColorCode = states.Count > 11 ? GetSectionColorCode(states[11]) : 0;
+        Section13ColorCode = states.Count > 12 ? GetSectionColorCode(states[12]) : 0;
+        Section14ColorCode = states.Count > 13 ? GetSectionColorCode(states[13]) : 0;
+        Section15ColorCode = states.Count > 14 ? GetSectionColorCode(states[14]) : 0;
+        Section16ColorCode = states.Count > 15 ? GetSectionColorCode(states[15]) : 0;
     }
 
     /// <summary>
@@ -5758,22 +5931,42 @@ public class MainViewModel : ReactiveObject
             StatusMessage = "Coverage/contours cleared";
         });
 
+        // Manual All button: Toggle all sections between On (green) and Off (red)
         ToggleManualModeCommand = new RelayCommand(() =>
         {
             IsManualSectionMode = !IsManualSectionMode;
-            StatusMessage = IsManualSectionMode ? "Manual section mode ON" : "Manual section mode OFF";
+
+            // Turn off Auto button if turning on Manual
+            if (IsManualSectionMode)
+                IsSectionMasterOn = false;
+
+            // Set all sections
+            var newState = IsManualSectionMode ? SectionButtonState.On : SectionButtonState.Off;
+            for (int i = 0; i < _sectionControlService.NumSections; i++)
+            {
+                _sectionControlService.SetSectionState(i, newState);
+            }
+
+            StatusMessage = IsManualSectionMode ? "All sections ON" : "All sections OFF";
         });
 
+        // Auto All button: Toggle all sections between Auto (yellow) and Off (red)
         ToggleSectionMasterCommand = new RelayCommand(() =>
         {
             IsSectionMasterOn = !IsSectionMasterOn;
 
-            // Update section control service master state
-            _sectionControlService.MasterState = IsSectionMasterOn
-                ? SectionMasterState.Auto
-                : SectionMasterState.Off;
+            // Turn off Manual button if turning on Auto
+            if (IsSectionMasterOn)
+                IsManualSectionMode = false;
 
-            StatusMessage = IsSectionMasterOn ? "Section master ON" : "Section master OFF";
+            // Set all sections
+            var newState = IsSectionMasterOn ? SectionButtonState.Auto : SectionButtonState.Off;
+            for (int i = 0; i < _sectionControlService.NumSections; i++)
+            {
+                _sectionControlService.SetSectionState(i, newState);
+            }
+
+            StatusMessage = IsSectionMasterOn ? "All sections AUTO" : "All sections OFF";
         });
 
         // Parameterized command for toggling individual sections (0-based index)
@@ -5802,6 +5995,7 @@ public class MainViewModel : ReactiveObject
                 SectionButtonState.On => SectionButtonState.Off,
                 _ => SectionButtonState.Off
             };
+
             _sectionControlService.SetSectionState(sectionIndex, newState);
             StatusMessage = $"Section {sectionIndex + 1}: {newState}";
         });

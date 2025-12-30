@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="60"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="100"
              x:Class="AgValoniaGPS.Views.Controls.Panels.SectionControlPanel"
              x:DataType="vm:MainViewModel">
 
@@ -17,7 +17,7 @@
         <Style Selector="Button.SectionButton">
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Height" Value="32"/>
-            <Setter Property="Width" Value="45"/>
+            <Setter Property="Width" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="#333"/>
@@ -47,53 +47,128 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
     </UserControl.Styles>
 
     <!-- Floating panel with section indicators -->
-    <Border Background="#DD2C3E50" CornerRadius="12" Padding="15"
+    <Border Background="#DD2C3E50" CornerRadius="12" Padding="12"
             BoxShadow="0 4 16 2 #40000000">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <!-- Drag handle -->
-            <TextBlock Text="&#x2261;" Foreground="#888" FontSize="16" FontWeight="Bold"
-                       VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <TextBlock Text="Sections" Foreground="White" FontSize="12" FontWeight="Bold"
-                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <!-- Drag handle and label -->
+            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="0,0,4,0">
+                <TextBlock Text="&#x2261;" Foreground="#888" FontSize="16" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Sect" Foreground="White" FontSize="10" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
 
-            <!-- Section buttons - tap to cycle Off -> Auto -> On -> Off -->
-            <!-- Background color matches map section color via converter -->
-            <StackPanel Orientation="Horizontal" Spacing="4">
-                <Button Classes="SectionButton"
-                        Background="{Binding Section1ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="0">
-                    <TextBlock Text="1"/>
-                </Button>
-                <Button Classes="SectionButton"
-                        Background="{Binding Section2ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="1">
-                    <TextBlock Text="2"/>
-                </Button>
-                <Button Classes="SectionButton"
-                        Background="{Binding Section3ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="2">
-                    <TextBlock Text="3"/>
-                </Button>
-                <Button Classes="SectionButton"
-                        Background="{Binding Section4ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="3">
-                    <TextBlock Text="4"/>
-                </Button>
-                <Button Classes="SectionButton"
-                        Background="{Binding Section5ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="4">
-                    <TextBlock Text="5"/>
-                </Button>
-                <Button Classes="SectionButton"
-                        Background="{Binding Section6ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
-                        Command="{Binding ToggleSectionCommand}" CommandParameter="5">
-                    <TextBlock Text="6"/>
-                </Button>
+            <!-- Section buttons - 2 rows of up to 8 each -->
+            <StackPanel Orientation="Vertical" Spacing="4">
+                <!-- Row 1: Sections 1-8 -->
+                <StackPanel Orientation="Horizontal" Spacing="3">
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section1ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="0"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=0}">
+                        <TextBlock Text="1"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section2ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="1"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=1}">
+                        <TextBlock Text="2"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section3ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="2"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=2}">
+                        <TextBlock Text="3"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section4ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="3"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=3}">
+                        <TextBlock Text="4"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section5ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="4"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=4}">
+                        <TextBlock Text="5"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section6ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="5"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=5}">
+                        <TextBlock Text="6"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section7ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="6"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=6}">
+                        <TextBlock Text="7"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section8ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="7"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=7}">
+                        <TextBlock Text="8"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Row 2: Sections 9-16 (only visible if > 8 sections) -->
+                <StackPanel Orientation="Horizontal" Spacing="3"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=8}">
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section9ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="8"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=8}">
+                        <TextBlock Text="9"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section10ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="9"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=9}">
+                        <TextBlock Text="10"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section11ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="10"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=10}">
+                        <TextBlock Text="11"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section12ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="11"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=11}">
+                        <TextBlock Text="12"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section13ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="12"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=12}">
+                        <TextBlock Text="13"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section14ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="13"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=13}">
+                        <TextBlock Text="14"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section15ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="14"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=14}">
+                        <TextBlock Text="15"/>
+                    </Button>
+                    <Button Classes="SectionButton"
+                            Background="{Binding Section16ColorCode, Converter={StaticResource SectionColorCodeToBackground}}"
+                            Command="{Binding ToggleSectionCommand}" CommandParameter="15"
+                            IsVisible="{Binding NumSections, Converter={x:Static converters:IntGreaterThanConverter.Instance}, ConverterParameter=15}">
+                        <TextBlock Text="16"/>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
     </Border>

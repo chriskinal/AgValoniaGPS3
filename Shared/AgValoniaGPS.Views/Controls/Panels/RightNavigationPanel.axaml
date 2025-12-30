@@ -85,8 +85,8 @@
                 </Panel>
             </Button>
 
-            <!-- 2. Manual Mode Toggle -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="Manual Sections On/Off"
+            <!-- 2. Manual Mode Toggle - All sections Manual On/Off -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Manual On/Off"
                     Command="{Binding ToggleManualModeCommand}">
                 <Panel>
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ManualOn.png" Stretch="Uniform"
@@ -96,8 +96,8 @@
                 </Panel>
             </Button>
 
-            <!-- 3. Section Master Toggle -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="Section Master On/Off"
+            <!-- 3. Section Master Toggle - All sections Auto/Off -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Auto/Off"
                     Command="{Binding ToggleSectionMasterCommand}">
                 <Panel>
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOn.png" Stretch="Uniform"

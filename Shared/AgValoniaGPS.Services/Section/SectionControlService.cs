@@ -97,16 +97,6 @@ public class SectionControlService : ISectionControlService
         var tool = ConfigurationStore.Instance.Tool;
         int numSections = NumSections;
 
-        // If master is off, turn everything off
-        if (_masterState == SectionMasterState.Off)
-        {
-            for (int i = 0; i < numSections; i++)
-            {
-                UpdateSectionOff(i);
-            }
-            return;
-        }
-
         // Check if speed is below cutoff
         if (speed < tool.SlowSpeedCutoff)
         {
@@ -161,13 +151,7 @@ public class SectionControlService : ISectionControlService
             return;
         }
 
-        // Auto mode - check conditions
-        if (_masterState == SectionMasterState.Manual)
-        {
-            // In manual master mode, sections stay as-is unless button overrides
-            return;
-        }
-
+        // Auto mode - check boundary/overlap conditions
         // Calculate look-ahead distances
         double lookAheadOnDist = speed * tool.LookAheadOnSetting;
         double lookAheadOffDist = speed * tool.LookAheadOffSetting;

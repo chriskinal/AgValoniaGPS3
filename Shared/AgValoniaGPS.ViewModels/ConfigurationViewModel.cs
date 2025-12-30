@@ -459,6 +459,14 @@ public class ConfigurationViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(SectionColor6));
         this.RaisePropertyChanged(nameof(SectionColor7));
         this.RaisePropertyChanged(nameof(SectionColor8));
+        this.RaisePropertyChanged(nameof(SectionColor9));
+        this.RaisePropertyChanged(nameof(SectionColor10));
+        this.RaisePropertyChanged(nameof(SectionColor11));
+        this.RaisePropertyChanged(nameof(SectionColor12));
+        this.RaisePropertyChanged(nameof(SectionColor13));
+        this.RaisePropertyChanged(nameof(SectionColor14));
+        this.RaisePropertyChanged(nameof(SectionColor15));
+        this.RaisePropertyChanged(nameof(SectionColor16));
     }
 
     #endregion
@@ -773,6 +781,14 @@ public class ConfigurationViewModel : ReactiveObject
     public uint SectionColor6 => Tool.GetSectionColor(5);
     public uint SectionColor7 => Tool.GetSectionColor(6);
     public uint SectionColor8 => Tool.GetSectionColor(7);
+    public uint SectionColor9 => Tool.GetSectionColor(8);
+    public uint SectionColor10 => Tool.GetSectionColor(9);
+    public uint SectionColor11 => Tool.GetSectionColor(10);
+    public uint SectionColor12 => Tool.GetSectionColor(11);
+    public uint SectionColor13 => Tool.GetSectionColor(12);
+    public uint SectionColor14 => Tool.GetSectionColor(13);
+    public uint SectionColor15 => Tool.GetSectionColor(14);
+    public uint SectionColor16 => Tool.GetSectionColor(15);
 
     /// <summary>
     /// Single coverage color when multi-colored sections is disabled.
