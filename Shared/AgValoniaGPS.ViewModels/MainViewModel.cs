@@ -1305,6 +1305,13 @@ public class MainViewModel : ReactiveObject
             gpsData.SatellitesInUse, gpsData.Hdop,
             transformedPosition.Easting, transformedPosition.Northing);
 
+        // Auto-disengage autosteer if vehicle is outside the outer boundary
+        if (IsAutoSteerEngaged && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
+        {
+            IsAutoSteerEngaged = false;
+            StatusMessage = "AutoSteer disengaged - outside boundary";
+        }
+
         // Calculate autosteer guidance if engaged and we have an active track
         if (IsAutoSteerEngaged && HasActiveTrack && SelectedTrack != null)
         {
@@ -1838,11 +1845,11 @@ public class MainViewModel : ReactiveObject
             if (input == null)
             {
                 Console.WriteLine($"[YouTurn] Failed to build creation input - using simple fallback");
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
+                var earlyFallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
+                if (earlyFallbackPath != null && earlyFallbackPath.Count > 10)
                 {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
+                    State.YouTurn.TurnPath = earlyFallbackPath;
+                    _youTurnPath = earlyFallbackPath;
                     _youTurnCounter = 0;
                     _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
                 }
@@ -1854,27 +1861,53 @@ public class MainViewModel : ReactiveObject
 
             if (output.Success && output.TurnPath != null && output.TurnPath.Count > 10)
             {
-                State.YouTurn.TurnPath = output.TurnPath;
-                _youTurnPath = output.TurnPath;
-                _youTurnCounter = 0;
-                StatusMessage = $"YouTurn path created ({output.TurnPath.Count} points)";
-                Console.WriteLine($"[YouTurn] Service path created with {output.TurnPath.Count} points, distToTurnLine={output.DistancePivotToTurnLine:F1}m");
+                // Check if any path points are outside the outer boundary
+                bool pathOutsideBoundary = false;
+                foreach (var pt in output.TurnPath)
+                {
+                    if (!IsPointInsideBoundary(pt.Easting, pt.Northing))
+                    {
+                        pathOutsideBoundary = true;
+                        Console.WriteLine($"[YouTurn] Path point ({pt.Easting:F1}, {pt.Northing:F1}) is outside boundary - rejecting path");
+                        break;
+                    }
+                }
 
-                // Update map to show the turn path
-                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+                if (!pathOutsideBoundary)
+                {
+                    State.YouTurn.TurnPath = output.TurnPath;
+                    _youTurnPath = output.TurnPath;
+                    _youTurnCounter = 0;
+                    StatusMessage = $"YouTurn path created ({output.TurnPath.Count} points)";
+                    Console.WriteLine($"[YouTurn] Service path created with {output.TurnPath.Count} points, distToTurnLine={output.DistancePivotToTurnLine:F1}m");
+
+                    // Update map to show the turn path
+                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+                    return; // Path is valid, we're done
+                }
+
+                // Path extends outside boundary - clear and fall through to fallback
+                Console.WriteLine($"[YouTurn] Service path rejected - extends outside boundary, trying fallback");
             }
             else
             {
                 Console.WriteLine($"[YouTurn] Service creation failed: {output.FailureReason ?? "unknown"}, using simple fallback");
-                // Fall back to simple geometric approach
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
-                {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                }
+            }
+
+            // Fall back to simple geometric approach (with boundary checking built in)
+            var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
+            if (fallbackPath != null && fallbackPath.Count > 10)
+            {
+                State.YouTurn.TurnPath = fallbackPath;
+                _youTurnPath = fallbackPath;
+                _youTurnCounter = 0;
+                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+            }
+            else
+            {
+                // No valid path - clear any existing
+                _youTurnPath = null;
+                _mapService.SetYouTurnPath(null);
             }
         }
         catch (Exception ex)
@@ -2175,12 +2208,31 @@ public class MainViewModel : ReactiveObject
         double arcEndE = arcStartE + Math.Sin(perpAngle) * arcDiameter;
         double arcEndN = arcStartN + Math.Cos(perpAngle) * arcDiameter;
 
+        // BOUNDARY CHECK: Verify the arc's apex (furthest point from field) is inside boundary
+        // The arc apex is at the arc center + turnRadius in the travel direction
+        double arcApexE = arcCenterE + Math.Sin(travelHeading) * turnRadius;
+        double arcApexN = arcCenterN + Math.Cos(travelHeading) * turnRadius;
+
+        if (!IsPointInsideBoundary(arcApexE, arcApexN))
+        {
+            Console.WriteLine($"[YouTurn] Arc apex ({arcApexE:F1}, {arcApexN:F1}) is outside boundary - not creating U-turn");
+            return path; // Return empty path - no valid U-turn possible
+        }
+
         // STEP 5: Calculate the EXIT END position (red marker)
         // The exit end must be on the NEXT track, at the same distance from headland as entry start
         // Since perpAngle already points toward the next track (based on turnLeft and travelHeading),
         // we just need to offset by turnOffset in that direction
         double exitEndE = entryStartE + Math.Sin(perpAngle) * turnOffset;
         double exitEndN = entryStartN + Math.Cos(perpAngle) * turnOffset;
+
+        // BOUNDARY CHECK: Verify the exit end (next track) is inside boundary
+        if (!IsPointInsideBoundary(exitEndE, exitEndN))
+        {
+            Console.WriteLine($"[YouTurn] Exit end ({exitEndE:F1}, {exitEndN:F1}) is outside boundary - not creating U-turn");
+            return path; // Return empty path - next track is outside boundary
+        }
+
         Console.WriteLine($"[YouTurn] ExitEnd calc: entryStart({entryStartE:F1},{entryStartN:F1}) + perpAngle({perpAngle * 180 / Math.PI:F1}°) * {turnOffset:F1}m = ({exitEndE:F1},{exitEndN:F1})");
         Console.WriteLine($"[YouTurn] perpAngle direction: turnLeft={turnLeft}, travelHeading={travelHeading * 180 / Math.PI:F1}°");
 

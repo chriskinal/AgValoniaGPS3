@@ -951,15 +951,11 @@ namespace AgValoniaGPS.Services.YouTurn
             Console.WriteLine($"[YouTurn] OmegaTurn: turnOffset={turnOffset:F2}m, skipRows={input.RowSkipsWidth}, goalResult={goalResult}");
             Console.WriteLine($"[YouTurn] Goal position: E={goal.Easting:F2}, N={goal.Northing:F2}");
 
-            // If goal is outside boundary (-1), we previously reduced the offset.
-            // But for U-turns, we WANT to reach the next track even if it means
-            // the arc goes through the headland/turn area. Only fail if truly invalid.
-            // The turn arc going through headland is expected behavior.
+            // If goal is outside boundary (-1), log it but proceed.
+            // The goal being near the edge is OK - we'll check the arc path later.
             if (goalResult == -1)
             {
-                Console.WriteLine($"[YouTurn] WARNING: Goal at turnOffset={turnOffset:F2}m is outside boundary - proceeding anyway for skip rows");
-                // Don't adjust the offset - let the turn reach the correct track
-                // The arc will go through the headland area which is expected
+                Console.WriteLine($"[YouTurn] Goal at turnOffset={turnOffset:F2}m is near/outside boundary edge");
             }
 
             // Generate the turn points
