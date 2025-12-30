@@ -57,6 +57,39 @@ Modernize AgValoniaGPS file formats from legacy AgOpenGPS text/XML formats to **
 - No graceful handling of unknown fields
 - Not compatible with GIS tools
 
+### Coverage Data (Legacy Text Files)
+
+| File | Format | Purpose |
+|------|--------|---------|
+| `Sections.txt` | Triangle strip text | Applied/worked area coverage |
+
+**Current AgValonia format:**
+```
+5                              <- vertex count (includes color vertex)
+152.000,251.000,152.00000      <- RGB color as first vertex
+3.675,-0.854,0.00000           <- triangle strip vertices...
+4.650,-0.635,0.00000
+3.630,-0.696,0.00000
+4.604,-0.470,0.00000
+```
+
+**Current AgOpenGPS format:**
+```
+97                             <- vertex pair count
+187,250,250                    <- RGB color
+-7.635,-3.967,0                <- vertex pairs (much larger merged polygons)
+6.99,-3.548,0
+...
+```
+
+**Issues:**
+- **Massive file size**: AgValonia 1.2MB vs AgOpenGPS 4KB for same 0.62ha field
+- **Tiny patches**: Each section start/stop creates new patch (often only 2 quads)
+- **No merging**: Adjacent patches with same color stored separately
+- **No simplification**: Every vertex stored at full precision
+- **Triangle strips**: Format optimized for OpenGL rendering, not storage
+- **Per-section colors**: AgValonia unique feature - each section can have different color (AgOpenGPS uses single color for all sections)
+
 ### Vehicle Profiles (XML)
 
 | File | Format | Purpose |
@@ -309,6 +342,123 @@ Vehicle profiles remain as regular JSON (not GeoJSON) since they're configuratio
 - Clear separation of concerns
 - Tool type field for future implement-specific logic
 
+### 3. Coverage Format: GeoJSON (`coverage.geojson`)
+
+Coverage data stored as GeoJSON MultiPolygons, grouped by color. This supports AgValonia's per-section color feature while dramatically reducing file size through polygon merging.
+
+```json
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "version": "1.0",
+    "totalAreaHa": 0.62,
+    "lastModified": "2025-12-30T14:00:00Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "coverage-color-0",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-74.0060, 40.7128], [-74.0055, 40.7128], [-74.0055, 40.7135], [-74.0060, 40.7135], [-74.0060, 40.7128]]],
+          [[[-74.0050, 40.7130], [-74.0045, 40.7130], [-74.0045, 40.7138], [-74.0050, 40.7138], [-74.0050, 40.7130]]]
+        ]
+      },
+      "properties": {
+        "featureType": "coverage",
+        "color": "#98FB98",
+        "sectionIndices": [0, 1, 2],
+        "areaHa": 0.31
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "coverage-color-1",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-74.0058, 40.7132], [-74.0052, 40.7132], [-74.0052, 40.7140], [-74.0058, 40.7140], [-74.0058, 40.7132]]]
+        ]
+      },
+      "properties": {
+        "featureType": "coverage",
+        "color": "#87CEEB",
+        "sectionIndices": [3, 4, 5],
+        "areaHa": 0.31
+      }
+    }
+  ]
+}
+```
+
+**Key design decisions:**
+
+1. **Group by color, not section**: Sections with same color are merged into one feature
+   - Single-color mode: One feature with all coverage
+   - Multi-color mode: One feature per unique color
+
+2. **MultiPolygon geometry**: Allows non-contiguous areas with same color
+   - Separate passes on same swath merge into single feature
+   - Handles gaps from skipped areas
+
+3. **Polygon simplification on save**:
+   - Douglas-Peucker algorithm to reduce vertex count
+   - Configurable tolerance (e.g., 0.1m for field work)
+   - Preserves visual accuracy while reducing file size
+
+4. **Triangle strip → Polygon conversion**:
+   ```
+   Runtime (rendering)          Storage (GeoJSON)
+   ┌─────────────────┐          ┌─────────────────┐
+   │ Triangle Strips │  ─────►  │ Merged Polygons │
+   │ (per section)   │  Save    │ (per color)     │
+   │                 │  ◄─────  │                 │
+   └─────────────────┘  Load    └─────────────────┘
+   ```
+
+5. **sectionIndices property**: Records which sections contributed to this color
+   - Enables reconstruction of per-section data if needed
+   - Useful for reports ("Section 3 covered X hectares")
+
+**Storage optimization algorithm:**
+
+```
+On Save:
+1. Group all patches by color
+2. For each color group:
+   a. Convert triangle strips to polygons
+   b. Union overlapping polygons (handles re-sprayed areas)
+   c. Simplify polygon boundaries (Douglas-Peucker)
+   d. Store as MultiPolygon feature
+3. Convert plane coords → WGS84
+4. Write GeoJSON
+
+On Load:
+1. Read GeoJSON
+2. Convert WGS84 → plane coords
+3. For each feature:
+   a. Triangulate polygons back to triangle strips
+   b. Create CoveragePatch objects for rendering
+```
+
+**Expected file size improvement:**
+
+| Scenario | Current | New Format | Reduction |
+|----------|---------|------------|-----------|
+| 0.62 ha, 16 sections, single color | 1.2 MB | ~8 KB | 99% |
+| 0.62 ha, 16 sections, multi-color | 1.2 MB | ~15 KB | 98% |
+| 10 ha field, heavy coverage | ~20 MB | ~50 KB | 99% |
+
+**Directory structure (updated):**
+```
+Fields/
+├── MyField/
+│   ├── field.geojson       # Metadata, boundaries, tracks (WGS84)
+│   ├── coverage.geojson    # Applied area coverage (WGS84)
+│   └── background.png      # Optional satellite image
+```
+
 ---
 
 ## Coordinate Conversion
@@ -406,13 +556,52 @@ public async Task<Field> LoadField(string path)
 }
 ```
 
-### Phase 3: Model Consolidation
+### Phase 3: Coverage Format Modernization
+
+1. Create `GeoJsonCoverageService` for new coverage format
+2. Implement polygon merging algorithm (union by color)
+3. Implement Douglas-Peucker simplification
+4. Implement triangulation for load (polygon → triangle strips)
+5. Auto-detect and migrate legacy `Sections.txt` files
+
+**Files to create:**
+- `Shared/AgValoniaGPS.Services/Coverage/GeoJsonCoverageService.cs`
+- `Shared/AgValoniaGPS.Services/Geometry/PolygonMerger.cs`
+- `Shared/AgValoniaGPS.Services/Geometry/PolygonSimplifier.cs`
+- `Shared/AgValoniaGPS.Services/Geometry/PolygonTriangulator.cs`
+
+**Key algorithms needed:**
+
+1. **Triangle Strip → Polygon**: Convert rendering format to boundary polygon
+   ```csharp
+   // Triangle strip vertices form a ribbon - extract outer boundary
+   public List<Vec2> TriangleStripToPolygon(List<Vec3> vertices)
+   ```
+
+2. **Polygon Union**: Merge overlapping/adjacent polygons
+   ```csharp
+   // Use Clipper library or implement Weiler-Atherton
+   public MultiPolygon UnionPolygons(List<Polygon> polygons)
+   ```
+
+3. **Douglas-Peucker Simplification**: Reduce vertex count
+   ```csharp
+   public List<Vec2> Simplify(List<Vec2> points, double tolerance)
+   ```
+
+4. **Polygon Triangulation**: Convert polygon back to triangle strips for rendering
+   ```csharp
+   // Ear clipping or similar algorithm
+   public List<Vec3> TriangulatePolygon(List<Vec2> boundary)
+   ```
+
+### Phase 4: Model Consolidation
 
 1. Remove `ABLine` class entirely (use `Track`)
 2. Serialize `ConfigurationStore` directly for profiles
 3. Update all references
 
-### Phase 4: Cleanup (Optional)
+### Phase 5: Cleanup (Optional)
 
 1. Remove legacy file services
 2. Remove obsolete model classes
@@ -468,13 +657,17 @@ GeoJSON format is the standard for sharing between AgValoniaGPS installations.
 | Simple field (boundary + 1 track) | ~2 KB (5 files) | ~2 KB (1 file) | Same |
 | Complex field (100 tracks) | ~50 KB (5 files) | ~55 KB (1 file) | +10% |
 | Vehicle profile | ~15 KB (XML) | ~3 KB (JSON) | -80% |
+| Coverage 0.62 ha, single color | ~1.2 MB | ~8 KB | **-99%** |
+| Coverage 0.62 ha, 16 colors | ~1.2 MB | ~15 KB | **-98%** |
+| Coverage 10 ha field | ~20 MB | ~50 KB | **-99%** |
 
-GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, but the GIS interoperability benefits outweigh the minimal size increase.
+GeoJSON field data is slightly larger than custom formats due to verbose coordinate arrays, but the GIS interoperability benefits outweigh the minimal size increase. Coverage data sees dramatic reductions due to polygon merging and simplification.
 
 ---
 
 ## Success Criteria
 
+### Field & Profile Formats
 - [ ] Fields load/save in GeoJSON format with WGS84 coordinates
 - [ ] Legacy AgOpenGPS fields import correctly
 - [ ] Coordinate conversion (WGS84 ↔ plane) works accurately
@@ -484,7 +677,20 @@ GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, bu
 - [ ] No 17-section limit
 - [ ] All angles stored in degrees
 - [ ] Schema version field present for future migrations
-- [ ] Unit tests pass for both formats
+
+### Coverage Format
+- [ ] Coverage saves as GeoJSON with merged polygons per color
+- [ ] Legacy `Sections.txt` files import correctly
+- [ ] Per-section colors preserved (AgValonia unique feature)
+- [ ] File size reduction of 90%+ achieved
+- [ ] Coverage can be viewed in QGIS/ArcGIS
+- [ ] Triangle strip rendering works after load (polygon → triangles)
+- [ ] Area calculations remain accurate after format conversion
+
+### Testing
+- [ ] Unit tests pass for all format conversions
+- [ ] Round-trip tests (save → load → save produces identical output)
+- [ ] Performance tests for large coverage files
 
 ---
 
@@ -494,7 +700,7 @@ GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, bu
    - Recommendation: Keep separate (large files shouldn't bloat JSON)
 
 2. **Field sharing**: Support compressed `.agfield` package (zip)?
-   - Could bundle `field.geojson` + `background.png` for easy sharing
+   - Could bundle `field.geojson` + `coverage.geojson` + `background.png` for easy sharing
 
 3. **Schema validation**: Use JSON Schema for validation?
    - Nice to have, not required for MVP
@@ -505,6 +711,23 @@ GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, bu
 5. **GeoJSON extensions**: Use GeoJSON-T for timestamped track recording?
    - Could enable track history/replay features
 
+6. **Coverage polygon library**: Use existing library (Clipper2, NetTopologySuite) or implement custom?
+   - Clipper2: Fast, well-tested, MIT license, C# native
+   - NetTopologySuite: Full GIS toolkit, may be overkill
+   - Custom: More control, but significant development effort
+   - Recommendation: Clipper2 for polygon operations
+
+7. **Coverage simplification tolerance**: What's the right balance between file size and visual accuracy?
+   - 0.05m: Very accurate, larger files
+   - 0.1m: Good balance for typical field work
+   - 0.5m: Smaller files, may show visible artifacts
+   - Recommendation: Default 0.1m, configurable in settings
+
+8. **Incremental coverage saves**: Save only new coverage or full merge each time?
+   - Full merge: Simpler, always optimized file
+   - Incremental: Faster saves, periodic full merge
+   - Recommendation: Full merge on field close, consider incremental for auto-save
+
 ---
 
 ## References
@@ -512,3 +735,6 @@ GeoJSON is slightly larger than custom JSON due to verbose coordinate arrays, bu
 - [RFC 7946 - The GeoJSON Format](https://tools.ietf.org/html/rfc7946)
 - [GeoJSON.io - Online editor](https://geojson.io/)
 - [QGIS Documentation](https://qgis.org/)
+- [Clipper2 Library](https://github.com/AngusJohnson/Clipper2) - Polygon clipping/union operations
+- [Douglas-Peucker Algorithm](https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm) - Line simplification
+- [Ear Clipping Triangulation](https://www.geometrictools.com/Documentation/TriangulationByEarClipping.pdf) - Polygon triangulation

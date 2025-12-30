@@ -3032,13 +3032,30 @@ public class MainViewModel : ReactiveObject
             var oldValue = _selectedTrack;
             if (this.RaiseAndSetIfChanged(ref _selectedTrack, value) != oldValue)
             {
-                var oldA = oldValue?.Points.FirstOrDefault();
-                var oldB = oldValue?.Points.LastOrDefault();
-                var newA = value?.Points.FirstOrDefault();
-                var newB = value?.Points.LastOrDefault();
-                Console.WriteLine($"[SelectedTrack] Changed from A({oldA?.Easting:F1},{oldA?.Northing:F1}) B({oldB?.Easting:F1},{oldB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack]       to A({newA?.Easting:F1},{newA?.Northing:F1}) B({newB?.Easting:F1},{newB?.Northing:F1})");
-                Console.WriteLine($"[SelectedTrack] Stack trace: {Environment.StackTrace}");
+                // Sync IsActive state with selection
+                if (oldValue != null)
+                {
+                    oldValue.IsActive = false;
+                }
+                if (value != null)
+                {
+                    value.IsActive = true;
+                    State.Field.ActiveTrack = value;
+                    // Show the track on the map when activated
+                    _mapService.SetActiveTrack(value);
+                }
+                else
+                {
+                    State.Field.ActiveTrack = null;
+                    // Clear the track from the map when deactivated
+                    _mapService.SetActiveTrack(null);
+                }
+
+                // Update guidance availability
+                HasActiveTrack = value != null;
+                IsAutoSteerAvailable = value != null;
+
+                Console.WriteLine($"[SelectedTrack] Changed to: {value?.Name ?? "None"}");
             }
         }
     }
@@ -5725,18 +5742,20 @@ public class MainViewModel : ReactiveObject
 
         SelectTrackAsActiveCommand = new RelayCommand(() =>
         {
+            // Toggle: if track is already active, deactivate it; otherwise activate
             if (SelectedTrack != null)
             {
-                // Deactivate all tracks first
-                foreach (var track in SavedTracks)
+                if (SelectedTrack.IsActive)
                 {
-                    track.IsActive = false;
+                    // Deactivate
+                    SelectedTrack = null;
+                    StatusMessage = "Track deactivated";
                 }
-                // Activate the selected track
-                SelectedTrack.IsActive = true;
-                HasActiveTrack = true;
-                IsAutoSteerAvailable = true;
-                StatusMessage = $"Activated track: {SelectedTrack.Name}";
+                else
+                {
+                    // Activate (SelectedTrack setter handles IsActive sync)
+                    StatusMessage = $"Activated track: {SelectedTrack.Name}";
+                }
                 State.UI.CloseDialog();
             }
         });
@@ -7934,27 +7953,26 @@ public class MainViewModel : ReactiveObject
             {
                 var tracks = Services.TrackFilesService.LoadTracks(field.DirectoryPath);
                 int loadedCount = 0;
+                Track? firstTrack = null;
 
                 foreach (var track in tracks)
                 {
-                    // First track is active by default
-                    if (loadedCount == 0)
-                    {
-                        track.IsActive = true;
-                        State.Field.ActiveTrack = track;
-                    }
+                    // Ensure all tracks start inactive (SelectedTrack setter will activate)
+                    track.IsActive = false;
                     State.Field.Tracks.Add(track);
                     SavedTracks.Add(track);
+
+                    if (loadedCount == 0)
+                    {
+                        firstTrack = track;
+                    }
                     loadedCount++;
                 }
 
                 Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from TrackLines.txt");
 
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
+                // Don't auto-activate any track - user must explicitly select one
+                // HasActiveTrack and IsAutoSteerAvailable stay false until user selects
                 return;
             }
 
@@ -8002,12 +8020,9 @@ public class MainViewModel : ReactiveObject
                                 name,
                                 new Vec3(eastingA, northingA, headingRadians),
                                 new Vec3(eastingB, northingB, headingRadians));
-                            track.IsActive = loadedCount == 0;
+                            // Don't auto-activate - user must explicitly select
+                            track.IsActive = false;
 
-                            if (loadedCount == 0)
-                            {
-                                State.Field.ActiveTrack = track;
-                            }
                             State.Field.Tracks.Add(track);
                             SavedTracks.Add(track);
                             loadedCount++;
@@ -8017,11 +8032,8 @@ public class MainViewModel : ReactiveObject
 
                 Console.WriteLine($"[TrackFiles] Loaded {loadedCount} tracks from legacy ABLines.txt");
 
-                if (loadedCount > 0)
-                {
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
-                }
+                // Don't auto-activate any track - user must explicitly select one
+                // HasActiveTrack and IsAutoSteerAvailable stay false until user selects
             }
             else
             {

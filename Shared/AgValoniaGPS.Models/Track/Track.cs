@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using AgValoniaGPS.Models.Base;
 
 namespace AgValoniaGPS.Models.Track;
@@ -36,8 +38,14 @@ public enum TrackType
 /// Replaces: ABLine.cs, separate curve models, and track mode switching.
 /// All guidance algorithms can work with List&lt;Vec3&gt; points.
 /// </summary>
-public class Track
+public class Track : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
     /// <summary>
     /// Track name for display and file storage.
     /// </summary>
@@ -63,7 +71,19 @@ public class Track
     /// <summary>
     /// Whether this track is currently active for guidance.
     /// </summary>
-    public bool IsActive { get; set; }
+    private bool _isActive;
+    public bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            if (_isActive != value)
+            {
+                _isActive = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Visibility on map.

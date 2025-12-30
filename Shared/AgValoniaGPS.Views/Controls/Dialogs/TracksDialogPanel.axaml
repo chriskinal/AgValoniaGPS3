@@ -138,10 +138,11 @@
                          MinHeight="200"
                          MaxHeight="300"
                          ItemsSource="{Binding SavedTracks}"
-                         SelectedItem="{Binding SelectedTrack}">
+                         SelectedItem="{Binding SelectedTrack, Mode=OneWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="track:Track">
-                            <Grid ColumnDefinitions="*,80,60">
+                            <!-- Background="Transparent" makes entire row clickable, not just text -->
+                            <Grid ColumnDefinitions="*,80,60" Background="Transparent" PointerReleased="TrackItem_PointerReleased">
                                 <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <Panel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">

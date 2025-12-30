@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using AgValoniaGPS.Models.State;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
@@ -15,6 +16,7 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
     private Button? _flagMenuButton;
     private bool _isABLineFlyoutOpen;
     private bool _isFlagsFlyoutOpen;
+    private AgValoniaGPS.ViewModels.MainViewModel? _subscribedViewModel;
 
     public BottomNavigationPanel()
     {
@@ -43,6 +45,35 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
 
         // Close flyouts when clicking outside
         this.PointerPressed += OnPanelPointerPressed;
+
+        // Subscribe to dialog changes to close flyouts when dialogs close
+        this.DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        // Unsubscribe from old viewmodel to avoid multiple subscriptions
+        if (_subscribedViewModel != null)
+        {
+            _subscribedViewModel.State.UI.DialogChanged -= OnDialogChanged;
+            _subscribedViewModel = null;
+        }
+
+        // Subscribe to dialog state changes
+        if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
+        {
+            vm.State.UI.DialogChanged += OnDialogChanged;
+            _subscribedViewModel = vm;
+        }
+    }
+
+    private void OnDialogChanged(object? sender, DialogChangedEventArgs e)
+    {
+        // Close flyouts when any dialog closes (especially after opening from flyout)
+        if (e.Current == DialogType.None)
+        {
+            CloseAllFlyouts();
+        }
     }
 
     /// <summary>

@@ -192,9 +192,8 @@ public partial class MainView : UserControl
     {
         if (_mapControl != null && _viewModel != null)
         {
-            // Find the active track (or the most recently added one)
-            var activeTrack = _viewModel.SavedTracks.FirstOrDefault(t => t.IsActive)
-                          ?? _viewModel.SavedTracks.LastOrDefault();
+            // Only show track on map if explicitly active (no fallback)
+            var activeTrack = _viewModel.SavedTracks.FirstOrDefault(t => t.IsActive);
             _mapControl.SetActiveTrack(activeTrack);
         }
     }

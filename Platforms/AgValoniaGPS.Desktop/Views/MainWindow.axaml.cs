@@ -527,9 +527,8 @@ public partial class MainWindow : Window
     {
         if (MapControl is DrawingContextMapControl dcMapControl && ViewModel != null)
         {
-            // Find the active track (or the most recently added one)
-            var activeTrack = ViewModel.SavedTracks.FirstOrDefault(t => t.IsActive)
-                          ?? ViewModel.SavedTracks.LastOrDefault();
+            // Only show track on map if explicitly active (no fallback)
+            var activeTrack = ViewModel.SavedTracks.FirstOrDefault(t => t.IsActive);
             dcMapControl.SetActiveTrack(activeTrack);
         }
     }
