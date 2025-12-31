@@ -3,7 +3,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
@@ -14,7 +15,7 @@ namespace AgValoniaGPS.ViewModels;
 /// ViewModel for the Configuration Dialog.
 /// Binds directly to ConfigurationStore - no property mapping needed.
 /// </summary>
-public class ConfigurationViewModel : ReactiveObject
+public partial class ConfigurationViewModel : ObservableObject
 {
     private readonly IConfigurationService _configService;
     private readonly INtripClientService? _ntripService;
@@ -25,7 +26,7 @@ public class ConfigurationViewModel : ReactiveObject
     public bool IsDialogVisible
     {
         get => _isDialogVisible;
-        set => this.RaiseAndSetIfChanged(ref _isDialogVisible, value);
+        set => SetProperty(ref _isDialogVisible, value);
     }
 
     #endregion
@@ -36,49 +37,49 @@ public class ConfigurationViewModel : ReactiveObject
     public bool IsNumericInputVisible
     {
         get => _isNumericInputVisible;
-        set => this.RaiseAndSetIfChanged(ref _isNumericInputVisible, value);
+        set => SetProperty(ref _isNumericInputVisible, value);
     }
 
     private string _numericInputTitle = string.Empty;
     public string NumericInputTitle
     {
         get => _numericInputTitle;
-        set => this.RaiseAndSetIfChanged(ref _numericInputTitle, value);
+        set => SetProperty(ref _numericInputTitle, value);
     }
 
     private string _numericInputUnit = string.Empty;
     public string NumericInputUnit
     {
         get => _numericInputUnit;
-        set => this.RaiseAndSetIfChanged(ref _numericInputUnit, value);
+        set => SetProperty(ref _numericInputUnit, value);
     }
 
     private decimal? _numericInputValue;
     public decimal? NumericInputValue
     {
         get => _numericInputValue;
-        set => this.RaiseAndSetIfChanged(ref _numericInputValue, value);
+        set => SetProperty(ref _numericInputValue, value);
     }
 
     private string _numericInputDisplayText = string.Empty;
     public string NumericInputDisplayText
     {
         get => _numericInputDisplayText;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDisplayText, value);
+        set => SetProperty(ref _numericInputDisplayText, value);
     }
 
     private bool _numericInputIntegerOnly;
     public bool NumericInputIntegerOnly
     {
         get => _numericInputIntegerOnly;
-        set => this.RaiseAndSetIfChanged(ref _numericInputIntegerOnly, value);
+        set => SetProperty(ref _numericInputIntegerOnly, value);
     }
 
     private bool _numericInputAllowNegative = true;
     public bool NumericInputAllowNegative
     {
         get => _numericInputAllowNegative;
-        set => this.RaiseAndSetIfChanged(ref _numericInputAllowNegative, value);
+        set => SetProperty(ref _numericInputAllowNegative, value);
     }
 
     private double _numericInputMin = double.MinValue;
@@ -118,7 +119,7 @@ public class ConfigurationViewModel : ReactiveObject
 
         // Set initial value and display
         _numericInputValue = (decimal)currentValue;
-        this.RaisePropertyChanged(nameof(NumericInputValue));
+        OnPropertyChanged(nameof(NumericInputValue));
 
         NumericInputDisplayText = integerOnly
             ? ((int)currentValue).ToString()
@@ -195,7 +196,7 @@ public class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
 
@@ -220,7 +221,7 @@ public class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
 
@@ -229,7 +230,7 @@ public class ConfigurationViewModel : ReactiveObject
             NumericInputDisplayText = "0";
             _numericInputValue = 0;
             _isFirstDigitEntry = false;
-            this.RaisePropertyChanged(nameof(NumericInputValue));
+            OnPropertyChanged(nameof(NumericInputValue));
         });
 
         NumericInputNegateCommand = new RelayCommand(() =>
@@ -250,7 +251,7 @@ public class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
     }
@@ -263,28 +264,28 @@ public class ConfigurationViewModel : ReactiveObject
     public bool IsTextInputVisible
     {
         get => _isTextInputVisible;
-        set => this.RaiseAndSetIfChanged(ref _isTextInputVisible, value);
+        set => SetProperty(ref _isTextInputVisible, value);
     }
 
     private string _textInputTitle = string.Empty;
     public string TextInputTitle
     {
         get => _textInputTitle;
-        set => this.RaiseAndSetIfChanged(ref _textInputTitle, value);
+        set => SetProperty(ref _textInputTitle, value);
     }
 
     private string _textInputValue = string.Empty;
     public string TextInputValue
     {
         get => _textInputValue;
-        set => this.RaiseAndSetIfChanged(ref _textInputValue, value);
+        set => SetProperty(ref _textInputValue, value);
     }
 
     private bool _textInputIsPassword;
     public bool TextInputIsPassword
     {
         get => _textInputIsPassword;
-        set => this.RaiseAndSetIfChanged(ref _textInputIsPassword, value);
+        set => SetProperty(ref _textInputIsPassword, value);
     }
 
     private Action<string>? _textInputCallback;
@@ -349,14 +350,14 @@ public class ConfigurationViewModel : ReactiveObject
     public bool IsColorPickerVisible
     {
         get => _isColorPickerVisible;
-        set => this.RaiseAndSetIfChanged(ref _isColorPickerVisible, value);
+        set => SetProperty(ref _isColorPickerVisible, value);
     }
 
     private string _colorPickerTitle = "Select Color";
     public string ColorPickerTitle
     {
         get => _colorPickerTitle;
-        set => this.RaiseAndSetIfChanged(ref _colorPickerTitle, value);
+        set => SetProperty(ref _colorPickerTitle, value);
     }
 
     // -1 = single coverage color, 0-15 = section index
@@ -438,7 +439,7 @@ public class ConfigurationViewModel : ReactiveObject
         {
             // Single coverage color
             Tool.SingleCoverageColor = color;
-            this.RaisePropertyChanged(nameof(SingleCoverageColor));
+            OnPropertyChanged(nameof(SingleCoverageColor));
         }
         else
         {
@@ -451,22 +452,22 @@ public class ConfigurationViewModel : ReactiveObject
 
     private void RefreshSectionColorProperties()
     {
-        this.RaisePropertyChanged(nameof(SectionColor1));
-        this.RaisePropertyChanged(nameof(SectionColor2));
-        this.RaisePropertyChanged(nameof(SectionColor3));
-        this.RaisePropertyChanged(nameof(SectionColor4));
-        this.RaisePropertyChanged(nameof(SectionColor5));
-        this.RaisePropertyChanged(nameof(SectionColor6));
-        this.RaisePropertyChanged(nameof(SectionColor7));
-        this.RaisePropertyChanged(nameof(SectionColor8));
-        this.RaisePropertyChanged(nameof(SectionColor9));
-        this.RaisePropertyChanged(nameof(SectionColor10));
-        this.RaisePropertyChanged(nameof(SectionColor11));
-        this.RaisePropertyChanged(nameof(SectionColor12));
-        this.RaisePropertyChanged(nameof(SectionColor13));
-        this.RaisePropertyChanged(nameof(SectionColor14));
-        this.RaisePropertyChanged(nameof(SectionColor15));
-        this.RaisePropertyChanged(nameof(SectionColor16));
+        OnPropertyChanged(nameof(SectionColor1));
+        OnPropertyChanged(nameof(SectionColor2));
+        OnPropertyChanged(nameof(SectionColor3));
+        OnPropertyChanged(nameof(SectionColor4));
+        OnPropertyChanged(nameof(SectionColor5));
+        OnPropertyChanged(nameof(SectionColor6));
+        OnPropertyChanged(nameof(SectionColor7));
+        OnPropertyChanged(nameof(SectionColor8));
+        OnPropertyChanged(nameof(SectionColor9));
+        OnPropertyChanged(nameof(SectionColor10));
+        OnPropertyChanged(nameof(SectionColor11));
+        OnPropertyChanged(nameof(SectionColor12));
+        OnPropertyChanged(nameof(SectionColor13));
+        OnPropertyChanged(nameof(SectionColor14));
+        OnPropertyChanged(nameof(SectionColor15));
+        OnPropertyChanged(nameof(SectionColor16));
     }
 
     #endregion
@@ -477,21 +478,21 @@ public class ConfigurationViewModel : ReactiveObject
     public bool IsNtripConnected
     {
         get => _isNtripConnected;
-        set => this.RaiseAndSetIfChanged(ref _isNtripConnected, value);
+        set => SetProperty(ref _isNtripConnected, value);
     }
 
     private string _ntripStatus = "Not Connected";
     public string NtripStatus
     {
         get => _ntripStatus;
-        set => this.RaiseAndSetIfChanged(ref _ntripStatus, value);
+        set => SetProperty(ref _ntripStatus, value);
     }
 
     private string _ntripBytesReceived = "0";
     public string NtripBytesReceived
     {
         get => _ntripBytesReceived;
-        set => this.RaiseAndSetIfChanged(ref _ntripBytesReceived, value);
+        set => SetProperty(ref _ntripBytesReceived, value);
     }
 
     public ICommand ConnectNtripCommand { get; private set; } = null!;
@@ -692,30 +693,30 @@ public class ConfigurationViewModel : ReactiveObject
 
     private void RefreshAllPinProperties()
     {
-        this.RaisePropertyChanged(nameof(Pin1Function));
-        this.RaisePropertyChanged(nameof(Pin2Function));
-        this.RaisePropertyChanged(nameof(Pin3Function));
-        this.RaisePropertyChanged(nameof(Pin4Function));
-        this.RaisePropertyChanged(nameof(Pin5Function));
-        this.RaisePropertyChanged(nameof(Pin6Function));
-        this.RaisePropertyChanged(nameof(Pin7Function));
-        this.RaisePropertyChanged(nameof(Pin8Function));
-        this.RaisePropertyChanged(nameof(Pin9Function));
-        this.RaisePropertyChanged(nameof(Pin10Function));
-        this.RaisePropertyChanged(nameof(Pin11Function));
-        this.RaisePropertyChanged(nameof(Pin12Function));
-        this.RaisePropertyChanged(nameof(Pin13Function));
-        this.RaisePropertyChanged(nameof(Pin14Function));
-        this.RaisePropertyChanged(nameof(Pin15Function));
-        this.RaisePropertyChanged(nameof(Pin16Function));
-        this.RaisePropertyChanged(nameof(Pin17Function));
-        this.RaisePropertyChanged(nameof(Pin18Function));
-        this.RaisePropertyChanged(nameof(Pin19Function));
-        this.RaisePropertyChanged(nameof(Pin20Function));
-        this.RaisePropertyChanged(nameof(Pin21Function));
-        this.RaisePropertyChanged(nameof(Pin22Function));
-        this.RaisePropertyChanged(nameof(Pin23Function));
-        this.RaisePropertyChanged(nameof(Pin24Function));
+        OnPropertyChanged(nameof(Pin1Function));
+        OnPropertyChanged(nameof(Pin2Function));
+        OnPropertyChanged(nameof(Pin3Function));
+        OnPropertyChanged(nameof(Pin4Function));
+        OnPropertyChanged(nameof(Pin5Function));
+        OnPropertyChanged(nameof(Pin6Function));
+        OnPropertyChanged(nameof(Pin7Function));
+        OnPropertyChanged(nameof(Pin8Function));
+        OnPropertyChanged(nameof(Pin9Function));
+        OnPropertyChanged(nameof(Pin10Function));
+        OnPropertyChanged(nameof(Pin11Function));
+        OnPropertyChanged(nameof(Pin12Function));
+        OnPropertyChanged(nameof(Pin13Function));
+        OnPropertyChanged(nameof(Pin14Function));
+        OnPropertyChanged(nameof(Pin15Function));
+        OnPropertyChanged(nameof(Pin16Function));
+        OnPropertyChanged(nameof(Pin17Function));
+        OnPropertyChanged(nameof(Pin18Function));
+        OnPropertyChanged(nameof(Pin19Function));
+        OnPropertyChanged(nameof(Pin20Function));
+        OnPropertyChanged(nameof(Pin21Function));
+        OnPropertyChanged(nameof(Pin22Function));
+        OnPropertyChanged(nameof(Pin23Function));
+        OnPropertyChanged(nameof(Pin24Function));
     }
 
     /// <summary>
@@ -800,23 +801,23 @@ public class ConfigurationViewModel : ReactiveObject
     /// </summary>
     private void RefreshSectionWidthProperties()
     {
-        this.RaisePropertyChanged(nameof(Section1Width));
-        this.RaisePropertyChanged(nameof(Section2Width));
-        this.RaisePropertyChanged(nameof(Section3Width));
-        this.RaisePropertyChanged(nameof(Section4Width));
-        this.RaisePropertyChanged(nameof(Section5Width));
-        this.RaisePropertyChanged(nameof(Section6Width));
-        this.RaisePropertyChanged(nameof(Section7Width));
-        this.RaisePropertyChanged(nameof(Section8Width));
-        this.RaisePropertyChanged(nameof(Section9Width));
-        this.RaisePropertyChanged(nameof(Section10Width));
-        this.RaisePropertyChanged(nameof(Section11Width));
-        this.RaisePropertyChanged(nameof(Section12Width));
-        this.RaisePropertyChanged(nameof(Section13Width));
-        this.RaisePropertyChanged(nameof(Section14Width));
-        this.RaisePropertyChanged(nameof(Section15Width));
-        this.RaisePropertyChanged(nameof(Section16Width));
-        this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+        OnPropertyChanged(nameof(Section1Width));
+        OnPropertyChanged(nameof(Section2Width));
+        OnPropertyChanged(nameof(Section3Width));
+        OnPropertyChanged(nameof(Section4Width));
+        OnPropertyChanged(nameof(Section5Width));
+        OnPropertyChanged(nameof(Section6Width));
+        OnPropertyChanged(nameof(Section7Width));
+        OnPropertyChanged(nameof(Section8Width));
+        OnPropertyChanged(nameof(Section9Width));
+        OnPropertyChanged(nameof(Section10Width));
+        OnPropertyChanged(nameof(Section11Width));
+        OnPropertyChanged(nameof(Section12Width));
+        OnPropertyChanged(nameof(Section13Width));
+        OnPropertyChanged(nameof(Section14Width));
+        OnPropertyChanged(nameof(Section15Width));
+        OnPropertyChanged(nameof(Section16Width));
+        OnPropertyChanged(nameof(CalculatedSectionTotal));
     }
 
     // Zone end section properties (for binding in zone mode)
@@ -834,14 +835,14 @@ public class ConfigurationViewModel : ReactiveObject
     /// </summary>
     private void RefreshZoneEndProperties()
     {
-        this.RaisePropertyChanged(nameof(Zone1EndSection));
-        this.RaisePropertyChanged(nameof(Zone2EndSection));
-        this.RaisePropertyChanged(nameof(Zone3EndSection));
-        this.RaisePropertyChanged(nameof(Zone4EndSection));
-        this.RaisePropertyChanged(nameof(Zone5EndSection));
-        this.RaisePropertyChanged(nameof(Zone6EndSection));
-        this.RaisePropertyChanged(nameof(Zone7EndSection));
-        this.RaisePropertyChanged(nameof(Zone8EndSection));
+        OnPropertyChanged(nameof(Zone1EndSection));
+        OnPropertyChanged(nameof(Zone2EndSection));
+        OnPropertyChanged(nameof(Zone3EndSection));
+        OnPropertyChanged(nameof(Zone4EndSection));
+        OnPropertyChanged(nameof(Zone5EndSection));
+        OnPropertyChanged(nameof(Zone6EndSection));
+        OnPropertyChanged(nameof(Zone7EndSection));
+        OnPropertyChanged(nameof(Zone8EndSection));
     }
 
     #endregion
@@ -856,7 +857,7 @@ public class ConfigurationViewModel : ReactiveObject
         get => _selectedProfileName;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedProfileName, value);
+            SetProperty(ref _selectedProfileName, value);
             if (value != null && value != Config.ActiveProfileName)
             {
                 _configService.LoadProfile(value);
@@ -1088,12 +1089,12 @@ public class ConfigurationViewModel : ReactiveObject
         {
             if (e.PropertyName == nameof(ConfigurationStore.HasUnsavedChanges))
             {
-                this.RaisePropertyChanged(nameof(HasUnsavedChanges));
+                OnPropertyChanged(nameof(HasUnsavedChanges));
             }
             // Update calculated section total when NumSections changes
             if (e.PropertyName == nameof(ConfigurationStore.NumSections))
             {
-                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+                OnPropertyChanged(nameof(CalculatedSectionTotal));
             }
         };
 
@@ -1102,7 +1103,7 @@ public class ConfigurationViewModel : ReactiveObject
         {
             if (e.PropertyName == nameof(ToolConfig.DefaultSectionWidth))
             {
-                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+                OnPropertyChanged(nameof(CalculatedSectionTotal));
             }
         };
 
@@ -1827,7 +1828,7 @@ public class ConfigurationViewModel : ReactiveObject
         if (string.IsNullOrEmpty(profileName)) return;
         _configService.LoadProfile(profileName);
         _selectedProfileName = profileName;
-        this.RaisePropertyChanged(nameof(SelectedProfileName));
+        OnPropertyChanged(nameof(SelectedProfileName));
     }
 
     private void SaveProfile()
@@ -1843,7 +1844,7 @@ public class ConfigurationViewModel : ReactiveObject
         _configService.CreateProfile(profileName);
         RefreshProfileList();
         _selectedProfileName = profileName;
-        this.RaisePropertyChanged(nameof(SelectedProfileName));
+        OnPropertyChanged(nameof(SelectedProfileName));
     }
 
     private void DeleteProfile()

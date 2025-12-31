@@ -4,7 +4,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Guidance;
@@ -22,7 +23,7 @@ using Avalonia.Threading;
 
 namespace AgValoniaGPS.ViewModels;
 
-public class MainViewModel : ReactiveObject
+public partial class MainViewModel : ObservableObject
 {
     private readonly IUdpCommunicationService _udpService;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsService _gpsService;
@@ -326,7 +327,7 @@ public class MainViewModel : ReactiveObject
 
         // IMPORTANT: Notify bindings that IsGridOn changed
         // (setting _displaySettings directly doesn't trigger property change notification)
-        this.RaisePropertyChanged(nameof(IsGridOn));
+        OnPropertyChanged(nameof(IsGridOn));
 
         // Restore simulator settings
         if (settings.SimulatorEnabled)
@@ -534,25 +535,25 @@ public class MainViewModel : ReactiveObject
     public string StatusMessage
     {
         get => _statusMessage;
-        set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+        set => SetProperty(ref _statusMessage, value);
     }
 
     public double Latitude
     {
         get => _latitude;
-        set => this.RaiseAndSetIfChanged(ref _latitude, value);
+        set => SetProperty(ref _latitude, value);
     }
 
     public double Longitude
     {
         get => _longitude;
-        set => this.RaiseAndSetIfChanged(ref _longitude, value);
+        set => SetProperty(ref _longitude, value);
     }
 
     public double Speed
     {
         get => _speed;
-        set => this.RaiseAndSetIfChanged(ref _speed, value);
+        set => SetProperty(ref _speed, value);
     }
 
     /// <summary>
@@ -561,7 +562,7 @@ public class MainViewModel : ReactiveObject
     public double CurrentFps
     {
         get => _currentFps;
-        set => this.RaiseAndSetIfChanged(ref _currentFps, value);
+        set => SetProperty(ref _currentFps, value);
     }
 
     /// <summary>
@@ -571,244 +572,244 @@ public class MainViewModel : ReactiveObject
     public double GpsToPgnLatencyMs
     {
         get => _gpsToPgnLatencyMs;
-        set => this.RaiseAndSetIfChanged(ref _gpsToPgnLatencyMs, value);
+        set => SetProperty(ref _gpsToPgnLatencyMs, value);
     }
 
     public int SatelliteCount
     {
         get => _satelliteCount;
-        set => this.RaiseAndSetIfChanged(ref _satelliteCount, value);
+        set => SetProperty(ref _satelliteCount, value);
     }
 
     public string FixQuality
     {
         get => _fixQuality;
-        set => this.RaiseAndSetIfChanged(ref _fixQuality, value);
+        set => SetProperty(ref _fixQuality, value);
     }
 
     public string NetworkStatus
     {
         get => _networkStatus;
-        set => this.RaiseAndSetIfChanged(ref _networkStatus, value);
+        set => SetProperty(ref _networkStatus, value);
     }
 
     // Guidance/Steering properties
     public double CrossTrackError
     {
         get => _crossTrackError;
-        set => this.RaiseAndSetIfChanged(ref _crossTrackError, value);
+        set => SetProperty(ref _crossTrackError, value);
     }
 
     public string CurrentGuidanceLine
     {
         get => _currentGuidanceLine;
-        set => this.RaiseAndSetIfChanged(ref _currentGuidanceLine, value);
+        set => SetProperty(ref _currentGuidanceLine, value);
     }
 
     public bool IsAutoSteerActive
     {
         get => _isAutoSteerActive;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerActive, value);
+        set => SetProperty(ref _isAutoSteerActive, value);
     }
 
     public int ActiveSections
     {
         get => _activeSections;
-        set => this.RaiseAndSetIfChanged(ref _activeSections, value);
+        set => SetProperty(ref _activeSections, value);
     }
 
     // Section states
     public bool Section1Active
     {
         get => _section1Active;
-        set => this.RaiseAndSetIfChanged(ref _section1Active, value);
+        set => SetProperty(ref _section1Active, value);
     }
 
     public bool Section2Active
     {
         get => _section2Active;
-        set => this.RaiseAndSetIfChanged(ref _section2Active, value);
+        set => SetProperty(ref _section2Active, value);
     }
 
     public bool Section3Active
     {
         get => _section3Active;
-        set => this.RaiseAndSetIfChanged(ref _section3Active, value);
+        set => SetProperty(ref _section3Active, value);
     }
 
     public bool Section4Active
     {
         get => _section4Active;
-        set => this.RaiseAndSetIfChanged(ref _section4Active, value);
+        set => SetProperty(ref _section4Active, value);
     }
 
     public bool Section5Active
     {
         get => _section5Active;
-        set => this.RaiseAndSetIfChanged(ref _section5Active, value);
+        set => SetProperty(ref _section5Active, value);
     }
 
     public bool Section6Active
     {
         get => _section6Active;
-        set => this.RaiseAndSetIfChanged(ref _section6Active, value);
+        set => SetProperty(ref _section6Active, value);
     }
 
     public bool Section7Active
     {
         get => _section7Active;
-        set => this.RaiseAndSetIfChanged(ref _section7Active, value);
+        set => SetProperty(ref _section7Active, value);
     }
 
     public bool Section8Active
     {
         get => _section8Active;
-        set => this.RaiseAndSetIfChanged(ref _section8Active, value);
+        set => SetProperty(ref _section8Active, value);
     }
 
     public bool Section9Active
     {
         get => _section9Active;
-        set => this.RaiseAndSetIfChanged(ref _section9Active, value);
+        set => SetProperty(ref _section9Active, value);
     }
 
     public bool Section10Active
     {
         get => _section10Active;
-        set => this.RaiseAndSetIfChanged(ref _section10Active, value);
+        set => SetProperty(ref _section10Active, value);
     }
 
     public bool Section11Active
     {
         get => _section11Active;
-        set => this.RaiseAndSetIfChanged(ref _section11Active, value);
+        set => SetProperty(ref _section11Active, value);
     }
 
     public bool Section12Active
     {
         get => _section12Active;
-        set => this.RaiseAndSetIfChanged(ref _section12Active, value);
+        set => SetProperty(ref _section12Active, value);
     }
 
     public bool Section13Active
     {
         get => _section13Active;
-        set => this.RaiseAndSetIfChanged(ref _section13Active, value);
+        set => SetProperty(ref _section13Active, value);
     }
 
     public bool Section14Active
     {
         get => _section14Active;
-        set => this.RaiseAndSetIfChanged(ref _section14Active, value);
+        set => SetProperty(ref _section14Active, value);
     }
 
     public bool Section15Active
     {
         get => _section15Active;
-        set => this.RaiseAndSetIfChanged(ref _section15Active, value);
+        set => SetProperty(ref _section15Active, value);
     }
 
     public bool Section16Active
     {
         get => _section16Active;
-        set => this.RaiseAndSetIfChanged(ref _section16Active, value);
+        set => SetProperty(ref _section16Active, value);
     }
 
     // Section color codes for panel buttons (0=Red/Off, 1=Yellow/ManualOn, 2=Green/AutoOn, 3=Gray/AutoOff)
     public int Section1ColorCode
     {
         get => _section1ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section1ColorCode, value);
+        set => SetProperty(ref _section1ColorCode, value);
     }
 
     public int Section2ColorCode
     {
         get => _section2ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section2ColorCode, value);
+        set => SetProperty(ref _section2ColorCode, value);
     }
 
     public int Section3ColorCode
     {
         get => _section3ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section3ColorCode, value);
+        set => SetProperty(ref _section3ColorCode, value);
     }
 
     public int Section4ColorCode
     {
         get => _section4ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section4ColorCode, value);
+        set => SetProperty(ref _section4ColorCode, value);
     }
 
     public int Section5ColorCode
     {
         get => _section5ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section5ColorCode, value);
+        set => SetProperty(ref _section5ColorCode, value);
     }
 
     public int Section6ColorCode
     {
         get => _section6ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section6ColorCode, value);
+        set => SetProperty(ref _section6ColorCode, value);
     }
 
     public int Section7ColorCode
     {
         get => _section7ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section7ColorCode, value);
+        set => SetProperty(ref _section7ColorCode, value);
     }
 
     public int Section8ColorCode
     {
         get => _section8ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section8ColorCode, value);
+        set => SetProperty(ref _section8ColorCode, value);
     }
 
     public int Section9ColorCode
     {
         get => _section9ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section9ColorCode, value);
+        set => SetProperty(ref _section9ColorCode, value);
     }
 
     public int Section10ColorCode
     {
         get => _section10ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section10ColorCode, value);
+        set => SetProperty(ref _section10ColorCode, value);
     }
 
     public int Section11ColorCode
     {
         get => _section11ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section11ColorCode, value);
+        set => SetProperty(ref _section11ColorCode, value);
     }
 
     public int Section12ColorCode
     {
         get => _section12ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section12ColorCode, value);
+        set => SetProperty(ref _section12ColorCode, value);
     }
 
     public int Section13ColorCode
     {
         get => _section13ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section13ColorCode, value);
+        set => SetProperty(ref _section13ColorCode, value);
     }
 
     public int Section14ColorCode
     {
         get => _section14ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section14ColorCode, value);
+        set => SetProperty(ref _section14ColorCode, value);
     }
 
     public int Section15ColorCode
     {
         get => _section15ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section15ColorCode, value);
+        set => SetProperty(ref _section15ColorCode, value);
     }
 
     public int Section16ColorCode
     {
         get => _section16ColorCode;
-        set => this.RaiseAndSetIfChanged(ref _section16ColorCode, value);
+        set => SetProperty(ref _section16ColorCode, value);
     }
 
     /// <summary>
@@ -859,20 +860,20 @@ public class MainViewModel : ReactiveObject
     public int NumSections
     {
         get => _numSections;
-        private set => this.RaiseAndSetIfChanged(ref _numSections, value);
+        private set => SetProperty(ref _numSections, value);
     }
 
     // AutoSteer Hello and Data properties
     public bool IsAutoSteerHelloOk
     {
         get => _isAutoSteerHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerHelloOk, value);
+        set => SetProperty(ref _isAutoSteerHelloOk, value);
     }
 
     public bool IsAutoSteerDataOk
     {
         get => _isAutoSteerDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerDataOk, value);
+        set => SetProperty(ref _isAutoSteerDataOk, value);
     }
 
     // Right Navigation Panel Properties
@@ -885,7 +886,7 @@ public class MainViewModel : ReactiveObject
     public bool IsContourModeOn
     {
         get => _isContourModeOn;
-        set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
+        set => SetProperty(ref _isContourModeOn, value);
     }
 
     // Button state tracking - these just track what the convenience buttons last did
@@ -895,64 +896,64 @@ public class MainViewModel : ReactiveObject
     public bool IsManualSectionMode
     {
         get => _isManualAllOn;
-        set => this.RaiseAndSetIfChanged(ref _isManualAllOn, value);
+        set => SetProperty(ref _isManualAllOn, value);
     }
 
     public bool IsSectionMasterOn
     {
         get => _isAutoAllOn;
-        set => this.RaiseAndSetIfChanged(ref _isAutoAllOn, value);
+        set => SetProperty(ref _isAutoAllOn, value);
     }
 
     public bool IsAutoSteerAvailable
     {
         get => _isAutoSteerAvailable;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerAvailable, value);
+        set => SetProperty(ref _isAutoSteerAvailable, value);
     }
 
     public bool IsAutoSteerEngaged
     {
         get => _isAutoSteerEngaged;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerEngaged, value);
+        set => SetProperty(ref _isAutoSteerEngaged, value);
     }
 
     public bool IsYouTurnEnabled
     {
         get => _isYouTurnEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isYouTurnEnabled, value);
+        set => SetProperty(ref _isYouTurnEnabled, value);
     }
 
     // Machine Hello and Data properties
     public bool IsMachineHelloOk
     {
         get => _isMachineHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isMachineHelloOk, value);
+        set => SetProperty(ref _isMachineHelloOk, value);
     }
 
     public bool IsMachineDataOk
     {
         get => _isMachineDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isMachineDataOk, value);
+        set => SetProperty(ref _isMachineDataOk, value);
     }
 
     // IMU Hello and Data properties
     public bool IsImuHelloOk
     {
         get => _isImuHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isImuHelloOk, value);
+        set => SetProperty(ref _isImuHelloOk, value);
     }
 
     public bool IsImuDataOk
     {
         get => _isImuDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isImuDataOk, value);
+        set => SetProperty(ref _isImuDataOk, value);
     }
 
     // GPS Hello and Data properties (GPS doesn't have hello, just data from NMEA)
     public bool IsGpsDataOk
     {
         get => _isGpsDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isGpsDataOk, value);
+        set => SetProperty(ref _isGpsDataOk, value);
     }
 
     // NTRIP properties
@@ -968,13 +969,13 @@ public class MainViewModel : ReactiveObject
     public bool IsNtripConnected
     {
         get => _isNtripConnected;
-        set => this.RaiseAndSetIfChanged(ref _isNtripConnected, value);
+        set => SetProperty(ref _isNtripConnected, value);
     }
 
     public string NtripStatus
     {
         get => _ntripStatus;
-        set => this.RaiseAndSetIfChanged(ref _ntripStatus, value);
+        set => SetProperty(ref _ntripStatus, value);
     }
 
     public string NtripBytesReceived
@@ -985,92 +986,92 @@ public class MainViewModel : ReactiveObject
     public string NtripCasterAddress
     {
         get => _ntripCasterAddress;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterAddress, value);
+        set => SetProperty(ref _ntripCasterAddress, value);
     }
 
     public int NtripCasterPort
     {
         get => _ntripCasterPort;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterPort, value);
+        set => SetProperty(ref _ntripCasterPort, value);
     }
 
     public string NtripMountPoint
     {
         get => _ntripMountPoint;
-        set => this.RaiseAndSetIfChanged(ref _ntripMountPoint, value);
+        set => SetProperty(ref _ntripMountPoint, value);
     }
 
     public string NtripUsername
     {
         get => _ntripUsername;
-        set => this.RaiseAndSetIfChanged(ref _ntripUsername, value);
+        set => SetProperty(ref _ntripUsername, value);
     }
 
     public string NtripPassword
     {
         get => _ntripPassword;
-        set => this.RaiseAndSetIfChanged(ref _ntripPassword, value);
+        set => SetProperty(ref _ntripPassword, value);
     }
 
     public string DebugLog
     {
         get => _debugLog;
-        set => this.RaiseAndSetIfChanged(ref _debugLog, value);
+        set => SetProperty(ref _debugLog, value);
     }
 
     public double Easting
     {
         get => _easting;
-        set => this.RaiseAndSetIfChanged(ref _easting, value);
+        set => SetProperty(ref _easting, value);
     }
 
     public double Northing
     {
         get => _northing;
-        set => this.RaiseAndSetIfChanged(ref _northing, value);
+        set => SetProperty(ref _northing, value);
     }
 
     public double Heading
     {
         get => _heading;
-        set => this.RaiseAndSetIfChanged(ref _heading, value);
+        set => SetProperty(ref _heading, value);
     }
 
     // Tool position properties (for map rendering)
     public double ToolEasting
     {
         get => _toolEasting;
-        set => this.RaiseAndSetIfChanged(ref _toolEasting, value);
+        set => SetProperty(ref _toolEasting, value);
     }
 
     public double ToolNorthing
     {
         get => _toolNorthing;
-        set => this.RaiseAndSetIfChanged(ref _toolNorthing, value);
+        set => SetProperty(ref _toolNorthing, value);
     }
 
     public double ToolHeadingRadians
     {
         get => _toolHeading;
-        set => this.RaiseAndSetIfChanged(ref _toolHeading, value);
+        set => SetProperty(ref _toolHeading, value);
     }
 
     public double ToolWidth
     {
         get => _toolWidth;
-        set => this.RaiseAndSetIfChanged(ref _toolWidth, value);
+        set => SetProperty(ref _toolWidth, value);
     }
 
     public double HitchEasting
     {
         get => _hitchEasting;
-        set => this.RaiseAndSetIfChanged(ref _hitchEasting, value);
+        set => SetProperty(ref _hitchEasting, value);
     }
 
     public double HitchNorthing
     {
         get => _hitchNorthing;
-        set => this.RaiseAndSetIfChanged(ref _hitchNorthing, value);
+        set => SetProperty(ref _hitchNorthing, value);
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot state)
@@ -2686,7 +2687,7 @@ public class MainViewModel : ReactiveObject
 
         // Legacy property updates
         _ntripBytesReceived = _ntripService.TotalBytesReceived;
-        this.RaisePropertyChanged(nameof(NtripBytesReceived));
+        OnPropertyChanged(nameof(NtripBytesReceived));
     }
 
     private void UpdateStatusMessage()
@@ -2715,13 +2716,13 @@ public class MainViewModel : ReactiveObject
     public Field? ActiveField
     {
         get => _activeField;
-        set => this.RaiseAndSetIfChanged(ref _activeField, value);
+        set => SetProperty(ref _activeField, value);
     }
 
     public string FieldsRootDirectory
     {
         get => _fieldsRootDirectory;
-        set => this.RaiseAndSetIfChanged(ref _fieldsRootDirectory, value);
+        set => SetProperty(ref _fieldsRootDirectory, value);
     }
 
     public string? ActiveFieldName => ActiveField?.Name;
@@ -2792,9 +2793,9 @@ public class MainViewModel : ReactiveObject
     /// </summary>
     public void RefreshCoverageStatistics()
     {
-        this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
-        this.RaisePropertyChanged(nameof(RemainingPercent));
-        this.RaisePropertyChanged(nameof(WorkRateDisplay));
+        OnPropertyChanged(nameof(WorkedAreaDisplay));
+        OnPropertyChanged(nameof(RemainingPercent));
+        OnPropertyChanged(nameof(WorkRateDisplay));
     }
 
     private void OnActiveFieldChanged(object? sender, Field? field)
@@ -2835,9 +2836,9 @@ public class MainViewModel : ReactiveObject
 
         // Legacy property
         ActiveField = field;
-        this.RaisePropertyChanged(nameof(ActiveFieldName));
-        this.RaisePropertyChanged(nameof(ActiveFieldArea));
-        this.RaisePropertyChanged(nameof(HasActiveField));
+        OnPropertyChanged(nameof(ActiveFieldName));
+        OnPropertyChanged(nameof(ActiveFieldArea));
+        OnPropertyChanged(nameof(HasActiveField));
 
         // Update field statistics service with new boundary
         if (field?.Boundary != null)
@@ -2848,9 +2849,9 @@ public class MainViewModel : ReactiveObject
             // Calculate boundary area and pass as list (outer boundary only for now)
             var boundaryAreas = new List<double> { field.Boundary.AreaHectares * 10000 }; // Convert ha to sq meters
             _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
-            this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
-            this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
-            this.RaisePropertyChanged(nameof(RemainingPercent));
+            OnPropertyChanged(nameof(BoundaryAreaDisplay));
+            OnPropertyChanged(nameof(WorkedAreaDisplay));
+            OnPropertyChanged(nameof(RemainingPercent));
         }
         else
         {
@@ -2913,7 +2914,7 @@ public class MainViewModel : ReactiveObject
                 // Use direct field assignment to avoid triggering save
                 _currentHeadlandLine = headlandLine.Tracks[0].TrackPoints;
                 _mapService.SetHeadlandLine(_currentHeadlandLine);
-                this.RaisePropertyChanged(nameof(CurrentHeadlandLine));
+                OnPropertyChanged(nameof(CurrentHeadlandLine));
 
                 HasHeadland = true;
                 IsHeadlandOn = true;
@@ -2952,49 +2953,49 @@ public class MainViewModel : ReactiveObject
     public bool IsViewSettingsPanelVisible
     {
         get => _isViewSettingsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isViewSettingsPanelVisible, value);
+        set => SetProperty(ref _isViewSettingsPanelVisible, value);
     }
 
     private bool _isFileMenuPanelVisible;
     public bool IsFileMenuPanelVisible
     {
         get => _isFileMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFileMenuPanelVisible, value);
+        set => SetProperty(ref _isFileMenuPanelVisible, value);
     }
 
     private bool _isToolsPanelVisible;
     public bool IsToolsPanelVisible
     {
         get => _isToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isToolsPanelVisible, value);
+        set => SetProperty(ref _isToolsPanelVisible, value);
     }
 
     private bool _isConfigurationPanelVisible;
     public bool IsConfigurationPanelVisible
     {
         get => _isConfigurationPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isConfigurationPanelVisible, value);
+        set => SetProperty(ref _isConfigurationPanelVisible, value);
     }
 
     private bool _isJobMenuPanelVisible;
     public bool IsJobMenuPanelVisible
     {
         get => _isJobMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isJobMenuPanelVisible, value);
+        set => SetProperty(ref _isJobMenuPanelVisible, value);
     }
 
     private bool _isFieldToolsPanelVisible;
     public bool IsFieldToolsPanelVisible
     {
         get => _isFieldToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFieldToolsPanelVisible, value);
+        set => SetProperty(ref _isFieldToolsPanelVisible, value);
     }
 
     private bool _isSimulatorPanelVisible;
     public bool IsSimulatorPanelVisible
     {
         get => _isSimulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+        set => SetProperty(ref _isSimulatorPanelVisible, value);
     }
 
     // Panel-based dialog data properties (visibility now managed by State.UI)
@@ -3002,14 +3003,14 @@ public class MainViewModel : ReactiveObject
     public decimal? SimCoordsDialogLatitude
     {
         get => _simCoordsDialogLatitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLatitude, value);
+        set => SetProperty(ref _simCoordsDialogLatitude, value);
     }
 
     private decimal? _simCoordsDialogLongitude;
     public decimal? SimCoordsDialogLongitude
     {
         get => _simCoordsDialogLongitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLongitude, value);
+        set => SetProperty(ref _simCoordsDialogLongitude, value);
     }
 
     // Field Selection Dialog properties (visibility managed by State.UI)
@@ -3019,7 +3020,7 @@ public class MainViewModel : ReactiveObject
     public FieldSelectionItem? SelectedFieldInfo
     {
         get => _selectedFieldInfo;
-        set => this.RaiseAndSetIfChanged(ref _selectedFieldInfo, value);
+        set => SetProperty(ref _selectedFieldInfo, value);
     }
 
     private string _fieldSelectionDirectory = string.Empty;
@@ -3032,10 +3033,10 @@ public class MainViewModel : ReactiveObject
         get => _currentABCreationMode;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentABCreationMode, value);
-            this.RaisePropertyChanged(nameof(IsCreatingABLine));
-            this.RaisePropertyChanged(nameof(EnableABClickSelection));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            SetProperty(ref _currentABCreationMode, value);
+            OnPropertyChanged(nameof(IsCreatingABLine));
+            OnPropertyChanged(nameof(EnableABClickSelection));
+            OnPropertyChanged(nameof(ABCreationInstructions));
         }
     }
 
@@ -3045,8 +3046,8 @@ public class MainViewModel : ReactiveObject
         get => _currentABPointStep;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentABPointStep, value);
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            SetProperty(ref _currentABPointStep, value);
+            OnPropertyChanged(nameof(ABCreationInstructions));
         }
     }
 
@@ -3055,7 +3056,7 @@ public class MainViewModel : ReactiveObject
     public Position? PendingPointA
     {
         get => _pendingPointA;
-        set => this.RaiseAndSetIfChanged(ref _pendingPointA, value);
+        set => SetProperty(ref _pendingPointA, value);
     }
 
     // Computed properties for UI binding
@@ -3090,7 +3091,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _selectedTrack;
-            if (this.RaiseAndSetIfChanged(ref _selectedTrack, value) != oldValue)
+            if (SetProperty(ref _selectedTrack, value))
             {
                 // Sync IsActive state with selection
                 if (oldValue != null)
@@ -3132,14 +3133,14 @@ public class MainViewModel : ReactiveObject
     public NtripProfile? SelectedNtripProfile
     {
         get => _selectedNtripProfile;
-        set => this.RaiseAndSetIfChanged(ref _selectedNtripProfile, value);
+        set => SetProperty(ref _selectedNtripProfile, value);
     }
 
     private NtripProfile? _editingNtripProfile;
     public NtripProfile? EditingNtripProfile
     {
         get => _editingNtripProfile;
-        set => this.RaiseAndSetIfChanged(ref _editingNtripProfile, value);
+        set => SetProperty(ref _editingNtripProfile, value);
     }
 
     /// <summary>
@@ -3162,14 +3163,14 @@ public class MainViewModel : ReactiveObject
     public string NtripTestStatus
     {
         get => _ntripTestStatus;
-        set => this.RaiseAndSetIfChanged(ref _ntripTestStatus, value);
+        set => SetProperty(ref _ntripTestStatus, value);
     }
 
     private bool _isTestingNtripConnection;
     public bool IsTestingNtripConnection
     {
         get => _isTestingNtripConnection;
-        set => this.RaiseAndSetIfChanged(ref _isTestingNtripConnection, value);
+        set => SetProperty(ref _isTestingNtripConnection, value);
     }
 
     // New Field Dialog properties (visibility managed by State.UI)
@@ -3177,21 +3178,21 @@ public class MainViewModel : ReactiveObject
     public string NewFieldName
     {
         get => _newFieldName;
-        set => this.RaiseAndSetIfChanged(ref _newFieldName, value);
+        set => SetProperty(ref _newFieldName, value);
     }
 
     private double _newFieldLatitude;
     public double NewFieldLatitude
     {
         get => _newFieldLatitude;
-        set => this.RaiseAndSetIfChanged(ref _newFieldLatitude, value);
+        set => SetProperty(ref _newFieldLatitude, value);
     }
 
     private double _newFieldLongitude;
     public double NewFieldLongitude
     {
         get => _newFieldLongitude;
-        set => this.RaiseAndSetIfChanged(ref _newFieldLongitude, value);
+        set => SetProperty(ref _newFieldLongitude, value);
     }
 
     public ICommand? CancelNewFieldDialogCommand { get; private set; }
@@ -3202,7 +3203,7 @@ public class MainViewModel : ReactiveObject
     public string FromExistingFieldName
     {
         get => _fromExistingFieldName;
-        set => this.RaiseAndSetIfChanged(ref _fromExistingFieldName, value);
+        set => SetProperty(ref _fromExistingFieldName, value);
     }
 
     private FieldSelectionItem? _fromExistingSelectedField;
@@ -3211,7 +3212,7 @@ public class MainViewModel : ReactiveObject
         get => _fromExistingSelectedField;
         set
         {
-            this.RaiseAndSetIfChanged(ref _fromExistingSelectedField, value);
+            SetProperty(ref _fromExistingSelectedField, value);
             if (value != null)
             {
                 // Auto-populate field name when selection changes
@@ -3225,28 +3226,28 @@ public class MainViewModel : ReactiveObject
     public bool CopyFlags
     {
         get => _copyFlags;
-        set => this.RaiseAndSetIfChanged(ref _copyFlags, value);
+        set => SetProperty(ref _copyFlags, value);
     }
 
     private bool _copyMapping = true;
     public bool CopyMapping
     {
         get => _copyMapping;
-        set => this.RaiseAndSetIfChanged(ref _copyMapping, value);
+        set => SetProperty(ref _copyMapping, value);
     }
 
     private bool _copyHeadland = true;
     public bool CopyHeadland
     {
         get => _copyHeadland;
-        set => this.RaiseAndSetIfChanged(ref _copyHeadland, value);
+        set => SetProperty(ref _copyHeadland, value);
     }
 
     private bool _copyLines = true;
     public bool CopyLines
     {
         get => _copyLines;
-        set => this.RaiseAndSetIfChanged(ref _copyLines, value);
+        set => SetProperty(ref _copyLines, value);
     }
 
     public ICommand? CancelFromExistingFieldDialogCommand { get; private set; }
@@ -3269,7 +3270,7 @@ public class MainViewModel : ReactiveObject
         get => _selectedKmlFile;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedKmlFile, value);
+            SetProperty(ref _selectedKmlFile, value);
             if (value != null)
             {
                 KmlImportFieldName = Path.GetFileNameWithoutExtension(value.Name);
@@ -3282,28 +3283,28 @@ public class MainViewModel : ReactiveObject
     public string KmlImportFieldName
     {
         get => _kmlImportFieldName;
-        set => this.RaiseAndSetIfChanged(ref _kmlImportFieldName, value);
+        set => SetProperty(ref _kmlImportFieldName, value);
     }
 
     private int _kmlBoundaryPointCount;
     public int KmlBoundaryPointCount
     {
         get => _kmlBoundaryPointCount;
-        set => this.RaiseAndSetIfChanged(ref _kmlBoundaryPointCount, value);
+        set => SetProperty(ref _kmlBoundaryPointCount, value);
     }
 
     private double _kmlCenterLatitude;
     public double KmlCenterLatitude
     {
         get => _kmlCenterLatitude;
-        set => this.RaiseAndSetIfChanged(ref _kmlCenterLatitude, value);
+        set => SetProperty(ref _kmlCenterLatitude, value);
     }
 
     private double _kmlCenterLongitude;
     public double KmlCenterLongitude
     {
         get => _kmlCenterLongitude;
-        set => this.RaiseAndSetIfChanged(ref _kmlCenterLongitude, value);
+        set => SetProperty(ref _kmlCenterLongitude, value);
     }
 
     private List<(double Latitude, double Longitude)> _kmlBoundaryPoints = new();
@@ -3323,7 +3324,7 @@ public class MainViewModel : ReactiveObject
         get => _selectedIsoXmlFile;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedIsoXmlFile, value);
+            SetProperty(ref _selectedIsoXmlFile, value);
             if (value != null)
             {
                 IsoXmlImportFieldName = value.Name;
@@ -3335,7 +3336,7 @@ public class MainViewModel : ReactiveObject
     public string IsoXmlImportFieldName
     {
         get => _isoXmlImportFieldName;
-        set => this.RaiseAndSetIfChanged(ref _isoXmlImportFieldName, value);
+        set => SetProperty(ref _isoXmlImportFieldName, value);
     }
 
     public ICommand? CancelIsoXmlImportDialogCommand { get; private set; }
@@ -3349,42 +3350,42 @@ public class MainViewModel : ReactiveObject
     public double BoundaryMapCenterLatitude
     {
         get => _boundaryMapCenterLatitude;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCenterLatitude, value);
+        set => SetProperty(ref _boundaryMapCenterLatitude, value);
     }
 
     private double _boundaryMapCenterLongitude;
     public double BoundaryMapCenterLongitude
     {
         get => _boundaryMapCenterLongitude;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCenterLongitude, value);
+        set => SetProperty(ref _boundaryMapCenterLongitude, value);
     }
 
     private int _boundaryMapPointCount;
     public int BoundaryMapPointCount
     {
         get => _boundaryMapPointCount;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapPointCount, value);
+        set => SetProperty(ref _boundaryMapPointCount, value);
     }
 
     private string _boundaryMapCoordinateText = string.Empty;
     public string BoundaryMapCoordinateText
     {
         get => _boundaryMapCoordinateText;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCoordinateText, value);
+        set => SetProperty(ref _boundaryMapCoordinateText, value);
     }
 
     private bool _boundaryMapIncludeBackground = true;
     public bool BoundaryMapIncludeBackground
     {
         get => _boundaryMapIncludeBackground;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapIncludeBackground, value);
+        set => SetProperty(ref _boundaryMapIncludeBackground, value);
     }
 
     private bool _boundaryMapCanSave;
     public bool BoundaryMapCanSave
     {
         get => _boundaryMapCanSave;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCanSave, value);
+        set => SetProperty(ref _boundaryMapCanSave, value);
     }
 
     // Result properties for boundary map dialog
@@ -3404,35 +3405,35 @@ public class MainViewModel : ReactiveObject
     public string NumericInputDialogTitle
     {
         get => _numericInputDialogTitle;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogTitle, value);
+        set => SetProperty(ref _numericInputDialogTitle, value);
     }
 
     private decimal? _numericInputDialogValue;
     public decimal? NumericInputDialogValue
     {
         get => _numericInputDialogValue;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogValue, value);
+        set => SetProperty(ref _numericInputDialogValue, value);
     }
 
     private string _numericInputDialogDisplayText = string.Empty;
     public string NumericInputDialogDisplayText
     {
         get => _numericInputDialogDisplayText;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogDisplayText, value);
+        set => SetProperty(ref _numericInputDialogDisplayText, value);
     }
 
     private bool _numericInputDialogIntegerOnly;
     public bool NumericInputDialogIntegerOnly
     {
         get => _numericInputDialogIntegerOnly;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogIntegerOnly, value);
+        set => SetProperty(ref _numericInputDialogIntegerOnly, value);
     }
 
     private bool _numericInputDialogAllowNegative = true;
     public bool NumericInputDialogAllowNegative
     {
         get => _numericInputDialogAllowNegative;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogAllowNegative, value);
+        set => SetProperty(ref _numericInputDialogAllowNegative, value);
     }
 
     // Callback to run when numeric input is confirmed
@@ -3446,21 +3447,21 @@ public class MainViewModel : ReactiveObject
     public string AgShareSettingsServerUrl
     {
         get => _agShareSettingsServerUrl;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsServerUrl, value);
+        set => SetProperty(ref _agShareSettingsServerUrl, value);
     }
 
     private string _agShareSettingsApiKey = string.Empty;
     public string AgShareSettingsApiKey
     {
         get => _agShareSettingsApiKey;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsApiKey, value);
+        set => SetProperty(ref _agShareSettingsApiKey, value);
     }
 
     private bool _agShareSettingsEnabled;
     public bool AgShareSettingsEnabled
     {
         get => _agShareSettingsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsEnabled, value);
+        set => SetProperty(ref _agShareSettingsEnabled, value);
     }
 
     public ICommand? CancelAgShareSettingsDialogCommand { get; private set; }
@@ -3477,7 +3478,7 @@ public class MainViewModel : ReactiveObject
     public bool IsDataIOKeyboardVisible
     {
         get => _isDataIOKeyboardVisible;
-        set => this.RaiseAndSetIfChanged(ref _isDataIOKeyboardVisible, value);
+        set => SetProperty(ref _isDataIOKeyboardVisible, value);
     }
 
     private string _dataIOKeyboardText = "";
@@ -3487,7 +3488,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _dataIOKeyboardText;
-            this.RaiseAndSetIfChanged(ref _dataIOKeyboardText, value);
+            SetProperty(ref _dataIOKeyboardText, value);
             if (oldValue != value && !string.IsNullOrEmpty(_activeDataIOField))
             {
                 // Update the appropriate field based on active field
@@ -3500,7 +3501,7 @@ public class MainViewModel : ReactiveObject
     public string ActiveDataIOField
     {
         get => _activeDataIOField;
-        set => this.RaiseAndSetIfChanged(ref _activeDataIOField, value);
+        set => SetProperty(ref _activeDataIOField, value);
     }
 
     // Data I/O Commands
@@ -3586,7 +3587,7 @@ public class MainViewModel : ReactiveObject
         get => _isFileMenuVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isFileMenuVisible, value) && value)
+            if (SetProperty(ref _isFileMenuVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFieldToolsVisible = false;
@@ -3601,7 +3602,7 @@ public class MainViewModel : ReactiveObject
         get => _isFieldToolsVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isFieldToolsVisible, value) && value)
+            if (SetProperty(ref _isFieldToolsVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFileMenuVisible = false;
@@ -3616,7 +3617,7 @@ public class MainViewModel : ReactiveObject
         get => _isSettingsVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isSettingsVisible, value) && value)
+            if (SetProperty(ref _isSettingsVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFileMenuVisible = false;
@@ -3631,7 +3632,7 @@ public class MainViewModel : ReactiveObject
         get => _isBoundaryPanelVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isBoundaryPanelVisible, value) && value)
+            if (SetProperty(ref _isBoundaryPanelVisible, value) && value)
             {
                 RefreshBoundaryList();
             }
@@ -3645,35 +3646,35 @@ public class MainViewModel : ReactiveObject
     public int SelectedBoundaryIndex
     {
         get => _selectedBoundaryIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedBoundaryIndex, value);
+        set => SetProperty(ref _selectedBoundaryIndex, value);
     }
 
     private bool _isBoundaryPlayerPanelVisible;
     public bool IsBoundaryPlayerPanelVisible
     {
         get => _isBoundaryPlayerPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryPlayerPanelVisible, value);
+        set => SetProperty(ref _isBoundaryPlayerPanelVisible, value);
     }
 
     private bool _isBoundaryRecording;
     public bool IsBoundaryRecording
     {
         get => _isBoundaryRecording;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryRecording, value);
+        set => SetProperty(ref _isBoundaryRecording, value);
     }
 
     private int _boundaryPointCount;
     public int BoundaryPointCount
     {
         get => _boundaryPointCount;
-        set => this.RaiseAndSetIfChanged(ref _boundaryPointCount, value);
+        set => SetProperty(ref _boundaryPointCount, value);
     }
 
     private double _boundaryAreaHectares;
     public double BoundaryAreaHectares
     {
         get => _boundaryAreaHectares;
-        set => this.RaiseAndSetIfChanged(ref _boundaryAreaHectares, value);
+        set => SetProperty(ref _boundaryAreaHectares, value);
     }
 
     // Boundary Player settings
@@ -3683,7 +3684,7 @@ public class MainViewModel : ReactiveObject
         get => _isBoundarySectionControlOn;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value) != value) return;
+            if (SetProperty(ref _isBoundarySectionControlOn, value) != value) return;
             StatusMessage = value ? "Boundary records when section is on" : "Boundary section control off";
         }
     }
@@ -3694,7 +3695,7 @@ public class MainViewModel : ReactiveObject
         get => _isDrawRightSide;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isDrawRightSide, value) != value) return;
+            if (SetProperty(ref _isDrawRightSide, value) != value) return;
             StatusMessage = value ? "Boundary on right side" : "Boundary on left side";
             UpdateBoundaryOffsetIndicator();
         }
@@ -3706,7 +3707,7 @@ public class MainViewModel : ReactiveObject
         get => _isDrawAtPivot;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value) != value) return;
+            if (SetProperty(ref _isDrawAtPivot, value) != value) return;
             StatusMessage = value ? "Recording at pivot point" : "Recording at tool";
         }
     }
@@ -3717,8 +3718,8 @@ public class MainViewModel : ReactiveObject
         get => _boundaryOffset;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _boundaryOffset, value) != value) return;
-            UpdateBoundaryOffsetIndicator();
+            if (SetProperty(ref _boundaryOffset, value))
+                UpdateBoundaryOffsetIndicator();
         }
     }
 
@@ -3764,7 +3765,7 @@ public class MainViewModel : ReactiveObject
     public ConfigurationViewModel? ConfigurationViewModel
     {
         get => _configurationViewModel;
-        set => this.RaiseAndSetIfChanged(ref _configurationViewModel, value);
+        set => SetProperty(ref _configurationViewModel, value);
     }
 
     public ICommand? ShowConfigurationDialogCommand { get; private set; }
@@ -3779,21 +3780,21 @@ public class MainViewModel : ReactiveObject
     public bool IsProfileSelectionVisible
     {
         get => _isProfileSelectionVisible;
-        set => this.RaiseAndSetIfChanged(ref _isProfileSelectionVisible, value);
+        set => SetProperty(ref _isProfileSelectionVisible, value);
     }
 
     private System.Collections.ObjectModel.ObservableCollection<string> _availableProfiles = new();
     public System.Collections.ObjectModel.ObservableCollection<string> AvailableProfiles
     {
         get => _availableProfiles;
-        set => this.RaiseAndSetIfChanged(ref _availableProfiles, value);
+        set => SetProperty(ref _availableProfiles, value);
     }
 
     private string? _selectedProfile;
     public string? SelectedProfile
     {
         get => _selectedProfile;
-        set => this.RaiseAndSetIfChanged(ref _selectedProfile, value);
+        set => SetProperty(ref _selectedProfile, value);
     }
 
     public string CurrentProfileName => _configurationService.Store.ActiveProfileName;
@@ -3805,7 +3806,7 @@ public class MainViewModel : ReactiveObject
         get => _isHeadlandOn;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isHeadlandOn, value))
+            if (SetProperty(ref _isHeadlandOn, value))
             {
                 StatusMessage = value ? "Headland ON" : "Headland OFF";
                 _mapService.SetHeadlandVisible(value);
@@ -3820,7 +3821,7 @@ public class MainViewModel : ReactiveObject
     public bool IsSectionControlInHeadland
     {
         get => _isSectionControlInHeadland;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlInHeadland, value);
+        set => SetProperty(ref _isSectionControlInHeadland, value);
     }
 
     private int _uTurnSkipRows;
@@ -3830,7 +3831,7 @@ public class MainViewModel : ReactiveObject
     public int UTurnSkipRows
     {
         get => _uTurnSkipRows;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSkipRows, Math.Max(0, Math.Min(9, value)));
+        set => SetProperty(ref _uTurnSkipRows, Math.Max(0, Math.Min(9, value)));
     }
 
     private bool _isUTurnSkipRowsEnabled;
@@ -3840,21 +3841,21 @@ public class MainViewModel : ReactiveObject
     public bool IsUTurnSkipRowsEnabled
     {
         get => _isUTurnSkipRowsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isUTurnSkipRowsEnabled, value);
+        set => SetProperty(ref _isUTurnSkipRowsEnabled, value);
     }
 
     private double _headlandDistance = 12.0;
     public double HeadlandDistance
     {
         get => _headlandDistance;
-        set => this.RaiseAndSetIfChanged(ref _headlandDistance, Math.Max(1.0, Math.Min(100.0, value)));
+        set => SetProperty(ref _headlandDistance, Math.Max(1.0, Math.Min(100.0, value)));
     }
 
     private int _headlandPasses = 1;
     public int HeadlandPasses
     {
         get => _headlandPasses;
-        set => this.RaiseAndSetIfChanged(ref _headlandPasses, Math.Max(1, Math.Min(5, value)));
+        set => SetProperty(ref _headlandPasses, Math.Max(1, Math.Min(5, value)));
     }
 
     private List<Models.Base.Vec3>? _currentHeadlandLine;
@@ -3863,7 +3864,7 @@ public class MainViewModel : ReactiveObject
         get => _currentHeadlandLine;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentHeadlandLine, value);
+            SetProperty(ref _currentHeadlandLine, value);
             _mapService.SetHeadlandLine(value);
             SaveHeadlandToFile(value);
 
@@ -3878,7 +3879,7 @@ public class MainViewModel : ReactiveObject
         get => _headlandPreviewLine;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPreviewLine, value);
+            SetProperty(ref _headlandPreviewLine, value);
             _mapService.SetHeadlandPreview(value);
         }
     }
@@ -3887,7 +3888,7 @@ public class MainViewModel : ReactiveObject
     public bool HasHeadland
     {
         get => _hasHeadland;
-        set => this.RaiseAndSetIfChanged(ref _hasHeadland, value);
+        set => SetProperty(ref _hasHeadland, value);
     }
 
     // Bottom strip state properties (matching AgOpenGPS conditional button visibility)
@@ -3898,7 +3899,7 @@ public class MainViewModel : ReactiveObject
     public bool HasActiveTrack
     {
         get => _hasActiveTrack;
-        set => this.RaiseAndSetIfChanged(ref _hasActiveTrack, value);
+        set => SetProperty(ref _hasActiveTrack, value);
     }
 
     private bool _hasBoundary;
@@ -3908,7 +3909,7 @@ public class MainViewModel : ReactiveObject
     public bool HasBoundary
     {
         get => _hasBoundary;
-        set => this.RaiseAndSetIfChanged(ref _hasBoundary, value);
+        set => SetProperty(ref _hasBoundary, value);
     }
 
     private bool _isNudgeEnabled;
@@ -3918,7 +3919,7 @@ public class MainViewModel : ReactiveObject
     public bool IsNudgeEnabled
     {
         get => _isNudgeEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isNudgeEnabled, value);
+        set => SetProperty(ref _isNudgeEnabled, value);
     }
 
     /// <summary>
@@ -3928,7 +3929,7 @@ public class MainViewModel : ReactiveObject
     public Boundary? CurrentBoundary
     {
         get => _currentBoundary;
-        private set => this.RaiseAndSetIfChanged(ref _currentBoundary, value);
+        private set => SetProperty(ref _currentBoundary, value);
     }
 
     // Headland Dialog properties (visibility managed by State.UI)
@@ -3939,9 +3940,9 @@ public class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _isHeadlandCurveMode;
-            if (this.RaiseAndSetIfChanged(ref _isHeadlandCurveMode, value))
+            if (SetProperty(ref _isHeadlandCurveMode, value))
             {
-                this.RaisePropertyChanged(nameof(IsHeadlandLineMode));
+                OnPropertyChanged(nameof(IsHeadlandLineMode));
                 // Update preview when track type changes
                 if (State.UI.IsHeadlandDialogVisible || State.UI.IsHeadlandBuilderDialogVisible)
                 {
@@ -3968,14 +3969,14 @@ public class MainViewModel : ReactiveObject
     public bool IsHeadlandZoomMode
     {
         get => _isHeadlandZoomMode;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandZoomMode, value);
+        set => SetProperty(ref _isHeadlandZoomMode, value);
     }
 
     private bool _isHeadlandSectionControlled = true;
     public bool IsHeadlandSectionControlled
     {
         get => _isHeadlandSectionControlled;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControlled, value);
+        set => SetProperty(ref _isHeadlandSectionControlled, value);
     }
 
     private int _headlandToolWidthMultiplier = 1;
@@ -3984,8 +3985,8 @@ public class MainViewModel : ReactiveObject
         get => _headlandToolWidthMultiplier;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandToolWidthMultiplier, value);
-            this.RaisePropertyChanged(nameof(HeadlandCalculatedWidth));
+            SetProperty(ref _headlandToolWidthMultiplier, value);
+            OnPropertyChanged(nameof(HeadlandCalculatedWidth));
             // Update distance based on tool width multiplier
             if (value > 0)
             {
@@ -4004,8 +4005,8 @@ public class MainViewModel : ReactiveObject
         get => _headlandPoint1Index;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPoint1Index, value);
-            this.RaisePropertyChanged(nameof(HeadlandPointsSelected));
+            SetProperty(ref _headlandPoint1Index, value);
+            OnPropertyChanged(nameof(HeadlandPointsSelected));
         }
     }
     private double _headlandPoint1T = 0;  // Parameter along segment (0 = start vertex, 1 = end vertex)
@@ -4017,8 +4018,8 @@ public class MainViewModel : ReactiveObject
         get => _headlandPoint2Index;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPoint2Index, value);
-            this.RaisePropertyChanged(nameof(HeadlandPointsSelected));
+            SetProperty(ref _headlandPoint2Index, value);
+            OnPropertyChanged(nameof(HeadlandPointsSelected));
         }
     }
     private double _headlandPoint2T = 0;  // Parameter along segment (0 = start vertex, 1 = end vertex)
@@ -4039,7 +4040,7 @@ public class MainViewModel : ReactiveObject
     public List<Models.Base.Vec2>? HeadlandSelectedMarkers
     {
         get => _headlandSelectedMarkers;
-        set => this.RaiseAndSetIfChanged(ref _headlandSelectedMarkers, value);
+        set => SetProperty(ref _headlandSelectedMarkers, value);
     }
 
     public bool HeadlandPointsSelected => _headlandPoint1Index >= 0 && _headlandPoint2Index >= 0;
@@ -4166,14 +4167,14 @@ public class MainViewModel : ReactiveObject
     public bool IsFieldOpen
     {
         get => _isFieldOpen;
-        set => this.RaiseAndSetIfChanged(ref _isFieldOpen, value);
+        set => SetProperty(ref _isFieldOpen, value);
     }
 
     private string _currentFieldName = string.Empty;
     public string CurrentFieldName
     {
         get => _currentFieldName;
-        set => this.RaiseAndSetIfChanged(ref _currentFieldName, value);
+        set => SetProperty(ref _currentFieldName, value);
     }
 
     // Simulator properties
@@ -4183,7 +4184,7 @@ public class MainViewModel : ReactiveObject
         get => _isSimulatorEnabled;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isSimulatorEnabled, value))
+            if (SetProperty(ref _isSimulatorEnabled, value))
             {
                 // Update centralized state
                 State.Simulator.IsEnabled = value;
@@ -4221,9 +4222,9 @@ public class MainViewModel : ReactiveObject
         get => _simulatorSteerAngle;
         set
         {
-            this.RaiseAndSetIfChanged(ref _simulatorSteerAngle, value);
+            SetProperty(ref _simulatorSteerAngle, value);
             State.Simulator.SteerAngle = value;
-            this.RaisePropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
+            OnPropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
             if (_isSimulatorEnabled)
             {
                 _simulatorService.SteerAngle = value;
@@ -4245,10 +4246,10 @@ public class MainViewModel : ReactiveObject
         {
             // Clamp to valid range
             value = Math.Max(-10, Math.Min(25, value));
-            this.RaiseAndSetIfChanged(ref _simulatorSpeedKph, value);
+            SetProperty(ref _simulatorSpeedKph, value);
             State.Simulator.Speed = value;
             State.Simulator.TargetSpeed = value;
-            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
             if (_isSimulatorEnabled)
             {
                 // Convert kph to stepDistance: stepDistance = speedKph / 40
@@ -4308,7 +4309,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.IsGridOn = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -4318,7 +4319,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.IsDayMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -4328,8 +4329,8 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.CameraPitch = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(Is2DMode));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Is2DMode));
         }
     }
 
@@ -4339,7 +4340,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.Is2DMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -4349,7 +4350,7 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.IsNorthUp = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -4359,8 +4360,8 @@ public class MainViewModel : ReactiveObject
         set
         {
             _displaySettings.Brightness = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(BrightnessDisplay));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(BrightnessDisplay));
         }
     }
 
@@ -4652,8 +4653,8 @@ public class MainViewModel : ReactiveObject
             _simulatorService.IsAcceleratingBackward = false;
             _simulatorService.StepDistance = 0;  // Immediately stop movement
             _simulatorSpeedKph = 0;  // Reset speed slider (use backing field to avoid triggering setter again)
-            this.RaisePropertyChanged(nameof(SimulatorSpeedKph));
-            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+            OnPropertyChanged(nameof(SimulatorSpeedKph));
+            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
             StatusMessage = "Sim: Stopped";
         });
 
@@ -4736,7 +4737,7 @@ public class MainViewModel : ReactiveObject
                 _configurationService.LoadProfile(SelectedProfile);
                 _settingsService.Settings.LastUsedVehicleProfile = SelectedProfile;
                 _settingsService.Save();
-                this.RaisePropertyChanged(nameof(CurrentProfileName));
+                OnPropertyChanged(nameof(CurrentProfileName));
             }
             IsProfileSelectionVisible = false;
         });
@@ -4761,7 +4762,7 @@ public class MainViewModel : ReactiveObject
             _configurationService.CreateProfile(profileName);
             _settingsService.Settings.LastUsedVehicleProfile = profileName;
             _settingsService.Save();
-            this.RaisePropertyChanged(nameof(CurrentProfileName));
+            OnPropertyChanged(nameof(CurrentProfileName));
         });
 
         ShowSimCoordsDialogCommand = new RelayCommand(() =>
@@ -7640,7 +7641,7 @@ public class MainViewModel : ReactiveObject
         HeadlandSelectedMarkers = markers.Count > 0 ? markers : null;
 
         // Also notify that HeadlandClipPath may have changed (it's computed from curve mode indices)
-        this.RaisePropertyChanged(nameof(HeadlandClipPath));
+        OnPropertyChanged(nameof(HeadlandClipPath));
     }
 
     /// <summary>
