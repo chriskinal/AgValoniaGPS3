@@ -33,6 +33,10 @@ public class SectionControlService : ISectionControlService
     // Default coverage overlap threshold (used if MinCoverage is 0)
     private const double DEFAULT_COVERAGE_THRESHOLD = 0.70; // 70%
 
+    // Turn detection for coverage margin
+    private double _previousHeading = double.NaN;
+    private const double TURN_THRESHOLD_RAD = 0.05; // ~3 degrees per update = turning
+
     public IReadOnlyList<SectionControlState> SectionStates => _sectionStates;
     public SectionMasterState MasterState
     {
@@ -101,6 +105,18 @@ public class SectionControlService : ISectionControlService
         var tool = ConfigurationStore.Instance.Tool;
         int numSections = NumSections;
 
+        // Detect if we're turning (heading changing rapidly)
+        bool isTurning = false;
+        if (!double.IsNaN(_previousHeading))
+        {
+            double headingDelta = Math.Abs(toolHeading - _previousHeading);
+            // Handle wrap-around at ±π
+            if (headingDelta > Math.PI)
+                headingDelta = 2 * Math.PI - headingDelta;
+            isTurning = headingDelta > TURN_THRESHOLD_RAD;
+        }
+        _previousHeading = toolHeading;
+
         // Check if speed is below cutoff
         if (speed < tool.SlowSpeedCutoff)
         {
@@ -114,7 +130,7 @@ public class SectionControlService : ISectionControlService
         // Update each section
         for (int i = 0; i < numSections; i++)
         {
-            UpdateSection(i, toolPosition, toolHeading, speed);
+            UpdateSection(i, toolPosition, toolHeading, speed, isTurning);
         }
 
         // Fire state changed event
@@ -130,7 +146,7 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Update a single section's state
     /// </summary>
-    private void UpdateSection(int index, Vec3 toolPosition, double toolHeading, double speed)
+    private void UpdateSection(int index, Vec3 toolPosition, double toolHeading, double speed, bool isTurning)
     {
         var section = _sectionStates[index];
         var tool = ConfigurationStore.Instance.Tool;
@@ -151,7 +167,7 @@ public class SectionControlService : ISectionControlService
 
         if (section.ButtonState == SectionButtonState.On)
         {
-            UpdateSectionOn(index, leftEdge, rightEdge, toolHeading);
+            UpdateSectionOn(index, leftEdge, rightEdge, toolHeading, isTurning);
             return;
         }
 
@@ -237,7 +253,7 @@ public class SectionControlService : ISectionControlService
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
-                StartMapping(index, leftEdge, rightEdge, toolHeading);
+                StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
             }
         }
         else if (shouldBeOff && section.IsOn)
@@ -263,7 +279,7 @@ public class SectionControlService : ISectionControlService
             // Section is on and should stay on - update mapping
             section.SectionOnTimer = 0;
             section.SectionOffTimer = 0;
-            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
         }
         else
         {
@@ -293,17 +309,17 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Force a section on (manual override)
     /// </summary>
-    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
+    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
     {
         var section = _sectionStates[index];
         if (!section.IsOn)
         {
             section.IsOn = true;
-            StartMapping(index, leftEdge, rightEdge, toolHeading);
+            StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
         }
         else
         {
-            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
         }
         section.SectionOnTimer = 0;
         section.SectionOffTimer = 0;
@@ -312,7 +328,7 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Start coverage mapping for a section
     /// </summary>
-    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
+    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
     {
         var section = _sectionStates[index];
         section.MappingOnTimer++;
@@ -322,8 +338,8 @@ public class SectionControlService : ISectionControlService
             section.IsMappingOn = true;
             section.MappingOnTimer = 0;
 
-            // Apply coverage margin to expand edges outward
-            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
+            // Apply coverage margin to expand edges outward (disabled during turns)
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading, isTurning);
 
             // Get zone index (for multi-colored sections or zones)
             int zoneIndex = GetZoneIndex(index);
@@ -334,18 +350,18 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Update coverage mapping point
     /// </summary>
-    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
+    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
     {
         var section = _sectionStates[index];
         if (!section.IsMappingOn)
         {
             // Mapping hasn't started yet - continue the startup timer
-            StartMapping(index, leftEdge, rightEdge, toolHeading);
+            StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
         }
         else
         {
-            // Apply coverage margin to expand edges outward
-            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
+            // Apply coverage margin to expand edges outward (disabled during turns)
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading, isTurning);
 
             int zoneIndex = GetZoneIndex(index);
             _coverageMapService.AddCoveragePoint(zoneIndex, expandedLeft, expandedRight);
@@ -355,13 +371,15 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Apply coverage margin to expand section edges outward.
     /// This creates slight overlap between passes to prevent gaps from GPS drift.
+    /// Margin is disabled during turns to prevent spiky triangle artifacts.
     /// </summary>
-    private (Vec2 left, Vec2 right) ApplyCoverageMargin(Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
+    private (Vec2 left, Vec2 right) ApplyCoverageMargin(Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
     {
         var tool = ConfigurationStore.Instance.Tool;
         double margin = tool.CoverageMarginMeters;
 
-        if (margin <= 0)
+        // Skip margin when turning or margin disabled
+        if (margin <= 0 || isTurning)
             return (leftEdge, rightEdge);
 
         // Perpendicular direction (same as section edge calculation)
