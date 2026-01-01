@@ -42,9 +42,11 @@ public class CoveragePatch
     public int TriangleCount => Vertices.Count > 2 ? Vertices.Count - 2 : 0;
 
     /// <summary>
-    /// Check if the patch has enough vertices to render (minimum 4: color + 3 positions = 1 triangle)
+    /// Check if the patch has enough vertices to render.
+    /// Require 9 vertices (1 color + 8 geometry = 3 quads minimum) to filter out
+    /// tiny glitch patches from section flickering at headland boundaries.
     /// </summary>
-    public bool IsRenderable => Vertices.Count >= 4;
+    public bool IsRenderable => Vertices.Count >= 9;
 }
 
 /// <summary>

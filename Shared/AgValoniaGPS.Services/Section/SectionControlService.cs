@@ -35,8 +35,10 @@ public class SectionControlService : ISectionControlService
 
     // Yaw rate tracking for curve-following coverage margin
     private double _previousHeading = double.NaN;
+    private double _previousVehicleHeading = double.NaN;
     private double _yawRate = 0; // smoothed yaw rate in radians per update cycle (positive = turning right)
     private double _instantYawRate = 0; // instantaneous (unsmoothed) yaw rate for threshold checks
+    private double _vehicleYawRate = 0; // vehicle (tractor) yaw rate
     private double _toolVehicleHeadingDiff = 0; // difference between tool and vehicle heading (for trailed implements)
     private const double YAW_RATE_SMOOTHING = 0.3; // Smoothing factor (0-1, lower = smoother)
 
@@ -118,6 +120,18 @@ public class SectionControlService : ISectionControlService
             headingDiff += 2 * Math.PI;
         _toolVehicleHeadingDiff = headingDiff;
 
+        // Calculate vehicle yaw rate (to distinguish turns from catch-up)
+        if (!double.IsNaN(_previousVehicleHeading))
+        {
+            double vehicleHeadingDelta = vehicleHeading - _previousVehicleHeading;
+            if (vehicleHeadingDelta > Math.PI)
+                vehicleHeadingDelta -= 2 * Math.PI;
+            else if (vehicleHeadingDelta < -Math.PI)
+                vehicleHeadingDelta += 2 * Math.PI;
+            _vehicleYawRate = vehicleHeadingDelta;
+        }
+        _previousVehicleHeading = vehicleHeading;
+
         // Calculate yaw rate (both instantaneous and smoothed)
         // Instantaneous is used for threshold checks (especially for trailed implements)
         // Smoothed is used for curve-following adjustments
@@ -147,6 +161,7 @@ public class SectionControlService : ISectionControlService
             }
             _yawRate = 0; // Reset when stopped
             _instantYawRate = 0;
+            _vehicleYawRate = 0;
             return;
         }
 
@@ -366,8 +381,6 @@ public class SectionControlService : ISectionControlService
             _instantYawRate = 0;
 
             // For the FIRST point of a new patch, use straight perpendicular (no yaw adjustment).
-            // The yaw rate adjustment is meant to align consecutive points within a patch.
-            // Using it on the first point causes spikes when exiting turns.
             var (expandedLeft, expandedRight) = ApplyCoverageMarginStraight(leftEdge, rightEdge, toolHeading);
 
             // Get zone index (for multi-colored sections or zones)
@@ -383,21 +396,6 @@ public class SectionControlService : ISectionControlService
     {
         var section = _sectionStates[index];
 
-        // Don't record coverage when tool is significantly misaligned with vehicle
-        // This prevents spiky triangles during implement catch-up after turns
-        const double MAX_HEADING_DIFF_FOR_RECORDING = 0.1; // ~6 degrees
-        if (Math.Abs(_toolVehicleHeadingDiff) > MAX_HEADING_DIFF_FOR_RECORDING)
-        {
-            // Tool catching up - stop current patch to avoid distorted triangles
-            if (section.IsMappingOn)
-            {
-                section.IsMappingOn = false;
-                int zoneIndex = GetZoneIndex(index);
-                _coverageMapService.StopMapping(zoneIndex);
-            }
-            return;
-        }
-
         if (!section.IsMappingOn)
         {
             // Mapping hasn't started yet - continue the startup timer
@@ -405,6 +403,15 @@ public class SectionControlService : ISectionControlService
         }
         else
         {
+            // Skip this point if tool is yawing too fast - would create distorted triangle
+            // Use a high threshold to only catch extreme cases (spikes), not normal curves
+            const double MAX_YAW_FOR_POINT = 0.08; // ~4.5 degrees per update
+            if (Math.Abs(_instantYawRate) > MAX_YAW_FOR_POINT)
+            {
+                // Skip this point, but keep patch active - we'll record the next good point
+                return;
+            }
+
             // Apply coverage margin with curve-following adjustment
             var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
 

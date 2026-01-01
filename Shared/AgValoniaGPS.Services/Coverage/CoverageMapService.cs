@@ -78,13 +78,15 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         _activePatches.Remove(zoneIndex);
 
         // Save patch if it has enough points
-        if (patch.Vertices.Count > 4)
+        // Require at least 9 vertices (1 color + 8 geometry = 4 edge pairs = 3 quads minimum)
+        // This filters out tiny glitch patches from section flickering at boundaries
+        if (patch.Vertices.Count >= 9)
         {
             _patchSaveList.Add(patch);
         }
         else
         {
-            // Remove incomplete patches
+            // Remove incomplete/glitch patches
             _patches.Remove(patch);
         }
     }
