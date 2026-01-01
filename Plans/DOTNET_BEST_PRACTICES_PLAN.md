@@ -3,7 +3,7 @@
 ## Overview
 Modernize the codebase to follow Microsoft's recommended .NET and MVVM best practices. All changes are cross-platform compatible.
 
-## Status: IN PROGRESS (Phases 1 & 2 Complete)
+## Status: IN PROGRESS (Phases 1, 2 & 5 Complete)
 
 ---
 
@@ -451,10 +451,10 @@ Services with constructor-only DI injection:
 - [ ] Update services to use IOptions
 - [ ] Create appsettings.json
 
-### Phase 5: Primary Constructors
-- [ ] Convert simple services
-- [ ] Test DI still works
-- [ ] Update all platforms
+### Phase 5: Primary Constructors ✅
+- [x] Convert simple services (HeadlandBuilderService, CoverageMapService, ConfigurationService, TramLineService)
+- [x] Test DI still works
+- [x] Build passes on all platforms
 
 ---
 
