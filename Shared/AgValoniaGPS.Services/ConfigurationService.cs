@@ -12,36 +12,27 @@ namespace AgValoniaGPS.Services;
 /// Bridges between ConfigurationStore and existing persistence services
 /// to maintain AgOpenGPS XML compatibility.
 /// </summary>
-public class ConfigurationService : IConfigurationService
+public class ConfigurationService(
+    IVehicleProfileService profileService,
+    ISettingsService settingsService) : IConfigurationService
 {
-    private readonly IVehicleProfileService _profileService;
-    private readonly ISettingsService _settingsService;
-
     public ConfigurationStore Store => ConfigurationStore.Instance;
 
-    public string ProfilesDirectory => _profileService.VehiclesDirectory;
+    public string ProfilesDirectory => profileService.VehiclesDirectory;
 
     public event EventHandler<string>? ProfileLoaded;
     public event EventHandler<string>? ProfileSaved;
-
-    public ConfigurationService(
-        IVehicleProfileService profileService,
-        ISettingsService settingsService)
-    {
-        _profileService = profileService;
-        _settingsService = settingsService;
-    }
 
     #region Profile Management
 
     public IReadOnlyList<string> GetAvailableProfiles()
     {
-        return _profileService.GetAvailableProfiles();
+        return profileService.GetAvailableProfiles();
     }
 
     public bool LoadProfile(string name)
     {
-        var profile = _profileService.Load(name);
+        var profile = profileService.Load(name);
         if (profile == null)
             return false;
 
@@ -57,7 +48,7 @@ public class ConfigurationService : IConfigurationService
     public void SaveProfile(string name)
     {
         var profile = CreateProfileFromStore(name);
-        _profileService.Save(profile);
+        profileService.Save(profile);
         Store.HasUnsavedChanges = false;
         Store.OnProfileSaved();
         ProfileSaved?.Invoke(this, name);
@@ -65,7 +56,7 @@ public class ConfigurationService : IConfigurationService
 
     public void CreateProfile(string name)
     {
-        var profile = _profileService.CreateDefaultProfile(name);
+        var profile = profileService.CreateDefaultProfile(name);
         ApplyProfileToStore(profile);
         Store.ActiveProfileName = name;
         Store.ActiveProfilePath = profile.FilePath;
@@ -103,14 +94,14 @@ public class ConfigurationService : IConfigurationService
 
     public void LoadAppSettings()
     {
-        _settingsService.Load();
-        ApplyAppSettingsToStore(_settingsService.Settings);
+        settingsService.Load();
+        ApplyAppSettingsToStore(settingsService.Settings);
     }
 
     public void SaveAppSettings()
     {
-        ApplyStoreToAppSettings(_settingsService.Settings);
-        _settingsService.Save();
+        ApplyStoreToAppSettings(settingsService.Settings);
+        settingsService.Save();
     }
 
     #endregion

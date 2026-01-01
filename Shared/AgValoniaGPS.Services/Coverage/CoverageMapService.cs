@@ -17,7 +17,7 @@ namespace AgValoniaGPS.Services.Coverage;
 ///
 /// Based on AgOpenGPS CPatches implementation with Torriem's area calculation.
 /// </summary>
-public class CoverageMapService : ICoverageMapService
+public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverageMapService
 {
     // All coverage patches (completed and active)
     private readonly List<CoveragePatch> _patches = new();
@@ -27,9 +27,6 @@ public class CoverageMapService : ICoverageMapService
 
     // Patches pending save to file
     private readonly List<CoveragePatch> _patchSaveList = new();
-
-    // Area calculation service
-    private readonly IWorkedAreaService _workedAreaService;
 
     // Area totals
     private double _totalWorkedArea;
@@ -44,11 +41,6 @@ public class CoverageMapService : ICoverageMapService
     public bool IsAnyZoneMapping => _activePatches.Count > 0;
 
     public event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
-
-    public CoverageMapService(IWorkedAreaService workedAreaService)
-    {
-        _workedAreaService = workedAreaService;
-    }
 
     public void StartMapping(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge, CoverageColor? color = null)
     {
@@ -117,7 +109,7 @@ public class CoverageMapService : ICoverageMapService
                 points[i] = patch.Vertices[i];
             }
 
-            double area = _workedAreaService.CalculateTriangleStripArea(points, c - 3);
+            double area = workedAreaService.CalculateTriangleStripArea(points, c - 3);
             _totalWorkedArea += area;
             _totalWorkedAreaUser += area;
 
@@ -390,7 +382,7 @@ public class CoverageMapService : ICoverageMapService
                 {
                     if (i >= 4)
                     {
-                        double area = _workedAreaService.CalculateTriangleStripArea(points, i - 3);
+                        double area = workedAreaService.CalculateTriangleStripArea(points, i - 3);
                         _totalWorkedArea += area;
                     }
                 }
