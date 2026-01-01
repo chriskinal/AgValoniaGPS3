@@ -30,8 +30,8 @@ public class SectionControlService : ISectionControlService
     private const int MAPPING_ON_DELAY = 2;   // ~200ms delay before recording coverage
     private const int MAPPING_OFF_DELAY = 2;  // ~200ms delay before stopping coverage
 
-    // Coverage overlap threshold - section considered "covered" if this percentage is already painted
-    private const double COVERAGE_OVERLAP_THRESHOLD = 0.70; // 70%
+    // Default coverage overlap threshold (used if MinCoverage is 0)
+    private const double DEFAULT_COVERAGE_THRESHOLD = 0.70; // 70%
 
     public IReadOnlyList<SectionControlState> SectionStates => _sectionStates;
     public SectionMasterState MasterState
@@ -151,7 +151,7 @@ public class SectionControlService : ISectionControlService
 
         if (section.ButtonState == SectionButtonState.On)
         {
-            UpdateSectionOn(index, leftEdge, rightEdge);
+            UpdateSectionOn(index, leftEdge, rightEdge, toolHeading);
             return;
         }
 
@@ -195,8 +195,10 @@ public class SectionControlService : ISectionControlService
             lookAheadOffDist);
 
         // Section is "covered" if coverage exceeds threshold
-        bool lookOnCovered = lookOnCoverage.CoveragePercent >= COVERAGE_OVERLAP_THRESHOLD;
-        bool lookOffCovered = lookOffCoverage.CoveragePercent >= COVERAGE_OVERLAP_THRESHOLD;
+        // Use MinCoverage setting from config (0-100), default to 70% if not set
+        double coverageThreshold = tool.MinCoverage > 0 ? tool.MinCoverage / 100.0 : DEFAULT_COVERAGE_THRESHOLD;
+        bool lookOnCovered = lookOnCoverage.CoveragePercent >= coverageThreshold;
+        bool lookOffCovered = lookOffCoverage.CoveragePercent >= coverageThreshold;
 
         // Store coverage percentage for potential UI display
         section.CoveragePercent = currentCoverage.CoveragePercent;
@@ -235,7 +237,7 @@ public class SectionControlService : ISectionControlService
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
-                StartMapping(index, leftEdge, rightEdge);
+                StartMapping(index, leftEdge, rightEdge, toolHeading);
             }
         }
         else if (shouldBeOff && section.IsOn)
@@ -261,7 +263,7 @@ public class SectionControlService : ISectionControlService
             // Section is on and should stay on - update mapping
             section.SectionOnTimer = 0;
             section.SectionOffTimer = 0;
-            UpdateMapping(index, leftEdge, rightEdge);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
@@ -291,17 +293,17 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Force a section on (manual override)
     /// </summary>
-    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge)
+    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         if (!section.IsOn)
         {
             section.IsOn = true;
-            StartMapping(index, leftEdge, rightEdge);
+            StartMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
-            UpdateMapping(index, leftEdge, rightEdge);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
         section.SectionOnTimer = 0;
         section.SectionOffTimer = 0;
@@ -310,7 +312,7 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Start coverage mapping for a section
     /// </summary>
-    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge)
+    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         section.MappingOnTimer++;
@@ -320,28 +322,64 @@ public class SectionControlService : ISectionControlService
             section.IsMappingOn = true;
             section.MappingOnTimer = 0;
 
+            // Apply coverage margin to expand edges outward
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
+
             // Get zone index (for multi-colored sections or zones)
             int zoneIndex = GetZoneIndex(index);
-            _coverageMapService.StartMapping(zoneIndex, leftEdge, rightEdge);
+            _coverageMapService.StartMapping(zoneIndex, expandedLeft, expandedRight);
         }
     }
 
     /// <summary>
     /// Update coverage mapping point
     /// </summary>
-    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge)
+    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         if (!section.IsMappingOn)
         {
             // Mapping hasn't started yet - continue the startup timer
-            StartMapping(index, leftEdge, rightEdge);
+            StartMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
+            // Apply coverage margin to expand edges outward
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
+
             int zoneIndex = GetZoneIndex(index);
-            _coverageMapService.AddCoveragePoint(zoneIndex, leftEdge, rightEdge);
+            _coverageMapService.AddCoveragePoint(zoneIndex, expandedLeft, expandedRight);
         }
+    }
+
+    /// <summary>
+    /// Apply coverage margin to expand section edges outward.
+    /// This creates slight overlap between passes to prevent gaps from GPS drift.
+    /// </summary>
+    private (Vec2 left, Vec2 right) ApplyCoverageMargin(Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
+    {
+        var tool = ConfigurationStore.Instance.Tool;
+        double margin = tool.CoverageMarginMeters;
+
+        if (margin <= 0)
+            return (leftEdge, rightEdge);
+
+        // Perpendicular direction (same as section edge calculation)
+        double perpHeading = toolHeading + Math.PI / 2.0;
+        double perpSin = Math.Sin(perpHeading);
+        double perpCos = Math.Cos(perpHeading);
+
+        // Expand left edge outward (negative direction)
+        var expandedLeft = new Vec2(
+            leftEdge.Easting - perpSin * margin,
+            leftEdge.Northing - perpCos * margin);
+
+        // Expand right edge outward (positive direction)
+        var expandedRight = new Vec2(
+            rightEdge.Easting + perpSin * margin,
+            rightEdge.Northing + perpCos * margin);
+
+        return (expandedLeft, expandedRight);
     }
 
     /// <summary>

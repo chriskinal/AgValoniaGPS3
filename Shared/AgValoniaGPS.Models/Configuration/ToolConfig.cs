@@ -230,6 +230,23 @@ public class ToolConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _slowSpeedCutoff, value);
     }
 
+    /// <summary>
+    /// Coverage margin in centimeters. Expands recorded coverage triangles
+    /// on each edge to prevent gaps between passes due to GPS drift.
+    /// Default 5cm (0.05m) on each side = 10cm total overlap.
+    /// </summary>
+    private double _coverageMargin = 5.0;
+    public double CoverageMargin
+    {
+        get => _coverageMargin;
+        set => this.RaiseAndSetIfChanged(ref _coverageMargin, value);
+    }
+
+    /// <summary>
+    /// Coverage margin in meters (converted from cm).
+    /// </summary>
+    public double CoverageMarginMeters => _coverageMargin / 100.0;
+
     // Individual section widths (cm) - up to 16 sections
     private double[] _sectionWidths = new double[16] { 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 };
 
