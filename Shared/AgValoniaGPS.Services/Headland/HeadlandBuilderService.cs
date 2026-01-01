@@ -9,15 +9,8 @@ namespace AgValoniaGPS.Services.Headland;
 /// <summary>
 /// Service for building headland lines from field boundaries
 /// </summary>
-public class HeadlandBuilderService : IHeadlandBuilderService
+public class HeadlandBuilderService(IPolygonOffsetService polygonOffsetService) : IHeadlandBuilderService
 {
-    private readonly IPolygonOffsetService _polygonOffsetService;
-
-    public HeadlandBuilderService(IPolygonOffsetService polygonOffsetService)
-    {
-        _polygonOffsetService = polygonOffsetService;
-    }
-
     /// <inheritdoc/>
     public HeadlandBuildResult BuildHeadland(Boundary boundary, HeadlandBuildOptions options)
     {
@@ -46,7 +39,7 @@ public class HeadlandBuilderService : IHeadlandBuilderService
 
         if (options.Passes == 1)
         {
-            offsetPoints = _polygonOffsetService.CreateInwardOffset(
+            offsetPoints = polygonOffsetService.CreateInwardOffset(
                 boundaryPoints,
                 options.Distance,
                 options.JoinType);
@@ -54,7 +47,7 @@ public class HeadlandBuilderService : IHeadlandBuilderService
         else
         {
             // For multi-pass, get the innermost pass
-            var allPasses = _polygonOffsetService.CreateMultiPassOffset(
+            var allPasses = polygonOffsetService.CreateMultiPassOffset(
                 boundaryPoints,
                 options.Distance,
                 options.Passes,
@@ -72,8 +65,8 @@ public class HeadlandBuilderService : IHeadlandBuilderService
             var result = new HeadlandBuildResult
             {
                 Success = true,
-                OuterHeadlandLine = _polygonOffsetService.CalculatePointHeadings(offsetPoints),
-                AllPasses = allPasses.Select(p => _polygonOffsetService.CalculatePointHeadings(p)).ToList()
+                OuterHeadlandLine = polygonOffsetService.CalculatePointHeadings(offsetPoints),
+                AllPasses = allPasses.Select(p => polygonOffsetService.CalculatePointHeadings(p)).ToList()
             };
 
             return result;
@@ -85,7 +78,7 @@ public class HeadlandBuilderService : IHeadlandBuilderService
         }
 
         // Calculate headings for each point
-        var headlandWithHeadings = _polygonOffsetService.CalculatePointHeadings(offsetPoints);
+        var headlandWithHeadings = polygonOffsetService.CalculatePointHeadings(offsetPoints);
 
         return HeadlandBuildResult.Ok(headlandWithHeadings);
     }
@@ -98,7 +91,7 @@ public class HeadlandBuilderService : IHeadlandBuilderService
             return null;
         }
 
-        return _polygonOffsetService.CreateInwardOffset(boundaryPoints, distance, joinType);
+        return polygonOffsetService.CreateInwardOffset(boundaryPoints, distance, joinType);
     }
 
     /// <inheritdoc/>
@@ -127,14 +120,14 @@ public class HeadlandBuilderService : IHeadlandBuilderService
                     .ToList();
 
                 // Outward offset for inner boundaries (headland goes around the island)
-                var offsetPoints = _polygonOffsetService.CreateOutwardOffset(
+                var offsetPoints = polygonOffsetService.CreateOutwardOffset(
                     innerPoints,
                     options.Distance,
                     options.JoinType);
 
                 if (offsetPoints != null && offsetPoints.Count >= 3)
                 {
-                    var withHeadings = _polygonOffsetService.CalculatePointHeadings(offsetPoints);
+                    var withHeadings = polygonOffsetService.CalculatePointHeadings(offsetPoints);
                     innerHeadlands.Add(withHeadings);
                 }
             }

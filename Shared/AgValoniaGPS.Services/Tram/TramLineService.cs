@@ -15,11 +15,10 @@ namespace AgValoniaGPS.Services.Tram;
 /// Tram lines are permanent wheel tracks that reduce soil compaction by
 /// concentrating wheel traffic to the same paths.
 /// </summary>
-public class TramLineService : ITramLineService
+public class TramLineService(
+    ITramLineOffsetService offsetService,
+    ILogger<TramLineService> logger) : ITramLineService
 {
-    private readonly ILogger<TramLineService> _logger;
-    private readonly ITramLineOffsetService _offsetService;
-
     private readonly List<Vec2> _outerBoundaryTrack = new();
     private readonly List<Vec2> _innerBoundaryTrack = new();
     private readonly List<List<Vec2>> _parallelTramLines = new();
@@ -50,12 +49,6 @@ public class TramLineService : ITramLineService
 
     public event EventHandler? TramLinesUpdated;
 
-    public TramLineService(ITramLineOffsetService offsetService, ILogger<TramLineService> logger)
-    {
-        _offsetService = offsetService;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
@@ -76,12 +69,12 @@ public class TramLineService : ITramLineService
 
         // Generate outer boundary track
         _outerBoundaryTrack.Clear();
-        var outerPoints = _offsetService.GenerateOuterTramline(fenceLineList, tramWidth, halfWheelTrack);
+        var outerPoints = offsetService.GenerateOuterTramline(fenceLineList, tramWidth, halfWheelTrack);
         _outerBoundaryTrack.AddRange(outerPoints);
 
         // Generate inner boundary track
         _innerBoundaryTrack.Clear();
-        var innerPoints = _offsetService.GenerateInnerTramline(fenceLineList, tramWidth, halfWheelTrack);
+        var innerPoints = offsetService.GenerateInnerTramline(fenceLineList, tramWidth, halfWheelTrack);
         _innerBoundaryTrack.AddRange(innerPoints);
 
         TramLinesUpdated?.Invoke(this, EventArgs.Empty);
@@ -335,7 +328,7 @@ public class TramLineService : ITramLineService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save tram lines");
+            logger.LogError(ex, "Failed to save tram lines");
         }
     }
 
@@ -398,7 +391,7 @@ public class TramLineService : ITramLineService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load tram lines");
+            logger.LogError(ex, "Failed to load tram lines");
         }
     }
 
