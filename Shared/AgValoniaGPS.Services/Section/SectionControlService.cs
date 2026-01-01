@@ -382,6 +382,22 @@ public class SectionControlService : ISectionControlService
     private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
+
+        // Don't record coverage when tool is significantly misaligned with vehicle
+        // This prevents spiky triangles during implement catch-up after turns
+        const double MAX_HEADING_DIFF_FOR_RECORDING = 0.1; // ~6 degrees
+        if (Math.Abs(_toolVehicleHeadingDiff) > MAX_HEADING_DIFF_FOR_RECORDING)
+        {
+            // Tool catching up - stop current patch to avoid distorted triangles
+            if (section.IsMappingOn)
+            {
+                section.IsMappingOn = false;
+                int zoneIndex = GetZoneIndex(index);
+                _coverageMapService.StopMapping(zoneIndex);
+            }
+            return;
+        }
+
         if (!section.IsMappingOn)
         {
             // Mapping hasn't started yet - continue the startup timer
