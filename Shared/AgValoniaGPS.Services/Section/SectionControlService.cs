@@ -33,9 +33,9 @@ public class SectionControlService : ISectionControlService
     // Default coverage overlap threshold (used if MinCoverage is 0)
     private const double DEFAULT_COVERAGE_THRESHOLD = 0.70; // 70%
 
-    // Turn detection for coverage margin
+    // Yaw rate tracking for curve-following coverage margin
     private double _previousHeading = double.NaN;
-    private const double TURN_THRESHOLD_RAD = 0.05; // ~3 degrees per update = turning
+    private double _yawRate = 0; // radians per update cycle (positive = turning right)
 
     public IReadOnlyList<SectionControlState> SectionStates => _sectionStates;
     public SectionMasterState MasterState
@@ -105,15 +105,16 @@ public class SectionControlService : ISectionControlService
         var tool = ConfigurationStore.Instance.Tool;
         int numSections = NumSections;
 
-        // Detect if we're turning (heading changing rapidly)
-        bool isTurning = false;
+        // Calculate yaw rate (continuous, for curve-following)
         if (!double.IsNaN(_previousHeading))
         {
-            double headingDelta = Math.Abs(toolHeading - _previousHeading);
+            double headingDelta = toolHeading - _previousHeading;
             // Handle wrap-around at ±π
             if (headingDelta > Math.PI)
-                headingDelta = 2 * Math.PI - headingDelta;
-            isTurning = headingDelta > TURN_THRESHOLD_RAD;
+                headingDelta -= 2 * Math.PI;
+            else if (headingDelta < -Math.PI)
+                headingDelta += 2 * Math.PI;
+            _yawRate = headingDelta; // rad per update cycle
         }
         _previousHeading = toolHeading;
 
@@ -124,13 +125,14 @@ public class SectionControlService : ISectionControlService
             {
                 UpdateSectionOff(i);
             }
+            _yawRate = 0; // Reset when stopped
             return;
         }
 
         // Update each section
         for (int i = 0; i < numSections; i++)
         {
-            UpdateSection(i, toolPosition, toolHeading, speed, isTurning);
+            UpdateSection(i, toolPosition, toolHeading, speed);
         }
 
         // Fire state changed event
@@ -146,7 +148,7 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Update a single section's state
     /// </summary>
-    private void UpdateSection(int index, Vec3 toolPosition, double toolHeading, double speed, bool isTurning)
+    private void UpdateSection(int index, Vec3 toolPosition, double toolHeading, double speed)
     {
         var section = _sectionStates[index];
         var tool = ConfigurationStore.Instance.Tool;
@@ -167,7 +169,7 @@ public class SectionControlService : ISectionControlService
 
         if (section.ButtonState == SectionButtonState.On)
         {
-            UpdateSectionOn(index, leftEdge, rightEdge, toolHeading, isTurning);
+            UpdateSectionOn(index, leftEdge, rightEdge, toolHeading);
             return;
         }
 
@@ -179,11 +181,11 @@ public class SectionControlService : ISectionControlService
         // Calculate section half-width for segment-based checks
         double halfWidth = (section.PositionRight - section.PositionLeft) / 2.0;
 
-        // Project forward for ON check
-        var onCheckPoint = ProjectForward(sectionCenter, toolHeading, lookAheadOnDist);
+        // Project forward for ON check - use curved projection to "look around the corner"
+        var onCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, lookAheadOnDist, speed);
 
-        // Project forward for OFF check
-        var offCheckPoint = ProjectForward(sectionCenter, toolHeading, lookAheadOffDist);
+        // Project forward for OFF check - use curved projection
+        var offCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, lookAheadOffDist, speed);
 
         // Check boundary conditions using segment-based detection
         var currentBoundaryResult = GetSegmentBoundaryStatus(sectionCenter, toolHeading, halfWidth);
@@ -253,7 +255,7 @@ public class SectionControlService : ISectionControlService
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
-                StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
+                StartMapping(index, leftEdge, rightEdge, toolHeading);
             }
         }
         else if (shouldBeOff && section.IsOn)
@@ -279,7 +281,7 @@ public class SectionControlService : ISectionControlService
             // Section is on and should stay on - update mapping
             section.SectionOnTimer = 0;
             section.SectionOffTimer = 0;
-            UpdateMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
@@ -309,17 +311,17 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Force a section on (manual override)
     /// </summary>
-    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
+    private void UpdateSectionOn(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         if (!section.IsOn)
         {
             section.IsOn = true;
-            StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
+            StartMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
-            UpdateMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
         section.SectionOnTimer = 0;
         section.SectionOffTimer = 0;
@@ -328,7 +330,7 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Start coverage mapping for a section
     /// </summary>
-    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
+    private void StartMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         section.MappingOnTimer++;
@@ -338,8 +340,8 @@ public class SectionControlService : ISectionControlService
             section.IsMappingOn = true;
             section.MappingOnTimer = 0;
 
-            // Apply coverage margin to expand edges outward (disabled during turns)
-            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading, isTurning);
+            // Apply coverage margin with curve-following adjustment
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
 
             // Get zone index (for multi-colored sections or zones)
             int zoneIndex = GetZoneIndex(index);
@@ -350,18 +352,18 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Update coverage mapping point
     /// </summary>
-    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
+    private void UpdateMapping(int index, Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var section = _sectionStates[index];
         if (!section.IsMappingOn)
         {
             // Mapping hasn't started yet - continue the startup timer
-            StartMapping(index, leftEdge, rightEdge, toolHeading, isTurning);
+            StartMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
-            // Apply coverage margin to expand edges outward (disabled during turns)
-            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading, isTurning);
+            // Apply coverage margin with curve-following adjustment
+            var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
 
             int zoneIndex = GetZoneIndex(index);
             _coverageMapService.AddCoveragePoint(zoneIndex, expandedLeft, expandedRight);
@@ -371,19 +373,25 @@ public class SectionControlService : ISectionControlService
     /// <summary>
     /// Apply coverage margin to expand section edges outward.
     /// This creates slight overlap between passes to prevent gaps from GPS drift.
-    /// Margin is disabled during turns to prevent spiky triangle artifacts.
+    /// Uses yaw rate to adjust expansion direction for curve-following.
     /// </summary>
-    private (Vec2 left, Vec2 right) ApplyCoverageMargin(Vec2 leftEdge, Vec2 rightEdge, double toolHeading, bool isTurning)
+    private (Vec2 left, Vec2 right) ApplyCoverageMargin(Vec2 leftEdge, Vec2 rightEdge, double toolHeading)
     {
         var tool = ConfigurationStore.Instance.Tool;
         double margin = tool.CoverageMarginMeters;
 
-        // Skip margin when turning or margin disabled
-        if (margin <= 0 || isTurning)
+        if (margin <= 0)
             return (leftEdge, rightEdge);
 
-        // Perpendicular direction (same as section edge calculation)
-        double perpHeading = toolHeading + Math.PI / 2.0;
+        // Adjust expansion direction to follow the curve using yaw rate.
+        // The expansion should be perpendicular to the average heading between
+        // this update and the next. Using half the yaw rate achieves this.
+        // This prevents spiky artifacts during turns by aligning the expansion
+        // with the actual curved path rather than the instantaneous heading.
+        double curveAdjustedHeading = toolHeading + _yawRate * 0.5;
+
+        // Perpendicular direction (rotated 90° from adjusted heading)
+        double perpHeading = curveAdjustedHeading + Math.PI / 2.0;
         double perpSin = Math.Sin(perpHeading);
         double perpCos = Math.Cos(perpHeading);
 
@@ -441,13 +449,75 @@ public class SectionControlService : ISectionControlService
     }
 
     /// <summary>
-    /// Project a point forward along a heading
+    /// Project a point forward along a heading (straight line)
     /// </summary>
     private Vec2 ProjectForward(Vec2 point, double heading, double distance)
     {
         return new Vec2(
             point.Easting + Math.Sin(heading) * distance,
             point.Northing + Math.Cos(heading) * distance
+        );
+    }
+
+    /// <summary>
+    /// Project a point forward along a curved path using yaw rate.
+    /// This "looks around the corner" by predicting where we'll actually be
+    /// based on our current turn rate, rather than projecting straight ahead.
+    /// </summary>
+    /// <param name="point">Starting point</param>
+    /// <param name="heading">Current heading in radians</param>
+    /// <param name="distance">Distance to project forward</param>
+    /// <param name="speed">Current speed in m/s</param>
+    /// <returns>Projected point along the curved path</returns>
+    private Vec2 ProjectForwardCurved(Vec2 point, double heading, double distance, double speed)
+    {
+        // For very slow speeds or no turn, use straight projection
+        if (speed < 0.1 || Math.Abs(_yawRate) < 0.001)
+        {
+            return ProjectForward(point, heading, distance);
+        }
+
+        // Calculate how much heading will change over the lookahead distance
+        // yawRate is rad/update, at 10Hz that's rad per 0.1 seconds
+        // Time to travel distance: t = distance / speed
+        // Number of updates in that time: n = t * 10 = 10 * distance / speed
+        // Total heading change: Δθ = yawRate * n
+        double updateRate = 10.0; // Hz
+        double timeToTravel = distance / speed;
+        double numUpdates = timeToTravel * updateRate;
+        double headingChange = _yawRate * numUpdates;
+
+        // For small heading changes, project along the average heading
+        // This is a good approximation for typical lookahead distances
+        if (Math.Abs(headingChange) < 0.5) // Less than ~30 degrees
+        {
+            double avgHeading = heading + headingChange * 0.5;
+            return new Vec2(
+                point.Easting + Math.Sin(avgHeading) * distance,
+                point.Northing + Math.Cos(avgHeading) * distance
+            );
+        }
+
+        // For larger turns, use proper arc math
+        // Turn radius: R = speed / (yawRate * updateRate) = speed / angular_velocity
+        double angularVelocity = _yawRate * updateRate; // rad/s
+        double turnRadius = speed / Math.Abs(angularVelocity);
+
+        // Arc endpoint calculation
+        // The center of the turn circle is perpendicular to heading at distance R
+        double turnSign = Math.Sign(_yawRate);
+        double centerHeading = heading + turnSign * Math.PI / 2.0;
+        double centerEasting = point.Easting + Math.Sin(centerHeading) * turnRadius;
+        double centerNorthing = point.Northing + Math.Cos(centerHeading) * turnRadius;
+
+        // Final heading after traveling the arc
+        double finalHeading = heading + headingChange;
+
+        // Position on arc at final heading (opposite side from center)
+        double finalCenterHeading = finalHeading + turnSign * Math.PI / 2.0;
+        return new Vec2(
+            centerEasting - Math.Sin(finalCenterHeading) * turnRadius,
+            centerNorthing - Math.Cos(finalCenterHeading) * turnRadius
         );
     }
 
