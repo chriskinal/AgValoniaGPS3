@@ -533,6 +533,19 @@
                     </Button>
                 </Grid>
             </Border>
+
+            <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="Coverage Margin" Foreground="White"/>
+                        <TextBlock Text="Expand recorded coverage to prevent gaps between passes"
+                                   Foreground="#888" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditCoverageMarginCommand}">
+                        <TextBlock Text="{Binding Tool.CoverageMargin, StringFormat='{}{0:F0} cm'}" Foreground="White" FontWeight="Bold"/>
+                    </Button>
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

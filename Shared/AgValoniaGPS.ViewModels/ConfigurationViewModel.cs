@@ -814,6 +814,7 @@ public partial class ConfigurationViewModel : ObservableObject
     public ICommand EditDefaultSectionWidthCommand { get; private set; } = null!;
     public ICommand EditMinCoverageCommand { get; private set; } = null!;
     public ICommand EditCutoffSpeedCommand { get; private set; } = null!;
+    public ICommand EditCoverageMarginCommand { get; private set; } = null!;
 
     // Individual Section Width Edit Commands (1-16)
     public ICommand EditSection1WidthCommand { get; private set; } = null!;
@@ -1150,6 +1151,11 @@ public partial class ConfigurationViewModel : ObservableObject
             ShowNumericInput("Slow Speed Cutoff", Tool.SlowSpeedCutoff,
                 v => Tool.SlowSpeedCutoff = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
+
+        EditCoverageMarginCommand = new RelayCommand(() =>
+            ShowNumericInput("Coverage Margin", Tool.CoverageMargin,
+                v => Tool.CoverageMargin = v,
+                "cm", integerOnly: false, allowNegative: false, min: 0, max: 50));
 
         // Individual section width commands
         EditSection1WidthCommand = new RelayCommand(() => EditSectionWidth(1));
