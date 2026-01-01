@@ -37,6 +37,7 @@ public class SectionControlService : ISectionControlService
     private double _previousHeading = double.NaN;
     private double _yawRate = 0; // smoothed yaw rate in radians per update cycle (positive = turning right)
     private double _instantYawRate = 0; // instantaneous (unsmoothed) yaw rate for threshold checks
+    private double _toolVehicleHeadingDiff = 0; // difference between tool and vehicle heading (for trailed implements)
     private const double YAW_RATE_SMOOTHING = 0.3; // Smoothing factor (0-1, lower = smoother)
 
     public IReadOnlyList<SectionControlState> SectionStates => _sectionStates;
@@ -102,10 +103,20 @@ public class SectionControlService : ISectionControlService
         };
     }
 
-    public void Update(Vec3 toolPosition, double toolHeading, double speed)
+    public void Update(Vec3 toolPosition, double toolHeading, double vehicleHeading, double speed)
     {
         var tool = ConfigurationStore.Instance.Tool;
         int numSections = NumSections;
+
+        // Calculate tool vs vehicle heading difference (for trailed implements)
+        // When tool is "catching up" after a turn, this difference is large
+        double headingDiff = toolHeading - vehicleHeading;
+        // Handle wrap-around at ±π
+        if (headingDiff > Math.PI)
+            headingDiff -= 2 * Math.PI;
+        else if (headingDiff < -Math.PI)
+            headingDiff += 2 * Math.PI;
+        _toolVehicleHeadingDiff = headingDiff;
 
         // Calculate yaw rate (both instantaneous and smoothed)
         // Instantaneous is used for threshold checks (especially for trailed implements)
@@ -429,13 +440,14 @@ public class SectionControlService : ISectionControlService
         if (margin <= 0)
             return (leftEdge, rightEdge);
 
-        // Only apply margin during relatively straight driving.
-        // During turns (high yaw rate), the margin causes spiky artifacts.
-        // The margin is primarily needed for parallel passes, not turns.
-        // Use INSTANTANEOUS yaw rate for this check - critical for trailed implements
-        // where the tool yaws rapidly during "catch up" after tractor turns.
+        // Only apply margin when tool is aligned with vehicle and not yawing.
+        // Skip margin when:
+        // 1. Tool is catching up to vehicle (large heading difference) - common with trailed implements
+        // 2. Tool is actively yawing (high instantaneous yaw rate)
+        // The margin is only needed for straight parallel passes where gaps can occur.
+        const double MAX_HEADING_DIFF = 0.05; // ~3 degrees - tool vs vehicle alignment
         const double MAX_YAW_FOR_MARGIN = 0.02; // ~1.1 degrees per update
-        if (Math.Abs(_instantYawRate) > MAX_YAW_FOR_MARGIN)
+        if (Math.Abs(_toolVehicleHeadingDiff) > MAX_HEADING_DIFF || Math.Abs(_instantYawRate) > MAX_YAW_FOR_MARGIN)
             return (leftEdge, rightEdge);
 
         // For straight/gentle curves, use slight yaw adjustment for smoother alignment

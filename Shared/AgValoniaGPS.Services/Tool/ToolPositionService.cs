@@ -88,6 +88,7 @@ public class ToolPositionService : IToolPositionService
         {
             ToolPosition = _toolPosition,
             ToolHeading = _toolHeading,
+            VehicleHeading = vehicleHeading,
             TankPosition = _tankPosition,
             IsTBT = tool.IsToolTBT
         });

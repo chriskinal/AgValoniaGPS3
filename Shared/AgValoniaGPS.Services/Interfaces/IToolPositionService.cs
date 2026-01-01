@@ -95,6 +95,11 @@ public class ToolPositionUpdatedEventArgs : EventArgs
     public double ToolHeading { get; init; }
 
     /// <summary>
+    /// Current vehicle heading in radians (for detecting tool catch-up on trailed implements)
+    /// </summary>
+    public double VehicleHeading { get; init; }
+
+    /// <summary>
     /// Tank trailer position (for TBT mode)
     /// </summary>
     public Vec3 TankPosition { get; init; }

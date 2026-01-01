@@ -1137,7 +1137,7 @@ public partial class MainViewModel : ObservableObject
         HitchNorthing = hitchPos.Northing;
 
         // Update section control - determines which sections should be on/off in Auto mode
-        _sectionControlService.Update(e.ToolPosition, e.ToolHeading, Speed);
+        _sectionControlService.Update(e.ToolPosition, e.ToolHeading, e.VehicleHeading, Speed);
 
         // Update coverage painting - paint when sections are active and moving
         UpdateCoveragePainting(e.ToolPosition, e.ToolHeading);

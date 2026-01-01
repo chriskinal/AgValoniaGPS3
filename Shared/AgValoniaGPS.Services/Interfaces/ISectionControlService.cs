@@ -36,8 +36,9 @@ public interface ISectionControlService
     /// </summary>
     /// <param name="toolPosition">Tool center position in world coordinates</param>
     /// <param name="toolHeading">Tool heading in radians</param>
+    /// <param name="vehicleHeading">Vehicle heading in radians (for detecting tool catch-up)</param>
     /// <param name="speed">Vehicle speed in m/s</param>
-    void Update(Vec3 toolPosition, double toolHeading, double speed);
+    void Update(Vec3 toolPosition, double toolHeading, double vehicleHeading, double speed);
 
     /// <summary>
     /// Get section edge positions in world coordinates
