@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -62,6 +63,15 @@ public partial class AntennaOffsetStepViewModel : WizardStepViewModel
         OnPropertyChanged(nameof(IsCenter));
         OnPropertyChanged(nameof(IsRight));
     }
+
+    [RelayCommand]
+    private void SetLeft() => AntennaOffset = -0.5;
+
+    [RelayCommand]
+    private void SetCenter() => AntennaOffset = 0;
+
+    [RelayCommand]
+    private void SetRight() => AntennaOffset = 0.5;
 
     public override Task<bool> ValidateAsync()
     {

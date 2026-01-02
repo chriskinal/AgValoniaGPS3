@@ -84,6 +84,16 @@ public abstract class WizardViewModel : ObservableObject
     /// </summary>
     public abstract string WizardTitle { get; }
 
+    private bool _isDialogVisible;
+    /// <summary>
+    /// Whether the wizard dialog is visible.
+    /// </summary>
+    public bool IsDialogVisible
+    {
+        get => _isDialogVisible;
+        set => SetProperty(ref _isDialogVisible, value);
+    }
+
     private bool _canGoNext;
     /// <summary>
     /// Whether the Next button should be enabled.

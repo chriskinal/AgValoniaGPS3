@@ -37,6 +37,46 @@
 
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
+            <!-- Antenna Height Diagram - side view showing height from ground -->
+            <Border Background="#2C3E50"
+                    CornerRadius="8"
+                    Padding="20"
+                    HorizontalAlignment="Center">
+                <Canvas Width="280" Height="120">
+                    <!-- Ground line -->
+                    <Line StartPoint="0,0" EndPoint="240,0"
+                          Canvas.Left="20" Canvas.Top="100"
+                          Stroke="#7F8C8D" StrokeThickness="2" StrokeDashArray="4,2"/>
+                    <!-- Vehicle body -->
+                    <Rectangle Canvas.Left="80" Canvas.Top="50" Width="120" Height="35"
+                               Fill="#34495E" RadiusX="6" RadiusY="6"/>
+                    <!-- Wheels -->
+                    <Ellipse Canvas.Left="85" Canvas.Top="75" Width="25" Height="25"
+                             Fill="#7F8C8D" Stroke="#6C7A89" StrokeThickness="2"/>
+                    <Ellipse Canvas.Left="170" Canvas.Top="75" Width="25" Height="25"
+                             Fill="#7F8C8D" Stroke="#6C7A89" StrokeThickness="2"/>
+                    <!-- GPS Antenna on roof -->
+                    <Ellipse Canvas.Left="132" Canvas.Top="35" Width="16" Height="16"
+                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                    <Line StartPoint="0,0" EndPoint="0,5"
+                          Canvas.Left="140" Canvas.Top="51"
+                          Stroke="#1ABC9C" StrokeThickness="2"/>
+                    <!-- Height arrow (vertical) -->
+                    <Line StartPoint="0,0" EndPoint="0,57"
+                          Canvas.Left="230" Canvas.Top="43"
+                          Stroke="#3498DB" StrokeThickness="2"/>
+                    <!-- Arrow heads -->
+                    <Polygon Canvas.Left="225" Canvas.Top="38" Points="0,10 10,10 5,0" Fill="#3498DB"/>
+                    <Polygon Canvas.Left="225" Canvas.Top="95" Points="0,0 10,0 5,10" Fill="#3498DB"/>
+                    <!-- Height label -->
+                    <TextBlock Canvas.Left="240" Canvas.Top="65" Text="Height"
+                               Foreground="#3498DB" FontSize="11" FontWeight="SemiBold"/>
+                    <!-- Ground label -->
+                    <TextBlock Canvas.Left="25" Canvas.Top="103" Text="Ground"
+                               Foreground="#7F8C8D" FontSize="10"/>
+                </Canvas>
+            </Border>
+
             <!-- Input -->
             <Border Background="#2C3E50"
                     CornerRadius="12"
