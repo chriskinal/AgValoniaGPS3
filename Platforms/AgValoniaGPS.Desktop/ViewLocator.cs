@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,6 +8,9 @@ namespace AgValoniaGPS.Desktop;
 
 public class ViewLocator : IDataTemplate
 {
+    // Cache the Views assembly for faster lookups
+    private static readonly Assembly ViewsAssembly = typeof(AgValoniaGPS.Views.Controls.DrawingContextMapControl).Assembly;
+
     public Control? Build(object? param)
     {
         if (param is null)
@@ -30,7 +34,14 @@ public class ViewLocator : IDataTemplate
             viewName = vmFullName.Replace("ViewModel", "View", StringComparison.Ordinal);
         }
 
-        var type = Type.GetType(viewName);
+        // Try to find type in Views assembly first (where most views live)
+        var type = ViewsAssembly.GetType(viewName);
+
+        // Fall back to Type.GetType for types in other assemblies
+        if (type == null)
+        {
+            type = Type.GetType(viewName);
+        }
 
         if (type != null)
         {

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:dialogs="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
+             xmlns:wizards="clr-namespace:AgValoniaGPS.Views.Controls.Wizards;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.DialogOverlayHost"
              x:DataType="vm:MainViewModel">
@@ -35,5 +36,8 @@
         <dialogs:NtripProfileEditorPanel/>
         <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
         <dialogs:AutoSteerConfigPanel DataContext="{Binding AutoSteerConfigViewModel}"/>
+
+        <!-- Wizards -->
+        <wizards:WizardDialogPanel DataContext="{Binding SteerWizardViewModel}"/>
     </Panel>
 </UserControl>

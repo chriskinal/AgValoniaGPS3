@@ -295,6 +295,7 @@ public partial class MainViewModel : ObservableObject
         InitializeBoundaryCommands();
         InitializeTrackCommands();
         InitializeNtripCommands();
+        InitializeWizardCommands();
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings

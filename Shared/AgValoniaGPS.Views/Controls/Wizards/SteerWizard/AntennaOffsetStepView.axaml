@@ -37,28 +37,70 @@
 
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
+            <!-- Antenna Offset Diagram - rear view showing lateral offset -->
+            <Border Background="#2C3E50"
+                    CornerRadius="8"
+                    Padding="20"
+                    HorizontalAlignment="Center">
+                <Canvas Width="280" Height="100">
+                    <!-- Vehicle body (rear view) -->
+                    <Rectangle Canvas.Left="90" Canvas.Top="20" Width="100" Height="60"
+                               Fill="#34495E" RadiusX="4" RadiusY="4"/>
+                    <!-- Left wheel -->
+                    <Rectangle Canvas.Left="60" Canvas.Top="50" Width="20" Height="35"
+                               Fill="#7F8C8D" RadiusX="3" RadiusY="3"/>
+                    <!-- Right wheel -->
+                    <Rectangle Canvas.Left="200" Canvas.Top="50" Width="20" Height="35"
+                               Fill="#7F8C8D" RadiusX="3" RadiusY="3"/>
+                    <!-- Center line -->
+                    <Line StartPoint="0,0" EndPoint="0,75"
+                          Canvas.Left="140" Canvas.Top="15"
+                          Stroke="#E74C3C" StrokeThickness="1" StrokeDashArray="3,3"/>
+                    <!-- GPS Antenna (offset to right) -->
+                    <Ellipse Canvas.Left="160" Canvas.Top="5" Width="14" Height="14"
+                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                    <!-- Offset arrow -->
+                    <Line StartPoint="0,0" EndPoint="20,0"
+                          Canvas.Left="140" Canvas.Top="12"
+                          Stroke="#3498DB" StrokeThickness="2"/>
+                    <Polygon Canvas.Left="157" Canvas.Top="7" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <!-- Labels -->
+                    <TextBlock Canvas.Left="130" Canvas.Top="88" Text="Center"
+                               Foreground="#E74C3C" FontSize="9"/>
+                    <TextBlock Canvas.Left="175" Canvas.Top="5" Text="GPS"
+                               Foreground="#1ABC9C" FontSize="9"/>
+                    <TextBlock Canvas.Left="20" Canvas.Top="40" Text="Left"
+                               Foreground="#7F8C8D" FontSize="10"/>
+                    <TextBlock Canvas.Left="245" Canvas.Top="40" Text="Right"
+                               Foreground="#7F8C8D" FontSize="10"/>
+                </Canvas>
+            </Border>
+
             <!-- Quick position buttons -->
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Center"
                         Spacing="12">
                 <Button Content="Left"
                         Width="80" Height="44"
-                        Background="{Binding IsLeft, Converter={StaticResource BoolToBrushConverter}, ConverterParameter=#1ABC9C|#34495E}"
+                        Background="#34495E"
                         Foreground="White"
                         CornerRadius="8"
-                        FontWeight="SemiBold"/>
+                        FontWeight="SemiBold"
+                        Command="{Binding SetLeftCommand}"/>
                 <Button Content="Center"
                         Width="80" Height="44"
-                        Background="{Binding IsCenter, Converter={StaticResource BoolToBrushConverter}, ConverterParameter=#1ABC9C|#34495E}"
+                        Background="#34495E"
                         Foreground="White"
                         CornerRadius="8"
-                        FontWeight="SemiBold"/>
+                        FontWeight="SemiBold"
+                        Command="{Binding SetCenterCommand}"/>
                 <Button Content="Right"
                         Width="80" Height="44"
-                        Background="{Binding IsRight, Converter={StaticResource BoolToBrushConverter}, ConverterParameter=#1ABC9C|#34495E}"
+                        Background="#34495E"
                         Foreground="White"
                         CornerRadius="8"
-                        FontWeight="SemiBold"/>
+                        FontWeight="SemiBold"
+                        Command="{Binding SetRightCommand}"/>
             </StackPanel>
 
             <!-- Input -->

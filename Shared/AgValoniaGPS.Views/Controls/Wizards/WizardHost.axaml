@@ -81,7 +81,10 @@
         <Border Grid.Row="2" Background="#1E2A35" Padding="20">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
-                <ContentControl Content="{Binding CurrentStep}"/>
+                <ContentControl Content="{Binding CurrentStep}"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"
+                                x:Name="StepContentControl"/>
             </ScrollViewer>
         </Border>
 

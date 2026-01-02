@@ -27,14 +27,32 @@
 
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
-            <!-- Diagram placeholder -->
+            <!-- Wheelbase Diagram - side view of vehicle -->
             <Border Background="#2C3E50"
                     CornerRadius="8"
-                    Padding="16"
+                    Padding="20"
                     HorizontalAlignment="Center">
-                <TextBlock Text="[Wheelbase Diagram]"
-                           Foreground="#7F8C8D"
-                           FontSize="14"/>
+                <Canvas Width="280" Height="100">
+                    <!-- Vehicle body -->
+                    <Rectangle Canvas.Left="40" Canvas.Top="25" Width="200" Height="40"
+                               Fill="#34495E" RadiusX="8" RadiusY="8"/>
+                    <!-- Front wheel -->
+                    <Ellipse Canvas.Left="180" Canvas.Top="50" Width="30" Height="30"
+                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                    <!-- Rear wheel -->
+                    <Ellipse Canvas.Left="70" Canvas.Top="50" Width="30" Height="30"
+                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                    <!-- Wheelbase arrow line -->
+                    <Line StartPoint="0,0" EndPoint="110,0"
+                          Canvas.Left="85" Canvas.Top="90"
+                          Stroke="#3498DB" StrokeThickness="2"/>
+                    <!-- Arrow heads -->
+                    <Polygon Canvas.Left="80" Canvas.Top="85" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <Polygon Canvas.Left="190" Canvas.Top="85" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <!-- Wheelbase label -->
+                    <TextBlock Canvas.Left="115" Canvas.Top="88" Text="Wheelbase"
+                               Foreground="#3498DB" FontSize="12" FontWeight="SemiBold"/>
+                </Canvas>
             </Border>
 
             <!-- Input -->

@@ -27,14 +27,32 @@
 
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
-            <!-- Diagram placeholder -->
+            <!-- Track Width Diagram - top/rear view of vehicle -->
             <Border Background="#2C3E50"
                     CornerRadius="8"
-                    Padding="16"
+                    Padding="20"
                     HorizontalAlignment="Center">
-                <TextBlock Text="[Track Width Diagram]"
-                           Foreground="#7F8C8D"
-                           FontSize="14"/>
+                <Canvas Width="280" Height="100">
+                    <!-- Vehicle body (top view) -->
+                    <Rectangle Canvas.Left="90" Canvas.Top="10" Width="100" Height="80"
+                               Fill="#34495E" RadiusX="4" RadiusY="4"/>
+                    <!-- Left wheel -->
+                    <Rectangle Canvas.Left="50" Canvas.Top="30" Width="30" Height="40"
+                               Fill="#1ABC9C" RadiusX="4" RadiusY="4"/>
+                    <!-- Right wheel -->
+                    <Rectangle Canvas.Left="200" Canvas.Top="30" Width="30" Height="40"
+                               Fill="#1ABC9C" RadiusX="4" RadiusY="4"/>
+                    <!-- Track width arrow line -->
+                    <Line StartPoint="0,0" EndPoint="150,0"
+                          Canvas.Left="65" Canvas.Top="80"
+                          Stroke="#3498DB" StrokeThickness="2"/>
+                    <!-- Arrow heads -->
+                    <Polygon Canvas.Left="60" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <Polygon Canvas.Left="210" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <!-- Track width label -->
+                    <TextBlock Canvas.Left="110" Canvas.Top="83" Text="Track Width"
+                               Foreground="#3498DB" FontSize="12" FontWeight="SemiBold"/>
+                </Canvas>
             </Border>
 
             <!-- Input -->
