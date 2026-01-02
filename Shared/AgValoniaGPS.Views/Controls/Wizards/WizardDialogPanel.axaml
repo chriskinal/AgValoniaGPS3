@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:wizards="clr-namespace:AgValoniaGPS.Views.Controls.Wizards"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.WizardDialogPanel">
+
+    <!-- Full screen overlay with wizard content -->
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <Border Background="#C0000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Wizard container - centered, responsive size -->
+        <Border Background="#1E2A35"
+                CornerRadius="12"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MinWidth="400"
+                MaxWidth="600"
+                MinHeight="400"
+                MaxHeight="700"
+                Margin="20"
+                ClipToBounds="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" Opacity="0.5" OffsetX="0" OffsetY="4"/>
+            </Border.Effect>
+
+            <!-- Wizard host control -->
+            <wizards:WizardHost x:Name="WizardHostControl"/>
+        </Border>
+    </Grid>
+</UserControl>

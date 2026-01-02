@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="350"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.WelcomeStepView"
+             x:DataType="steer:WelcomeStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,16"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="15"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="24"
+                   Margin="0,0,0,24"/>
+
+        <!-- Icon/Image area -->
+        <Border Grid.Row="2"
+                Background="#2C3E50"
+                CornerRadius="12"
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                <TextBlock Text="AutoSteer"
+                           FontSize="32"
+                           FontWeight="Bold"
+                           Foreground="#1ABC9C"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Configuration Wizard"
+                           FontSize="18"
+                           Foreground="#95A5A6"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Tip -->
+        <Border Grid.Row="3"
+                Background="#34495E"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,20,0,0">
+            <TextBlock Text="Tip: Have your vehicle measurements ready before starting."
+                       FontSize="13"
+                       Foreground="#95A5A6"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>

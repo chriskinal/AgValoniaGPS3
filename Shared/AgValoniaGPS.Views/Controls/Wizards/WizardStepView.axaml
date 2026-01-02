@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:wizards="clr-namespace:AgValoniaGPS.ViewModels.Wizards;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.WizardStepView"
+             x:DataType="wizards:WizardStepViewModel">
+
+    <!-- Default template for wizard steps -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Step Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,8"/>
+
+        <!-- Step Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#95A5A6"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,20"/>
+
+        <!-- Main Content Area (for derived views to override) -->
+        <ContentPresenter Grid.Row="2"
+                          x:Name="PART_ContentPresenter"
+                          Content="{Binding}"
+                          ContentTemplate="{Binding $parent[UserControl].ContentTemplate}"/>
+
+        <!-- Validation Message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="6"
+                Padding="12,8"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
