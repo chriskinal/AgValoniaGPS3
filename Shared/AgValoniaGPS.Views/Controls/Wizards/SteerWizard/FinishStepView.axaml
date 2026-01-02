@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.FinishStepView"
+             x:DataType="steer:FinishStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="#1ABC9C"
+                   Margin="0,0,0,16"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="15"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="24"
+                   Margin="0,0,0,24"/>
+
+        <!-- Success indicator -->
+        <Border Grid.Row="2"
+                Background="#2C3E50"
+                CornerRadius="12"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <StackPanel Spacing="16" HorizontalAlignment="Center">
+                <!-- Checkmark icon (text representation) -->
+                <Border Background="#1ABC9C"
+                        CornerRadius="30"
+                        Width="60" Height="60"
+                        HorizontalAlignment="Center">
+                    <TextBlock Text="OK"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <TextBlock Text="Configuration saved!"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Click Finish to close the wizard"
+                           FontSize="14"
+                           Foreground="#95A5A6"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

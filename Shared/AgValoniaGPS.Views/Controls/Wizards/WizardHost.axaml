@@ -1,0 +1,150 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:wizards="clr-namespace:AgValoniaGPS.ViewModels.Wizards;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.WizardHost"
+             x:DataType="wizards:WizardViewModel">
+
+    <UserControl.Styles>
+        <!-- Step indicator dot styles -->
+        <Style Selector="Ellipse.step-dot">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Fill" Value="#3498DB"/>
+            <Setter Property="Opacity" Value="0.4"/>
+            <Setter Property="Margin" Value="4,0"/>
+        </Style>
+        <Style Selector="Ellipse.step-dot.active">
+            <Setter Property="Opacity" Value="1.0"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+        </Style>
+        <Style Selector="Ellipse.step-dot.completed">
+            <Setter Property="Fill" Value="#1ABC9C"/>
+            <Setter Property="Opacity" Value="0.8"/>
+        </Style>
+
+        <!-- Navigation button styles -->
+        <Style Selector="Button.wizard-nav">
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.wizard-nav.primary">
+            <Setter Property="Background" Value="#1ABC9C"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.wizard-nav.secondary">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.wizard-nav.cancel">
+            <Setter Property="Background" Value="#E74C3C"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.wizard-nav:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+        <!-- Header with title and progress -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding WizardTitle}"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="#1ABC9C"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StepDisplay}"
+                           FontSize="14"
+                           Foreground="#95A5A6"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Progress bar -->
+        <ProgressBar Grid.Row="1"
+                     Minimum="0" Maximum="100"
+                     Value="{Binding ProgressPercent}"
+                     Height="6"
+                     Background="#1a1a1a"
+                     Foreground="#1ABC9C"/>
+
+        <!-- Step content area -->
+        <Border Grid.Row="2" Background="#1E2A35" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ContentControl Content="{Binding CurrentStep}"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Step indicator dots -->
+        <Border Grid.Row="3" Background="#2C3E50" Padding="12,8"
+                IsVisible="{Binding !!TotalSteps}">
+            <ItemsControl ItemsSource="{Binding Steps}"
+                          HorizontalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="wizards:WizardStepViewModel">
+                        <Ellipse Classes="step-dot"
+                                 Classes.active="{Binding IsActive}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- Navigation buttons -->
+        <Border Grid.Row="4" Background="#2C3E50" Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <!-- Cancel button (left) -->
+                <Button Grid.Column="0"
+                        Classes="wizard-nav cancel"
+                        Content="Cancel"
+                        Command="{Binding CancelCommand}"/>
+
+                <!-- Spacer -->
+
+                <!-- Skip button (optional) -->
+                <Button Grid.Column="2"
+                        Classes="wizard-nav secondary"
+                        Content="Skip"
+                        Command="{Binding SkipCommand}"
+                        IsVisible="{Binding CanSkip}"
+                        Margin="0,0,8,0"/>
+
+                <!-- Back button -->
+                <Button Grid.Column="3"
+                        Classes="wizard-nav secondary"
+                        Content="Back"
+                        Command="{Binding BackCommand}"
+                        IsEnabled="{Binding CanGoBack}"
+                        Margin="0,0,8,0"/>
+
+                <!-- Next and Finish buttons (mutually exclusive visibility) -->
+                <Button Grid.Column="4"
+                        Classes="wizard-nav primary"
+                        Content="Next"
+                        Command="{Binding NextCommand}"
+                        IsVisible="{Binding !IsOnLastStep}"
+                        IsEnabled="{Binding CanGoNext}"/>
+
+                <Button Grid.Column="4"
+                        Classes="wizard-nav primary"
+                        Content="Finish"
+                        Command="{Binding FinishCommand}"
+                        IsVisible="{Binding IsOnLastStep}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

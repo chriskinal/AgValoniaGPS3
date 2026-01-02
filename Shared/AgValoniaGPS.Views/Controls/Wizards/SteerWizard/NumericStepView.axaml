@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.NumericStepView">
+
+    <!-- Generic view for numeric input steps like Wheelbase, TrackWidth, etc. -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Value input area -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- Current value display -->
+            <Border Background="#2C3E50"
+                    CornerRadius="12"
+                    Padding="24,16"
+                    HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding Wheelbase, FallbackValue=2.5}"
+                                   x:Name="ValueInput"
+                                   Minimum="0"
+                                   Maximum="20"
+                                   Increment="0.01"
+                                   FormatString="F2"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Width="200"
+                                   HorizontalContentAlignment="Center"
+                                   Background="#1E2A35"
+                                   Foreground="White"
+                                   BorderBrush="#3498DB"
+                                   BorderThickness="2"
+                                   CornerRadius="8"/>
+                    <TextBlock Text="{Binding Unit, FallbackValue=m}"
+                               FontSize="24"
+                               Foreground="#95A5A6"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Quick adjustment buttons -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8">
+                <Button Content="-0.5"
+                        Width="60" Height="40"
+                        Background="#34495E"
+                        Foreground="White"
+                        CornerRadius="6"
+                        Command="{Binding AdjustCommand}"
+                        CommandParameter="-0.5"/>
+                <Button Content="-0.1"
+                        Width="60" Height="40"
+                        Background="#34495E"
+                        Foreground="White"
+                        CornerRadius="6"
+                        Command="{Binding AdjustCommand}"
+                        CommandParameter="-0.1"/>
+                <Button Content="+0.1"
+                        Width="60" Height="40"
+                        Background="#34495E"
+                        Foreground="White"
+                        CornerRadius="6"
+                        Command="{Binding AdjustCommand}"
+                        CommandParameter="0.1"/>
+                <Button Content="+0.5"
+                        Width="60" Height="40"
+                        Background="#34495E"
+                        Foreground="White"
+                        CornerRadius="6"
+                        Command="{Binding AdjustCommand}"
+                        CommandParameter="0.5"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>

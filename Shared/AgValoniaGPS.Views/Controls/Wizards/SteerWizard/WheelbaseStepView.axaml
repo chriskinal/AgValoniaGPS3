@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.WheelbaseStepView"
+             x:DataType="steer:WheelbaseStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Value input area -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
+            <!-- Diagram placeholder -->
+            <Border Background="#2C3E50"
+                    CornerRadius="8"
+                    Padding="16"
+                    HorizontalAlignment="Center">
+                <TextBlock Text="[Wheelbase Diagram]"
+                           Foreground="#7F8C8D"
+                           FontSize="14"/>
+            </Border>
+
+            <!-- Input -->
+            <Border Background="#2C3E50"
+                    CornerRadius="12"
+                    Padding="24,16"
+                    HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding Wheelbase}"
+                                   Minimum="0.5"
+                                   Maximum="15"
+                                   Increment="0.05"
+                                   FormatString="F2"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Width="180"
+                                   HorizontalContentAlignment="Center"
+                                   Background="#1E2A35"
+                                   Foreground="White"
+                                   BorderBrush="#3498DB"
+                                   BorderThickness="2"
+                                   CornerRadius="8"/>
+                    <TextBlock Text="{Binding Unit}"
+                               FontSize="24"
+                               Foreground="#95A5A6"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
