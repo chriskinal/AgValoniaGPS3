@@ -2,20 +2,26 @@
 
 ## Current State
 
-### UI Complete
+### ✅ UI Complete
 - 9-tab configuration panel built
 - Numeric input dialogs working
 - Toggle buttons with visual feedback
-- Test mode UI with steer controls
+- Test mode UI with steer controls (free drive mode)
 
-### Models Complete
+### ✅ Models Complete
 - `AutoSteerConfig` - All settings with reactive properties
+- `AutoSteerConfigDto` - JSON serialization for profile persistence
 - `PgnBuilder.BuildSteerSettingsPgn()` - PGN 252 builder
 - `PgnBuilder.BuildSteerConfigPgn()` - PGN 251 builder
+- `PgnBuilder.TryParseSteerData()` - PGN 253 parser
+- `SteerModuleData` - Parsed data record
 
-### Partially Wired
-- `SendAndSaveCommand` - Sends PGN 251/252, but needs validation
-- `_udpService` injected but minimally used
+### ✅ Backend Wired
+- `SendAndSaveCommand` - Sends PGN 251/252 + saves profile
+- Profile persistence via JSON (ProfileName.AutoSteer.json)
+- PGN 253 subscription with smoothing and 10Hz display throttling
+- Free drive mode via VehicleState flags (AgOpenGPS pattern)
+- Little-endian byte order for Arduino/Teensy compatibility
 
 ## What Needs Wiring
 
@@ -51,17 +57,19 @@ Byte 13:  CRC
 
 ### 2. Profile Save/Load Integration
 
-**Current:** Settings stored in `ConfigurationStore.AutoSteer`
-**Need:** Persist to disk with vehicle profile
+**Current:** ✅ Implemented
+
+**Implementation:**
+- `AutoSteerConfigDto` record for JSON serialization
+- `ToDto()` / `ApplyFromDto()` methods on AutoSteerConfig
+- Saved as `ProfileName.AutoSteer.json` alongside XML profile
+- Auto-loads when profile is loaded
+- Auto-saves when SendAndSave is clicked
 
 **Tasks:**
-- [ ] Ensure `AutoSteerConfig` serializes with profile (JSON)
-- [ ] Add `LoadProfile` event handling to reload UI when profile changes
-- [ ] Mark profile as "dirty" when settings change (`Config.HasUnsavedChanges`)
-- [ ] `SendAndSaveCommand` should:
-  1. Send PGN 251 + 252 to module
-  2. Save profile to disk
-  3. Clear dirty flag
+- [x] Ensure `AutoSteerConfig` serializes with profile (JSON)
+- [x] Add `LoadProfile` handling to load AutoSteer settings
+- [x] `SendAndSaveCommand` sends PGN 251/252 + saves profile
 
 ### 3. Zero WAS Calibration (Tab 2)
 
@@ -94,26 +102,7 @@ Byte 13:  CRC
 - [x] AutoSteerConfigViewModel wired to IAutoSteerService for free drive
 - [x] Free drive auto-disables when config panel closes (safety)
 
-### 5. Diameter Measurement (Tab 2)
-
-**Current:** Rec button has TODO for diameter calculation
-**Need:** Record turning circle to auto-calculate counts per degree
-
-**Flow:**
-1. User clicks "Rec" to start recording
-2. User drives in a full circle (360°)
-3. Track WAS counts through the turn
-4. Calculate: countsPerDegree = totalCounts / 360
-5. Set `AutoSteer.CountsPerDegree = calculated`
-
-**Tasks:**
-- [ ] Add recording state to ViewModel
-- [ ] Accumulate WAS counts from PGN 253 during recording
-- [ ] Track heading change (need IMU data or GPS heading)
-- [ ] Calculate and suggest counts per degree value
-- [ ] Allow user to accept or reject calculated value
-
-### 6. Reset to Defaults
+### 5. Reset to Defaults
 
 **Current:** ✅ Implemented
 
@@ -123,19 +112,18 @@ Byte 13:  CRC
 - [x] Show confirmation dialog before reset
 - [x] Send updated PGN 251/252 after reset
 
-### 7. Real-time Status Display
+### 6. Real-time Status Display
 
 **Current:** ✅ Implemented with smoothing and throttling
 
 **Tasks:**
 - [x] Subscribe to PGN 253 data stream (on panel open)
-- [ ] Update `SetSteerAngle` from guidance calculation (future integration)
 - [x] Update `ActualSteerAngle` from PGN 253 with EMA smoothing
-- [x] Update `PwmDisplay` from PGN 253
+- [x] Calculate PWM from error × proportional gain
 - [x] Calculate `SteerError = |SetAngle - ActualAngle|`
 - [x] Update at 10Hz with fixed-width columns for stable layout
 
-### 8. Sensor Readings (Tab 5)
+### 7. Sensor Readings (Tab 5)
 
 **Current:** Pressure/current progress bars are placeholders
 **Need:** Live sensor values from module
@@ -161,26 +149,30 @@ The module may send additional sensor data (pressure, current) in:
 
 ## Implementation Order
 
-### Phase 1: Core Communication (High Priority)
+### Phase 1: Core Communication ✅ COMPLETE
 1. ✅ Parse PGN 253 incoming data
 2. ✅ Wire `ActualSteerAngle`, `PwmDisplay` to status bar
 3. ✅ Validate `SendAndSaveCommand` sends both PGNs correctly
 4. ✅ Add display smoothing and throttling (10Hz updates, EMA filter)
+5. ✅ Fix byte order (little-endian for Arduino/Teensy)
 
-### Phase 2: Calibration Tools (Medium Priority)
-5. ✅ Implement `ZeroWasCommand` using PGN 253 data
-6. Diameter recording (deferred - requires GPS tracking)
+### Phase 2: Calibration Tools ✅ COMPLETE
+6. ✅ Implement `ZeroWasCommand` using PGN 253 data
 7. ✅ Implement `ResetToDefaultsCommand` with confirmation dialog
 
-### Phase 3: Test Mode (Medium Priority)
+### Phase 3: Test Mode ✅ COMPLETE
 8. ✅ Wire test mode steer commands to send to module
 9. ✅ Add free drive mode toggle (uses AgOpenGPS pattern)
-10. Rate limiting handled by main loop (no additional work needed)
+10. ✅ PWM calculation from error × proportional gain
 
-### Phase 4: Advanced Features (Lower Priority)
-11. Pressure/current sensor displays
-12. Turn sensor counts display
-13. Setup wizard integration
+### Phase 4: Profile Persistence ✅ COMPLETE
+11. ✅ Add AutoSteerConfigDto for JSON serialization
+12. ✅ Save/load with profile (ProfileName.AutoSteer.json)
+
+### Phase 5: Remaining Items (Lower Priority)
+13. [ ] Switch status indicators (steer/work switch from PGN 253)
+14. [ ] Pressure/current sensor displays (if module supports)
+15. [ ] Setup wizard integration (future)
 
 ## Testing Strategy
 
