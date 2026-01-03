@@ -65,19 +65,17 @@ Byte 13:  CRC
 
 ### 3. Zero WAS Calibration (Tab 2)
 
-**Current:** `ZeroWasCommand` has TODO placeholder
-**Need:** Read current WAS count from module and set as offset
+**Current:** ✅ Implemented
+**Implementation:** Uses smoothed actual angle from PGN 253 to calculate offset correction.
 
-**Flow:**
-1. User clicks "Zero WAS" button
-2. Request current WAS reading from module (need to define protocol)
-3. Set `AutoSteer.WasOffset = currentReading`
-4. Send updated PGN 252 to module
+**Formula:**
+- newOffset = currentOffset + (currentAngle × countsPerDegree)
+- This makes the current reading become zero
 
 **Tasks:**
-- [ ] Define protocol for requesting WAS reading (or use latest from PGN 253)
-- [ ] Implement `ZeroWasCommand` to capture current WAS value
-- [ ] Show confirmation dialog with captured value
+- [x] Use smoothed actual angle from PGN 253 (no separate protocol needed)
+- [x] Implement `ZeroWasCommand` to calculate and apply offset correction
+- [x] Send updated PGN 252 to module immediately
 
 ### 4. Test Mode Steer Commands
 
@@ -113,27 +111,25 @@ Byte 13:  CRC
 
 ### 6. Reset to Defaults
 
-**Current:** TODO placeholder
-**Need:** Restore factory default values
+**Current:** ✅ Implemented
 
 **Tasks:**
-- [ ] Define default values for all AutoSteerConfig properties
-- [ ] Add `ResetToDefaults()` method on `AutoSteerConfig`
-- [ ] Show confirmation dialog before reset
-- [ ] Send updated PGN 251/252 after reset
+- [x] Define default values for all AutoSteerConfig properties (in field initializers)
+- [x] Add `ResetToDefaults()` method on `AutoSteerConfig`
+- [x] Show confirmation dialog before reset
+- [x] Send updated PGN 251/252 after reset
 
 ### 7. Real-time Status Display
 
-**Current:** Status bar shows Set/Actual/PWM/Error placeholders
-**Need:** Live values from module
+**Current:** ✅ Implemented with smoothing and throttling
 
 **Tasks:**
-- [ ] Subscribe to PGN 253 data stream
-- [ ] Update `SetSteerAngle` from guidance calculation
-- [ ] Update `ActualSteerAngle` from PGN 253
-- [ ] Update `PwmDisplay` from PGN 253
-- [ ] Calculate `SteerError = |SetAngle - ActualAngle|`
-- [ ] Update at appropriate rate (10Hz?)
+- [x] Subscribe to PGN 253 data stream (on panel open)
+- [ ] Update `SetSteerAngle` from guidance calculation (future integration)
+- [x] Update `ActualSteerAngle` from PGN 253 with EMA smoothing
+- [x] Update `PwmDisplay` from PGN 253
+- [x] Calculate `SteerError = |SetAngle - ActualAngle|`
+- [x] Update at 10Hz with fixed-width columns for stable layout
 
 ### 8. Sensor Readings (Tab 5)
 
@@ -164,13 +160,13 @@ The module may send additional sensor data (pressure, current) in:
 ### Phase 1: Core Communication (High Priority)
 1. ✅ Parse PGN 253 incoming data
 2. ✅ Wire `ActualSteerAngle`, `PwmDisplay` to status bar
-3. Validate `SendAndSaveCommand` sends both PGNs correctly
-4. Verify module receives and applies settings
+3. ✅ Validate `SendAndSaveCommand` sends both PGNs correctly
+4. ✅ Add display smoothing and throttling (10Hz updates, EMA filter)
 
 ### Phase 2: Calibration Tools (Medium Priority)
-5. Implement `ZeroWasCommand` using PGN 253 data
-6. Add diameter recording (if feasible)
-7. Implement `ResetToDefaultsCommand`
+5. ✅ Implement `ZeroWasCommand` using PGN 253 data
+6. Diameter recording (deferred - requires GPS tracking)
+7. ✅ Implement `ResetToDefaultsCommand` with confirmation dialog
 
 ### Phase 3: Test Mode (Medium Priority)
 8. Wire test mode steer commands to send to module

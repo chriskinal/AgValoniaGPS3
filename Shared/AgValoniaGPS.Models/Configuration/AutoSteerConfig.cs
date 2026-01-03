@@ -575,4 +575,76 @@ public class AutoSteerConfig : ReactiveObject
         CurrentSensorEnabled = (value & 0x04) != 0;
         ImuAxisSwap = (value & 0x08) != 0 ? 1 : 0;
     }
+
+    // ============================================
+    // Reset to Defaults
+    // ============================================
+
+    /// <summary>
+    /// Reset all settings to factory defaults.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        // Tab 1: Pure Pursuit / Stanley
+        SteerResponseHold = 3.0;
+        IntegralGain = 0.0;
+        IsStanleyMode = false;
+        StanleyAggressiveness = 1.0;
+        StanleyOvershootReduction = 1.0;
+
+        // Tab 2: Steering Sensor
+        WasOffset = 0;
+        CountsPerDegree = 100;
+        Ackermann = 100;
+        MaxSteerAngle = 45;
+
+        // Tab 3: Deadzone / Timing
+        DeadzoneHeading = 0.1;
+        DeadzoneDelay = 5;
+        SpeedFactor = 1.0;
+        AcquireFactor = 0.9;
+
+        // Tab 4: Gain / PWM
+        ProportionalGain = 10;
+        MaxPwm = 235;
+        MinPwm = 5;
+
+        // Tab 5: Turn Sensors
+        TurnSensorEnabled = false;
+        PressureSensorEnabled = false;
+        CurrentSensorEnabled = false;
+        TurnSensorCounts = 255;
+        PressureTripPoint = 0;
+        CurrentTripPoint = 0;
+
+        // Tab 6: Hardware Config
+        DanfossEnabled = false;
+        InvertWas = false;
+        InvertMotor = false;
+        InvertRelays = false;
+        MotorDriver = 0;
+        AdConverter = 0;
+        ImuAxisSwap = 0;
+        ExternalEnable = 0;
+
+        // Tab 7: Algorithm
+        UTurnCompensation = 0.0;
+        SideHillCompensation = 0.0;
+        SteerInReverse = false;
+
+        // Tab 8: Speed Limits
+        ManualTurnsEnabled = false;
+        ManualTurnsSpeed = 12.0;
+        MinSteerSpeed = 0.0;
+        MaxSteerSpeed = 15.0;
+
+        // Tab 9: Display
+        LineWidth = 2;
+        NudgeDistance = 20;
+        NextGuidanceTime = 1.5;
+        CmPerPixel = 5;
+        LightbarEnabled = true;
+        SteerBarEnabled = false;
+        GuidanceBarOn = true;
+    }
 }

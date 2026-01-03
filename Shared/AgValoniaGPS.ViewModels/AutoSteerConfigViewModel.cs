@@ -311,9 +311,15 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     {
         ZeroWasCommand = new RelayCommand(() =>
         {
-            // TODO: Read current WAS value from hardware and set as offset
-            AutoSteer.WasOffset = 0;
+            // Calculate new WAS offset to make current angle read zero.
+            // Module formula: angle = (rawCounts - wasOffset) / countsPerDegree
+            // To zero: newOffset = currentOffset + (currentAngle * countsPerDegree)
+            var angleCorrection = (int)Math.Round(_smoothedActualAngle * AutoSteer.CountsPerDegree);
+            AutoSteer.WasOffset += angleCorrection;
             Config.MarkChanged();
+
+            // Send updated settings to module immediately
+            SendSteerSettingsPgn();
         });
 
         EditCountsPerDegreeCommand = new RelayCommand(() =>
@@ -771,8 +777,18 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     #region Action Commands
 
     public ICommand SendAndSaveCommand { get; private set; } = null!;
-    public ICommand ResetCommand { get; private set; } = null!;
+    public ICommand ResetToDefaultsCommand { get; private set; } = null!;
     public ICommand WizardCommand { get; private set; } = null!;
+
+    private bool _isResetConfirmVisible;
+    public bool IsResetConfirmVisible
+    {
+        get => _isResetConfirmVisible;
+        set => SetProperty(ref _isResetConfirmVisible, value);
+    }
+
+    public ICommand ConfirmResetCommand { get; private set; } = null!;
+    public ICommand CancelResetCommand { get; private set; } = null!;
 
     private void InitializeActionCommands()
     {
@@ -788,10 +804,28 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             _configService.SaveProfile(Config.ActiveProfileName);
         });
 
-        ResetCommand = new RelayCommand(() =>
+        ResetToDefaultsCommand = new RelayCommand(() =>
         {
-            // Reset to defaults
-            // TODO: Implement reset to factory defaults
+            // Show confirmation before reset
+            IsResetConfirmVisible = true;
+        });
+
+        ConfirmResetCommand = new RelayCommand(() =>
+        {
+            // Reset all settings to defaults
+            AutoSteer.ResetToDefaults();
+            Config.MarkChanged();
+
+            // Send updated settings to module
+            SendSteerSettingsPgn();
+            SendSteerConfigPgn();
+
+            IsResetConfirmVisible = false;
+        });
+
+        CancelResetCommand = new RelayCommand(() =>
+        {
+            IsResetConfirmVisible = false;
         });
 
         WizardCommand = new RelayCommand(() =>

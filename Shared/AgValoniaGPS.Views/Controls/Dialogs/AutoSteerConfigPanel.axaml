@@ -1084,7 +1084,7 @@
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
                                                Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Reset" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Defaults" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Send+Save with mandatory indicator -->
@@ -1202,6 +1202,38 @@
                                 Margin="4,0,0,0" Background="#DD4A9A7E"/>
                     </Grid>
                 </Grid>
+            </Border>
+        </Border>
+
+        <!-- Reset Confirmation Dialog -->
+        <Border Background="#CC000000"
+                IsVisible="{Binding IsResetConfirmVisible}"
+                ZIndex="100">
+            <Border Background="#DD1E2A38" CornerRadius="12" Padding="24"
+                    Width="320"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    BorderBrush="#E74C3C" BorderThickness="2">
+                <StackPanel Spacing="16">
+                    <!-- Warning Icon and Title -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
+                               Width="40" Height="40" Stretch="Uniform"/>
+                        <TextBlock Text="Reset to Defaults?" FontSize="18" FontWeight="Bold" Foreground="White"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Warning Message -->
+                    <TextBlock Text="This will reset ALL AutoSteer settings to factory defaults and send them to the module."
+                               TextWrapping="Wrap" Foreground="#AAA" TextAlignment="Center"/>
+
+                    <!-- Buttons -->
+                    <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
+                        <Button Grid.Column="0" Content="Cancel" Command="{Binding CancelResetCommand}"
+                                Margin="0,0,4,0" Padding="16,10" Background="#DD34495E"/>
+                        <Button Grid.Column="1" Content="Reset" Command="{Binding ConfirmResetCommand}"
+                                Margin="4,0,0,0" Padding="16,10" Background="#DDE74C3C"/>
+                    </Grid>
+                </StackPanel>
             </Border>
         </Border>
     </Grid>
