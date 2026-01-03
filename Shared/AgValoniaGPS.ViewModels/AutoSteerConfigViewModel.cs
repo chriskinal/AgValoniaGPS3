@@ -678,6 +678,28 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         set => SetProperty(ref _actualCurrentPercent, value);
     }
 
+    // Switch status from module (PGN 253)
+    private bool _steerSwitchActive;
+    public bool SteerSwitchActive
+    {
+        get => _steerSwitchActive;
+        set => SetProperty(ref _steerSwitchActive, value);
+    }
+
+    private bool _workSwitchActive;
+    public bool WorkSwitchActive
+    {
+        get => _workSwitchActive;
+        set => SetProperty(ref _workSwitchActive, value);
+    }
+
+    private bool _remoteButtonPressed;
+    public bool RemoteButtonPressed
+    {
+        get => _remoteButtonPressed;
+        set => SetProperty(ref _remoteButtonPressed, value);
+    }
+
     private int _testSteerOffset;
     public int TestSteerOffset
     {
@@ -926,6 +948,11 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             pwmClamped = 0;
 
         PwmDisplay = pwmClamped;
+
+        // Update switch status from module
+        SteerSwitchActive = steerData.SteerSwitchActive;
+        WorkSwitchActive = steerData.WorkSwitchActive;
+        RemoteButtonPressed = steerData.RemoteButtonPressed;
     }
 
     #endregion
