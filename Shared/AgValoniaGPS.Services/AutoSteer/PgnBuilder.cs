@@ -24,6 +24,7 @@ public static class PgnBuilder
     public const byte PGN_MACHINE = 0xEF;        // 239 - Machine Data
     public const byte PGN_STEER_SETTINGS = 0xFC; // 252 - Steer Settings
     public const byte PGN_STEER_CONFIG = 0xFB;   // 251 - Steer Config
+    public const byte PGN_STEER_DATA = 0xFD;     // 253 - Steer Data FROM Module
 
     // Buffer sizes: header(2) + source(1) + pgn(1) + length(1) + data(N) + crc(1)
     public const int AUTOSTEER_PGN_SIZE = 14;       // 5 header + 8 data + 1 crc
@@ -302,5 +303,81 @@ public static class PgnBuilder
         buf[10] = CalculateCrc(buf, 2, 8);
 
         return buf;
+    }
+
+    /// <summary>
+    /// Parse PGN 253 (Steer Data) received from the steering module.
+    /// Format: [0x80, 0x81, Source, 0xFD, 8, AngleHi, AngleLo, HeadingHi, HeadingLo, Roll, Switches, PWM, Reserved, CRC]
+    ///
+    /// Byte 5-6:  Actual steer angle * 100 (signed int16)
+    /// Byte 7-8:  Heading from IMU * 16 (unsigned int16)
+    /// Byte 9:    Roll from IMU (signed byte, degrees)
+    /// Byte 10:   Switch status byte
+    ///            bit 0: Steer switch
+    ///            bit 1: Work switch
+    ///            bit 2: Remote steer button
+    /// Byte 11:   PWM display (0-255)
+    /// Byte 12:   Reserved
+    /// Byte 13:   CRC
+    /// </summary>
+    /// <param name="data">Raw PGN data including headers</param>
+    /// <param name="result">Parsed steer module data</param>
+    /// <returns>True if parsing succeeded, false if data is invalid</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryParseSteerData(ReadOnlySpan<byte> data, out SteerModuleData result)
+    {
+        result = default;
+
+        // Validate minimum length: header(2) + source(1) + pgn(1) + length(1) + data(8) + crc(1) = 14
+        if (data.Length < 14)
+            return false;
+
+        // Validate header
+        if (data[0] != HEADER1 || data[1] != HEADER2)
+            return false;
+
+        // Validate PGN
+        if (data[3] != PGN_STEER_DATA)
+            return false;
+
+        // Parse actual steer angle (signed int16, angle * 100)
+        short angleRaw = (short)((data[5] << 8) | data[6]);
+        double actualSteerAngle = angleRaw / 100.0;
+
+        // Parse IMU heading (unsigned int16, heading * 16)
+        ushort headingRaw = (ushort)((data[7] << 8) | data[8]);
+        double imuHeading = headingRaw / 16.0;
+
+        // Parse IMU roll (signed byte)
+        sbyte imuRoll = (sbyte)data[9];
+
+        // Parse switch status byte
+        byte switches = data[10];
+        bool steerSwitch = (switches & 0x01) != 0;
+        bool workSwitch = (switches & 0x02) != 0;
+        bool remoteButton = (switches & 0x04) != 0;
+
+        // Parse PWM display
+        byte pwmDisplay = data[11];
+
+        result = new SteerModuleData(
+            actualSteerAngle,
+            imuHeading,
+            imuRoll,
+            steerSwitch,
+            workSwitch,
+            remoteButton,
+            pwmDisplay);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Parse PGN 253 from a byte array (convenience overload).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryParseSteerData(byte[] data, out SteerModuleData result)
+    {
+        return TryParseSteerData(data.AsSpan(), out result);
     }
 }

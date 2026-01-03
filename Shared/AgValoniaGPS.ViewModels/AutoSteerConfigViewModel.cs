@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Interfaces;
@@ -50,7 +51,16 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     public bool IsPanelVisible
     {
         get => _isPanelVisible;
-        set => SetProperty(ref _isPanelVisible, value);
+        set
+        {
+            if (SetProperty(ref _isPanelVisible, value))
+            {
+                if (value)
+                    SubscribeToUdpEvents();
+                else
+                    UnsubscribeFromUdpEvents();
+            }
+        }
     }
 
     private bool _isFullMode;
@@ -820,6 +830,46 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         SetSteerAngle = setAngle;
         PwmDisplay = pwm;
         SteerError = Math.Abs(actualAngle - setAngle);
+    }
+
+    #endregion
+
+    #region UDP Event Subscription
+
+    private bool _isSubscribed;
+
+    private void SubscribeToUdpEvents()
+    {
+        if (_isSubscribed || _udpService == null) return;
+
+        _udpService.DataReceived += OnUdpDataReceived;
+        _isSubscribed = true;
+    }
+
+    private void UnsubscribeFromUdpEvents()
+    {
+        if (!_isSubscribed || _udpService == null) return;
+
+        _udpService.DataReceived -= OnUdpDataReceived;
+        _isSubscribed = false;
+    }
+
+    private void OnUdpDataReceived(object? sender, UdpDataReceivedEventArgs e)
+    {
+        // Only process PGN 253 (Steer Data from module)
+        if (e.PGN != PgnNumbers.AUTOSTEER_DATA) return;
+
+        // Parse the incoming steer data
+        if (PgnBuilder.TryParseSteerData(e.Data, out var steerData))
+        {
+            // Update display properties on UI thread
+            ActualSteerAngle = steerData.ActualSteerAngle;
+            PwmDisplay = steerData.PwmDisplay;
+            SteerError = Math.Abs(SetSteerAngle - steerData.ActualSteerAngle);
+
+            // Update switch status (could be used for indicators)
+            // steerData.SteerSwitchActive, steerData.WorkSwitchActive, steerData.RemoteButtonPressed
+        }
     }
 
     #endregion
