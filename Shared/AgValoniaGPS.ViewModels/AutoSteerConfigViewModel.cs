@@ -839,12 +839,22 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
     private bool _isSubscribed;
 
+    // Display throttling: update at ~10Hz instead of 50Hz
+    private const int DisplayUpdateIntervalMs = 100;
+    private DateTime _lastDisplayUpdate = DateTime.MinValue;
+
+    // Smoothing: exponential moving average for angle display
+    private double _smoothedActualAngle;
+    private const double SmoothingFactor = 0.3; // Lower = smoother, higher = more responsive
+
     private void SubscribeToUdpEvents()
     {
         if (_isSubscribed || _udpService == null) return;
 
         _udpService.DataReceived += OnUdpDataReceived;
         _isSubscribed = true;
+        _smoothedActualAngle = 0;
+        _lastDisplayUpdate = DateTime.MinValue;
     }
 
     private void UnsubscribeFromUdpEvents()
@@ -861,13 +871,24 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         if (e.PGN != PgnNumbers.AUTOSTEER_DATA) return;
 
         // Parse the incoming steer data
-        if (PgnBuilder.TryParseSteerData(e.Data, out var steerData))
-        {
-            // Update display properties on UI thread
-            ActualSteerAngle = steerData.ActualSteerAngle;
-            PwmDisplay = steerData.PwmDisplay;
-            SteerError = Math.Abs(SetSteerAngle - steerData.ActualSteerAngle);
-        }
+        if (!PgnBuilder.TryParseSteerData(e.Data, out var steerData))
+            return;
+
+        // Apply exponential moving average smoothing to angle
+        _smoothedActualAngle = (_smoothedActualAngle * (1 - SmoothingFactor)) +
+                              (steerData.ActualSteerAngle * SmoothingFactor);
+
+        // Throttle display updates to ~10Hz
+        var now = DateTime.UtcNow;
+        if ((now - _lastDisplayUpdate).TotalMilliseconds < DisplayUpdateIntervalMs)
+            return;
+
+        _lastDisplayUpdate = now;
+
+        // Update display properties with smoothed values
+        ActualSteerAngle = Math.Round(_smoothedActualAngle, 1);
+        PwmDisplay = steerData.PwmDisplay;
+        SteerError = Math.Round(Math.Abs(SetSteerAngle - _smoothedActualAngle), 1);
     }
 
     #endregion

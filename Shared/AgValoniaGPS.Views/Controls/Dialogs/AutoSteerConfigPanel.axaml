@@ -1115,22 +1115,23 @@
                 <!-- Footer: Status Bar -->
                 <Border Grid.Row="2" Background="#DD2C3E50" Padding="12,8">
                     <Grid ColumnDefinitions="*,Auto">
-                        <!-- Status Values -->
-                        <StackPanel Orientation="Horizontal" Spacing="24">
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <TextBlock Text="Set:" Classes="StatusLabel" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding SetSteerAngle, StringFormat='{}{0:F1}'}"
-                                           Classes="StatusValue" VerticalAlignment="Center"/>
+                        <!-- Status Values - Fixed width columns to prevent layout shift -->
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Orientation="Horizontal" Width="80">
+                                <TextBlock Text="Set:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
+                                <TextBlock Text="{Binding SetSteerAngle, StringFormat='{}{0:F1}°'}"
+                                           Classes="StatusValue" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <TextBlock Text="Act:" Classes="StatusLabel" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Width="80">
+                                <TextBlock Text="Act:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
                                 <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
-                                           Classes="StatusValue" VerticalAlignment="Center"/>
+                                           Classes="StatusValue" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <TextBlock Text="Err:" Classes="StatusLabel" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Width="80">
+                                <TextBlock Text="Err:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
                                 <TextBlock Text="{Binding SteerError, StringFormat='{}{0:F1}°'}"
-                                           Foreground="#E74C3C" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                           Foreground="#E74C3C" FontWeight="Bold" FontSize="14"
+                                           VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
                             </StackPanel>
                         </StackPanel>
 
