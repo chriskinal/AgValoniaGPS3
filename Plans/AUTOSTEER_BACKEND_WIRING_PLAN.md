@@ -52,7 +52,7 @@ Byte 13:  CRC
 - [x] Create `SteerModuleData` record for parsed data
 - [x] Expose `ActualSteerAngle` on `AutoSteerConfigViewModel`
 - [x] Expose `PwmDisplay` for the PWM bar visualization
-- [ ] Expose `SwitchStatus` for steer/work switch indicators
+- [x] Expose `SwitchStatus` for steer/work switch indicators
 - [x] Update status bar in config panel with live values
 
 ### 2. Profile Save/Load Integration
@@ -170,7 +170,7 @@ The module may send additional sensor data (pressure, current) in:
 12. ✅ Save/load with profile (ProfileName.AutoSteer.json)
 
 ### Phase 5: Remaining Items (Lower Priority)
-13. [ ] Switch status indicators (steer/work switch from PGN 253)
+13. [x] Switch status indicators (steer/work switch from PGN 253)
 14. [ ] Pressure/current sensor displays (if module supports)
 15. [ ] Setup wizard integration (future)
 
