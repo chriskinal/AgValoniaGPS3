@@ -952,8 +952,21 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
         // Update display properties with smoothed values
         ActualSteerAngle = Math.Round(_smoothedActualAngle, 1);
-        PwmDisplay = steerData.PwmDisplay;
-        SteerError = Math.Round(Math.Abs(SetSteerAngle - _smoothedActualAngle), 1);
+
+        // Calculate steer error
+        double error = SetSteerAngle - _smoothedActualAngle;
+        SteerError = Math.Round(Math.Abs(error), 1);
+
+        // Calculate PWM based on error and proportional gain
+        // This is the PWM AgValonia would send to the motor
+        double pwmRaw = error * AutoSteer.ProportionalGain;
+        int pwmClamped = (int)Math.Clamp(Math.Abs(pwmRaw), 0, AutoSteer.MaxPwm);
+
+        // Apply minimum PWM threshold (deadband)
+        if (pwmClamped < AutoSteer.MinPwm)
+            pwmClamped = 0;
+
+        PwmDisplay = pwmClamped;
     }
 
     #endregion
