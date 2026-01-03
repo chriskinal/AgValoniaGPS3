@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.SteerEnableStepView"
+             x:DataType="steer:SteerEnableStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Options -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- None (Software Only) -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectNone}"
+                    Classes.selected="{Binding IsNoneSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="60" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <TextBlock Text="SW"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#95A5A6"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="None (Software Only)"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Enable/disable AutoSteer from the touchscreen"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- Switch -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectSwitch}"
+                    Classes.selected="{Binding IsSwitchSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="60" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <Canvas Width="40" Height="40">
+                            <!-- Toggle switch icon -->
+                            <Rectangle Canvas.Left="5" Canvas.Top="15" Width="30" Height="10"
+                                       Fill="#7F8C8D" RadiusX="5" RadiusY="5"/>
+                            <Ellipse Canvas.Left="20" Canvas.Top="10" Width="20" Height="20"
+                                     Fill="#1ABC9C"/>
+                        </Canvas>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Toggle Switch"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Physical ON/OFF switch - AutoSteer active when switch is ON"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- Button -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectButton}"
+                    Classes.selected="{Binding IsButtonSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="60" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <Canvas Width="40" Height="40">
+                            <!-- Momentary button icon -->
+                            <Ellipse Canvas.Left="8" Canvas.Top="8" Width="24" Height="24"
+                                     Fill="#7F8C8D" Stroke="#95A5A6" StrokeThickness="2"/>
+                            <Ellipse Canvas.Left="12" Canvas.Top="12" Width="16" Height="16"
+                                     Fill="#E74C3C"/>
+                        </Canvas>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Momentary Button"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Press to toggle AutoSteer ON/OFF - latching behavior"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="Button.option-button">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.option-button:pointerover">
+            <Setter Property="Background" Value="#3D566E"/>
+        </Style>
+        <Style Selector="Button.option-button.selected">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+        <Style Selector="Button.option-button.selected:pointerover">
+            <Setter Property="Background" Value="#16A085"/>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

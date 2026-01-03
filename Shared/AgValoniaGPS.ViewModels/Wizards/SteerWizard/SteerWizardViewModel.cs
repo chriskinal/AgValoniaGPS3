@@ -17,13 +17,24 @@ public class SteerWizardViewModel : WizardViewModel
     {
         _configService = configService;
 
-        // Add all wizard steps
+        // Group A: Introduction
         AddStep(new WelcomeStepViewModel());
+
+        // Group B: Vehicle Dimensions
         AddStep(new WheelbaseStepViewModel(configService));
         AddStep(new TrackWidthStepViewModel(configService));
         AddStep(new AntennaPivotStepViewModel(configService));
         AddStep(new AntennaHeightStepViewModel(configService));
         AddStep(new AntennaOffsetStepViewModel(configService));
+
+        // Group C: Hardware Configuration
+        AddStep(new SteerEnableStepViewModel(configService));
+        AddStep(new MotorDriverStepViewModel(configService));
+        AddStep(new ADConverterStepViewModel(configService));
+        AddStep(new InvertSettingsStepViewModel(configService));
+        AddStep(new DanfossStepViewModel(configService));
+
+        // Group G: Completion
         AddStep(new FinishStepViewModel());
 
         // Initialize navigation

@@ -56,12 +56,24 @@ public partial class WizardHost : UserControl
         // This bypasses DataTemplate resolution which had caching issues
         Control? view = step switch
         {
+            // Group A: Introduction
             WelcomeStepViewModel => new WelcomeStepView(),
+
+            // Group B: Vehicle Dimensions
             WheelbaseStepViewModel => new WheelbaseStepView(),
             TrackWidthStepViewModel => new TrackWidthStepView(),
             AntennaPivotStepViewModel => new AntennaPivotStepView(),
             AntennaHeightStepViewModel => new AntennaHeightStepView(),
             AntennaOffsetStepViewModel => new AntennaOffsetStepView(),
+
+            // Group C: Hardware Configuration
+            SteerEnableStepViewModel => new SteerEnableStepView(),
+            MotorDriverStepViewModel => new MotorDriverStepView(),
+            ADConverterStepViewModel => new ADConverterStepView(),
+            InvertSettingsStepViewModel => new InvertSettingsStepView(),
+            DanfossStepViewModel => new DanfossStepView(),
+
+            // Group G: Completion
             FinishStepViewModel => new FinishStepView(),
             _ => null
         };

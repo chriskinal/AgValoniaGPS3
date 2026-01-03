@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.InvertSettingsStepView"
+             x:DataType="steer:InvertSettingsStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title with skip indicator -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+            <Border Background="#34495E"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding CanSkip}">
+                <TextBlock Text="Optional"
+                           FontSize="11"
+                           Foreground="#95A5A6"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Toggle options -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- Invert WAS -->
+            <Border Background="#34495E" CornerRadius="12" Padding="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Invert Wheel Angle Sensor"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Enable if WAS reads backwards (left shows as right)"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding InvertWas}"
+                                  OnContent="ON"
+                                  OffContent="OFF"
+                                  VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Invert Motor -->
+            <Border Background="#34495E" CornerRadius="12" Padding="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Invert Motor Direction"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Enable if motor turns the wrong direction"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding InvertMotor}"
+                                  OnContent="ON"
+                                  OffContent="OFF"
+                                  VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Invert Relays -->
+            <Border Background="#34495E" CornerRadius="12" Padding="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Invert Relay Outputs"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Enable if relays are active-low"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding InvertRelays}"
+                                  OnContent="ON"
+                                  OffContent="OFF"
+                                  VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
