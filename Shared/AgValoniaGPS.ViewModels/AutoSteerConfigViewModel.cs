@@ -719,6 +719,7 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             {
                 _autoSteerService?.EnableFreeDrive();
                 FreeDriveSteerAngle = 0;
+                SetSteerAngle = 0; // Show target angle in status bar
             }
             else
             {
@@ -731,8 +732,9 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         {
             if (IsFreeDriveMode)
             {
-                FreeDriveSteerAngle = Math.Max(FreeDriveSteerAngle - 1, -40);
+                FreeDriveSteerAngle = Math.Max(FreeDriveSteerAngle - 2, -40);
                 _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
+                SetSteerAngle = FreeDriveSteerAngle; // Update status bar
             }
         });
 
@@ -740,8 +742,9 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         {
             if (IsFreeDriveMode)
             {
-                FreeDriveSteerAngle = Math.Min(FreeDriveSteerAngle + 1, 40);
+                FreeDriveSteerAngle = Math.Min(FreeDriveSteerAngle + 2, 40);
                 _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
+                SetSteerAngle = FreeDriveSteerAngle; // Update status bar
             }
         });
 
@@ -749,12 +752,14 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         {
             FreeDriveSteerAngle = 0;
             _autoSteerService?.SetFreeDriveAngle(0);
+            if (IsFreeDriveMode) SetSteerAngle = 0;
         });
 
         SteerOffset5Command = new RelayCommand(() =>
         {
             FreeDriveSteerAngle = FreeDriveSteerAngle == 0 ? 5 : 0;
             _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
+            if (IsFreeDriveMode) SetSteerAngle = FreeDriveSteerAngle;
         });
 
         ToggleRecordingCommand = new RelayCommand(() =>
