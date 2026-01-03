@@ -80,17 +80,19 @@ public static class PgnBuilder
         if (state.IsInFreeDriveMode)
         {
             // Free Drive: fake speed of 8.0 km/h to allow motor operation
+            // Little-endian: low byte first (Arduino/Teensy convention)
             ushort freeSpeed = 80;  // 8.0 km/h * 10
-            buf[5] = (byte)(freeSpeed >> 8);
-            buf[6] = (byte)(freeSpeed & 0xFF);
+            buf[5] = (byte)(freeSpeed & 0xFF);        // low byte
+            buf[6] = (byte)(freeSpeed >> 8);          // high byte
 
             // Status = 1 (autosteer enabled for testing)
             buf[7] = 1;
 
             // Use free drive steer angle instead of guidance angle
+            // Little-endian: low byte first
             short freeDriveAngle = (short)(state.FreeDriveSteerAngle * 100);
-            buf[8] = (byte)(freeDriveAngle >> 8);
-            buf[9] = (byte)(freeDriveAngle & 0xFF);
+            buf[8] = (byte)(freeDriveAngle & 0xFF);   // low byte
+            buf[9] = (byte)(freeDriveAngle >> 8);     // high byte
 
             // XTE = 0 in free drive mode
             buf[10] = 127;  // 0 + 127 offset
@@ -102,11 +104,12 @@ public static class PgnBuilder
         else
         {
             // Normal mode: use guidance values
+            // Little-endian: low byte first (Arduino/Teensy convention)
 
-            // Speed - using km/h * 10 format (2 bytes, high/low)
+            // Speed - using km/h * 10 format (2 bytes)
             ushort speedInt = (ushort)(state.SpeedKmh * 10);
-            buf[5] = (byte)(speedInt >> 8);
-            buf[6] = (byte)(speedInt & 0xFF);
+            buf[5] = (byte)(speedInt & 0xFF);         // low byte
+            buf[6] = (byte)(speedInt >> 8);           // high byte
 
             // Status byte
             byte status = 0;
@@ -117,10 +120,10 @@ public static class PgnBuilder
             if (state.GuidanceValid) status |= 0x10;
             buf[7] = status;
 
-            // Steer angle * 100 (signed, 2 bytes, high/low)
+            // Steer angle * 100 (signed, 2 bytes)
             short angleInt = (short)(state.SteerAngle * 100);
-            buf[8] = (byte)(angleInt >> 8);
-            buf[9] = (byte)(angleInt & 0xFF);
+            buf[8] = (byte)(angleInt & 0xFF);         // low byte
+            buf[9] = (byte)(angleInt >> 8);           // high byte
 
             // XTE - cross-track error (single byte, clamped to -127 to 127 cm)
             int xte = (int)(state.CrossTrackError * 100); // meters to cm
