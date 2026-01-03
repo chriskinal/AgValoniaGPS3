@@ -114,6 +114,16 @@ public struct VehicleState
     public bool SteerSwitchActive;
 
     // ═══════════════════════════════════════════════════════════════════════
+    // Free Drive Mode (for config panel testing)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>When true, use FreeDriveSteerAngle instead of guidance SteerAngle</summary>
+    public bool IsInFreeDriveMode;
+
+    /// <summary>Manual steer angle for free drive testing (-40 to +40 degrees)</summary>
+    public double FreeDriveSteerAngle;
+
+    // ═══════════════════════════════════════════════════════════════════════
     // Validity Flags
     // ═══════════════════════════════════════════════════════════════════════
 

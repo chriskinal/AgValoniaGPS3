@@ -79,16 +79,20 @@ Byte 13:  CRC
 
 ### 4. Test Mode Steer Commands
 
-**Current:** Steer left/right/zero buttons exist but only adjust local values
-**Need:** Send steer commands to module in free drive mode
+**Current:** ✅ Implemented using AgOpenGPS pattern
+
+**Implementation:** Free drive mode sets flags on VehicleState that PGN 254 builder checks:
+- `VehicleState.IsInFreeDriveMode` - When true, overrides guidance angle
+- `VehicleState.FreeDriveSteerAngle` - Manual angle (-40 to +40 degrees)
+- Fake speed of 8 km/h sent to enable motor operation
+- Status byte set to 1 (autosteer enabled)
 
 **Tasks:**
-- [ ] Define test mode PGN or reuse existing steer command format
-- [ ] `SteerLeftCommand` - Send negative steer angle increment
-- [ ] `SteerRightCommand` - Send positive steer angle increment
-- [ ] `ZeroSteerAngleCommand` - Send zero steer angle
-- [ ] `ToggleFreeDriveCommand` - Enable/disable motor free drive mode
-- [ ] Rate limit commands (don't flood UDP)
+- [x] Add `IsInFreeDriveMode` and `FreeDriveSteerAngle` to VehicleState
+- [x] PGN 254 builder checks IsInFreeDriveMode and uses FreeDriveSteerAngle
+- [x] IAutoSteerService exposes EnableFreeDrive/DisableFreeDrive/SetFreeDriveAngle
+- [x] AutoSteerConfigViewModel wired to IAutoSteerService for free drive
+- [x] Free drive auto-disables when config panel closes (safety)
 
 ### 5. Diameter Measurement (Tab 2)
 
@@ -169,9 +173,9 @@ The module may send additional sensor data (pressure, current) in:
 7. ✅ Implement `ResetToDefaultsCommand` with confirmation dialog
 
 ### Phase 3: Test Mode (Medium Priority)
-8. Wire test mode steer commands to send to module
-9. Add free drive mode toggle
-10. Rate limit test commands
+8. ✅ Wire test mode steer commands to send to module
+9. ✅ Add free drive mode toggle (uses AgOpenGPS pattern)
+10. Rate limiting handled by main loop (no additional work needed)
 
 ### Phase 4: Advanced Features (Lower Priority)
 11. Pressure/current sensor displays

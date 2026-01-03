@@ -67,6 +67,39 @@ public interface IAutoSteerService
     /// Get current latency metrics (for diagnostics display).
     /// </summary>
     AutoSteerLatencyMetrics GetLatencyMetrics();
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Free Drive Mode (for config panel testing)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Whether free drive (test) mode is active.
+    /// When true, PGN 254 uses FreeDriveSteerAngle instead of guidance angle.
+    /// </summary>
+    bool IsInFreeDriveMode { get; }
+
+    /// <summary>
+    /// Current free drive steer angle in degrees (-40 to +40).
+    /// </summary>
+    double FreeDriveSteerAngle { get; }
+
+    /// <summary>
+    /// Enable free drive mode for motor testing.
+    /// Overrides guidance with manual steer angle control.
+    /// </summary>
+    void EnableFreeDrive();
+
+    /// <summary>
+    /// Disable free drive mode and return to normal operation.
+    /// </summary>
+    void DisableFreeDrive();
+
+    /// <summary>
+    /// Set the free drive steer angle.
+    /// Only effective when IsInFreeDriveMode is true.
+    /// </summary>
+    /// <param name="angleDegrees">Target steer angle (-40 to +40 degrees)</param>
+    void SetFreeDriveAngle(double angleDegrees);
 }
 
 /// <summary>

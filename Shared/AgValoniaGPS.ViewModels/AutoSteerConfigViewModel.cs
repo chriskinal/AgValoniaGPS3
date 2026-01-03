@@ -19,11 +19,16 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 {
     private readonly IConfigurationService _configService;
     private readonly IUdpCommunicationService? _udpService;
+    private readonly IAutoSteerService? _autoSteerService;
 
-    public AutoSteerConfigViewModel(IConfigurationService configService, IUdpCommunicationService? udpService = null)
+    public AutoSteerConfigViewModel(
+        IConfigurationService configService,
+        IUdpCommunicationService? udpService = null,
+        IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
         _udpService = udpService;
+        _autoSteerService = autoSteerService;
 
         InitializeNumericInputCommands();
         InitializeTab1Commands();
@@ -57,9 +62,20 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             if (SetProperty(ref _isPanelVisible, value))
             {
                 if (value)
+                {
                     SubscribeToUdpEvents();
+                }
                 else
+                {
                     UnsubscribeFromUdpEvents();
+                    // Disable free drive when panel closes (safety)
+                    if (IsFreeDriveMode)
+                    {
+                        _autoSteerService?.DisableFreeDrive();
+                        IsFreeDriveMode = false;
+                        FreeDriveSteerAngle = 0;
+                    }
+                }
             }
         }
     }
@@ -699,8 +715,14 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         ToggleFreeDriveCommand = new RelayCommand(() =>
         {
             IsFreeDriveMode = !IsFreeDriveMode;
-            if (!IsFreeDriveMode)
+            if (IsFreeDriveMode)
             {
+                _autoSteerService?.EnableFreeDrive();
+                FreeDriveSteerAngle = 0;
+            }
+            else
+            {
+                _autoSteerService?.DisableFreeDrive();
                 FreeDriveSteerAngle = 0;
             }
         });
@@ -710,6 +732,7 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             if (IsFreeDriveMode)
             {
                 FreeDriveSteerAngle = Math.Max(FreeDriveSteerAngle - 1, -40);
+                _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
             }
         });
 
@@ -718,17 +741,20 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             if (IsFreeDriveMode)
             {
                 FreeDriveSteerAngle = Math.Min(FreeDriveSteerAngle + 1, 40);
+                _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
             }
         });
 
         SteerCenterCommand = new RelayCommand(() =>
         {
             FreeDriveSteerAngle = 0;
+            _autoSteerService?.SetFreeDriveAngle(0);
         });
 
         SteerOffset5Command = new RelayCommand(() =>
         {
             FreeDriveSteerAngle = FreeDriveSteerAngle == 0 ? 5 : 0;
+            _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
         });
 
         ToggleRecordingCommand = new RelayCommand(() =>

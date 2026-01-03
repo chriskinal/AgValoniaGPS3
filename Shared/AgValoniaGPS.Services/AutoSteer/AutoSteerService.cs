@@ -47,6 +47,8 @@ public class AutoSteerService : IAutoSteerService
 
     public bool IsEnabled => _isEnabled;
     public bool IsEngaged => _isEngaged;
+    public bool IsInFreeDriveMode => _state.IsInFreeDriveMode;
+    public double FreeDriveSteerAngle => _state.FreeDriveSteerAngle;
 
     public AutoSteerService(
         ITrackGuidanceService guidanceService,
@@ -85,6 +87,28 @@ public class AutoSteerService : IAutoSteerService
     {
         _isEngaged = false;
         _state.IsAutoSteerEngaged = false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Free Drive Mode
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public void EnableFreeDrive()
+    {
+        _state.IsInFreeDriveMode = true;
+        _state.FreeDriveSteerAngle = 0;
+    }
+
+    public void DisableFreeDrive()
+    {
+        _state.IsInFreeDriveMode = false;
+        _state.FreeDriveSteerAngle = 0;
+    }
+
+    public void SetFreeDriveAngle(double angleDegrees)
+    {
+        // Clamp to safe range (-40 to +40 degrees)
+        _state.FreeDriveSteerAngle = Math.Clamp(angleDegrees, -40, 40);
     }
 
     /// <summary>

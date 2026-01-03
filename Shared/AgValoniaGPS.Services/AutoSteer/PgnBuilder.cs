@@ -56,6 +56,11 @@ public static class PgnBuilder
     /// Byte 11:   SC1to8 (sections 1-8 bitmask)
     /// Byte 12:   SC9to16 (sections 9-16 bitmask)
     /// Byte 13:   CRC
+    ///
+    /// When IsInFreeDriveMode is true, overrides speed/status/angle for testing:
+    /// - Speed set to 8.0 km/h (fake speed to allow motor operation)
+    /// - Status set to 1 (autosteer enabled)
+    /// - SteerAngle from FreeDriveSteerAngle instead of guidance
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte[] BuildAutoSteerPgn(ref VehicleState state)
@@ -71,33 +76,61 @@ public static class PgnBuilder
         buf[3] = PGN_AUTOSTEER;
         buf[4] = 8;  // Data length
 
-        // Speed - using km/h * 10 format (2 bytes, high/low)
-        ushort speedInt = (ushort)(state.SpeedKmh * 10);
-        buf[5] = (byte)(speedInt >> 8);
-        buf[6] = (byte)(speedInt & 0xFF);
+        // Check for Free Drive mode (test mode from config panel)
+        if (state.IsInFreeDriveMode)
+        {
+            // Free Drive: fake speed of 8.0 km/h to allow motor operation
+            ushort freeSpeed = 80;  // 8.0 km/h * 10
+            buf[5] = (byte)(freeSpeed >> 8);
+            buf[6] = (byte)(freeSpeed & 0xFF);
 
-        // Status byte
-        byte status = 0;
-        if (state.SteerSwitchActive) status |= 0x01;
-        if (state.WorkSwitchActive) status |= 0x02;
-        if (state.IsAutoSteerEngaged) status |= 0x04;
-        if (state.GpsValid) status |= 0x08;
-        if (state.GuidanceValid) status |= 0x10;
-        buf[7] = status;
+            // Status = 1 (autosteer enabled for testing)
+            buf[7] = 1;
 
-        // Steer angle * 100 (signed, 2 bytes, high/low)
-        short angleInt = (short)(state.SteerAngle * 100);
-        buf[8] = (byte)(angleInt >> 8);
-        buf[9] = (byte)(angleInt & 0xFF);
+            // Use free drive steer angle instead of guidance angle
+            short freeDriveAngle = (short)(state.FreeDriveSteerAngle * 100);
+            buf[8] = (byte)(freeDriveAngle >> 8);
+            buf[9] = (byte)(freeDriveAngle & 0xFF);
 
-        // XTE - cross-track error (single byte, clamped to -127 to 127 cm)
-        int xte = (int)(state.CrossTrackError * 100); // meters to cm
-        xte = Math.Clamp(xte, -127, 127);
-        buf[10] = (byte)(sbyte)xte;
+            // XTE = 0 in free drive mode
+            buf[10] = 127;  // 0 + 127 offset
 
-        // Section states (16 bits = 2 bytes)
-        buf[11] = (byte)(state.SectionStates & 0xFF);         // Sections 1-8
-        buf[12] = (byte)((state.SectionStates >> 8) & 0xFF);  // Sections 9-16
+            // Section states (still send real values)
+            buf[11] = (byte)(state.SectionStates & 0xFF);
+            buf[12] = (byte)((state.SectionStates >> 8) & 0xFF);
+        }
+        else
+        {
+            // Normal mode: use guidance values
+
+            // Speed - using km/h * 10 format (2 bytes, high/low)
+            ushort speedInt = (ushort)(state.SpeedKmh * 10);
+            buf[5] = (byte)(speedInt >> 8);
+            buf[6] = (byte)(speedInt & 0xFF);
+
+            // Status byte
+            byte status = 0;
+            if (state.SteerSwitchActive) status |= 0x01;
+            if (state.WorkSwitchActive) status |= 0x02;
+            if (state.IsAutoSteerEngaged) status |= 0x04;
+            if (state.GpsValid) status |= 0x08;
+            if (state.GuidanceValid) status |= 0x10;
+            buf[7] = status;
+
+            // Steer angle * 100 (signed, 2 bytes, high/low)
+            short angleInt = (short)(state.SteerAngle * 100);
+            buf[8] = (byte)(angleInt >> 8);
+            buf[9] = (byte)(angleInt & 0xFF);
+
+            // XTE - cross-track error (single byte, clamped to -127 to 127 cm)
+            int xte = (int)(state.CrossTrackError * 100); // meters to cm
+            xte = Math.Clamp(xte, -127, 127);
+            buf[10] = (byte)(sbyte)xte;
+
+            // Section states (16 bits = 2 bytes)
+            buf[11] = (byte)(state.SectionStates & 0xFF);         // Sections 1-8
+            buf[12] = (byte)((state.SectionStates >> 8) & 0xFF);  // Sections 9-16
+        }
 
         // CRC: sum of bytes 2 through 12 (source through last data byte)
         buf[13] = CalculateCrc(buf, 2, 11);
