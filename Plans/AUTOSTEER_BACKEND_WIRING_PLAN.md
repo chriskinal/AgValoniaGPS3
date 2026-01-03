@@ -169,10 +169,14 @@ The module may send additional sensor data (pressure, current) in:
 11. ✅ Add AutoSteerConfigDto for JSON serialization
 12. ✅ Save/load with profile (ProfileName.AutoSteer.json)
 
-### Phase 5: Remaining Items (Lower Priority)
+### Phase 5: UI Behavior ✅ COMPLETE
 13. [x] Switch status indicators (steer/work switch from PGN 253)
-14. [ ] Pressure/current sensor displays (if module supports)
-15. [ ] Setup wizard integration (future)
+14. [x] Debounced auto-send for left-side sliders (1 second delay)
+15. [x] Unsaved changes warning for right-side settings
+
+### Phase 6: Future / Out of Scope
+16. [ ] Pressure/current sensor displays (module may not send this data)
+17. [ ] Setup wizard integration (separate PR #7)
 
 ## Testing Strategy
 
@@ -190,9 +194,9 @@ The module may send additional sensor data (pressure, current) in:
 | `AutoSteerConfig.cs` | Add `ResetToDefaults()` method |
 | `AutoSteerConfigPanel.axaml` | Bind status bar to live values |
 
-## Open Questions
+## Resolved Questions
 
-1. **Test Mode Protocol** - Does the module have a specific test/free-drive mode command?
-2. **Sensor Data** - Does PGN 253 include pressure/current, or is there a separate sensor PGN?
-3. **Bidirectional Sync** - Should we read settings back from module on panel open to verify sync?
-4. **Error Handling** - What happens if module doesn't respond to PGN 251/252?
+1. **Test Mode Protocol** - ✅ Uses AgOpenGPS pattern: set VehicleState flags, main loop picks them up
+2. **Sensor Data** - Module doesn't send pressure/current in standard PGN 253
+3. **Bidirectional Sync** - Not possible, module doesn't echo settings back
+4. **Error Handling** - Fire-and-forget UDP; no response expected from module
