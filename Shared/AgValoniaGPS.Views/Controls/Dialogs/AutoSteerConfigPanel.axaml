@@ -288,10 +288,10 @@
                                                 <StackPanel Spacing="4">
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditCountsPerDegreeCommand}">
-                                                            <TextBlock Text="{Binding AutoSteer.CountsPerDegree, StringFormat='{}{0:F2}'}"
+                                                            <TextBlock Text="{Binding AutoSteer.CountsPerDegree, StringFormat='{}{0:F0}'}"
                                                                        Foreground="White" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
-                                                        <Slider Grid.Column="1" Minimum="0.01" Maximum="1"
+                                                        <Slider Grid.Column="1" Minimum="1" Maximum="255"
                                                                 Value="{Binding AutoSteer.CountsPerDegree}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>

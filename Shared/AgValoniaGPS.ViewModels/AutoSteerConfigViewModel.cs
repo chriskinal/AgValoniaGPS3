@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -318,7 +319,7 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         EditCountsPerDegreeCommand = new RelayCommand(() =>
             ShowNumericInput("Counts Per Degree", AutoSteer.CountsPerDegree,
                 v => AutoSteer.CountsPerDegree = v,
-                "", integerOnly: false, allowNegative: false, min: 0.01, max: 1.0));
+                "", integerOnly: true, allowNegative: false, min: 1, max: 255));
 
         EditAckermannCommand = new RelayCommand(() =>
             ShowNumericInput("Ackermann", AutoSteer.Ackermann,
@@ -866,9 +867,6 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             ActualSteerAngle = steerData.ActualSteerAngle;
             PwmDisplay = steerData.PwmDisplay;
             SteerError = Math.Abs(SetSteerAngle - steerData.ActualSteerAngle);
-
-            // Update switch status (could be used for indicators)
-            // steerData.SteerSwitchActive, steerData.WorkSwitchActive, steerData.RemoteButtonPressed
         }
     }
 

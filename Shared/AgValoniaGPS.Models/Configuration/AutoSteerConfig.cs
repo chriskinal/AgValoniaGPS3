@@ -83,10 +83,10 @@ public class AutoSteerConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _wasOffset, value);
     }
 
-    private double _countsPerDegree = 0.1;
+    private double _countsPerDegree = 100;
     /// <summary>
     /// WAS counts per degree of steering angle.
-    /// Range: 0.01 - 1.0
+    /// Range: 1 - 255
     /// </summary>
     public double CountsPerDegree
     {

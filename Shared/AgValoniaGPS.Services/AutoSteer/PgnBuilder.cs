@@ -195,15 +195,15 @@ public static class PgnBuilder
 
     /// <summary>
     /// Build PGN 252 (Steer Settings) from AutoSteerConfig.
-    /// Format: [0x80, 0x81, 0x7F, 0xFC, 8, gainP, highPWM, lowPWM, minPWM, countsPerDeg, offsetHi, offsetLo, ackerman, CRC]
+    /// Format: [0x80, 0x81, 0x7F, 0xFC, 8, gainP, highPWM, lowPWM, minPWM, countsPerDeg, offsetLo, offsetHi, ackerman, CRC]
     ///
     /// Byte 5:  Proportional gain (1-100)
     /// Byte 6:  High PWM limit (max PWM)
     /// Byte 7:  Low PWM limit (highPWM / 3)
     /// Byte 8:  Minimum PWM to move
-    /// Byte 9:  Counts per degree * 10
-    /// Byte 10: WAS offset high byte
-    /// Byte 11: WAS offset low byte
+    /// Byte 9:  Counts per degree (1-255)
+    /// Byte 10: WAS offset low byte (little-endian)
+    /// Byte 11: WAS offset high byte (little-endian)
     /// Byte 12: Ackermann correction (0-200)
     /// Byte 13: CRC
     /// </summary>
@@ -232,13 +232,13 @@ public static class PgnBuilder
         // Min PWM to move (1-50)
         buf[8] = (byte)Math.Clamp(config.MinPwm, 1, 50);
 
-        // Counts per degree * 10 (0.01-1.0 -> 1-100)
-        buf[9] = (byte)Math.Clamp((int)(config.CountsPerDegree * 100), 1, 255);
+        // Counts per degree (1-255, sent as-is)
+        buf[9] = (byte)Math.Clamp((int)config.CountsPerDegree, 1, 255);
 
-        // WAS offset (signed 16-bit, high/low bytes)
+        // WAS offset (signed 16-bit, little-endian: low byte first)
         short wasOffset = (short)Math.Clamp(config.WasOffset, -32768, 32767);
-        buf[10] = (byte)(wasOffset >> 8);
-        buf[11] = (byte)(wasOffset & 0xFF);
+        buf[10] = (byte)(wasOffset & 0xFF);        // low byte
+        buf[11] = (byte)((wasOffset >> 8) & 0xFF); // high byte
 
         // Ackermann correction (0-200)
         buf[12] = (byte)Math.Clamp(config.Ackermann, 0, 200);
