@@ -42,12 +42,12 @@ Byte 13:  CRC
 ```
 
 **Tasks:**
-- [ ] Add PGN 253 parser to `UdpCommunicationService` or create `SteerModuleDataHandler`
-- [ ] Create `SteerModuleData` record/class for parsed data
-- [ ] Expose `ActualSteerAngle` on `AutoSteerConfigViewModel`
-- [ ] Expose `PwmDisplay` for the PWM bar visualization
+- [x] Add PGN 253 parser to `PgnBuilder.TryParseSteerData()`
+- [x] Create `SteerModuleData` record for parsed data
+- [x] Expose `ActualSteerAngle` on `AutoSteerConfigViewModel`
+- [x] Expose `PwmDisplay` for the PWM bar visualization
 - [ ] Expose `SwitchStatus` for steer/work switch indicators
-- [ ] Update status bar in config panel with live values
+- [x] Update status bar in config panel with live values
 
 ### 2. Profile Save/Load Integration
 
@@ -156,14 +156,14 @@ The module may send additional sensor data (pressure, current) in:
 |-----|-----------|---------|--------|
 | 251 | PC → Module | Steer Config (hardware settings) | ✅ Builder done |
 | 252 | PC → Module | Steer Settings (calibration) | ✅ Builder done |
-| 253 | Module → PC | Steer Data (actual angles, switches) | ❌ Parser needed |
+| 253 | Module → PC | Steer Data (actual angles, switches) | ✅ Parser done |
 | 254 | PC → Module | AutoSteer Data (speed, status, XTE) | ✅ Builder done |
 
 ## Implementation Order
 
 ### Phase 1: Core Communication (High Priority)
-1. Parse PGN 253 incoming data
-2. Wire `ActualSteerAngle`, `PwmDisplay` to status bar
+1. ✅ Parse PGN 253 incoming data
+2. ✅ Wire `ActualSteerAngle`, `PwmDisplay` to status bar
 3. Validate `SendAndSaveCommand` sends both PGNs correctly
 4. Verify module receives and applies settings
 
