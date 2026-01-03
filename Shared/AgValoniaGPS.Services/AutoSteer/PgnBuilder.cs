@@ -341,11 +341,13 @@ public static class PgnBuilder
             return false;
 
         // Parse actual steer angle (signed int16, angle * 100)
-        short angleRaw = (short)((data[5] << 8) | data[6]);
+        // Little-endian: low byte first (Arduino/Teensy convention)
+        short angleRaw = (short)(data[5] | (data[6] << 8));
         double actualSteerAngle = angleRaw / 100.0;
 
         // Parse IMU heading (unsigned int16, heading * 16)
-        ushort headingRaw = (ushort)((data[7] << 8) | data[8]);
+        // Little-endian: low byte first
+        ushort headingRaw = (ushort)(data[7] | (data[8] << 8));
         double imuHeading = headingRaw / 16.0;
 
         // Parse IMU roll (signed byte)
