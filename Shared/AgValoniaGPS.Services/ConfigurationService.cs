@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
@@ -37,6 +38,7 @@ public class ConfigurationService(
             return false;
 
         ApplyProfileToStore(profile);
+        LoadAutoSteerConfig(name);
         Store.ActiveProfileName = name;
         Store.ActiveProfilePath = profile.FilePath;
         Store.HasUnsavedChanges = false;
@@ -49,6 +51,7 @@ public class ConfigurationService(
     {
         var profile = CreateProfileFromStore(name);
         profileService.Save(profile);
+        SaveAutoSteerConfig(name);
         Store.HasUnsavedChanges = false;
         Store.OnProfileSaved();
         ProfileSaved?.Invoke(this, name);
@@ -372,6 +375,71 @@ public class ConfigurationService(
 
         // Active profile
         settings.LastUsedVehicleProfile = store.ActiveProfileName;
+    }
+
+    #endregion
+
+    #region AutoSteer Config Persistence
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    /// <summary>
+    /// Gets the path to the AutoSteer config JSON file for a profile.
+    /// Stored as ProfileName.AutoSteer.json alongside the XML profile.
+    /// </summary>
+    private string GetAutoSteerConfigPath(string profileName)
+    {
+        return Path.Combine(ProfilesDirectory, $"{profileName}.AutoSteer.json");
+    }
+
+    /// <summary>
+    /// Save AutoSteerConfig to JSON file alongside the profile.
+    /// </summary>
+    private void SaveAutoSteerConfig(string profileName)
+    {
+        try
+        {
+            var path = GetAutoSteerConfigPath(profileName);
+            var dto = Store.AutoSteer.ToDto();
+            var json = JsonSerializer.Serialize(dto, JsonOptions);
+            File.WriteAllText(path, json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to save AutoSteer config: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Load AutoSteerConfig from JSON file. If not found, keeps defaults.
+    /// </summary>
+    private void LoadAutoSteerConfig(string profileName)
+    {
+        try
+        {
+            var path = GetAutoSteerConfigPath(profileName);
+            if (!File.Exists(path))
+            {
+                // No AutoSteer config file - reset to defaults
+                Store.AutoSteer.ResetToDefaults();
+                return;
+            }
+
+            var json = File.ReadAllText(path);
+            var dto = JsonSerializer.Deserialize<AutoSteerConfigDto>(json);
+            if (dto != null)
+            {
+                Store.AutoSteer.ApplyFromDto(dto);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to load AutoSteer config: {ex.Message}");
+            // On error, keep current values (or reset to defaults)
+        }
     }
 
     #endregion

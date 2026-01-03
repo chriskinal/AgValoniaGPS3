@@ -577,6 +577,115 @@ public class AutoSteerConfig : ReactiveObject
     }
 
     // ============================================
+    // Serialization (for profile persistence)
+    // ============================================
+
+    /// <summary>
+    /// Create a DTO for JSON serialization.
+    /// </summary>
+    public AutoSteerConfigDto ToDto()
+    {
+        return new AutoSteerConfigDto
+        {
+            SteerResponseHold = SteerResponseHold,
+            IntegralGain = IntegralGain,
+            IsStanleyMode = IsStanleyMode,
+            StanleyAggressiveness = StanleyAggressiveness,
+            StanleyOvershootReduction = StanleyOvershootReduction,
+            WasOffset = WasOffset,
+            CountsPerDegree = CountsPerDegree,
+            Ackermann = Ackermann,
+            MaxSteerAngle = MaxSteerAngle,
+            DeadzoneHeading = DeadzoneHeading,
+            DeadzoneDelay = DeadzoneDelay,
+            SpeedFactor = SpeedFactor,
+            AcquireFactor = AcquireFactor,
+            ProportionalGain = ProportionalGain,
+            MaxPwm = MaxPwm,
+            MinPwm = MinPwm,
+            TurnSensorEnabled = TurnSensorEnabled,
+            PressureSensorEnabled = PressureSensorEnabled,
+            CurrentSensorEnabled = CurrentSensorEnabled,
+            TurnSensorCounts = TurnSensorCounts,
+            PressureTripPoint = PressureTripPoint,
+            CurrentTripPoint = CurrentTripPoint,
+            DanfossEnabled = DanfossEnabled,
+            InvertWas = InvertWas,
+            InvertMotor = InvertMotor,
+            InvertRelays = InvertRelays,
+            MotorDriver = MotorDriver,
+            AdConverter = AdConverter,
+            ImuAxisSwap = ImuAxisSwap,
+            ExternalEnable = ExternalEnable,
+            UTurnCompensation = UTurnCompensation,
+            SideHillCompensation = SideHillCompensation,
+            SteerInReverse = SteerInReverse,
+            ManualTurnsEnabled = ManualTurnsEnabled,
+            ManualTurnsSpeed = ManualTurnsSpeed,
+            MinSteerSpeed = MinSteerSpeed,
+            MaxSteerSpeed = MaxSteerSpeed,
+            LineWidth = LineWidth,
+            NudgeDistance = NudgeDistance,
+            NextGuidanceTime = NextGuidanceTime,
+            CmPerPixel = CmPerPixel,
+            LightbarEnabled = LightbarEnabled,
+            SteerBarEnabled = SteerBarEnabled,
+            GuidanceBarOn = GuidanceBarOn
+        };
+    }
+
+    /// <summary>
+    /// Apply values from a DTO (loaded from JSON).
+    /// </summary>
+    public void ApplyFromDto(AutoSteerConfigDto dto)
+    {
+        SteerResponseHold = dto.SteerResponseHold;
+        IntegralGain = dto.IntegralGain;
+        IsStanleyMode = dto.IsStanleyMode;
+        StanleyAggressiveness = dto.StanleyAggressiveness;
+        StanleyOvershootReduction = dto.StanleyOvershootReduction;
+        WasOffset = dto.WasOffset;
+        CountsPerDegree = dto.CountsPerDegree;
+        Ackermann = dto.Ackermann;
+        MaxSteerAngle = dto.MaxSteerAngle;
+        DeadzoneHeading = dto.DeadzoneHeading;
+        DeadzoneDelay = dto.DeadzoneDelay;
+        SpeedFactor = dto.SpeedFactor;
+        AcquireFactor = dto.AcquireFactor;
+        ProportionalGain = dto.ProportionalGain;
+        MaxPwm = dto.MaxPwm;
+        MinPwm = dto.MinPwm;
+        TurnSensorEnabled = dto.TurnSensorEnabled;
+        PressureSensorEnabled = dto.PressureSensorEnabled;
+        CurrentSensorEnabled = dto.CurrentSensorEnabled;
+        TurnSensorCounts = dto.TurnSensorCounts;
+        PressureTripPoint = dto.PressureTripPoint;
+        CurrentTripPoint = dto.CurrentTripPoint;
+        DanfossEnabled = dto.DanfossEnabled;
+        InvertWas = dto.InvertWas;
+        InvertMotor = dto.InvertMotor;
+        InvertRelays = dto.InvertRelays;
+        MotorDriver = dto.MotorDriver;
+        AdConverter = dto.AdConverter;
+        ImuAxisSwap = dto.ImuAxisSwap;
+        ExternalEnable = dto.ExternalEnable;
+        UTurnCompensation = dto.UTurnCompensation;
+        SideHillCompensation = dto.SideHillCompensation;
+        SteerInReverse = dto.SteerInReverse;
+        ManualTurnsEnabled = dto.ManualTurnsEnabled;
+        ManualTurnsSpeed = dto.ManualTurnsSpeed;
+        MinSteerSpeed = dto.MinSteerSpeed;
+        MaxSteerSpeed = dto.MaxSteerSpeed;
+        LineWidth = dto.LineWidth;
+        NudgeDistance = dto.NudgeDistance;
+        NextGuidanceTime = dto.NextGuidanceTime;
+        CmPerPixel = dto.CmPerPixel;
+        LightbarEnabled = dto.LightbarEnabled;
+        SteerBarEnabled = dto.SteerBarEnabled;
+        GuidanceBarOn = dto.GuidanceBarOn;
+    }
+
+    // ============================================
     // Reset to Defaults
     // ============================================
 
@@ -647,4 +756,72 @@ public class AutoSteerConfig : ReactiveObject
         SteerBarEnabled = false;
         GuidanceBarOn = true;
     }
+}
+
+/// <summary>
+/// DTO for AutoSteerConfig JSON serialization.
+/// </summary>
+public record AutoSteerConfigDto
+{
+    // Tab 1: Pure Pursuit / Stanley
+    public double SteerResponseHold { get; init; } = 3.0;
+    public double IntegralGain { get; init; } = 0.0;
+    public bool IsStanleyMode { get; init; } = false;
+    public double StanleyAggressiveness { get; init; } = 1.0;
+    public double StanleyOvershootReduction { get; init; } = 1.0;
+
+    // Tab 2: Steering Sensor
+    public int WasOffset { get; init; } = 0;
+    public double CountsPerDegree { get; init; } = 100;
+    public int Ackermann { get; init; } = 100;
+    public int MaxSteerAngle { get; init; } = 45;
+
+    // Tab 3: Deadzone / Timing
+    public double DeadzoneHeading { get; init; } = 0.1;
+    public int DeadzoneDelay { get; init; } = 5;
+    public double SpeedFactor { get; init; } = 1.0;
+    public double AcquireFactor { get; init; } = 0.9;
+
+    // Tab 4: Gain / PWM
+    public int ProportionalGain { get; init; } = 10;
+    public int MaxPwm { get; init; } = 235;
+    public int MinPwm { get; init; } = 5;
+
+    // Tab 5: Turn Sensors
+    public bool TurnSensorEnabled { get; init; } = false;
+    public bool PressureSensorEnabled { get; init; } = false;
+    public bool CurrentSensorEnabled { get; init; } = false;
+    public int TurnSensorCounts { get; init; } = 255;
+    public int PressureTripPoint { get; init; } = 0;
+    public int CurrentTripPoint { get; init; } = 0;
+
+    // Tab 6: Hardware Config
+    public bool DanfossEnabled { get; init; } = false;
+    public bool InvertWas { get; init; } = false;
+    public bool InvertMotor { get; init; } = false;
+    public bool InvertRelays { get; init; } = false;
+    public int MotorDriver { get; init; } = 0;
+    public int AdConverter { get; init; } = 0;
+    public int ImuAxisSwap { get; init; } = 0;
+    public int ExternalEnable { get; init; } = 0;
+
+    // Tab 7: Algorithm
+    public double UTurnCompensation { get; init; } = 0.0;
+    public double SideHillCompensation { get; init; } = 0.0;
+    public bool SteerInReverse { get; init; } = false;
+
+    // Tab 8: Speed Limits
+    public bool ManualTurnsEnabled { get; init; } = false;
+    public double ManualTurnsSpeed { get; init; } = 12.0;
+    public double MinSteerSpeed { get; init; } = 0.0;
+    public double MaxSteerSpeed { get; init; } = 15.0;
+
+    // Tab 9: Display
+    public int LineWidth { get; init; } = 2;
+    public int NudgeDistance { get; init; } = 20;
+    public double NextGuidanceTime { get; init; } = 1.5;
+    public int CmPerPixel { get; init; } = 5;
+    public bool LightbarEnabled { get; init; } = true;
+    public bool SteerBarEnabled { get; init; } = false;
+    public bool GuidanceBarOn { get; init; } = true;
 }
