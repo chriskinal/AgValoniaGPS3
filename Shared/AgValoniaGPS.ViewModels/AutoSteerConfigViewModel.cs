@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
@@ -21,6 +23,27 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     private readonly IUdpCommunicationService? _udpService;
     private readonly IAutoSteerService? _autoSteerService;
 
+    // Debounce timer for auto-sending slider changes
+    private readonly System.Timers.Timer _sliderDebounceTimer;
+    private const int SliderDebounceDelayMs = 1000;
+
+    // Properties that trigger immediate slider debounce (left-side compact mode)
+    private static readonly HashSet<string> LeftSideSliderProperties = new()
+    {
+        nameof(AutoSteerConfig.SteerResponseHold),
+        nameof(AutoSteerConfig.IntegralGain),
+        nameof(AutoSteerConfig.StanleyAggressiveness),
+        nameof(AutoSteerConfig.StanleyOvershootReduction),
+        nameof(AutoSteerConfig.CountsPerDegree),
+        nameof(AutoSteerConfig.Ackermann),
+        nameof(AutoSteerConfig.MaxSteerAngle),
+        nameof(AutoSteerConfig.SpeedFactor),
+        nameof(AutoSteerConfig.AcquireFactor),
+        nameof(AutoSteerConfig.ProportionalGain),
+        nameof(AutoSteerConfig.MaxPwm),
+        nameof(AutoSteerConfig.MinPwm)
+    };
+
     public AutoSteerConfigViewModel(
         IConfigurationService configService,
         IUdpCommunicationService? udpService = null,
@@ -29,6 +52,14 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         _configService = configService;
         _udpService = udpService;
         _autoSteerService = autoSteerService;
+
+        // Set up debounce timer for slider changes
+        _sliderDebounceTimer = new System.Timers.Timer(SliderDebounceDelayMs);
+        _sliderDebounceTimer.AutoReset = false;
+        _sliderDebounceTimer.Elapsed += OnSliderDebounceElapsed;
+
+        // Subscribe to AutoSteer property changes
+        AutoSteer.PropertyChanged += OnAutoSteerPropertyChanged;
 
         InitializeNumericInputCommands();
         InitializeTab1Commands();
@@ -48,6 +79,65 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
     public ConfigurationStore Config => _configService.Store;
     public AutoSteerConfig AutoSteer => Config.AutoSteer;
+
+    #endregion
+
+    #region Change Tracking & Auto-Send
+
+    private bool _hasUnsavedRightSideChanges;
+    /// <summary>
+    /// True when right-side (expanded mode) settings have changed but not been saved.
+    /// Shows warning indicator to remind user to click Send+Save.
+    /// </summary>
+    public bool HasUnsavedRightSideChanges
+    {
+        get => _hasUnsavedRightSideChanges;
+        set => SetProperty(ref _hasUnsavedRightSideChanges, value);
+    }
+
+    private void OnAutoSteerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null) return;
+
+        if (LeftSideSliderProperties.Contains(e.PropertyName))
+        {
+            // Left-side slider changed - debounce and auto-send
+            _sliderDebounceTimer.Stop();
+            _sliderDebounceTimer.Start();
+        }
+        else
+        {
+            // Right-side setting changed - show warning
+            HasUnsavedRightSideChanges = true;
+        }
+    }
+
+    private void OnSliderDebounceElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        // Timer fires on background thread - send PGN updates
+        SendSettingsToModule();
+    }
+
+    /// <summary>
+    /// Send current settings to the steering module (PGN 251 + 252).
+    /// Thread-safe, can be called from timer thread.
+    /// </summary>
+    private void SendSettingsToModule()
+    {
+        if (_udpService == null) return;
+
+        try
+        {
+            var pgn251 = PgnBuilder.BuildSteerConfigPgn(AutoSteer);
+            var pgn252 = PgnBuilder.BuildSteerSettingsPgn(AutoSteer);
+            _udpService.SendToModules(pgn251);
+            _udpService.SendToModules(pgn252);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to send settings: {ex.Message}");
+        }
+    }
 
     #endregion
 
@@ -814,6 +904,9 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
             // Save configuration
             _configService.SaveProfile(Config.ActiveProfileName);
+
+            // Clear the unsaved changes warning
+            HasUnsavedRightSideChanges = false;
         });
 
         ResetToDefaultsCommand = new RelayCommand(() =>

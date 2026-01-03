@@ -1081,16 +1081,17 @@
                                         <TextBlock Text="Defaults" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-                                <!-- Send+Save with mandatory indicator -->
+                                <!-- Send+Save with unsaved changes warning -->
                                 <Button Grid.Column="2" Margin="2" Padding="4"
                                         Background="#DD4A9A7E" Command="{Binding SendAndSaveCommand}">
                                     <StackPanel HorizontalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
                                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolAcceptChange.png"
                                                    Width="32" Height="32" Stretch="Uniform"/>
+                                            <!-- Warning icon shows when right-side settings changed -->
                                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConSt_Mandatory.png"
                                                    Width="24" Height="24" Stretch="Uniform" VerticalAlignment="Center"
-                                                   IsVisible="{Binding Config.HasUnsavedChanges}"/>
+                                                   IsVisible="{Binding HasUnsavedRightSideChanges}"/>
                                         </StackPanel>
                                         <TextBlock Text="Send+Save" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
