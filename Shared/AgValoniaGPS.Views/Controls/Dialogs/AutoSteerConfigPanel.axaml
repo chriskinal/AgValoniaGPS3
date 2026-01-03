@@ -534,30 +534,16 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <!-- Steer Angle & Diameter Display -->
-                                    <Grid ColumnDefinitions="*,Auto,*" IsEnabled="{Binding IsFreeDriveMode}">
-                                        <Border Grid.Column="0" Classes="ParamCard" Margin="0,0,4,0">
-                                            <StackPanel HorizontalAlignment="Center">
-                                                <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
-                                                           Foreground="White" FontWeight="Bold" FontSize="18"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock Text="Steer Angle" Foreground="#AAA" FontSize="10"
-                                                           HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                        <Button Grid.Column="1" Content="REC" Padding="12,6"
-                                                Background="#DDE74C3C" VerticalAlignment="Stretch"
-                                                Command="{Binding RecordDiameterCommand}"/>
-                                        <Border Grid.Column="2" Classes="ParamCard" Margin="4,0,0,0">
-                                            <StackPanel HorizontalAlignment="Center">
-                                                <TextBlock Text="{Binding MeasuredDiameter, StringFormat='{}{0:F2}m'}"
-                                                           Foreground="White" FontWeight="Bold" FontSize="18"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock Text="Diameter" Foreground="#AAA" FontSize="10"
-                                                           HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
+                                    <!-- Actual Steer Angle Display -->
+                                    <Border Classes="ParamCard" IsEnabled="{Binding IsFreeDriveMode}">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
+                                                       Foreground="White" FontWeight="Bold" FontSize="18"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Actual Steer Angle" Foreground="#AAA" FontSize="10"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </Border>
                         </Grid>

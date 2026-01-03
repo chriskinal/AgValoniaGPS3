@@ -678,21 +678,6 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         set => SetProperty(ref _actualCurrentPercent, value);
     }
 
-    // Diameter measurement
-    private bool _isRecording;
-    public bool IsRecording
-    {
-        get => _isRecording;
-        set => SetProperty(ref _isRecording, value);
-    }
-
-    private double _measuredDiameter;
-    public double MeasuredDiameter
-    {
-        get => _measuredDiameter;
-        set => SetProperty(ref _measuredDiameter, value);
-    }
-
     private int _testSteerOffset;
     public int TestSteerOffset
     {
@@ -705,9 +690,7 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     public ICommand SteerRightCommand { get; private set; } = null!;
     public ICommand SteerCenterCommand { get; private set; } = null!;
     public ICommand SteerOffset5Command { get; private set; } = null!;
-    public ICommand ToggleRecordingCommand { get; private set; } = null!;
     public ICommand EditSteerOffsetCommand { get; private set; } = null!;
-    public ICommand RecordDiameterCommand { get; private set; } = null!;
     public ICommand EditTurnSensorCountsCommand { get; private set; } = null!;
 
     private void InitializeTestModeCommands()
@@ -762,20 +745,6 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             if (IsFreeDriveMode) SetSteerAngle = FreeDriveSteerAngle;
         });
 
-        ToggleRecordingCommand = new RelayCommand(() =>
-        {
-            IsRecording = !IsRecording;
-            if (IsRecording)
-            {
-                MeasuredDiameter = 0;
-                // TODO: Start recording position for diameter calculation
-            }
-            else
-            {
-                // TODO: Calculate diameter from recorded path
-            }
-        });
-
         EditSteerOffsetCommand = new RelayCommand(() =>
         {
             ShowNumericInput("Steer Offset", TestSteerOffset, value =>
@@ -790,16 +759,6 @@ public partial class AutoSteerConfigViewModel : ObservableObject
             {
                 AutoSteer.TurnSensorCounts = (int)Math.Clamp(value, 0, 255);
             });
-        });
-
-        RecordDiameterCommand = new RelayCommand(() =>
-        {
-            IsRecording = !IsRecording;
-            if (IsRecording)
-            {
-                MeasuredDiameter = 0;
-                // Start recording - actual diameter measurement would require GPS tracking
-            }
         });
     }
 
