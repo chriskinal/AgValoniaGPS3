@@ -232,23 +232,45 @@ Shared/AgValoniaGPS.ViewModels/
 
 **MainViewModel.cs**: 6,082 → 4,350 lines (-1,732 lines, ~28% reduction)
 
-### Findings
+### Phase 1 Status: Complete (Practical Limit Reached)
 
-The remaining extractions (View Settings, Simulator, GPS Handling, etc.) are more challenging because:
+The four extractions above represent the contiguous, self-contained code blocks that could be cleanly extracted. The remaining code has the following challenges:
 
-1. **Scattered Code**: Properties and methods are interleaved throughout the file rather than in contiguous blocks
-2. **Interconnected Logic**: Simulator event handlers call YouTurn methods, AutoSteer guidance, and GPS processing
-3. **Shared State**: Many methods access common fields like `_howManyPathsAway`, `_currentHeadlandLine`, `_isYouTurnTriggered`
+**Simulator Handlers (~100 lines, lines 801-897)**
+- `OnSimulatorTick()` and `OnSimulatorGpsDataUpdated()` orchestrate calls across multiple partial classes
+- Call `ProcessYouTurn()` (YouTurn.cs), `CalculateYouTurnGuidance()` (YouTurn.cs), `CalculateAutoSteerGuidance()` (Guidance.cs)
+- Best left in MainViewModel.cs as the central orchestration point
 
-### Recommendations for Remaining Extractions
+**Boundary Recording Handlers (~52 lines, lines 906-958)**
+- `OnBoundaryPointAdded()` and `OnBoundaryStateChanged()`
+- Too small to justify a separate file (only 52 lines)
+- Depend on `_boundaryRecordingService` and `_mapService`
 
-Before extracting more code:
-1. **Reorganize with #regions** - Group related code together within MainViewModel.cs first
-2. **Identify clear boundaries** - Find methods that only access a limited set of fields
-3. **Consider service extraction** - Some logic (like Simulator) might be better moved to dedicated services rather than partial classes
+**View Settings Properties (~400 lines, scattered)**
+- Panel visibility properties, display settings are scattered throughout the 4,350-line file
+- Would require extensive reorganization before extraction
 
-## Timeline Considerations
+**GPS Handling (~200 lines, scattered)**
+- `OnGpsDataUpdated()`, `UpdateGpsProperties()` and related properties
+- Latitude, Longitude, Speed properties scattered among other UI properties
 
-- ~~Wait for PR #7 (SteerWizard) decision before starting~~ (Done)
-- Each extraction can be a separate commit
-- Consider doing Phase 1a first, evaluate, then continue
+### Recommendations for Future Work
+
+1. **Consider consolidating remaining code with #regions** rather than partial classes
+2. **Phase 2: Service Extraction** - Move complex business logic to services instead of partial classes:
+   - Simulator tick logic → SimulatorOrchestrationService
+   - GPS data transformation → already in GpsService
+3. **Phase 3: Sub-ViewModels** - For truly independent UI panels (SimulatorPanelViewModel, etc.)
+
+### Results Summary
+
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| MainViewModel.cs lines | 6,082 | 4,350 | -1,732 (28%) |
+| Partial class files | 7 (commands only) | 11 | +4 new files |
+| Largest extraction | - | YouTurn.cs (1,112) | Self-contained logic |
+
+The refactoring successfully extracted 28% of the code into focused partial class files, improving:
+- Code navigation (find code by category)
+- Merge conflict reduction (changes to different areas don't conflict)
+- AI assistance context (smaller files fit in LLM context windows)
