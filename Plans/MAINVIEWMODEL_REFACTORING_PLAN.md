@@ -226,8 +226,9 @@ Shared/AgValoniaGPS.ViewModels/
 | File | Lines | Status |
 |------|-------|--------|
 | MainViewModel.YouTurn.cs | 1,112 | ✅ Complete |
+| MainViewModel.Guidance.cs | 180 | ✅ Complete |
 
-**MainViewModel.cs**: 6,082 → 5,022 lines (-1,060 lines)
+**MainViewModel.cs**: 6,082 → 4,877 lines (-1,205 lines)
 
 ### Findings
 
