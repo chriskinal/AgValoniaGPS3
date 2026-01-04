@@ -39,7 +39,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
     <PackageReference Include="Avalonia.Labs.Controls" Version="11.3.1" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
-    <PackageReference Include="HotAvalonia" Version="3.0.2" PrivateAssets="All" Publish="True" />
+    <!-- HotAvalonia removed - uses DynamicMethod which is not supported on iOS (no JIT allowed) -->
   </ItemGroup>
 
   <ItemGroup>
