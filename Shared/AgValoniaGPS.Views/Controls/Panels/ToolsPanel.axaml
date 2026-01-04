@@ -47,15 +47,8 @@
             <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
 
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
-                <!-- Row 0: Wizards -->
-                <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press"
-                        Command="{Binding ShowSteerWizardCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/WizardWand.png" Width="28" Height="28"/>
-                        <TextBlock Text="Steer Wizard" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
+                <!-- Row 0: Log Viewer -->
+                <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="28" Height="28"/>
                         <TextBlock Text="Log Viewer" VerticalAlignment="Center" FontSize="12"/>
