@@ -228,8 +228,9 @@ Shared/AgValoniaGPS.ViewModels/
 | MainViewModel.YouTurn.cs | 1,112 | ✅ Complete |
 | MainViewModel.Guidance.cs | 180 | ✅ Complete |
 | MainViewModel.Ntrip.cs | 208 | ✅ Complete |
+| MainViewModel.SectionControl.cs | 383 | ✅ Complete |
 
-**MainViewModel.cs**: 6,082 → 4,703 lines (-1,379 lines)
+**MainViewModel.cs**: 6,082 → 4,350 lines (-1,732 lines, ~28% reduction)
 
 ### Findings
 
