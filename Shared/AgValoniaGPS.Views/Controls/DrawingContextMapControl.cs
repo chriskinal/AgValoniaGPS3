@@ -193,6 +193,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Coverage patches for worked area display
     private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
 
+    // Cached coverage geometry (rebuilt incrementally as patches grow)
+    private List<(Geometry Geometry, IBrush Brush, int VertexCount)> _cachedCoverageGeometry = new();
+
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
     private AgValoniaGPS.Models.Track.Track? _nextTrack; // Next track to follow after U-turn
@@ -565,40 +568,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawCoverage(DrawingContext context)
     {
-        if (_coveragePatches.Count == 0) return;
-
-        foreach (var patch in _coveragePatches)
+        // Draw pre-built cached geometry
+        foreach (var (geometry, brush, _) in _cachedCoverageGeometry)
         {
-            if (!patch.IsRenderable) continue;
-
-            // Get vertices (skip first which is color)
-            var vertices = patch.Vertices;
-            if (vertices.Count < 4) continue; // Need at least color + 3 points for 1 triangle
-
-            // Create brush from patch color with 60% alpha (matching AgOpenGPS)
-            var color = Color.FromArgb(152, patch.Color.R, patch.Color.G, patch.Color.B);
-            var brush = new SolidColorBrush(color);
-
-            // Draw triangle strip as individual triangles
-            // Vertices: [0]=color, [1]=first left, [2]=first right, [3]=second left, [4]=second right, ...
-            // Triangles: (1,2,3), (2,3,4), (3,4,5), ...
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                for (int i = 1; i <= vertices.Count - 3; i++)
-                {
-                    var v1 = vertices[i];
-                    var v2 = vertices[i + 1];
-                    var v3 = vertices[i + 2];
-
-                    // Draw triangle
-                    ctx.BeginFigure(new Point(v1.Easting, v1.Northing), true);
-                    ctx.LineTo(new Point(v2.Easting, v2.Northing));
-                    ctx.LineTo(new Point(v3.Easting, v3.Northing));
-                    ctx.EndFigure(true);
-                }
-            }
-
             context.DrawGeometry(brush, null, geometry);
         }
     }
@@ -1482,6 +1454,74 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches)
     {
         _coveragePatches = patches;
+        RebuildCoverageGeometryCache();
+    }
+
+    private void RebuildCoverageGeometryCache()
+    {
+        // Incremental update: only rebuild geometry for patches that changed
+        // Patches can grow (vertices added) or new patches can be added
+        // Patches are never modified in place, only appended to
+
+        int patchCount = _coveragePatches.Count;
+
+        // If we have more cached entries than patches, clear and rebuild
+        // (this happens when coverage is cleared)
+        if (_cachedCoverageGeometry.Count > patchCount)
+        {
+            _cachedCoverageGeometry.Clear();
+        }
+
+        for (int p = 0; p < patchCount; p++)
+        {
+            var patch = _coveragePatches[p];
+            if (!patch.IsRenderable) continue;
+
+            var vertices = patch.Vertices;
+            if (vertices.Count < 4) continue;
+
+            // Check if we already have geometry for this patch with same vertex count
+            if (p < _cachedCoverageGeometry.Count)
+            {
+                var cached = _cachedCoverageGeometry[p];
+                if (cached.VertexCount == vertices.Count)
+                {
+                    // No change, skip rebuild
+                    continue;
+                }
+            }
+
+            // Create brush from patch color with 60% alpha (matching AgOpenGPS)
+            var color = Color.FromArgb(152, patch.Color.R, patch.Color.G, patch.Color.B);
+            var brush = new SolidColorBrush(color);
+
+            // Build triangle strip geometry
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                for (int i = 1; i <= vertices.Count - 3; i++)
+                {
+                    var v1 = vertices[i];
+                    var v2 = vertices[i + 1];
+                    var v3 = vertices[i + 2];
+
+                    ctx.BeginFigure(new Point(v1.Easting, v1.Northing), true);
+                    ctx.LineTo(new Point(v2.Easting, v2.Northing));
+                    ctx.LineTo(new Point(v3.Easting, v3.Northing));
+                    ctx.EndFigure(true);
+                }
+            }
+
+            // Update or add the cached entry
+            if (p < _cachedCoverageGeometry.Count)
+            {
+                _cachedCoverageGeometry[p] = (geometry, brush, vertices.Count);
+            }
+            else
+            {
+                _cachedCoverageGeometry.Add((geometry, brush, vertices.Count));
+            }
+        }
     }
 
     // Mouse interaction support (for external control)

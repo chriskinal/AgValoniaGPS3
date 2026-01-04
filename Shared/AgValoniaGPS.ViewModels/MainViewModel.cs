@@ -207,9 +207,8 @@ public partial class MainViewModel : ObservableObject
         // Note: NOT subscribing to DisplaySettings events - using direct property access instead
         // to avoid threading issues with ReactiveUI
 
-        // Initialize simulator service with default position (will be updated when GPS gets fix)
-        _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(40.7128, -74.0060)); // Default to NYC coordinates
-        _simulatorService.StepDistance = 0; // Stationary initially
+        // Note: Simulator coordinates are restored in RestoreSettings() from saved app settings
+        // Default values only used if no settings exist (first run)
 
         // Create simulator timer (100ms tick rate, matching WinForms implementation)
         _simulatorTimer = new DispatcherTimer
@@ -230,11 +229,9 @@ public partial class MainViewModel : ObservableObject
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings
-        Dispatcher.UIThread.Post(() =>
-        {
-            _displaySettings.LoadSettings();
-            RestoreSettings();
-        }, DispatcherPriority.Background);
+        // IMPORTANT: Run synchronously to ensure settings are loaded before any save can occur
+        _displaySettings.LoadSettings();
+        RestoreSettings();
 
         // Start UDP communication (fire-and-forget but explicit)
         _ = InitializeAsync();
@@ -271,21 +268,17 @@ public partial class MainViewModel : ObservableObject
         // (setting _displaySettings directly doesn't trigger property change notification)
         OnPropertyChanged(nameof(IsGridOn));
 
-        // Restore simulator settings
-        if (settings.SimulatorEnabled)
-        {
-            // Initialize simulator with saved coordinates
-            _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
-                settings.SimulatorLatitude,
-                settings.SimulatorLongitude));
-            _simulatorService.StepDistance = settings.SimulatorSpeed;
+        // Restore simulator settings (always restore coords, regardless of enabled state)
+        _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
+            settings.SimulatorLatitude,
+            settings.SimulatorLongitude));
+        _simulatorService.StepDistance = settings.SimulatorSpeed;
 
-            // Also set Latitude/Longitude so map dialogs work correctly at startup
-            Latitude = settings.SimulatorLatitude;
-            Longitude = settings.SimulatorLongitude;
+        // Also set Latitude/Longitude so map dialogs work correctly at startup
+        Latitude = settings.SimulatorLatitude;
+        Longitude = settings.SimulatorLongitude;
 
-            _logger.LogDebug("Restored simulator: {Lat},{Lon}", settings.SimulatorLatitude, settings.SimulatorLongitude);
-        }
+        _logger.LogDebug("Restored simulator: {Lat},{Lon}", settings.SimulatorLatitude, settings.SimulatorLongitude);
     }
 
     private void LoadDefaultVehicleProfile()

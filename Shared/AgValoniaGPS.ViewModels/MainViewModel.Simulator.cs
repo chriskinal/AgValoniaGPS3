@@ -229,6 +229,11 @@ public partial class MainViewModel
         // Save coordinates to settings so they persist
         _settingsService.Settings.SimulatorLatitude = latitude;
         _settingsService.Settings.SimulatorLongitude = longitude;
+
+        // Also update ConfigurationStore so SaveAppSettings won't overwrite with stale values
+        Models.Configuration.ConfigurationStore.Instance.Simulator.Latitude = latitude;
+        Models.Configuration.ConfigurationStore.Instance.Simulator.Longitude = longitude;
+
         var saved = _settingsService.Save();
 
         // Also update the Latitude/Longitude properties directly so that

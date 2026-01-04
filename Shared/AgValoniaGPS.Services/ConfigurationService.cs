@@ -178,10 +178,9 @@ public class ConfigurationService(
         store.NumSections = profile.NumSections;
         store.SectionPositions = (double[])profile.SectionPositions.Clone();
 
-        // Simulator config
-        store.Simulator.Enabled = profile.IsSimulatorOn;
-        store.Simulator.Latitude = profile.SimLatitude;
-        store.Simulator.Longitude = profile.SimLongitude;
+        // NOTE: Simulator coords are NOT loaded from profile - they are app-level settings
+        // stored in AppSettings, not vehicle-specific. Only Enabled state could come from
+        // profile for legacy compatibility, but we skip it too to avoid confusion.
 
         // Display config
         store.IsMetric = profile.IsMetric;
@@ -312,15 +311,12 @@ public class ConfigurationService(
         store.Connections.GpsUpdateRate = settings.GpsUpdateRate;
         store.Connections.UseRtk = settings.UseRtk;
 
-        // Simulator config (AppSettings values as fallback if no profile loaded)
-        if (!store.Simulator.Enabled && settings.SimulatorEnabled)
-        {
-            store.Simulator.Enabled = settings.SimulatorEnabled;
-            store.Simulator.Latitude = settings.SimulatorLatitude;
-            store.Simulator.Longitude = settings.SimulatorLongitude;
-            store.Simulator.Speed = settings.SimulatorSpeed;
-            store.Simulator.SteerAngle = settings.SimulatorSteerAngle;
-        }
+        // Simulator config - always restore from settings
+        store.Simulator.Enabled = settings.SimulatorEnabled;
+        store.Simulator.Latitude = settings.SimulatorLatitude;
+        store.Simulator.Longitude = settings.SimulatorLongitude;
+        store.Simulator.Speed = settings.SimulatorSpeed;
+        store.Simulator.SteerAngle = settings.SimulatorSteerAngle;
     }
 
     /// <summary>
