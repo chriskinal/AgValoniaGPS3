@@ -23,6 +23,7 @@
         <dialogs:IsoXmlImportDialogPanel/>
         <dialogs:BoundaryMapDialogPanel/>
         <dialogs:NumericInputDialogPanel/>
+        <dialogs:ConfirmationDialogPanel/>
         <dialogs:AgShareSettingsDialogPanel/>
         <dialogs:AgShareUploadDialogPanel/>
         <dialogs:AgShareDownloadDialogPanel/>

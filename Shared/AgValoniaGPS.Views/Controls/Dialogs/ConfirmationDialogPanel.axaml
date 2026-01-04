@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="250"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.ConfirmationDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsConfirmationDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsConfirmationDialogVisible}">
+
+    <!-- Full screen overlay with backdrop -->
+    <Grid>
+        <!-- Semi-transparent backdrop - clicking dismisses (cancels) -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Centered dialog -->
+        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="320" MaxWidth="400">
+            <StackPanel Spacing="16">
+                <!-- Title -->
+                <TextBlock Text="{Binding ConfirmationDialogTitle}" FontSize="20" FontWeight="Bold"
+                           Foreground="#E74C3C" HorizontalAlignment="Center"/>
+
+                <!-- Message -->
+                <TextBlock Text="{Binding ConfirmationDialogMessage}" FontSize="14"
+                           Foreground="White" TextWrapping="Wrap"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           Margin="0,8"/>
+
+                <!-- Action Buttons -->
+                <Grid ColumnDefinitions="*,*" Margin="0,12,0,0">
+                    <Button Grid.Column="0" Content="No" Margin="0,0,8,0"
+                            Command="{Binding CancelConfirmationDialogCommand}"
+                            Background="#7F8C8D" Foreground="White"
+                            HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                    <Button Grid.Column="1" Content="Yes" Margin="8,0,0,0"
+                            Command="{Binding ConfirmConfirmationDialogCommand}"
+                            Background="#E74C3C" Foreground="White"
+                            HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

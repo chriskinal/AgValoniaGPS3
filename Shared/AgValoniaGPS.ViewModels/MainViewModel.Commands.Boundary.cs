@@ -469,6 +469,21 @@ public partial class MainViewModel
             _numericInputDialogCallback = null;
         });
 
+        // Confirmation Dialog Commands
+        CancelConfirmationDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+            _confirmationDialogCallback = null;
+        });
+
+        ConfirmConfirmationDialogCommand = new RelayCommand(() =>
+        {
+            var callback = _confirmationDialogCallback;
+            State.UI.CloseDialog();
+            _confirmationDialogCallback = null;
+            callback?.Invoke();
+        });
+
         DeleteBoundaryCommand = new RelayCommand(DeleteSelectedBoundary);
 
         ImportKmlBoundaryCommand = new AsyncRelayCommand(async () =>

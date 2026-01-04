@@ -1453,6 +1453,39 @@ public partial class MainViewModel : ObservableObject
     public ICommand? CancelNumericInputDialogCommand { get; private set; }
     public ICommand? ConfirmNumericInputDialogCommand { get; private set; }
 
+    // Confirmation Dialog properties (visibility managed by State.UI)
+    private string _confirmationDialogTitle = string.Empty;
+    public string ConfirmationDialogTitle
+    {
+        get => _confirmationDialogTitle;
+        set => SetProperty(ref _confirmationDialogTitle, value);
+    }
+
+    private string _confirmationDialogMessage = string.Empty;
+    public string ConfirmationDialogMessage
+    {
+        get => _confirmationDialogMessage;
+        set => SetProperty(ref _confirmationDialogMessage, value);
+    }
+
+    // Callback to run when confirmation dialog is confirmed
+    private Action? _confirmationDialogCallback;
+
+    public ICommand? CancelConfirmationDialogCommand { get; private set; }
+    public ICommand? ConfirmConfirmationDialogCommand { get; private set; }
+
+    /// <summary>
+    /// Shows a confirmation dialog with the specified title and message.
+    /// When the user confirms, the callback is executed.
+    /// </summary>
+    public void ShowConfirmationDialog(string title, string message, Action onConfirm)
+    {
+        ConfirmationDialogTitle = title;
+        ConfirmationDialogMessage = message;
+        _confirmationDialogCallback = onConfirm;
+        State.UI.ShowDialog(Models.State.DialogType.Confirmation);
+    }
+
     // AgShare Settings Dialog properties (visibility managed by State.UI)
     private string _agShareSettingsServerUrl = "https://agshare.agopengps.com";
     public string AgShareSettingsServerUrl

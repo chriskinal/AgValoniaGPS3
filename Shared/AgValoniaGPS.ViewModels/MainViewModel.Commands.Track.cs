@@ -394,36 +394,35 @@ public partial class MainViewModel
             StatusMessage = "Coverage/contours cleared";
         });
 
-        DeleteAppliedAreaCommand = new RelayCommand(async () =>
+        DeleteAppliedAreaCommand = new RelayCommand(() =>
         {
-            var confirmed = await _dialogService.ShowConfirmationAsync(
+            ShowConfirmationDialog(
                 "Delete Applied Area",
-                "Are you sure you want to delete all applied area coverage? This cannot be undone.");
-
-            if (!confirmed)
-                return;
-
-            _coverageMapService.ClearAll();
-
-            if (State.Field.ActiveField != null)
-            {
-                var sectionsFile = System.IO.Path.Combine(State.Field.ActiveField.DirectoryPath, "Sections.txt");
-                if (System.IO.File.Exists(sectionsFile))
+                "Are you sure you want to delete all applied area coverage? This cannot be undone.",
+                () =>
                 {
-                    try
-                    {
-                        System.IO.File.Delete(sectionsFile);
-                        _logger.LogDebug($"[Coverage] Deleted {sectionsFile}");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogDebug($"[Coverage] Error deleting Sections.txt: {ex.Message}");
-                    }
-                }
-            }
+                    _coverageMapService.ClearAll();
 
-            RefreshCoverageStatistics();
-            StatusMessage = "Applied area deleted";
+                    if (State.Field.ActiveField != null)
+                    {
+                        var sectionsFile = System.IO.Path.Combine(State.Field.ActiveField.DirectoryPath, "Sections.txt");
+                        if (System.IO.File.Exists(sectionsFile))
+                        {
+                            try
+                            {
+                                System.IO.File.Delete(sectionsFile);
+                                _logger.LogDebug($"[Coverage] Deleted {sectionsFile}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogDebug($"[Coverage] Error deleting Sections.txt: {ex.Message}");
+                            }
+                        }
+                    }
+
+                    RefreshCoverageStatistics();
+                    StatusMessage = "Applied area deleted";
+                });
         });
 
         // Map zoom commands
