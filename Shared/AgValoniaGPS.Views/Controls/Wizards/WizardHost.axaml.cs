@@ -8,6 +8,7 @@ namespace AgValoniaGPS.Views.Controls.Wizards;
 public partial class WizardHost : UserControl
 {
     private ContentControl? _stepContentControl;
+    private WizardViewModel? _subscribedWizard;
 
     public WizardHost()
     {
@@ -20,22 +21,46 @@ public partial class WizardHost : UserControl
 
         _stepContentControl = this.FindControl<ContentControl>("StepContentControl");
 
-        // Subscribe to DataContext changes to handle CurrentStep changes
-        if (DataContext is WizardViewModel wizard)
-        {
-            wizard.PropertyChanged += Wizard_PropertyChanged;
-            UpdateStepView(wizard.CurrentStep);
-        }
+        // Subscribe to current wizard
+        SubscribeToWizard(DataContext as WizardViewModel);
 
         this.DataContextChanged += WizardHost_DataContextChanged;
     }
 
+    protected override void OnUnloaded(Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        // Clean up subscriptions to prevent memory leaks
+        UnsubscribeFromWizard();
+        this.DataContextChanged -= WizardHost_DataContextChanged;
+
+        base.OnUnloaded(e);
+    }
+
     private void WizardHost_DataContextChanged(object? sender, EventArgs e)
     {
-        if (DataContext is WizardViewModel wizard)
+        // Unsubscribe from old wizard, subscribe to new one
+        SubscribeToWizard(DataContext as WizardViewModel);
+    }
+
+    private void SubscribeToWizard(WizardViewModel? wizard)
+    {
+        // Unsubscribe from old wizard first
+        UnsubscribeFromWizard();
+
+        if (wizard != null)
         {
+            _subscribedWizard = wizard;
             wizard.PropertyChanged += Wizard_PropertyChanged;
             UpdateStepView(wizard.CurrentStep);
+        }
+    }
+
+    private void UnsubscribeFromWizard()
+    {
+        if (_subscribedWizard != null)
+        {
+            _subscribedWizard.PropertyChanged -= Wizard_PropertyChanged;
+            _subscribedWizard = null;
         }
     }
 
