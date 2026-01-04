@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.MotorDriverStepView"
+             x:DataType="steer:MotorDriverStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Options -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- IBT2 -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectIBT2}"
+                    Classes.selected="{Binding IsIBT2Selected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="80" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <TextBlock Text="IBT2"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#3498DB"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="IBT2 (Dual H-Bridge)"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Most common driver - uses two PWM signals for direction control"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- Cytron -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectCytron}"
+                    Classes.selected="{Binding IsCytronSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="80" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <TextBlock Text="Cytron"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="#9B59B6"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Cytron (PWM + DIR)"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Single PWM signal with separate direction pin"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="Button.option-button">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.option-button:pointerover">
+            <Setter Property="Background" Value="#3D566E"/>
+        </Style>
+        <Style Selector="Button.option-button.selected">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+        <Style Selector="Button.option-button.selected:pointerover">
+            <Setter Property="Background" Value="#16A085"/>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

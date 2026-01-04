@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.AntennaPivotStepView"
+             x:DataType="steer:AntennaPivotStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Value input area -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
+            <!-- Antenna Pivot Diagram - side view showing antenna position -->
+            <Border Background="#2C3E50"
+                    CornerRadius="8"
+                    Padding="20"
+                    HorizontalAlignment="Center">
+                <Canvas Width="280" Height="120">
+                    <!-- Vehicle body -->
+                    <Rectangle Canvas.Left="40" Canvas.Top="35" Width="200" Height="40"
+                               Fill="#34495E" RadiusX="8" RadiusY="8"/>
+                    <!-- Front wheel -->
+                    <Ellipse Canvas.Left="180" Canvas.Top="60" Width="30" Height="30"
+                             Fill="#7F8C8D" Stroke="#6C7A89" StrokeThickness="2"/>
+                    <!-- Rear wheel (pivot point) -->
+                    <Ellipse Canvas.Left="70" Canvas.Top="60" Width="30" Height="30"
+                             Fill="#E74C3C" Stroke="#C0392B" StrokeThickness="2"/>
+                    <!-- GPS Antenna -->
+                    <Ellipse Canvas.Left="155" Canvas.Top="20" Width="16" Height="16"
+                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                    <Line StartPoint="0,0" EndPoint="0,10"
+                          Canvas.Left="163" Canvas.Top="36"
+                          Stroke="#1ABC9C" StrokeThickness="2"/>
+                    <!-- Pivot arrow line -->
+                    <Line StartPoint="0,0" EndPoint="78,0"
+                          Canvas.Left="85" Canvas.Top="100"
+                          Stroke="#3498DB" StrokeThickness="2"/>
+                    <!-- Arrow heads -->
+                    <Polygon Canvas.Left="80" Canvas.Top="95" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <Polygon Canvas.Left="158" Canvas.Top="95" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <!-- Labels -->
+                    <TextBlock Canvas.Left="100" Canvas.Top="103" Text="Antenna Pivot"
+                               Foreground="#3498DB" FontSize="11" FontWeight="SemiBold"/>
+                    <TextBlock Canvas.Left="62" Canvas.Top="78" Text="Pivot"
+                               Foreground="#E74C3C" FontSize="9"/>
+                    <TextBlock Canvas.Left="150" Canvas.Top="5" Text="GPS"
+                               Foreground="#1ABC9C" FontSize="9"/>
+                </Canvas>
+            </Border>
+
+            <!-- Input -->
+            <Border Background="#2C3E50"
+                    CornerRadius="12"
+                    Padding="24,16"
+                    HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding AntennaPivot}"
+                                   Minimum="-10"
+                                   Maximum="15"
+                                   Increment="0.05"
+                                   FormatString="F2"
+                                   FontSize="32"
+                                   FontWeight="Bold"
+                                   Width="180"
+                                   HorizontalContentAlignment="Center"
+                                   Background="#1E2A35"
+                                   Foreground="White"
+                                   BorderBrush="#3498DB"
+                                   BorderThickness="2"
+                                   CornerRadius="8"/>
+                    <TextBlock Text="{Binding Unit}"
+                               FontSize="24"
+                               Foreground="#95A5A6"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Hint about positive/negative -->
+            <TextBlock Text="Positive = ahead of rear axle, Negative = behind"
+                       FontSize="12"
+                       Foreground="#7F8C8D"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>

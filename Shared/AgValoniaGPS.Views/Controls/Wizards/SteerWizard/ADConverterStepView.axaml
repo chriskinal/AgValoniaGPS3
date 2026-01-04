@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.ADConverterStepView"
+             x:DataType="steer:ADConverterStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title with skip indicator -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+            <Border Background="#34495E"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding CanSkip}">
+                <TextBlock Text="Optional"
+                           FontSize="11"
+                           Foreground="#95A5A6"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Options -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- Differential -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectDifferential}"
+                    Classes.selected="{Binding IsDifferentialSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="80" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="ADS"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="#E67E22"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="1115"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="#E67E22"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Differential (ADS1115)"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="16-bit ADC with differential input - best noise rejection"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- Single-ended -->
+            <Button Classes="option-button"
+                    Command="{Binding SelectSingle}"
+                    Classes.selected="{Binding IsSingleSelected}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0"
+                            Width="80" Height="60"
+                            Background="#2C3E50"
+                            CornerRadius="8"
+                            Margin="0,0,16,0">
+                        <TextBlock Text="ADC"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#27AE60"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Single-Ended"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Standard single-ended ADC input (built-in or external)"
+                                   FontSize="13"
+                                   Foreground="#95A5A6"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="Button.option-button">
+            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.option-button:pointerover">
+            <Setter Property="Background" Value="#3D566E"/>
+        </Style>
+        <Style Selector="Button.option-button.selected">
+            <Setter Property="Background" Value="#1ABC9C"/>
+        </Style>
+        <Style Selector="Button.option-button.selected:pointerover">
+            <Setter Property="Background" Value="#16A085"/>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

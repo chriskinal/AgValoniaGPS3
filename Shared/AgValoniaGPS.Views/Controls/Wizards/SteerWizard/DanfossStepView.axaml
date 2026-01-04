@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.DanfossStepView"
+             x:DataType="steer:DanfossStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title with skip indicator -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+            <Border Background="#34495E"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding CanSkip}">
+                <TextBlock Text="Optional"
+                           FontSize="11"
+                           Foreground="#95A5A6"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="#BDC3C7"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Danfoss toggle -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
+            <!-- Info box -->
+            <Border Background="#2C3E50" CornerRadius="12" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Danfoss Hydraulic Valves"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#E67E22"/>
+                    <TextBlock Text="Danfoss OSPC/OSPB steering valves require specific PWM timing signals. Only enable this if you have confirmed Danfoss hardware installed."
+                               FontSize="14"
+                               Foreground="#BDC3C7"
+                               TextWrapping="Wrap"
+                               LineHeight="20"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Toggle -->
+            <Border Background="#34495E" CornerRadius="12" Padding="20">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Enable Danfoss Mode"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Use Danfoss-specific PWM timing"
+                                   FontSize="14"
+                                   Foreground="#95A5A6"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1"
+                                  IsChecked="{Binding DanfossEnabled}"
+                                  OnContent="ON"
+                                  OffContent="OFF"
+                                  VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Warning when enabled -->
+            <Border Background="#7F6308"
+                    CornerRadius="8"
+                    Padding="12"
+                    IsVisible="{Binding DanfossEnabled}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="!"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="#F1C40F"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Danfoss mode enabled. Ensure your hardware is compatible."
+                               FontSize="14"
+                               Foreground="#F1C40F"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="White"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
