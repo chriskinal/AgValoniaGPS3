@@ -81,6 +81,9 @@ public struct VehicleState
     /// <summary>Calculated steer angle in degrees (positive = steer right)</summary>
     public double SteerAngle;
 
+    /// <summary>Actual wheel angle from WAS sensor in degrees (from PGN 253)</summary>
+    public double ActualSteerAngle;
+
     /// <summary>Distance to next turn in meters</summary>
     public double DistanceToTurn;
 

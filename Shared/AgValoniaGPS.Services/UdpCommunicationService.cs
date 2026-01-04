@@ -275,7 +275,7 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
                 System.Diagnostics.Debug.WriteLine($"AutoSteer HELLO received at {now:HH:mm:ss.fff}");
                 break;
 
-            case PgnNumbers.AUTOSTEER_CONFIG:     // 250 - Regular data
+            case PgnNumbers.SENSOR_DATA:          // 250 - Sensor data from module
             case PgnNumbers.AUTOSTEER_DATA:       // 253 - Regular data
             case PgnNumbers.AUTOSTEER_DATA2:      // 254
             case PgnNumbers.STEER_SETTINGS:       // 252

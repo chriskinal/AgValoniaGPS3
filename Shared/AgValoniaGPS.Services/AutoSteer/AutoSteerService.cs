@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 
 // Alias to disambiguate from Track namespace
@@ -66,12 +67,103 @@ public class AutoSteerService : IAutoSteerService
     public void Start()
     {
         _isEnabled = true;
+        _udpService.DataReceived += OnUdpDataReceived;
     }
 
     public void Stop()
     {
+        _udpService.DataReceived -= OnUdpDataReceived;
         _isEnabled = false;
         _isEngaged = false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Module Data Reception (PGN 253, 250)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Latest module data - updated from PGN 253/250
+    private SteerModuleData _lastSteerData;
+    private SensorModuleData _lastSensorData;
+    private double _sensorPercent;
+
+    /// <summary>Latest steer data from module (PGN 253).</summary>
+    public SteerModuleData LastSteerData => _lastSteerData;
+
+    /// <summary>Latest sensor data from module (PGN 250).</summary>
+    public SensorModuleData LastSensorData => _lastSensorData;
+
+    /// <summary>Sensor reading as percentage (0-100).</summary>
+    public double SensorPercent => _sensorPercent;
+
+    /// <summary>
+    /// Handle incoming UDP data from steering module.
+    /// </summary>
+    private void OnUdpDataReceived(object? sender, UdpDataReceivedEventArgs e)
+    {
+        switch (e.PGN)
+        {
+            case PgnNumbers.AUTOSTEER_DATA: // 253 - Steer Data from module
+                ProcessSteerData(e.Data);
+                break;
+
+            case PgnNumbers.SENSOR_DATA: // 250 - Sensor Data from module
+                ProcessSensorData(e.Data);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Process PGN 253 - Steer Data from module.
+    /// Contains actual steer angle, switch states, PWM feedback.
+    /// </summary>
+    private void ProcessSteerData(byte[] data)
+    {
+        if (!PgnBuilder.TryParseSteerData(data, out var steerData))
+            return;
+
+        _lastSteerData = steerData;
+
+        // Update vehicle state with actual angle from WAS
+        _state.ActualSteerAngle = steerData.ActualSteerAngle;
+        _state.SteerSwitchActive = steerData.SteerSwitchActive;
+        _state.WorkSwitchActive = steerData.WorkSwitchActive;
+    }
+
+    /// <summary>
+    /// Process PGN 250 - Sensor Data from module.
+    /// Contains pressure/current sensor readings for kickout.
+    /// </summary>
+    private void ProcessSensorData(byte[] data)
+    {
+        if (!PgnBuilder.TryParseSensorData(data, out var sensorData))
+            return;
+
+        _lastSensorData = sensorData;
+
+        // Map sensor value (0-255) to percentage (0-100)
+        _sensorPercent = sensorData.SensorValue / 255.0 * 100.0;
+
+        // Get config for sensor settings
+        var config = ConfigurationStore.Instance.AutoSteer;
+
+        // Check pressure sensor trip point (hydraulic kickout)
+        if (config.PressureSensorEnabled && config.PressureTripPoint > 0)
+        {
+            if (_sensorPercent >= config.PressureTripPoint)
+            {
+                Disengage();
+                Debug.WriteLine($"[AutoSteer] Pressure kickout: {_sensorPercent:F1}% >= {config.PressureTripPoint}%");
+            }
+        }
+        // Check current sensor trip point (motor overload protection)
+        else if (config.CurrentSensorEnabled && config.CurrentTripPoint > 0)
+        {
+            if (_sensorPercent >= config.CurrentTripPoint)
+            {
+                Disengage();
+                Debug.WriteLine($"[AutoSteer] Current kickout: {_sensorPercent:F1}% >= {config.CurrentTripPoint}%");
+            }
+        }
     }
 
     public void Engage()

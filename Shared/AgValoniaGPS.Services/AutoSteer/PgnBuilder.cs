@@ -25,6 +25,7 @@ public static class PgnBuilder
     public const byte PGN_STEER_SETTINGS = 0xFC; // 252 - Steer Settings
     public const byte PGN_STEER_CONFIG = 0xFB;   // 251 - Steer Config
     public const byte PGN_STEER_DATA = 0xFD;     // 253 - Steer Data FROM Module
+    public const byte PGN_SENSOR_DATA = 0xFA;    // 250 - Sensor Data FROM Module
 
     // Buffer sizes: header(2) + source(1) + pgn(1) + length(1) + data(N) + crc(1)
     public const int AUTOSTEER_PGN_SIZE = 14;       // 5 header + 8 data + 1 crc
@@ -341,19 +342,21 @@ public static class PgnBuilder
         return buf;
     }
 
+    #region PGN 253 Parser (Steer Data FROM Module)
+
     /// <summary>
     /// Parse PGN 253 (Steer Data) received from the steering module.
-    /// Format: [0x80, 0x81, Source, 0xFD, 8, AngleHi, AngleLo, HeadingHi, HeadingLo, Roll, Switches, PWM, Reserved, CRC]
+    /// Format: [0x80, 0x81, Source, 0xFD, 8, AngleLo, AngleHi, HeadingLo, HeadingHi, RollLo, RollHi, Switches, PWM, CRC]
     ///
-    /// Byte 5-6:  Actual steer angle * 100 (signed int16)
-    /// Byte 7-8:  Heading from IMU * 16 (unsigned int16)
-    /// Byte 9:    Roll from IMU (signed byte, degrees)
-    /// Byte 10:   Switch status byte
-    ///            bit 0: Steer switch
-    ///            bit 1: Work switch
+    /// Byte 5-6:  Actual steer angle * 100 (signed int16, little-endian)
+    /// Byte 7-8:  Heading from IMU * 0.1 (signed int16, little-endian)
+    /// Byte 9-10: Roll from IMU * 0.1 (signed int16, little-endian)
+    /// Byte 11:   Switch status byte
+    ///            bit 0: Work switch (INVERTED: 0=ON, 1=OFF)
+    ///            bit 1: Steer switch active
     ///            bit 2: Remote steer button
-    /// Byte 11:   PWM display (0-255)
-    /// Byte 12:   Reserved
+    ///            bit 5: VWAS fusion active
+    /// Byte 12:   PWM display (0-255)
     /// Byte 13:   CRC
     /// </summary>
     /// <param name="data">Raw PGN data including headers</param>
@@ -381,30 +384,38 @@ public static class PgnBuilder
         short angleRaw = (short)(data[5] | (data[6] << 8));
         double actualSteerAngle = angleRaw / 100.0;
 
-        // Parse IMU heading (unsigned int16, heading * 16)
+        // Parse IMU heading (signed int16, heading * 0.1) - deprecated, GNSS supplies this now
         // Little-endian: low byte first
-        ushort headingRaw = (ushort)(data[7] | (data[8] << 8));
-        double imuHeading = headingRaw / 16.0;
+        short headingRaw = (short)(data[7] | (data[8] << 8));
+        double imuHeading = headingRaw * 0.1;
 
-        // Parse IMU roll (signed byte)
-        sbyte imuRoll = (sbyte)data[9];
+        // Parse IMU roll (signed int16, roll * 0.1) - deprecated, GNSS supplies this now
+        // Little-endian: low byte first
+        short rollRaw = (short)(data[9] | (data[10] << 8));
+        double imuRoll = rollRaw * 0.1;
 
-        // Parse switch status byte
-        byte switches = data[10];
-        bool steerSwitch = (switches & 0x01) != 0;
-        bool workSwitch = (switches & 0x02) != 0;
+        // Parse switch status byte (byte 11)
+        // Bit 0: Work switch (INVERTED: 1=OFF, 0=ON)
+        // Bit 1: Steer enabled
+        // Bit 2: Remote/kickout button
+        // Bit 5: VWAS fusion active
+        byte switches = data[11];
+        bool workSwitchActive = (switches & 0x01) == 0;  // Inverted logic!
+        bool steerSwitchActive = (switches & 0x02) != 0;
         bool remoteButton = (switches & 0x04) != 0;
+        bool vwasFusionActive = (switches & 0x20) != 0;
 
-        // Parse PWM display
-        byte pwmDisplay = data[11];
+        // Parse PWM display (byte 12)
+        byte pwmDisplay = data[12];
 
         result = new SteerModuleData(
             actualSteerAngle,
             imuHeading,
             imuRoll,
-            steerSwitch,
-            workSwitch,
+            workSwitchActive,
+            steerSwitchActive,
             remoteButton,
+            vwasFusionActive,
             pwmDisplay);
 
         return true;
@@ -418,4 +429,52 @@ public static class PgnBuilder
     {
         return TryParseSteerData(data.AsSpan(), out result);
     }
+
+    #endregion
+
+    #region PGN 250 Parser (Sensor Data FROM Module)
+
+    /// <summary>
+    /// Parse PGN 250 (Sensor Data) from raw bytes.
+    /// Contains pressure/current sensor readings if hardware supports it.
+    /// </summary>
+    /// <param name="data">Raw PGN data including headers</param>
+    /// <param name="result">Parsed sensor data</param>
+    /// <returns>True if parsing succeeded, false if data is invalid</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryParseSensorData(ReadOnlySpan<byte> data, out SensorModuleData result)
+    {
+        result = default;
+
+        // Validate minimum length: header(2) + source(1) + pgn(1) + length(1) + data(8) + crc(1) = 14
+        if (data.Length < 14)
+            return false;
+
+        // Validate header
+        if (data[0] != HEADER1 || data[1] != HEADER2)
+            return false;
+
+        // Validate PGN
+        if (data[3] != PGN_SENSOR_DATA)
+            return false;
+
+        // Parse sensor value (byte 5)
+        // This is the raw sensor reading - interpretation depends on hardware config
+        // Could be pressure sensor, current sensor, or other diagnostic data
+        byte sensorValue = data[5];
+
+        result = new SensorModuleData(sensorValue);
+        return true;
+    }
+
+    /// <summary>
+    /// Parse PGN 250 from a byte array (convenience overload).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryParseSensorData(byte[] data, out SensorModuleData result)
+    {
+        return TryParseSensorData(data.AsSpan(), out result);
+    }
+
+    #endregion
 }

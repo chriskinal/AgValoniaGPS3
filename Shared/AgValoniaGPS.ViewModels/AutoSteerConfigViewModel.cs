@@ -790,6 +790,13 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         set => SetProperty(ref _remoteButtonPressed, value);
     }
 
+    private bool _vwasFusionActive;
+    public bool VwasFusionActive
+    {
+        get => _vwasFusionActive;
+        set => SetProperty(ref _vwasFusionActive, value);
+    }
+
     private int _testSteerOffset;
     public int TestSteerOffset
     {
@@ -1006,7 +1013,25 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
     private void OnUdpDataReceived(object? sender, UdpDataReceivedEventArgs e)
     {
-        // Only process PGN 253 (Steer Data from module)
+        // Handle PGN 250 (Sensor Data from module - pressure/current)
+        // Note: Kickout logic is handled by AutoSteerService; we just update display here
+        if (e.PGN == PgnNumbers.SENSOR_DATA)
+        {
+            if (PgnBuilder.TryParseSensorData(e.Data, out var sensorData))
+            {
+                // Map sensor value (0-255) to percentage (0-100)
+                double percent = sensorData.SensorValue / 255.0 * 100.0;
+
+                // Update display for the enabled sensor type
+                if (AutoSteer.PressureSensorEnabled)
+                    ActualPressurePercent = Math.Round(percent, 1);
+                else if (AutoSteer.CurrentSensorEnabled)
+                    ActualCurrentPercent = Math.Round(percent, 1);
+            }
+            return;
+        }
+
+        // Handle PGN 253 (Steer Data from module)
         if (e.PGN != PgnNumbers.AUTOSTEER_DATA) return;
 
         // Parse the incoming steer data
@@ -1043,9 +1068,10 @@ public partial class AutoSteerConfigViewModel : ObservableObject
         PwmDisplay = pwmClamped;
 
         // Update switch status from module
-        SteerSwitchActive = steerData.SteerSwitchActive;
         WorkSwitchActive = steerData.WorkSwitchActive;
+        SteerSwitchActive = steerData.SteerSwitchActive;
         RemoteButtonPressed = steerData.RemoteButtonPressed;
+        VwasFusionActive = steerData.VwasFusionActive;
     }
 
     #endregion

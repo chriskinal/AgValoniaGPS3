@@ -100,6 +100,28 @@ public interface IAutoSteerService
     /// </summary>
     /// <param name="angleDegrees">Target steer angle (-40 to +40 degrees)</param>
     void SetFreeDriveAngle(double angleDegrees);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Module Feedback (PGN 253, 250)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Latest steer data from module (PGN 253).
+    /// Contains actual steer angle, switch states, PWM feedback.
+    /// </summary>
+    SteerModuleData LastSteerData { get; }
+
+    /// <summary>
+    /// Latest sensor data from module (PGN 250).
+    /// Contains pressure/current sensor reading.
+    /// </summary>
+    SensorModuleData LastSensorData { get; }
+
+    /// <summary>
+    /// Sensor reading as percentage (0-100).
+    /// Derived from LastSensorData.SensorValue.
+    /// </summary>
+    double SensorPercent { get; }
 }
 
 /// <summary>

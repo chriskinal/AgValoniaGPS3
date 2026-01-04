@@ -150,9 +150,9 @@ public static class PgnNumbers
     public const byte STEER_SETTINGS = 252;
 
     /// <summary>
-    /// AutoSteer config/settings (0xFA = 250)
+    /// Sensor data FROM module (pressure/current) (0xFA = 250)
     /// </summary>
-    public const byte AUTOSTEER_CONFIG = 250;
+    public const byte SENSOR_DATA = 250;
 
     /// <summary>
     /// Steer config (0xFB = 251)

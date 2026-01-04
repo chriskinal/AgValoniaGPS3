@@ -125,23 +125,23 @@ Byte 13:  CRC
 
 ### 7. Sensor Readings (Tab 5)
 
-**Current:** Pressure/current progress bars are placeholders
-**Need:** Live sensor values from module
+**Current:** PGN 250 parser added, UI progress bars are placeholders
+**Need:** Wire live sensor values to UI
 
-The module may send additional sensor data (pressure, current) in:
-- Extended PGN 253 data
-- Separate sensor PGN
+The module sends PGN 250 with sensor data (pressure/current) if hardware supports it.
 
 **Tasks:**
-- [ ] Determine if module sends pressure/current data
-- [ ] If yes, parse and expose on ViewModel
-- [ ] Update progress bars with actual readings
-- [ ] Compare against trip point thresholds
+- [x] Determine if module sends pressure/current data (yes, PGN 250)
+- [x] Add PGN 250 parser (TryParseSensorData in PgnBuilder.cs)
+- [x] Wire sensor data to ViewModel (ActualPressurePercent/ActualCurrentPercent)
+- [x] Update progress bars with actual readings (bound in AXAML)
+- [x] Auto-disengage when pressure/current exceeds trip point (AutoSteerService)
 
 ## PGN Communication Summary
 
 | PGN | Direction | Purpose | Status |
 |-----|-----------|---------|--------|
+| 250 | Module → PC | Sensor Data (pressure/current) | ✅ Parser done |
 | 251 | PC → Module | Steer Config (hardware settings) | ✅ Builder done |
 | 252 | PC → Module | Steer Settings (calibration) | ✅ Builder done |
 | 253 | Module → PC | Steer Data (actual angles, switches) | ✅ Parser done |
@@ -174,9 +174,13 @@ The module may send additional sensor data (pressure, current) in:
 14. [x] Debounced auto-send for left-side sliders (1 second delay)
 15. [x] Unsaved changes warning for right-side settings
 
-### Phase 6: Future / Out of Scope
-16. [ ] Pressure/current sensor displays (module may not send this data)
-17. [ ] Setup wizard integration (separate PR #7)
+### Phase 6: Sensor Integration ✅ COMPLETE
+16. [x] PGN 250 parser for pressure/current sensor data
+17. [x] Wire sensor data to ViewModel and UI progress bars
+18. [x] Sensor trip point auto-disengage (hydraulic/current kickout)
+
+### Phase 7: Future / Out of Scope
+19. [ ] Setup wizard integration (separate PR #7)
 
 ## Testing Strategy
 
