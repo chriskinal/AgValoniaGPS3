@@ -57,7 +57,6 @@ public partial class MainViewModel : ObservableObject
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
-    private AgValoniaGPS.Models.LocalPlane? _simulatorLocalPlane;
 
     /// <summary>
     /// Centralized application state - single source of truth for all runtime state.
@@ -79,11 +78,6 @@ public partial class MainViewModel : ObservableObject
     // YouTurn state is now in MainViewModel.YouTurn.cs
 
     private string _statusMessage = "Starting...";
-    private double _latitude;
-    private double _longitude;
-    private double _speed;
-    private int _satelliteCount;
-    private string _fixQuality = "No Fix";
     private string _networkStatus = "Disconnected";
     private double _currentFps;
     private double _gpsToPgnLatencyMs;
@@ -106,9 +100,6 @@ public partial class MainViewModel : ObservableObject
     private bool _isImuDataOk;
     private bool _isGpsDataOk;
     private string _debugLog = "";
-    private double _easting;
-    private double _northing;
-    private double _heading;
 
     // Tool position (for rendering)
     private double _toolEasting;
@@ -423,24 +414,6 @@ public partial class MainViewModel : ObservableObject
         set => SetProperty(ref _statusMessage, value);
     }
 
-    public double Latitude
-    {
-        get => _latitude;
-        set => SetProperty(ref _latitude, value);
-    }
-
-    public double Longitude
-    {
-        get => _longitude;
-        set => SetProperty(ref _longitude, value);
-    }
-
-    public double Speed
-    {
-        get => _speed;
-        set => SetProperty(ref _speed, value);
-    }
-
     /// <summary>
     /// Current rendering frames per second
     /// </summary>
@@ -458,18 +431,6 @@ public partial class MainViewModel : ObservableObject
     {
         get => _gpsToPgnLatencyMs;
         set => SetProperty(ref _gpsToPgnLatencyMs, value);
-    }
-
-    public int SatelliteCount
-    {
-        get => _satelliteCount;
-        set => SetProperty(ref _satelliteCount, value);
-    }
-
-    public string FixQuality
-    {
-        get => _fixQuality;
-        set => SetProperty(ref _fixQuality, value);
     }
 
     public string NetworkStatus
@@ -597,24 +558,6 @@ public partial class MainViewModel : ObservableObject
     {
         get => _debugLog;
         set => SetProperty(ref _debugLog, value);
-    }
-
-    public double Easting
-    {
-        get => _easting;
-        set => SetProperty(ref _easting, value);
-    }
-
-    public double Northing
-    {
-        get => _northing;
-        set => SetProperty(ref _northing, value);
-    }
-
-    public double Heading
-    {
-        get => _heading;
-        set => SetProperty(ref _heading, value);
     }
 
     // Tool position properties (for map rendering)
@@ -748,153 +691,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private void OnGpsDataUpdated(object? sender, AgValoniaGPS.Models.GpsData data)
-    {
-        // Marshal to UI thread (use Invoke for synchronous execution to avoid modal dialog issues)
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            // Already on UI thread, execute directly
-            UpdateGpsProperties(data);
-        }
-        else
-        {
-            // Not on UI thread, invoke synchronously
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => UpdateGpsProperties(data));
-        }
-    }
 
-    private void UpdateGpsProperties(AgValoniaGPS.Models.GpsData data)
-    {
-        // Update centralized state (single source of truth)
-        State.Vehicle.UpdateFromGps(
-            data.CurrentPosition,
-            data.FixQuality,
-            data.SatellitesInUse,
-            data.Hdop,
-            data.DifferentialAge);
-
-        // Legacy property updates (for existing bindings - will be removed in Phase 5)
-        Latitude = data.CurrentPosition.Latitude;
-        Longitude = data.CurrentPosition.Longitude;
-        Speed = data.CurrentPosition.Speed;
-        SatelliteCount = data.SatellitesInUse;
-        FixQuality = GetFixQualityString(data.FixQuality);
-        StatusMessage = data.IsValid ? "GPS Active" : "Waiting for GPS";
-
-        // Update UTM coordinates and heading for map rendering
-        Easting = data.CurrentPosition.Easting;
-        Northing = data.CurrentPosition.Northing;
-        Heading = data.CurrentPosition.Heading;
-
-        // Add boundary point if recording is active
-        if (_boundaryRecordingService.IsRecording)
-        {
-            double headingRadians = data.CurrentPosition.Heading * Math.PI / 180.0;
-            var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(
-                data.CurrentPosition.Easting,
-                data.CurrentPosition.Northing,
-                headingRadians);
-            _boundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
-        }
-    }
-
-    // Simulator event handlers
-    private void OnSimulatorTick(object? sender, EventArgs e)
-    {
-        // Call simulator Tick with current steer angle
-        _simulatorService.Tick(SimulatorSteerAngle);
-    }
-
-    private void OnSimulatorGpsDataUpdated(object? sender, GpsSimulationEventArgs e)
-    {
-        var simulatedData = e.Data;
-
-        // Create LocalPlane if not yet created (using simulator's initial position as origin)
-        if (_simulatorLocalPlane == null)
-        {
-            var sharedProps = new AgValoniaGPS.Models.SharedFieldProperties();
-            _simulatorLocalPlane = new AgValoniaGPS.Models.LocalPlane(simulatedData.Position, sharedProps);
-        }
-
-        // Convert WGS84 to local coordinates (Northing/Easting)
-        var localCoord = _simulatorLocalPlane.ConvertWgs84ToGeoCoord(simulatedData.Position);
-
-        // Build Position object with both WGS84 and UTM coordinates
-        var position = new AgValoniaGPS.Models.Position
-        {
-            Latitude = simulatedData.Position.Latitude,
-            Longitude = simulatedData.Position.Longitude,
-            Altitude = simulatedData.Altitude,
-            Easting = localCoord.Easting,
-            Northing = localCoord.Northing,
-            Heading = simulatedData.HeadingDegrees,
-            Speed = simulatedData.SpeedKmh / 3.6  // Convert km/h to m/s
-        };
-
-        // Build GpsData object
-        var gpsData = new AgValoniaGPS.Models.GpsData
-        {
-            CurrentPosition = position,
-            FixQuality = 4,  // RTK Fixed
-            SatellitesInUse = simulatedData.SatellitesTracked,
-            Hdop = simulatedData.Hdop,
-            DifferentialAge = 0.0,
-            Timestamp = DateTime.Now
-        };
-
-        // Directly update GPS service (bypasses NMEA parsing like WinForms version does)
-        // This applies antenna-to-pivot transformation to gpsData.CurrentPosition
-        _gpsService.UpdateGpsData(gpsData);
-
-        // Use the TRANSFORMED position (pivot/tractor center) for all guidance calculations
-        var transformedPosition = gpsData.CurrentPosition;
-
-        // Update tool position based on vehicle pivot position
-        // Tool position service handles fixed, trailing, and TBT configurations
-        var vehiclePivot = new Models.Base.Vec3(
-            transformedPosition.Easting,
-            transformedPosition.Northing,
-            transformedPosition.Heading * Math.PI / 180.0  // Convert to radians
-        );
-        _toolPositionService.Update(vehiclePivot, transformedPosition.Heading * Math.PI / 180.0);
-
-        // Process through AutoSteer pipeline for latency measurement
-        _autoSteerService.ProcessSimulatedPosition(
-            transformedPosition.Latitude, transformedPosition.Longitude, transformedPosition.Altitude,
-            transformedPosition.Heading, transformedPosition.Speed, gpsData.FixQuality,
-            gpsData.SatellitesInUse, gpsData.Hdop,
-            transformedPosition.Easting, transformedPosition.Northing);
-
-        // Auto-disengage autosteer if vehicle is outside the outer boundary
-        if (IsAutoSteerEngaged && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
-        {
-            IsAutoSteerEngaged = false;
-            StatusMessage = "AutoSteer disengaged - outside boundary";
-        }
-
-        // Calculate autosteer guidance if engaged and we have an active track
-        if (IsAutoSteerEngaged && HasActiveTrack && SelectedTrack != null)
-        {
-            // Increment YouTurn counter (used for throttling)
-            _youTurnCounter++;
-
-            // Check for YouTurn execution or create path if approaching headland
-            if (IsYouTurnEnabled && _currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
-            {
-                ProcessYouTurn(transformedPosition);
-            }
-
-            // If we're in a YouTurn, use YouTurn guidance; otherwise use AB line guidance
-            if (_isYouTurnTriggered && _youTurnPath != null && _youTurnPath.Count > 0)
-            {
-                CalculateYouTurnGuidance(transformedPosition);
-            }
-            else
-            {
-                CalculateAutoSteerGuidance(transformedPosition);
-            }
-        }
-    }
 
     // AutoSteer guidance methods (CalculateAutoSteerGuidance, UpdateActiveLineVisualization)
     // are now in MainViewModel.Guidance.cs
@@ -902,60 +699,6 @@ public partial class MainViewModel : ObservableObject
     // YouTurn methods (ProcessYouTurn, CreateYouTurnPath, CalculateYouTurnGuidance, etc.)
     // are now in MainViewModel.YouTurn.cs
 
-    // Boundary recording event handlers
-    private void OnBoundaryPointAdded(object? sender, BoundaryPointAddedEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Update centralized state
-            State.BoundaryRec.PointCount = e.TotalPoints;
-            State.BoundaryRec.AreaHectares = e.AreaHectares;
-            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
-
-            // Legacy properties
-            BoundaryPointCount = e.TotalPoints;
-            BoundaryAreaHectares = e.AreaHectares;
-
-            // Update map with recorded points
-            var points = _boundaryRecordingService.RecordedPoints
-                .Select(p => (p.Easting, p.Northing))
-                .ToList();
-            _mapService.SetRecordingPoints(points);
-        });
-    }
-
-    private void OnBoundaryStateChanged(object? sender, BoundaryRecordingStateChangedEventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Update centralized state
-            State.BoundaryRec.IsRecording = e.State == BoundaryRecordingState.Recording;
-            State.BoundaryRec.IsPaused = e.State == BoundaryRecordingState.Paused;
-            State.BoundaryRec.PointCount = e.PointCount;
-            State.BoundaryRec.AreaHectares = e.AreaHectares;
-            State.BoundaryRec.AreaAcres = e.AreaHectares * 2.47105;
-
-            // Legacy properties
-            IsBoundaryRecording = e.State == BoundaryRecordingState.Recording;
-            BoundaryPointCount = e.PointCount;
-            BoundaryAreaHectares = e.AreaHectares;
-
-            // Clear recording points from map when recording becomes idle
-            if (e.State == BoundaryRecordingState.Idle)
-            {
-                State.BoundaryRec.RecordingPoints.Clear();
-                _mapService.ClearRecordingPoints();
-            }
-            // Update map with current recorded points (for undo/clear operations)
-            else if (e.PointCount >= 0)
-            {
-                var points = _boundaryRecordingService.RecordedPoints
-                    .Select(p => (p.Easting, p.Northing))
-                    .ToList();
-                _mapService.SetRecordingPoints(points);
-            }
-        });
-    }
 
     private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
     {
@@ -1037,15 +780,6 @@ public partial class MainViewModel : ObservableObject
             : "Waiting for modules...";
     }
 
-    private string GetFixQualityString(int fixQuality) => fixQuality switch
-    {
-        0 => "No Fix",
-        1 => "GPS Fix",
-        2 => "DGPS Fix",
-        4 => "RTK Fixed",
-        5 => "RTK Float",
-        _ => "Unknown"
-    };
 
     // Field management properties
     public Field? ActiveField
@@ -1280,57 +1014,6 @@ public partial class MainViewModel : ObservableObject
             HasHeadland = false;
             IsHeadlandOn = false;
         }
-    }
-
-    // ========== View Settings ==========
-
-    private bool _isViewSettingsPanelVisible;
-    public bool IsViewSettingsPanelVisible
-    {
-        get => _isViewSettingsPanelVisible;
-        set => SetProperty(ref _isViewSettingsPanelVisible, value);
-    }
-
-    private bool _isFileMenuPanelVisible;
-    public bool IsFileMenuPanelVisible
-    {
-        get => _isFileMenuPanelVisible;
-        set => SetProperty(ref _isFileMenuPanelVisible, value);
-    }
-
-    private bool _isToolsPanelVisible;
-    public bool IsToolsPanelVisible
-    {
-        get => _isToolsPanelVisible;
-        set => SetProperty(ref _isToolsPanelVisible, value);
-    }
-
-    private bool _isConfigurationPanelVisible;
-    public bool IsConfigurationPanelVisible
-    {
-        get => _isConfigurationPanelVisible;
-        set => SetProperty(ref _isConfigurationPanelVisible, value);
-    }
-
-    private bool _isJobMenuPanelVisible;
-    public bool IsJobMenuPanelVisible
-    {
-        get => _isJobMenuPanelVisible;
-        set => SetProperty(ref _isJobMenuPanelVisible, value);
-    }
-
-    private bool _isFieldToolsPanelVisible;
-    public bool IsFieldToolsPanelVisible
-    {
-        get => _isFieldToolsPanelVisible;
-        set => SetProperty(ref _isFieldToolsPanelVisible, value);
-    }
-
-    private bool _isSimulatorPanelVisible;
-    public bool IsSimulatorPanelVisible
-    {
-        get => _isSimulatorPanelVisible;
-        set => SetProperty(ref _isSimulatorPanelVisible, value);
     }
 
     // Panel-based dialog data properties (visibility now managed by State.UI)
@@ -1893,27 +1576,6 @@ public partial class MainViewModel : ObservableObject
         set => SetProperty(ref _isBoundaryPlayerPanelVisible, value);
     }
 
-    private bool _isBoundaryRecording;
-    public bool IsBoundaryRecording
-    {
-        get => _isBoundaryRecording;
-        set => SetProperty(ref _isBoundaryRecording, value);
-    }
-
-    private int _boundaryPointCount;
-    public int BoundaryPointCount
-    {
-        get => _boundaryPointCount;
-        set => SetProperty(ref _boundaryPointCount, value);
-    }
-
-    private double _boundaryAreaHectares;
-    public double BoundaryAreaHectares
-    {
-        get => _boundaryAreaHectares;
-        set => SetProperty(ref _boundaryAreaHectares, value);
-    }
-
     // Boundary Player settings
     private bool _isBoundarySectionControlOn;
     public bool IsBoundarySectionControlOn
@@ -2404,198 +2066,6 @@ public partial class MainViewModel : ObservableObject
         get => _currentFieldName;
         set => SetProperty(ref _currentFieldName, value);
     }
-
-    // Simulator properties
-    private bool _isSimulatorEnabled;
-    public bool IsSimulatorEnabled
-    {
-        get => _isSimulatorEnabled;
-        set
-        {
-            if (SetProperty(ref _isSimulatorEnabled, value))
-            {
-                // Update centralized state
-                State.Simulator.IsEnabled = value;
-
-                // Save to settings
-                _settingsService.Settings.SimulatorEnabled = value;
-                _settingsService.Save();
-
-                // Start or stop simulator timer based on enabled state
-                if (value)
-                {
-                    // Initialize simulator with saved coordinates
-                    var settings = _settingsService.Settings;
-                    _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
-                        settings.SimulatorLatitude,
-                        settings.SimulatorLongitude));
-
-                    State.Simulator.IsRunning = true;
-                    _simulatorTimer.Start();
-                    StatusMessage = $"Simulator ON at {settings.SimulatorLatitude:F8}, {settings.SimulatorLongitude:F8}";
-                }
-                else
-                {
-                    State.Simulator.IsRunning = false;
-                    _simulatorTimer.Stop();
-                    StatusMessage = "Simulator OFF";
-                }
-            }
-        }
-    }
-
-    private double _simulatorSteerAngle;
-    public double SimulatorSteerAngle
-    {
-        get => _simulatorSteerAngle;
-        set
-        {
-            SetProperty(ref _simulatorSteerAngle, value);
-            State.Simulator.SteerAngle = value;
-            OnPropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
-            if (_isSimulatorEnabled)
-            {
-                _simulatorService.SteerAngle = value;
-            }
-        }
-    }
-
-    public string SimulatorSteerAngleDisplay => $"Steer Angle: {_simulatorSteerAngle:F1}°";
-
-    private double _simulatorSpeedKph;
-    /// <summary>
-    /// Simulator speed in kph. Range: -10 to +25 kph.
-    /// Converts to/from stepDistance using formula: speedKph = stepDistance * 40
-    /// </summary>
-    public double SimulatorSpeedKph
-    {
-        get => _simulatorSpeedKph;
-        set
-        {
-            // Clamp to valid range
-            value = Math.Max(-10, Math.Min(25, value));
-            SetProperty(ref _simulatorSpeedKph, value);
-            State.Simulator.Speed = value;
-            State.Simulator.TargetSpeed = value;
-            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
-            if (_isSimulatorEnabled)
-            {
-                // Convert kph to stepDistance: stepDistance = speedKph / 40
-                _simulatorService.StepDistance = value / 40.0;
-                // Disable acceleration when manually setting speed
-                _simulatorService.IsAcceleratingForward = false;
-                _simulatorService.IsAcceleratingBackward = false;
-            }
-        }
-    }
-
-    public string SimulatorSpeedDisplay => $"Speed: {_simulatorSpeedKph:F1} kph";
-
-    /// <summary>
-    /// Set new starting coordinates for the simulator
-    /// </summary>
-    public void SetSimulatorCoordinates(double latitude, double longitude)
-    {
-        // Reinitialize simulator with new coordinates
-        _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(latitude, longitude));
-        _simulatorService.StepDistance = 0;
-
-        // Clear LocalPlane so it will be recreated with new origin on next GPS data update
-        _simulatorLocalPlane = null;
-
-        // Reset steering
-        SimulatorSteerAngle = 0;
-
-        // Save coordinates to settings so they persist
-        _settingsService.Settings.SimulatorLatitude = latitude;
-        _settingsService.Settings.SimulatorLongitude = longitude;
-        var saved = _settingsService.Save();
-
-        // Also update the Latitude/Longitude properties directly so that
-        // the map boundary dialog uses the correct coordinates even if
-        // the simulator timer hasn't ticked yet
-        Latitude = latitude;
-        Longitude = longitude;
-
-        StatusMessage = saved
-            ? $"Simulator reset to {latitude:F8}, {longitude:F8}"
-            : $"Reset to {latitude:F8}, {longitude:F8} (save failed: {_settingsService.GetSettingsFilePath()})";
-    }
-
-    /// <summary>
-    /// Get current simulator position
-    /// </summary>
-    public AgValoniaGPS.Models.Wgs84 GetSimulatorPosition()
-    {
-        return _simulatorService.CurrentPosition;
-    }
-
-    // Navigation settings properties (forwarded from service)
-    public bool IsGridOn
-    {
-        get => _displaySettings.IsGridOn;
-        set
-        {
-            _displaySettings.IsGridOn = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsDayMode
-    {
-        get => _displaySettings.IsDayMode;
-        set
-        {
-            _displaySettings.IsDayMode = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double CameraPitch
-    {
-        get => _displaySettings.CameraPitch;
-        set
-        {
-            _displaySettings.CameraPitch = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Is2DMode));
-        }
-    }
-
-    public bool Is2DMode
-    {
-        get => _displaySettings.Is2DMode;
-        set
-        {
-            _displaySettings.Is2DMode = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsNorthUp
-    {
-        get => _displaySettings.IsNorthUp;
-        set
-        {
-            _displaySettings.IsNorthUp = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int Brightness
-    {
-        get => _displaySettings.Brightness;
-        set
-        {
-            _displaySettings.Brightness = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(BrightnessDisplay));
-        }
-    }
-
-    public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
-        ? $"{_displaySettings.Brightness}%"
-        : "??";
 
     // Commands
     public ICommand? ToggleViewSettingsPanelCommand { get; private set; }

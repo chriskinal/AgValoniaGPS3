@@ -229,48 +229,45 @@ Shared/AgValoniaGPS.ViewModels/
 | MainViewModel.Guidance.cs | 180 | ✅ Complete |
 | MainViewModel.Ntrip.cs | 208 | ✅ Complete |
 | MainViewModel.SectionControl.cs | 383 | ✅ Complete |
+| MainViewModel.Simulator.cs | 254 | ✅ Complete |
+| MainViewModel.GpsHandling.cs | 140 | ✅ Complete |
+| MainViewModel.BoundaryRecording.cs | 100 | ✅ Complete |
+| MainViewModel.ViewSettings.cs | 137 | ✅ Complete |
 
-**MainViewModel.cs**: 6,082 → 4,350 lines (-1,732 lines, ~28% reduction)
+**MainViewModel.cs**: 6,082 → 3,820 lines (-2,262 lines, ~37% reduction)
 
-### Phase 1 Status: Complete (Practical Limit Reached)
+### Phase 1 Status: Complete
 
-The four extractions above represent the contiguous, self-contained code blocks that could be cleanly extracted. The remaining code has the following challenges:
-
-**Simulator Handlers (~100 lines, lines 801-897)**
-- `OnSimulatorTick()` and `OnSimulatorGpsDataUpdated()` orchestrate calls across multiple partial classes
-- Call `ProcessYouTurn()` (YouTurn.cs), `CalculateYouTurnGuidance()` (YouTurn.cs), `CalculateAutoSteerGuidance()` (Guidance.cs)
-- Best left in MainViewModel.cs as the central orchestration point
-
-**Boundary Recording Handlers (~52 lines, lines 906-958)**
-- `OnBoundaryPointAdded()` and `OnBoundaryStateChanged()`
-- Too small to justify a separate file (only 52 lines)
-- Depend on `_boundaryRecordingService` and `_mapService`
-
-**View Settings Properties (~400 lines, scattered)**
-- Panel visibility properties, display settings are scattered throughout the 4,350-line file
-- Would require extensive reorganization before extraction
-
-**GPS Handling (~200 lines, scattered)**
-- `OnGpsDataUpdated()`, `UpdateGpsProperties()` and related properties
-- Latitude, Longitude, Speed properties scattered among other UI properties
-
-### Recommendations for Future Work
-
-1. **Consider consolidating remaining code with #regions** rather than partial classes
-2. **Phase 2: Service Extraction** - Move complex business logic to services instead of partial classes:
-   - Simulator tick logic → SimulatorOrchestrationService
-   - GPS data transformation → already in GpsService
-3. **Phase 3: Sub-ViewModels** - For truly independent UI panels (SimulatorPanelViewModel, etc.)
+All identified logical groups have been extracted to dedicated partial class files:
+- **YouTurn** (1,112 lines) - U-turn path generation and guidance
+- **Guidance** (180 lines) - AutoSteer Pure Pursuit/Stanley algorithms
+- **Ntrip** (208 lines) - NTRIP RTK connection handling
+- **SectionControl** (383 lines) - Section on/off states and event handling
+- **Simulator** (254 lines) - GPS simulation and vehicle movement
+- **GpsHandling** (140 lines) - GPS data processing and property updates
+- **BoundaryRecording** (100 lines) - Boundary point collection and events
+- **ViewSettings** (137 lines) - Panel visibility and display settings
 
 ### Results Summary
 
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
-| MainViewModel.cs lines | 6,082 | 4,350 | -1,732 (28%) |
-| Partial class files | 7 (commands only) | 11 | +4 new files |
+| MainViewModel.cs lines | 6,082 | 3,820 | -2,262 (37%) |
+| Partial class files | 7 (commands only) | 15 | +8 new files |
 | Largest extraction | - | YouTurn.cs (1,112) | Self-contained logic |
 
-The refactoring successfully extracted 28% of the code into focused partial class files, improving:
+The refactoring successfully extracted 37% of the code into focused partial class files, improving:
 - Code navigation (find code by category)
 - Merge conflict reduction (changes to different areas don't conflict)
 - AI assistance context (smaller files fit in LLM context windows)
+- Maintainability (scattered code now properly organized)
+
+### Recommendations for Future Work
+
+1. **Phase 2: Service Extraction** - Move complex business logic to services:
+   - Consider moving simulator orchestration to a dedicated service
+   - GPS data transformation is already handled by GpsService
+2. **Phase 3: Sub-ViewModels** - For truly independent UI panels:
+   - SimulatorPanelViewModel
+   - BoundaryPanelViewModel
+   - GuidanceViewModel
