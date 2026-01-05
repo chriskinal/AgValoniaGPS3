@@ -34,11 +34,27 @@ public partial class MainViewModel
     {
         var simulatedData = e.Data;
 
-        // Create LocalPlane if not yet created (using simulator's initial position as origin)
+        // Create LocalPlane if not yet created
+        // Use FIELD origin if a field is loaded, otherwise use simulator position
         if (_simulatorLocalPlane == null)
         {
             var sharedProps = new AgValoniaGPS.Models.SharedFieldProperties();
-            _simulatorLocalPlane = new AgValoniaGPS.Models.LocalPlane(simulatedData.Position, sharedProps);
+            AgValoniaGPS.Models.Wgs84 origin;
+
+            if (_fieldOriginLatitude != 0 && _fieldOriginLongitude != 0)
+            {
+                // Use field origin so coordinates match the field's boundary/track data
+                origin = new AgValoniaGPS.Models.Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
+                Console.WriteLine($"[Simulator] Using field origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
+            }
+            else
+            {
+                // No field loaded, use simulator position as origin
+                origin = simulatedData.Position;
+                Console.WriteLine($"[Simulator] Using simulator position as origin: {origin.Latitude}, {origin.Longitude}");
+            }
+
+            _simulatorLocalPlane = new AgValoniaGPS.Models.LocalPlane(origin, sharedProps);
         }
 
         // Convert WGS84 to local coordinates (Northing/Easting)
@@ -91,7 +107,9 @@ public partial class MainViewModel
             transformedPosition.Easting, transformedPosition.Northing);
 
         // Auto-disengage autosteer if vehicle is outside the outer boundary
-        if (IsAutoSteerEngaged && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
+        // BUT skip this check on first pass (howManyPathsAway == 0) if track runs along boundary
+        bool skipBoundaryCheck = _isSelectedTrackOnBoundary && _howManyPathsAway == 0;
+        if (IsAutoSteerEngaged && !skipBoundaryCheck && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
         {
             IsAutoSteerEngaged = false;
             StatusMessage = "AutoSteer disengaged - outside boundary";
@@ -216,6 +234,8 @@ public partial class MainViewModel
     /// </summary>
     public void SetSimulatorCoordinates(double latitude, double longitude)
     {
+        Console.WriteLine($"[SimCoords] Setting simulator to: {latitude}, {longitude}");
+
         // Reinitialize simulator with new coordinates
         _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(latitude, longitude));
         _simulatorService.StepDistance = 0;

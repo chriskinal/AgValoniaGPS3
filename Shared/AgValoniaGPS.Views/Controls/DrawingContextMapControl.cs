@@ -564,6 +564,24 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 context.DrawGeometry(null, _boundaryPenInner, geometry);
             }
         }
+
+        // Draw headland polygon (working area boundary) - uses same style as inner boundaries
+        if (_boundary.HeadlandPolygon != null && _boundary.HeadlandPolygon.IsValid && _boundary.HeadlandPolygon.Points.Count > 1)
+        {
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                var points = _boundary.HeadlandPolygon.Points;
+                ctx.BeginFigure(new Point(points[0].Easting, points[0].Northing), false);
+                for (int i = 1; i < points.Count; i++)
+                {
+                    ctx.LineTo(new Point(points[i].Easting, points[i].Northing));
+                }
+                ctx.LineTo(new Point(points[0].Easting, points[0].Northing));
+                ctx.EndFigure(true);
+            }
+            context.DrawGeometry(null, _boundaryPenInner, geometry);
+        }
     }
 
     private void DrawCoverage(DrawingContext context)
@@ -981,28 +999,38 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var pointA = new Point(trackPointA.Easting, trackPointA.Northing);
         var pointB = new Point(trackPointB.Easting, trackPointB.Northing);
 
-        // Calculate heading and extend the line in both directions
-        double dx = pointB.X - pointA.X;
-        double dy = pointB.Y - pointA.Y;
-        double length = Math.Sqrt(dx * dx + dy * dy);
-
-        if (length > 0.01) // Avoid division by zero
+        // For AB lines (2 points), draw extended line in both directions
+        if (track.Points.Count == 2)
         {
-            // Normalize direction
-            double nx = dx / length;
-            double ny = dy / length;
+            Console.WriteLine($"[DrawTrack] AB Line: '{track.Name}' with 2 points");
+            double dx = pointB.X - pointA.X;
+            double dy = pointB.Y - pointA.Y;
+            double length = Math.Sqrt(dx * dx + dy * dy);
 
-            // Extend line 500 meters in each direction
-            double extendDistance = 500.0;
-            var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
-            var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
+            if (length > 0.01)
+            {
+                double nx = dx / length;
+                double ny = dy / length;
+                double extendDistance = 500.0;
+                var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
+                var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
+                context.DrawLine(extendPen, extendA, extendB);
+            }
 
-            // Draw extended line (semi-transparent)
-            context.DrawLine(extendPen, extendA, extendB);
+            // Draw main AB line
+            context.DrawLine(mainPen, pointA, pointB);
         }
-
-        // Draw main track line
-        context.DrawLine(mainPen, pointA, pointB);
+        else
+        {
+            // For curves (>2 points), draw all segments
+            Console.WriteLine($"[DrawTrack] Curve: '{track.Name}' drawing {track.Points.Count - 1} segments");
+            for (int i = 0; i < track.Points.Count - 1; i++)
+            {
+                var p1 = new Point(track.Points[i].Easting, track.Points[i].Northing);
+                var p2 = new Point(track.Points[i + 1].Easting, track.Points[i + 1].Northing);
+                context.DrawLine(mainPen, p1, p2);
+            }
+        }
 
         // Draw Point A marker (green)
         context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
@@ -1125,7 +1153,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         double zoomFactor = e.Delta.Y > 0 ? 1.1 : 0.9;
         _zoom *= zoomFactor;
-        _zoom = Math.Clamp(_zoom, 0.1, 100.0);
+        _zoom = Math.Clamp(_zoom, 0.02, 100.0);  // Min zoom 0.02 = 10km view height for large fields
         e.Handled = true;
     }
 
@@ -1160,7 +1188,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         else
         {
             _zoom *= factor;
-            _zoom = Math.Clamp(_zoom, 0.1, 100.0);
+            _zoom = Math.Clamp(_zoom, 0.02, 100.0);  // Min zoom 0.02 = 10km view height for large fields
         }
     }
 

@@ -114,17 +114,17 @@ public partial class MainViewModel
 
         // Only calculate distance to headland when aligned with the AB line
         // This prevents creating turns while mid-turn when heading changes rapidly
+        double travelHeading = abHeading;
+        if (!_isHeadingSameWay)
+        {
+            travelHeading += Math.PI;
+            if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
+        }
+
         if (isAlignedWithABLine)
         {
-            // IMPORTANT: Calculate distance using the travel heading (AB heading adjusted for direction),
-            // not the vehicle heading. This ensures the raycast direction matches the path construction
-            // direction, preventing arc positioning errors when vehicle heading differs from AB heading.
-            double travelHeading = abHeading;
-            if (!_isHeadingSameWay)
-            {
-                travelHeading += Math.PI;
-                if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
-            }
+            // Calculate distance to headland using raycast
+            // Only triggers automatic U-turns when there's a headland line defined
             _distanceToHeadland = CalculateDistanceToHeadland(currentPosition, travelHeading);
         }
         else
@@ -133,33 +133,22 @@ public partial class MainViewModel
         }
 
         // Create U-turn path when approaching the headland ahead
-        // The raycast already looks in the direction we're heading, so it finds the headland in front
-        // We only need to check if we're within a reasonable trigger distance (not too close, not too far)
-        double minDistanceToCreate = 30.0;  // meters - don't create if we're already too close (in the turn zone)
+        // For boundary tracks without headland, use manual U-turn buttons instead
+        double minDistanceToCreate = 10.0;  // meters - don't create if we're already too close (mid-turn)
 
-        // The headland must be ahead of us (raycast found something) and not too close
-        // AND we must be aligned with the AB line (not mid-turn)
         bool headlandAhead = _distanceToHeadland > minDistanceToCreate &&
                              _distanceToHeadland < double.MaxValue &&
                              isAlignedWithABLine;
 
-        // Debug: Log status periodically
-        if (_youTurnPath == null && !_isInYouTurn && _youTurnCounter % 60 == 0)
-        {
-            _logger.LogDebug($"[YouTurn] Status: distToHeadland={_distanceToHeadland:F1}m, headlandAhead={headlandAhead}, aligned={isAlignedWithABLine}, counter={_youTurnCounter}");
-        }
-
         if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead)
         {
-            // First check if a U-turn would put us outside the boundary
+            // Check if a U-turn would put us outside the boundary
             if (WouldNextLineBeInsideBoundary(track, abHeading))
             {
-                _logger.LogDebug($"[YouTurn] Creating turn path - dist ahead: {_distanceToHeadland:F1}m");
-                // Determine turn direction BEFORE computing next track
-                // Same direction = turn left, opposite = turn right (for zig-zag pattern)
+                _logger.LogDebug($"[YouTurn] Auto-creating turn path - headland dist: {_distanceToHeadland:F1}m");
+                // Use alternating pattern for automatic headland turns
                 _isTurnLeft = _isHeadingSameWay;
                 _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
-                // Compute the next track offset BEFORE creating the path (so NextTrackTurnOffset is set)
                 ComputeNextTrack(track, abHeading);
                 CreateYouTurnPath(currentPosition, headingRadians, abHeading);
             }
@@ -230,9 +219,9 @@ public partial class MainViewModel
         var pointA = currentTrack.Points[0];
         var pointB = currentTrack.Points[currentTrack.Points.Count - 1];
 
-        // Calculate where the next line would be (use config skip width)
+        // Calculate where the next line would be (use runtime skip rows property)
         // skipWidth=0 means adjacent passes, skipWidth=1 means skip 1 row, etc.
-        int rowSkipWidth = Guidance.UTurnSkipWidth;
+        int rowSkipWidth = UTurnSkipRows; // Use runtime property (matches ComputeNextTrack)
         double actualWidth = ConfigStore.ActualToolWidth;
         double overlap = Tool.Overlap;
         double offsetDistance = (rowSkipWidth + 1) * (actualWidth - overlap);
@@ -275,6 +264,74 @@ public partial class MainViewModel
         }
 
         return inside;
+    }
+
+    /// <summary>
+    /// Calculate the minimum distance from a point to the boundary polygon.
+    /// </summary>
+    private double DistanceToBoundary(double easting, double northing)
+    {
+        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
+            return double.MaxValue;
+
+        var points = _currentBoundary.OuterBoundary.Points;
+        double minDist = double.MaxValue;
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            var p1 = points[i];
+            var p2 = points[(i + 1) % points.Count];
+
+            // Distance from point to line segment
+            double dist = PointToSegmentDistance(easting, northing, p1.Easting, p1.Northing, p2.Easting, p2.Northing);
+            if (dist < minDist)
+                minDist = dist;
+        }
+
+        return minDist;
+    }
+
+    /// <summary>
+    /// Calculate the distance from a point to a line segment.
+    /// </summary>
+    private static double PointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2)
+    {
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double lenSq = dx * dx + dy * dy;
+
+        if (lenSq < 0.0001) // Degenerate segment
+            return Math.Sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+
+        // Project point onto line, clamped to segment
+        double t = Math.Max(0, Math.Min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+        double projX = x1 + t * dx;
+        double projY = y1 + t * dy;
+
+        return Math.Sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+    }
+
+    /// <summary>
+    /// Check if a track runs along the boundary (high % of points near boundary).
+    /// Returns true if the track should skip boundary disengage on first pass.
+    /// </summary>
+    private bool IsTrackOnBoundary(Track? track, double threshold = 5.0, double minOverlapPercent = 0.5)
+    {
+        if (track == null || track.Points.Count == 0)
+            return false;
+
+        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
+            return false;
+
+        int pointsNearBoundary = 0;
+        foreach (var point in track.Points)
+        {
+            if (DistanceToBoundary(point.Easting, point.Northing) < threshold)
+                pointsNearBoundary++;
+        }
+
+        double overlapPercent = (double)pointsNearBoundary / track.Points.Count;
+        return overlapPercent >= minOverlapPercent;
     }
 
     /// <summary>
@@ -763,11 +820,19 @@ public partial class MainViewModel
     {
         var path = new List<Vec3>();
 
-        // Parameters - use ConfigurationStore values
+        // Parameters - use the pre-calculated NextTrackTurnOffset which matches the cyan "next track" line
+        // This is set by ComputeNextTrack() which is called before CreateYouTurnPath()
         double pointSpacing = 0.5; // meters between path points
-        int rowSkipWidth = Guidance.UTurnSkipWidth; // From config (0 = adjacent, 1 = skip 1 row, etc.)
-        double trackWidth = ConfigStore.ActualToolWidth - Tool.Overlap; // Implement width minus overlap
-        double turnOffset = trackWidth * (rowSkipWidth + 1); // Perpendicular distance to next track
+        double turnOffset = NextTrackTurnOffset; // Use pre-calculated offset to match cyan line exactly
+
+        // Fallback if NextTrackTurnOffset wasn't set (shouldn't happen normally)
+        if (turnOffset < 0.1)
+        {
+            int rowSkipWidth = UTurnSkipRows; // Use runtime property (matches ComputeNextTrack)
+            double trackWidth = ConfigStore.ActualToolWidth - Tool.Overlap;
+            turnOffset = trackWidth * (rowSkipWidth + 1);
+            _logger.LogDebug($"[YouTurn] Using fallback turnOffset calculation: {turnOffset:F2}m");
+        }
 
         // Turn radius from config, with fallback calculation
         double turnRadius = Guidance.UTurnRadius;
@@ -811,16 +876,14 @@ public partial class MainViewModel
         // So: arc_top_position = headlandLegLength + turnRadius
         // We want arc_top to be at HeadlandDistance - distanceFromBoundary
         // Therefore: headlandLegLength = HeadlandDistance - turnRadius - distanceFromBoundary
-        // Negative distanceFromBoundary pushes arc PAST the outer boundary (useful for trailing implements)
         double distanceFromBoundary = Guidance.UTurnDistanceFromBoundary;
         double headlandLegLength = HeadlandDistance - turnRadius - distanceFromBoundary;
 
         // How far path extends into cultivated area (entry/exit legs) - use UTurnExtension from config
         double fieldLegLength = Guidance.UTurnExtension;
 
-        _logger.LogDebug($"[YouTurn] HeadlandBoundary: E={headlandBoundaryEasting:F1}, N={headlandBoundaryNorthing:F1}");
-        _logger.LogDebug($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m, turnRadius={turnRadius:F1}m, turnOffset={turnOffset:F1}m");
-        _logger.LogDebug($"[YouTurn] Arc will extend to {headlandLegLength + turnRadius:F1}m past headland boundary (headland zone is {HeadlandDistance:F1}m)");
+        _logger.LogDebug($"[YouTurn] Simple path: turnOffset={turnOffset:F1}m, turnRadius={turnRadius:F1}m");
+        _logger.LogDebug($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m");
 
         // ============================================
         // CALCULATE KEY WAYPOINTS IN ABSOLUTE COORDINATES

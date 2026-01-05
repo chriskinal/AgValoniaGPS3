@@ -70,7 +70,9 @@ public class BoundaryFileService
     }
 
     /// <summary>
-    /// Load headland from Headland.Txt and add as inner boundary
+    /// Load headland from Headland.Txt as the working area boundary.
+    /// The headland polygon defines where sections CAN work (inside = work area).
+    /// The area between this and outer boundary is the headland zone (no work until headland passes).
     /// </summary>
     private void LoadHeadland(string fieldDirectory, Boundary boundary)
     {
@@ -91,11 +93,11 @@ public class BoundaryFileService
                 reader.DiscardBufferedData();
             }
 
-            // Read headland polygon
+            // Read headland polygon - store as HeadlandPolygon, NOT as inner boundary
             var headland = ReadBoundaryPolygon(reader);
             if (headland != null && headland.IsValid)
             {
-                boundary.InnerBoundaries.Add(headland);
+                boundary.HeadlandPolygon = headland;
             }
         }
     }

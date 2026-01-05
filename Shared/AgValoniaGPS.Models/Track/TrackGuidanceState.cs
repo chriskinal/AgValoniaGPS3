@@ -52,6 +52,11 @@ public class TrackGuidanceState
     public double DerivativeDistError { get; set; }
 
     /// <summary>
+    /// Current location index on curve (for efficient local search).
+    /// </summary>
+    public int CurrentLocationIndex { get; set; }
+
+    /// <summary>
     /// Create a fresh state for starting guidance.
     /// </summary>
     public static TrackGuidanceState Initial() => new();
@@ -69,6 +74,7 @@ public class TrackGuidanceState
         XTrackSteerCorrection = XTrackSteerCorrection,
         DistSteerError = DistSteerError,
         LastDistSteerError = LastDistSteerError,
-        DerivativeDistError = DerivativeDistError
+        DerivativeDistError = DerivativeDistError,
+        CurrentLocationIndex = CurrentLocationIndex
     };
 }

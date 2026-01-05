@@ -74,6 +74,9 @@ public partial class MainViewModel : ObservableObject
     private double _fieldOriginLatitude;
     private double _fieldOriginLongitude;
 
+    // Track-on-boundary detection: skip boundary disengage on first pass
+    private bool _isSelectedTrackOnBoundary;
+
     // Track guidance state is now in MainViewModel.Guidance.cs
     // YouTurn state is now in MainViewModel.YouTurn.cs
 
@@ -921,8 +924,12 @@ public partial class MainViewModel : ObservableObject
             SetCurrentBoundary(null);
         }
 
-        // Load headland from field directory if available
-        LoadHeadlandFromField(field);
+        // Load headland from Headlines.txt if not already loaded from HeadlandPolygon
+        // (HeadlandPolygon is loaded in SetCurrentBoundary from Headland.Txt)
+        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+        {
+            LoadHeadlandFromField(field);
+        }
 
         // Load AB lines from field directory if available
         LoadTracksFromField(field);
@@ -1115,12 +1122,20 @@ public partial class MainViewModel : ObservableObject
                     State.Field.ActiveTrack = value;
                     // Show the track on the map when activated
                     _mapService.SetActiveTrack(value);
+
+                    // Check if track runs along boundary (skip disengage on first pass)
+                    _isSelectedTrackOnBoundary = IsTrackOnBoundary(value);
+                    if (_isSelectedTrackOnBoundary)
+                    {
+                        _logger.LogDebug($"[SelectedTrack] Track '{value.Name}' is ON boundary - will skip boundary check on pass 0");
+                    }
                 }
                 else
                 {
                     State.Field.ActiveTrack = null;
                     // Clear the track from the map when deactivated
                     _mapService.SetActiveTrack(null);
+                    _isSelectedTrackOnBoundary = false;
                 }
 
                 // Update guidance availability
@@ -2454,6 +2469,7 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>
     /// Sets the boundary on both the map service and the ViewModel's CurrentBoundary property.
+    /// Also populates HeadlandLine from HeadlandPolygon for section control.
     /// </summary>
     private void SetCurrentBoundary(Boundary? boundary)
     {
@@ -2462,6 +2478,32 @@ public partial class MainViewModel : ObservableObject
 
         // Sync to FieldState for section control boundary/headland detection
         State.Field.CurrentBoundary = boundary;
+
+        // Populate HeadlandLine from HeadlandPolygon for section control IsPointInHeadland check
+        _logger.LogDebug($"[Headland] SetCurrentBoundary: HeadlandPolygon={boundary?.HeadlandPolygon != null}, IsValid={boundary?.HeadlandPolygon?.IsValid}, PointCount={boundary?.HeadlandPolygon?.Points?.Count ?? 0}");
+        if (boundary?.HeadlandPolygon != null && boundary.HeadlandPolygon.IsValid)
+        {
+            var headlandPoints = new List<Vec3>();
+            foreach (var point in boundary.HeadlandPolygon.Points)
+            {
+                headlandPoints.Add(new Vec3(point.Easting, point.Northing, point.Heading));
+            }
+            State.Field.HeadlandLine = headlandPoints;
+            _currentHeadlandLine = headlandPoints;
+            _mapService.SetHeadlandLine(headlandPoints);
+            HasHeadland = true;
+            IsHeadlandOn = true;
+            _logger.LogDebug($"[Headland] Loaded {headlandPoints.Count} points from HeadlandPolygon for YouTurn");
+        }
+        else
+        {
+            State.Field.HeadlandLine = null;
+            _currentHeadlandLine = null;
+            _mapService.SetHeadlandLine(null);
+            HasHeadland = false;
+            IsHeadlandOn = false;
+            _logger.LogDebug($"[Headland] No valid HeadlandPolygon - YouTurn headland detection disabled");
+        }
     }
 
     /// <summary>
@@ -3707,6 +3749,9 @@ public partial class MainViewModel : ObservableObject
                     track.IsActive = false;
                     State.Field.Tracks.Add(track);
                     SavedTracks.Add(track);
+
+                    // Debug: log track details
+                    Console.WriteLine($"[TrackFiles] Track: '{track.Name}', Points: {track.Points.Count}, Type: {track.Type}, IsCurve: {track.IsCurve}");
 
                     if (loadedCount == 0)
                     {

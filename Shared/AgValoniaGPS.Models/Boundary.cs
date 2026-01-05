@@ -16,9 +16,17 @@ public class Boundary
     public BoundaryPolygon? OuterBoundary { get; set; }
 
     /// <summary>
-    /// Inner boundary polygons (holes/exclusions)
+    /// Inner boundary polygons (holes/exclusions like ponds)
     /// </summary>
     public List<BoundaryPolygon> InnerBoundaries { get; set; } = new List<BoundaryPolygon>();
+
+    /// <summary>
+    /// Headland polygon - defines the inner working area boundary.
+    /// Points INSIDE this polygon are the work area (sections ON).
+    /// Points OUTSIDE (but inside outer boundary) are the headland zone (sections OFF).
+    /// This is separate from InnerBoundaries which are holes to avoid.
+    /// </summary>
+    public BoundaryPolygon? HeadlandPolygon { get; set; }
 
     /// <summary>
     /// Whether this boundary is turned on for display/guidance

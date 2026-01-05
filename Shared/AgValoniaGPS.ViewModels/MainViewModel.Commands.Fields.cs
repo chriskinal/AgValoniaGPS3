@@ -56,6 +56,13 @@ public partial class MainViewModel
                 {
                     _fieldOriginLatitude = fieldInfo.Origin.Latitude;
                     _fieldOriginLongitude = fieldInfo.Origin.Longitude;
+                    // Clear simulator LocalPlane so it recreates with field origin
+                    _simulatorLocalPlane = null;
+                    _logger.LogDebug($"[Field] Set origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
+
+                    // Move simulator to field origin (like AgOpenGPS does)
+                    SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
+                    _logger.LogDebug($"[Field] Moved simulator to field origin");
                 }
             }
             catch (Exception ex)
@@ -663,6 +670,13 @@ public partial class MainViewModel
                     {
                         _fieldOriginLatitude = fieldInfo.Origin.Latitude;
                         _fieldOriginLongitude = fieldInfo.Origin.Longitude;
+                        // Clear simulator LocalPlane so it recreates with field origin
+                        _simulatorLocalPlane = null;
+                        _logger.LogDebug($"[Field] Set origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
+
+                        // Move simulator to field origin (like AgOpenGPS does)
+                        SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
+                        _logger.LogDebug($"[Field] Moved simulator to field origin");
                     }
                 }
                 catch (Exception ex)
