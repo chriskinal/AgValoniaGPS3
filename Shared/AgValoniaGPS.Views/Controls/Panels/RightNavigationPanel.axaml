@@ -119,6 +119,22 @@
                 </Panel>
             </Button>
 
+            <!-- 4b. Manual U-Turn Left/Right buttons (only visible when autosteer engaged) -->
+            <Grid ColumnDefinitions="*,*" IsVisible="{Binding IsAutoSteerEngaged}">
+                <Button Grid.Column="0" Classes="RightPanelButton" Width="30" Height="32"
+                        ToolTip.Tip="Manual U-Turn Left"
+                        Command="{Binding ManualYouTurnLeftCommand}"
+                        Margin="0,0,2,0">
+                    <TextBlock Text="↰" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+                <Button Grid.Column="1" Classes="RightPanelButton" Width="30" Height="32"
+                        ToolTip.Tip="Manual U-Turn Right"
+                        Command="{Binding ManualYouTurnRightCommand}"
+                        Margin="2,0,0,0">
+                    <TextBlock Text="↱" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+            </Grid>
+
             <!-- 5. AutoSteer Toggle (3 states: Gray=disabled, Off=ready, On=active) -->
             <Button Classes="RightPanelButton" ToolTip.Tip="AutoSteer"
                     Command="{Binding ToggleAutoSteerCommand}"

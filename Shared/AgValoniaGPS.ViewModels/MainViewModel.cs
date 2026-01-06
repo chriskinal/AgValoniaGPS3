@@ -1501,6 +1501,33 @@ public partial class MainViewModel : ObservableObject
         State.UI.ShowDialog(Models.State.DialogType.Confirmation);
     }
 
+    // Error Dialog properties (visibility managed by State.UI)
+    private string _errorDialogTitle = string.Empty;
+    public string ErrorDialogTitle
+    {
+        get => _errorDialogTitle;
+        set => SetProperty(ref _errorDialogTitle, value);
+    }
+
+    private string _errorDialogMessage = string.Empty;
+    public string ErrorDialogMessage
+    {
+        get => _errorDialogMessage;
+        set => SetProperty(ref _errorDialogMessage, value);
+    }
+
+    public ICommand? DismissErrorDialogCommand { get; private set; }
+
+    /// <summary>
+    /// Shows an error dialog with the specified title and message.
+    /// </summary>
+    public void ShowErrorDialog(string title, string message)
+    {
+        ErrorDialogTitle = title;
+        ErrorDialogMessage = message;
+        State.UI.ShowDialog(Models.State.DialogType.Error);
+    }
+
     // AgShare Settings Dialog properties (visibility managed by State.UI)
     private string _agShareSettingsServerUrl = "https://agshare.agopengps.com";
     public string AgShareSettingsServerUrl
@@ -1798,6 +1825,9 @@ public partial class MainViewModel : ObservableObject
             SetProperty(ref _currentHeadlandLine, value);
             _mapService.SetHeadlandLine(value);
             SaveHeadlandToFile(value);
+
+            // Set HasHeadland based on whether we have a valid headland line
+            HasHeadland = value != null && value.Count >= 3;
 
             // Sync to FieldState for section control headland detection
             State.Field.HeadlandLine = value;
@@ -2267,6 +2297,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? ToggleSectionMasterCommand { get; private set; }
     public ICommand? ToggleSectionCommand { get; private set; }
     public ICommand? ToggleYouTurnCommand { get; private set; }
+    public ICommand? ManualYouTurnLeftCommand { get; private set; }
+    public ICommand? ManualYouTurnRightCommand { get; private set; }
     public ICommand? ToggleAutoSteerCommand { get; private set; }
 
 
@@ -2475,6 +2507,9 @@ public partial class MainViewModel : ObservableObject
     {
         _mapService.SetBoundary(boundary);
         CurrentBoundary = boundary;
+
+        // Set HasBoundary based on whether we have a valid outer boundary
+        HasBoundary = boundary?.OuterBoundary != null && boundary.OuterBoundary.IsValid;
 
         // Sync to FieldState for section control boundary/headland detection
         State.Field.CurrentBoundary = boundary;

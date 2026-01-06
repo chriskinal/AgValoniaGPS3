@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="250"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.ErrorDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsErrorDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsErrorDialogVisible}">
+
+    <!-- Full screen overlay with backdrop -->
+    <Grid>
+        <!-- Semi-transparent backdrop - clicking dismisses -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Centered dialog -->
+        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="320" MaxWidth="450">
+            <StackPanel Spacing="16">
+                <!-- Title -->
+                <TextBlock Text="{Binding ErrorDialogTitle}" FontSize="20" FontWeight="Bold"
+                           Foreground="#E74C3C" HorizontalAlignment="Center"/>
+
+                <!-- Message -->
+                <TextBlock Text="{Binding ErrorDialogMessage}" FontSize="14"
+                           Foreground="White" TextWrapping="Wrap"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           Margin="0,8"/>
+
+                <!-- OK Button -->
+                <Button Content="OK" Margin="0,12,0,0"
+                        Command="{Binding DismissErrorDialogCommand}"
+                        Background="#3498DB" Foreground="White"
+                        HorizontalAlignment="Center" Width="120" Height="50"
+                        FontSize="18" FontWeight="Bold"
+                        HorizontalContentAlignment="Center" CornerRadius="6"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

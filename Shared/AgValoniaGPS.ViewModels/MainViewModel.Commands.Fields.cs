@@ -609,6 +609,9 @@ public partial class MainViewModel
             SavedTracks.Clear();
             SelectedTrack = null;
 
+            // Clear U-turn state
+            ClearYouTurnState();
+
             // Disconnect NTRIP if connected
             if (_ntripService.IsConnected)
             {

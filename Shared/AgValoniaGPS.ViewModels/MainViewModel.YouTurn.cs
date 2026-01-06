@@ -29,7 +29,6 @@ public partial class MainViewModel
     private bool _isTurnLeft; // Direction of the current/pending U-turn
     private bool _wasHeadingSameWayAtTurnStart; // Heading direction when turn was created (for offset calc)
     private bool _lastTurnWasLeft; // Track last turn direction to alternate
-    private bool _hasCompletedFirstTurn; // Track if we've done at least one turn
     private Track? _nextTrack; // The next track to switch to after U-turn completes
 
     /// <summary>
@@ -77,6 +76,124 @@ public partial class MainViewModel
 
     #endregion
 
+    #region YouTurn Methods
+
+    /// <summary>
+    /// Clear all U-turn state - called when closing a field.
+    /// </summary>
+    public void ClearYouTurnState()
+    {
+        _youTurnPath = null;
+        _nextTrack = null;
+        _isYouTurnTriggered = false;
+        _isInYouTurn = false;
+        _youTurnCounter = 0;
+        _lastTurnCompletionPosition = null;
+
+        _mapService.SetYouTurnPath(null);
+        _mapService.SetNextTrack(null);
+        _mapService.SetIsInYouTurn(false);
+
+        State.YouTurn.IsTriggered = false;
+        State.YouTurn.IsExecuting = false;
+        State.YouTurn.TurnPath = null;
+    }
+
+    /// <summary>
+    /// Manually trigger a left U-turn. Used for tracks along boundaries where
+    /// automatic headland detection doesn't work.
+    /// </summary>
+    public void TriggerManualYouTurnLeft()
+    {
+        TriggerManualYouTurn(turnLeft: true);
+    }
+
+    /// <summary>
+    /// Manually trigger a right U-turn. Used for tracks along boundaries where
+    /// automatic headland detection doesn't work.
+    /// </summary>
+    public void TriggerManualYouTurnRight()
+    {
+        TriggerManualYouTurn(turnLeft: false);
+    }
+
+    /// <summary>
+    /// Trigger a manual U-turn in the specified direction.
+    /// Creates the turn path immediately without waiting for headland detection.
+    /// </summary>
+    private void TriggerManualYouTurn(bool turnLeft)
+    {
+        // Must have autosteer engaged and a track selected
+        if (!IsAutoSteerEngaged || SelectedTrack == null)
+        {
+            StatusMessage = "Enable autosteer first";
+            return;
+        }
+
+        // Don't create a new turn if already in one
+        if (_isInYouTurn || _youTurnPath != null)
+        {
+            StatusMessage = "U-turn already in progress";
+            return;
+        }
+
+        var track = SelectedTrack;
+        if (track.Points.Count < 2)
+        {
+            StatusMessage = "Invalid track";
+            return;
+        }
+
+        // Get current position from GPS
+        var currentPosition = new AgValoniaGPS.Models.Position
+        {
+            Easting = Easting,
+            Northing = Northing,
+            Heading = Heading
+        };
+
+        double headingRadians = currentPosition.Heading * Math.PI / 180.0;
+
+        // Calculate track heading
+        var trackPointA = track.Points[0];
+        var trackPointB = track.Points[track.Points.Count - 1];
+        double abDx = trackPointB.Easting - trackPointA.Easting;
+        double abDy = trackPointB.Northing - trackPointA.Northing;
+        double abHeading = Math.Atan2(abDx, abDy);
+
+        // Determine if vehicle is heading same way as AB line
+        double headingDiff = headingRadians - abHeading;
+        while (headingDiff > Math.PI) headingDiff -= 2 * Math.PI;
+        while (headingDiff < -Math.PI) headingDiff += 2 * Math.PI;
+        _isHeadingSameWay = Math.Abs(headingDiff) < Math.PI / 2;
+
+        // Set turn direction and save heading state for offset calculation
+        _isTurnLeft = turnLeft;
+        _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
+
+        _logger.LogDebug($"[ManualYouTurn] Triggering {(turnLeft ? "LEFT" : "RIGHT")} turn, isHeadingSameWay={_isHeadingSameWay}");
+
+        // Compute next track and create turn path
+        ComputeNextTrack(track, abHeading);
+        CreateYouTurnPath(currentPosition, headingRadians, abHeading);
+
+        if (_youTurnPath != null && _youTurnPath.Count > 2)
+        {
+            // Immediately trigger the turn (don't wait for proximity to start point)
+            State.YouTurn.IsTriggered = true;
+            State.YouTurn.IsExecuting = true;
+            _isYouTurnTriggered = true;
+            _isInYouTurn = true;
+            StatusMessage = $"Manual {(turnLeft ? "left" : "right")} U-turn started";
+        }
+        else
+        {
+            StatusMessage = "Failed to create U-turn path";
+        }
+    }
+
+    #endregion
+
     #region YouTurn Processing
 
     /// <summary>
@@ -96,6 +213,10 @@ public partial class MainViewModel
         double abDx = trackPointB.Easting - trackPointA.Easting;
         double abDy = trackPointB.Northing - trackPointA.Northing;
         double abHeading = Math.Atan2(abDx, abDy);
+
+        // Debug: log track point positions and calculated heading
+        _logger.LogDebug($"[YouTurn] TrackA=({trackPointA.Easting:F1}, {trackPointA.Northing:F1}), TrackB=({trackPointB.Easting:F1}, {trackPointB.Northing:F1})");
+        _logger.LogDebug($"[YouTurn] abDx={abDx:F1}, abDy={abDy:F1}, abHeading={abHeading * 180 / Math.PI:F1}°");
 
         // Determine if vehicle is heading the same way as the AB line
         double headingDiff = headingRadians - abHeading;
@@ -135,9 +256,10 @@ public partial class MainViewModel
         // Create U-turn path when approaching the headland ahead
         // For boundary tracks without headland, use manual U-turn buttons instead
         double minDistanceToCreate = 10.0;  // meters - don't create if we're already too close (mid-turn)
+        double maxDistanceToCreate = 150.0; // meters - don't create if headland is too far (just keep driving)
 
         bool headlandAhead = _distanceToHeadland > minDistanceToCreate &&
-                             _distanceToHeadland < double.MaxValue &&
+                             _distanceToHeadland < maxDistanceToCreate &&
                              isAlignedWithABLine;
 
         if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead)
@@ -417,7 +539,6 @@ public partial class MainViewModel
 
         // Remember this turn direction for alternating pattern
         _lastTurnWasLeft = _isTurnLeft;
-        _hasCompletedFirstTurn = true;
 
         // Update centralized state
         State.YouTurn.LastTurnWasLeft = _isTurnLeft;
@@ -508,104 +629,54 @@ public partial class MainViewModel
 
         _logger.LogDebug($"[YouTurn] Creating turn with YouTurnCreationService: direction={(_isTurnLeft ? "LEFT" : "RIGHT")}, isHeadingSameWay={_isHeadingSameWay}, pathsAway={_howManyPathsAway}");
 
-        try
+        // Build the YouTurnCreationInput with proper boundary wiring
+        var input = BuildYouTurnCreationInput(currentPosition, headingRadians, abHeading, turnLeft);
+        if (input == null)
         {
-            // Build the YouTurnCreationInput with proper boundary wiring
-            var input = BuildYouTurnCreationInput(currentPosition, headingRadians, abHeading, turnLeft);
-            if (input == null)
-            {
-                _logger.LogDebug($"[YouTurn] Failed to build creation input - using simple fallback");
-                var earlyFallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (earlyFallbackPath != null && earlyFallbackPath.Count > 10)
-                {
-                    State.YouTurn.TurnPath = earlyFallbackPath;
-                    _youTurnPath = earlyFallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                }
-                return;
-            }
-
-            // Use the YouTurnCreationService to create the path
-            var output = _youTurnCreationService.CreateTurn(input);
-
-            if (output.Success && output.TurnPath != null && output.TurnPath.Count > 10)
-            {
-                // User controls how far the turn extends via distanceFromBoundary setting
-                // Don't reject paths that go past the outer boundary - that may be intentional
-                var path = output.TurnPath;
-
-                // Apply smoothing passes from config (1-50)
-                int smoothingPasses = Guidance.UTurnSmoothing;
-                if (smoothingPasses > 1 && path.Count > 4)
-                {
-                    for (int pass = 0; pass < smoothingPasses; pass++)
-                    {
-                        // Smooth interior points only (preserve start and end)
-                        for (int i = 2; i < path.Count - 2; i++)
-                        {
-                            var prev = path[i - 1];
-                            var curr = path[i];
-                            var next = path[i + 1];
-
-                            path[i] = new Vec3
-                            {
-                                Easting = (prev.Easting + curr.Easting + next.Easting) / 3.0,
-                                Northing = (prev.Northing + curr.Northing + next.Northing) / 3.0,
-                                Heading = curr.Heading
-                            };
-                        }
-                    }
-                    _logger.LogDebug($"[YouTurn] Applied {smoothingPasses} smoothing passes to service path");
-                }
-
-                State.YouTurn.TurnPath = path;
-                _youTurnPath = path;
-                _youTurnCounter = 0;
-                StatusMessage = $"YouTurn path created ({path.Count} points)";
-                _logger.LogDebug($"[YouTurn] Service path created with {path.Count} points, distToTurnLine={output.DistancePivotToTurnLine:F1}m");
-
-                // Update map to show the turn path
-                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-                return; // Path is valid, we're done
-            }
-            else
-            {
-                _logger.LogDebug($"[YouTurn] Service creation failed: {output.FailureReason ?? "unknown"}, using simple fallback");
-            }
-
-            // Fall back to simple geometric approach (with boundary checking built in)
-            var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-            if (fallbackPath != null && fallbackPath.Count > 10)
-            {
-                State.YouTurn.TurnPath = fallbackPath;
-                _youTurnPath = fallbackPath;
-                _youTurnCounter = 0;
-                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
-            }
-            else
-            {
-                // No valid path - clear any existing
-                _youTurnPath = null;
-                _mapService.SetYouTurnPath(null);
-            }
+            _logger.LogWarning("[YouTurn] Failed to build creation input - no boundary available?");
+            return;
         }
-        catch (Exception ex)
+
+        // Use the YouTurnCreationService to create the path
+        var output = _youTurnCreationService.CreateTurn(input);
+
+        if (output.Success && output.TurnPath != null && output.TurnPath.Count > 10)
         {
-            _logger.LogDebug($"[YouTurn] Exception creating path: {ex.Message}");
-            // Fall back to simple geometric approach
-            try
+            var path = output.TurnPath;
+
+            // Apply smoothing passes from config (1-50)
+            int smoothingPasses = Guidance.UTurnSmoothing;
+            if (smoothingPasses > 1 && path.Count > 4)
             {
-                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
-                if (fallbackPath != null && fallbackPath.Count > 10)
+                for (int pass = 0; pass < smoothingPasses; pass++)
                 {
-                    State.YouTurn.TurnPath = fallbackPath;
-                    _youTurnPath = fallbackPath;
-                    _youTurnCounter = 0;
-                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+                    for (int i = 2; i < path.Count - 2; i++)
+                    {
+                        var prev = path[i - 1];
+                        var curr = path[i];
+                        var next = path[i + 1];
+
+                        path[i] = new Vec3
+                        {
+                            Easting = (prev.Easting + curr.Easting + next.Easting) / 3.0,
+                            Northing = (prev.Northing + curr.Northing + next.Northing) / 3.0,
+                            Heading = curr.Heading
+                        };
+                    }
                 }
             }
-            catch { }
+
+            State.YouTurn.TurnPath = path;
+            _youTurnPath = path;
+            _youTurnCounter = 0;
+            StatusMessage = $"YouTurn path created ({path.Count} points)";
+            _logger.LogDebug($"[YouTurn] Path created with {path.Count} points");
+
+            _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+        }
+        else
+        {
+            _logger.LogWarning($"[YouTurn] Service failed: {output.FailureReason ?? "unknown"}");
         }
     }
 
@@ -748,9 +819,10 @@ public partial class MainViewModel
 
             // AB line guidance data
             ABHeading = abHeading,
-            // Calculate reference point on the CURRENT track (not the original AB line)
-            // Offset PointA perpendicular to the AB heading by howManyPathsAway * trackWidth
-            ABReferencePoint = CalculateCurrentTrackReferencePoint(track, toolWidth, abHeading),
+            // Calculate reference point on the CURRENT track near the vehicle position
+            // (not at the extended endpoints which could be kilometers away)
+            ABReferencePoint = CalculateCurrentTrackReferencePoint(track, toolWidth, abHeading,
+                new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians)),
             IsHeadingSameWay = _isHeadingSameWay,
 
             // Vehicle position and configuration
@@ -783,340 +855,48 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Calculate a reference point on the current track (offset from the original AB line).
-    /// The track number is determined by _howManyPathsAway.
+    /// Calculate a reference point on the current track near the vehicle position.
+    /// Projects the vehicle position onto the AB line, then offsets by howManyPathsAway.
     /// </summary>
-    private Vec2 CalculateCurrentTrackReferencePoint(Track track, double toolWidth, double abHeading)
+    private Vec2 CalculateCurrentTrackReferencePoint(Track track, double toolWidth, double abHeading, Vec3 vehiclePosition)
     {
-        if (track.Points.Count == 0)
-            return new Vec2(0, 0);
+        if (track.Points.Count < 2)
+            return new Vec2(vehiclePosition.Easting, vehiclePosition.Northing);
 
-        // Start with the first point on the original track
-        double baseEasting = track.Points[0].Easting;
-        double baseNorthing = track.Points[0].Northing;
+        // Project vehicle position onto the AB line to get a reference point near the vehicle
+        // (not at the extended endpoints which could be kilometers away)
+        var ptA = track.Points[0];
+        var ptB = track.Points[track.Points.Count - 1];
+
+        // Vector from A to B
+        double abE = ptB.Easting - ptA.Easting;
+        double abN = ptB.Northing - ptA.Northing;
+        double abLengthSq = abE * abE + abN * abN;
+
+        // Vector from A to vehicle
+        double avE = vehiclePosition.Easting - ptA.Easting;
+        double avN = vehiclePosition.Northing - ptA.Northing;
+
+        // Project vehicle onto AB line: t = (AV · AB) / |AB|²
+        double t = (avE * abE + avN * abN) / abLengthSq;
+
+        // Clamp t to [0,1] to stay on the line segment (though for extended lines this shouldn't matter much)
+        t = Math.Max(0, Math.Min(1, t));
+
+        // Calculate the projected point on the AB line
+        double baseEasting = ptA.Easting + t * abE;
+        double baseNorthing = ptA.Northing + t * abN;
 
         // Calculate perpendicular offset to get to the current track
-        // The perpendicular direction is 90° from the AB heading
         double perpAngle = abHeading + Math.PI / 2.0;
-
-        // The offset distance is howManyPathsAway * toolWidth
         double offsetDistance = _howManyPathsAway * toolWidth;
 
-        // Apply the offset perpendicular to the AB line
         double offsetEasting = baseEasting + Math.Sin(perpAngle) * offsetDistance;
         double offsetNorthing = baseNorthing + Math.Cos(perpAngle) * offsetDistance;
 
-        _logger.LogDebug($"[YouTurn] Reference point: howManyPathsAway={_howManyPathsAway}, offset={offsetDistance:F2}m, perpAngle={perpAngle * 180 / Math.PI:F1}°");
+        _logger.LogDebug($"[YouTurn] Reference point: projected from vehicle, howManyPathsAway={_howManyPathsAway}, offset={offsetDistance:F2}m");
 
         return new Vec2(offsetEasting, offsetNorthing);
-    }
-
-    /// <summary>
-    /// Create a simple U-turn path directly using geometry.
-    /// This creates a SYMMETRICAL U-turn by calculating exact endpoint positions first,
-    /// then building the path to connect them.
-    /// </summary>
-    private List<Vec3> CreateSimpleUTurnPath(AgValoniaGPS.Models.Position currentPosition, double headingRadians, double abHeading, bool turnLeft)
-    {
-        var path = new List<Vec3>();
-
-        // Parameters - use the pre-calculated NextTrackTurnOffset which matches the cyan "next track" line
-        // This is set by ComputeNextTrack() which is called before CreateYouTurnPath()
-        double pointSpacing = 0.5; // meters between path points
-        double turnOffset = NextTrackTurnOffset; // Use pre-calculated offset to match cyan line exactly
-
-        // Fallback if NextTrackTurnOffset wasn't set (shouldn't happen normally)
-        if (turnOffset < 0.1)
-        {
-            int rowSkipWidth = UTurnSkipRows; // Use runtime property (matches ComputeNextTrack)
-            double trackWidth = ConfigStore.ActualToolWidth - Tool.Overlap;
-            turnOffset = trackWidth * (rowSkipWidth + 1);
-            _logger.LogDebug($"[YouTurn] Using fallback turnOffset calculation: {turnOffset:F2}m");
-        }
-
-        // Turn radius from config, with fallback calculation
-        double turnRadius = Guidance.UTurnRadius;
-
-        // If config radius is too small for the track offset, use geometric minimum
-        double geometricMinRadius = turnOffset / 2.0;
-        if (turnRadius < geometricMinRadius)
-        {
-            turnRadius = geometricMinRadius;
-        }
-
-        // Absolute minimum turn radius constraint
-        double minTurnRadius = 4.0;
-        if (turnRadius < minTurnRadius)
-        {
-            turnRadius = minTurnRadius;
-        }
-
-        // Get the heading we're traveling (adjusted for same/opposite to AB)
-        double travelHeading = abHeading;
-        if (!_isHeadingSameWay)
-        {
-            travelHeading += Math.PI;
-            if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
-        }
-
-        // Exit heading is 180° opposite (going back toward field)
-        double exitHeading = travelHeading + Math.PI;
-        if (exitHeading >= Math.PI * 2) exitHeading -= Math.PI * 2;
-
-        // Perpendicular direction (toward next track)
-        double perpAngle = turnLeft ? (travelHeading - Math.PI / 2) : (travelHeading + Math.PI / 2);
-
-        // Calculate the headland boundary point on CURRENT track
-        double distToHeadland = _distanceToHeadland;
-        double headlandBoundaryEasting = currentPosition.Easting + Math.Sin(travelHeading) * distToHeadland;
-        double headlandBoundaryNorthing = currentPosition.Northing + Math.Cos(travelHeading) * distToHeadland;
-
-        // Leg lengths - use config values
-        // The arc extends turnRadius beyond the arc start (toward the outer boundary)
-        // So: arc_top_position = headlandLegLength + turnRadius
-        // We want arc_top to be at HeadlandDistance - distanceFromBoundary
-        // Therefore: headlandLegLength = HeadlandDistance - turnRadius - distanceFromBoundary
-        double distanceFromBoundary = Guidance.UTurnDistanceFromBoundary;
-        double headlandLegLength = HeadlandDistance - turnRadius - distanceFromBoundary;
-
-        // How far path extends into cultivated area (entry/exit legs) - use UTurnExtension from config
-        double fieldLegLength = Guidance.UTurnExtension;
-
-        _logger.LogDebug($"[YouTurn] Simple path: turnOffset={turnOffset:F1}m, turnRadius={turnRadius:F1}m");
-        _logger.LogDebug($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m");
-
-        // ============================================
-        // CALCULATE KEY WAYPOINTS IN ABSOLUTE COORDINATES
-        // ============================================
-        // The U-turn connects two parallel AB lines separated by turnOffset.
-        // Entry start and exit end must BOTH be in the cultivated area (outside headland).
-        // The arc happens deep in the headland.
-
-        // STEP 1: Calculate the ENTRY START position (green marker)
-        // This is on the CURRENT track, fieldLegLength BEHIND the headland boundary
-        double entryStartE = headlandBoundaryEasting - Math.Sin(travelHeading) * fieldLegLength;
-        double entryStartN = headlandBoundaryNorthing - Math.Cos(travelHeading) * fieldLegLength;
-
-        // STEP 2: Calculate the ARC START position
-        // This is on the CURRENT track, deep in the headland
-        double arcStartE = headlandBoundaryEasting + Math.Sin(travelHeading) * headlandLegLength;
-        double arcStartN = headlandBoundaryNorthing + Math.Cos(travelHeading) * headlandLegLength;
-
-        // STEP 3: Calculate the ARC CENTER (center of semicircle)
-        // Perpendicular from arc start by turnRadius
-        double arcCenterE = arcStartE + Math.Sin(perpAngle) * turnRadius;
-        double arcCenterN = arcStartN + Math.Cos(perpAngle) * turnRadius;
-
-        // STEP 4: Calculate the ARC END position
-        // Arc end is where the semicircle ends: diameter = 2 * turnRadius from arcStart
-        // (This may differ from turnOffset when turnRadius is clamped to minTurnRadius)
-        double arcDiameter = 2.0 * turnRadius;
-        double arcEndE = arcStartE + Math.Sin(perpAngle) * arcDiameter;
-        double arcEndN = arcStartN + Math.Cos(perpAngle) * arcDiameter;
-
-        // BOUNDARY CHECK: Verify the arc's apex (furthest point from field) is inside boundary
-        // The arc apex is at the arc center + turnRadius in the travel direction
-        double arcApexE = arcCenterE + Math.Sin(travelHeading) * turnRadius;
-        double arcApexN = arcCenterN + Math.Cos(travelHeading) * turnRadius;
-
-        if (!IsPointInsideBoundary(arcApexE, arcApexN))
-        {
-            _logger.LogDebug($"[YouTurn] Arc apex ({arcApexE:F1}, {arcApexN:F1}) is outside boundary - not creating U-turn");
-            return path; // Return empty path - no valid U-turn possible
-        }
-
-        // STEP 5: Calculate the EXIT END position (red marker)
-        // The exit end must be on the NEXT track, at the same distance from headland as entry start
-        // Since perpAngle already points toward the next track (based on turnLeft and travelHeading),
-        // we just need to offset by turnOffset in that direction
-        double exitEndE = entryStartE + Math.Sin(perpAngle) * turnOffset;
-        double exitEndN = entryStartN + Math.Cos(perpAngle) * turnOffset;
-
-        // BOUNDARY CHECK: Verify the exit end (next track) is inside boundary
-        if (!IsPointInsideBoundary(exitEndE, exitEndN))
-        {
-            _logger.LogDebug($"[YouTurn] Exit end ({exitEndE:F1}, {exitEndN:F1}) is outside boundary - not creating U-turn");
-            return path; // Return empty path - next track is outside boundary
-        }
-
-        _logger.LogDebug($"[YouTurn] ExitEnd calc: entryStart({entryStartE:F1},{entryStartN:F1}) + perpAngle({perpAngle * 180 / Math.PI:F1}°) * {turnOffset:F1}m = ({exitEndE:F1},{exitEndN:F1})");
-        _logger.LogDebug($"[YouTurn] perpAngle direction: turnLeft={turnLeft}, travelHeading={travelHeading * 180 / Math.PI:F1}°");
-
-        _logger.LogDebug($"[YouTurn] turnOffset={turnOffset:F1}m, arcDiameter={arcDiameter:F1}m (2*turnRadius)");
-        _logger.LogDebug($"[YouTurn] EntryStart (green): E={entryStartE:F1}, N={entryStartN:F1}");
-        _logger.LogDebug($"[YouTurn] ExitEnd (red): E={exitEndE:F1}, N={exitEndN:F1} = entryStart + perpOffset({turnOffset:F1}m)");
-        _logger.LogDebug($"[YouTurn] ArcStart: E={arcStartE:F1}, N={arcStartN:F1}");
-        _logger.LogDebug($"[YouTurn] ArcEnd: E={arcEndE:F1}, N={arcEndN:F1} = arcStart + perpOffset({arcDiameter:F1}m)");
-
-        // ============================================
-        // BUILD PATH: Entry Leg
-        // ============================================
-        double totalEntryLength = fieldLegLength + headlandLegLength;
-        int totalEntryPoints = (int)(totalEntryLength / pointSpacing);
-
-        for (int i = 0; i <= totalEntryPoints; i++)
-        {
-            double dist = i * pointSpacing;
-            Vec3 pt = new Vec3
-            {
-                Easting = entryStartE + Math.Sin(travelHeading) * dist,
-                Northing = entryStartN + Math.Cos(travelHeading) * dist,
-                Heading = travelHeading
-            };
-            path.Add(pt);
-        }
-
-        // ============================================
-        // BUILD PATH: Semicircle Arc
-        // ============================================
-        // Generate arc points from arcStart to arcEnd around arcCenter
-        int arcPoints = Math.Max((int)(Math.PI * turnRadius / pointSpacing), 20);
-
-        for (int i = 1; i <= arcPoints; i++)
-        {
-            // Fraction around the arc (0 to 1)
-            double t = (double)i / arcPoints;
-
-            // Angle: start pointing back toward entry leg, sweep 180° toward exit leg
-            // Start angle: direction from center to arcStart
-            double startAngle = Math.Atan2(arcStartE - arcCenterE, arcStartN - arcCenterN);
-
-            // Sweep direction in Easting/Northing coordinate system where:
-            //   Easting = sin(angle), Northing = cos(angle)
-            //   angle=0 is north, angle=π/2 is east, angle=π is south, angle=3π/2 is west
-            // For left turn: arc center is to the left of travel direction
-            //   We want to sweep AWAY from field (into headland), which means DECREASING angle
-            // For right turn: arc center is to the right of travel direction
-            //   We want to sweep AWAY from field (into headland), which means INCREASING angle
-            double sweepAngle = turnLeft ? (-Math.PI * t) : (Math.PI * t);
-            double currentAngle = startAngle + sweepAngle;
-
-            // Point on arc
-            double ptE = arcCenterE + Math.Sin(currentAngle) * turnRadius;
-            double ptN = arcCenterN + Math.Cos(currentAngle) * turnRadius;
-
-            // Heading is tangent to circle (perpendicular to radius)
-            // For left turn (decreasing angle/clockwise), tangent is +90° from radius
-            // For right turn (increasing angle/counter-clockwise), tangent is -90° from radius
-            double tangentHeading = currentAngle + (turnLeft ? -Math.PI / 2 : Math.PI / 2);
-            if (tangentHeading < 0) tangentHeading += Math.PI * 2;
-            if (tangentHeading >= Math.PI * 2) tangentHeading -= Math.PI * 2;
-
-            Vec3 pt = new Vec3
-            {
-                Easting = ptE,
-                Northing = ptN,
-                Heading = tangentHeading
-            };
-            path.Add(pt);
-        }
-
-        // ============================================
-        // BUILD PATH: Exit Leg
-        // ============================================
-        // Exit leg must end at exitEnd (which is turnOffset perpendicular from entryStart)
-        // This ensures the exit lands on the next track regardless of arc diameter
-        var lastArcPoint = path[path.Count - 1];
-        double actualArcEndE = lastArcPoint.Easting;
-        double actualArcEndN = lastArcPoint.Northing;
-
-        // Calculate exitStart: same distance into headland as arcEnd, but at turnOffset from entry track
-        // This is where the exit leg begins (at turnOffset perpendicular offset)
-        double exitStartE = arcStartE + Math.Sin(perpAngle) * turnOffset;
-        double exitStartN = arcStartN + Math.Cos(perpAngle) * turnOffset;
-
-        // If arc diameter differs from turnOffset, we need a connecting segment
-        // from actualArcEnd to exitStart (perpendicular adjustment)
-        double arcToExitDist = Math.Sqrt(Math.Pow(exitStartE - actualArcEndE, 2) + Math.Pow(exitStartN - actualArcEndN, 2));
-        if (arcToExitDist > pointSpacing)
-        {
-            // Add connecting points from arc end to exit start
-            int connectPoints = (int)(arcToExitDist / pointSpacing);
-            for (int i = 1; i <= connectPoints; i++)
-            {
-                double t = (double)i / (connectPoints + 1);
-                Vec3 pt = new Vec3
-                {
-                    Easting = actualArcEndE + (exitStartE - actualArcEndE) * t,
-                    Northing = actualArcEndN + (exitStartN - actualArcEndN) * t,
-                    Heading = exitHeading
-                };
-                path.Add(pt);
-            }
-        }
-
-        // Now build exit leg from exitStart to exitEnd (going back into field)
-        int totalExitPoints = (int)(totalEntryLength / pointSpacing);
-
-        for (int i = 1; i <= totalExitPoints; i++)
-        {
-            double dist = i * pointSpacing;
-            Vec3 pt = new Vec3
-            {
-                Easting = exitStartE + Math.Sin(exitHeading) * dist,
-                Northing = exitStartN + Math.Cos(exitHeading) * dist,
-                Heading = exitHeading
-            };
-            path.Add(pt);
-        }
-
-        _logger.LogDebug($"[YouTurn] Path has {path.Count} points: {totalEntryPoints + 1} entry, {arcPoints} arc, {totalExitPoints} exit");
-        _logger.LogDebug($"[YouTurn] Actual entry start: E={path[0].Easting:F1}, N={path[0].Northing:F1}");
-        _logger.LogDebug($"[YouTurn] Actual exit end: E={path[path.Count - 1].Easting:F1}, N={path[path.Count - 1].Northing:F1}");
-
-        // Apply smoothing passes from config (1-50)
-        int smoothingPasses = Guidance.UTurnSmoothing;
-        if (smoothingPasses > 1 && path.Count > 4)
-        {
-            for (int pass = 0; pass < smoothingPasses; pass++)
-            {
-                // Smooth interior points only (preserve start and end)
-                for (int i = 2; i < path.Count - 2; i++)
-                {
-                    var prev = path[i - 1];
-                    var curr = path[i];
-                    var next = path[i + 1];
-
-                    // Average position with neighbors
-                    path[i] = new Vec3
-                    {
-                        Easting = (prev.Easting + curr.Easting + next.Easting) / 3.0,
-                        Northing = (prev.Northing + curr.Northing + next.Northing) / 3.0,
-                        Heading = curr.Heading // Preserve heading
-                    };
-                }
-            }
-            _logger.LogDebug($"[YouTurn] Applied {smoothingPasses} smoothing passes");
-        }
-
-        return path;
-    }
-
-    /// <summary>
-    /// Check if a point is inside the headland boundary.
-    /// </summary>
-    private bool IsPointInsideHeadland(Vec3 point)
-    {
-        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
-            return false;
-
-        // Use ray casting algorithm
-        int n = _currentHeadlandLine.Count;
-        bool inside = false;
-
-        for (int i = 0, j = n - 1; i < n; j = i++)
-        {
-            var pi = _currentHeadlandLine[i];
-            var pj = _currentHeadlandLine[j];
-
-            if (((pi.Northing > point.Northing) != (pj.Northing > point.Northing)) &&
-                (point.Easting < (pj.Easting - pi.Easting) * (point.Northing - pi.Northing) / (pj.Northing - pi.Northing) + pi.Easting))
-            {
-                inside = !inside;
-            }
-        }
-
-        return inside;
     }
 
     #endregion

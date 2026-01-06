@@ -484,6 +484,12 @@ public partial class MainViewModel
             callback?.Invoke();
         });
 
+        // Error Dialog Command
+        DismissErrorDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
         DeleteBoundaryCommand = new RelayCommand(DeleteSelectedBoundary);
 
         ImportKmlBoundaryCommand = new AsyncRelayCommand(async () =>

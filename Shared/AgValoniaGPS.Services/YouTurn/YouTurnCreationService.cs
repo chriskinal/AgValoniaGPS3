@@ -921,6 +921,8 @@ namespace AgValoniaGPS.Services.YouTurn
             // Or did we lose the turnLine
             if (closestTurnPt.TurnLineIndex == -1)
             {
+                _logger.LogDebug("FindABTurnPoint failed: no intersection found. RefPoint=({E}, {N}), head={Head}°, boundaryLines={Count}",
+                    onPurePoint.Easting, onPurePoint.Northing, head * 180 / Math.PI, input.BoundaryTurnLines.Count);
                 FailCreate();
                 return false;
             }

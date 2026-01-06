@@ -195,10 +195,16 @@ public partial class MainViewModel
                 {
                     var heading = CalculateHeading(PendingPointA, pointToSet);
                     var headingRadians = heading * Math.PI / 180.0;
-                    var newTrack = Track.FromABLine(
-                        $"AB_{heading:F1} {DateTime.Now:HH:mm:ss}",
+
+                    // Extend AB Line points past boundary for proper U-turn detection
+                    var (extendedA, extendedB) = ExtendABLinePastBoundary(
                         new Vec3(PendingPointA.Easting, PendingPointA.Northing, headingRadians),
                         new Vec3(pointToSet.Easting, pointToSet.Northing, headingRadians));
+
+                    var newTrack = Track.FromABLine(
+                        $"AB_{heading:F1} {DateTime.Now:HH:mm:ss}",
+                        extendedA,
+                        extendedB);
                     newTrack.IsActive = true;
 
                     SavedTracks.Add(newTrack);
@@ -370,6 +376,9 @@ public partial class MainViewModel
             StatusMessage = IsYouTurnEnabled ? "YouTurn enabled" : "YouTurn disabled";
         });
 
+        ManualYouTurnLeftCommand = new RelayCommand(TriggerManualYouTurnLeft);
+        ManualYouTurnRightCommand = new RelayCommand(TriggerManualYouTurnRight);
+
         ToggleAutoSteerCommand = new RelayCommand(() =>
         {
             if (!IsAutoSteerAvailable)
@@ -377,6 +386,27 @@ public partial class MainViewModel
                 StatusMessage = "AutoSteer not available - no active track";
                 return;
             }
+
+            // If trying to engage, validate boundaries
+            if (!IsAutoSteerEngaged)
+            {
+                // Check for outer boundary
+                if (!HasBoundary || _currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
+                {
+                    ShowErrorDialog("Missing Boundary",
+                        "AutoSteer requires an outer boundary.\n\nPlease create or load a field boundary before engaging autosteer.");
+                    return;
+                }
+
+                // Check for headland
+                if (!HasHeadland || _currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+                {
+                    ShowErrorDialog("Missing Headland",
+                        "AutoSteer requires a headland boundary for U-turn detection.\n\nPlease create a headland using the Headland button in the boundary panel.");
+                    return;
+                }
+            }
+
             IsAutoSteerEngaged = !IsAutoSteerEngaged;
             StatusMessage = IsAutoSteerEngaged ? "AutoSteer ENGAGED" : "AutoSteer disengaged";
         });
@@ -443,5 +473,86 @@ public partial class MainViewModel
             _mapService.Zoom(0.8);
             ZoomOutRequested?.Invoke();
         });
+    }
+
+    /// <summary>
+    /// Extend AB Line points so they pass the outer boundary by a margin.
+    /// This ensures headland raycast will find an intersection for U-turn detection.
+    /// </summary>
+    /// <param name="pointA">Original point A</param>
+    /// <param name="pointB">Original point B</param>
+    /// <param name="marginMeters">How far past the boundary to extend (default 10m)</param>
+    /// <returns>Tuple of extended (pointA, pointB)</returns>
+    private (Vec3 extendedA, Vec3 extendedB) ExtendABLinePastBoundary(Vec3 pointA, Vec3 pointB, double marginMeters = 20.0)
+    {
+        double heading = Math.Atan2(pointB.Easting - pointA.Easting, pointB.Northing - pointA.Northing);
+        double sinH = Math.Sin(heading);
+        double cosH = Math.Cos(heading);
+
+        double extendA = marginMeters;
+        double extendB = marginMeters;
+
+        if (_currentBoundary?.OuterBoundary != null && _currentBoundary.OuterBoundary.IsValid)
+        {
+            var boundaryPts = _currentBoundary.OuterBoundary.Points;
+            int count = boundaryPts.Count;
+
+            // Raycast from pointA backwards to find boundary intersection
+            for (int i = 0; i < count; i++)
+            {
+                var p1 = boundaryPts[i];
+                var p2 = boundaryPts[(i + 1) % count];
+
+                // Line segment intersection using parametric form
+                double dx = -sinH; // backwards direction
+                double dy = -cosH;
+                double ex = p2.Easting - p1.Easting;
+                double ey = p2.Northing - p1.Northing;
+
+                double denom = dx * ey - dy * ex;
+                if (Math.Abs(denom) < 0.0001) continue;
+
+                double t = ((p1.Easting - pointA.Easting) * ey - (p1.Northing - pointA.Northing) * ex) / denom;
+                double u = ((p1.Easting - pointA.Easting) * dy - (p1.Northing - pointA.Northing) * dx) / denom;
+
+                if (t > 0 && u >= 0 && u <= 1)
+                    extendA = Math.Max(extendA, t + marginMeters);
+            }
+
+            // Raycast from pointB forwards to find boundary intersection
+            for (int i = 0; i < count; i++)
+            {
+                var p1 = boundaryPts[i];
+                var p2 = boundaryPts[(i + 1) % count];
+
+                double dx = sinH; // forwards direction
+                double dy = cosH;
+                double ex = p2.Easting - p1.Easting;
+                double ey = p2.Northing - p1.Northing;
+
+                double denom = dx * ey - dy * ex;
+                if (Math.Abs(denom) < 0.0001) continue;
+
+                double t = ((p1.Easting - pointB.Easting) * ey - (p1.Northing - pointB.Northing) * ex) / denom;
+                double u = ((p1.Easting - pointB.Easting) * dy - (p1.Northing - pointB.Northing) * dx) / denom;
+
+                if (t > 0 && u >= 0 && u <= 1)
+                    extendB = Math.Max(extendB, t + marginMeters);
+            }
+        }
+
+        var extendedA = new Vec3(
+            pointA.Easting - sinH * extendA,
+            pointA.Northing - cosH * extendA,
+            heading);
+
+        var extendedB = new Vec3(
+            pointB.Easting + sinH * extendB,
+            pointB.Northing + cosH * extendB,
+            heading);
+
+        _logger.LogDebug($"[ABLine] Extended A by {extendA:F1}m, B by {extendB:F1}m");
+
+        return (extendedA, extendedB);
     }
 }

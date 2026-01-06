@@ -24,6 +24,7 @@
         <dialogs:BoundaryMapDialogPanel/>
         <dialogs:NumericInputDialogPanel/>
         <dialogs:ConfirmationDialogPanel/>
+        <dialogs:ErrorDialogPanel/>
         <dialogs:AgShareSettingsDialogPanel/>
         <dialogs:AgShareUploadDialogPanel/>
         <dialogs:AgShareDownloadDialogPanel/>

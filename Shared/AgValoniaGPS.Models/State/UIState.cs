@@ -44,6 +44,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsNtripProfilesDialogVisible));
                 this.RaisePropertyChanged(nameof(IsNtripProfileEditorDialogVisible));
                 this.RaisePropertyChanged(nameof(IsConfirmationDialogVisible));
+                this.RaisePropertyChanged(nameof(IsErrorDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -74,6 +75,7 @@ public class UIState : ReactiveObject
     public bool IsNtripProfilesDialogVisible => ActiveDialog == DialogType.NtripProfiles;
     public bool IsNtripProfileEditorDialogVisible => ActiveDialog == DialogType.NtripProfileEditor;
     public bool IsConfirmationDialogVisible => ActiveDialog == DialogType.Confirmation;
+    public bool IsErrorDialogVisible => ActiveDialog == DialogType.Error;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -168,7 +170,8 @@ public enum DialogType
     DrawAB,
     NtripProfiles,
     NtripProfileEditor,
-    Confirmation
+    Confirmation,
+    Error
 }
 
 /// <summary>

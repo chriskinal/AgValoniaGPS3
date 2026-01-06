@@ -110,7 +110,12 @@
                 <Separator Background="#555" Height="1" Margin="0,4"/>
 
                 <!-- Row 4: Speed Slider (-10 to +25 kph) -->
-                <TextBlock Text="Speed" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Speed" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <CheckBox Grid.Column="1" Content="10x" IsChecked="{Binding IsSimulatorSpeed10x}"
+                              FontSize="10" Foreground="#AAA" Margin="0,0,0,0"
+                              ToolTip.Tip="10x speed multiplier for large fields"/>
+                </Grid>
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0" Text="-10" Foreground="#888" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <Slider Grid.Column="1" Margin="0"

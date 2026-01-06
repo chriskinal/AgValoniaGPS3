@@ -19,6 +19,7 @@ public partial class MainViewModel
     private bool _isSimulatorEnabled;
     private double _simulatorSteerAngle;
     private double _simulatorSpeedKph;
+    private bool _isSimulatorSpeed10x;
 
     #endregion
 
@@ -198,7 +199,7 @@ public partial class MainViewModel
     public string SimulatorSteerAngleDisplay => $"Steer Angle: {_simulatorSteerAngle:F1}°";
 
     /// <summary>
-    /// Simulator speed in kph. Range: -10 to +25 kph.
+    /// Simulator speed in kph. Range: -10 to +25 kph (or -100 to +250 with 10x enabled).
     /// Converts to/from stepDistance using formula: speedKph = stepDistance * 40
     /// </summary>
     public double SimulatorSpeedKph
@@ -209,21 +210,43 @@ public partial class MainViewModel
             // Clamp to valid range
             value = Math.Max(-10, Math.Min(25, value));
             SetProperty(ref _simulatorSpeedKph, value);
-            State.Simulator.Speed = value;
-            State.Simulator.TargetSpeed = value;
-            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
-            if (_isSimulatorEnabled)
-            {
-                // Convert kph to stepDistance: stepDistance = speedKph / 40
-                _simulatorService.StepDistance = value / 40.0;
-                // Disable acceleration when manually setting speed
-                _simulatorService.IsAcceleratingForward = false;
-                _simulatorService.IsAcceleratingBackward = false;
-            }
+            UpdateSimulatorSpeed();
         }
     }
 
-    public string SimulatorSpeedDisplay => $"Speed: {_simulatorSpeedKph:F1} kph";
+    /// <summary>
+    /// When enabled, multiplies the speed slider value by 10 for testing large fields.
+    /// </summary>
+    public bool IsSimulatorSpeed10x
+    {
+        get => _isSimulatorSpeed10x;
+        set
+        {
+            SetProperty(ref _isSimulatorSpeed10x, value);
+            UpdateSimulatorSpeed();
+            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
+        }
+    }
+
+    private void UpdateSimulatorSpeed()
+    {
+        double effectiveSpeed = _isSimulatorSpeed10x ? _simulatorSpeedKph * 10 : _simulatorSpeedKph;
+        State.Simulator.Speed = effectiveSpeed;
+        State.Simulator.TargetSpeed = effectiveSpeed;
+        OnPropertyChanged(nameof(SimulatorSpeedDisplay));
+        if (_isSimulatorEnabled)
+        {
+            // Convert kph to stepDistance: stepDistance = speedKph / 40
+            _simulatorService.StepDistance = effectiveSpeed / 40.0;
+            // Disable acceleration when manually setting speed
+            _simulatorService.IsAcceleratingForward = false;
+            _simulatorService.IsAcceleratingBackward = false;
+        }
+    }
+
+    public string SimulatorSpeedDisplay => _isSimulatorSpeed10x
+        ? $"Speed: {_simulatorSpeedKph * 10:F0} kph (10x)"
+        : $"Speed: {_simulatorSpeedKph:F1} kph";
 
     #endregion
 
