@@ -79,13 +79,8 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: 'preview'
 
-      # macOS needs iOS workload because shared projects multi-target for iOS
-      - name: Install iOS workload (macOS only)
-        if: runner.os == 'macOS'
-        run: dotnet workload install ios --skip-sign-check
-
       - name: Restore dependencies
-        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
+        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -p:TargetFramework=net10.0
 
       - name: Build and Publish (Unix)
         if: runner.os != 'Windows'
@@ -93,15 +88,14 @@ jobs:
           dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj \
             -c Release \
             -r ${{ matrix.rid }} \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -f net10.0 \
+            --self-contained false \
             -o publish/${{ matrix.name }}
 
       - name: Build and Publish (Windows)
         if: runner.os == 'Windows'
         run: |
-          dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/${{ matrix.name }}
+          dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -c Release -r ${{ matrix.rid }} -f net10.0 --self-contained false -o publish/${{ matrix.name }}
         shell: pwsh
 
       - name: Create archive (Windows)
@@ -246,6 +240,7 @@ jobs:
             | Android | `AgValoniaGPS-Android.apk` |
 
             ### Installation Notes
+            - **All Desktop**: Requires [.NET 10.0 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
             - **Windows**: Extract and run the .exe
             - **macOS**: Extract, right-click the app and select "Open" (first time only)
             - **Linux**: Extract, `chmod +x` the binary, then run
