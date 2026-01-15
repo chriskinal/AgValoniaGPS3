@@ -1,0 +1,236 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:  # Allow manual trigger
+  schedule:
+    # Run daily at 6 AM UTC (if there were changes)
+    - cron: '0 6 * * *'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # Check if there are new commits (for scheduled runs)
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # For scheduled runs, check if there were commits in the last 24 hours
+            COMMITS=$(git log --since="24 hours ago" --oneline | wc -l)
+            if [ "$COMMITS" -gt 0 ]; then
+              echo "should_build=true" >> $GITHUB_OUTPUT
+              echo "Found $COMMITS commits in last 24 hours, will build"
+            else
+              echo "should_build=false" >> $GITHUB_OUTPUT
+              echo "No commits in last 24 hours, skipping build"
+            fi
+          else
+            # For push and manual triggers, always build
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+
+  # Build Desktop versions (Windows, macOS, Linux)
+  build-desktop:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            name: Windows-x64
+          - os: macos-latest
+            rid: osx-arm64
+            name: macOS-ARM64
+          - os: macos-13
+            rid: osx-x64
+            name: macOS-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+            name: Linux-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: 'preview'
+
+      - name: Restore dependencies
+        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
+
+      - name: Build and Publish
+        run: |
+          dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o publish/${{ matrix.name }}
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path publish/${{ matrix.name }}/* -DestinationPath AgValoniaGPS-${{ matrix.name }}.zip
+        shell: pwsh
+
+      - name: Create archive (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd publish
+          zip -r ../AgValoniaGPS-${{ matrix.name }}.zip ${{ matrix.name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgValoniaGPS-${{ matrix.name }}
+          path: AgValoniaGPS-${{ matrix.name }}.zip
+          retention-days: 30
+
+  # Build iOS (requires macOS)
+  build-ios:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: 'preview'
+
+      - name: Install iOS workload
+        run: dotnet workload install ios
+
+      - name: Restore dependencies
+        run: dotnet restore Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj
+
+      - name: Build iOS (Simulator)
+        run: |
+          dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
+            -c Release \
+            -f net10.0-ios \
+            -r iossimulator-arm64
+
+      # Note: For device builds, you'd need signing certificates
+      # - name: Build iOS (Device)
+      #   run: |
+      #     dotnet publish Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
+      #       -c Release \
+      #       -f net10.0-ios \
+      #       -r ios-arm64
+
+      - name: Create iOS artifact
+        run: |
+          cd Platforms/AgValoniaGPS.iOS/bin/Release/net10.0-ios/iossimulator-arm64
+          zip -r ${{ github.workspace }}/AgValoniaGPS-iOS-Simulator.zip AgValoniaGPS.iOS.app
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgValoniaGPS-iOS-Simulator
+          path: AgValoniaGPS-iOS-Simulator.zip
+          retention-days: 30
+
+  # Create a release with all artifacts
+  create-release:
+    needs: [build-desktop, build-ios]
+    if: always() && needs.check-changes.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get version and date
+        id: version
+        run: |
+          # Try to get version from version.h if it exists
+          if [ -f "sys/version.h" ]; then
+            VERSION=$(grep -oP 'VERSION\s+"\K[^"]+' sys/version.h || echo "0.0.0")
+          else
+            VERSION="0.0.0"
+          fi
+          DATE=$(date +'%Y%m%d')
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "date=${DATE}" >> $GITHUB_OUTPUT
+          echo "tag=nightly-${DATE}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: List artifacts
+        run: find artifacts -type f -name "*.zip" | head -20
+
+      - name: Delete existing nightly release
+        run: |
+          gh release delete ${{ steps.version.outputs.tag }} --yes || true
+          git push origin :refs/tags/${{ steps.version.outputs.tag }} || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Nightly Build - ${{ steps.version.outputs.date }}"
+          body: |
+            ## Automated Nightly Build
+
+            **Date:** ${{ steps.version.outputs.date }}
+            **Commit:** ${{ steps.version.outputs.short_sha }}
+            **Version:** ${{ steps.version.outputs.version }}
+
+            ### Downloads
+
+            | Platform | File |
+            |----------|------|
+            | Windows x64 | `AgValoniaGPS-Windows-x64.zip` |
+            | macOS ARM64 (M1/M2/M3) | `AgValoniaGPS-macOS-ARM64.zip` |
+            | macOS x64 (Intel) | `AgValoniaGPS-macOS-x64.zip` |
+            | Linux x64 | `AgValoniaGPS-Linux-x64.zip` |
+            | iOS Simulator | `AgValoniaGPS-iOS-Simulator.zip` |
+
+            ### Notes
+            - These are development builds and may contain bugs
+            - macOS users may need to right-click and select "Open" the first time
+            - Linux users may need to `chmod +x` the binary
+            - iOS Simulator build is for ARM64 Macs only
+
+            ---
+            *Built automatically from the latest master branch*
+          draft: false
+          prerelease: true
+          files: |
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
