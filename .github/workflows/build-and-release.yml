@@ -143,7 +143,12 @@ jobs:
           java-version: '17'
 
       - name: Install Android workload
-        run: dotnet workload install android
+        run: |
+          for i in 1 2 3; do
+            dotnet workload install android && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Restore dependencies
         run: dotnet restore Platforms/AgValoniaGPS.Android/AgValoniaGPS.Android.csproj
