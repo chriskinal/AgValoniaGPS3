@@ -79,8 +79,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: 'preview'
 
+      # macOS needs iOS workload because shared projects multi-target for iOS on macOS
+      - name: Install workloads (macOS only)
+        if: runner.os == 'macOS'
+        run: dotnet workload restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
+
       - name: Restore dependencies
-        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -p:TargetFramework=net10.0
+        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
 
       - name: Build and Publish (Unix)
         if: runner.os != 'Windows'
