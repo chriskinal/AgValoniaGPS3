@@ -110,7 +110,58 @@ jobs:
           path: AgValoniaGPS-${{ matrix.name }}.zip
           retention-days: 30
 
-  # Build iOS (requires macOS)
+  # Build Android APK
+  build-android:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: 'preview'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      - name: Install Android workload
+        run: dotnet workload install android
+
+      - name: Restore dependencies
+        run: dotnet restore Platforms/AgValoniaGPS.Android/AgValoniaGPS.Android.csproj
+
+      - name: Build Android APK
+        run: |
+          dotnet publish Platforms/AgValoniaGPS.Android/AgValoniaGPS.Android.csproj \
+            -c Release \
+            -f net10.0-android \
+            -o publish/android
+
+      - name: Find and rename APK
+        run: |
+          APK=$(find publish/android -name "*.apk" | head -1)
+          if [ -n "$APK" ]; then
+            cp "$APK" AgValoniaGPS-Android.apk
+          else
+            echo "No APK found!"
+            exit 1
+          fi
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgValoniaGPS-Android
+          path: AgValoniaGPS-Android.apk
+          retention-days: 30
+
+  # Build iOS (Simulator + Device if certificates available)
   build-ios:
     needs: check-changes
     if: needs.check-changes.outputs.should_build == 'true'
@@ -131,6 +182,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj
 
+      # Always build simulator version
       - name: Build iOS (Simulator)
         run: |
           dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
@@ -138,29 +190,105 @@ jobs:
             -f net10.0-ios \
             -r iossimulator-arm64
 
-      # Note: For device builds, you'd need signing certificates
-      # - name: Build iOS (Device)
-      #   run: |
-      #     dotnet publish Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
-      #       -c Release \
-      #       -f net10.0-ios \
-      #       -r ios-arm64
-
-      - name: Create iOS artifact
+      - name: Create iOS Simulator artifact
         run: |
           cd Platforms/AgValoniaGPS.iOS/bin/Release/net10.0-ios/iossimulator-arm64
           zip -r ${{ github.workspace }}/AgValoniaGPS-iOS-Simulator.zip AgValoniaGPS.iOS.app
 
-      - name: Upload iOS artifact
+      - name: Upload iOS Simulator artifact
         uses: actions/upload-artifact@v4
         with:
           name: AgValoniaGPS-iOS-Simulator
           path: AgValoniaGPS-iOS-Simulator.zip
           retention-days: 30
 
+      # Build device version if signing secrets are available
+      - name: Check for iOS signing secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.IOS_CERTIFICATE_P12 }}" ] && [ -n "${{ secrets.IOS_PROVISIONING_PROFILE }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "iOS signing secrets not configured - skipping device build"
+          fi
+
+      - name: Install Apple certificate
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        env:
+          P12_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          # Create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # Decode certificate
+          echo -n "$P12_CERTIFICATE" | base64 --decode -o $CERTIFICATE_PATH
+
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+      - name: Install provisioning profile
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        env:
+          PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          PP_PATH=$RUNNER_TEMP/profile.mobileprovision
+          echo -n "$PROVISIONING_PROFILE" | base64 --decode -o $PP_PATH
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build iOS (Device)
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          dotnet publish Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
+            -c Release \
+            -f net10.0-ios \
+            -r ios-arm64 \
+            -p:ArchiveOnBuild=true \
+            -p:CodesignKey="${{ secrets.IOS_CODESIGN_IDENTITY }}" \
+            -p:CodesignProvision="${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}"
+
+      - name: Create iOS Device artifact
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          # Find the .ipa file
+          IPA=$(find Platforms/AgValoniaGPS.iOS/bin/Release -name "*.ipa" | head -1)
+          if [ -n "$IPA" ]; then
+            cp "$IPA" AgValoniaGPS-iOS-Device.ipa
+          else
+            # If no IPA, create from .app
+            cd Platforms/AgValoniaGPS.iOS/bin/Release/net10.0-ios/ios-arm64
+            mkdir -p Payload
+            cp -r AgValoniaGPS.iOS.app Payload/
+            zip -r ${{ github.workspace }}/AgValoniaGPS-iOS-Device.ipa Payload
+          fi
+
+      - name: Upload iOS Device artifact
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgValoniaGPS-iOS-Device
+          path: AgValoniaGPS-iOS-Device.ipa
+          retention-days: 30
+
+      - name: Cleanup keychain
+        if: always() && steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+
   # Create a release with all artifacts
   create-release:
-    needs: [build-desktop, build-ios]
+    needs: [build-desktop, build-android, build-ios]
     if: always() && needs.check-changes.outputs.should_build == 'true'
     runs-on: ubuntu-latest
 
@@ -189,7 +317,7 @@ jobs:
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: List artifacts
-        run: find artifacts -type f -name "*.zip" | head -20
+        run: find artifacts -type f \( -name "*.zip" -o -name "*.apk" -o -name "*.ipa" \) | head -20
 
       - name: Delete existing nightly release
         run: |
@@ -218,13 +346,25 @@ jobs:
             | macOS ARM64 (M1/M2/M3) | `AgValoniaGPS-macOS-ARM64.zip` |
             | macOS x64 (Intel) | `AgValoniaGPS-macOS-x64.zip` |
             | Linux x64 | `AgValoniaGPS-Linux-x64.zip` |
+            | Android | `AgValoniaGPS-Android.apk` |
             | iOS Simulator | `AgValoniaGPS-iOS-Simulator.zip` |
+            | iOS Device | `AgValoniaGPS-iOS-Device.ipa` (if signed) |
 
-            ### Notes
-            - These are development builds and may contain bugs
-            - macOS users may need to right-click and select "Open" the first time
-            - Linux users may need to `chmod +x` the binary
-            - iOS Simulator build is for ARM64 Macs only
+            ### Installation Notes
+            - **Windows**: Extract and run the .exe
+            - **macOS**: Extract, right-click the app and select "Open" (first time only)
+            - **Linux**: Extract, `chmod +x` the binary, then run
+            - **Android**: Enable "Install from unknown sources", then install the APK
+            - **iOS Simulator**: For ARM64 Macs - extract and drag to simulator
+            - **iOS Device**: Requires signing - install via Xcode or TestFlight
+
+            ### Setting up iOS Device Builds
+            To enable iOS device builds, add these secrets to your repository:
+            - `IOS_CERTIFICATE_P12`: Base64-encoded .p12 certificate
+            - `IOS_CERTIFICATE_PASSWORD`: Certificate password
+            - `IOS_PROVISIONING_PROFILE`: Base64-encoded .mobileprovision
+            - `IOS_PROVISIONING_PROFILE_NAME`: Profile name (e.g., "AgValoniaGPS Development")
+            - `IOS_CODESIGN_IDENTITY`: Signing identity (e.g., "Apple Development: Your Name (XXXXXXXXXX)")
 
             ---
             *Built automatically from the latest master branch*
@@ -232,5 +372,7 @@ jobs:
           prerelease: true
           files: |
             artifacts/**/*.zip
+            artifacts/**/*.apk
+            artifacts/**/*.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
