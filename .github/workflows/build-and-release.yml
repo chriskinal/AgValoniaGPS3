@@ -81,7 +81,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: 'preview'
 
       # macOS needs iOS workload because shared projects multi-target for iOS on macOS
       - name: Install workloads (macOS only)
@@ -98,13 +97,13 @@ jobs:
             -c Release \
             -r ${{ matrix.rid }} \
             -f net10.0 \
-            --self-contained false \
+            --self-contained true \
             -o publish/${{ matrix.name }}
 
       - name: Build and Publish (Windows)
         if: runner.os == 'Windows'
         run: |
-          dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -c Release -r ${{ matrix.rid }} -f net10.0 --self-contained false -o publish/${{ matrix.name }}
+          dotnet publish Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -c Release -r ${{ matrix.rid }} -f net10.0 --self-contained true -o publish/${{ matrix.name }}
         shell: pwsh
 
       - name: Create archive (Windows)
@@ -138,7 +137,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: 'preview'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -254,8 +252,7 @@ jobs:
             | Android | `AgValoniaGPS-Android.apk` |
 
             ### Installation Notes
-            - **All Desktop**: Requires [.NET 10.0 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
-            - **Windows**: Extract and run the .exe
+            - **Windows**: Extract and run the .exe (self-contained, no .NET install needed)
             - **macOS**: Extract, right-click the app and select "Open" (first time only)
             - **Linux**: Extract, `chmod +x` the binary, then run
             - **Android**: Enable "Install from unknown sources", then install the APK
