@@ -82,16 +82,10 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # macOS needs iOS workload because shared projects multi-target for iOS on macOS
-      - name: Install workloads (macOS only)
-        if: runner.os == 'macOS'
-        run: dotnet workload restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
-
       - name: Restore dependencies
         run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
 
-      # macOS must use framework-dependent because Mono runtime packages for osx-* don't exist on NuGet for .NET 10
-      # (shared projects multi-target for iOS which requires Mono)
+      # macOS uses DesktopOnly=true to skip iOS multi-targeting, enabling self-contained builds
       - name: Build and Publish (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -99,7 +93,8 @@ jobs:
             -c Release \
             -r ${{ matrix.rid }} \
             -f net10.0 \
-            --self-contained false \
+            -p:DesktopOnly=true \
+            --self-contained true \
             -o publish/${{ matrix.name }}
 
       - name: Build and Publish (Linux)
@@ -264,9 +259,10 @@ jobs:
             | Android | `AgValoniaGPS-Android.apk` |
 
             ### Installation Notes
-            - **Windows**: Extract and run the .exe (self-contained, no .NET install needed)
-            - **macOS**: Requires [.NET 10.0 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0). Extract, right-click the app and select "Open" (first time only)
-            - **Linux**: Extract, `chmod +x` the binary, then run (self-contained, no .NET install needed)
+            All desktop builds are self-contained - no .NET runtime install needed.
+            - **Windows**: Extract and run the .exe
+            - **macOS**: Extract, right-click the app and select "Open" (first time only)
+            - **Linux**: Extract, `chmod +x` the binary, then run
             - **Android**: Enable "Install from unknown sources", then install the APK
 
             ### iOS Builds

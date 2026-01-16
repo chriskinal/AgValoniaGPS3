@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('OSX'))">net10.0;net10.0-ios</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('OSX'))">net10.0</TargetFrameworks>
+    <!-- DesktopOnly=true skips iOS targeting for self-contained desktop builds -->
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$(DesktopOnly)' != 'true'">net10.0;net10.0-ios</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('OSX')) Or '$(DesktopOnly)' == 'true'">net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
