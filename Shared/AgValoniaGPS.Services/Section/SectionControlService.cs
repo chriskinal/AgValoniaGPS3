@@ -33,6 +33,15 @@ public class SectionControlService : ISectionControlService
     // Default coverage overlap threshold (used if MinCoverage is 0)
     private const double DEFAULT_COVERAGE_THRESHOLD = 0.70; // 70%
 
+    // Minimum distance (squared) between coverage points to reduce edge jaggedness
+    // At 10Hz and 10 kph (2.78 m/s), vehicle moves ~0.28m per update
+    // Using 0.12m threshold ensures we add points frequently enough for accuracy
+    // but filter out GPS jitter that causes jagged edges
+    private const double MIN_COVERAGE_POINT_DISTANCE_SQ = 0.12 * 0.12; // 0.0144 m²
+
+    // Last coverage point position per zone (for minimum distance filtering)
+    private readonly Dictionary<int, Vec2> _lastCoveragePosition = new();
+
     // Yaw rate tracking for curve-following coverage margin
     private double _previousHeading = double.NaN;
     private double _previousVehicleHeading = double.NaN;
@@ -234,10 +243,22 @@ public class SectionControlService : ISectionControlService
         bool lookOnInBoundary = lookOnBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD;
         bool lookOffInBoundary = lookOffBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD;
 
-        // Check headland conditions (still point-based for now)
+        // Check headland conditions
+        // Use speed-dependent look-ahead so coverage triangles extend INTO headland consistently
+        // The look-ahead compensates for MAPPING_ON_DELAY (vehicle travels during the delay)
+        // Formula: lookAhead = targetPenetration + speed * delayTime
+        const double TARGET_PENETRATION = 0.30;  // Target: first coverage point 30cm into headland
+        const double MAPPING_DELAY_SECONDS = 0.2; // MAPPING_ON_DELAY = 2 cycles at 10Hz
+        double headlandOnLookAhead = TARGET_PENETRATION + speed * MAPPING_DELAY_SECONDS;
+        var headlandOnCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, headlandOnLookAhead, speed);
+
         bool isInHeadland = IsPointInHeadland(sectionCenter);
-        bool lookOnInHeadland = IsPointInHeadland(onCheckPoint);
-        bool lookOffInHeadland = IsPointInHeadland(offCheckPoint);
+        bool lookAheadInHeadland = IsPointInHeadland(headlandOnCheckPoint);
+
+        // For ON: use speed-adjusted look-ahead so triangle extends ~30cm into headland at any speed
+        // For OFF: use current position so we stop AFTER entering headland (last point in headland)
+        bool lookOnInHeadland = lookAheadInHeadland;  // Turn ON when look-ahead exits headland
+        bool lookOffInHeadland = isInHeadland;        // Turn OFF when current pos enters headland
 
         // Check coverage using segment-based detection
         // This checks the entire section width, not just center point
@@ -386,6 +407,12 @@ public class SectionControlService : ISectionControlService
             // Get zone index (for multi-colored sections or zones)
             int zoneIndex = GetZoneIndex(index);
             _coverageMapService.StartMapping(zoneIndex, expandedLeft, expandedRight);
+
+            // Record initial position for minimum distance filtering
+            var center = new Vec2(
+                (leftEdge.Easting + rightEdge.Easting) / 2,
+                (leftEdge.Northing + rightEdge.Northing) / 2);
+            _lastCoveragePosition[zoneIndex] = center;
         }
     }
 
@@ -412,11 +439,34 @@ public class SectionControlService : ISectionControlService
                 return;
             }
 
+            int zoneIndex = GetZoneIndex(index);
+
+            // Check minimum distance from last coverage point to reduce edge jaggedness
+            // This filters out GPS jitter while maintaining coverage accuracy
+            var currentCenter = new Vec2(
+                (leftEdge.Easting + rightEdge.Easting) / 2,
+                (leftEdge.Northing + rightEdge.Northing) / 2);
+
+            if (_lastCoveragePosition.TryGetValue(zoneIndex, out var lastPos))
+            {
+                double dx = currentCenter.Easting - lastPos.Easting;
+                double dy = currentCenter.Northing - lastPos.Northing;
+                double distSq = dx * dx + dy * dy;
+
+                if (distSq < MIN_COVERAGE_POINT_DISTANCE_SQ)
+                {
+                    // Too close to last point - skip to reduce jagged edges
+                    return;
+                }
+            }
+
             // Apply coverage margin with curve-following adjustment
             var (expandedLeft, expandedRight) = ApplyCoverageMargin(leftEdge, rightEdge, toolHeading);
 
-            int zoneIndex = GetZoneIndex(index);
             _coverageMapService.AddCoveragePoint(zoneIndex, expandedLeft, expandedRight);
+
+            // Update last position for this zone
+            _lastCoveragePosition[zoneIndex] = currentCenter;
         }
     }
 
@@ -509,6 +559,9 @@ public class SectionControlService : ISectionControlService
 
             int zoneIndex = GetZoneIndex(index);
             _coverageMapService.StopMapping(zoneIndex);
+
+            // Clear last position so next patch starts fresh
+            _lastCoveragePosition.Remove(zoneIndex);
         }
     }
 
@@ -726,6 +779,9 @@ public class SectionControlService : ISectionControlService
         {
             UpdateSectionOff(i);
         }
+
+        // Clear all last coverage positions
+        _lastCoveragePosition.Clear();
 
         SectionStateChanged?.Invoke(this, new SectionStateChangedEventArgs
         {

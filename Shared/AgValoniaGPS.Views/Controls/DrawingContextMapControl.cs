@@ -265,7 +265,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _vehicleBrush = new SolidColorBrush(Color.FromRgb(0, 200, 0));
         _vehiclePen = new Pen(Brushes.DarkGreen, 2);
         _recordingPointBrush = new SolidColorBrush(Color.FromRgb(255, 128, 0));
-        _headlandPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 255, 128)), 1.5); // Green headland line
+        _headlandPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 255, 128)), 0.1); // Green headland line (0.1m = 10cm width)
         _headlandPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)), 1.5); // Semi-transparent orange preview
         _selectionMarkerBrush = new SolidColorBrush(Color.FromRgb(255, 0, 255)); // Magenta selection markers
         _selectionMarkerPen = new Pen(Brushes.White, 2); // White outline

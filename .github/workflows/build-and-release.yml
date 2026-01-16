@@ -203,8 +203,8 @@ jobs:
 
   # Create a release with all artifacts
   create-release:
-    needs: [build-desktop, build-android]
-    if: always() && needs.check-changes.outputs.should_build == 'true'
+    needs: [check-changes, build-desktop, build-android]
+    if: always() && needs.check-changes.outputs.should_build == 'true' && (needs.build-desktop.result == 'success' || needs.build-android.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
