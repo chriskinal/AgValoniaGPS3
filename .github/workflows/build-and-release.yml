@@ -82,7 +82,12 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
+      - name: Restore dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj -p:DesktopOnly=true
+
+      - name: Restore dependencies (other)
+        if: runner.os != 'macOS'
         run: dotnet restore Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
 
       # macOS uses DesktopOnly=true to skip iOS multi-targeting, enabling self-contained builds
