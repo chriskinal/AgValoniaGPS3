@@ -226,6 +226,11 @@ public class SectionControlService : ISectionControlService
         // Calculate section half-width for segment-based checks
         double halfWidth = (section.PositionRight - section.PositionLeft) / 2.0;
 
+        // Include coverage margin in boundary check - coverage is recorded at expanded positions,
+        // so we must check the ACTUAL coverage area, not just the section width
+        double coverageMargin = tool.CoverageMarginMeters > 0 ? tool.CoverageMarginMeters : 0;
+        double halfWidthWithMargin = halfWidth + coverageMargin;
+
         // Project forward for ON check - use curved projection to "look around the corner"
         var onCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, lookAheadOnDist, speed);
 
@@ -233,15 +238,18 @@ public class SectionControlService : ISectionControlService
         var offCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, lookAheadOffDist, speed);
 
         // Check boundary conditions using segment-based detection
-        var currentBoundaryResult = GetSegmentBoundaryStatus(sectionCenter, toolHeading, halfWidth);
+        // Use halfWidthWithMargin for current position to prevent coverage outside boundary
+        var currentBoundaryResult = GetSegmentBoundaryStatus(sectionCenter, toolHeading, halfWidthWithMargin);
         var lookOnBoundaryResult = GetSegmentBoundaryStatus(onCheckPoint, toolHeading, halfWidth);
         var lookOffBoundaryResult = GetSegmentBoundaryStatus(offCheckPoint, toolHeading, halfWidth);
 
-        // Section is "in boundary" if majority of segment is inside
-        const double BOUNDARY_THRESHOLD = 0.50; // 50% inside = in boundary
-        bool isInBoundary = currentBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD;
-        bool lookOnInBoundary = lookOnBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD;
-        bool lookOffInBoundary = lookOffBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD;
+        // Use strict threshold for current position - section must be fully inside to spray
+        // This prevents spraying outside boundary when implement swings during turns
+        const double BOUNDARY_THRESHOLD_STRICT = 0.95; // 95% inside required to be "in boundary"
+        const double BOUNDARY_THRESHOLD_LOOKAHEAD = 0.50; // 50% for look-ahead anticipation
+        bool isInBoundary = currentBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD_STRICT;
+        bool lookOnInBoundary = lookOnBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD_LOOKAHEAD;
+        bool lookOffInBoundary = lookOffBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD_LOOKAHEAD;
 
         // Check headland conditions
         // Use speed-dependent look-ahead so coverage triangles extend INTO headland consistently
@@ -283,22 +291,44 @@ public class SectionControlService : ISectionControlService
         section.IsInHeadland = isInHeadland;
         section.IsLookOnInHeadland = lookOnInHeadland;
 
+        // CRITICAL: If current position is outside boundary, section must be OFF immediately.
+        // This prevents spraying outside the field when trailing implements swing out during turns.
+        // Look-ahead is for anticipating boundaries, not overriding physical position.
+        if (!isInBoundary)
+        {
+            UpdateSectionOff(index);
+            return;
+        }
+
+        // ADDITIONAL CHECK: Verify both expanded edge points are inside boundary.
+        // The segment-based check can sometimes pass when edges are outside,
+        // especially when tool heading is perpendicular to boundary.
+        if (coverageMargin > 0)
+        {
+            double perpHeading = toolHeading + Math.PI / 2.0;
+            var expandedLeftEdge = new Vec2(
+                sectionCenter.Easting + Math.Sin(perpHeading) * (-halfWidthWithMargin),
+                sectionCenter.Northing + Math.Cos(perpHeading) * (-halfWidthWithMargin));
+            var expandedRightEdge = new Vec2(
+                sectionCenter.Easting + Math.Sin(perpHeading) * halfWidthWithMargin,
+                sectionCenter.Northing + Math.Cos(perpHeading) * halfWidthWithMargin);
+
+            if (!IsPointInBoundary(expandedLeftEdge) || !IsPointInBoundary(expandedRightEdge))
+            {
+                UpdateSectionOff(index);
+                return;
+            }
+        }
+
         // Determine if section should be on
         bool shouldBeOn = !lookOnCovered      // Not already covered at look-ahead point
-                       && lookOnInBoundary    // Inside boundary
+                       && lookOnInBoundary    // Inside boundary at look-ahead
                        && !lookOnInHeadland;  // Not in headland
 
         // Determine if section should be off
         bool shouldBeOff = lookOffCovered     // Already covered
-                        || !lookOffInBoundary // Outside boundary
+                        || !lookOffInBoundary // Outside boundary at look-ahead
                         || lookOffInHeadland; // In headland
-
-        // Apply turn off when outside boundary setting
-        if (tool.IsSectionOffWhenOut && !isInBoundary)
-        {
-            shouldBeOff = true;
-            shouldBeOn = false;
-        }
 
         // Apply state transitions with timing
         if (shouldBeOn && !section.IsOn)

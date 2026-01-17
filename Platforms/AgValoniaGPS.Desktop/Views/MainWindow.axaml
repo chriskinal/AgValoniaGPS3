@@ -77,6 +77,19 @@
             </StackPanel>
         </Border>
 
+        <!-- Zoom Controls - Bottom Right (for touch/tablet users) -->
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    ZIndex="10" Margin="0,0,20,20" Spacing="10">
+            <Button Content="+" Command="{Binding ZoomInCommand}"
+                    Width="50" Height="50" FontSize="28" FontWeight="Bold"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    Background="#4A5568" Foreground="White" CornerRadius="8"/>
+            <Button Content="-" Command="{Binding ZoomOutCommand}"
+                    Width="50" Height="50" FontSize="28" FontWeight="Bold"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    Background="#4A5568" Foreground="White" CornerRadius="8"/>
+        </StackPanel>
+
         <!-- All Draggable Panels in single Canvas (must be in same Canvas for consistent drag bounds) -->
         <Canvas ZIndex="10">
             <!-- LEFT SIDEBAR: Main Navigation Panel (Draggable & Rotatable) -->
