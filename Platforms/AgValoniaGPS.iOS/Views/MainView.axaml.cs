@@ -46,6 +46,33 @@ public partial class MainView : UserControl
 
         // Restore panel positions from ConfigurationStore
         RestorePanelPositions();
+
+        // Handle window resize to keep panels in view
+        this.PropertyChanged += MainView_PropertyChanged;
+    }
+
+    private void MainView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == nameof(Bounds))
+        {
+            ConstrainPanelsToView();
+        }
+    }
+
+    private void ConstrainPanelsToView()
+    {
+        // Constrain all panels using shared helper
+        // iOS uses Canvas.Left for RightNavPanel (not Canvas.Right like Desktop)
+        PanelConstraintHelper.ConstrainPanelWithExtent(_leftNavPanel, Bounds.Width, Bounds.Height,
+            subPanelExtent: 410, defaultLeft: 20, defaultTop: 50);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_rightNavPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 600, defaultTop: 50);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_bottomNavPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 200, defaultTop: 420);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_sectionControlPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 200, defaultTop: 500);
+        PanelConstraintHelper.ConstrainSubPanels(_leftNavPanel, Bounds.Width, Bounds.Height,
+            PanelConstraintHelper.LeftNavSubPanelNames, defaultRelativeTop: 0);
     }
 
     private void RestorePanelPositions()

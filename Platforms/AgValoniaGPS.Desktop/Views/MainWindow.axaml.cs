@@ -18,6 +18,7 @@ using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Views.Controls;
 using AgValoniaGPS.Views.Controls.Panels;
+using AgValoniaGPS.Views.Behaviors;
 
 namespace AgValoniaGPS.Desktop.Views;
 
@@ -201,6 +202,8 @@ public partial class MainWindow : Window
 
         if (!double.IsNaN(display.RightNavPanelX) && !double.IsNaN(display.RightNavPanelY) && RightNavPanel != null)
         {
+            // Clear Canvas.Right (set in XAML) when restoring to Canvas.Left position
+            RightNavPanel.ClearValue(Canvas.RightProperty);
             Canvas.SetLeft(RightNavPanel, display.RightNavPanelX);
             Canvas.SetTop(RightNavPanel, display.RightNavPanelY);
         }
@@ -334,24 +337,15 @@ public partial class MainWindow : Window
                 Canvas.SetTop(SectionControlPanel, newTop);
             }
 
-            // Constrain left panel to new window bounds
-            if (LeftNavPanel != null)
-            {
-                double currentLeft = Canvas.GetLeft(LeftNavPanel);
-                double currentTop = Canvas.GetTop(LeftNavPanel);
-
-                if (double.IsNaN(currentLeft)) currentLeft = 20; // Default initial position
-                if (double.IsNaN(currentTop)) currentTop = 100;
-
-                double maxLeft = Bounds.Width - LeftNavPanel.Bounds.Width;
-                double maxTop = Bounds.Height - LeftNavPanel.Bounds.Height;
-
-                double newLeft = Math.Clamp(currentLeft, 0, Math.Max(0, maxLeft));
-                double newTop = Math.Clamp(currentTop, 0, Math.Max(0, maxTop));
-
-                Canvas.SetLeft(LeftNavPanel, newLeft);
-                Canvas.SetTop(LeftNavPanel, newTop);
-            }
+            // Constrain all panels using shared helper
+            PanelConstraintHelper.ConstrainPanelWithExtent(LeftNavPanel, Bounds.Width, Bounds.Height,
+                subPanelExtent: 410, defaultLeft: 20, defaultTop: 100);
+            PanelConstraintHelper.ConstrainLeftTopPanel(BottomNavPanel, Bounds.Width, Bounds.Height,
+                defaultLeft: 200, defaultTop: 600);
+            PanelConstraintHelper.ConstrainRightTopPanel(RightNavPanel, Bounds.Width, Bounds.Height,
+                defaultTop: 100);
+            PanelConstraintHelper.ConstrainSubPanels(LeftNavPanel, Bounds.Width, Bounds.Height,
+                PanelConstraintHelper.LeftNavSubPanelNames);
         }
     }
 
@@ -623,7 +617,9 @@ public partial class MainWindow : Window
         if (LeftNavPanel == null) return;
 
         // Constrain to window bounds
-        double maxLeft = Bounds.Width - LeftNavPanel.Bounds.Width;
+        // Account for sub-panels that extend ~410px to the right (offset 90 + width ~320)
+        const double subPanelExtent = 410;
+        double maxLeft = Bounds.Width - LeftNavPanel.Bounds.Width - subPanelExtent;
         double maxTop = Bounds.Height - LeftNavPanel.Bounds.Height;
 
         double newLeft = Math.Clamp(newPosition.X, 0, Math.Max(0, maxLeft));
