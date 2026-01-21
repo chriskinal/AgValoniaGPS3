@@ -1136,6 +1136,8 @@ public partial class MainViewModel : ObservableObject
                     // Clear the track from the map when deactivated
                     _mapService.SetActiveTrack(null);
                     _isSelectedTrackOnBoundary = false;
+                    // Clear any U-turn state associated with the deactivated track
+                    ClearYouTurnState();
                 }
 
                 // Update guidance availability
