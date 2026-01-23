@@ -65,7 +65,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- General Settings -->
             <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
-            <Button Classes="ModernButton" Content="Kiosk Mode" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
             <Button Classes="ModernButton" Content="Reset All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
 
             <Separator Height="1" Background="#444" Margin="0,4"/>

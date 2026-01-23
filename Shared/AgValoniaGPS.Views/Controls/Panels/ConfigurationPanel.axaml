@@ -89,12 +89,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Vehicle Settings" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMapping.png" Width="28" Height="28"/>
-                        <TextBlock Text="Section Colors" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
             </Grid>
 
             <!-- Current Profile Display -->

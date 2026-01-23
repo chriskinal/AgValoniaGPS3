@@ -59,17 +59,78 @@ These features are good starting points for new contributors.
 - **Task**: Create help dialog or link to online documentation
 - **Skills needed**: XAML, basic ViewModel
 
-#### Section Colors Configuration
-- **Button location**: Configuration Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ConfigurationPanel.axaml` (Line 78)
-- **Task**: Create dialog to customize section/coverage display colors
-- **Skills needed**: XAML, color picker, settings persistence
-
 #### App Colors / Theme
 - **Button location**: File Menu Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 59)
 - **Task**: Create dialog to customize application color scheme/theme
 - **Skills needed**: XAML, Avalonia theming, settings persistence
+
+#### Nudge AB Left/Right
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 271-278)
+- **Task**: Implement NudgeLeftCommand and NudgeRightCommand to shift track by standard offset
+- **Skills needed**: Track model, geometry
+
+#### Fine Nudge AB Left/Right
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 283-290)
+- **Task**: Implement FineNudgeLeftCommand and FineNudgeRightCommand for small track adjustments
+- **Skills needed**: Track model, geometry
+
+#### Snap to Left/Right Track
+- **Button location**: Bottom Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 192-203)
+- **Task**: Implement SnapLeftCommand and SnapRightCommand to jump to adjacent tracks
+- **Skills needed**: Track model, guidance system
+
+#### Snap to Pivot
+- **Button location**: Bottom Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 206)
+- **Task**: Implement SnapToPivotCommand to snap to pivot point
+- **Skills needed**: Track model, geometry
+
+#### U-Turn Skip Rows On/Off
+- **Button location**: Bottom Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 142)
+- **Task**: Implement ToggleUTurnSkipRowsCommand to enable/disable row skipping during U-turns
+- **Skills needed**: U-turn system, guidance
+
+#### Reset Tool Heading
+- **Button location**: Bottom Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 157)
+- **Task**: Implement ResetToolHeadingCommand to reset implement heading to vehicle heading
+- **Skills needed**: Vehicle/tool geometry
+
+#### Display Options - Wire Up Settings
+- **Location**: Configuration Dialog → Display Options tab
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Dialogs/Configuration/DisplayConfigTab.axaml`
+- **Task**: Wire up display toggles to actually affect rendering/UI. Settings toggle but have no effect:
+  - Polygons, Speedometer, Keyboard, Headland Distance display
+  - Auto Day/Night brightness, Svenn Arrow, Start Fullscreen
+  - Elevation Log, Field Texture, Grid, Extra Guidelines
+  - Line Smooth, Direction Markers, Section Lines
+  - Metric/Imperial units
+- **Skills needed**: DrawingContext rendering, MainViewModel integration
+
+#### Additional Options - Wire Up Settings
+- **Location**: Configuration Dialog → Additional Options tab
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Dialogs/Configuration/AdditionalOptionsConfigTab.axaml`
+- **Task**: Wire up additional options to actually affect the application:
+  - Screen Buttons: U-Turn button visibility, Lateral button visibility
+  - Sounds: Auto Steer, U-Turn, Hydraulic, Sections sounds
+  - Hardware Messages toggle
+- **Skills needed**: Audio playback, UI visibility bindings
+
+#### View Settings Panel - Wire Up Settings
+- **Location**: View Settings Panel (opened from left nav)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ViewSettingsPanel.axaml`
+- **Task**: Wire up view settings to actually affect rendering. Only Grid works currently:
+  - Day/Night mode (IsDayMode not used)
+  - 2D/3D toggle (Is2DMode not used)
+  - North Up/Track Up (IsNorthUp not used)
+  - Camera Tilt Up/Down (CameraPitch not used)
+  - Brightness +/- (IsBrightnessSupported returns false)
+- **Skills needed**: DrawingContext rendering, camera transforms
 
 ---
 
@@ -101,6 +162,30 @@ These features require more understanding of the codebase.
 - **Task**: Import track/guidance line data from external files (KML, shapefile, etc.)
 - **Skills needed**: File parsing, coordinate systems, Track model
 
+#### Draw AB Line on Map
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 239)
+- **Task**: Implement ShowDrawABDialogCommand to allow drawing curved or multipoint lines on map
+- **Skills needed**: Map interaction, Track model, dialog system
+
+#### Smooth AB Curve
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 254)
+- **Task**: Implement SmoothABLineCommand to smooth/simplify curve points
+- **Skills needed**: Geometry algorithms, Track model
+
+#### Delete Contours
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 261)
+- **Task**: Implement DeleteContoursCommand to remove contour reference lines
+- **Skills needed**: Track model, contour system
+
+#### Contour Mode On/Off
+- **Button location**: Right Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/RightNavigationPanel.axaml` (Line 95)
+- **Task**: Implement ToggleContourModeCommand to toggle contour guidance mode
+- **Skills needed**: Guidance system, contour tracking
+
 #### Hotkeys Configuration
 - **Button location**: File Menu Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 60)
@@ -130,6 +215,12 @@ These features require more understanding of the codebase.
 ### Difficulty: Hard
 
 These features require deep understanding of agricultural guidance or complex implementations.
+
+#### Headland Builder
+- **Button location**: Field Tools Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 87)
+- **Task**: Implement ShowHeadlandBuilderCommand to create/edit headland zones interactively
+- **Skills needed**: Boundary geometry, polygon operations, map interaction
 
 #### Steer Chart
 - **Button location**: Tools Panel
@@ -201,9 +292,10 @@ These features may not be needed or have lower priority.
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 50)
 - **Note**: Requires localization infrastructure to be set up first
 
-#### Kiosk Mode
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 51)
-- **Note**: May not be needed for this application
+#### Section Mapping Colors
+- **Button location**: Bottom Navigation Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 151)
+- **Note**: May be redundant with App Colors/Theme configuration
 
 ---
 
