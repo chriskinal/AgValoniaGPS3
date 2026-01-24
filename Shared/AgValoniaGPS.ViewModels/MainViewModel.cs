@@ -1093,11 +1093,27 @@ public partial class MainViewModel : ObservableObject
         set => SetProperty(ref _pendingPointA, value);
     }
 
+    // Curve recording state
+    private List<Vec3> _recordedCurvePoints = new();
+    private Vec3? _lastCurvePoint;
+    private const double CurveMinPointSpacing = 2.0; // Minimum 2m spacing between curve points
+
+    /// <summary>
+    /// Whether curve recording is currently active
+    /// </summary>
+    public bool IsRecordingCurve => CurrentABCreationMode == ABCreationMode.Curve;
+
+    /// <summary>
+    /// Number of points recorded in current curve
+    /// </summary>
+    public int RecordedCurvePointCount => _recordedCurvePoints.Count;
+
     // Computed properties for UI binding
     public bool IsCreatingABLine => CurrentABCreationMode != ABCreationMode.None;
 
     public bool EnableABClickSelection => CurrentABCreationMode == ABCreationMode.DrawAB ||
-                                          CurrentABCreationMode == ABCreationMode.DriveAB;
+                                          CurrentABCreationMode == ABCreationMode.DriveAB ||
+                                          CurrentABCreationMode == ABCreationMode.Curve;
 
     public string ABCreationInstructions
     {
@@ -1109,7 +1125,7 @@ public partial class MainViewModel : ObservableObject
                 (ABCreationMode.DriveAB, ABPointStep.SettingPointB) => "Drive to B, then tap screen to set Point B",
                 (ABCreationMode.DrawAB, ABPointStep.SettingPointA) => "Tap on map to place Point A",
                 (ABCreationMode.DrawAB, ABPointStep.SettingPointB) => "Tap on map to place Point B",
-                (ABCreationMode.Curve, _) => "Drive along curve path, then tap to finish",
+                (ABCreationMode.Curve, _) => $"RECORDING: Drive along curve ({RecordedCurvePointCount} pts) - Tap screen when done",
                 _ => string.Empty
             };
         }
@@ -2284,6 +2300,7 @@ public partial class MainViewModel : ObservableObject
     public ICommand? StartAPlusLineCommand { get; private set; }
     public ICommand? StartDriveABCommand { get; private set; }
     public ICommand? StartCurveRecordingCommand { get; private set; }
+    public ICommand? FinishCurveRecordingCommand { get; private set; }
     public ICommand? CycleABLinesCommand { get; private set; }
     public ICommand? SmoothABLineCommand { get; private set; }
     public ICommand? NudgeLeftCommand { get; private set; }

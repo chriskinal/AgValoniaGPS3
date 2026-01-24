@@ -15,6 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
+using AgValoniaGPS.Models;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -139,6 +141,49 @@ public partial class MainViewModel
                 data.CurrentPosition.Northing,
                 headingRadians);
             _boundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
+        }
+
+        // Add curve point if curve recording is active
+        if (CurrentABCreationMode == ABCreationMode.Curve)
+        {
+            AddCurvePoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
+        }
+    }
+
+    /// <summary>
+    /// Add a point to the curve being recorded, with minimum spacing filtering.
+    /// </summary>
+    private void AddCurvePoint(double easting, double northing, double headingDegrees)
+    {
+        double headingRadians = headingDegrees * Math.PI / 180.0;
+
+        // Check minimum spacing from last point
+        if (_lastCurvePoint.HasValue)
+        {
+            double dx = easting - _lastCurvePoint.Value.Easting;
+            double dy = northing - _lastCurvePoint.Value.Northing;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+
+            if (distance < CurveMinPointSpacing)
+            {
+                return; // Too close to last point, skip
+            }
+        }
+
+        var point = new Models.Base.Vec3(easting, northing, headingRadians);
+        _recordedCurvePoints.Add(point);
+        _lastCurvePoint = point;
+
+        // Update map display with recorded curve points
+        var displayPoints = _recordedCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+        _mapService.SetRecordingPoints(displayPoints);
+
+        // Update UI periodically (every 5 points to avoid excessive updates)
+        if (_recordedCurvePoints.Count % 5 == 0)
+        {
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions)); // Update instruction text with point count
+            StatusMessage = $"Recording curve: {_recordedCurvePoints.Count} points";
         }
     }
 

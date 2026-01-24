@@ -161,6 +161,7 @@ public partial class MainWindow : Window
 
         // For DriveAB mode, we use current GPS position (not the clicked position)
         // For DrawAB mode, we use the clicked map position
+        // For Curve mode, tap finishes recording
         if (ViewModel.CurrentABCreationMode == ABCreationMode.DriveAB)
         {
             // In DriveAB mode, any tap triggers setting the point at current GPS position
@@ -177,6 +178,12 @@ public partial class MainWindow : Window
             };
             Console.WriteLine($"[OnMapClicked] DrawAB - Using map position: E={e.Easting:F2}, N={e.Northing:F2}");
             ViewModel.SetABPointCommand?.Execute(mapPosition);
+        }
+        else if (ViewModel.CurrentABCreationMode == ABCreationMode.Curve)
+        {
+            // In Curve mode, tap finishes recording
+            Console.WriteLine($"[OnMapClicked] Curve - Finishing with {ViewModel.RecordedCurvePointCount} points");
+            ViewModel.SetABPointCommand?.Execute(null);
         }
     }
 

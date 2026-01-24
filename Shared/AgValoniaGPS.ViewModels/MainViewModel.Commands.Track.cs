@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
@@ -151,7 +152,70 @@ public partial class MainViewModel
         StartCurveRecordingCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
-            StatusMessage = "Curve mode: Start driving to record curve path";
+            CurrentABCreationMode = ABCreationMode.Curve;
+            _recordedCurvePoints.Clear();
+            _lastCurvePoint = null;
+
+            // Capture first point immediately at current position
+            if (Easting != 0 || Northing != 0)
+            {
+                var headingRadians = Heading * Math.PI / 180.0;
+                var firstPoint = new Vec3(Easting, Northing, headingRadians);
+                _recordedCurvePoints.Add(firstPoint);
+                _lastCurvePoint = firstPoint;
+
+                // Show first point on map
+                var displayPoints = _recordedCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+                _mapService.SetRecordingPoints(displayPoints);
+            }
+
+            StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
+            OnPropertyChanged(nameof(IsRecordingCurve));
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
+        });
+
+        FinishCurveRecordingCommand = new RelayCommand(() =>
+        {
+            if (CurrentABCreationMode != ABCreationMode.Curve)
+            {
+                return;
+            }
+
+            // Need at least 3 points for a valid curve
+            if (_recordedCurvePoints.Count < 3)
+            {
+                StatusMessage = $"Need at least 3 points for a curve (have {_recordedCurvePoints.Count})";
+                return;
+            }
+
+            // Extend curve ends past boundary for U-turn detection
+            var extendedPoints = ExtendCurvePastBoundary(_recordedCurvePoints);
+
+            // Create the curve track
+            var newTrack = Track.FromCurve(
+                $"Curve {DateTime.Now:HH:mm:ss}",
+                extendedPoints,
+                isClosed: false);
+            newTrack.IsActive = true;
+
+            SavedTracks.Add(newTrack);
+            SaveTracksToFile();
+            HasActiveTrack = true;
+            IsAutoSteerAvailable = true;
+
+            StatusMessage = $"Created curve with {_recordedCurvePoints.Count} points: {newTrack.Name}";
+            _logger.LogDebug($"[Curve] Created curve track: {newTrack.Name} with {_recordedCurvePoints.Count} points");
+
+            // Clear recording display from map
+            _mapService.ClearRecordingPoints();
+
+            // Reset state
+            CurrentABCreationMode = ABCreationMode.None;
+            _recordedCurvePoints.Clear();
+            _lastCurvePoint = null;
+            OnPropertyChanged(nameof(IsRecordingCurve));
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
         });
 
         StartDrawABModeCommand = new RelayCommand(() =>
@@ -170,6 +234,14 @@ public partial class MainViewModel
             if (CurrentABCreationMode == ABCreationMode.None)
             {
                 _logger.LogDebug("[SetABPointCommand] Mode is None, returning");
+                return;
+            }
+
+            // Handle curve mode - tap to finish recording
+            if (CurrentABCreationMode == ABCreationMode.Curve)
+            {
+                _logger.LogDebug($"[SetABPointCommand] Curve mode - finishing with {_recordedCurvePoints.Count} points");
+                FinishCurveRecordingCommand?.Execute(null);
                 return;
             }
 
@@ -239,10 +311,20 @@ public partial class MainViewModel
 
         CancelABCreationCommand = new RelayCommand(() =>
         {
+            // Clean up curve recording state if active
+            if (CurrentABCreationMode == ABCreationMode.Curve)
+            {
+                _mapService.ClearRecordingPoints(); // Clear recording display from map
+                _recordedCurvePoints.Clear();
+                _lastCurvePoint = null;
+                OnPropertyChanged(nameof(IsRecordingCurve));
+                OnPropertyChanged(nameof(RecordedCurvePointCount));
+            }
+
             CurrentABCreationMode = ABCreationMode.None;
             CurrentABPointStep = ABPointStep.None;
             PendingPointA = null;
-            StatusMessage = "AB line creation cancelled";
+            StatusMessage = "AB line/curve creation cancelled";
         });
 
         CycleABLinesCommand = new RelayCommand(() =>
@@ -570,5 +652,115 @@ public partial class MainViewModel
         _logger.LogDebug($"[ABLine] Extended A by {extendA:F1}m, B by {extendB:F1}m");
 
         return (extendedA, extendedB);
+    }
+
+    /// <summary>
+    /// Extend curve endpoints so they pass the outer boundary by a margin.
+    /// This ensures headland raycast will find an intersection for U-turn detection.
+    /// </summary>
+    /// <param name="points">Original curve points</param>
+    /// <param name="marginMeters">How far past the boundary to extend (default 20m)</param>
+    /// <returns>New list with extended endpoints</returns>
+    private List<Vec3> ExtendCurvePastBoundary(List<Vec3> points, double marginMeters = 20.0)
+    {
+        if (points.Count < 2)
+        {
+            return new List<Vec3>(points);
+        }
+
+        var result = new List<Vec3>(points);
+
+        // Get headings at curve ends
+        var firstPoint = points[0];
+        var secondPoint = points[1];
+        var lastPoint = points[^1];
+        var secondLastPoint = points[^2];
+
+        // Heading at start (backwards from first segment)
+        double startHeading = Math.Atan2(secondPoint.Easting - firstPoint.Easting,
+                                          secondPoint.Northing - firstPoint.Northing);
+        // Heading at end (forwards along last segment)
+        double endHeading = Math.Atan2(lastPoint.Easting - secondLastPoint.Easting,
+                                        lastPoint.Northing - secondLastPoint.Northing);
+
+        double extendStart = marginMeters;
+        double extendEnd = marginMeters;
+
+        if (_currentBoundary?.OuterBoundary != null && _currentBoundary.OuterBoundary.IsValid)
+        {
+            var boundaryPts = _currentBoundary.OuterBoundary.Points;
+            int count = boundaryPts.Count;
+
+            // Raycast from first point backwards to find boundary intersection
+            double sinStart = Math.Sin(startHeading);
+            double cosStart = Math.Cos(startHeading);
+            for (int i = 0; i < count; i++)
+            {
+                var p1 = boundaryPts[i];
+                var p2 = boundaryPts[(i + 1) % count];
+
+                double dx = -sinStart; // backwards direction
+                double dy = -cosStart;
+                double ex = p2.Easting - p1.Easting;
+                double ey = p2.Northing - p1.Northing;
+
+                double denom = dx * ey - dy * ex;
+                if (Math.Abs(denom) < 0.0001) continue;
+
+                double t = ((p1.Easting - firstPoint.Easting) * ey - (p1.Northing - firstPoint.Northing) * ex) / denom;
+                double u = ((p1.Easting - firstPoint.Easting) * dy - (p1.Northing - firstPoint.Northing) * dx) / denom;
+
+                if (t > 0 && u >= 0 && u <= 1)
+                    extendStart = Math.Max(extendStart, t + marginMeters);
+            }
+
+            // Raycast from last point forwards to find boundary intersection
+            double sinEnd = Math.Sin(endHeading);
+            double cosEnd = Math.Cos(endHeading);
+            for (int i = 0; i < count; i++)
+            {
+                var p1 = boundaryPts[i];
+                var p2 = boundaryPts[(i + 1) % count];
+
+                double dx = sinEnd; // forwards direction
+                double dy = cosEnd;
+                double ex = p2.Easting - p1.Easting;
+                double ey = p2.Northing - p1.Northing;
+
+                double denom = dx * ey - dy * ex;
+                if (Math.Abs(denom) < 0.0001) continue;
+
+                double t = ((p1.Easting - lastPoint.Easting) * ey - (p1.Northing - lastPoint.Northing) * ex) / denom;
+                double u = ((p1.Easting - lastPoint.Easting) * dy - (p1.Northing - lastPoint.Northing) * dx) / denom;
+
+                if (t > 0 && u >= 0 && u <= 1)
+                    extendEnd = Math.Max(extendEnd, t + marginMeters);
+            }
+        }
+
+        // Create extended start point
+        double sinStart2 = Math.Sin(startHeading);
+        double cosStart2 = Math.Cos(startHeading);
+        var extendedStart = new Vec3(
+            firstPoint.Easting - sinStart2 * extendStart,
+            firstPoint.Northing - cosStart2 * extendStart,
+            startHeading);
+
+        // Create extended end point
+        double sinEnd2 = Math.Sin(endHeading);
+        double cosEnd2 = Math.Cos(endHeading);
+        var extendedEnd = new Vec3(
+            lastPoint.Easting + sinEnd2 * extendEnd,
+            lastPoint.Northing + cosEnd2 * extendEnd,
+            endHeading);
+
+        // Insert extended start at beginning, replace first point
+        result[0] = extendedStart;
+        // Append extended end, replace last point
+        result[^1] = extendedEnd;
+
+        _logger.LogDebug($"[Curve] Extended start by {extendStart:F1}m, end by {extendEnd:F1}m");
+
+        return result;
     }
 }
