@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <!-- Override Directory.Build.props to support multi-targeting -->
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dev4Agriculture.ISO11783.ISOXML" Version="0.23.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OpenTK" Version="3.3.3" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <ProjectReference Include="..\AgLibrary\AgLibrary.csproj" />
+  </ItemGroup>
+
+  <!-- Framework-specific references -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="PresentationCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Translations\gStr.Designer.cs">
+      <DependentUpon>gStr.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Translations\gStr.resx">
+      <SubType>Designer</SubType>
+      <LastGenOutput>gStr.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

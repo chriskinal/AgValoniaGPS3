@@ -1,0 +1,27 @@
+﻿<Window x:Class="AgOpenGPS.WpfApp.Configuration.ConfigMenuDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" mc:Ignorable="d"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+    xmlns:corevm="clr-namespace:AgOpenGPS.Core.ViewModels;assembly=AgOpenGPS.Core"
+    xmlns:local="clr-namespace:AgOpenGPS.WpfApp"
+ 
+    d:DataContext="{d:DesignInstance Type=corevm:ConfigMenuViewModel}"
+ 
+    Title="ConfigMenuDialog" Height="300" Width="100">
+
+    <UniformGrid Columns="1" Rows="8">
+        <Button x:Name="showConfigurationDialogButton"
+            Content="Configuration"
+            Command="{Binding ShowConfigurationDialogCommand}" />
+        <Button />
+        <Button />
+        <Button />
+        <Button />
+        <Button />
+        <Button />
+        <Button />
+    </UniformGrid>
+
+</Window>

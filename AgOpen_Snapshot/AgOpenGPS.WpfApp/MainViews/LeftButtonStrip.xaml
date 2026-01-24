@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="AgOpenGPS.WpfApp.MainViews.LeftButtonStrip"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" mc:Ignorable="d"
+
+    xmlns:corevm="clr-namespace:AgOpenGPS.Core.ViewModels;assembly=AgOpenGPS.Core"
+
+    d:DataContext="{d:DesignInstance Type=corevm:ApplicationViewModel, IsDesignTimeCreatable=False}"
+    d:DesignHeight="700">
+
+    <Grid x:Name="leftButtonStripGrid" VerticalAlignment="Stretch">
+        <StackPanel VerticalAlignment="Top">
+            <Button Height="80" Width="100" />
+            <Button Height="80" Width="100" />
+            <Button x:Name="showConfigMenuButton"
+                Content="Configuration"
+                Height="80" Width="100"
+                Command="{Binding ShowConfigMenuCommand}" />
+            <Button x:Name="showSelectFieldMenuButton"
+                Content="Start New Field"
+                Height="80" Width="100"
+                Command="{Binding ShowSelectFieldMenuCommand}"/>
+            <Button Height="80" Width="100" />
+            <Button Height="80" Width="100" />
+            <Button Height="80" Width="100" />
+        </StackPanel>
+    </Grid>
+
+</UserControl>

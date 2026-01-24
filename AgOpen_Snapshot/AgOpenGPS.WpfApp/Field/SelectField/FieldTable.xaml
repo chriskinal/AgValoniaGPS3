@@ -1,0 +1,127 @@
+﻿<UserControl x:Class="AgOpenGPS.WpfApp.Field.FieldTable"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" mc:Ignorable="d"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+
+    xmlns:corevm="clr-namespace:AgOpenGPS.Core.ViewModels;assembly=AgOpenGPS.Core"
+    xmlns:base="clr-namespace:AgOpenGPS.WpfApp.Base"
+    xmlns:local="clr-namespace:AgOpenGPS.WpfApp.Field"
+
+    d:DataContext="{d:DesignInstance Type=corevm:FieldTableViewModel, IsDesignTimeCreatable=False}"
+    d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="SourceByName" Source="{Binding FieldDescriptionViewModels}">
+            <CollectionViewSource.SortDescriptions>
+                <componentmodel:SortDescription PropertyName="FieldName"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+
+        <CollectionViewSource x:Key="SourceByDistance" Source="{Binding FieldDescriptionViewModels}">
+            <CollectionViewSource.SortDescriptions>
+                <componentmodel:SortDescription PropertyName="DistanceViewModel.DistanceInMeters"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+
+        <CollectionViewSource x:Key="SourceByArea" Source="{Binding FieldDescriptionViewModels}">
+            <CollectionViewSource.SortDescriptions>
+                <componentmodel:SortDescription PropertyName="AreaViewModel.AreaInSquareMeters"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+
+        <DataGrid x:Key="FieldsDataGridByName" x:Shared="False"
+            ItemsSource="{Binding Source={StaticResource SourceByName}}"
+            SelectedItem="{Binding LocalSelectedField}"
+            AutoGenerateColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn x:Name="nameColumn"
+                    Header="Name"
+                    Width="175" Binding="{Binding FieldName, Mode=OneWay}"/>
+                <DataGridTemplateColumn Header="Distance" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:LongDistanceView x:Name="distanceView" DataContext="{Binding DistanceViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Area" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:AreaView x:Name="areaView" DataContext="{Binding AreaViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DataGrid x:Key="FieldsDataGridByDistance" x:Shared="False"
+            ItemsSource="{Binding Source={StaticResource SourceByDistance}}"
+            SelectedItem="{Binding LocalSelectedField}"
+            AutoGenerateColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Distance" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:LongDistanceView x:Name="distanceView" DataContext="{Binding DistanceViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn 
+                    Header="Name"
+                    Width="175" Binding="{Binding FieldName, Mode=OneWay}"/>
+                <DataGridTemplateColumn Header="Area" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:AreaView x:Name="areaView" DataContext="{Binding AreaViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DataGrid x:Key="FieldsDataGridByArea" x:Shared="False"
+            ItemsSource="{Binding Source={StaticResource SourceByArea}}"
+            SelectedItem="{Binding LocalSelectedField}"
+            AutoGenerateColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Area" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:AreaView x:Name="areaView" DataContext="{Binding AreaViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn 
+                    Header="Name"
+                    Width="175" Binding="{Binding FieldName, Mode=OneWay}"/>
+                <DataGridTemplateColumn Header="Distance" Width="100" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <base:LongDistanceView x:Name="distanceView" DataContext="{Binding DistanceViewModel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </UserControl.Resources>
+
+    <StackPanel>
+        <ContentControl x:Name="byNameGrid"
+            Content="{StaticResource FieldsDataGridByName}"
+            Visibility="{Binding ByNameVisibility}" />
+        <ContentControl x:Name="byDistanceGrid"
+            Content="{StaticResource FieldsDataGridByDistance}"
+            Visibility="{Binding ByDistanceVisibility}" />
+        <ContentControl x:Name="byAreaGrid"
+            Content="{StaticResource FieldsDataGridByArea}"
+            Visibility="{Binding ByAreaVisibility}" />
+    </StackPanel>
+
+</UserControl>
