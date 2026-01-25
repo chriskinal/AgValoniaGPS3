@@ -705,7 +705,7 @@ public partial class MainViewModel : ObservableObject
 
 
 
-    // AutoSteer guidance methods (CalculateAutoSteerGuidance, UpdateActiveLineVisualization)
+    // AutoSteer guidance methods (CalculateAutoSteerGuidance)
     // are now in MainViewModel.Guidance.cs
 
     // YouTurn methods (ProcessYouTurn, CreateYouTurnPath, CalculateYouTurnGuidance, etc.)
@@ -1093,7 +1093,7 @@ public partial class MainViewModel : ObservableObject
         set => SetProperty(ref _pendingPointA, value);
     }
 
-    // Curve recording state
+    // Curve recording state (drive mode)
     private List<Vec3> _recordedCurvePoints = new();
     private Vec3? _lastCurvePoint;
     private const double CurveMinPointSpacing = 2.0; // Minimum 2m spacing between curve points
@@ -1108,12 +1108,26 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public int RecordedCurvePointCount => _recordedCurvePoints.Count;
 
+    // Curve drawing state (tap mode)
+    private List<Vec3> _drawnCurvePoints = new();
+
+    /// <summary>
+    /// Whether curve drawing is currently active
+    /// </summary>
+    public bool IsDrawingCurve => CurrentABCreationMode == ABCreationMode.DrawCurve;
+
+    /// <summary>
+    /// Number of points drawn in current curve
+    /// </summary>
+    public int DrawnCurvePointCount => _drawnCurvePoints.Count;
+
     // Computed properties for UI binding
     public bool IsCreatingABLine => CurrentABCreationMode != ABCreationMode.None;
 
     public bool EnableABClickSelection => CurrentABCreationMode == ABCreationMode.DrawAB ||
                                           CurrentABCreationMode == ABCreationMode.DriveAB ||
-                                          CurrentABCreationMode == ABCreationMode.Curve;
+                                          CurrentABCreationMode == ABCreationMode.Curve ||
+                                          CurrentABCreationMode == ABCreationMode.DrawCurve;
 
     public string ABCreationInstructions
     {
@@ -1126,6 +1140,7 @@ public partial class MainViewModel : ObservableObject
                 (ABCreationMode.DrawAB, ABPointStep.SettingPointA) => "Tap on map to place Point A",
                 (ABCreationMode.DrawAB, ABPointStep.SettingPointB) => "Tap on map to place Point B",
                 (ABCreationMode.Curve, _) => $"RECORDING: Drive along curve ({RecordedCurvePointCount} pts) - Tap screen when done",
+                (ABCreationMode.DrawCurve, _) => $"DRAWING: Tap to add points ({DrawnCurvePointCount} pts) - Tap Finish when done",
                 _ => string.Empty
             };
         }
@@ -1160,6 +1175,21 @@ public partial class MainViewModel : ObservableObject
                     if (_isSelectedTrackOnBoundary)
                     {
                         _logger.LogDebug($"[SelectedTrack] Track '{value.Name}' is ON boundary - will skip boundary check on pass 0");
+                    }
+
+                    // For curved tracks, calculate and display max inward passes
+                    if (value.Points.Count > 2)
+                    {
+                        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+                        double minRadius = CurveProcessing.CalculateMinRadiusOfCurvature(value.Points);
+                        int maxPasses = CurveProcessing.CalculateMaxInwardPasses(value.Points, widthMinusOverlap);
+
+                        if (maxPasses < 50) // Only show warning for reasonably tight curves
+                        {
+                            StatusMessage = $"Curve selected: min radius {minRadius:F1}m, max ~{maxPasses} inward passes";
+                            _logger.LogInformation("Curve '{Name}' selected: min radius {Radius:F1}m, max inward passes ~{Max}",
+                                value.Name, minRadius, maxPasses);
+                        }
                     }
                 }
                 else
@@ -2308,6 +2338,9 @@ public partial class MainViewModel : ObservableObject
     public ICommand? FineNudgeLeftCommand { get; private set; }
     public ICommand? FineNudgeRightCommand { get; private set; }
     public ICommand? StartDrawABModeCommand { get; private set; }
+    public ICommand? StartDrawCurveModeCommand { get; private set; }
+    public ICommand? FinishDrawCurveCommand { get; private set; }
+    public ICommand? UndoLastDrawnPointCommand { get; private set; }
     public ICommand? SetABPointCommand { get; private set; }
     public ICommand? CancelABCreationCommand { get; private set; }
 

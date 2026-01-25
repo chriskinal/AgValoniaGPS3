@@ -118,6 +118,87 @@ namespace AgValoniaGPS.Models.Guidance
         }
 
         /// <summary>
+        /// Smooths a curve using Catmull-Rom spline interpolation.
+        /// Creates a smooth curve that passes through all control points.
+        /// </summary>
+        /// <param name="controlPoints">Control points to smooth through</param>
+        /// <param name="pointsPerSegment">Number of interpolated points per segment (default 10)</param>
+        /// <returns>Smoothed curve points</returns>
+        public static List<Vec3> SmoothWithCatmullRom(IReadOnlyList<Vec3> controlPoints, int pointsPerSegment = 10)
+        {
+            if (controlPoints == null || controlPoints.Count < 2)
+                return controlPoints != null ? new List<Vec3>(controlPoints) : new List<Vec3>();
+
+            // Need at least 2 points for a curve
+            if (controlPoints.Count == 2)
+                return new List<Vec3>(controlPoints);
+
+            var result = new List<Vec3>();
+
+            // For Catmull-Rom, we need 4 points per segment (p0, p1, p2, p3)
+            // The curve is drawn between p1 and p2
+            // For endpoints, we extrapolate virtual points
+
+            for (int i = 0; i < controlPoints.Count - 1; i++)
+            {
+                // Get the 4 control points for this segment
+                Vec3 p0 = i > 0 ? controlPoints[i - 1] : ExtrapolatePoint(controlPoints[1], controlPoints[0]);
+                Vec3 p1 = controlPoints[i];
+                Vec3 p2 = controlPoints[i + 1];
+                Vec3 p3 = i + 2 < controlPoints.Count ? controlPoints[i + 2] : ExtrapolatePoint(controlPoints[controlPoints.Count - 2], controlPoints[controlPoints.Count - 1]);
+
+                // Add interpolated points for this segment
+                for (int j = 0; j < pointsPerSegment; j++)
+                {
+                    double t = (double)j / pointsPerSegment;
+                    var point = CatmullRomPoint(p0, p1, p2, p3, t);
+                    result.Add(point);
+                }
+            }
+
+            // Add the final point
+            result.Add(controlPoints[controlPoints.Count - 1]);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Extrapolates a virtual point beyond the endpoint for Catmull-Rom.
+        /// </summary>
+        private static Vec3 ExtrapolatePoint(Vec3 from, Vec3 to)
+        {
+            double dx = to.Easting - from.Easting;
+            double dy = to.Northing - from.Northing;
+            return new Vec3(to.Easting + dx, to.Northing + dy, to.Heading);
+        }
+
+        /// <summary>
+        /// Calculates a point on a Catmull-Rom spline segment.
+        /// </summary>
+        /// <param name="p0">Control point before segment start</param>
+        /// <param name="p1">Segment start point</param>
+        /// <param name="p2">Segment end point</param>
+        /// <param name="p3">Control point after segment end</param>
+        /// <param name="t">Parameter (0 to 1)</param>
+        /// <returns>Interpolated point on the curve</returns>
+        private static Vec3 CatmullRomPoint(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, double t)
+        {
+            double t2 = t * t;
+            double t3 = t2 * t;
+
+            // Catmull-Rom basis functions
+            double b0 = -0.5 * t3 + t2 - 0.5 * t;
+            double b1 = 1.5 * t3 - 2.5 * t2 + 1.0;
+            double b2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
+            double b3 = 0.5 * t3 - 0.5 * t2;
+
+            double x = b0 * p0.Easting + b1 * p1.Easting + b2 * p2.Easting + b3 * p3.Easting;
+            double y = b0 * p0.Northing + b1 * p1.Northing + b2 * p2.Northing + b3 * p3.Northing;
+
+            return new Vec3(x, y, 0);
+        }
+
+        /// <summary>
         /// Calculates heading angles for each point based on direction to next point.
         /// Last point uses the heading from the second-to-last segment.
         /// </summary>
@@ -167,6 +248,166 @@ namespace AgValoniaGPS.Models.Guidance
             double avg = Math.Atan2(sy, cx);
             if (avg < 0) avg += GeometryMath.twoPI;
             return avg;
+        }
+
+        /// <summary>
+        /// Removes self-intersecting portions of an offset curve.
+        /// When offsetting a curve inward past its radius of curvature, the curve folds back on itself.
+        /// This function detects these folds (where heading reverses) and removes them.
+        /// </summary>
+        /// <param name="points">Offset curve points with headings already calculated</param>
+        /// <param name="referenceHeading">Expected direction of travel (from original curve)</param>
+        /// <returns>Cleaned curve with self-intersections removed</returns>
+        public static List<Vec3> RemoveSelfIntersections(List<Vec3> points, double referenceHeading)
+        {
+            if (points == null || points.Count < 3) return points;
+
+            var result = new List<Vec3>(points.Count);
+            result.Add(points[0]);
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                // Check if this segment is going roughly the same direction as expected
+                double segmentHeading = points[i - 1].Heading;
+                double headingDiff = segmentHeading - referenceHeading;
+
+                // Normalize to [-PI, PI]
+                while (headingDiff > Math.PI) headingDiff -= GeometryMath.twoPI;
+                while (headingDiff < -Math.PI) headingDiff += GeometryMath.twoPI;
+
+                // If heading is within 90° of expected, keep this point
+                // If heading is more than 90° off, this segment is going "backwards" - skip it
+                if (Math.Abs(headingDiff) < Math.PI / 2)
+                {
+                    result.Add(points[i]);
+                }
+            }
+
+            // Need at least 2 points for a valid track
+            if (result.Count < 2)
+            {
+                // Fallback: return first and last points
+                return new List<Vec3> { points[0], points[points.Count - 1] };
+            }
+
+            // Recalculate headings for the cleaned curve
+            CalculateHeadings(result);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a clean offset curve by offsetting points and removing self-intersections.
+        /// Use this instead of manually offsetting and calling CalculateHeadings.
+        /// </summary>
+        /// <param name="originalPoints">Original curve points with headings</param>
+        /// <param name="offsetDistance">Perpendicular offset distance (positive = left of heading)</param>
+        /// <returns>Clean offset curve without self-intersections</returns>
+        public static List<Vec3> CreateOffsetCurve(IReadOnlyList<Vec3> originalPoints, double offsetDistance)
+        {
+            var (result, _) = CreateOffsetCurveWithInfo(originalPoints, offsetDistance);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a clean offset curve and returns information about whether points were removed.
+        /// </summary>
+        /// <param name="originalPoints">Original curve points with headings</param>
+        /// <param name="offsetDistance">Perpendicular offset distance (positive = left of heading)</param>
+        /// <returns>Tuple of (cleaned curve, percentage of points removed due to self-intersection)</returns>
+        public static (List<Vec3> Points, double PercentRemoved) CreateOffsetCurveWithInfo(
+            IReadOnlyList<Vec3> originalPoints, double offsetDistance)
+        {
+            if (originalPoints == null || originalPoints.Count < 2)
+                return (originalPoints != null ? new List<Vec3>(originalPoints) : new List<Vec3>(), 0);
+
+            if (Math.Abs(offsetDistance) < 0.01)
+                return (new List<Vec3>(originalPoints), 0);
+
+            // Create offset points
+            var offsetPoints = new List<Vec3>(originalPoints.Count);
+            foreach (var pt in originalPoints)
+            {
+                double perpAngle = pt.Heading + Math.PI / 2;
+                double offsetE = pt.Easting + Math.Sin(perpAngle) * offsetDistance;
+                double offsetN = pt.Northing + Math.Cos(perpAngle) * offsetDistance;
+                offsetPoints.Add(new Vec3(offsetE, offsetN, 0));
+            }
+
+            // Calculate headings for offset curve
+            CalculateHeadings(offsetPoints);
+
+            // Get reference heading from original curve
+            double referenceHeading = ComputeAverageHeading(originalPoints);
+
+            // Remove self-intersections
+            int originalCount = offsetPoints.Count;
+            var cleaned = RemoveSelfIntersections(offsetPoints, referenceHeading);
+            double percentRemoved = originalCount > 0
+                ? (originalCount - cleaned.Count) * 100.0 / originalCount
+                : 0;
+
+            return (cleaned, percentRemoved);
+        }
+
+        /// <summary>
+        /// Calculates the minimum radius of curvature along a curve.
+        /// This determines the maximum inward offset before self-intersection occurs.
+        /// </summary>
+        /// <param name="points">Curve points with headings</param>
+        /// <returns>Minimum radius in meters, or double.MaxValue for straight lines</returns>
+        public static double CalculateMinRadiusOfCurvature(IReadOnlyList<Vec3> points)
+        {
+            if (points == null || points.Count < 3)
+                return double.MaxValue; // Straight line or too few points
+
+            double minRadius = double.MaxValue;
+
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                // Calculate distance to next point
+                double dx = points[i + 1].Easting - points[i].Easting;
+                double dy = points[i + 1].Northing - points[i].Northing;
+                double segmentLength = Math.Sqrt(dx * dx + dy * dy);
+
+                if (segmentLength < 0.01) continue; // Skip very short segments
+
+                // Calculate heading change
+                double headingChange = points[i + 1].Heading - points[i].Heading;
+
+                // Normalize to [-PI, PI]
+                while (headingChange > Math.PI) headingChange -= GeometryMath.twoPI;
+                while (headingChange < -Math.PI) headingChange += GeometryMath.twoPI;
+
+                double absHeadingChange = Math.Abs(headingChange);
+                if (absHeadingChange < 0.001) continue; // Nearly straight segment
+
+                // Radius = arc_length / angle (in radians)
+                // For small angles, segment length ≈ arc length
+                double radius = segmentLength / absHeadingChange;
+
+                if (radius < minRadius)
+                    minRadius = radius;
+            }
+
+            return minRadius;
+        }
+
+        /// <summary>
+        /// Calculates how many inward passes can be made before hitting the curve's geometric limit.
+        /// </summary>
+        /// <param name="points">Curve points with headings</param>
+        /// <param name="passWidth">Width of each pass (tool width minus overlap)</param>
+        /// <returns>Maximum number of inward passes possible, or int.MaxValue for straight lines</returns>
+        public static int CalculateMaxInwardPasses(IReadOnlyList<Vec3> points, double passWidth)
+        {
+            if (passWidth <= 0) return int.MaxValue;
+
+            double minRadius = CalculateMinRadiusOfCurvature(points);
+            if (minRadius >= double.MaxValue - 1) return int.MaxValue;
+
+            // Leave some margin (80% of min radius) to avoid artifacts
+            return (int)(minRadius * 0.8 / passWidth);
         }
     }
 }

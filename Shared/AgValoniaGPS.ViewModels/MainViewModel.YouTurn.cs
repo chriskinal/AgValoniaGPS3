@@ -220,19 +220,39 @@ public partial class MainViewModel
         var track = SelectedTrack;
         if (track == null || track.Points.Count < 2 || _currentHeadlandLine == null) return;
 
-        var trackPointA = track.Points[0];
-        var trackPointB = track.Points[track.Points.Count - 1];
-
         double headingRadians = currentPosition.Heading * Math.PI / 180.0;
+        bool isCurve = track.Points.Count > 2;
 
-        // Calculate track heading to determine direction
-        double abDx = trackPointB.Easting - trackPointA.Easting;
-        double abDy = trackPointB.Northing - trackPointA.Northing;
-        double abHeading = Math.Atan2(abDx, abDy);
-
-        // Debug: log track point positions and calculated heading
-        _logger.LogDebug($"[YouTurn] TrackA=({trackPointA.Easting:F1}, {trackPointA.Northing:F1}), TrackB=({trackPointB.Easting:F1}, {trackPointB.Northing:F1})");
-        _logger.LogDebug($"[YouTurn] abDx={abDx:F1}, abDy={abDy:F1}, abHeading={abHeading * 180 / Math.PI:F1}°");
+        double abHeading;
+        if (isCurve)
+        {
+            // For curves, find the nearest point and use its local heading
+            double minDistSq = double.MaxValue;
+            int nearestIdx = 0;
+            for (int i = 0; i < track.Points.Count; i++)
+            {
+                double dx = track.Points[i].Easting - currentPosition.Easting;
+                double dy = track.Points[i].Northing - currentPosition.Northing;
+                double distSq = dx * dx + dy * dy;
+                if (distSq < minDistSq)
+                {
+                    minDistSq = distSq;
+                    nearestIdx = i;
+                }
+            }
+            abHeading = track.Points[nearestIdx].Heading;
+            _logger.LogDebug($"[YouTurn] Curve mode: nearest index={nearestIdx}, localHeading={abHeading * 180 / Math.PI:F1}°");
+        }
+        else
+        {
+            // For AB lines, calculate heading from first to last point
+            var trackPointA = track.Points[0];
+            var trackPointB = track.Points[1];
+            double abDx = trackPointB.Easting - trackPointA.Easting;
+            double abDy = trackPointB.Northing - trackPointA.Northing;
+            abHeading = Math.Atan2(abDx, abDy);
+            _logger.LogDebug($"[YouTurn] AB Line: abHeading={abHeading * 180 / Math.PI:F1}°");
+        }
 
         // Determine if vehicle is heading the same way as the AB line
         double headingDiff = headingRadians - abHeading;
@@ -272,13 +292,28 @@ public partial class MainViewModel
         // Create U-turn path when approaching the headland ahead
         // For boundary tracks without headland, use manual U-turn buttons instead
         double minDistanceToCreate = 10.0;  // meters - don't create if we're already too close (mid-turn)
-        double maxDistanceToCreate = 150.0; // meters - don't create if headland is too far (just keep driving)
+        double maxDistanceToCreate = 60.0;  // meters - create when getting close to headland, not immediately on line acquisition
 
         bool headlandAhead = _distanceToHeadland > minDistanceToCreate &&
                              _distanceToHeadland < maxDistanceToCreate &&
                              isAlignedWithABLine;
 
-        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead)
+        // Prevent creating a new U-turn if we just completed one and haven't traveled far enough
+        // This stops the oscillation that happens when the far headland is within range
+        bool tooCloseToLastTurn = false;
+        if (_lastTurnCompletionPosition != null)
+        {
+            double distFromLastTurn = Math.Sqrt(
+                Math.Pow(currentPosition.Easting - _lastTurnCompletionPosition.Value.Easting, 2) +
+                Math.Pow(currentPosition.Northing - _lastTurnCompletionPosition.Value.Northing, 2));
+            tooCloseToLastTurn = distFromLastTurn < 20.0; // Must travel at least 20m before next turn
+            if (tooCloseToLastTurn && _youTurnCounter % 30 == 0)
+            {
+                _logger.LogDebug($"[YouTurn] Too close to last turn completion ({distFromLastTurn:F1}m), waiting...");
+            }
+        }
+
+        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead && !tooCloseToLastTurn)
         {
             // Check if a U-turn would put us outside the boundary
             if (WouldNextLineBeInsideBoundary(track, abHeading))
@@ -296,16 +331,13 @@ public partial class MainViewModel
                 StatusMessage = "End of field reached";
             }
         }
-        // If we have a valid path and distance is close, trigger the turn
+        // If we have a valid path and approaching headland, trigger the turn
         else if (_youTurnPath != null && _youTurnPath.Count > 2 && !_isYouTurnTriggered && !_isInYouTurn)
         {
-            // Calculate distance to turn start point
-            double distToTurnStart = Math.Sqrt(
-                Math.Pow(currentPosition.Easting - _youTurnPath[0].Easting, 2) +
-                Math.Pow(currentPosition.Northing - _youTurnPath[0].Northing, 2));
-
-            // Trigger when within 2 meters of turn start
-            if (distToTurnStart <= 2.0)
+            // Trigger when within 3 meters of the headland boundary
+            // This is more reliable than checking distance to turn start point,
+            // which may not be exactly on the vehicle's path for offset tracks
+            if (_distanceToHeadland <= 3.0 && _distanceToHeadland > 0)
             {
                 // Update centralized state
                 State.YouTurn.IsTriggered = true;
@@ -314,7 +346,7 @@ public partial class MainViewModel
                 _isYouTurnTriggered = true;
                 _isInYouTurn = true;
                 StatusMessage = "YouTurn triggered!";
-                _logger.LogDebug($"[YouTurn] Triggered at distance {distToTurnStart:F2}m from turn start");
+                _logger.LogDebug($"[YouTurn] Triggered at {_distanceToHeadland:F2}m from headland");
                 // Note: ComputeNextTrack was already called when the path was created
             }
         }
@@ -504,21 +536,34 @@ public partial class MainViewModel
         // Save the perpendicular turn offset (always positive - direction handled by IsTurnLeft)
         NextTrackTurnOffset = Math.Abs(pathsToMove * widthMinusOverlap);
 
-        // Calculate the perpendicular direction (90 degrees from AB heading)
-        // Positive offset is to the LEFT of the AB line (when looking from A to B)
-        double perpAngle = abHeading + Math.PI / 2;
-        double offsetEasting = Math.Sin(perpAngle) * nextDistAway;
-        double offsetNorthing = Math.Cos(perpAngle) * nextDistAway;
+        // Check if this is an AB line (2 points) or a curve (>2 points)
+        if (referenceTrack.Points.Count == 2)
+        {
+            // AB Line: Calculate perpendicular offset from track heading
+            double perpAngle = abHeading + Math.PI / 2;
+            double offsetEasting = Math.Sin(perpAngle) * nextDistAway;
+            double offsetNorthing = Math.Cos(perpAngle) * nextDistAway;
 
-        // Create the next track for visualization (relative to reference track)
-        _nextTrack = Track.FromABLine(
-            $"Path {nextPathsAway}",
-            new Vec3(refPointA.Easting + offsetEasting, refPointA.Northing + offsetNorthing, abHeading),
-            new Vec3(refPointB.Easting + offsetEasting, refPointB.Northing + offsetNorthing, abHeading));
+            _nextTrack = Track.FromABLine(
+                $"Path {nextPathsAway}",
+                new Vec3(refPointA.Easting + offsetEasting, refPointA.Northing + offsetNorthing, abHeading),
+                new Vec3(refPointB.Easting + offsetEasting, refPointB.Northing + offsetNorthing, abHeading));
+        }
+        else
+        {
+            // Curve: Create clean offset curve that handles self-intersections on tight curves
+            var offsetPoints = CurveProcessing.CreateOffsetCurve(referenceTrack.Points, nextDistAway);
+
+            _nextTrack = Track.FromCurve(
+                $"Path {nextPathsAway}",
+                offsetPoints,
+                referenceTrack.IsClosed);
+        }
         _nextTrack.IsActive = false;
 
         _logger.LogDebug($"[YouTurn] Turn {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading {(_isHeadingSameWay ? "SAME" : "OPPOSITE")} way");
         _logger.LogDebug($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")}: path {_howManyPathsAway} -> {nextPathsAway} ({nextDistAway:F1}m)");
+        _logger.LogDebug($"[YouTurn] Next track type: {(referenceTrack.Points.Count == 2 ? "AB Line" : $"Curve with {referenceTrack.Points.Count} points")}");
 
         // Update map visualization
         _mapService.SetNextTrack(_nextTrack);
@@ -530,6 +575,13 @@ public partial class MainViewModel
     /// </summary>
     private void CompleteYouTurn()
     {
+        // Guard against double-calling (can be triggered from both ProcessYouTurn and CalculateYouTurnGuidance)
+        if (!_isInYouTurn)
+        {
+            _logger.LogDebug("[YouTurn] CompleteYouTurn called but not in turn - ignoring");
+            return;
+        }
+
         // Save the turn completion position (end of turn path) to prevent immediate re-triggering
         if (_youTurnPath != null && _youTurnPath.Count > 0)
         {
@@ -570,8 +622,13 @@ public partial class MainViewModel
         _nextTrack = null;
         _youTurnCounter = 10; // Keep high so next U-turn path is created when conditions are met
 
+        // CRITICAL: Reset guidance state to force global search on new offset track
+        // Without this, the guidance uses the old CurrentLocationIndex which points to
+        // the wrong position on the new track, causing the tractor to loop back
+        _trackGuidanceState = null;
+
         // Update map visualization - clear the old turn path and next line
-        // The active line will be updated by UpdateActiveLineVisualization in CalculateAutoSteerGuidance
+        // The active track will be updated by CalculateAutoSteerGuidance
         _mapService.SetYouTurnPath(null);
         _mapService.SetNextTrack(null);
         _mapService.SetIsInYouTurn(false);
@@ -694,6 +751,89 @@ public partial class MainViewModel
         {
             _logger.LogWarning($"[YouTurn] Service failed: {output.FailureReason ?? "unknown"}");
         }
+    }
+
+    /// <summary>
+    /// Find the track heading at the point where the CURRENT OFFSET TRACK crosses the headland.
+    /// Uses the offset track, not the original, to get accurate heading for curves.
+    /// </summary>
+    private double FindTrackHeadingAtHeadland(Track track, Vec3 vehiclePos, bool headingSameWay)
+    {
+        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+            return track.Points[0].Heading; // Fallback
+
+        // Create the current offset track (same logic as guidance)
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        double offsetDistance = _howManyPathsAway * widthMinusOverlap;
+
+        List<Vec3> searchPoints;
+        if (Math.Abs(offsetDistance) < 0.01)
+        {
+            searchPoints = track.Points;
+        }
+        else
+        {
+            // Create clean offset curve that handles self-intersections on tight curves
+            searchPoints = CurveProcessing.CreateOffsetCurve(track.Points, offsetDistance);
+        }
+
+        // Find nearest point to vehicle on the offset track
+        int nearestIdx = 0;
+        double minDistSq = double.MaxValue;
+        for (int i = 0; i < searchPoints.Count; i++)
+        {
+            double dx = searchPoints[i].Easting - vehiclePos.Easting;
+            double dy = searchPoints[i].Northing - vehiclePos.Northing;
+            double distSq = dx * dx + dy * dy;
+            if (distSq < minDistSq)
+            {
+                minDistSq = distSq;
+                nearestIdx = i;
+            }
+        }
+
+        // Search from nearest point in direction of travel
+        int step = headingSameWay ? 1 : -1;
+        int endIdx = headingSameWay ? searchPoints.Count - 1 : 0;
+
+        for (int i = nearestIdx; i != endIdx; i += step)
+        {
+            var p1 = searchPoints[i];
+            var p2 = searchPoints[i + step];
+
+            // Check if this segment crosses the headland
+            for (int j = 0; j < _currentHeadlandLine.Count; j++)
+            {
+                var h1 = _currentHeadlandLine[j];
+                var h2 = _currentHeadlandLine[(j + 1) % _currentHeadlandLine.Count];
+
+                if (SegmentsIntersect(p1.Easting, p1.Northing, p2.Easting, p2.Northing,
+                                      h1.Easting, h1.Northing, h2.Easting, h2.Northing))
+                {
+                    // Found intersection - return the track heading at this segment
+                    _logger.LogDebug($"[YouTurn] Found headland intersection on offset track (path {_howManyPathsAway}) at index {i}, heading={p1.Heading * 180 / Math.PI:F1}°");
+                    return p1.Heading;
+                }
+            }
+        }
+
+        // No intersection found, use heading at nearest point
+        return searchPoints[nearestIdx].Heading;
+    }
+
+    /// <summary>
+    /// Check if two line segments intersect.
+    /// </summary>
+    private bool SegmentsIntersect(double x1, double y1, double x2, double y2,
+                                   double x3, double y3, double x4, double y4)
+    {
+        double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (Math.Abs(d) < 1e-10) return false;
+
+        double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d;
+        double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / d;
+
+        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     }
 
     /// <summary>
@@ -834,7 +974,10 @@ public partial class MainViewModel
             IsPointInsideTurnArea = isPointInsideTurnArea,
 
             // AB line guidance data
-            ABHeading = abHeading,
+            // For curves, use the track heading at the headland intersection, not at vehicle position
+            ABHeading = track.Points.Count > 2
+                ? FindTrackHeadingAtHeadland(track, new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians), _isHeadingSameWay)
+                : abHeading,
             // Calculate reference point on the CURRENT track near the vehicle position
             // (not at the extended endpoints which could be kilometers away)
             ABReferencePoint = CalculateCurrentTrackReferencePoint(track, toolWidth, abHeading,
@@ -871,18 +1014,53 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Calculate a reference point on the current track near the vehicle position.
-    /// Projects the vehicle position onto the AB line, then offsets by howManyPathsAway.
+    /// Calculate the reference point where the CURRENT OFFSET TRACK crosses the headland, ahead of the vehicle.
+    /// This is the starting point for the U-turn path.
+    ///
+    /// Key insight: We create the offset track first, then find where IT crosses the headland.
+    /// This is correct for curves where the offset track crosses at a different position than the base track.
     /// </summary>
     private Vec2 CalculateCurrentTrackReferencePoint(Track track, double toolWidth, double abHeading, Vec3 vehiclePosition)
     {
         if (track.Points.Count < 2)
             return new Vec2(vehiclePosition.Easting, vehiclePosition.Northing);
 
-        // Project vehicle position onto the AB line to get a reference point near the vehicle
-        // (not at the extended endpoints which could be kilometers away)
-        var ptA = track.Points[0];
-        var ptB = track.Points[track.Points.Count - 1];
+        // First, create the current offset track (same logic as in guidance)
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        double offsetDistance = _howManyPathsAway * widthMinusOverlap;
+
+        Track currentOffsetTrack;
+        if (Math.Abs(offsetDistance) < 0.01)
+        {
+            // No offset - use original track
+            currentOffsetTrack = track;
+        }
+        else
+        {
+            // Create clean offset curve that handles self-intersections on tight curves
+            var offsetPoints = CurveProcessing.CreateOffsetCurve(track.Points, offsetDistance);
+
+            currentOffsetTrack = new Track
+            {
+                Name = $"Current path {_howManyPathsAway}",
+                Points = offsetPoints,
+                Type = track.Type,
+                IsVisible = false,
+                IsActive = false
+            };
+        }
+
+        // Now find where the OFFSET TRACK crosses the headland (no additional offset needed)
+        var intersection = FindTrackHeadlandIntersectionAhead(currentOffsetTrack, vehiclePosition, _isHeadingSameWay);
+        if (intersection.HasValue)
+        {
+            _logger.LogDebug($"[YouTurn] Reference point: offset track (path {_howManyPathsAway}) crosses headland at ({intersection.Value.Easting:F1}, {intersection.Value.Northing:F1})");
+            return intersection.Value;
+        }
+
+        // Fallback: project vehicle position onto the offset track
+        var ptA = currentOffsetTrack.Points[0];
+        var ptB = currentOffsetTrack.Points[currentOffsetTrack.Points.Count - 1];
 
         // Vector from A to B
         double abE = ptB.Easting - ptA.Easting;
@@ -893,26 +1071,152 @@ public partial class MainViewModel
         double avE = vehiclePosition.Easting - ptA.Easting;
         double avN = vehiclePosition.Northing - ptA.Northing;
 
-        // Project vehicle onto AB line: t = (AV · AB) / |AB|²
+        // Project vehicle onto track: t = (AV · AB) / |AB|²
         double t = (avE * abE + avN * abN) / abLengthSq;
-
-        // Clamp t to [0,1] to stay on the line segment (though for extended lines this shouldn't matter much)
         t = Math.Max(0, Math.Min(1, t));
 
-        // Calculate the projected point on the AB line
-        double baseEasting = ptA.Easting + t * abE;
-        double baseNorthing = ptA.Northing + t * abN;
+        // Calculate the projected point on the offset track
+        double projEasting = ptA.Easting + t * abE;
+        double projNorthing = ptA.Northing + t * abN;
 
-        // Calculate perpendicular offset to get to the current track
-        double perpAngle = abHeading + Math.PI / 2.0;
-        double offsetDistance = _howManyPathsAway * toolWidth;
+        _logger.LogDebug($"[YouTurn] Reference point: fallback to vehicle projection on offset track, path={_howManyPathsAway}");
 
-        double offsetEasting = baseEasting + Math.Sin(perpAngle) * offsetDistance;
-        double offsetNorthing = baseNorthing + Math.Cos(perpAngle) * offsetDistance;
+        return new Vec2(projEasting, projNorthing);
+    }
 
-        _logger.LogDebug($"[YouTurn] Reference point: projected from vehicle, howManyPathsAway={_howManyPathsAway}, offset={offsetDistance:F2}m");
+    /// <summary>
+    /// Find where the track crosses the headland ahead of the vehicle in the direction of travel.
+    /// Returns the intersection point, or null if no intersection found ahead.
+    /// </summary>
+    private Vec2? FindTrackHeadlandIntersectionAhead(Track track, Vec3 vehiclePos, bool headingSameWay)
+    {
+        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+            return null;
 
-        return new Vec2(offsetEasting, offsetNorthing);
+        if (track.Points.Count < 2)
+            return null;
+
+        // For curves, search along track points from vehicle position in direction of travel
+        if (track.Points.Count > 2)
+        {
+            // Find nearest point to vehicle
+            int nearestIdx = 0;
+            double minDistSq = double.MaxValue;
+            for (int i = 0; i < track.Points.Count; i++)
+            {
+                double pdx = track.Points[i].Easting - vehiclePos.Easting;
+                double pdy = track.Points[i].Northing - vehiclePos.Northing;
+                double distSq = pdx * pdx + pdy * pdy;
+                if (distSq < minDistSq)
+                {
+                    minDistSq = distSq;
+                    nearestIdx = i;
+                }
+            }
+
+            // Search from nearest point in direction of travel
+            int step = headingSameWay ? 1 : -1;
+            int endIdx = headingSameWay ? track.Points.Count - 1 : 0;
+
+            for (int i = nearestIdx; i != endIdx; i += step)
+            {
+                var p1 = track.Points[i];
+                var p2 = track.Points[i + step];
+
+                // Check if this segment crosses the headland
+                for (int j = 0; j < _currentHeadlandLine.Count; j++)
+                {
+                    var h1 = _currentHeadlandLine[j];
+                    var h2 = _currentHeadlandLine[(j + 1) % _currentHeadlandLine.Count];
+
+                    var intersection = GetLineIntersection(
+                        p1.Easting, p1.Northing, p2.Easting, p2.Northing,
+                        h1.Easting, h1.Northing, h2.Easting, h2.Northing);
+
+                    if (intersection.HasValue)
+                    {
+                        return intersection;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // For AB lines, extend the line and find intersection
+        var ptA = track.Points[0];
+        var ptB = track.Points[1];
+
+        // Determine which direction is "ahead" based on heading
+        Vec3 startPoint, endPoint;
+        if (headingSameWay)
+        {
+            startPoint = ptA;
+            endPoint = ptB;
+        }
+        else
+        {
+            startPoint = ptB;
+            endPoint = ptA;
+        }
+
+        // Extend the line far beyond the track endpoints
+        double dx = endPoint.Easting - startPoint.Easting;
+        double dy = endPoint.Northing - startPoint.Northing;
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 0.001) return null;
+
+        // Extend to 1000m past the endpoint (should cover any field)
+        double extendedE = endPoint.Easting + (dx / len) * 1000;
+        double extendedN = endPoint.Northing + (dy / len) * 1000;
+
+        // Find where this extended line crosses the headland, starting from vehicle position
+        Vec2? closestIntersection = null;
+        double closestDist = double.MaxValue;
+
+        for (int j = 0; j < _currentHeadlandLine.Count; j++)
+        {
+            var h1 = _currentHeadlandLine[j];
+            var h2 = _currentHeadlandLine[(j + 1) % _currentHeadlandLine.Count];
+
+            var intersection = GetLineIntersection(
+                vehiclePos.Easting, vehiclePos.Northing, extendedE, extendedN,
+                h1.Easting, h1.Northing, h2.Easting, h2.Northing);
+
+            if (intersection.HasValue)
+            {
+                double distSq = (intersection.Value.Easting - vehiclePos.Easting) * (intersection.Value.Easting - vehiclePos.Easting) +
+                               (intersection.Value.Northing - vehiclePos.Northing) * (intersection.Value.Northing - vehiclePos.Northing);
+                if (distSq < closestDist)
+                {
+                    closestDist = distSq;
+                    closestIntersection = intersection;
+                }
+            }
+        }
+
+        return closestIntersection;
+    }
+
+    /// <summary>
+    /// Get the intersection point of two line segments, or null if they don't intersect.
+    /// </summary>
+    private Vec2? GetLineIntersection(double x1, double y1, double x2, double y2,
+                                      double x3, double y3, double x4, double y4)
+    {
+        double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (Math.Abs(d) < 1e-10) return null;
+
+        double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d;
+        double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / d;
+
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+        {
+            double x = x1 + t * (x2 - x1);
+            double y = y1 + t * (y2 - y1);
+            return new Vec2(x, y);
+        }
+
+        return null;
     }
 
     #endregion

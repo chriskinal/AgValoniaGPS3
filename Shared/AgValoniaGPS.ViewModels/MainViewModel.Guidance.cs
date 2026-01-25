@@ -36,6 +36,10 @@ public partial class MainViewModel
     // Track guidance state (carried between iterations)
     private TrackGuidanceState? _trackGuidanceState;
 
+    // Track when we last warned about curve limits (to avoid spam)
+    private DateTime _lastCurveLimitWarning = DateTime.MinValue;
+    private int _lastWarnedPathsAway = int.MinValue;
+
     #endregion
 
     #region AutoSteer Event Handlers
@@ -60,27 +64,16 @@ public partial class MainViewModel
 
     /// <summary>
     /// Calculate steering guidance using Pure Pursuit algorithm and apply to simulator.
-    /// For AB lines: Uses _howManyPathsAway to dynamically calculate which parallel line to follow.
-    /// For curves: Follows the curve directly (parallel offset curves are a future feature).
+    /// Unified approach: An AB line is just a curve with 2 points.
+    /// Uses _howManyPathsAway to calculate which parallel offset to follow.
     /// </summary>
     private void CalculateAutoSteerGuidance(AgValoniaGPS.Models.Position currentPosition)
     {
         var track = SelectedTrack;
-        if (track == null) return;
+        if (track == null || track.Points.Count < 2) return;
 
         // Convert heading from degrees to radians for the algorithm
         double headingRadians = currentPosition.Heading * Math.PI / 180.0;
-
-        // Calculate track heading (from first to last point)
-        double trackDx = track.PointB.Easting - track.PointA.Easting;
-        double trackDy = track.PointB.Northing - track.PointA.Northing;
-        double trackHeading = Math.Atan2(trackDx, trackDy); // Note: atan2(dx, dy) for north-based heading
-
-        // Determine if vehicle is heading the same way as the track
-        double headingDiff = headingRadians - trackHeading;
-        while (headingDiff > Math.PI) headingDiff -= 2 * Math.PI;
-        while (headingDiff < -Math.PI) headingDiff += 2 * Math.PI;
-        bool isHeadingSameWay = Math.Abs(headingDiff) < Math.PI / 2;
 
         // Calculate dynamic look-ahead distance based on speed
         double speed = currentPosition.Speed * 3.6; // Convert m/s to km/h for look-ahead calc
@@ -97,80 +90,71 @@ public partial class MainViewModel
         double steerEasting = currentPosition.Easting + Math.Sin(headingRadians) * Vehicle.Wheelbase;
         double steerNorthing = currentPosition.Northing + Math.Cos(headingRadians) * Vehicle.Wheelbase;
 
-        Track currentTrack;
+        // Calculate parallel offset based on _howManyPathsAway
+        // Same logic for both AB lines and curves
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        double distAway = widthMinusOverlap * _howManyPathsAway;
 
-        // Check if this is an AB line (2 points) or a curve (>2 points)
-        if (track.Points.Count == 2)
+        if (_youTurnCounter % 30 == 0)
         {
-            // AB Line: Calculate parallel offset based on _howManyPathsAway
-            double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
-            double distAway = widthMinusOverlap * _howManyPathsAway;
+            _logger.LogDebug("AutoSteer: Following track '{Name}' ({Count} points), path {Path}, offset {Offset:F1}m",
+                track.Name, track.Points.Count, _howManyPathsAway, distAway);
+        }
 
-            double perpAngle = trackHeading + Math.PI / 2;
-            double offsetEasting = Math.Sin(perpAngle) * distAway;
-            double offsetNorthing = Math.Cos(perpAngle) * distAway;
-
-            double currentPtAEasting = track.PointA.Easting + offsetEasting;
-            double currentPtANorthing = track.PointA.Northing + offsetNorthing;
-            double currentPtBEasting = track.PointB.Easting + offsetEasting;
-            double currentPtBNorthing = track.PointB.Northing + offsetNorthing;
-
-            if (_youTurnCounter % 30 == 0)
-            {
-                _logger.LogDebug("AutoSteer AB: Following path {Path}, offset {Offset:F1}m", _howManyPathsAway, distAway);
-            }
-
-            currentTrack = Track.FromABLine(
-                "CurrentGuidance",
-                new Vec3(currentPtAEasting, currentPtANorthing, trackHeading),
-                new Vec3(currentPtBEasting, currentPtBNorthing, trackHeading));
-
-            // Update the map to show the current AB line
-            UpdateActiveLineVisualization(currentPtAEasting, currentPtANorthing, currentPtBEasting, currentPtBNorthing);
+        Track currentTrack;
+        if (Math.Abs(distAway) < 0.01)
+        {
+            // No offset needed - use original track
+            currentTrack = track;
         }
         else
         {
-            // Curve: Apply parallel offset based on _howManyPathsAway
-            double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
-            double distAway = widthMinusOverlap * _howManyPathsAway;
+            // Create offset track using the clean offset function that handles self-intersections.
+            // When offsetting inward on tight curves, the offset can fold back on itself.
+            // CreateOffsetCurveWithInfo detects and removes these self-intersecting portions.
+            var (offsetPoints, percentRemoved) = CurveProcessing.CreateOffsetCurveWithInfo(track.Points, distAway);
 
-            if (_youTurnCounter % 30 == 0)
+            // Warn user if significant portion of curve was removed due to tight radius
+            if (percentRemoved > 10 && _howManyPathsAway != _lastWarnedPathsAway)
             {
-                _logger.LogDebug("AutoSteer Curve: Following curve '{Name}' with {Count} points, path {Path}, offset {Offset:F1}m",
-                    track.Name, track.Points.Count, _howManyPathsAway, distAway);
-            }
-
-            if (Math.Abs(distAway) < 0.01)
-            {
-                // No offset needed - use original curve
-                currentTrack = track;
-            }
-            else
-            {
-                // Create offset curve by moving each point perpendicular to its local heading
-                var offsetPoints = new List<Vec3>(track.Points.Count);
-                foreach (var pt in track.Points)
+                // Only warn once per path and at most every 10 seconds
+                if ((DateTime.Now - _lastCurveLimitWarning).TotalSeconds > 10)
                 {
-                    // Perpendicular is 90° from heading (left is positive offset)
-                    double perpAngle = pt.Heading + Math.PI / 2;
-                    double offsetE = pt.Easting + Math.Sin(perpAngle) * distAway;
-                    double offsetN = pt.Northing + Math.Cos(perpAngle) * distAway;
-                    offsetPoints.Add(new Vec3(offsetE, offsetN, pt.Heading));
+                    _lastCurveLimitWarning = DateTime.Now;
+                    _lastWarnedPathsAway = _howManyPathsAway;
+
+                    double minRadius = CurveProcessing.CalculateMinRadiusOfCurvature(track.Points);
+                    int maxPasses = CurveProcessing.CalculateMaxInwardPasses(track.Points, widthMinusOverlap);
+
+                    StatusMessage = $"Curve too tight! {percentRemoved:F0}% removed. Max ~{maxPasses} inward passes (min radius: {minRadius:F1}m)";
+                    _logger.LogWarning("Curve offset limit: {Percent:F1}% of points removed at path {Path}. Min radius: {Radius:F1}m, max passes: {Max}",
+                        percentRemoved, _howManyPathsAway, minRadius, maxPasses);
                 }
-
-                currentTrack = new Track
-                {
-                    Name = $"{track.Name} (path {_howManyPathsAway})",
-                    Points = offsetPoints,
-                    Type = track.Type,
-                    IsVisible = true,
-                    IsActive = true
-                };
             }
 
-            // Update the map to show the current curve (offset or original)
-            _mapService.SetActiveTrack(currentTrack);
+            currentTrack = new Track
+            {
+                Name = $"{track.Name} (path {_howManyPathsAway})",
+                Points = offsetPoints,
+                Type = track.Type,
+                IsVisible = true,
+                IsActive = true
+            };
         }
+
+        // Update the map visualization
+        _mapService.SetActiveTrack(currentTrack);
+
+        // IMPORTANT: Calculate isHeadingSameWay using the OFFSET track we're actually following,
+        // not the original track. For curves, the nearest segment can be at different indices
+        // on the original vs offset track, causing incorrect heading direction.
+        double trackHeading = FindNearestSegmentHeading(currentTrack.Points, currentPosition.Easting, currentPosition.Northing);
+
+        // Determine if vehicle is heading the same way as the track
+        double headingDiff = headingRadians - trackHeading;
+        while (headingDiff > Math.PI) headingDiff -= 2 * Math.PI;
+        while (headingDiff < -Math.PI) headingDiff += 2 * Math.PI;
+        bool isHeadingSameWay = Math.Abs(headingDiff) < Math.PI / 2;
 
         // Build unified guidance input
         var input = new TrackGuidanceInput
@@ -227,17 +211,64 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Update the map visualization to show the current dynamically-calculated guidance line.
+    /// Find the heading of the nearest segment to a point.
+    /// For a 2-point track (AB line), returns the constant A→B heading.
+    /// For curves, returns the heading of the segment closest to the point.
     /// </summary>
-    private void UpdateActiveLineVisualization(double ptAEasting, double ptANorthing, double ptBEasting, double ptBNorthing)
+    private static double FindNearestSegmentHeading(List<Vec3> points, double easting, double northing)
     {
-        // Create a temporary Track for visualization that represents the current offset line
-        var currentGuidanceTrack = Track.FromABLine(
-            "CurrentGuidance",
-            new Vec3(ptAEasting, ptANorthing, 0),
-            new Vec3(ptBEasting, ptBNorthing, 0));
-        currentGuidanceTrack.IsActive = true;
-        _mapService.SetActiveTrack(currentGuidanceTrack);
+        if (points.Count < 2) return 0;
+
+        // For 2-point tracks, there's only one segment - use its heading directly
+        // This prevents the "nearest point jumping" issue for AB lines
+        if (points.Count == 2)
+        {
+            return points[0].Heading;
+        }
+
+        // For curves, find the segment with minimum perpendicular distance
+        double minDist = double.MaxValue;
+        int nearestSegmentIdx = 0;
+
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            var p1 = points[i];
+            var p2 = points[i + 1];
+
+            // Calculate perpendicular distance to segment
+            double segDx = p2.Easting - p1.Easting;
+            double segDy = p2.Northing - p1.Northing;
+            double segLenSq = segDx * segDx + segDy * segDy;
+
+            double dist;
+            if (segLenSq < 0.0001)
+            {
+                // Degenerate segment - use point distance
+                dist = Math.Sqrt((easting - p1.Easting) * (easting - p1.Easting) +
+                                 (northing - p1.Northing) * (northing - p1.Northing));
+            }
+            else
+            {
+                // Project point onto segment line
+                double t = ((easting - p1.Easting) * segDx + (northing - p1.Northing) * segDy) / segLenSq;
+                t = Math.Clamp(t, 0, 1);
+
+                double projE = p1.Easting + t * segDx;
+                double projN = p1.Northing + t * segDy;
+
+                dist = Math.Sqrt((easting - projE) * (easting - projE) +
+                                 (northing - projN) * (northing - projN));
+            }
+
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearestSegmentIdx = i;
+            }
+        }
+
+        // Return the heading of the start point of the nearest segment
+        return points[nearestSegmentIdx].Heading;
     }
 
     #endregion

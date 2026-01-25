@@ -65,10 +65,7 @@ public class TrackGuidanceService : ITrackGuidanceService
         bool isClosed = input.Track.IsClosed;
         bool isABLine = input.Track.IsABLine;
 
-        // Determine effective heading direction
-        bool reverseHeading = input.IsReverse ? !input.IsHeadingSameWay : input.IsHeadingSameWay;
-
-        // Find the nearest segment (A, B indices)
+        // Find the nearest segment (A, B indices) FIRST, before determining heading direction
         int indexA, indexB;
         if (isABLine)
         {
@@ -78,7 +75,8 @@ public class TrackGuidanceService : ITrackGuidanceService
         }
         else
         {
-            // Multi-point track - find nearest segment
+            // Multi-point track - find nearest segment using global search initially
+            // We don't use reverseHeading for segment finding to avoid circular dependency
             (indexA, indexB) = FindNearestSegment(
                 input.PivotPosition,
                 points,
@@ -86,7 +84,7 @@ public class TrackGuidanceService : ITrackGuidanceService
                 input.CurrentLocationIndex,
                 input.FindGlobalNearest,
                 input.GoalPointDistance,
-                reverseHeading);
+                true); // Always search forward initially - we'll correct direction after
 
             output.CurrentLocationIndex = indexA;
             output.FindGlobalNearest = false;
@@ -102,6 +100,17 @@ public class TrackGuidanceService : ITrackGuidanceService
 
         Vec3 ptA = points[indexA];
         Vec3 ptB = points[indexB];
+
+        // Calculate isHeadingSameWay based on the ACTUAL segment we found
+        // This ensures consistency - no mismatch between the segment and the heading direction
+        double segmentHeading = ptA.Heading;
+        double headingDiff = input.PivotPosition.Heading - segmentHeading;
+        while (headingDiff > Math.PI) headingDiff -= TwoPI;
+        while (headingDiff < -Math.PI) headingDiff += TwoPI;
+        bool isHeadingSameWay = Math.Abs(headingDiff) < PIBy2;
+
+        // Now determine effective heading direction using the locally calculated value
+        bool reverseHeading = input.IsReverse ? !isHeadingSameWay : isHeadingSameWay;
 
         // Calculate segment direction
         double dx = ptB.Easting - ptA.Easting;
@@ -127,11 +136,11 @@ public class TrackGuidanceService : ITrackGuidanceService
         // Apply algorithm-specific calculations
         if (input.UseStanley)
         {
-            CalculateStanleyGuidance(input, output, points, indexA, indexB, ptA, ptB, dx, dz);
+            CalculateStanleyGuidance(input, output, points, indexA, indexB, ptA, ptB, dx, dz, isHeadingSameWay);
         }
         else
         {
-            CalculatePurePursuitGuidance(input, output, points, indexA, indexB, ptA, ptB, dx, dz, reverseHeading, isABLine, isClosed);
+            CalculatePurePursuitGuidance(input, output, points, indexA, indexB, ptA, ptB, dx, dz, reverseHeading, isABLine, isClosed, isHeadingSameWay);
         }
 
         return output;
@@ -149,7 +158,8 @@ public class TrackGuidanceService : ITrackGuidanceService
         double dx, double dz,
         bool reverseHeading,
         bool isABLine,
-        bool isClosed)
+        bool isClosed,
+        bool isHeadingSameWay)
     {
         // Calculate integral term
         CalculateIntegralTerm(input, output);
@@ -159,7 +169,7 @@ public class TrackGuidanceService : ITrackGuidanceService
         {
             // AB line: project goal point along infinite line
             double lineHeading = Math.Atan2(dx, dz);
-            if (input.IsReverse ^ input.IsHeadingSameWay)
+            if (input.IsReverse ^ isHeadingSameWay)
             {
                 output.GoalPoint = new Vec2(
                     output.ClosestPointPivot.Easting + Math.Sin(lineHeading) * input.GoalPointDistance,
@@ -185,7 +195,7 @@ public class TrackGuidanceService : ITrackGuidanceService
             // Check for end of track
             if (!isClosed && input.IsAutoSteerOn && !input.IsReverse)
             {
-                var endPoint = input.IsHeadingSameWay ? points[^1] : points[0];
+                var endPoint = isHeadingSameWay ? points[^1] : points[0];
                 if (GeometryMath.Distance(output.GoalPoint, endPoint) < 0.5)
                 {
                     output.IsAtEndOfTrack = true;
@@ -230,7 +240,7 @@ public class TrackGuidanceService : ITrackGuidanceService
             input.PivotPosition.Northing + output.PurePursuitRadius * Math.Sin(localHeading));
 
         // Adjust sign based on heading direction
-        if (!input.IsHeadingSameWay)
+        if (!isHeadingSameWay)
             output.DistanceFromLinePivot *= -1.0;
 
         output.CrossTrackError = output.DistanceFromLinePivot;
@@ -255,7 +265,8 @@ public class TrackGuidanceService : ITrackGuidanceService
         List<Vec3> points,
         int indexA, int indexB,
         Vec3 ptA, Vec3 ptB,
-        double dx, double dz)
+        double dx, double dz,
+        bool isHeadingSameWay)
     {
         // Apply integral offset to create virtual offset line
         double integral = input.PreviousState?.Integral ?? 0;
@@ -294,7 +305,7 @@ public class TrackGuidanceService : ITrackGuidanceService
         double steerHeadingError = input.SteerPosition.Heading - steerErr;
         steerHeadingError = NormalizeHeadingError(steerHeadingError);
 
-        if (!input.IsHeadingSameWay)
+        if (!isHeadingSameWay)
         {
             output.DistanceFromLinePivot *= -1.0;
             output.DistanceFromLineSteer *= -1.0;
@@ -458,6 +469,7 @@ public class TrackGuidanceService : ITrackGuidanceService
 
     /// <summary>
     /// Find the nearest segment on a multi-point track.
+    /// Returns indices of ADJACENT points forming the nearest segment.
     /// </summary>
     private (int indexA, int indexB) FindNearestSegment(
         Vec3 position,
@@ -468,62 +480,84 @@ public class TrackGuidanceService : ITrackGuidanceService
         double searchDistance,
         bool reverseDirection)
     {
-        int nearestIndex;
+        int segmentCount = isClosed ? points.Count : points.Count - 1;
 
         if (findGlobal)
         {
-            // Global search - check every 10th point for efficiency
-            nearestIndex = FindNearestGlobalPoint(position, points, 10);
+            // Global search - find segment with minimum perpendicular distance
+            double minDist = double.MaxValue;
+            int nearestSegment = 0;
+
+            for (int i = 0; i < segmentCount; i++)
+            {
+                int nextIdx = (i + 1) % points.Count;
+                double dist = PerpendicularDistanceToSegment(position, points[i], points[nextIdx]);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestSegment = i;
+                }
+            }
+
+            return (nearestSegment, (nearestSegment + 1) % points.Count);
         }
         else
         {
-            // Local search around current index
-            nearestIndex = FindNearestLocalPoint(position, points, currentIndex, searchDistance, reverseDirection);
+            // Local search - check segments around current index
+            int searchRadius = (int)(searchDistance / 2) + 8; // Approximate segment count to check
+            double minDist = double.MaxValue;
+            int nearestSegment = currentIndex;
+
+            for (int offset = -searchRadius; offset <= searchRadius; offset++)
+            {
+                int segIdx = currentIndex + offset;
+                if (!isClosed)
+                {
+                    if (segIdx < 0 || segIdx >= segmentCount) continue;
+                }
+                else
+                {
+                    segIdx = ((segIdx % segmentCount) + segmentCount) % segmentCount;
+                }
+
+                int nextIdx = (segIdx + 1) % points.Count;
+                double dist = PerpendicularDistanceToSegment(position, points[segIdx], points[nextIdx]);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestSegment = segIdx;
+                }
+            }
+
+            return (nearestSegment, (nearestSegment + 1) % points.Count);
         }
+    }
 
-        // Find the two closest points around the nearest
-        int searchStart = Math.Max(0, nearestIndex - 8);
-        int searchEnd = Math.Min(points.Count, nearestIndex + 8);
+    /// <summary>
+    /// Calculate perpendicular distance from a point to a line segment.
+    /// </summary>
+    private double PerpendicularDistanceToSegment(Vec3 point, Vec3 segA, Vec3 segB)
+    {
+        double segDx = segB.Easting - segA.Easting;
+        double segDy = segB.Northing - segA.Northing;
+        double segLenSq = segDx * segDx + segDy * segDy;
 
-        double minDistA = double.MaxValue;
-        double minDistB = double.MaxValue;
-        int indexA = nearestIndex;
-        int indexB = nearestIndex;
-
-        for (int j = searchStart; j < searchEnd; j++)
+        if (segLenSq < 0.0001)
         {
-            double dist = GeometryMath.DistanceSquared(position, points[j]);
-            if (dist < minDistA)
-            {
-                minDistB = minDistA;
-                indexB = indexA;
-                minDistA = dist;
-                indexA = j;
-            }
-            else if (dist < minDistB)
-            {
-                minDistB = dist;
-                indexB = j;
-            }
+            // Degenerate segment - use point distance
+            return Math.Sqrt((point.Easting - segA.Easting) * (point.Easting - segA.Easting) +
+                             (point.Northing - segA.Northing) * (point.Northing - segA.Northing));
         }
 
-        // Ensure ascending order
-        if (indexA > indexB)
-            (indexA, indexB) = (indexB, indexA);
+        // Project point onto segment line
+        double t = ((point.Easting - segA.Easting) * segDx + (point.Northing - segA.Northing) * segDy) / segLenSq;
+        t = Math.Clamp(t, 0, 1);
 
-        // For closed loops, handle wrap-around
-        if (isClosed && indexA == 0 && indexB == points.Count - 1)
-        {
-            // Check if we should use last-to-first segment
-            if (!IsInRange(points[indexA], points[indexB], position))
-            {
-                // Use wrap-around segment
-                indexA = points.Count - 1;
-                indexB = 0;
-            }
-        }
+        double projE = segA.Easting + t * segDx;
+        double projN = segA.Northing + t * segDy;
 
-        return (indexA, indexB);
+        return Math.Sqrt((point.Easting - projE) * (point.Easting - projE) +
+                         (point.Northing - projN) * (point.Northing - projN));
     }
 
     /// <summary>
