@@ -251,52 +251,6 @@ namespace AgValoniaGPS.Models.Guidance
         }
 
         /// <summary>
-        /// Removes self-intersecting portions of an offset curve.
-        /// When offsetting a curve inward past its radius of curvature, the curve folds back on itself.
-        /// This function detects these folds (where heading reverses) and removes them.
-        /// </summary>
-        /// <param name="points">Offset curve points with headings already calculated</param>
-        /// <param name="referenceHeading">Expected direction of travel (from original curve)</param>
-        /// <returns>Cleaned curve with self-intersections removed</returns>
-        public static List<Vec3> RemoveSelfIntersections(List<Vec3> points, double referenceHeading)
-        {
-            if (points == null || points.Count < 3) return points;
-
-            var result = new List<Vec3>(points.Count);
-            result.Add(points[0]);
-
-            for (int i = 1; i < points.Count; i++)
-            {
-                // Check if this segment is going roughly the same direction as expected
-                double segmentHeading = points[i - 1].Heading;
-                double headingDiff = segmentHeading - referenceHeading;
-
-                // Normalize to [-PI, PI]
-                while (headingDiff > Math.PI) headingDiff -= GeometryMath.twoPI;
-                while (headingDiff < -Math.PI) headingDiff += GeometryMath.twoPI;
-
-                // If heading is within 90° of expected, keep this point
-                // If heading is more than 90° off, this segment is going "backwards" - skip it
-                if (Math.Abs(headingDiff) < Math.PI / 2)
-                {
-                    result.Add(points[i]);
-                }
-            }
-
-            // Need at least 2 points for a valid track
-            if (result.Count < 2)
-            {
-                // Fallback: return first and last points
-                return new List<Vec3> { points[0], points[points.Count - 1] };
-            }
-
-            // Recalculate headings for the cleaned curve
-            CalculateHeadings(result);
-
-            return result;
-        }
-
-        /// <summary>
         /// Creates a clean offset curve by offsetting points and removing self-intersections.
         /// Use this instead of manually offsetting and calling CalculateHeadings.
         /// </summary>
@@ -311,6 +265,8 @@ namespace AgValoniaGPS.Models.Guidance
 
         /// <summary>
         /// Creates a clean offset curve and returns information about whether points were removed.
+        /// Uses AgOpenGPS collision detection: if an offset point is within offset² distance
+        /// of ANY original curve point, it indicates self-intersection and the point is skipped.
         /// </summary>
         /// <param name="originalPoints">Original curve points with headings</param>
         /// <param name="offsetDistance">Perpendicular offset distance (positive = left of heading)</param>
@@ -324,30 +280,90 @@ namespace AgValoniaGPS.Models.Guidance
             if (Math.Abs(offsetDistance) < 0.01)
                 return (new List<Vec3>(originalPoints), 0);
 
-            // Create offset points
+            // AgOpenGPS collision detection threshold: offset² - small margin
+            // If offset point is closer than this to ANY original point, it's a self-intersection
+            double distSqAway = (offsetDistance * offsetDistance) - 0.01;
+            int refCount = originalPoints.Count;
+            int skippedCount = 0;
+
             var offsetPoints = new List<Vec3>(originalPoints.Count);
-            foreach (var pt in originalPoints)
+
+            for (int i = 0; i < refCount; i++)
             {
+                var pt = originalPoints[i];
+
+                // Calculate offset point position
                 double perpAngle = pt.Heading + Math.PI / 2;
                 double offsetE = pt.Easting + Math.Sin(perpAngle) * offsetDistance;
                 double offsetN = pt.Northing + Math.Cos(perpAngle) * offsetDistance;
-                offsetPoints.Add(new Vec3(offsetE, offsetN, 0));
+
+                // AgOpenGPS collision detection: check if offset point is too close
+                // to ANY original curve point (indicates self-intersection)
+                bool addPoint = true;
+                for (int t = 0; t < refCount; t++)
+                {
+                    double dx = offsetE - originalPoints[t].Easting;
+                    double dy = offsetN - originalPoints[t].Northing;
+                    double distSq = dx * dx + dy * dy;
+
+                    if (distSq < distSqAway)
+                    {
+                        // Offset point is too close to original curve - self-intersection detected
+                        addPoint = false;
+                        skippedCount++;
+                        break;
+                    }
+                }
+
+                if (addPoint)
+                {
+                    // Also check minimum spacing from previous offset point (AgOpenGPS uses ~0.48 * tool width)
+                    // We use a simpler 1m minimum spacing check
+                    if (offsetPoints.Count > 0)
+                    {
+                        var lastPt = offsetPoints[offsetPoints.Count - 1];
+                        double dx = offsetE - lastPt.Easting;
+                        double dy = offsetN - lastPt.Northing;
+                        double distSq = dx * dx + dy * dy;
+
+                        if (distSq < 1.0) // Less than 1m from previous point
+                        {
+                            continue; // Skip to maintain spacing
+                        }
+                    }
+
+                    offsetPoints.Add(new Vec3(offsetE, offsetN, pt.Heading));
+                }
             }
 
-            // Calculate headings for offset curve
+            // Need at least 2 points for a valid track
+            if (offsetPoints.Count < 2)
+            {
+                // Fallback: return first and last original points offset
+                var first = originalPoints[0];
+                var last = originalPoints[refCount - 1];
+
+                double perpAngle1 = first.Heading + Math.PI / 2;
+                double perpAngle2 = last.Heading + Math.PI / 2;
+
+                return (new List<Vec3>
+                {
+                    new Vec3(
+                        first.Easting + Math.Sin(perpAngle1) * offsetDistance,
+                        first.Northing + Math.Cos(perpAngle1) * offsetDistance,
+                        first.Heading),
+                    new Vec3(
+                        last.Easting + Math.Sin(perpAngle2) * offsetDistance,
+                        last.Northing + Math.Cos(perpAngle2) * offsetDistance,
+                        last.Heading)
+                }, skippedCount * 100.0 / refCount);
+            }
+
+            // Recalculate headings based on actual offset point positions
             CalculateHeadings(offsetPoints);
 
-            // Get reference heading from original curve
-            double referenceHeading = ComputeAverageHeading(originalPoints);
-
-            // Remove self-intersections
-            int originalCount = offsetPoints.Count;
-            var cleaned = RemoveSelfIntersections(offsetPoints, referenceHeading);
-            double percentRemoved = originalCount > 0
-                ? (originalCount - cleaned.Count) * 100.0 / originalCount
-                : 0;
-
-            return (cleaned, percentRemoved);
+            double percentRemoved = refCount > 0 ? skippedCount * 100.0 / refCount : 0;
+            return (offsetPoints, percentRemoved);
         }
 
         /// <summary>
