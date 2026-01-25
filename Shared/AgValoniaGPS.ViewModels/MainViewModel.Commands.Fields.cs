@@ -86,6 +86,9 @@ public partial class MainViewModel
                 _logger.LogDebug($"[Field] Could not load Field.txt origin: {ex.Message}");
             }
 
+            // Clear previous field's background image before loading new field
+            _mapService.ClearBackground();
+
             var boundary = _boundaryFileService.LoadBoundary(fieldPath);
             if (boundary != null)
             {
@@ -620,6 +623,9 @@ public partial class MainViewModel
             // Clear headland
             LoadHeadlandFromField(null);
 
+            // Clear background image
+            _mapService.ClearBackground();
+
             // Clear tracks
             State.Field.Tracks.Clear();
             SavedTracks.Clear();
@@ -702,6 +708,9 @@ public partial class MainViewModel
                 {
                     _logger.LogDebug($"[Field] Could not load Field.txt origin: {ex.Message}");
                 }
+
+                // Clear previous field's background image before loading new field
+                _mapService.ClearBackground();
 
                 // Load boundary from field (same pattern as ConfirmFieldSelectionDialogCommand)
                 var boundary = _boundaryFileService.LoadBoundary(fieldPath);
