@@ -185,6 +185,17 @@ public partial class MainWindow : Window
             Console.WriteLine($"[OnMapClicked] Curve - Finishing with {ViewModel.RecordedCurvePointCount} points");
             ViewModel.SetABPointCommand?.Execute(null);
         }
+        else if (ViewModel.CurrentABCreationMode == ABCreationMode.DrawCurve)
+        {
+            // In DrawCurve mode, pass the clicked map coordinates to add a point
+            var mapPosition = new Position
+            {
+                Easting = e.Easting,
+                Northing = e.Northing
+            };
+            Console.WriteLine($"[OnMapClicked] DrawCurve - Adding point: E={e.Easting:F2}, N={e.Northing:F2}");
+            ViewModel.SetABPointCommand?.Execute(mapPosition);
+        }
     }
 
     private void MainWindow_Opened(object? sender, EventArgs e)

@@ -231,6 +231,16 @@ public partial class MainView : UserControl
             // In Curve mode, tap finishes recording
             _viewModel.SetABPointCommand?.Execute(null);
         }
+        else if (_viewModel.CurrentABCreationMode == ABCreationMode.DrawCurve)
+        {
+            // In DrawCurve mode, pass the clicked map coordinates to add a point
+            var mapPosition = new Position
+            {
+                Easting = e.Easting,
+                Northing = e.Northing
+            };
+            _viewModel.SetABPointCommand?.Execute(mapPosition);
+        }
     }
 
     private void SavedTracks_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

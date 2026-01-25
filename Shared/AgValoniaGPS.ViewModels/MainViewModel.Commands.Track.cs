@@ -189,6 +189,12 @@ public partial class MainViewModel
                 return;
             }
 
+            // Deactivate all existing tracks before adding the new one
+            foreach (var existingTrack in SavedTracks)
+            {
+                existingTrack.IsActive = false;
+            }
+
             // Extend curve ends past boundary for U-turn detection
             var extendedPoints = ExtendCurvePastBoundary(_recordedCurvePoints);
 
@@ -197,12 +203,11 @@ public partial class MainViewModel
                 $"Curve {DateTime.Now:HH:mm:ss}",
                 extendedPoints,
                 isClosed: false);
-            newTrack.IsActive = true;
 
+            // Add track and select it as active (SelectedTrack setter handles IsActive and map update)
             SavedTracks.Add(newTrack);
+            SelectedTrack = newTrack;
             SaveTracksToFile();
-            HasActiveTrack = true;
-            IsAutoSteerAvailable = true;
 
             StatusMessage = $"Created curve with {_recordedCurvePoints.Count} points: {newTrack.Name}";
             _logger.LogDebug($"[Curve] Created curve track: {newTrack.Name} with {_recordedCurvePoints.Count} points");
@@ -227,6 +232,104 @@ public partial class MainViewModel
             StatusMessage = ABCreationInstructions;
         });
 
+        StartDrawCurveModeCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+            CurrentABCreationMode = ABCreationMode.DrawCurve;
+            _drawnCurvePoints.Clear();
+            StatusMessage = ABCreationInstructions;
+            OnPropertyChanged(nameof(IsDrawingCurve));
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
+        });
+
+        FinishDrawCurveCommand = new RelayCommand(() =>
+        {
+            if (CurrentABCreationMode != ABCreationMode.DrawCurve)
+            {
+                return;
+            }
+
+            // Need at least 2 points for a valid track
+            if (_drawnCurvePoints.Count < 2)
+            {
+                StatusMessage = $"Need at least 2 points (have {_drawnCurvePoints.Count})";
+                return;
+            }
+
+            // Clear drawing display from map
+            _mapService.ClearRecordingPoints();
+
+            // Deactivate all existing tracks before adding the new one
+            foreach (var existingTrack in SavedTracks)
+            {
+                existingTrack.IsActive = false;
+            }
+
+            Track newTrack;
+
+            // If only 2 points, create a straight AB line
+            if (_drawnCurvePoints.Count == 2)
+            {
+                var (extendedA, extendedB) = ExtendABLinePastBoundary(_drawnCurvePoints[0], _drawnCurvePoints[1]);
+                newTrack = Track.FromABLine(
+                    $"AB_{extendedA.Heading * 180.0 / Math.PI:F1} {DateTime.Now:HH:mm:ss}",
+                    extendedA,
+                    extendedB);
+                StatusMessage = $"Created AB line: {newTrack.Name}";
+                _logger.LogDebug($"[DrawCurve] Created AB line from 2 points: {newTrack.Name}");
+            }
+            else
+            {
+                // 3+ points - smooth the curve using Catmull-Rom spline, then extend past boundary
+                var smoothedPoints = Models.Guidance.CurveProcessing.SmoothWithCatmullRom(_drawnCurvePoints, pointsPerSegment: 10);
+                smoothedPoints = Models.Guidance.CurveProcessing.CalculateHeadings(smoothedPoints);
+                var extendedPoints = ExtendCurvePastBoundary(smoothedPoints);
+                newTrack = Track.FromCurve(
+                    $"DrawnCurve {DateTime.Now:HH:mm:ss}",
+                    extendedPoints,
+                    isClosed: false);
+                StatusMessage = $"Created smooth curve from {_drawnCurvePoints.Count} control points: {newTrack.Name}";
+                _logger.LogDebug($"[DrawCurve] Created smooth curve track: {newTrack.Name} from {_drawnCurvePoints.Count} control points → {extendedPoints.Count} smoothed points");
+            }
+
+            // Add track and select it as active (SelectedTrack setter handles IsActive and map update)
+            SavedTracks.Add(newTrack);
+            SelectedTrack = newTrack;
+            SaveTracksToFile();
+
+            // Reset state
+            CurrentABCreationMode = ABCreationMode.None;
+            _drawnCurvePoints.Clear();
+            OnPropertyChanged(nameof(IsDrawingCurve));
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
+        });
+
+        UndoLastDrawnPointCommand = new RelayCommand(() =>
+        {
+            if (CurrentABCreationMode != ABCreationMode.DrawCurve || _drawnCurvePoints.Count == 0)
+            {
+                return;
+            }
+
+            _drawnCurvePoints.RemoveAt(_drawnCurvePoints.Count - 1);
+
+            // Update map display
+            if (_drawnCurvePoints.Count > 0)
+            {
+                var displayPoints = _drawnCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+                _mapService.SetRecordingPoints(displayPoints);
+            }
+            else
+            {
+                _mapService.ClearRecordingPoints();
+            }
+
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
+            StatusMessage = $"Removed last point ({_drawnCurvePoints.Count} points remaining)";
+        });
+
         SetABPointCommand = new RelayCommand<object?>(param =>
         {
             _logger.LogDebug($"[SetABPointCommand] Called with param={param?.GetType().Name ?? "null"}, Mode={CurrentABCreationMode}, Step={CurrentABPointStep}");
@@ -242,6 +345,31 @@ public partial class MainViewModel
             {
                 _logger.LogDebug($"[SetABPointCommand] Curve mode - finishing with {_recordedCurvePoints.Count} points");
                 FinishCurveRecordingCommand?.Execute(null);
+                return;
+            }
+
+            // Handle draw curve mode - tap to add points
+            if (CurrentABCreationMode == ABCreationMode.DrawCurve && param is Position curveMapPos)
+            {
+                // Calculate heading from previous point (or use 0 for first point)
+                double heading = 0;
+                if (_drawnCurvePoints.Count > 0)
+                {
+                    var lastPt = _drawnCurvePoints[^1];
+                    heading = Math.Atan2(curveMapPos.Easting - lastPt.Easting, curveMapPos.Northing - lastPt.Northing);
+                }
+
+                var point = new Vec3(curveMapPos.Easting, curveMapPos.Northing, heading);
+                _drawnCurvePoints.Add(point);
+
+                // Update map display
+                var displayPoints = _drawnCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+                _mapService.SetRecordingPoints(displayPoints);
+
+                OnPropertyChanged(nameof(DrawnCurvePointCount));
+                OnPropertyChanged(nameof(ABCreationInstructions));
+                StatusMessage = $"Added point {_drawnCurvePoints.Count} - tap more points or Finish";
+                _logger.LogDebug($"[SetABPointCommand] DrawCurve - Added point {_drawnCurvePoints.Count}: E={curveMapPos.Easting:F2}, N={curveMapPos.Northing:F2}");
                 return;
             }
 
@@ -281,6 +409,12 @@ public partial class MainViewModel
             {
                 if (PendingPointA != null)
                 {
+                    // Deactivate all existing tracks before adding the new one
+                    foreach (var existingTrack in SavedTracks)
+                    {
+                        existingTrack.IsActive = false;
+                    }
+
                     var heading = CalculateHeading(PendingPointA, pointToSet);
                     var headingRadians = heading * Math.PI / 180.0;
 
@@ -293,12 +427,11 @@ public partial class MainViewModel
                         $"AB_{heading:F1} {DateTime.Now:HH:mm:ss}",
                         extendedA,
                         extendedB);
-                    newTrack.IsActive = true;
 
+                    // Add track and select it as active (SelectedTrack setter handles IsActive and map update)
                     SavedTracks.Add(newTrack);
+                    SelectedTrack = newTrack;
                     SaveTracksToFile();
-                    HasActiveTrack = true;
-                    IsAutoSteerAvailable = true;
                     StatusMessage = $"Created AB line: {newTrack.Name} ({heading:F1})";
                     _logger.LogDebug($"[SetABPointCommand] Created AB Line: {newTrack.Name}");
 
@@ -319,6 +452,15 @@ public partial class MainViewModel
                 _lastCurvePoint = null;
                 OnPropertyChanged(nameof(IsRecordingCurve));
                 OnPropertyChanged(nameof(RecordedCurvePointCount));
+            }
+
+            // Clean up draw curve state if active
+            if (CurrentABCreationMode == ABCreationMode.DrawCurve)
+            {
+                _mapService.ClearRecordingPoints(); // Clear drawing display from map
+                _drawnCurvePoints.Clear();
+                OnPropertyChanged(nameof(IsDrawingCurve));
+                OnPropertyChanged(nameof(DrawnCurvePointCount));
             }
 
             CurrentABCreationMode = ABCreationMode.None;

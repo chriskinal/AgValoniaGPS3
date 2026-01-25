@@ -26,9 +26,10 @@ public enum ABCreationMode
 {
     None,           // Not creating an AB line
     DriveAB,        // Drive from A to B - uses current position when tapping
-    DrawAB,         // Draw on map - tap to place points
+    DrawAB,         // Draw on map - tap to place 2 points for straight line
     APlusLine,      // Create from current position + heading
-    Curve           // Record curve while driving
+    Curve,          // Record curve while driving
+    DrawCurve       // Draw on map - tap to place multiple points for curve
 }
 
 /// <summary>

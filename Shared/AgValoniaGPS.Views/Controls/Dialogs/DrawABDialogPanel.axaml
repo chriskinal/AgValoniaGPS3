@@ -69,7 +69,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="20" BoxShadow="0 8 32 #40000000">
             <StackPanel Spacing="16">
                 <!-- Title -->
-                <TextBlock Text="Draw AB Line on Map"
+                <TextBlock Text="Draw Track on Map"
                            Foreground="White" FontSize="18" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
 
@@ -77,36 +77,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Foreground="#BDC3C7" FontSize="14"
                            HorizontalAlignment="Center"/>
 
-                <!-- Instructions -->
-                <Border Background="#34495E" CornerRadius="8" Padding="12">
-                    <StackPanel Spacing="8">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Ellipse Width="20" Height="20" Fill="#E74C3C"/>
-                            <TextBlock Text="1. Tap map to set Point A" Foreground="#BDC3C7" FontSize="13"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Ellipse Width="20" Height="20" Fill="#3498DB"/>
-                            <TextBlock Text="2. Tap map to set Point B" Foreground="#BDC3C7" FontSize="13"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Ellipse Width="20" Height="20" Fill="#27AE60"/>
-                            <TextBlock Text="3. Confirm to create line" Foreground="#BDC3C7" FontSize="13"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Action buttons -->
+                <!-- Mode selection buttons -->
                 <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-                    <!-- Start Drawing -->
-                    <Button Classes="ModeButton" ToolTip.Tip="Start drawing mode"
+                    <!-- Straight Line (2 points) -->
+                    <Button Classes="ModeButton" ToolTip.Tip="Draw straight AB line with 2 points"
                             Command="{Binding StartDrawABModeCommand}">
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
-                            <TextBlock Text="Start" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Straight" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="(2 pts)" FontSize="10" Foreground="#BDC3C7" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Curve (multiple points) -->
+                    <Button Classes="ModeButton" ToolTip.Tip="Draw curved path with multiple points"
+                            Command="{Binding StartDrawCurveModeCommand}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="(3+ pts)" FontSize="10" Foreground="#BDC3C7" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -120,6 +111,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </StackPanel>
                     </Button>
                 </StackPanel>
+
+                <!-- Instructions for straight line -->
+                <Border Background="#34495E" CornerRadius="8" Padding="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Straight Line:" Foreground="White" FontWeight="Bold" FontSize="13"/>
+                        <TextBlock Text="Tap 2 points to create a straight AB line"
+                                   Foreground="#BDC3C7" FontSize="12"/>
+                        <TextBlock Text="Curve:" Foreground="White" FontWeight="Bold" FontSize="13" Margin="0,8,0,0"/>
+                        <TextBlock Text="Tap 3+ points, then tap Finish in the status bar"
+                                   Foreground="#BDC3C7" FontSize="12"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Border>
     </Grid>

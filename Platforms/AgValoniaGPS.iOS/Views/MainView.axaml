@@ -116,6 +116,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <StackPanel Orientation="Horizontal" Spacing="16">
                 <TextBlock Text="{Binding ABCreationInstructions}"
                            Foreground="White" FontSize="16" VerticalAlignment="Center"/>
+                <!-- Finish button for drive-recording Curve mode -->
+                <Button Content="Finish"
+                        Command="{Binding FinishCurveRecordingCommand}"
+                        Background="#27AE60" Foreground="White"
+                        Padding="12,4"
+                        IsVisible="{Binding IsRecordingCurve}"/>
+                <!-- Finish button for DrawCurve mode -->
+                <Button Content="Finish"
+                        Command="{Binding FinishDrawCurveCommand}"
+                        Background="#27AE60" Foreground="White"
+                        Padding="12,4"
+                        IsVisible="{Binding IsDrawingCurve}"/>
+                <!-- Undo button for DrawCurve mode -->
+                <Button Content="Undo"
+                        Command="{Binding UndoLastDrawnPointCommand}"
+                        Background="#E67E22" Foreground="White"
+                        Padding="12,4"
+                        IsVisible="{Binding IsDrawingCurve}"/>
                 <Button Content="Cancel"
                         Command="{Binding CancelABCreationCommand}"
                         Background="#DD3333" Foreground="White"
