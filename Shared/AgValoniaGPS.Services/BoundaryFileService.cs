@@ -172,6 +172,9 @@ public class BoundaryFileService
             }
         }
 
+        // Update bounding box cache for fast boundary checks
+        polygon.UpdateBounds();
+
         return polygon;
     }
 

@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
@@ -66,6 +67,18 @@ public class SectionControlService : ISectionControlService
     private double _vehicleYawRate = 0; // vehicle (tractor) yaw rate
     private double _toolVehicleHeadingDiff = 0; // difference between tool and vehicle heading (for trailed implements)
     private const double YAW_RATE_SMOOTHING = 0.3; // Smoothing factor (0-1, lower = smoother)
+
+    // Performance timing (exposed for consolidated logging)
+    private static readonly Stopwatch _sectionSw = new();
+    private static double _totalBoundaryMs;
+    private static double _totalHeadlandMs;
+    private static double _totalCoverageMs;
+    private static int _sectionUpdateCounter;
+
+    // Public accessors for timing (read from MainViewModel)
+    public static double LastBoundaryMs => _totalBoundaryMs;
+    public static double LastHeadlandMs => _totalHeadlandMs;
+    public static double LastCoverageCheckMs => _totalCoverageMs;
 
     public IReadOnlyList<SectionControlState> SectionStates => _sectionStates;
     public SectionMasterState MasterState
@@ -190,11 +203,22 @@ public class SectionControlService : ISectionControlService
             return;
         }
 
+        // Reset timing accumulators
+        _totalBoundaryMs = 0;
+        _totalHeadlandMs = 0;
+        _totalCoverageMs = 0;
+
         // Update each section
         for (int i = 0; i < numSections; i++)
         {
             UpdateSection(i, toolPosition, toolHeading, speed);
         }
+
+        // Flush coverage updates after all sections processed (fires event once, not 16 times)
+        _coverageMapService.FlushCoverageUpdate();
+
+        // Timing logged from MainViewModel
+        _sectionUpdateCounter++;
 
         // Fire state changed event
         SectionStateChanged?.Invoke(this, new SectionStateChangedEventArgs
@@ -255,9 +279,11 @@ public class SectionControlService : ISectionControlService
 
         // Check boundary conditions using segment-based detection
         // Use halfWidthWithMargin for current position to prevent coverage outside boundary
+        _sectionSw.Restart();
         var currentBoundaryResult = GetSegmentBoundaryStatus(sectionCenter, toolHeading, halfWidthWithMargin);
         var lookOnBoundaryResult = GetSegmentBoundaryStatus(onCheckPoint, toolHeading, halfWidth);
         var lookOffBoundaryResult = GetSegmentBoundaryStatus(offCheckPoint, toolHeading, halfWidth);
+        _totalBoundaryMs += _sectionSw.Elapsed.TotalMilliseconds;
 
         // Use strict threshold for current position - section must be fully inside to spray
         // This prevents spraying outside boundary when implement swings during turns
@@ -276,8 +302,10 @@ public class SectionControlService : ISectionControlService
         double headlandOnLookAhead = TARGET_PENETRATION + speed * MAPPING_DELAY_SECONDS;
         var headlandOnCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, headlandOnLookAhead, speed);
 
+        _sectionSw.Restart();
         bool isInHeadland = IsPointInHeadland(sectionCenter);
         bool lookAheadInHeadland = IsPointInHeadland(headlandOnCheckPoint);
+        _totalHeadlandMs += _sectionSw.Elapsed.TotalMilliseconds;
 
         // For ON: use speed-adjusted look-ahead so triangle extends ~30cm into headland at any speed
         // For OFF: use current position so we stop AFTER entering headland (last point in headland)
@@ -286,12 +314,14 @@ public class SectionControlService : ISectionControlService
 
         // Check coverage using segment-based detection
         // This checks the entire section width, not just center point
+        _sectionSw.Restart();
         var (currentCoverage, lookOnCoverage, lookOffCoverage) = _coverageMapService.GetSegmentCoverageMulti(
             sectionCenter,
             toolHeading,
             halfWidth,
             lookAheadOnDist,
             lookAheadOffDist);
+        _totalCoverageMs += _sectionSw.Elapsed.TotalMilliseconds;
 
         // Section is "covered" if coverage exceeds threshold
         // Use MinCoverage setting from config (0-100), default to 70% if not set

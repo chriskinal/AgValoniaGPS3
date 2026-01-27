@@ -626,6 +626,9 @@ public partial class MainViewModel
             // Clear background image
             _mapService.ClearBackground();
 
+            // Save tracks before clearing (preserves pass number via NudgeDistance)
+            SaveTracksToFile();
+
             // Clear tracks
             State.Field.Tracks.Clear();
             SavedTracks.Clear();

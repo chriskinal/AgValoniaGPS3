@@ -213,6 +213,7 @@ public class VehicleProfileService : IVehicleProfileService
             IsToolFrontFixed = GetBool(settings, "setTool_isToolFront", false),
             NumOfSections = GetInt(settings, "setVehicle_numSections", 1),
             MinCoverage = GetInt(settings, "setVehicle_minCoverage", 100),
+            IsMultiColoredSections = GetBool(settings, "setTool_isMultiColoredSections", false),
             IsSectionsNotZones = GetBool(settings, "setTool_isSectionsNotZones", true),
             IsSectionOffWhenOut = GetBool(settings, "setTool_isSectionOffWhenOut", true),
             IsHeadlandSectionControl = GetBool(settings, "setTool_isHeadlandSectionControl", true),
@@ -315,6 +316,7 @@ public class VehicleProfileService : IVehicleProfileService
         yield return CreateSetting("setTool_isToolFront", t.IsToolFrontFixed);
         yield return CreateSetting("setVehicle_numSections", t.NumOfSections);
         yield return CreateSetting("setVehicle_minCoverage", t.MinCoverage);
+        yield return CreateSetting("setTool_isMultiColoredSections", t.IsMultiColoredSections);
         yield return CreateSetting("setTool_isSectionsNotZones", t.IsSectionsNotZones);
         yield return CreateSetting("setTool_isSectionOffWhenOut", t.IsSectionOffWhenOut);
         yield return CreateSetting("setTool_isHeadlandSectionControl", t.IsHeadlandSectionControl);

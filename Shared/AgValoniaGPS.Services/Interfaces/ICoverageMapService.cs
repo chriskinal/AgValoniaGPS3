@@ -75,6 +75,12 @@ public interface ICoverageMapService
     void AddCoveragePoint(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge);
 
     /// <summary>
+    /// Fire the CoverageUpdated event if coverage has changed since last flush.
+    /// Call this once per GPS update cycle to avoid firing many events for multiple sections.
+    /// </summary>
+    void FlushCoverageUpdate();
+
+    /// <summary>
     /// Check if a zone is currently mapping
     /// </summary>
     /// <param name="zoneIndex">Zone index (0-based)</param>

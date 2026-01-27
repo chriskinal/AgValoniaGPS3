@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -625,8 +626,17 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // Timing instrumentation for performance profiling
+    private static readonly Stopwatch _updateSw = new();
+    private static double _lastSectionControlMs;
+    private static double _lastCoveragePaintingMs;
+    private static double _lastPropertyUpdateMs;
+    private static int _updateCounter;
+
     private void UpdateToolPositionProperties(Services.Interfaces.ToolPositionUpdatedEventArgs e)
     {
+        _updateSw.Restart();
+
         var config = Models.Configuration.ConfigurationStore.Instance;
 
         // Calculate actual tool width from active sections (section widths are in cm)
@@ -647,14 +657,28 @@ public partial class MainViewModel : ObservableObject
         HitchEasting = hitchPos.Easting;
         HitchNorthing = hitchPos.Northing;
 
+        double propsTime = _updateSw.Elapsed.TotalMilliseconds;
+
         // Update section control - determines which sections should be on/off in Auto mode
+        _updateSw.Restart();
         _sectionControlService.Update(e.ToolPosition, e.ToolHeading, e.VehicleHeading, Speed);
+        _lastSectionControlMs = _updateSw.Elapsed.TotalMilliseconds;
 
         // Update coverage painting - paint when sections are active and moving
+        _updateSw.Restart();
         UpdateCoveragePainting(e.ToolPosition, e.ToolHeading);
+        _lastCoveragePaintingMs = _updateSw.Elapsed.TotalMilliseconds;
 
         // Set ToolEasting LAST - this triggers the PropertyChanged that updates the map
+        _updateSw.Restart();
         ToolEasting = e.ToolPosition.Easting;
+        _lastPropertyUpdateMs = _updateSw.Elapsed.TotalMilliseconds;
+
+        // Log every 30 updates (~1 second at 30 Hz GPS) - single line for easy filtering
+        if (++_updateCounter % 30 == 0)
+        {
+            Debug.WriteLine($"[Timing] SectionCtrl: {_lastSectionControlMs:F2}ms (Bnd:{Services.Section.SectionControlService.LastBoundaryMs:F2} Hdl:{Services.Section.SectionControlService.LastHeadlandMs:F2} Cov:{Services.Section.SectionControlService.LastCoverageCheckMs:F2}) | Paint: {_lastCoveragePaintingMs:F2}ms | Props: {_lastPropertyUpdateMs:F2}ms");
+        }
     }
 
     /// <summary>
@@ -701,6 +725,9 @@ public partial class MainViewModel : ObservableObject
                 _coverageMapService.AddCoveragePoint(i, left, right);
             }
         }
+
+        // Flush coverage updates after all sections processed (fires event once, not 16 times)
+        _coverageMapService.FlushCoverageUpdate();
     }
 
 
@@ -1170,6 +1197,19 @@ public partial class MainViewModel : ObservableObject
                     // Show the track on the map when activated
                     _mapService.SetActiveTrack(value);
 
+                    // Initialize pass number from saved NudgeDistance
+                    // NudgeDistance = widthMinusOverlap * howManyPathsAway
+                    double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+                    if (widthMinusOverlap > 0.1)
+                    {
+                        _howManyPathsAway = (int)Math.Round(value.NudgeDistance / widthMinusOverlap);
+                        _logger.LogDebug($"[SelectedTrack] Restored pass number {_howManyPathsAway} from NudgeDistance {value.NudgeDistance:F2}m");
+                    }
+                    else
+                    {
+                        _howManyPathsAway = 0;
+                    }
+
                     // Check if track runs along boundary (skip disengage on first pass)
                     _isSelectedTrackOnBoundary = IsTrackOnBoundary(value);
                     if (_isSelectedTrackOnBoundary)
@@ -1180,7 +1220,7 @@ public partial class MainViewModel : ObservableObject
                     // For curved tracks, calculate and display max inward passes
                     if (value.Points.Count > 2)
                     {
-                        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+                        // widthMinusOverlap already calculated above
                         double minRadius = CurveProcessing.CalculateMinRadiusOfCurvature(value.Points);
                         int maxPasses = CurveProcessing.CalculateMaxInwardPasses(value.Points, widthMinusOverlap);
 
@@ -3778,6 +3818,14 @@ public partial class MainViewModel : ObservableObject
         if (activeField == null || string.IsNullOrEmpty(activeField.DirectoryPath))
         {
             return; // No active field to save to
+        }
+
+        // Update selected track's NudgeDistance from current pass number before saving
+        if (SelectedTrack != null)
+        {
+            double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+            SelectedTrack.NudgeDistance = _howManyPathsAway * widthMinusOverlap;
+            _logger.LogDebug($"[TrackFiles] Updated NudgeDistance to {SelectedTrack.NudgeDistance:F2}m (pass {_howManyPathsAway})");
         }
 
         try

@@ -7,6 +7,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
+    <!-- TODO: Enable compiled bindings after fixing binding errors in:
+         - AgShareDownloadDialogPanel.axaml (missing DataType in DataTemplate)
+         - AgShareUploadDialogPanel.axaml (missing DataType in DataTemplate)
+         - AutoSteerConfigPanel.axaml (missing EditSidehillCompensationCommand)
+         - ConfigurationDialog.axaml (missing IsMetric property)
+         - NewFieldDialogPanel.axaml (missing x:DataType)
+         - NumericStepView.axaml (missing x:DataType)
+    -->
+    <!-- <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault> -->
   </PropertyGroup>
 
   <!-- Avalonia is needed for avares:// resource compilation -->

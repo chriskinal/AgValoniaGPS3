@@ -121,6 +121,9 @@ public class BoundaryRecordingService : IBoundaryRecordingService
             Points = new List<BoundaryPoint>(_recordedPoints)
         };
 
+        // Update bounding box cache for fast boundary checks
+        polygon.UpdateBounds();
+
         // Clear recorded points for next recording
         _recordedPoints.Clear();
         _lastPoint = null;

@@ -24,10 +24,13 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Rendering.SceneGraph;
+using Avalonia.Skia;
 using Avalonia.Threading;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Coverage;
 using AgValoniaGPS.Models.Track;
+using SkiaSharp;
 
 // For loading embedded resources
 using AssetLoader = Avalonia.Platform.AssetLoader;
@@ -210,7 +213,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
 
     // Cached coverage geometry (rebuilt incrementally as patches grow)
-    private List<(Geometry Geometry, IBrush Brush, int VertexCount)> _cachedCoverageGeometry = new();
+    // IsFinalized = true means patch is complete and will never change
+    // Includes bounding box for viewport culling
+    private List<(Geometry Geometry, IBrush Brush, int VertexCount, bool IsFinalized, double MinX, double MinY, double MaxX, double MaxY)> _cachedCoverageGeometry = new();
+
+    // Batched geometry by color for efficient drawing (ONLY finalized patches)
+    // Active patches are drawn separately since their geometry changes every frame
+    private Dictionary<uint, (GeometryGroup Geometry, IBrush Brush)> _batchedCoverageByColor = new();
+    private HashSet<int> _batchedGeometryIndices = new(); // Track which patches are already in batches
+    private HashSet<int> _activePatchIndices = new(); // Track active (non-finalized) patches for O(1) lookup
+
+    // Coverage bitmap cache - renders all coverage to a single bitmap for O(1) drawing
+    private RenderTargetBitmap? _coverageBitmap;
+    private bool _coverageBitmapDirty = true;
+    private double _coverageBoundsMinX, _coverageBoundsMinY, _coverageBoundsMaxX, _coverageBoundsMaxY;
+    private const double COVERAGE_PIXELS_PER_METER = 0.5; // 0.5 pixels per meter = 2m resolution
+
+    // Track what's already rendered to bitmap for incremental updates
+    private int _lastRenderedPatchCount = 0;
+    private List<int> _lastRenderedVertexCounts = new();
+
+    // Track first non-finalized patch to skip finalized patches entirely in loop
+    private int _firstNonFinalizedPatchIndex = 0;
+
+    // Cached Skia draw operation (rebuilt when coverage changes)
+    private CoverageDrawOperation? _cachedCoverageDrawOp;
+    private int _lastDrawOpPatchCount = -1;
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
@@ -250,6 +278,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private static DateTime _lastFpsUpdate = DateTime.UtcNow;
     private static int _frameCount;
     private static double _currentFps;
+
+    // Performance profiling
+    private static readonly System.Diagnostics.Stopwatch _profileSw = new();
+    private static readonly System.Diagnostics.Stopwatch _renderSw = new();
+    private static double _lastCoverageRenderMs;
+    private static double _lastSetCoveragePatchesMs;
+    private static double _lastFullRenderMs;
+    private static int _profileCounter;
+    private static int _renderCounter;
 
     /// <summary>
     /// Current frames per second (updated every second)
@@ -335,6 +372,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public override void Render(DrawingContext context)
     {
+        _renderSw.Restart();
+
         base.Render(context);
 
         var bounds = Bounds;
@@ -434,6 +473,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             {
                 DrawBoundaryOffsetIndicator(context);
             }
+        }
+
+        _renderSw.Stop();
+        _lastFullRenderMs = _renderSw.Elapsed.TotalMilliseconds;
+
+        // Log full render time every 30 frames
+        if (++_renderCounter % 30 == 0)
+        {
+            Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Patches: {_coveragePatches.Count}");
         }
     }
 
@@ -602,10 +650,248 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawCoverage(DrawingContext context)
     {
-        // Draw pre-built cached geometry
-        foreach (var (geometry, brush, _) in _cachedCoverageGeometry)
+        _profileSw.Restart();
+
+        // Update tracking for active vs finalized patches
+        UpdateColorBatchesIncremental();
+
+        // Compute visible world bounds for viewport culling
+        // Use axis-aligned bounding box that contains the rotated view (conservative but fast)
+        double aspect = Bounds.Width > 0 && Bounds.Height > 0 ? Bounds.Width / Bounds.Height : 1.0;
+        double viewHalfWidth = 100.0 * aspect / _zoom;
+        double viewHalfHeight = 100.0 / _zoom;
+
+        // For rotated view, use the diagonal as the radius for the AABB
+        double viewRadius = Math.Sqrt(viewHalfWidth * viewHalfWidth + viewHalfHeight * viewHalfHeight);
+        double visMinX = _cameraX - viewRadius;
+        double visMaxX = _cameraX + viewRadius;
+        double visMinY = _cameraY - viewRadius;
+        double visMaxY = _cameraY + viewRadius;
+
+        // Draw only visible patches from the cache
+        int drawnCount = 0;
+        for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
         {
-            context.DrawGeometry(brush, null, geometry);
+            var cached = _cachedCoverageGeometry[i];
+
+            // Viewport culling: skip patches entirely outside visible bounds
+            if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
+                cached.MaxY < visMinY || cached.MinY > visMaxY)
+                continue;
+
+            context.DrawGeometry(cached.Brush, null, cached.Geometry);
+            drawnCount++;
+        }
+
+        _profileSw.Stop();
+        _lastCoverageRenderMs = _profileSw.Elapsed.TotalMilliseconds;
+        _lastDrawnPatchCount = drawnCount;
+    }
+
+    private int _lastDrawnPatchCount;
+
+    private void UpdateColorBatchesIncremental()
+    {
+        // If coverage was cleared, reset
+        if (_cachedCoverageGeometry.Count == 0)
+        {
+            _batchedCoverageByColor.Clear();
+            _batchedGeometryIndices.Clear();
+            _activePatchIndices.Clear();
+            return;
+        }
+
+        // If our tracked indices exceed cache size, coverage was reset
+        if (_batchedGeometryIndices.Count > 0 &&
+            _batchedGeometryIndices.Max() >= _cachedCoverageGeometry.Count)
+        {
+            _batchedCoverageByColor.Clear();
+            _batchedGeometryIndices.Clear();
+            _activePatchIndices.Clear();
+        }
+
+        // Check active patches - some may have just finalized
+        // Copy to list to allow modification during iteration
+        var toRemove = new List<int>();
+        foreach (int idx in _activePatchIndices)
+        {
+            if (idx >= _cachedCoverageGeometry.Count)
+            {
+                toRemove.Add(idx);
+                continue;
+            }
+
+            var cached = _cachedCoverageGeometry[idx];
+            if (cached.IsFinalized && !_batchedGeometryIndices.Contains(idx))
+            {
+                // This patch just finalized - add to batch
+                AddToBatch(idx, cached.Geometry, cached.Brush);
+                toRemove.Add(idx);
+            }
+        }
+
+        foreach (int idx in toRemove)
+            _activePatchIndices.Remove(idx);
+    }
+
+    private void AddToBatch(int idx, Geometry geometry, IBrush brush)
+    {
+        // Get color key from brush
+        uint colorKey = 0;
+        if (brush is SolidColorBrush scb)
+        {
+            colorKey = ((uint)scb.Color.A << 24) | ((uint)scb.Color.R << 16) |
+                      ((uint)scb.Color.G << 8) | scb.Color.B;
+        }
+
+        // Get or create GeometryGroup for this color
+        if (!_batchedCoverageByColor.TryGetValue(colorKey, out var batch))
+        {
+            batch = (new GeometryGroup(), brush);
+            _batchedCoverageByColor[colorKey] = batch;
+        }
+
+        // Add geometry to the group and mark as batched
+        batch.Geometry.Children.Add(geometry);
+        _batchedGeometryIndices.Add(idx);
+    }
+
+    private void RebuildCoverageBitmap()
+    {
+        if (_coverageBitmap == null) return;
+        if (_cachedCoverageGeometry.Count == 0) return;
+
+        // Calculate bitmap dimensions
+        double worldWidth = _coverageBoundsMaxX - _coverageBoundsMinX;
+        double worldHeight = _coverageBoundsMaxY - _coverageBoundsMinY;
+
+        if (worldWidth <= 0 || worldHeight <= 0) return;
+
+        // Check if we need a full redraw (coverage was cleared)
+        bool needsFullRedraw = _lastRenderedPatchCount > _cachedCoverageGeometry.Count;
+
+        // Find patches that need rendering (new or grown)
+        var patchesToRender = new List<int>();
+        for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+        {
+            var cached = _cachedCoverageGeometry[i];
+            var vertexCount = cached.VertexCount;
+
+            // New patch?
+            if (i >= _lastRenderedVertexCounts.Count)
+            {
+                patchesToRender.Add(i);
+                continue;
+            }
+
+            // Patch has grown?
+            if (vertexCount > _lastRenderedVertexCounts[i])
+            {
+                patchesToRender.Add(i);
+            }
+        }
+
+        // Nothing to render?
+        if (!needsFullRedraw && patchesToRender.Count == 0) return;
+
+        // Create drawing context
+        // Use false parameter to NOT clear the bitmap (incremental rendering)
+        using (var dc = _coverageBitmap.CreateDrawingContext(needsFullRedraw))
+        {
+            // Transform from world coordinates to bitmap coordinates
+            double scaleX = _coverageBitmap.PixelSize.Width / worldWidth;
+            double scaleY = _coverageBitmap.PixelSize.Height / worldHeight;
+
+            var transform = Matrix.CreateTranslation(-_coverageBoundsMinX, -_coverageBoundsMaxY) *
+                           Matrix.CreateScale(scaleX, -scaleY);
+
+            using (dc.PushTransform(transform))
+            {
+                if (needsFullRedraw)
+                {
+                    // Full redraw - render all patches
+                    foreach (var cached in _cachedCoverageGeometry)
+                    {
+                        dc.DrawGeometry(cached.Brush, null, cached.Geometry);
+                    }
+                }
+                else
+                {
+                    // Incremental - only render changed patches
+                    foreach (int idx in patchesToRender)
+                    {
+                        var cached = _cachedCoverageGeometry[idx];
+                        dc.DrawGeometry(cached.Brush, null, cached.Geometry);
+                    }
+                }
+            }
+        }
+
+        // Update tracking state
+        _lastRenderedPatchCount = _cachedCoverageGeometry.Count;
+        _lastRenderedVertexCounts.Clear();
+        foreach (var cached in _cachedCoverageGeometry)
+        {
+            _lastRenderedVertexCounts.Add(cached.VertexCount);
+        }
+    }
+
+    /// <summary>
+    /// Initialize or resize the coverage bitmap based on boundary bounds
+    /// </summary>
+    private void InitializeCoverageBitmap()
+    {
+        if (_boundary?.OuterBoundary == null || !_boundary.OuterBoundary.IsValid)
+        {
+            _coverageBitmap?.Dispose();
+            _coverageBitmap = null;
+            return;
+        }
+
+        // Calculate bounds from boundary points
+        var points = _boundary.OuterBoundary.Points;
+        if (points.Count < 3) return;
+
+        double minX = double.MaxValue, minY = double.MaxValue;
+        double maxX = double.MinValue, maxY = double.MinValue;
+
+        foreach (var pt in points)
+        {
+            if (pt.Easting < minX) minX = pt.Easting;
+            if (pt.Easting > maxX) maxX = pt.Easting;
+            if (pt.Northing < minY) minY = pt.Northing;
+            if (pt.Northing > maxY) maxY = pt.Northing;
+        }
+
+        // Add padding (50m on each side)
+        const double padding = 50.0;
+        _coverageBoundsMinX = minX - padding;
+        _coverageBoundsMinY = minY - padding;
+        _coverageBoundsMaxX = maxX + padding;
+        _coverageBoundsMaxY = maxY + padding;
+
+        double worldWidth = _coverageBoundsMaxX - _coverageBoundsMinX;
+        double worldHeight = _coverageBoundsMaxY - _coverageBoundsMinY;
+
+        // Calculate bitmap size (limit to reasonable dimensions)
+        int bitmapWidth = Math.Clamp((int)(worldWidth * COVERAGE_PIXELS_PER_METER), 64, 4096);
+        int bitmapHeight = Math.Clamp((int)(worldHeight * COVERAGE_PIXELS_PER_METER), 64, 4096);
+
+        // Create or recreate bitmap if size changed
+        if (_coverageBitmap == null ||
+            _coverageBitmap.PixelSize.Width != bitmapWidth ||
+            _coverageBitmap.PixelSize.Height != bitmapHeight)
+        {
+            _coverageBitmap?.Dispose();
+            _coverageBitmap = new RenderTargetBitmap(new PixelSize(bitmapWidth, bitmapHeight));
+            _coverageBitmapDirty = true;
+
+            // Reset incremental rendering state
+            _lastRenderedPatchCount = 0;
+            _lastRenderedVertexCounts.Clear();
+            _firstNonFinalizedPatchIndex = 0;
+
+            Debug.WriteLine($"[DrawingContextMapControl] Created coverage bitmap: {bitmapWidth}x{bitmapHeight} for {worldWidth:F0}x{worldHeight:F0}m field");
         }
     }
 
@@ -1373,6 +1659,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetBoundary(Boundary? boundary)
     {
         _boundary = boundary;
+        InitializeCoverageBitmap();
     }
 
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)
@@ -1497,15 +1784,42 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Coverage visualization
     public void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches)
     {
+        _profileSw.Restart();
+
         _coveragePatches = patches;
+
+        // Rebuild Skia draw operation if patch count changed (new patches added)
+        // We rebuild the whole thing because Skia paths are immutable
+        if (patches.Count != _lastDrawOpPatchCount)
+        {
+            _cachedCoverageDrawOp?.Dispose();
+            _cachedCoverageDrawOp = new CoverageDrawOperation(
+                new Rect(-100000, -100000, 200000, 200000), // Large bounds to cover any field
+                patches);
+            _lastDrawOpPatchCount = patches.Count;
+        }
+
+        // Still maintain geometry cache for fallback
         RebuildCoverageGeometryCache();
+
+        _profileSw.Stop();
+        _lastSetCoveragePatchesMs = _profileSw.Elapsed.TotalMilliseconds;
+
+        // Log every 30 calls (~1 second at 30 FPS)
+        if (++_profileCounter % 30 == 0)
+        {
+            int batchedCount = 0;
+            foreach (var (_, (geom, _)) in _batchedCoverageByColor)
+                batchedCount += geom.Children.Count;
+
+            Debug.WriteLine($"[Timing] SetPatches: {_lastSetCoveragePatchesMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Drawn: {_lastDrawnPatchCount}/{patches.Count}, Batched: {batchedCount}, Active: {_activePatchIndices.Count}");
+        }
     }
 
     private void RebuildCoverageGeometryCache()
     {
         // Incremental update: only rebuild geometry for patches that changed
-        // Patches can grow (vertices added) or new patches can be added
-        // Patches are never modified in place, only appended to
+        // OPTIMIZATION: Start from first non-finalized patch to skip O(n) iteration
 
         int patchCount = _coveragePatches.Count;
 
@@ -1514,9 +1828,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_cachedCoverageGeometry.Count > patchCount)
         {
             _cachedCoverageGeometry.Clear();
+            _batchedCoverageByColor.Clear();
+            _batchedGeometryIndices.Clear();
+            _activePatchIndices.Clear();
+            _coverageBitmapDirty = true;
+            _firstNonFinalizedPatchIndex = 0;
         }
 
-        for (int p = 0; p < patchCount; p++)
+        // Start from first non-finalized patch (skip all finalized ones at start)
+        int startIndex = Math.Min(_firstNonFinalizedPatchIndex, patchCount);
+
+        for (int p = startIndex; p < patchCount; p++)
         {
             var patch = _coveragePatches[p];
             if (!patch.IsRenderable) continue;
@@ -1524,13 +1846,39 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var vertices = patch.Vertices;
             if (vertices.Count < 4) continue;
 
-            // Check if we already have geometry for this patch with same vertex count
+            // Check if we already have cached geometry for this patch
             if (p < _cachedCoverageGeometry.Count)
             {
                 var cached = _cachedCoverageGeometry[p];
+
+                // Check if patch just became finalized (was active, now inactive)
+                bool isNowFinalized = !patch.IsActive;
+                if (!cached.IsFinalized && isNowFinalized)
+                {
+                    // Update cache to mark as finalized (geometry doesn't change, just the flag)
+                    _cachedCoverageGeometry[p] = (cached.Geometry, cached.Brush, cached.VertexCount, true,
+                        cached.MinX, cached.MinY, cached.MaxX, cached.MaxY);
+                }
+
+                // If patch is finalized in cache, update start index and skip
+                if (cached.IsFinalized || isNowFinalized)
+                {
+                    // Move start index past consecutive finalized patches
+                    if (p == _firstNonFinalizedPatchIndex)
+                    {
+                        _firstNonFinalizedPatchIndex = p + 1;
+                    }
+                    continue;
+                }
+
+                // If vertex count unchanged, skip rebuild but still track as active
                 if (cached.VertexCount == vertices.Count)
                 {
-                    // No change, skip rebuild
+                    // Still need to track active patches for drawing
+                    if (!cached.IsFinalized)
+                    {
+                        _activePatchIndices.Add(p);
+                    }
                     continue;
                 }
             }
@@ -1539,32 +1887,79 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var color = Color.FromArgb(152, patch.Color.R, patch.Color.G, patch.Color.B);
             var brush = new SolidColorBrush(color);
 
-            // Build triangle strip geometry
+            // Calculate bounding box while iterating vertices
+            double minX = double.MaxValue, maxX = double.MinValue;
+            double minY = double.MaxValue, maxY = double.MinValue;
+
+            // Build coverage polygon from triangle strip
+            // Triangle strip vertices alternate: left1, right1, left2, right2, ...
+            // Convert to polygon: down the left side, then back up the right side
             var geometry = new StreamGeometry();
             using (var ctx = geometry.Open())
             {
-                for (int i = 1; i <= vertices.Count - 3; i++)
-                {
-                    var v1 = vertices[i];
-                    var v2 = vertices[i + 1];
-                    var v3 = vertices[i + 2];
+                // Skip vertex 0 (color data), start from vertex 1
+                // Collect left edge (odd indices) and right edge (even indices)
+                var leftEdge = new List<Point>();
+                var rightEdge = new List<Point>();
 
-                    ctx.BeginFigure(new Point(v1.Easting, v1.Northing), true);
-                    ctx.LineTo(new Point(v2.Easting, v2.Northing));
-                    ctx.LineTo(new Point(v3.Easting, v3.Northing));
+                for (int i = 1; i < vertices.Count; i++)
+                {
+                    var v = vertices[i];
+                    var pt = new Point(v.Easting, v.Northing);
+
+                    // Track bounding box
+                    if (v.Easting < minX) minX = v.Easting;
+                    if (v.Easting > maxX) maxX = v.Easting;
+                    if (v.Northing < minY) minY = v.Northing;
+                    if (v.Northing > maxY) maxY = v.Northing;
+
+                    if (i % 2 == 1)
+                        leftEdge.Add(pt);
+                    else
+                        rightEdge.Add(pt);
+                }
+
+                if (leftEdge.Count > 0 && rightEdge.Count > 0)
+                {
+                    // Draw as single polygon: down left edge, back up right edge
+                    ctx.BeginFigure(leftEdge[0], true);
+                    for (int i = 1; i < leftEdge.Count; i++)
+                        ctx.LineTo(leftEdge[i]);
+
+                    // Connect to right edge at the end
+                    if (rightEdge.Count > 0)
+                        ctx.LineTo(rightEdge[rightEdge.Count - 1]);
+
+                    // Go back up the right edge
+                    for (int i = rightEdge.Count - 2; i >= 0; i--)
+                        ctx.LineTo(rightEdge[i]);
+
                     ctx.EndFigure(true);
                 }
             }
 
-            // Update or add the cached entry
+            // Mark as finalized if patch is no longer active (complete)
+            bool isFinalized = !patch.IsActive;
+
+            // Update or add the cached entry with bounding box
             if (p < _cachedCoverageGeometry.Count)
             {
-                _cachedCoverageGeometry[p] = (geometry, brush, vertices.Count);
+                _cachedCoverageGeometry[p] = (geometry, brush, vertices.Count, isFinalized, minX, minY, maxX, maxY);
             }
             else
             {
-                _cachedCoverageGeometry.Add((geometry, brush, vertices.Count));
+                _cachedCoverageGeometry.Add((geometry, brush, vertices.Count, isFinalized, minX, minY, maxX, maxY));
             }
+
+            // Track active patches for efficient drawing (avoid O(n) scan)
+            if (!isFinalized)
+            {
+                _activePatchIndices.Add(p);
+            }
+
+            // Mark bitmap cache as needing rebuild
+            // (color batches are updated incrementally when finalized)
+            _coverageBitmapDirty = true;
         }
     }
 
@@ -1640,4 +2035,108 @@ public class MapClickEventArgs : EventArgs
         Easting = easting;
         Northing = northing;
     }
+}
+
+/// <summary>
+/// Custom draw operation for coverage rendering using direct Skia access.
+/// This bypasses Avalonia's DrawingContext overhead for better performance.
+/// The draw operation renders in world coordinates - the parent context handles transforms.
+/// </summary>
+public class CoverageDrawOperation : ICustomDrawOperation
+{
+    private readonly List<(SKPath Path, SKPaint Paint)> _coveragePaths;
+
+    public Rect Bounds { get; }
+
+    public CoverageDrawOperation(Rect bounds, IReadOnlyList<CoveragePatch> patches)
+    {
+        Bounds = bounds;
+        _coveragePaths = new List<(SKPath, SKPaint)>();
+
+        // Pre-build Skia paths for all patches
+        BuildCoveragePaths(patches);
+    }
+
+    private void BuildCoveragePaths(IReadOnlyList<CoveragePatch> patches)
+    {
+        foreach (var patch in patches)
+        {
+            if (!patch.IsRenderable || patch.Vertices.Count < 4)
+                continue;
+
+            var vertices = patch.Vertices;
+
+            // Create paint with patch color (60% alpha)
+            var paint = new SKPaint
+            {
+                Color = new SKColor(patch.Color.R, patch.Color.G, patch.Color.B, 152),
+                Style = SKPaintStyle.Fill,
+                IsAntialias = false // Faster without antialiasing for coverage
+            };
+
+            // Build path from triangle strip (convert to polygon)
+            var path = new SKPath();
+            var leftEdge = new List<SKPoint>();
+            var rightEdge = new List<SKPoint>();
+
+            // Skip vertex 0 (color data), collect left (odd) and right (even) edges
+            for (int i = 1; i < vertices.Count; i++)
+            {
+                var v = vertices[i];
+                var pt = new SKPoint((float)v.Easting, (float)v.Northing);
+                if (i % 2 == 1)
+                    leftEdge.Add(pt);
+                else
+                    rightEdge.Add(pt);
+            }
+
+            if (leftEdge.Count > 0 && rightEdge.Count > 0)
+            {
+                // Draw as polygon: down left edge, back up right edge
+                path.MoveTo(leftEdge[0]);
+                for (int i = 1; i < leftEdge.Count; i++)
+                    path.LineTo(leftEdge[i]);
+
+                // Connect to right edge at end
+                path.LineTo(rightEdge[rightEdge.Count - 1]);
+
+                // Back up right edge
+                for (int i = rightEdge.Count - 2; i >= 0; i--)
+                    path.LineTo(rightEdge[i]);
+
+                path.Close();
+            }
+
+            _coveragePaths.Add((path, paint));
+        }
+    }
+
+    public void Render(ImmediateDrawingContext context)
+    {
+        var leaseFeature = context.TryGetFeature(typeof(ISkiaSharpApiLeaseFeature)) as ISkiaSharpApiLeaseFeature;
+        if (leaseFeature == null)
+            return; // Skia not available
+
+        using var lease = leaseFeature.Lease();
+        var canvas = lease.SkCanvas;
+
+        // Draw all coverage paths (transform already applied by parent context)
+        foreach (var (path, paint) in _coveragePaths)
+        {
+            canvas.DrawPath(path, paint);
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach (var (path, paint) in _coveragePaths)
+        {
+            path.Dispose();
+            paint.Dispose();
+        }
+        _coveragePaths.Clear();
+    }
+
+    public bool HitTest(Point p) => false;
+    public bool Equals(ICustomDrawOperation? other) => false;
 }
