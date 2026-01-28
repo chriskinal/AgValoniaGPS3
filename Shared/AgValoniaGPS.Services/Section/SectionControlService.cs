@@ -59,6 +59,14 @@ public class SectionControlService : ISectionControlService
     // Last coverage point position per zone (for minimum distance filtering)
     private readonly Dictionary<int, Vec2> _lastCoveragePosition = new();
 
+    // Coverage check throttling - don't check every frame (too expensive with many patches)
+    private const double COVERAGE_CHECK_INTERVAL_MS = 150; // Check coverage every 150ms
+    private readonly Stopwatch _coverageThrottleSw = Stopwatch.StartNew();
+    private readonly CoverageResult[] _cachedCurrentCoverage = new CoverageResult[16];
+    private readonly CoverageResult[] _cachedLookOnCoverage = new CoverageResult[16];
+    private readonly CoverageResult[] _cachedLookOffCoverage = new CoverageResult[16];
+    private bool _coverageCacheValid = false;
+
     // Yaw rate tracking for curve-following coverage margin
     private double _previousHeading = double.NaN;
     private double _previousVehicleHeading = double.NaN;
@@ -208,11 +216,21 @@ public class SectionControlService : ISectionControlService
         _totalHeadlandMs = 0;
         _totalCoverageMs = 0;
 
+        // Check if coverage cache should be invalidated (throttle coverage checks)
+        if (_coverageThrottleSw.Elapsed.TotalMilliseconds >= COVERAGE_CHECK_INTERVAL_MS)
+        {
+            _coverageCacheValid = false;
+            _coverageThrottleSw.Restart();
+        }
+
         // Update each section
         for (int i = 0; i < numSections; i++)
         {
             UpdateSection(i, toolPosition, toolHeading, speed);
         }
+
+        // Mark coverage cache as valid for next frame (until throttle timer expires)
+        _coverageCacheValid = true;
 
         // Flush coverage updates after all sections processed (fires event once, not 16 times)
         _coverageMapService.FlushCoverageUpdate();
@@ -312,16 +330,37 @@ public class SectionControlService : ISectionControlService
         bool lookOnInHeadland = lookAheadInHeadland;  // Turn ON when look-ahead exits headland
         bool lookOffInHeadland = isInHeadland;        // Turn OFF when current pos enters headland
 
-        // Check coverage using segment-based detection
+        // Check coverage using segment-based detection (throttled for performance)
         // This checks the entire section width, not just center point
-        _sectionSw.Restart();
-        var (currentCoverage, lookOnCoverage, lookOffCoverage) = _coverageMapService.GetSegmentCoverageMulti(
-            sectionCenter,
-            toolHeading,
-            halfWidth,
-            lookAheadOnDist,
-            lookAheadOffDist);
-        _totalCoverageMs += _sectionSw.Elapsed.TotalMilliseconds;
+        CoverageResult currentCoverage, lookOnCoverage, lookOffCoverage;
+
+        if (_coverageCacheValid && index < _cachedCurrentCoverage.Length)
+        {
+            // Use cached results
+            currentCoverage = _cachedCurrentCoverage[index];
+            lookOnCoverage = _cachedLookOnCoverage[index];
+            lookOffCoverage = _cachedLookOffCoverage[index];
+        }
+        else
+        {
+            // Perform actual coverage check
+            _sectionSw.Restart();
+            (currentCoverage, lookOnCoverage, lookOffCoverage) = _coverageMapService.GetSegmentCoverageMulti(
+                sectionCenter,
+                toolHeading,
+                halfWidth,
+                lookAheadOnDist,
+                lookAheadOffDist);
+            _totalCoverageMs += _sectionSw.Elapsed.TotalMilliseconds;
+
+            // Cache results
+            if (index < _cachedCurrentCoverage.Length)
+            {
+                _cachedCurrentCoverage[index] = currentCoverage;
+                _cachedLookOnCoverage[index] = lookOnCoverage;
+                _cachedLookOffCoverage[index] = lookOffCoverage;
+            }
+        }
 
         // Section is "covered" if coverage exceeds threshold
         // Use MinCoverage setting from config (0-100), default to 70% if not set

@@ -179,6 +179,9 @@ public partial class MainView : UserControl
             };
             // Set initial coverage (in case field was already loaded)
             _mapControl.SetCoveragePatches(coverageService.GetPatches());
+
+            // Set up polygon-based coverage rendering (one extruded polygon per section)
+            _mapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
         }
 
         // Wire up position updates - when ViewModel properties change, update map control

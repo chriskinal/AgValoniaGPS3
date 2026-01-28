@@ -128,10 +128,22 @@ public interface ICoverageMapService
         double lookOffDistance);
 
     /// <summary>
-    /// Get all coverage patches for rendering
+    /// Get all coverage patches for rendering (detailed geometry for accurate display)
     /// </summary>
     /// <returns>Read-only list of coverage patches</returns>
     IReadOnlyList<CoveragePatch> GetPatches();
+
+    /// <summary>
+    /// Get visual polygon data for rendering - one continuous extruded polygon per section.
+    /// Much more efficient than individual patches or grid cells.
+    /// </summary>
+    /// <returns>Section polygons with left/right edge points</returns>
+    IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)> GetSectionPolygons();
+
+    /// <summary>
+    /// Number of visual polygons (one per section with coverage)
+    /// </summary>
+    int VisualPolygonCount { get; }
 
     /// <summary>
     /// Get patches for a specific zone

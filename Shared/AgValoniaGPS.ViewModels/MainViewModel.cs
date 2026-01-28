@@ -1203,11 +1203,12 @@ public partial class MainViewModel : ObservableObject
                     if (widthMinusOverlap > 0.1)
                     {
                         _howManyPathsAway = (int)Math.Round(value.NudgeDistance / widthMinusOverlap);
-                        _logger.LogDebug($"[SelectedTrack] Restored pass number {_howManyPathsAway} from NudgeDistance {value.NudgeDistance:F2}m");
+                        Console.WriteLine($"[NUDGE] SelectedTrack setter: '{value.Name}' NudgeDistance={value.NudgeDistance:F2}m -> _howManyPathsAway={_howManyPathsAway}");
                     }
                     else
                     {
                         _howManyPathsAway = 0;
+                        Console.WriteLine($"[NUDGE] SelectedTrack setter: '{value.Name}' widthMinusOverlap too small, _howManyPathsAway=0");
                     }
 
                     // Check if track runs along boundary (skip disengage on first pass)
@@ -3825,17 +3826,23 @@ public partial class MainViewModel : ObservableObject
         {
             double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
             SelectedTrack.NudgeDistance = _howManyPathsAway * widthMinusOverlap;
-            _logger.LogDebug($"[TrackFiles] Updated NudgeDistance to {SelectedTrack.NudgeDistance:F2}m (pass {_howManyPathsAway})");
+            Console.WriteLine($"[NUDGE] SaveTracksToFile: SelectedTrack '{SelectedTrack.Name}' NudgeDistance = {_howManyPathsAway} * {widthMinusOverlap:F2} = {SelectedTrack.NudgeDistance:F2}m");
+        }
+
+        // Debug: Log all tracks' NudgeDistance before saving
+        foreach (var track in SavedTracks)
+        {
+            Console.WriteLine($"[NUDGE] SaveTracksToFile: Saving '{track.Name}': NudgeDistance={track.NudgeDistance:F2}m");
         }
 
         try
         {
             Services.TrackFilesService.SaveTracks(activeField.DirectoryPath, SavedTracks.ToList());
-            _logger.LogDebug($"[TrackFiles] Saved {SavedTracks.Count} tracks to TrackLines.txt");
+            Console.WriteLine($"[NUDGE] SaveTracksToFile: Saved {SavedTracks.Count} tracks");
         }
         catch (System.Exception ex)
         {
-            _logger.LogDebug($"[TrackFiles] Failed to save tracks: {ex.Message}");
+            Console.WriteLine($"[NUDGE] SaveTracksToFile: FAILED - {ex.Message}");
         }
     }
 

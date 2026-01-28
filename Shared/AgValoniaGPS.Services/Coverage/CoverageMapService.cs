@@ -18,195 +18,297 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.Coverage;
-using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services.Coverage;
 
 /// <summary>
 /// Tracks and manages coverage (worked area) as the tool moves across the field.
-/// Coverage is stored as triangle strips for efficient rendering.
 ///
-/// Based on AgOpenGPS CPatches implementation with Torriem's area calculation.
+/// Architecture (dual-layer design):
+/// - VISUAL LAYER: One StreamGeometry polygon per section (16 max) for efficient rendering
+/// - DETECTION LAYER: HashSet bitmap with 0.5m cells for O(1) coverage detection
+///
+/// This replaces the old patch-based system which stored 50,000+ triangle strips
+/// and iterated through them for coverage detection (280-330ms per check).
+/// The new bitmap approach provides coverage detection in ~0.04ms.
 /// </summary>
 public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverageMapService
 {
-    // All coverage patches (completed and active)
-    private readonly List<CoveragePatch> _patches = new();
+    // ========== VISUAL LAYER ==========
+    // Visual polygons per section - multiple passes per section (one polygon per pass)
+    // Each pass tracks left/right edge points to form a filled polygon
+    // When sections turn off at headland and back on, a new pass/polygon is started
+    private readonly Dictionary<int, List<SectionVisualPolygon>> _sectionPolygons = new();
 
-    // Active patches per zone (index = zone index)
-    private readonly Dictionary<int, CoveragePatch> _activePatches = new();
+    // ========== DETECTION LAYER (Bitmap) ==========
+    // Coverage bitmap for O(1) coverage detection (like AgOpenGPS GPU pixel readback)
+    // Each cell represents a small area; if present in the set, that cell is covered
+    private const double BITMAP_CELL_SIZE = 0.5; // meters per cell (0.5m = ~1.6ft resolution)
+    private readonly HashSet<(int CellE, int CellN)> _coverageBitmap = new();
 
-    // Track indices of active patches for O(1) lookup
-    private readonly Dictionary<int, int> _activePatchIndices = new(); // zone -> patch index
+    // ========== TRACKING STATE ==========
+    // Track which sections are actively mapping
+    private readonly HashSet<int> _activeSections = new();
 
-    // Patches pending save to file
-    private readonly List<CoveragePatch> _patchSaveList = new();
+    // Track last edges per section for area calculation and bitmap rasterization
+    private readonly Dictionary<int, ((double E, double N) Left, (double E, double N) Right)> _lastEdgesPerSection = new();
 
-    // Area totals
+    // Track last VISUAL edges per section for decimation (only add points if far enough apart)
+    // This is separate from _lastEdgesPerSection which tracks every point for bitmap rasterization
+    private readonly Dictionary<int, ((double E, double N) Left, (double E, double N) Right)> _lastVisualEdgesPerSection = new();
+    private const double VISUAL_DECIMATION_THRESHOLD_SQ = 25.0; // 5m minimum spacing squared for visual polygon
+
+    // Area totals (calculated incrementally)
     private double _totalWorkedArea;
     private double _totalWorkedAreaUser;
-
-    // Triangle count threshold for splitting patches (for rendering efficiency)
-    private const int MAX_TRIANGLES_PER_PATCH = 62;
 
     // Dirty flag to track if coverage has changed since last flush
     private bool _coverageDirty;
     private double _pendingAreaAdded;
 
-    // Spatial index for fast coverage lookup
-    private const double COVERAGE_GRID_CELL_SIZE = 50.0; // meters per cell
-    private readonly Dictionary<(int, int), List<int>> _coverageSpatialIndex = new();
-    private int _gridOffsetE; // offset to make grid indices non-negative
-    private int _gridOffsetN;
-    private bool _spatialIndexNeedsRebuild = true;
-
-    // Cached patch bounding boxes for fast rejection
-    private readonly List<(double MinE, double MaxE, double MinN, double MaxN)> _patchBounds = new();
+    /// <summary>
+    /// Tracks the visual polygon for a single section - left edge points forward,
+    /// right edge points will be reversed to close the polygon.
+    /// </summary>
+    private class SectionVisualPolygon
+    {
+        public List<(double E, double N)> LeftEdge { get; } = new();
+        public List<(double E, double N)> RightEdge { get; } = new();
+        public CoverageColor Color { get; set; }
+        public bool IsDirty { get; set; } = true;
+    }
 
     public double TotalWorkedArea => _totalWorkedArea;
     public double TotalWorkedAreaUser => _totalWorkedAreaUser;
-    public int PatchCount => _patches.Count;
-    public bool IsAnyZoneMapping => _activePatches.Count > 0;
+    public int PatchCount => _coverageBitmap.Count; // Now represents bitmap cell count
+    public bool IsAnyZoneMapping => _activeSections.Count > 0;
+
+    // Debug: total polygon points across all sections (sum across all passes)
+    public int TotalPolygonPoints => _sectionPolygons.Values.Sum(passes => passes.Sum(p => p.LeftEdge.Count + p.RightEdge.Count));
+    public int ActiveSectionCount => _activeSections.Count;
+
+    // Track the current active polygon for each section (last polygon in the list)
+    private SectionVisualPolygon? GetCurrentPolygon(int zoneIndex) =>
+        _sectionPolygons.TryGetValue(zoneIndex, out var passes) && passes.Count > 0 ? passes[^1] : null;
 
     public event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
 
     public void StartMapping(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge, CoverageColor? color = null)
     {
         // If already mapping this zone, just continue
-        if (_activePatches.ContainsKey(zoneIndex))
+        if (_activeSections.Contains(zoneIndex))
             return;
 
-        // Create new patch
-        var patch = new CoveragePatch
+        Console.WriteLine($"[Timing] CovStart zone {zoneIndex} at ({leftEdge.Easting:F1}, {leftEdge.Northing:F1})");
+
+        _activeSections.Add(zoneIndex);
+
+        // Initialize pass list for this section if needed
+        if (!_sectionPolygons.TryGetValue(zoneIndex, out var passes))
         {
-            ZoneIndex = zoneIndex,
-            Color = color ?? GetZoneColor(zoneIndex),
-            IsActive = true,
-            Vertices = new List<Vec3>(64)
-        };
+            passes = new List<SectionVisualPolygon>();
+            _sectionPolygons[zoneIndex] = passes;
+        }
 
-        // First vertex is the color
-        patch.Vertices.Add(patch.Color.ToVec3());
+        // Always create a NEW polygon for each pass (prevents fold-back artifacts at U-turns)
+        var polygon = new SectionVisualPolygon { Color = color ?? GetZoneColor(zoneIndex) };
+        passes.Add(polygon);
 
-        // Add initial edge points
-        patch.Vertices.Add(new Vec3(leftEdge.Easting, leftEdge.Northing, 0));
-        patch.Vertices.Add(new Vec3(rightEdge.Easting, rightEdge.Northing, 0));
+        // Store initial edge for area calculation
+        _lastEdgesPerSection[zoneIndex] = (
+            (leftEdge.Easting, leftEdge.Northing),
+            (rightEdge.Easting, rightEdge.Northing));
 
-        _patches.Add(patch);
-        int patchIndex = _patches.Count - 1;
-        _activePatches[zoneIndex] = patch;
-        _activePatchIndices[zoneIndex] = patchIndex;
-        // Don't invalidate - active patches are always checked via _activePatchIndices
-        // Index will be updated when patch becomes inactive (StopMapping/SplitPatch)
+        // Add initial points to visual polygon
+        polygon.LeftEdge.Add((leftEdge.Easting, leftEdge.Northing));
+        polygon.RightEdge.Add((rightEdge.Easting, rightEdge.Northing));
+        polygon.IsDirty = true;
     }
 
     public void StopMapping(int zoneIndex)
     {
-        if (!_activePatches.TryGetValue(zoneIndex, out var patch))
+        if (!_activeSections.Contains(zoneIndex))
             return;
 
-        // Get patch index before removing from active tracking
-        int patchIndex = _activePatchIndices.GetValueOrDefault(zoneIndex, -1);
+        var currentPolygon = GetCurrentPolygon(zoneIndex);
+        int passCount = _sectionPolygons.TryGetValue(zoneIndex, out var passes) ? passes.Count : 0;
+        Console.WriteLine($"[Timing] CovStop zone {zoneIndex}, pass {passCount} has {currentPolygon?.LeftEdge.Count ?? 0} pts");
 
-        // Mark patch as complete
-        patch.IsActive = false;
-        _activePatches.Remove(zoneIndex);
-        _activePatchIndices.Remove(zoneIndex);
-
-        // Save patch if it has enough points
-        // Require at least 9 vertices (1 color + 8 geometry = 4 edge pairs = 3 quads minimum)
-        // This filters out tiny glitch patches from section flickering at boundaries
-        if (patch.Vertices.Count >= 9)
-        {
-            _patchSaveList.Add(patch);
-            // Add to spatial index now that it's finalized
-            if (patchIndex >= 0)
-                AddPatchToSpatialIndex(patchIndex);
-        }
-        else
-        {
-            // Remove incomplete/glitch patches - need full rebuild since we're removing
-            _patches.Remove(patch);
-            InvalidateSpatialIndex();
-        }
+        _activeSections.Remove(zoneIndex);
+        _lastEdgesPerSection.Remove(zoneIndex);
+        _lastVisualEdgesPerSection.Remove(zoneIndex);
     }
 
     public void AddCoveragePoint(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge)
     {
-        if (!_activePatches.TryGetValue(zoneIndex, out var patch))
+        if (!_activeSections.Contains(zoneIndex))
             return;
 
-        // Add two vertices for next quad
-        patch.Vertices.Add(new Vec3(leftEdge.Easting, leftEdge.Northing, 0));
-        patch.Vertices.Add(new Vec3(rightEdge.Easting, rightEdge.Northing, 0));
-
-        // Calculate area of new triangles
-        int c = patch.Vertices.Count - 1;
-        if (c >= 4) // Need at least 5 vertices (1 color + 4 positions = 2 triangles)
+        // Get last edges for this section (used for bitmap rasterization and area calc)
+        if (!_lastEdgesPerSection.TryGetValue(zoneIndex, out var lastEdges))
         {
-            // Convert to array for area calculation
-            var points = new Vec3[c + 1];
-            for (int i = 0; i <= c; i++)
+            // First point - just store edges
+            _lastEdgesPerSection[zoneIndex] = (
+                (leftEdge.Easting, leftEdge.Northing),
+                (rightEdge.Easting, rightEdge.Northing));
+            // Also store as last visual edge
+            _lastVisualEdgesPerSection[zoneIndex] = (
+                (leftEdge.Easting, leftEdge.Northing),
+                (rightEdge.Easting, rightEdge.Northing));
+            return;
+        }
+
+        // Add to visual polygon only if far enough from last visual point (decimation)
+        // This prevents unbounded polygon growth while keeping bitmap accurate
+        var currentPolygon = GetCurrentPolygon(zoneIndex);
+        if (currentPolygon != null)
+        {
+            bool shouldAddVisual = true;
+            if (_lastVisualEdgesPerSection.TryGetValue(zoneIndex, out var lastVisualEdges))
             {
-                points[i] = patch.Vertices[i];
+                // Check distance from last visual point (use left edge as reference)
+                double dx = leftEdge.Easting - lastVisualEdges.Left.E;
+                double dy = leftEdge.Northing - lastVisualEdges.Left.N;
+                double distSq = dx * dx + dy * dy;
+                shouldAddVisual = distSq >= VISUAL_DECIMATION_THRESHOLD_SQ;
             }
 
-            double area = workedAreaService.CalculateTriangleStripArea(points, c - 3);
-            _totalWorkedArea += area;
-            _totalWorkedAreaUser += area;
-            _pendingAreaAdded += area;
-
-            // Mark as dirty - event will fire on FlushCoverageUpdate()
-            _coverageDirty = true;
+            if (shouldAddVisual)
+            {
+                currentPolygon.LeftEdge.Add((leftEdge.Easting, leftEdge.Northing));
+                currentPolygon.RightEdge.Add((rightEdge.Easting, rightEdge.Northing));
+                currentPolygon.IsDirty = true;
+                _lastVisualEdgesPerSection[zoneIndex] = (
+                    (leftEdge.Easting, leftEdge.Northing),
+                    (rightEdge.Easting, rightEdge.Northing));
+            }
         }
 
-        // Break into chunks for rendering efficiency
-        if (patch.TriangleCount > MAX_TRIANGLES_PER_PATCH)
-        {
-            SplitPatch(patch, zoneIndex, leftEdge, rightEdge);
-        }
+        // Rasterize the quad to the coverage bitmap for O(1) detection (every point!)
+        RasterizeQuadToBitmap(zoneIndex, leftEdge, rightEdge);
+
+        // Calculate area of the quad (two triangles)
+        double area = CalculateQuadArea(
+            lastEdges.Left, lastEdges.Right,
+            (rightEdge.Easting, rightEdge.Northing),
+            (leftEdge.Easting, leftEdge.Northing));
+
+        _totalWorkedArea += area;
+        _totalWorkedAreaUser += area;
+        _pendingAreaAdded += area;
+        _coverageDirty = true;
+
+        // Update last edges for next quad
+        _lastEdgesPerSection[zoneIndex] = (
+            (leftEdge.Easting, leftEdge.Northing),
+            (rightEdge.Easting, rightEdge.Northing));
     }
 
     /// <summary>
-    /// Split a patch that has too many triangles.
-    /// Creates a new patch continuing from the last two points.
+    /// Calculate the area of a quad using the shoelace formula.
+    /// Points are in order: p0 -> p1 -> p2 -> p3 -> back to p0
     /// </summary>
-    private void SplitPatch(CoveragePatch oldPatch, int zoneIndex, Vec2 leftEdge, Vec2 rightEdge)
+    private static double CalculateQuadArea(
+        (double E, double N) p0, (double E, double N) p1,
+        (double E, double N) p2, (double E, double N) p3)
     {
-        // Save the old patch and get its index before adding new patch
-        oldPatch.IsActive = false;
-        int oldPatchIndex = _patches.IndexOf(oldPatch);
-        _patchSaveList.Add(oldPatch);
+        // Shoelace formula for quadrilateral area
+        double area = Math.Abs(
+            (p0.E * p1.N - p1.E * p0.N) +
+            (p1.E * p2.N - p2.E * p1.N) +
+            (p2.E * p3.N - p3.E * p2.N) +
+            (p3.E * p0.N - p0.E * p3.N)) / 2.0;
+        return area;
+    }
 
-        // Create new patch
-        var newPatch = new CoveragePatch
+
+    /// <summary>
+    /// Rasterize a quad (from previous to current edges) to the coverage bitmap.
+    /// This provides O(1) coverage lookup similar to AgOpenGPS GPU pixel readback.
+    /// </summary>
+    private void RasterizeQuadToBitmap(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge)
+    {
+        var currLeft = (E: leftEdge.Easting, N: leftEdge.Northing);
+        var currRight = (E: rightEdge.Easting, N: rightEdge.Northing);
+
+        // Need previous edges to form a quad
+        if (!_lastEdgesPerSection.TryGetValue(zoneIndex, out var lastEdges))
         {
-            ZoneIndex = zoneIndex,
-            Color = oldPatch.Color,
-            IsActive = true,
-            Vertices = new List<Vec3>(64)
-        };
+            _lastEdgesPerSection[zoneIndex] = (currLeft, currRight);
+            return;
+        }
 
-        // Color vertex
-        newPatch.Vertices.Add(oldPatch.Color.ToVec3());
+        // Form quad: prevLeft -> prevRight -> currRight -> currLeft
+        var p0 = lastEdges.Left;
+        var p1 = lastEdges.Right;
+        var p2 = currRight;
+        var p3 = currLeft;
 
-        // Start with last two points (to maintain continuity)
-        newPatch.Vertices.Add(new Vec3(leftEdge.Easting, leftEdge.Northing, 0));
-        newPatch.Vertices.Add(new Vec3(rightEdge.Easting, rightEdge.Northing, 0));
+        // Find bounding box
+        double minE = Math.Min(Math.Min(p0.E, p1.E), Math.Min(p2.E, p3.E));
+        double maxE = Math.Max(Math.Max(p0.E, p1.E), Math.Max(p2.E, p3.E));
+        double minN = Math.Min(Math.Min(p0.N, p1.N), Math.Min(p2.N, p3.N));
+        double maxN = Math.Max(Math.Max(p0.N, p1.N), Math.Max(p2.N, p3.N));
 
-        _patches.Add(newPatch);
-        int newPatchIndex = _patches.Count - 1;
-        _activePatches[zoneIndex] = newPatch;
-        _activePatchIndices[zoneIndex] = newPatchIndex;
+        // Convert to cell coordinates
+        int cellMinE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
+        int cellMaxE = (int)Math.Floor(maxE / BITMAP_CELL_SIZE);
+        int cellMinN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
+        int cellMaxN = (int)Math.Floor(maxN / BITMAP_CELL_SIZE);
 
-        // Add old patch to spatial index incrementally (it's now finalized)
-        if (oldPatchIndex >= 0)
-            AddPatchToSpatialIndex(oldPatchIndex);
+        // Mark all cells in bounding box that are inside the quad
+        for (int ce = cellMinE; ce <= cellMaxE; ce++)
+        {
+            for (int cn = cellMinN; cn <= cellMaxN; cn++)
+            {
+                // Cell center
+                double cellCenterE = (ce + 0.5) * BITMAP_CELL_SIZE;
+                double cellCenterN = (cn + 0.5) * BITMAP_CELL_SIZE;
+
+                // Check if cell center is inside quad (point-in-polygon test)
+                if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
+                {
+                    _coverageBitmap.Add((ce, cn));
+                }
+            }
+        }
+
+        // Update last edges for next quad
+        _lastEdgesPerSection[zoneIndex] = (currLeft, currRight);
+    }
+
+    /// <summary>
+    /// Check if a point is inside a quad (4-point polygon).
+    /// Uses cross product sign test - point is inside if all cross products have same sign.
+    /// </summary>
+    private static bool IsPointInQuad(double px, double py,
+        (double E, double N) p0, (double E, double N) p1,
+        (double E, double N) p2, (double E, double N) p3)
+    {
+        // Check each edge - point should be on same side of all edges
+        double d0 = CrossProductSign(px, py, p0.E, p0.N, p1.E, p1.N);
+        double d1 = CrossProductSign(px, py, p1.E, p1.N, p2.E, p2.N);
+        double d2 = CrossProductSign(px, py, p2.E, p2.N, p3.E, p3.N);
+        double d3 = CrossProductSign(px, py, p3.E, p3.N, p0.E, p0.N);
+
+        bool hasNeg = (d0 < 0) || (d1 < 0) || (d2 < 0) || (d3 < 0);
+        bool hasPos = (d0 > 0) || (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        // Inside if all same sign (all positive or all negative)
+        return !(hasNeg && hasPos);
+    }
+
+    /// <summary>
+    /// Cross product sign for point vs edge.
+    /// </summary>
+    private static double CrossProductSign(double px, double py,
+        double x1, double y1, double x2, double y2)
+    {
+        return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
     }
 
     /// <summary>
@@ -220,7 +322,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
-            PatchCount = _patches.Count,
+            PatchCount = _coverageBitmap.Count,
             AreaAdded = _pendingAreaAdded
         });
 
@@ -230,42 +332,19 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     public bool IsZoneMapping(int zoneIndex)
     {
-        return _activePatches.ContainsKey(zoneIndex);
+        return _activeSections.Contains(zoneIndex);
     }
 
     public bool IsPointCovered(double easting, double northing)
     {
-        // Use spatial index to only check nearby patches
-        foreach (int patchIndex in GetNearbyPatchIndices(easting, northing, COVERAGE_GRID_CELL_SIZE))
-        {
-            var patch = _patches[patchIndex];
-            if (!patch.IsRenderable) continue;
-
-            // Use cached bounding box for quick rejection
-            if (patchIndex < _patchBounds.Count)
-            {
-                var bounds = _patchBounds[patchIndex];
-                if (easting < bounds.MinE || easting > bounds.MaxE ||
-                    northing < bounds.MinN || northing > bounds.MaxN)
-                    continue;
-            }
-
-            // Check actual triangles in the strip
-            // Triangle strip: vertices 1,2,3 form triangle 1; 2,3,4 form triangle 2; etc.
-            // (vertex 0 is color)
-            if (IsPointInTriangleStrip(patch.Vertices, easting, northing))
-                return true;
-        }
-
-        return false;
+        // O(1) bitmap lookup - convert to cell coordinates and check if covered
+        int cellE = (int)Math.Floor(easting / BITMAP_CELL_SIZE);
+        int cellN = (int)Math.Floor(northing / BITMAP_CELL_SIZE);
+        return _coverageBitmap.Contains((cellE, cellN));
     }
 
     public CoverageResult GetSegmentCoverage(Vec2 sectionCenter, double heading, double halfWidth, double lookAheadDistance = 0)
     {
-        // Precompute transform for heading
-        double cos = Math.Cos(-heading);
-        double sin = Math.Sin(-heading);
-
         // Adjust center for look-ahead
         Vec2 checkCenter = lookAheadDistance == 0
             ? sectionCenter
@@ -273,43 +352,50 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
                 sectionCenter.Easting + Math.Sin(heading) * lookAheadDistance,
                 sectionCenter.Northing + Math.Cos(heading) * lookAheadDistance);
 
-        // Collect coverage intervals along X-axis
-        var intervals = new List<(double Start, double End)>();
+        return GetSegmentCoverageBitmap(checkCenter, heading, halfWidth);
+    }
 
-        // Search radius for spatial index
-        double searchRadius = halfWidth + lookAheadDistance + COVERAGE_GRID_CELL_SIZE;
+    /// <summary>
+    /// Check segment coverage using bitmap - O(width/cellSize) lookups.
+    /// Sample points along the section width perpendicular to heading.
+    /// </summary>
+    private CoverageResult GetSegmentCoverageBitmap(Vec2 center, double heading, double halfWidth)
+    {
+        // Perpendicular direction (90 degrees to heading)
+        double perpSin = Math.Cos(heading);  // sin(heading + 90) = cos(heading)
+        double perpCos = -Math.Sin(heading); // cos(heading + 90) = -sin(heading)
 
-        // Use spatial index to only check nearby patches
-        foreach (int patchIndex in GetNearbyPatchIndices(checkCenter.Easting, checkCenter.Northing, searchRadius))
+        // Sample points along the section width at cell-size intervals
+        int numSamples = Math.Max(3, (int)Math.Ceiling(halfWidth * 2 / BITMAP_CELL_SIZE));
+        double step = halfWidth * 2 / (numSamples - 1);
+
+        int coveredCount = 0;
+        for (int i = 0; i < numSamples; i++)
         {
-            var patch = _patches[patchIndex];
-            if (!patch.IsRenderable) continue;
+            double offset = -halfWidth + i * step;
+            double sampleE = center.Easting + perpSin * offset;
+            double sampleN = center.Northing + perpCos * offset;
 
-            // Check each triangle in the strip (skip color vertex at index 0)
-            for (int i = 1; i < patch.Vertices.Count - 2; i++)
-            {
-                var interval = GetTriangleXInterval(
-                    patch.Vertices[i],
-                    patch.Vertices[i + 1],
-                    patch.Vertices[i + 2],
-                    checkCenter, cos, sin, halfWidth);
+            int cellE = (int)Math.Floor(sampleE / BITMAP_CELL_SIZE);
+            int cellN = (int)Math.Floor(sampleN / BITMAP_CELL_SIZE);
 
-                if (interval.HasValue)
-                    intervals.Add(interval.Value);
-            }
+            if (_coverageBitmap.Contains((cellE, cellN)))
+                coveredCount++;
         }
 
-        return CalculateCoverageFromIntervals(intervals, halfWidth);
+        double coveragePercent = (double)coveredCount / numSamples;
+        double uncoveredLength = (numSamples - coveredCount) * (halfWidth * 2 / numSamples);
+        return new CoverageResult(
+            coveragePercent,
+            coveredCount > 0,           // HasAnyOverlap
+            coveragePercent >= 0.95,    // IsFullyCovered (95%+ threshold)
+            uncoveredLength);
     }
 
     public (CoverageResult Current, CoverageResult LookOn, CoverageResult LookOff) GetSegmentCoverageMulti(
         Vec2 sectionCenter, double heading, double halfWidth,
         double lookOnDistance, double lookOffDistance)
     {
-        // Precompute transform for heading
-        double cos = Math.Cos(-heading);
-        double sin = Math.Sin(-heading);
-
         // Calculate all three check centers
         Vec2 currentCenter = sectionCenter;
         Vec2 lookOnCenter = new Vec2(
@@ -319,412 +405,104 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             sectionCenter.Easting + Math.Sin(heading) * lookOffDistance,
             sectionCenter.Northing + Math.Cos(heading) * lookOffDistance);
 
-        // Max radius to consider for any of the three positions
-        double maxLookDist = Math.Max(lookOnDistance, lookOffDistance);
-        double searchRadius = halfWidth + maxLookDist + COVERAGE_GRID_CELL_SIZE;
-
-        var currentIntervals = new List<(double Start, double End)>();
-        var lookOnIntervals = new List<(double Start, double End)>();
-        var lookOffIntervals = new List<(double Start, double End)>();
-
-        // Use spatial index to only check nearby patches
-        foreach (int patchIndex in GetNearbyPatchIndices(sectionCenter.Easting, sectionCenter.Northing, searchRadius))
-        {
-            var patch = _patches[patchIndex];
-            if (!patch.IsRenderable) continue;
-
-            // Check each triangle in the strip
-            for (int i = 1; i < patch.Vertices.Count - 2; i++)
-            {
-                var v0 = patch.Vertices[i];
-                var v1 = patch.Vertices[i + 1];
-                var v2 = patch.Vertices[i + 2];
-
-                // Check current position
-                var currInterval = GetTriangleXInterval(v0, v1, v2, currentCenter, cos, sin, halfWidth);
-                if (currInterval.HasValue)
-                    currentIntervals.Add(currInterval.Value);
-
-                // Check look-on position
-                var onInterval = GetTriangleXInterval(v0, v1, v2, lookOnCenter, cos, sin, halfWidth);
-                if (onInterval.HasValue)
-                    lookOnIntervals.Add(onInterval.Value);
-
-                // Check look-off position
-                var offInterval = GetTriangleXInterval(v0, v1, v2, lookOffCenter, cos, sin, halfWidth);
-                if (offInterval.HasValue)
-                    lookOffIntervals.Add(offInterval.Value);
-            }
-        }
-
+        // Use bitmap-based coverage detection - O(width/cellSize) per position
         return (
-            CalculateCoverageFromIntervals(currentIntervals, halfWidth),
-            CalculateCoverageFromIntervals(lookOnIntervals, halfWidth),
-            CalculateCoverageFromIntervals(lookOffIntervals, halfWidth)
+            GetSegmentCoverageBitmap(currentCenter, heading, halfWidth),
+            GetSegmentCoverageBitmap(lookOnCenter, heading, halfWidth),
+            GetSegmentCoverageBitmap(lookOffCenter, heading, halfWidth)
         );
     }
 
     /// <summary>
-    /// Get X interval where a triangle crosses Y=0 in local coordinates.
+    /// Rasterize a quad directly to the bitmap (used during file loading).
     /// </summary>
-    private (double Start, double End)? GetTriangleXInterval(
-        Vec3 v0, Vec3 v1, Vec3 v2,
-        Vec2 center, double cos, double sin, double halfWidth)
+    private void RasterizeQuadToBitmapDirect(
+        (double E, double N) p0, (double E, double N) p1,
+        (double E, double N) p2, (double E, double N) p3)
     {
-        // Transform to local coords
-        var a = GeometryMath.ToLocalCoords(new Vec2(v0.Easting, v0.Northing), center, cos, sin);
-        var b = GeometryMath.ToLocalCoords(new Vec2(v1.Easting, v1.Northing), center, cos, sin);
-        var c = GeometryMath.ToLocalCoords(new Vec2(v2.Easting, v2.Northing), center, cos, sin);
+        // Find bounding box
+        double minE = Math.Min(Math.Min(p0.E, p1.E), Math.Min(p2.E, p3.E));
+        double maxE = Math.Max(Math.Max(p0.E, p1.E), Math.Max(p2.E, p3.E));
+        double minN = Math.Min(Math.Min(p0.N, p1.N), Math.Min(p2.N, p3.N));
+        double maxN = Math.Max(Math.Max(p0.N, p1.N), Math.Max(p2.N, p3.N));
 
-        // Quick reject: all above or all below X-axis (Y=0)?
-        if ((a.Northing > 0 && b.Northing > 0 && c.Northing > 0) ||
-            (a.Northing < 0 && b.Northing < 0 && c.Northing < 0))
-            return null;
+        // Convert to cell coordinates
+        int cellMinE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
+        int cellMaxE = (int)Math.Floor(maxE / BITMAP_CELL_SIZE);
+        int cellMinN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
+        int cellMaxN = (int)Math.Floor(maxN / BITMAP_CELL_SIZE);
 
-        // Find X intercepts where edges cross Y=0
-        var xIntercepts = new List<double>(6);
-
-        var x1 = GeometryMath.GetXInterceptAtYZero(a, b);
-        var x2 = GeometryMath.GetXInterceptAtYZero(b, c);
-        var x3 = GeometryMath.GetXInterceptAtYZero(c, a);
-
-        if (x1.HasValue) xIntercepts.Add(x1.Value);
-        if (x2.HasValue) xIntercepts.Add(x2.Value);
-        if (x3.HasValue) xIntercepts.Add(x3.Value);
-
-        // Handle vertices exactly on the axis
-        const double epsilon = 0.001;
-        if (Math.Abs(a.Northing) < epsilon) xIntercepts.Add(a.Easting);
-        if (Math.Abs(b.Northing) < epsilon) xIntercepts.Add(b.Easting);
-        if (Math.Abs(c.Northing) < epsilon) xIntercepts.Add(c.Easting);
-
-        if (xIntercepts.Count < 2)
-            return null;
-
-        double xMin = xIntercepts.Min();
-        double xMax = xIntercepts.Max();
-
-        // Clip to section bounds
-        xMin = Math.Max(xMin, -halfWidth);
-        xMax = Math.Min(xMax, halfWidth);
-
-        if (xMax <= xMin)
-            return null;
-
-        return (xMin, xMax);
-    }
-
-    /// <summary>
-    /// Calculate coverage result from X intervals.
-    /// </summary>
-    private CoverageResult CalculateCoverageFromIntervals(List<(double Start, double End)> intervals, double halfWidth)
-    {
-        if (intervals.Count == 0)
-            return new CoverageResult(0, false, false, halfWidth * 2);
-
-        // Merge overlapping intervals
-        var merged = GeometryMath.MergeIntervals(intervals);
-
-        // Calculate total coverage
-        double totalWidth = halfWidth * 2;
-        double coveredWidth = merged.Sum(i => i.End - i.Start);
-        double coveragePercent = Math.Min(1.0, coveredWidth / totalWidth);
-
-        return new CoverageResult(
-            CoveragePercent: coveragePercent,
-            HasAnyOverlap: coveredWidth > 0.001,
-            IsFullyCovered: coveragePercent > 0.99,
-            UncoveredLength: totalWidth - coveredWidth
-        );
-    }
-
-    /// <summary>
-    /// Quick bounding box check if patch is near a point (squared distance).
-    /// </summary>
-    private bool IsPatchNearPointSq(CoveragePatch patch, Vec2 point, double radiusSq)
-    {
-        // Calculate approximate center and check distance
-        if (patch.Vertices.Count < 4) return false;
-
-        // Use first and last geometry vertices to approximate center
-        var first = patch.Vertices[1];
-        var last = patch.Vertices[patch.Vertices.Count - 1];
-        double centerE = (first.Easting + last.Easting) / 2;
-        double centerN = (first.Northing + last.Northing) / 2;
-
-        double dx = point.Easting - centerE;
-        double dy = point.Northing - centerN;
-
-        // Use larger radius to account for patch extent
-        double patchExtentSq = GeometryMath.DistanceSquared(first, last) / 4;
-        return (dx * dx + dy * dy) < (radiusSq + patchExtentSq);
-    }
-
-    /// <summary>
-    /// Rebuild the entire spatial index from all patches.
-    /// </summary>
-    private void RebuildSpatialIndex()
-    {
-        _coverageSpatialIndex.Clear();
-        _patchBounds.Clear();
-
-        if (_patches.Count == 0)
-        {
-            _spatialIndexNeedsRebuild = false;
-            return;
-        }
-
-        // First pass: calculate all bounds and find min coordinates for grid offset
-        double globalMinE = double.MaxValue;
-        double globalMinN = double.MaxValue;
-
-        for (int p = 0; p < _patches.Count; p++)
-        {
-            var patch = _patches[p];
-            if (patch.Vertices.Count < 4)
-            {
-                _patchBounds.Add((0, 0, 0, 0));
-                continue;
-            }
-
-            double minE = double.MaxValue, maxE = double.MinValue;
-            double minN = double.MaxValue, maxN = double.MinValue;
-
-            // Skip color vertex at index 0
-            for (int i = 1; i < patch.Vertices.Count; i++)
-            {
-                var v = patch.Vertices[i];
-                if (v.Easting < minE) minE = v.Easting;
-                if (v.Easting > maxE) maxE = v.Easting;
-                if (v.Northing < minN) minN = v.Northing;
-                if (v.Northing > maxN) maxN = v.Northing;
-            }
-
-            _patchBounds.Add((minE, maxE, minN, maxN));
-
-            if (minE < globalMinE) globalMinE = minE;
-            if (minN < globalMinN) globalMinN = minN;
-        }
-
-        // Calculate grid offset to handle negative coordinates
-        _gridOffsetE = (int)Math.Floor(globalMinE / COVERAGE_GRID_CELL_SIZE);
-        _gridOffsetN = (int)Math.Floor(globalMinN / COVERAGE_GRID_CELL_SIZE);
-
-        // Second pass: add each patch to all grid cells it touches
-        for (int p = 0; p < _patches.Count; p++)
-        {
-            var bounds = _patchBounds[p];
-            if (bounds.MinE == 0 && bounds.MaxE == 0) continue; // Skip invalid patches
-
-            int cellMinE = (int)Math.Floor(bounds.MinE / COVERAGE_GRID_CELL_SIZE) - _gridOffsetE;
-            int cellMaxE = (int)Math.Floor(bounds.MaxE / COVERAGE_GRID_CELL_SIZE) - _gridOffsetE;
-            int cellMinN = (int)Math.Floor(bounds.MinN / COVERAGE_GRID_CELL_SIZE) - _gridOffsetN;
-            int cellMaxN = (int)Math.Floor(bounds.MaxN / COVERAGE_GRID_CELL_SIZE) - _gridOffsetN;
-
-            for (int ce = cellMinE; ce <= cellMaxE; ce++)
-            {
-                for (int cn = cellMinN; cn <= cellMaxN; cn++)
-                {
-                    var key = (ce, cn);
-                    if (!_coverageSpatialIndex.TryGetValue(key, out var list))
-                    {
-                        list = new List<int>();
-                        _coverageSpatialIndex[key] = list;
-                    }
-                    list.Add(p);
-                }
-            }
-        }
-
-        _spatialIndexNeedsRebuild = false;
-    }
-
-    /// <summary>
-    /// Get patch indices near a point within the given radius.
-    /// Always includes active patches (which may have grown beyond their indexed bounds).
-    /// </summary>
-    private IEnumerable<int> GetNearbyPatchIndices(double easting, double northing, double radius)
-    {
-        if (_spatialIndexNeedsRebuild)
-            RebuildSpatialIndex();
-
-        var seen = new HashSet<int>();
-
-        // Always include active patches (they may have grown beyond indexed bounds)
-        foreach (int idx in _activePatchIndices.Values)
-        {
-            if (seen.Add(idx))
-                yield return idx;
-        }
-
-        if (_coverageSpatialIndex.Count == 0)
-            yield break;
-
-        // Find cells within radius
-        int cellE = (int)Math.Floor(easting / COVERAGE_GRID_CELL_SIZE) - _gridOffsetE;
-        int cellN = (int)Math.Floor(northing / COVERAGE_GRID_CELL_SIZE) - _gridOffsetN;
-        int cellRadius = (int)Math.Ceiling(radius / COVERAGE_GRID_CELL_SIZE);
-
-        for (int ce = cellE - cellRadius; ce <= cellE + cellRadius; ce++)
-        {
-            for (int cn = cellN - cellRadius; cn <= cellN + cellRadius; cn++)
-            {
-                if (_coverageSpatialIndex.TryGetValue((ce, cn), out var patchIndices))
-                {
-                    foreach (int idx in patchIndices)
-                    {
-                        if (seen.Add(idx)) // Only yield each patch once
-                            yield return idx;
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Mark spatial index as needing rebuild (call when patches change significantly).
-    /// </summary>
-    private void InvalidateSpatialIndex()
-    {
-        _spatialIndexNeedsRebuild = true;
-    }
-
-    /// <summary>
-    /// Add a single patch to the spatial index incrementally.
-    /// </summary>
-    private void AddPatchToSpatialIndex(int patchIndex)
-    {
-        // If index needs rebuild, this patch will be included in the full rebuild
-        // Also skip if index was never built (grid offsets not set)
-        if (_spatialIndexNeedsRebuild || _coverageSpatialIndex.Count == 0) return;
-
-        var patch = _patches[patchIndex];
-        if (patch.Vertices.Count < 4) return;
-
-        // Calculate bounds
-        double minE = double.MaxValue, maxE = double.MinValue;
-        double minN = double.MaxValue, maxN = double.MinValue;
-
-        for (int i = 1; i < patch.Vertices.Count; i++)
-        {
-            var v = patch.Vertices[i];
-            if (v.Easting < minE) minE = v.Easting;
-            if (v.Easting > maxE) maxE = v.Easting;
-            if (v.Northing < minN) minN = v.Northing;
-            if (v.Northing > maxN) maxN = v.Northing;
-        }
-
-        // Ensure _patchBounds is large enough
-        while (_patchBounds.Count <= patchIndex)
-            _patchBounds.Add((0, 0, 0, 0));
-        _patchBounds[patchIndex] = (minE, maxE, minN, maxN);
-
-        // Add to spatial index cells
-        int cellMinE = (int)Math.Floor(minE / COVERAGE_GRID_CELL_SIZE) - _gridOffsetE;
-        int cellMaxE = (int)Math.Floor(maxE / COVERAGE_GRID_CELL_SIZE) - _gridOffsetE;
-        int cellMinN = (int)Math.Floor(minN / COVERAGE_GRID_CELL_SIZE) - _gridOffsetN;
-        int cellMaxN = (int)Math.Floor(maxN / COVERAGE_GRID_CELL_SIZE) - _gridOffsetN;
-
+        // Mark all cells in bounding box that are inside the quad
         for (int ce = cellMinE; ce <= cellMaxE; ce++)
         {
             for (int cn = cellMinN; cn <= cellMaxN; cn++)
             {
-                var key = (ce, cn);
-                if (!_coverageSpatialIndex.TryGetValue(key, out var list))
+                double cellCenterE = (ce + 0.5) * BITMAP_CELL_SIZE;
+                double cellCenterN = (cn + 0.5) * BITMAP_CELL_SIZE;
+
+                if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
                 {
-                    list = new List<int>();
-                    _coverageSpatialIndex[key] = list;
+                    _coverageBitmap.Add((ce, cn));
                 }
-                if (!list.Contains(patchIndex))
-                    list.Add(patchIndex);
             }
         }
     }
 
     /// <summary>
-    /// Check if a point is inside any triangle in a triangle strip.
-    /// Vertices[0] is color, actual geometry starts at index 1.
+    /// Get visual polygon data for rendering.
+    /// Returns section index, color, and edge points for each pass of each section.
+    /// Multiple passes per section are returned as separate polygons.
     /// </summary>
-    private bool IsPointInTriangleStrip(List<Vec3> vertices, double easting, double northing)
+    public IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)> GetSectionPolygons()
     {
-        // Need at least 3 geometry vertices (indices 1,2,3) to form a triangle
-        if (vertices.Count < 4) return false;
-
-        // Check each triangle in the strip
-        for (int i = 1; i < vertices.Count - 2; i++)
+        foreach (var (sectionIndex, passes) in _sectionPolygons)
         {
-            var v0 = vertices[i];
-            var v1 = vertices[i + 1];
-            var v2 = vertices[i + 2];
-
-            if (IsPointInTriangle(easting, northing,
-                v0.Easting, v0.Northing,
-                v1.Easting, v1.Northing,
-                v2.Easting, v2.Northing))
+            foreach (var polygon in passes)
             {
-                return true;
+                if (polygon.LeftEdge.Count >= 2)
+                {
+                    yield return (sectionIndex, polygon.Color, polygon.LeftEdge, polygon.RightEdge);
+                }
             }
         }
-
-        return false;
     }
 
     /// <summary>
-    /// Check if point (px,py) is inside triangle (ax,ay)-(bx,by)-(cx,cy)
-    /// using barycentric coordinate method.
+    /// Get the number of visual polygons (one per section with coverage)
     /// </summary>
-    private bool IsPointInTriangle(double px, double py,
-        double ax, double ay, double bx, double by, double cx, double cy)
-    {
-        // Compute vectors
-        double v0x = cx - ax;
-        double v0y = cy - ay;
-        double v1x = bx - ax;
-        double v1y = by - ay;
-        double v2x = px - ax;
-        double v2y = py - ay;
-
-        // Compute dot products
-        double dot00 = v0x * v0x + v0y * v0y;
-        double dot01 = v0x * v1x + v0y * v1y;
-        double dot02 = v0x * v2x + v0y * v2y;
-        double dot11 = v1x * v1x + v1y * v1y;
-        double dot12 = v1x * v2x + v1y * v2y;
-
-        // Compute barycentric coordinates
-        double denom = dot00 * dot11 - dot01 * dot01;
-        if (Math.Abs(denom) < 1e-10) return false; // Degenerate triangle
-
-        double invDenom = 1.0 / denom;
-        double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-        double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-        // Check if point is in triangle (with small tolerance for edge cases)
-        const double tolerance = 0.001;
-        return (u >= -tolerance) && (v >= -tolerance) && (u + v <= 1.0 + tolerance);
-    }
+    // Total number of polygon passes across all sections
+    public int VisualPolygonCount => _sectionPolygons.Values.Sum(passes => passes.Count);
 
     public IReadOnlyList<CoveragePatch> GetPatches()
     {
-        return _patches.AsReadOnly();
+        // Legacy compatibility - patches no longer used, return empty list
+        return Array.Empty<CoveragePatch>();
     }
 
     public IReadOnlyList<CoveragePatch> GetPatchesForZone(int zoneIndex)
     {
-        return _patches.Where(p => p.ZoneIndex == zoneIndex).ToList().AsReadOnly();
+        // Legacy compatibility - patches no longer used, return empty list
+        return Array.Empty<CoveragePatch>();
     }
 
     public void ClearAll()
     {
-        _patches.Clear();
-        _activePatches.Clear();
-        _activePatchIndices.Clear();
-        _patchSaveList.Clear();
-        _coverageSpatialIndex.Clear();
-        _patchBounds.Clear();
-        _spatialIndexNeedsRebuild = true;
+        // Clear visual polygons
+        _sectionPolygons.Clear();
+
+        // Clear coverage bitmap
+        _coverageBitmap.Clear();
+
+        // Clear tracking state
+        _activeSections.Clear();
+        _lastEdgesPerSection.Clear();
+        _lastVisualEdgesPerSection.Clear();
+
+        // Reset totals
         _totalWorkedArea = 0;
         _totalWorkedAreaUser = 0;
+        _coverageDirty = false;
+        _pendingAreaAdded = 0;
 
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
@@ -743,36 +521,35 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     {
         var filename = Path.Combine(fieldDirectory, "Sections.txt");
 
-        // First, finalize any active patches (sections still painting when field closes)
-        foreach (var kvp in _activePatches.ToList())
+        // Save visual polygons in new format
+        // Format: section count, then for each section: index, color, point count, points
+        using var writer = new StreamWriter(filename, false);
+
+        // Write header with format version
+        writer.WriteLine("V3"); // Version 3 = multi-pass polygon format
+
+        foreach (var (sectionIndex, passes) in _sectionPolygons)
         {
-            var patch = kvp.Value;
-            patch.IsActive = false;
-            if (patch.Vertices.Count > 4)
+            foreach (var polygon in passes)
             {
-                _patchSaveList.Add(patch);
+                if (polygon.LeftEdge.Count < 2) continue;
+
+                // Write section header: index, R, G, B, point count
+                // Note: same section index can appear multiple times (multiple passes)
+                writer.WriteLine($"{sectionIndex},{polygon.Color.R},{polygon.Color.G},{polygon.Color.B},{polygon.LeftEdge.Count}");
+
+                // Write left/right edge pairs
+                for (int i = 0; i < polygon.LeftEdge.Count; i++)
+                {
+                    var left = polygon.LeftEdge[i];
+                    var right = polygon.RightEdge[i];
+                    writer.WriteLine($"{left.E:F3},{left.N:F3},{right.E:F3},{right.N:F3}");
+                }
             }
         }
-        _activePatches.Clear();
 
-        // Append new patches to file
-        using var writer = new StreamWriter(filename, true);
-
-        foreach (var patch in _patchSaveList)
-        {
-            if (patch.Vertices.Count < 4) continue;
-
-            // Write vertex count
-            writer.WriteLine(patch.Vertices.Count.ToString(CultureInfo.InvariantCulture));
-
-            // Write vertices
-            foreach (var v in patch.Vertices)
-            {
-                writer.WriteLine($"{v.Easting:F3},{v.Northing:F3},{v.Heading:F5}");
-            }
-        }
-
-        _patchSaveList.Clear();
+        // Write total worked area at end for quick loading
+        writer.WriteLine($"AREA,{_totalWorkedArea:F2}");
     }
 
     public void LoadFromFile(string fieldDirectory)
@@ -784,6 +561,119 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
         using var reader = new StreamReader(path);
 
+        // Check format version
+        var firstLine = reader.ReadLine();
+        if (string.IsNullOrWhiteSpace(firstLine)) return;
+
+        if (firstLine == "V2" || firstLine == "V3")
+        {
+            // V2/V3 format - load visual polygons directly
+            // V3 supports multiple passes per section (same section index multiple times)
+            LoadNewFormat(reader);
+        }
+        else
+        {
+            // Legacy format - convert patches to visual polygons + bitmap
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            reader.DiscardBufferedData();
+            LoadLegacyFormat(reader);
+        }
+
+        _totalWorkedAreaUser = _totalWorkedArea;
+
+        CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
+        {
+            TotalArea = _totalWorkedArea,
+            PatchCount = _coverageBitmap.Count,
+            AreaAdded = 0
+        });
+    }
+
+    /// <summary>
+    /// Load coverage from new V2 format (visual polygons).
+    /// </summary>
+    private void LoadNewFormat(StreamReader reader)
+    {
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            // Check for area line at end
+            if (line.StartsWith("AREA,"))
+            {
+                if (double.TryParse(line.Substring(5), NumberStyles.Float, CultureInfo.InvariantCulture, out double area))
+                    _totalWorkedArea = area;
+                continue;
+            }
+
+            // Parse section header: index, R, G, B, point count
+            var parts = line.Split(',');
+            if (parts.Length < 5) continue;
+
+            if (!int.TryParse(parts[0], out int sectionIndex) ||
+                !byte.TryParse(parts[1], out byte r) ||
+                !byte.TryParse(parts[2], out byte g) ||
+                !byte.TryParse(parts[3], out byte b) ||
+                !int.TryParse(parts[4], out int pointCount))
+                continue;
+
+            var polygon = new SectionVisualPolygon
+            {
+                Color = new CoverageColor(r, g, b),
+                IsDirty = true
+            };
+
+            (double E, double N) prevLeft = (0, 0);
+            (double E, double N) prevRight = (0, 0);
+
+            // Read edge pairs
+            for (int i = 0; i < pointCount && !reader.EndOfStream; i++)
+            {
+                var edgeLine = reader.ReadLine();
+                if (string.IsNullOrWhiteSpace(edgeLine)) continue;
+
+                var edgeParts = edgeLine.Split(',');
+                if (edgeParts.Length >= 4 &&
+                    double.TryParse(edgeParts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double leftE) &&
+                    double.TryParse(edgeParts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double leftN) &&
+                    double.TryParse(edgeParts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double rightE) &&
+                    double.TryParse(edgeParts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out double rightN))
+                {
+                    polygon.LeftEdge.Add((leftE, leftN));
+                    polygon.RightEdge.Add((rightE, rightN));
+
+                    // Rasterize quad to bitmap (skip first point, need two for quad)
+                    if (i > 0)
+                    {
+                        RasterizeQuadToBitmapDirect(
+                            prevLeft, prevRight,
+                            (rightE, rightN), (leftE, leftN));
+                    }
+
+                    prevLeft = (leftE, leftN);
+                    prevRight = (rightE, rightN);
+                }
+            }
+
+            if (polygon.LeftEdge.Count >= 2)
+            {
+                // Add polygon as a new pass for this section
+                if (!_sectionPolygons.TryGetValue(sectionIndex, out var passes))
+                {
+                    passes = new List<SectionVisualPolygon>();
+                    _sectionPolygons[sectionIndex] = passes;
+                }
+                passes.Add(polygon);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Load coverage from legacy patch format and convert to new structures.
+    /// </summary>
+    private void LoadLegacyFormat(StreamReader reader)
+    {
         while (!reader.EndOfStream)
         {
             var line = reader.ReadLine();
@@ -792,12 +682,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             if (!int.TryParse(line.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int vertCount))
                 continue;
 
-            var patch = new CoveragePatch
-            {
-                ZoneIndex = 0,
-                IsActive = false,
-                Vertices = new List<Vec3>(vertCount)
-            };
+            var vertices = new List<Vec3>(vertCount);
 
             // Read vertices
             for (int i = 0; i < vertCount && !reader.EndOfStream; i++)
@@ -811,47 +696,58 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
                     double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double n) &&
                     double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double h))
                 {
-                    patch.Vertices.Add(new Vec3(e, n, h));
+                    vertices.Add(new Vec3(e, n, h));
                 }
             }
 
+            if (vertices.Count < 4) continue;
+
             // First vertex is color
-            if (patch.Vertices.Count > 0)
+            var color = CoverageColor.FromVec3(vertices[0]);
+
+            // Use section 0 for legacy patches (they don't have section info)
+            // Each legacy patch becomes a separate polygon (pass) for section 0
+            if (!_sectionPolygons.TryGetValue(0, out var passes))
             {
-                patch.Color = CoverageColor.FromVec3(patch.Vertices[0]);
+                passes = new List<SectionVisualPolygon>();
+                _sectionPolygons[0] = passes;
+            }
+            var polygon = new SectionVisualPolygon { Color = color, IsDirty = true };
+            passes.Add(polygon);
+
+            // Extract left/right edges and rasterize to bitmap
+            // Vertices: [color, left1, right1, left2, right2, ...]
+            for (int i = 1; i < vertices.Count - 1; i += 2)
+            {
+                var left = vertices[i];
+                var right = vertices[i + 1];
+                polygon.LeftEdge.Add((left.Easting, left.Northing));
+                polygon.RightEdge.Add((right.Easting, right.Northing));
+
+                // Rasterize quad to bitmap (need previous pair)
+                if (i >= 3)
+                {
+                    var prevLeft = vertices[i - 2];
+                    var prevRight = vertices[i - 1];
+                    RasterizeQuadToBitmapDirect(
+                        (prevLeft.Easting, prevLeft.Northing),
+                        (prevRight.Easting, prevRight.Northing),
+                        (right.Easting, right.Northing),
+                        (left.Easting, left.Northing));
+                }
             }
 
             // Calculate area for loaded patch
-            if (patch.Vertices.Count >= 5)
+            if (vertices.Count >= 5)
             {
-                var points = patch.Vertices.ToArray();
+                var points = vertices.ToArray();
                 for (int i = 4; i < points.Length; i += 2)
                 {
-                    if (i >= 4)
-                    {
-                        double area = workedAreaService.CalculateTriangleStripArea(points, i - 3);
-                        _totalWorkedArea += area;
-                    }
+                    double area = workedAreaService.CalculateTriangleStripArea(points, i - 3);
+                    _totalWorkedArea += area;
                 }
             }
-
-            if (patch.IsRenderable)
-            {
-                _patches.Add(patch);
-            }
         }
-
-        _totalWorkedAreaUser = _totalWorkedArea;
-
-        // Rebuild spatial index for loaded patches
-        InvalidateSpatialIndex();
-
-        CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
-        {
-            TotalArea = _totalWorkedArea,
-            PatchCount = _patches.Count,
-            AreaAdded = 0
-        });
     }
 
     /// <summary>

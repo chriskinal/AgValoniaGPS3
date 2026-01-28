@@ -648,6 +648,11 @@ public partial class MainViewModel
             }
 
             IsAutoSteerEngaged = !IsAutoSteerEngaged;
+            if (IsAutoSteerEngaged)
+            {
+                double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+                Console.WriteLine($"[NUDGE] AutoSteer ENGAGED: _howManyPathsAway={_howManyPathsAway}, offset={_howManyPathsAway * widthMinusOverlap:F2}m");
+            }
             StatusMessage = IsAutoSteerEngaged ? "AutoSteer ENGAGED" : "AutoSteer disengaged";
         });
 
@@ -661,6 +666,13 @@ public partial class MainViewModel
         DeleteContoursCommand = new RelayCommand(() =>
         {
             _coverageMapService.ClearAll();
+            // Reset track guidance state to force global search for nearest segment
+            _trackGuidanceState = null;
+            // Reset pass counter and track offset on ALL tracks
+            _howManyPathsAway = 0;
+            foreach (var track in SavedTracks)
+                track.NudgeDistance = 0;
+            SaveTracksToFile();
             StatusMessage = "Coverage/contours cleared";
         });
 
@@ -689,6 +701,33 @@ public partial class MainViewModel
                             }
                         }
                     }
+
+                    // Reset track guidance state to force global search for nearest segment
+                    // Otherwise it will continue from where coverage ended
+                    _trackGuidanceState = null;
+
+                    // Reset pass counter and track offset to go back to the original track
+                    Console.WriteLine($"[NUDGE] Resetting _howManyPathsAway from {_howManyPathsAway} to 0");
+                    _howManyPathsAway = 0;
+
+                    // Reset NudgeDistance on ALL tracks, not just selected
+                    Console.WriteLine($"[NUDGE] Resetting NudgeDistance on {SavedTracks.Count} tracks");
+
+                    // Verify SelectedTrack is in SavedTracks
+                    if (SelectedTrack != null)
+                    {
+                        bool inCollection = SavedTracks.Contains(SelectedTrack);
+                        Console.WriteLine($"[NUDGE] SelectedTrack '{SelectedTrack.Name}' in SavedTracks: {inCollection}");
+                    }
+
+                    foreach (var track in SavedTracks)
+                    {
+                        Console.WriteLine($"[NUDGE] Track '{track.Name}' NudgeDistance: {track.NudgeDistance:F1} -> 0");
+                        track.NudgeDistance = 0;
+                    }
+                    // Save tracks to persist the reset NudgeDistance
+                    SaveTracksToFile();
+                    Console.WriteLine($"[NUDGE] Saved tracks to file, _howManyPathsAway is now {_howManyPathsAway}");
 
                     RefreshCoverageStatistics();
                     StatusMessage = "Applied area deleted";

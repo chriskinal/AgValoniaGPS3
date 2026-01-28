@@ -141,12 +141,15 @@ public partial class MainWindow : Window
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    MapControl?.SetCoveragePatches(coverageService.GetPatches());
+                    MapControl?.MarkCoverageDirty();
                     ViewModel?.RefreshCoverageStatistics();
                 });
             };
-            // Set initial coverage (in case field was already loaded)
-            MapControl.SetCoveragePatches(coverageService.GetPatches());
+
+            // Set up polygon-based coverage rendering (one extruded polygon per section)
+            MapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
+            // Mark dirty in case field was already loaded with coverage
+            MapControl.MarkCoverageDirty();
         }
 
         // Wire up MapClicked event for AB line creation

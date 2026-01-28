@@ -92,8 +92,17 @@ public interface ISharedMapControl
     // Coverage visualization
     void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches);
 
+    // Coverage polygon provider for extruded rendering (dual-buffer approach)
+    void SetCoveragePolygonProvider(Func<IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)>>? provider);
+
+    // Mark coverage as needing refresh (call when coverage data changes)
+    void MarkCoverageDirty();
+
     // Grid visibility property
     bool IsGridVisible { get; set; }
+
+    // Use polygon-based rendering for coverage (faster - one polygon per section)
+    bool UsePolygonCoverageRendering { get; set; }
 
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
@@ -113,6 +122,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         get => GetValue(IsGridVisibleProperty);
         set => SetValue(IsGridVisibleProperty, value);
+    }
+
+    // Avalonia styled property for polygon-based coverage rendering (faster - one polygon per section)
+    public static readonly StyledProperty<bool> UsePolygonCoverageRenderingProperty =
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UsePolygonCoverageRendering), defaultValue: true);
+
+    public bool UsePolygonCoverageRendering
+    {
+        get => GetValue(UsePolygonCoverageRenderingProperty);
+        set => SetValue(UsePolygonCoverageRenderingProperty, value);
     }
 
     // Avalonia styled property for vehicle visibility (can hide for headland editing)
@@ -239,6 +258,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Cached Skia draw operation (rebuilt when coverage changes)
     private CoverageDrawOperation? _cachedCoverageDrawOp;
     private int _lastDrawOpPatchCount = -1;
+
+    // Polygon-based coverage rendering (dual-buffer approach - one extruded polygon per section)
+    private Func<IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)>>? _coveragePolygonProvider;
+
+    // Cached polygon geometry (rebuilt when coverage changes)
+    private Dictionary<int, (StreamGeometry Geometry, IBrush Brush)> _cachedPolygonGeometry = new();
+    private int _lastPolygonPointCount = 0;
+    private bool _polygonGeometryDirty = true;
+    private readonly System.Diagnostics.Stopwatch _polygonRebuildThrottle = System.Diagnostics.Stopwatch.StartNew();
+    private const double POLYGON_REBUILD_INTERVAL_MS = 1000; // Only rebuild geometry every 1 second
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
@@ -421,7 +450,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
 
             // Draw coverage (worked area) - drawn early so it's under everything else
-            if (_coveragePatches.Count > 0)
+            // Call if we have patches OR if polygon-based rendering is enabled with a provider
+            if (_coveragePatches.Count > 0 || (UsePolygonCoverageRendering && _coveragePolygonProvider != null))
             {
                 DrawCoverage(context);
             }
@@ -481,7 +511,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Log full render time every 30 frames
         if (++_renderCounter % 30 == 0)
         {
-            Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Patches: {_coveragePatches.Count}");
+            Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Polygons: {_cachedPolygonGeometry.Count}");
         }
     }
 
@@ -650,10 +680,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawCoverage(DrawingContext context)
     {
-        _profileSw.Restart();
+        // Debug: log every 90 frames to see if this is being called
+        if (_renderCounter % 90 == 1)
+            Console.WriteLine($"[Timing] DrawCov: UsePoly={UsePolygonCoverageRendering}, HasProvider={_coveragePolygonProvider != null}");
 
-        // Update tracking for active vs finalized patches
-        UpdateColorBatchesIncremental();
+        _profileSw.Restart();
 
         // Compute visible world bounds for viewport culling
         // Use axis-aligned bounding box that contains the rotated view (conservative but fast)
@@ -667,6 +698,178 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double visMaxX = _cameraX + viewRadius;
         double visMinY = _cameraY - viewRadius;
         double visMaxY = _cameraY + viewRadius;
+
+        int drawnCount;
+
+        // Use polygon-based rendering if enabled and provider is available
+        if (UsePolygonCoverageRendering && _coveragePolygonProvider != null)
+        {
+            drawnCount = DrawCoveragePolygons(context);
+        }
+        else
+        {
+            // Log once why we're not using polygon rendering
+            if (_renderCounter % 90 == 1)
+                Console.WriteLine($"[Timing] CovPath: UsePoly={UsePolygonCoverageRendering}, Provider={_coveragePolygonProvider != null}");
+            // Fall back to patch-based rendering
+            drawnCount = DrawCoveragePatches(context, visMinX, visMaxX, visMinY, visMaxY);
+        }
+
+        _profileSw.Stop();
+        _lastCoverageRenderMs = _profileSw.Elapsed.TotalMilliseconds;
+        _lastDrawnPatchCount = drawnCount;
+    }
+
+    /// <summary>
+    /// Draw coverage using extruded polygons (one per section).
+    /// Much faster than grid cells or individual patches.
+    /// </summary>
+    private int DrawCoveragePolygons(DrawingContext context)
+    {
+        if (_coveragePolygonProvider == null)
+            return 0;
+
+        // Rebuild cached geometry if dirty
+        // Throttle geometry rebuilds - only rebuild every 1 second to avoid stuttering
+        // during continuous coverage recording. Force rebuild if cache is empty.
+        int cacheCount = _cachedPolygonGeometry.Count;
+        double elapsedMs = _polygonRebuildThrottle.Elapsed.TotalMilliseconds;
+        bool shouldRebuild = _polygonGeometryDirty &&
+            (cacheCount == 0 || elapsedMs >= POLYGON_REBUILD_INTERVAL_MS);
+
+        // Log why we're rebuilding (or not)
+        if (_renderCounter % 30 == 0)
+        {
+            Console.WriteLine($"[Timing] CovPoly: dirty={_polygonGeometryDirty}, cache={cacheCount}, elapsed={elapsedMs:F0}ms, rebuild={shouldRebuild}");
+        }
+
+        if (shouldRebuild)
+        {
+            // Reset dirty and restart timer BEFORE rebuild to prevent re-triggering
+            // if MarkCoverageDirty is called during the rebuild
+            _polygonGeometryDirty = false;
+            _polygonRebuildThrottle.Restart();
+
+            // Log the specific reason for rebuild
+            string reason = cacheCount == 0 ? "cache empty" : $"elapsed >= {POLYGON_REBUILD_INTERVAL_MS}ms";
+
+            // Time the rebuild
+            var rebuildSw = System.Diagnostics.Stopwatch.StartNew();
+            RebuildPolygonGeometryCache();
+            rebuildSw.Stop();
+            Console.WriteLine($"[Timing] CovRebuildStart: reason={reason}, took={rebuildSw.ElapsedMilliseconds}ms");
+        }
+
+        // Draw cached geometry (one draw call per section)
+        foreach (var (_, (geometry, brush)) in _cachedPolygonGeometry)
+        {
+            context.DrawGeometry(brush, null, geometry);
+        }
+
+        return _cachedPolygonGeometry.Count;
+    }
+
+    /// <summary>
+    /// Rebuild the cached polygon geometry from the coverage polygon provider.
+    /// Each section gets one StreamGeometry built from left edge + reversed right edge.
+    /// Note: Throttling is handled by the caller (DrawCoveragePolygons) using _polygonRebuildThrottle.
+    /// </summary>
+    private void RebuildPolygonGeometryCache()
+    {
+        if (_coveragePolygonProvider == null)
+        {
+            _cachedPolygonGeometry.Clear();
+            _polygonGeometryDirty = false;
+            _lastPolygonPointCount = 0;
+            return;
+        }
+
+        // Build into a new dictionary to avoid clearing during iteration
+        var newCache = new Dictionary<int, (StreamGeometry Geometry, IBrush Brush)>();
+        int totalPoints = 0;
+        int polygonCount = 0;
+
+        foreach (var (sectionIndex, color, leftEdge, rightEdge) in _coveragePolygonProvider())
+        {
+            if (leftEdge.Count < 2) continue;
+
+            // Create brush from color (R, G, B are already 0-255 bytes)
+            // Use opaque (255) to avoid expensive alpha blending
+            var brush = new SolidColorBrush(Color.FromArgb(255, color.R, color.G, color.B));
+
+            // Build polygon: left edge forward, then right edge backward
+            // Decimate points - skip points closer than threshold to reduce vertex count
+            // 10m threshold = 100 sq - aggressive decimation for performance
+            const double decimationThresholdSq = 100.0; // 10m minimum spacing squared
+
+            var streamGeometry = new StreamGeometry();
+            using (var ctx = streamGeometry.Open())
+            {
+                // Start at first left edge point
+                ctx.BeginFigure(new Point(leftEdge[0].E, leftEdge[0].N), true);
+                var lastPt = leftEdge[0];
+                int addedPoints = 1;
+
+                // Continue along left edge with decimation
+                for (int i = 1; i < leftEdge.Count; i++)
+                {
+                    var pt = leftEdge[i];
+                    double dx = pt.E - lastPt.E;
+                    double dy = pt.N - lastPt.N;
+                    if (dx * dx + dy * dy >= decimationThresholdSq || i == leftEdge.Count - 1)
+                    {
+                        ctx.LineTo(new Point(pt.E, pt.N));
+                        lastPt = pt;
+                        addedPoints++;
+                    }
+                }
+
+                // Continue along right edge in reverse with decimation
+                lastPt = rightEdge[rightEdge.Count - 1];
+                ctx.LineTo(new Point(lastPt.E, lastPt.N));
+                addedPoints++;
+
+                for (int i = rightEdge.Count - 2; i >= 0; i--)
+                {
+                    var pt = rightEdge[i];
+                    double dx = pt.E - lastPt.E;
+                    double dy = pt.N - lastPt.N;
+                    if (dx * dx + dy * dy >= decimationThresholdSq || i == 0)
+                    {
+                        ctx.LineTo(new Point(pt.E, pt.N));
+                        lastPt = pt;
+                        addedPoints++;
+                    }
+                }
+
+                ctx.EndFigure(true);
+                totalPoints += addedPoints;
+            }
+
+            newCache[polygonCount] = (streamGeometry, brush);
+            polygonCount++;
+        }
+
+        // Swap cache atomically so it's never empty during normal operation
+        _cachedPolygonGeometry = newCache;
+
+        // Warn if cache is empty - this will cause rebuilds every frame!
+        if (polygonCount == 0)
+            Console.WriteLine($"[Timing] CovRebuild: WARNING cache empty! Will rebuild every frame");
+        else
+            Console.WriteLine($"[Timing] CovRebuild: {polygonCount} polygons, {totalPoints} points");
+
+        _lastPolygonPointCount = totalPoints;
+        // Note: dirty flag is now reset BEFORE rebuild in DrawCoveragePolygons
+    }
+
+    /// <summary>
+    /// Draw coverage using triangle strip patches (detailed, original method).
+    /// </summary>
+    private int DrawCoveragePatches(DrawingContext context, double visMinX, double visMaxX, double visMinY, double visMaxY)
+    {
+        // Update tracking for active vs finalized patches
+        UpdateColorBatchesIncremental();
 
         // Draw only visible patches from the cache
         int drawnCount = 0;
@@ -683,9 +886,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             drawnCount++;
         }
 
-        _profileSw.Stop();
-        _lastCoverageRenderMs = _profileSw.Elapsed.TotalMilliseconds;
-        _lastDrawnPatchCount = drawnCount;
+        return drawnCount;
     }
 
     private int _lastDrawnPatchCount;
@@ -1788,6 +1989,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         _coveragePatches = patches;
 
+        // Mark polygon geometry as dirty when coverage changes
+        _polygonGeometryDirty = true;
+
         // Rebuild Skia draw operation if patch count changed (new patches added)
         // We rebuild the whole thing because Skia paths are immutable
         if (patches.Count != _lastDrawOpPatchCount)
@@ -1814,6 +2018,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             Debug.WriteLine($"[Timing] SetPatches: {_lastSetCoveragePatchesMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Drawn: {_lastDrawnPatchCount}/{patches.Count}, Batched: {batchedCount}, Active: {_activePatchIndices.Count}");
         }
+    }
+
+    public void SetCoveragePolygonProvider(Func<IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)>>? provider)
+    {
+        _coveragePolygonProvider = provider;
+        _polygonGeometryDirty = true;
+    }
+
+    public void MarkCoverageDirty()
+    {
+        _polygonGeometryDirty = true;
     }
 
     private void RebuildCoverageGeometryCache()

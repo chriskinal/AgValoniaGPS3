@@ -145,12 +145,15 @@ public partial class MainView : UserControl
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    _mapControl?.SetCoveragePatches(coverageService.GetPatches());
+                    _mapControl?.MarkCoverageDirty();
                     _viewModel?.RefreshCoverageStatistics();
                 });
             };
-            // Set initial coverage (in case field was already loaded)
-            _mapControl.SetCoveragePatches(coverageService.GetPatches());
+
+            // Set up polygon-based coverage rendering (one extruded polygon per section)
+            _mapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
+            // Mark dirty in case field was already loaded with coverage
+            _mapControl.MarkCoverageDirty();
         }
 
         // Wire up position updates - when ViewModel properties change, update map control
