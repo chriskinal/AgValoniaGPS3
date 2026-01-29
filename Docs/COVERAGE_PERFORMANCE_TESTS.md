@@ -56,21 +56,21 @@ This document tracks performance testing of different coverage rendering approac
 
 ---
 
-### PERF-003: [Current Baseline]
+### PERF-003: Current Polygon Baseline
 - **Date**: 2026-01-28
-- **Commit**: (pending - run test first)
+- **Commit**: `57ea35c`
 - **Branch**: `coverage-dual-buffer`
 - **Method**: Polygons (strokes disabled)
 - **Decimation**: Source 5m, Render 10m
 
 | Coverage | Points | Polygons | FPS (zoomed out) | FPS (mid-zoom) | FPS (zoomed in) | Notes |
 |----------|--------|----------|------------------|----------------|-----------------|-------|
-| 10% | | | | | | |
-| 20% | | | | | | |
-| 30% | | | | | | |
+| 7% | 69,341 | 256 | ? | 17 | ? | Wide bad zoom range |
 
 **Observations**:
-- (fill in after test)
+- WORSE than PERF-001 - something regressed
+- Wide range of zoom settings cause FPS loss (not narrow like before)
+- Need to find what changed or try more aggressive decimation
 
 ---
 
