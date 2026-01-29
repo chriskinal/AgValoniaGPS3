@@ -174,6 +174,22 @@ public interface ICoverageMapService
     IReadOnlyList<CoveragePatch> GetPatchesForZone(int zoneIndex);
 
     /// <summary>
+    /// Set fixed field bounds for bitmap coordinate calculations.
+    /// This establishes a stable coordinate system that doesn't change as coverage expands.
+    /// Should be called when a field/boundary is loaded.
+    /// </summary>
+    /// <param name="minE">Minimum easting (with padding)</param>
+    /// <param name="maxE">Maximum easting (with padding)</param>
+    /// <param name="minN">Minimum northing (with padding)</param>
+    /// <param name="maxN">Maximum northing (with padding)</param>
+    void SetFieldBounds(double minE, double maxE, double minN, double maxN);
+
+    /// <summary>
+    /// Clear field bounds (when field is closed)
+    /// </summary>
+    void ClearFieldBounds();
+
+    /// <summary>
     /// Clear all coverage data
     /// </summary>
     void ClearAll();

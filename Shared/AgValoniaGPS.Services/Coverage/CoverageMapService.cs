@@ -60,6 +60,13 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     private int _maxCellN = int.MinValue;
     private bool _boundsValid;
 
+    // Fixed field bounds for stable bitmap coordinates (set when field is loaded)
+    private double _fieldMinE;
+    private double _fieldMaxE;
+    private double _fieldMinN;
+    private double _fieldMaxN;
+    private bool _fieldBoundsSet;
+
     // ========== TRACKING STATE ==========
     // Track which sections are actively mapping
     private readonly HashSet<int> _activeSections = new();
@@ -506,10 +513,16 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     /// <summary>
     /// Get coverage bitmap bounds in world coordinates.
-    /// Returns null if no coverage exists.
+    /// Returns fixed field bounds if set, otherwise coverage bounds.
+    /// Returns null if no bounds available.
     /// </summary>
     public (double MinE, double MaxE, double MinN, double MaxN)? GetCoverageBounds()
     {
+        // Use fixed field bounds if set (stable coordinate system)
+        if (_fieldBoundsSet)
+            return (_fieldMinE, _fieldMaxE, _fieldMinN, _fieldMaxN);
+
+        // Fall back to coverage bounds (dynamic, can drift)
         if (!_boundsValid || _coverageBitmap.Count == 0)
             return null;
 
@@ -526,11 +539,28 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     /// <summary>
     /// Get coverage cells for bitmap rendering at specified resolution.
     /// Converts from internal 0.5m cells to requested cell size.
+    /// Uses fixed field bounds if set, otherwise coverage bounds.
     /// </summary>
     public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(double cellSize)
     {
         if (_coverageBitmap.Count == 0)
             yield break;
+
+        // Determine origin for coordinate calculations
+        double minE, minN;
+        if (_fieldBoundsSet)
+        {
+            // Use fixed field bounds (stable coordinate system)
+            minE = _fieldMinE;
+            minN = _fieldMinN;
+        }
+        else
+        {
+            // Fall back to coverage bounds (can drift)
+            if (!_boundsValid) yield break;
+            minE = _minCellE * BITMAP_CELL_SIZE;
+            minN = _minCellN * BITMAP_CELL_SIZE;
+        }
 
         // Use a HashSet to avoid duplicate cells when downsampling
         var outputCells = new HashSet<(int, int)>();
@@ -543,11 +573,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
             double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
 
-            // Convert to output cell coordinates (relative to bitmap bounds)
-            if (!_boundsValid) continue;
-            double minE = _minCellE * BITMAP_CELL_SIZE;
-            double minN = _minCellN * BITMAP_CELL_SIZE;
-
+            // Convert to output cell coordinates (relative to origin)
             int outCellX = (int)Math.Floor((worldE - minE) / cellSize);
             int outCellY = (int)Math.Floor((worldN - minN) / cellSize);
 
@@ -561,24 +587,36 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     /// <summary>
     /// Get newly added coverage cells since last call.
     /// Clears the pending list after returning.
+    /// Uses fixed field bounds if set, otherwise coverage bounds.
     /// </summary>
     public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetNewCoverageBitmapCells(double cellSize)
     {
         if (_newCells.Count == 0)
             yield break;
 
+        // Determine origin for coordinate calculations
+        double minE, minN;
+        if (_fieldBoundsSet)
+        {
+            // Use fixed field bounds (stable coordinate system)
+            minE = _fieldMinE;
+            minN = _fieldMinN;
+        }
+        else
+        {
+            // Fall back to coverage bounds (can drift)
+            if (!_boundsValid)
+            {
+                _newCells.Clear();
+                yield break;
+            }
+            minE = _minCellE * BITMAP_CELL_SIZE;
+            minN = _minCellN * BITMAP_CELL_SIZE;
+        }
+
         // Use a HashSet to avoid duplicate cells when downsampling
         var outputCells = new HashSet<(int, int)>();
         var defaultColor = GetZoneColor(0);
-
-        // Get bounds for coordinate conversion
-        if (!_boundsValid)
-        {
-            _newCells.Clear();
-            yield break;
-        }
-        double minE = _minCellE * BITMAP_CELL_SIZE;
-        double minN = _minCellN * BITMAP_CELL_SIZE;
 
         // Convert each new cell to the requested cell size
         foreach (var (cellE, cellN) in _newCells)
@@ -644,6 +682,28 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             PatchCount = 0,
             AreaAdded = 0
         });
+    }
+
+    /// <summary>
+    /// Set fixed field bounds for stable bitmap coordinate calculations.
+    /// </summary>
+    public void SetFieldBounds(double minE, double maxE, double minN, double maxN)
+    {
+        _fieldMinE = minE;
+        _fieldMaxE = maxE;
+        _fieldMinN = minN;
+        _fieldMaxN = maxN;
+        _fieldBoundsSet = true;
+        Console.WriteLine($"[Coverage] Field bounds set: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}]");
+    }
+
+    /// <summary>
+    /// Clear field bounds (when field is closed).
+    /// </summary>
+    public void ClearFieldBounds()
+    {
+        _fieldBoundsSet = false;
+        Console.WriteLine("[Coverage] Field bounds cleared");
     }
 
     public void ResetUserArea()

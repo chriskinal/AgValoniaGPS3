@@ -2620,6 +2620,28 @@ public partial class MainViewModel : ObservableObject
         // Set HasBoundary based on whether we have a valid outer boundary
         HasBoundary = boundary?.OuterBoundary != null && boundary.OuterBoundary.IsValid;
 
+        // Set fixed field bounds for coverage bitmap coordinate system
+        if (boundary?.OuterBoundary != null && boundary.OuterBoundary.IsValid && boundary.OuterBoundary.Points.Count > 0)
+        {
+            // Calculate bounding box with padding for stable bitmap coordinates
+            double minE = double.MaxValue, maxE = double.MinValue;
+            double minN = double.MaxValue, maxN = double.MinValue;
+            foreach (var point in boundary.OuterBoundary.Points)
+            {
+                minE = Math.Min(minE, point.Easting);
+                maxE = Math.Max(maxE, point.Easting);
+                minN = Math.Min(minN, point.Northing);
+                maxN = Math.Max(maxN, point.Northing);
+            }
+            // Add 50m padding to handle coverage near edges
+            const double padding = 50.0;
+            _coverageMapService.SetFieldBounds(minE - padding, maxE + padding, minN - padding, maxN + padding);
+        }
+        else
+        {
+            _coverageMapService.ClearFieldBounds();
+        }
+
         // Sync to FieldState for section control boundary/headland detection
         State.Field.CurrentBoundary = boundary;
 
