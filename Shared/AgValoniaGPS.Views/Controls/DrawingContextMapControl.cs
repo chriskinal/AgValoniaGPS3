@@ -310,6 +310,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _bitmapNeedsFullRebuild = true;
     private bool _bitmapNeedsIncrementalUpdate = false;
     private bool _bitmapUpdatePending = false; // Prevents re-entry during update
+    private bool _isRendering = false; // Guard against operations during render pass
 
     // Provider for coverage bitmap data (from ICoverageMapService)
     private Func<(double MinE, double MaxE, double MinN, double MaxN)?>? _coverageBoundsProvider;
@@ -455,9 +456,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public override void Render(DrawingContext context)
     {
-        _renderSw.Restart();
+        _isRendering = true;
+        try
+        {
+            _renderSw.Restart();
 
-        base.Render(context);
+            base.Render(context);
 
         var bounds = Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
@@ -570,6 +574,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // Count actual completed renders for accurate FPS
         UpdateFpsCounter();
+        }
+        finally
+        {
+            _isRendering = false;
+        }
     }
 
     private Matrix GetCameraTransform(Rect bounds, double viewWidth, double viewHeight)
@@ -877,13 +886,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // If bitmap not ready yet, fall back to polygons
         if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
         {
-            // Try to trigger initial update
+            // Schedule initial bitmap creation for after render pass completes
+            // Don't try to create bitmap during render - just use polygon fallback
             if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
             {
                 _bitmapUpdatePending = true;
                 Dispatcher.UIThread.Post(() =>
                 {
-                    UpdateCoverageBitmapIfNeeded();
+                    // Double-check we're not rendering when this executes
+                    if (!_isRendering)
+                    {
+                        UpdateCoverageBitmapIfNeeded();
+                    }
                     _bitmapUpdatePending = false;
                 }, DispatcherPriority.Background);
             }
@@ -2443,12 +2457,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _bitmapNeedsIncrementalUpdate = true;
 
         // Schedule bitmap update outside of render pass
-        if (UseBitmapCoverageRendering && !_bitmapUpdatePending)
+        // Don't schedule during render to avoid invalidation errors
+        if (UseBitmapCoverageRendering && !_bitmapUpdatePending && !_isRendering)
         {
             _bitmapUpdatePending = true;
             Dispatcher.UIThread.Post(() =>
             {
-                UpdateCoverageBitmapIfNeeded();
+                if (!_isRendering)
+                {
+                    UpdateCoverageBitmapIfNeeded();
+                }
                 _bitmapUpdatePending = false;
             }, DispatcherPriority.Background);
         }
