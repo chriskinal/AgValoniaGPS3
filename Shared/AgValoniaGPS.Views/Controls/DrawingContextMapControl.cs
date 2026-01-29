@@ -305,9 +305,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // This provides O(1) render time by blitting a pre-rendered bitmap each frame
     private WriteableBitmap? _coverageWriteableBitmap;
     private const double COVERAGE_BITMAP_CELL_SIZE = 1.0; // 1.0m per pixel (matches interface)
-    private double _bitmapMinE, _bitmapMinN; // World coordinates of bitmap origin
+    private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
     private bool _bitmapNeedsFullRebuild = true;
+    private bool _bitmapNeedsIncrementalUpdate = false;
+    private bool _bitmapUpdatePending = false; // Prevents re-entry during update
 
     // Provider for coverage bitmap data (from ICoverageMapService)
     private Func<(double MinE, double MaxE, double MinN, double MaxN)?>? _coverageBoundsProvider;
@@ -786,26 +788,24 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     }
 
     /// <summary>
-    /// Draw coverage using WriteableBitmap (PERF-004).
-    /// O(1) render time - just blit the pre-rendered bitmap.
-    /// Bitmap is updated incrementally as new coverage cells are added.
+    /// Update coverage bitmap if needed. Called outside of render pass via Dispatcher.
     /// </summary>
-    private int DrawCoverageBitmap(DrawingContext context)
+    private void UpdateCoverageBitmapIfNeeded()
     {
         if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
-            return 0;
+            return;
 
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
         if (bounds == null)
-            return 0;
+            return;
 
         var (minE, maxE, minN, maxN) = bounds.Value;
         double worldWidth = maxE - minE;
         double worldHeight = maxN - minN;
 
         if (worldWidth <= 0 || worldHeight <= 0)
-            return 0;
+            return;
 
         // Calculate required bitmap dimensions at 1.0m per pixel
         int requiredWidth = (int)Math.Ceiling(worldWidth / COVERAGE_BITMAP_CELL_SIZE);
@@ -815,10 +815,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         const int MAX_DIMENSION = 4096;
         if (requiredWidth > MAX_DIMENSION || requiredHeight > MAX_DIMENSION)
         {
-            // Fall back to polygon rendering for very large fields
-            if (_renderCounter % 90 == 1)
-                Console.WriteLine($"[Timing] CovBitmap: Too large {requiredWidth}x{requiredHeight}, falling back to polygons");
-            return DrawCoveragePolygons(context);
+            Console.WriteLine($"[Timing] CovBitmap: Too large {requiredWidth}x{requiredHeight}, skipping bitmap");
+            return;
         }
 
         // Check if we need to rebuild the bitmap (bounds changed or first time)
@@ -834,6 +832,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _bitmapNeedsFullRebuild = true;
             _bitmapMinE = minE;
             _bitmapMinN = minN;
+            _bitmapMaxE = maxE;
+            _bitmapMaxN = maxN;
             _bitmapWidth = requiredWidth;
             _bitmapHeight = requiredHeight;
 
@@ -845,54 +845,62 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 Avalonia.Platform.PixelFormat.Bgra8888,
                 Avalonia.Platform.AlphaFormat.Premul);
 
-            if (_renderCounter % 30 == 0)
-                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
+            Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
         }
 
         // Update bitmap with coverage cells
         if (_bitmapNeedsFullRebuild)
         {
-            // Full rebuild - paint all cells
             var sw = System.Diagnostics.Stopwatch.StartNew();
             int cellCount = UpdateCoverageBitmapFull();
             sw.Stop();
-            if (_renderCounter % 30 == 0)
-                Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
+            _bitmapNeedsIncrementalUpdate = false;
         }
-        else if (_coverageNewCellsProvider != null)
+        else if (_bitmapNeedsIncrementalUpdate && _coverageNewCellsProvider != null)
         {
-            // Incremental update - only paint new cells
             int newCellCount = UpdateCoverageBitmapIncremental();
-            if (newCellCount > 0 && _renderCounter % 30 == 0)
+            if (newCellCount > 0)
                 Console.WriteLine($"[Timing] CovBitmap: Incremental {newCellCount} new cells");
+            _bitmapNeedsIncrementalUpdate = false;
         }
+    }
 
-        // Draw the bitmap to the context
-        if (_coverageWriteableBitmap != null)
+    /// <summary>
+    /// Draw coverage using WriteableBitmap (PERF-004).
+    /// O(1) render time - just blit the pre-rendered bitmap.
+    /// Bitmap is updated outside of render pass via MarkCoverageDirty.
+    /// </summary>
+    private int DrawCoverageBitmap(DrawingContext context)
+    {
+        // If bitmap not ready yet, fall back to polygons
+        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
         {
-            // Transform from bitmap coordinates to world coordinates
-            // Bitmap (0,0) is top-left, world coordinates have Y increasing upward
-            // Bitmap pixel (x,y) maps to world (minE + x*cellSize, maxN - y*cellSize)
-
-            // Save current transform
-            using (context.PushTransform(Matrix.Identity))
+            // Try to trigger initial update
+            if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
             {
-                // Calculate the world-space rectangle for the bitmap
-                // In world coordinates: (minE, minN) to (maxE, maxN)
-                // But bitmap Y is inverted, so we need to flip
-
-                // Source rect is entire bitmap
-                var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
-
-                // Destination rect in world coordinates
-                // Note: Y is inverted in world coords vs screen, but we're drawing
-                // in world space where Y increases upward (northing)
-                var destRect = new Rect(minE, minN, worldWidth, worldHeight);
-
-                context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+                _bitmapUpdatePending = true;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    UpdateCoverageBitmapIfNeeded();
+                    _bitmapUpdatePending = false;
+                }, DispatcherPriority.Background);
             }
+            return DrawCoveragePolygons(context);
         }
+
+        // Just draw the bitmap - no modifications during render
+        double worldWidth = _bitmapMaxE - _bitmapMinE;
+        double worldHeight = _bitmapMaxN - _bitmapMinN;
+
+        // Source rect is entire bitmap
+        var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
+
+        // Destination rect in world coordinates
+        var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
+
+        context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
 
         return _bitmapWidth * _bitmapHeight;
     }
@@ -2432,6 +2440,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void MarkCoverageDirty()
     {
         _polygonGeometryDirty = true;
+        _bitmapNeedsIncrementalUpdate = true;
+
+        // Schedule bitmap update outside of render pass
+        if (UseBitmapCoverageRendering && !_bitmapUpdatePending)
+        {
+            _bitmapUpdatePending = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                UpdateCoverageBitmapIfNeeded();
+                _bitmapUpdatePending = false;
+            }, DispatcherPriority.Background);
+        }
     }
 
     private void RebuildCoverageGeometryCache()
