@@ -463,8 +463,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _currentFps = _frameCount / elapsed;
             _frameCount = 0;
             _lastFpsUpdate = now;
-            // Fire event to update UI
-            FpsUpdated?.Invoke(_currentFps);
+            // Fire event to update UI - must post to dispatcher to avoid
+            // "Visual was invalidated during render pass" error when
+            // the event handler updates bound properties
+            var fps = _currentFps;
+            Dispatcher.UIThread.Post(() => FpsUpdated?.Invoke(fps), DispatcherPriority.Background);
         }
     }
 
