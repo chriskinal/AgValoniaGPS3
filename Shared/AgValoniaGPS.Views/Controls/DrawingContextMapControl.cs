@@ -397,9 +397,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void OnRenderTimerTick(object? sender, EventArgs e)
     {
-        // Increment frame count and trigger render
-        _frameCount++;
+        // Just trigger render - don't count here (we count actual completed renders)
         InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Update FPS counter. Called at end of Render() to count actual completed frames.
+    /// </summary>
+    private void UpdateFpsCounter()
+    {
+        _frameCount++;
 
         // Check if it's time to update FPS (every second)
         var now = DateTime.UtcNow;
@@ -409,7 +416,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _currentFps = _frameCount / elapsed;
             _frameCount = 0;
             _lastFpsUpdate = now;
-            // Fire event - we're in timer callback, not Render(), so this is safe
+            // Fire event to update UI
             FpsUpdated?.Invoke(_currentFps);
         }
     }
@@ -528,6 +535,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Polygons: {_cachedPolygonGeometry.Count}");
         }
+
+        // Count actual completed renders for accurate FPS
+        UpdateFpsCounter();
     }
 
     private Matrix GetCameraTransform(Rect bounds, double viewWidth, double viewHeight)
