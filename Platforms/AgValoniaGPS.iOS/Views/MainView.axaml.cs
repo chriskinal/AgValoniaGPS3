@@ -184,9 +184,10 @@ public partial class MainView : UserControl
             _mapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
 
             // Set up bitmap-based coverage rendering (PERF-004)
+            // allCellsProvider takes viewport bounds for spatial queries - O(viewport) not O(total coverage)
             _mapControl.SetCoverageBitmapProviders(
                 coverageService.GetCoverageBounds,
-                coverageService.GetCoverageBitmapCells,
+                (cellSize, minE, maxE, minN, maxN) => coverageService.GetCoverageBitmapCells(cellSize, minE, maxE, minN, maxN),
                 coverageService.GetNewCoverageBitmapCells);
         }
 

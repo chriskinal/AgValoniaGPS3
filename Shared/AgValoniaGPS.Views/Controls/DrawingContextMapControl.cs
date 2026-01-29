@@ -96,9 +96,10 @@ public interface ISharedMapControl
     void SetCoveragePolygonProvider(Func<IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)>>? provider);
 
     // Coverage bitmap providers for PERF-004 bitmap-based rendering
+    // allCellsProvider signature: (cellSize, viewMinE, viewMaxE, viewMinN, viewMaxN) -> cells within bounds
     void SetCoverageBitmapProviders(
         Func<(double MinE, double MaxE, double MinN, double MaxN)?>? boundsProvider,
-        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
+        Func<double, double, double, double, double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
         Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? newCellsProvider);
 
     // Mark coverage as needing refresh (call when coverage data changes)
@@ -316,7 +317,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Provider for coverage bitmap data (from ICoverageMapService)
     private Func<(double MinE, double MaxE, double MinN, double MaxN)?>? _coverageBoundsProvider;
-    private Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? _coverageAllCellsProvider;
+    // Provider signature: (cellSize, viewMinE, viewMaxE, viewMinN, viewMaxN) -> cells
+    private Func<double, double, double, double, double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? _coverageAllCellsProvider;
     private Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? _coverageNewCellsProvider;
 
     // Track data
@@ -885,15 +887,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         // Update bitmap with coverage cells
-        // Always do full rebuild for now - incremental updates have coordinate issues
-        // when bounds expand (cells calculated relative to new bounds don't match old bitmap)
-        if (_bitmapNeedsFullRebuild || _bitmapNeedsIncrementalUpdate)
+        if (_bitmapNeedsFullRebuild)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             int cellCount = UpdateCoverageBitmapFull();
             sw.Stop();
             Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
+            _bitmapNeedsIncrementalUpdate = false;
+        }
+        else if (_bitmapNeedsIncrementalUpdate)
+        {
+            // Incremental update - only add new cells (fast, O(new cells) not O(total coverage))
+            int cellCount = UpdateCoverageBitmapIncremental();
+            if (cellCount > 0)
+                Console.WriteLine($"[Timing] CovBitmap: Incremental {cellCount} cells");
             _bitmapNeedsIncrementalUpdate = false;
         }
     }
@@ -950,7 +958,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Buffer is already zeroed (transparent)
 
         int cellCount = 0;
-        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(_actualBitmapCellSize))
+        // Query only cells within the bitmap bounds - O(viewport) not O(total coverage)
+        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(
+            _actualBitmapCellSize, _bitmapMinE, _bitmapMaxE, _bitmapMinN, _bitmapMaxN))
         {
             // Convert cell coordinates to bitmap pixel
             // CellY is relative to minN (increasing north)
@@ -976,39 +986,31 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     /// <summary>
     /// Update coverage bitmap with only new cells (incremental update).
+    /// Writes directly to framebuffer - no buffer copying.
     /// </summary>
-    private int UpdateCoverageBitmapIncremental()
+    private unsafe int UpdateCoverageBitmapIncremental()
     {
         if (_coverageWriteableBitmap == null || _coverageNewCellsProvider == null)
             return 0;
 
         using var framebuffer = _coverageWriteableBitmap.Lock();
         int stride = framebuffer.RowBytes;
-        int bufferSize = stride * _bitmapHeight;
-
-        // Read existing buffer
-        var buffer = new byte[bufferSize];
-        System.Runtime.InteropServices.Marshal.Copy(framebuffer.Address, buffer, 0, bufferSize);
+        byte* ptr = (byte*)framebuffer.Address;
 
         int cellCount = 0;
         foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(_actualBitmapCellSize))
         {
-            int px = cellX;
-            int py = cellY; // No Y flip needed
-
-            if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
+            if (cellX >= 0 && cellX < _bitmapWidth && cellY >= 0 && cellY < _bitmapHeight)
             {
-                int offset = py * stride + px * 4;
-                buffer[offset + 0] = color.B;
-                buffer[offset + 1] = color.G;
-                buffer[offset + 2] = color.R;
-                buffer[offset + 3] = 200;
+                byte* pixel = ptr + cellY * stride + cellX * 4;
+                pixel[0] = color.B; // BGRA format
+                pixel[1] = color.G;
+                pixel[2] = color.R;
+                pixel[3] = 200;
                 cellCount++;
             }
         }
 
-        // Copy buffer back to framebuffer
-        System.Runtime.InteropServices.Marshal.Copy(buffer, 0, framebuffer.Address, bufferSize);
         return cellCount;
     }
 
@@ -2457,7 +2459,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void SetCoverageBitmapProviders(
         Func<(double MinE, double MaxE, double MinN, double MaxN)?>? boundsProvider,
-        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
+        Func<double, double, double, double, double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
         Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? newCellsProvider)
     {
         _coverageBoundsProvider = boundsProvider;

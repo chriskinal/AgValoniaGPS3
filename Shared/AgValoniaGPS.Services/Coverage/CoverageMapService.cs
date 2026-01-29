@@ -538,49 +538,60 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     }
 
     /// <summary>
-    /// Get coverage cells for bitmap rendering at specified resolution.
-    /// Converts from internal 0.5m cells to requested cell size.
-    /// Uses fixed field bounds if set, otherwise coverage bounds.
+    /// Get coverage cells within viewport bounds for bitmap rendering.
+    /// Only iterates cells within the specified world coordinate bounds.
+    /// Time complexity: O(viewport area), not O(total coverage).
     /// </summary>
-    public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(double cellSize)
+    public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(
+        double cellSize, double viewMinE, double viewMaxE, double viewMinN, double viewMaxN)
     {
         if (_coverageBitmap.Count == 0)
             yield break;
 
         // Determine origin for coordinate calculations
-        double minE, minN;
+        double originE, originN;
         if (_fieldBoundsSet)
         {
-            // Use fixed field bounds (stable coordinate system)
-            minE = _fieldMinE;
-            minN = _fieldMinN;
+            originE = _fieldMinE;
+            originN = _fieldMinN;
         }
         else
         {
-            // Fall back to coverage bounds (can drift)
             if (!_boundsValid) yield break;
-            minE = _minCellE * BITMAP_CELL_SIZE;
-            minN = _minCellN * BITMAP_CELL_SIZE;
+            originE = _minCellE * BITMAP_CELL_SIZE;
+            originN = _minCellN * BITMAP_CELL_SIZE;
         }
 
-        // Use a HashSet to avoid duplicate cells when downsampling
+        var defaultColor = GetZoneColor(0);
+
+        // Convert viewport bounds to internal cell coordinates
+        int internalMinCellE = (int)Math.Floor(viewMinE / BITMAP_CELL_SIZE);
+        int internalMaxCellE = (int)Math.Ceiling(viewMaxE / BITMAP_CELL_SIZE);
+        int internalMinCellN = (int)Math.Floor(viewMinN / BITMAP_CELL_SIZE);
+        int internalMaxCellN = (int)Math.Ceiling(viewMaxN / BITMAP_CELL_SIZE);
+
+        // Track output cells to avoid duplicates when downsampling
         var outputCells = new HashSet<(int, int)>();
-        var defaultColor = GetZoneColor(0); // Use zone 0 color for now
 
-        // Convert each internal cell to the requested cell size
-        foreach (var (cellE, cellN) in _coverageBitmap)
+        // Iterate only over cells within viewport bounds - O(viewport) not O(coverage)
+        for (int cellE = internalMinCellE; cellE <= internalMaxCellE; cellE++)
         {
-            // Convert internal cell center to world coordinates
-            double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
-            double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
-
-            // Convert to output cell coordinates (relative to origin)
-            int outCellX = (int)Math.Floor((worldE - minE) / cellSize);
-            int outCellY = (int)Math.Floor((worldN - minN) / cellSize);
-
-            if (outputCells.Add((outCellX, outCellY)))
+            for (int cellN = internalMinCellN; cellN <= internalMaxCellN; cellN++)
             {
-                yield return (outCellX, outCellY, defaultColor);
+                // O(1) HashSet lookup
+                if (_coverageBitmap.Contains((cellE, cellN)))
+                {
+                    // Convert to output cell coordinates
+                    double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
+                    double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
+                    int outCellX = (int)Math.Floor((worldE - originE) / cellSize);
+                    int outCellY = (int)Math.Floor((worldN - originN) / cellSize);
+
+                    if (outputCells.Add((outCellX, outCellY)))
+                    {
+                        yield return (outCellX, outCellY, defaultColor);
+                    }
+                }
             }
         }
     }

@@ -147,11 +147,17 @@ public interface ICoverageMapService
     (double MinE, double MaxE, double MinN, double MaxN)? GetCoverageBounds();
 
     /// <summary>
-    /// Get coverage cells for bitmap rendering at specified resolution.
+    /// Get coverage cells within viewport bounds for bitmap rendering.
+    /// Only returns cells within the specified world coordinate bounds.
+    /// Time complexity: O(viewport area), not O(total coverage).
     /// </summary>
-    /// <param name="cellSize">Size of each cell in meters (e.g., 1.0 for 1m resolution)</param>
-    /// <returns>Enumerable of (cellX, cellY, color) for each covered cell</returns>
-    IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(double cellSize);
+    /// <param name="cellSize">Size of each output cell in meters</param>
+    /// <param name="viewMinE">Viewport minimum easting</param>
+    /// <param name="viewMaxE">Viewport maximum easting</param>
+    /// <param name="viewMinN">Viewport minimum northing</param>
+    /// <param name="viewMaxN">Viewport maximum northing</param>
+    IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(
+        double cellSize, double viewMinE, double viewMaxE, double viewMinN, double viewMaxN);
 
     /// <summary>
     /// Get newly added coverage cells since last call (for incremental bitmap updates).
