@@ -141,6 +141,27 @@ public interface ICoverageMapService
     IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)> GetSectionPolygons();
 
     /// <summary>
+    /// Get coverage bitmap bounds in world coordinates.
+    /// Returns null if no coverage exists.
+    /// </summary>
+    (double MinE, double MaxE, double MinN, double MaxN)? GetCoverageBounds();
+
+    /// <summary>
+    /// Get coverage cells for bitmap rendering at specified resolution.
+    /// </summary>
+    /// <param name="cellSize">Size of each cell in meters (e.g., 1.0 for 1m resolution)</param>
+    /// <returns>Enumerable of (cellX, cellY, color) for each covered cell</returns>
+    IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(double cellSize);
+
+    /// <summary>
+    /// Get newly added coverage cells since last call (for incremental bitmap updates).
+    /// Clears the pending list after returning.
+    /// </summary>
+    /// <param name="cellSize">Size of each cell in meters</param>
+    /// <returns>Enumerable of (cellX, cellY, color) for newly added cells</returns>
+    IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetNewCoverageBitmapCells(double cellSize);
+
+    /// <summary>
     /// Number of visual polygons (one per section with coverage)
     /// </summary>
     int VisualPolygonCount { get; }

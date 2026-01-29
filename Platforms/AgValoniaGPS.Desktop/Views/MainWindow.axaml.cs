@@ -148,6 +148,13 @@ public partial class MainWindow : Window
 
             // Set up polygon-based coverage rendering (one extruded polygon per section)
             MapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
+
+            // Set up bitmap-based coverage rendering (PERF-004)
+            MapControl.SetCoverageBitmapProviders(
+                coverageService.GetCoverageBounds,
+                coverageService.GetCoverageBitmapCells,
+                coverageService.GetNewCoverageBitmapCells);
+
             // Mark dirty in case field was already loaded with coverage
             MapControl.MarkCoverageDirty();
         }

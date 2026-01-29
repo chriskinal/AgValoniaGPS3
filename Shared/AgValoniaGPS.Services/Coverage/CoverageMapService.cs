@@ -50,6 +50,16 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     private const double BITMAP_CELL_SIZE = 0.5; // meters per cell (0.5m = ~1.6ft resolution)
     private readonly HashSet<(int CellE, int CellN)> _coverageBitmap = new();
 
+    // Track newly added cells since last GetNewCoverageBitmapCells call
+    private readonly HashSet<(int CellE, int CellN)> _newCells = new();
+
+    // Track bounds of coverage bitmap for efficient bounds calculation
+    private int _minCellE = int.MaxValue;
+    private int _maxCellE = int.MinValue;
+    private int _minCellN = int.MaxValue;
+    private int _maxCellN = int.MinValue;
+    private bool _boundsValid;
+
     // ========== TRACKING STATE ==========
     // Track which sections are actively mapping
     private readonly HashSet<int> _activeSections = new();
@@ -272,7 +282,12 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
                 // Check if cell center is inside quad (point-in-polygon test)
                 if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
                 {
-                    _coverageBitmap.Add((ce, cn));
+                    if (_coverageBitmap.Add((ce, cn)))
+                    {
+                        // New cell - track it and update bounds
+                        _newCells.Add((ce, cn));
+                        UpdateBounds(ce, cn);
+                    }
                 }
             }
         }
@@ -442,10 +457,26 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
                 if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
                 {
-                    _coverageBitmap.Add((ce, cn));
+                    if (_coverageBitmap.Add((ce, cn)))
+                    {
+                        // Update bounds (don't track as new cell during file load)
+                        UpdateBounds(ce, cn);
+                    }
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Update coverage bounds when a new cell is added.
+    /// </summary>
+    private void UpdateBounds(int cellE, int cellN)
+    {
+        if (cellE < _minCellE) _minCellE = cellE;
+        if (cellE > _maxCellE) _maxCellE = cellE;
+        if (cellN < _minCellN) _minCellN = cellN;
+        if (cellN > _maxCellN) _maxCellN = cellN;
+        _boundsValid = true;
     }
 
     /// <summary>
@@ -473,6 +504,101 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     // Total number of polygon passes across all sections
     public int VisualPolygonCount => _sectionPolygons.Values.Sum(passes => passes.Count);
 
+    /// <summary>
+    /// Get coverage bitmap bounds in world coordinates.
+    /// Returns null if no coverage exists.
+    /// </summary>
+    public (double MinE, double MaxE, double MinN, double MaxN)? GetCoverageBounds()
+    {
+        if (!_boundsValid || _coverageBitmap.Count == 0)
+            return null;
+
+        // Convert cell coordinates to world coordinates
+        // Cell (x,y) covers from x*cellSize to (x+1)*cellSize
+        double minE = _minCellE * BITMAP_CELL_SIZE;
+        double maxE = (_maxCellE + 1) * BITMAP_CELL_SIZE;
+        double minN = _minCellN * BITMAP_CELL_SIZE;
+        double maxN = (_maxCellN + 1) * BITMAP_CELL_SIZE;
+
+        return (minE, maxE, minN, maxN);
+    }
+
+    /// <summary>
+    /// Get coverage cells for bitmap rendering at specified resolution.
+    /// Converts from internal 0.5m cells to requested cell size.
+    /// </summary>
+    public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(double cellSize)
+    {
+        if (_coverageBitmap.Count == 0)
+            yield break;
+
+        // Use a HashSet to avoid duplicate cells when downsampling
+        var outputCells = new HashSet<(int, int)>();
+        var defaultColor = GetZoneColor(0); // Use zone 0 color for now
+
+        // Convert each internal cell to the requested cell size
+        foreach (var (cellE, cellN) in _coverageBitmap)
+        {
+            // Convert internal cell center to world coordinates
+            double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
+            double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
+
+            // Convert to output cell coordinates (relative to bitmap bounds)
+            if (!_boundsValid) continue;
+            double minE = _minCellE * BITMAP_CELL_SIZE;
+            double minN = _minCellN * BITMAP_CELL_SIZE;
+
+            int outCellX = (int)Math.Floor((worldE - minE) / cellSize);
+            int outCellY = (int)Math.Floor((worldN - minN) / cellSize);
+
+            if (outputCells.Add((outCellX, outCellY)))
+            {
+                yield return (outCellX, outCellY, defaultColor);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get newly added coverage cells since last call.
+    /// Clears the pending list after returning.
+    /// </summary>
+    public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetNewCoverageBitmapCells(double cellSize)
+    {
+        if (_newCells.Count == 0)
+            yield break;
+
+        // Use a HashSet to avoid duplicate cells when downsampling
+        var outputCells = new HashSet<(int, int)>();
+        var defaultColor = GetZoneColor(0);
+
+        // Get bounds for coordinate conversion
+        if (!_boundsValid)
+        {
+            _newCells.Clear();
+            yield break;
+        }
+        double minE = _minCellE * BITMAP_CELL_SIZE;
+        double minN = _minCellN * BITMAP_CELL_SIZE;
+
+        // Convert each new cell to the requested cell size
+        foreach (var (cellE, cellN) in _newCells)
+        {
+            double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
+            double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
+
+            int outCellX = (int)Math.Floor((worldE - minE) / cellSize);
+            int outCellY = (int)Math.Floor((worldN - minN) / cellSize);
+
+            if (outputCells.Add((outCellX, outCellY)))
+            {
+                yield return (outCellX, outCellY, defaultColor);
+            }
+        }
+
+        // Clear for next call
+        _newCells.Clear();
+    }
+
     public IReadOnlyList<CoveragePatch> GetPatches()
     {
         // Legacy compatibility - patches no longer used, return empty list
@@ -490,8 +616,16 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         // Clear visual polygons
         _sectionPolygons.Clear();
 
-        // Clear coverage bitmap
+        // Clear coverage bitmap and new cells tracking
         _coverageBitmap.Clear();
+        _newCells.Clear();
+
+        // Reset bounds
+        _minCellE = int.MaxValue;
+        _maxCellE = int.MinValue;
+        _minCellN = int.MaxValue;
+        _maxCellN = int.MinValue;
+        _boundsValid = false;
 
         // Clear tracking state
         _activeSections.Clear();

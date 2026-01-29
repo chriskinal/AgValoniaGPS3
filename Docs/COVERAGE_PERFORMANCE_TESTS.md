@@ -106,16 +106,25 @@ This document tracks performance testing of different coverage rendering approac
 
 ### PERF-004: WriteableBitmap Rendering (1.0m cells)
 - **Date**: 2026-01-28
-- **Commit**: (pending)
-- **Branch**: `coverage-dual-buffer`
+- **Commit**: (this commit)
+- **Branch**: `master`
 - **Method**: Render coverage to WriteableBitmap, blit each frame
 - **Resolution**: 1.0m per pixel (~5.2M pixels for 520ha, ~21MB)
+- **Status**: IMPLEMENTED - ready for testing
 
 **Approach**:
 - Create WriteableBitmap sized to field bounds
 - When coverage added: paint new pixels incrementally
 - Each frame: single DrawImage() call
 - Expected: O(1) render time regardless of coverage amount
+
+**To Enable**: Set `UseBitmapCoverageRendering = true` in `DrawingContextMapControl`
+
+**Implementation**:
+- Added `GetCoverageBounds()`, `GetCoverageBitmapCells()`, `GetNewCoverageBitmapCells()` to `ICoverageMapService`
+- Added `DrawCoverageBitmap()` method in `DrawingContextMapControl`
+- Uses Marshal.Copy for safe memory access (no unsafe code)
+- Incremental updates: only new cells are painted each frame
 
 | Coverage | Points | Bitmap Size | FPS (zoomed out) | FPS (mid-zoom) | FPS (zoomed in) | Notes |
 |----------|--------|-------------|------------------|----------------|-----------------|-------|

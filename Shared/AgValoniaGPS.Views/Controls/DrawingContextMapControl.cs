@@ -95,6 +95,12 @@ public interface ISharedMapControl
     // Coverage polygon provider for extruded rendering (dual-buffer approach)
     void SetCoveragePolygonProvider(Func<IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)>>? provider);
 
+    // Coverage bitmap providers for PERF-004 bitmap-based rendering
+    void SetCoverageBitmapProviders(
+        Func<(double MinE, double MaxE, double MinN, double MaxN)?>? boundsProvider,
+        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
+        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? newCellsProvider);
+
     // Mark coverage as needing refresh (call when coverage data changes)
     void MarkCoverageDirty();
 
@@ -143,6 +149,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         get => GetValue(UseStrokeCoverageRenderingProperty);
         set => SetValue(UseStrokeCoverageRenderingProperty, value);
+    }
+
+    // Avalonia styled property for bitmap-based coverage rendering (PERF-004)
+    // Renders coverage to a WriteableBitmap for O(1) render time regardless of coverage amount
+    public static readonly StyledProperty<bool> UseBitmapCoverageRenderingProperty =
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseBitmapCoverageRendering), defaultValue: false);
+
+    public bool UseBitmapCoverageRendering
+    {
+        get => GetValue(UseBitmapCoverageRenderingProperty);
+        set => SetValue(UseBitmapCoverageRenderingProperty, value);
     }
 
     // Avalonia styled property for vehicle visibility (can hide for headland editing)
@@ -283,6 +300,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Cached stroke geometry for stroke-based coverage rendering (alternative to polygons)
     private Dictionary<int, (StreamGeometry Geometry, Pen Pen)> _cachedStrokeGeometry = new();
     private int _lastStrokePointCount = 0;
+
+    // WriteableBitmap for PERF-004 bitmap-based coverage rendering
+    // This provides O(1) render time by blitting a pre-rendered bitmap each frame
+    private WriteableBitmap? _coverageWriteableBitmap;
+    private const double COVERAGE_BITMAP_CELL_SIZE = 1.0; // 1.0m per pixel (matches interface)
+    private double _bitmapMinE, _bitmapMinN; // World coordinates of bitmap origin
+    private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
+    private bool _bitmapNeedsFullRebuild = true;
+
+    // Provider for coverage bitmap data (from ICoverageMapService)
+    private Func<(double MinE, double MaxE, double MinN, double MaxN)?>? _coverageBoundsProvider;
+    private Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? _coverageAllCellsProvider;
+    private Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? _coverageNewCellsProvider;
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
@@ -726,8 +756,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         int drawnCount;
 
-        // Use stroke-based rendering if enabled (highest priority - experimental)
-        if (UseStrokeCoverageRendering && _coveragePolygonProvider != null)
+        // Use bitmap-based rendering if enabled (PERF-004 - highest priority)
+        if (UseBitmapCoverageRendering && _coverageBoundsProvider != null)
+        {
+            drawnCount = DrawCoverageBitmap(context);
+        }
+        // Use stroke-based rendering if enabled (experimental)
+        else if (UseStrokeCoverageRendering && _coveragePolygonProvider != null)
         {
             drawnCount = DrawCoverageStrokes(context);
         }
@@ -748,6 +783,196 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _profileSw.Stop();
         _lastCoverageRenderMs = _profileSw.Elapsed.TotalMilliseconds;
         _lastDrawnPatchCount = drawnCount;
+    }
+
+    /// <summary>
+    /// Draw coverage using WriteableBitmap (PERF-004).
+    /// O(1) render time - just blit the pre-rendered bitmap.
+    /// Bitmap is updated incrementally as new coverage cells are added.
+    /// </summary>
+    private int DrawCoverageBitmap(DrawingContext context)
+    {
+        if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
+            return 0;
+
+        // Get coverage bounds
+        var bounds = _coverageBoundsProvider();
+        if (bounds == null)
+            return 0;
+
+        var (minE, maxE, minN, maxN) = bounds.Value;
+        double worldWidth = maxE - minE;
+        double worldHeight = maxN - minN;
+
+        if (worldWidth <= 0 || worldHeight <= 0)
+            return 0;
+
+        // Calculate required bitmap dimensions at 1.0m per pixel
+        int requiredWidth = (int)Math.Ceiling(worldWidth / COVERAGE_BITMAP_CELL_SIZE);
+        int requiredHeight = (int)Math.Ceiling(worldHeight / COVERAGE_BITMAP_CELL_SIZE);
+
+        // Limit bitmap size for safety (max ~64MB at 4 bytes per pixel)
+        const int MAX_DIMENSION = 4096;
+        if (requiredWidth > MAX_DIMENSION || requiredHeight > MAX_DIMENSION)
+        {
+            // Fall back to polygon rendering for very large fields
+            if (_renderCounter % 90 == 1)
+                Console.WriteLine($"[Timing] CovBitmap: Too large {requiredWidth}x{requiredHeight}, falling back to polygons");
+            return DrawCoveragePolygons(context);
+        }
+
+        // Check if we need to rebuild the bitmap (bounds changed or first time)
+        bool boundsChanged = _coverageWriteableBitmap == null ||
+            Math.Abs(_bitmapMinE - minE) > 0.01 ||
+            Math.Abs(_bitmapMinN - minN) > 0.01 ||
+            _bitmapWidth != requiredWidth ||
+            _bitmapHeight != requiredHeight;
+
+        if (boundsChanged)
+        {
+            // Bounds changed - need full rebuild
+            _bitmapNeedsFullRebuild = true;
+            _bitmapMinE = minE;
+            _bitmapMinN = minN;
+            _bitmapWidth = requiredWidth;
+            _bitmapHeight = requiredHeight;
+
+            // Dispose old bitmap and create new one
+            _coverageWriteableBitmap?.Dispose();
+            _coverageWriteableBitmap = new WriteableBitmap(
+                new PixelSize(requiredWidth, requiredHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Bgra8888,
+                Avalonia.Platform.AlphaFormat.Premul);
+
+            if (_renderCounter % 30 == 0)
+                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
+        }
+
+        // Update bitmap with coverage cells
+        if (_bitmapNeedsFullRebuild)
+        {
+            // Full rebuild - paint all cells
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            int cellCount = UpdateCoverageBitmapFull();
+            sw.Stop();
+            if (_renderCounter % 30 == 0)
+                Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
+            _bitmapNeedsFullRebuild = false;
+        }
+        else if (_coverageNewCellsProvider != null)
+        {
+            // Incremental update - only paint new cells
+            int newCellCount = UpdateCoverageBitmapIncremental();
+            if (newCellCount > 0 && _renderCounter % 30 == 0)
+                Console.WriteLine($"[Timing] CovBitmap: Incremental {newCellCount} new cells");
+        }
+
+        // Draw the bitmap to the context
+        if (_coverageWriteableBitmap != null)
+        {
+            // Transform from bitmap coordinates to world coordinates
+            // Bitmap (0,0) is top-left, world coordinates have Y increasing upward
+            // Bitmap pixel (x,y) maps to world (minE + x*cellSize, maxN - y*cellSize)
+
+            // Save current transform
+            using (context.PushTransform(Matrix.Identity))
+            {
+                // Calculate the world-space rectangle for the bitmap
+                // In world coordinates: (minE, minN) to (maxE, maxN)
+                // But bitmap Y is inverted, so we need to flip
+
+                // Source rect is entire bitmap
+                var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
+
+                // Destination rect in world coordinates
+                // Note: Y is inverted in world coords vs screen, but we're drawing
+                // in world space where Y increases upward (northing)
+                var destRect = new Rect(minE, minN, worldWidth, worldHeight);
+
+                context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+            }
+        }
+
+        return _bitmapWidth * _bitmapHeight;
+    }
+
+    /// <summary>
+    /// Update coverage bitmap with all cells (full rebuild).
+    /// </summary>
+    private int UpdateCoverageBitmapFull()
+    {
+        if (_coverageWriteableBitmap == null || _coverageAllCellsProvider == null)
+            return 0;
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        int stride = framebuffer.RowBytes;
+        int bufferSize = stride * _bitmapHeight;
+
+        // Create a managed buffer to work with
+        var buffer = new byte[bufferSize];
+        // Buffer is already zeroed (transparent)
+
+        int cellCount = 0;
+        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
+        {
+            // Convert cell coordinates to bitmap pixel
+            // CellY is relative to minN (increasing north), bitmap Y is inverted
+            int px = cellX;
+            int py = _bitmapHeight - 1 - cellY; // Flip Y
+
+            if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
+            {
+                int offset = py * stride + px * 4;
+                buffer[offset + 0] = color.B; // BGRA format
+                buffer[offset + 1] = color.G;
+                buffer[offset + 2] = color.R;
+                buffer[offset + 3] = 200; // Semi-transparent
+                cellCount++;
+            }
+        }
+
+        // Copy buffer to framebuffer
+        System.Runtime.InteropServices.Marshal.Copy(buffer, 0, framebuffer.Address, bufferSize);
+        return cellCount;
+    }
+
+    /// <summary>
+    /// Update coverage bitmap with only new cells (incremental update).
+    /// </summary>
+    private int UpdateCoverageBitmapIncremental()
+    {
+        if (_coverageWriteableBitmap == null || _coverageNewCellsProvider == null)
+            return 0;
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        int stride = framebuffer.RowBytes;
+        int bufferSize = stride * _bitmapHeight;
+
+        // Read existing buffer
+        var buffer = new byte[bufferSize];
+        System.Runtime.InteropServices.Marshal.Copy(framebuffer.Address, buffer, 0, bufferSize);
+
+        int cellCount = 0;
+        foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
+        {
+            int px = cellX;
+            int py = _bitmapHeight - 1 - cellY;
+
+            if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
+            {
+                int offset = py * stride + px * 4;
+                buffer[offset + 0] = color.B;
+                buffer[offset + 1] = color.G;
+                buffer[offset + 2] = color.R;
+                buffer[offset + 3] = 200;
+                cellCount++;
+            }
+        }
+
+        // Copy buffer back to framebuffer
+        System.Runtime.InteropServices.Marshal.Copy(buffer, 0, framebuffer.Address, bufferSize);
+        return cellCount;
     }
 
     /// <summary>
@@ -2191,6 +2416,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _coveragePolygonProvider = provider;
         _polygonGeometryDirty = true;
+    }
+
+    public void SetCoverageBitmapProviders(
+        Func<(double MinE, double MaxE, double MinN, double MaxN)?>? boundsProvider,
+        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? allCellsProvider,
+        Func<double, IEnumerable<(int CellX, int CellY, CoverageColor Color)>>? newCellsProvider)
+    {
+        _coverageBoundsProvider = boundsProvider;
+        _coverageAllCellsProvider = allCellsProvider;
+        _coverageNewCellsProvider = newCellsProvider;
+        _bitmapNeedsFullRebuild = true;
     }
 
     public void MarkCoverageDirty()
