@@ -932,9 +932,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
         {
             // Convert cell coordinates to bitmap pixel
-            // CellY is relative to minN (increasing north), bitmap Y is inverted
+            // CellY is relative to minN (increasing north)
+            // Don't flip Y - bitmap top-left is at (minE, minN) which matches cell (0,0)
             int px = cellX;
-            int py = _bitmapHeight - 1 - cellY; // Flip Y
+            int py = cellY;
 
             if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
             {
@@ -972,7 +973,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
         {
             int px = cellX;
-            int py = _bitmapHeight - 1 - cellY;
+            int py = cellY; // No Y flip needed
 
             if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
             {
