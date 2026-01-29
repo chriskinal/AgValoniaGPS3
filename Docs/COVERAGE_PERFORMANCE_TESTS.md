@@ -96,12 +96,35 @@ This document tracks performance testing of different coverage rendering approac
 
 ## Ideas to Try
 
-1. **PERF-004**: More aggressive decimation - Try 20m render threshold
+1. ~~**PERF-004**: More aggressive decimation~~ - Causes accuracy issues at headlands
 2. **PERF-005**: Zoom-dependent detail - Coarser geometry when zoomed out
-3. **PERF-006**: Render to bitmap - Cache coverage as bitmap
-4. **PERF-007**: Tile-based rendering - Divide into tiles with cached bitmaps
-5. **PERF-008**: Douglas-Peucker simplification on polygons
-6. **PERF-009**: Merge adjacent same-color polygons
+3. **PERF-006**: Tile-based rendering - Divide into tiles with cached bitmaps
+4. **PERF-007**: Douglas-Peucker simplification on polygons
+5. **PERF-008**: Merge adjacent same-color polygons
+
+---
+
+### PERF-004: WriteableBitmap Rendering (1.0m cells)
+- **Date**: 2026-01-28
+- **Commit**: (pending)
+- **Branch**: `coverage-dual-buffer`
+- **Method**: Render coverage to WriteableBitmap, blit each frame
+- **Resolution**: 1.0m per pixel (~5.2M pixels for 520ha, ~21MB)
+
+**Approach**:
+- Create WriteableBitmap sized to field bounds
+- When coverage added: paint new pixels incrementally
+- Each frame: single DrawImage() call
+- Expected: O(1) render time regardless of coverage amount
+
+| Coverage | Points | Bitmap Size | FPS (zoomed out) | FPS (mid-zoom) | FPS (zoomed in) | Notes |
+|----------|--------|-------------|------------------|----------------|-----------------|-------|
+| 10% | N/A | ~21MB | | | | |
+| 30% | N/A | ~21MB | | | | |
+| 50% | N/A | ~21MB | | | | |
+
+**Observations**:
+- (pending test results)
 
 ## Historical Data (from transcripts, pre-polygon)
 
