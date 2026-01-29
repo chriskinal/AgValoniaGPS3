@@ -47,7 +47,8 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     // ========== DETECTION LAYER (Bitmap) ==========
     // Coverage bitmap for O(1) coverage detection (like AgOpenGPS GPU pixel readback)
     // Each cell represents a small area; if present in the set, that cell is covered
-    private const double BITMAP_CELL_SIZE = 0.5; // meters per cell (0.5m = ~1.6ft resolution)
+    // 0.1m resolution matches RTK GPS accuracy (~2cm) for precision agriculture
+    private const double BITMAP_CELL_SIZE = 0.1; // meters per cell (10cm = ~4in resolution)
     private readonly HashSet<(int CellE, int CellN)> _coverageBitmap = new();
 
     // Track newly added cells since last GetNewCoverageBitmapCells call
