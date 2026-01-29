@@ -153,8 +153,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Avalonia styled property for bitmap-based coverage rendering (PERF-004)
     // Renders coverage to a WriteableBitmap for O(1) render time regardless of coverage amount
+    // NOTE: Currently disabled - WriteableBitmap.Lock() triggers "Visual was invalidated during render pass"
+    // error in Avalonia. The proper pattern requires using an Image control with WriteableBitmap as Source,
+    // not direct context.DrawImage() in a custom Control's Render method.
+    // See: https://github.com/AvaloniaUI/Avalonia/discussions/17013
     public static readonly StyledProperty<bool> UseBitmapCoverageRenderingProperty =
-        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseBitmapCoverageRendering), defaultValue: true);
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseBitmapCoverageRendering), defaultValue: false);
 
     public bool UseBitmapCoverageRendering
     {

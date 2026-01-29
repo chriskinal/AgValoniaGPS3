@@ -106,11 +106,11 @@ This document tracks performance testing of different coverage rendering approac
 
 ### PERF-004: WriteableBitmap Rendering (1.0m cells)
 - **Date**: 2026-01-28
-- **Commit**: (this commit)
-- **Branch**: `master`
+- **Commit**: b45c0a6
+- **Branch**: `coverage-dual-buffer`
 - **Method**: Render coverage to WriteableBitmap, blit each frame
 - **Resolution**: 1.0m per pixel (~5.2M pixels for 520ha, ~21MB)
-- **Status**: IMPLEMENTED - ready for testing
+- **Status**: BLOCKED - Avalonia architecture issue
 
 **Approach**:
 - Create WriteableBitmap sized to field bounds
@@ -118,22 +118,30 @@ This document tracks performance testing of different coverage rendering approac
 - Each frame: single DrawImage() call
 - Expected: O(1) render time regardless of coverage amount
 
-**To Enable**: Set `UseBitmapCoverageRendering = true` in `DrawingContextMapControl`
-
 **Implementation**:
 - Added `GetCoverageBounds()`, `GetCoverageBitmapCells()`, `GetNewCoverageBitmapCells()` to `ICoverageMapService`
 - Added `DrawCoverageBitmap()` method in `DrawingContextMapControl`
 - Uses Marshal.Copy for safe memory access (no unsafe code)
-- Incremental updates: only new cells are painted each frame
+
+**BLOCKED**: WriteableBitmap.Lock() triggers "Visual was invalidated during render pass" error.
+The Avalonia-recommended pattern is to use an `Image` control with WriteableBitmap as its Source
+and call `Image.InvalidateVisual()` after updating - NOT to use `context.DrawImage()` directly
+in a custom Control's Render method.
+
+**References**:
+- https://github.com/AvaloniaUI/Avalonia/issues/9618
+- https://github.com/AvaloniaUI/Avalonia/discussions/17013
+
+**Future Fix**: Add an Image control overlay for coverage bitmap rendering instead of
+drawing directly in DrawingContextMapControl.Render().
 
 | Coverage | Points | Bitmap Size | FPS (zoomed out) | FPS (mid-zoom) | FPS (zoomed in) | Notes |
 |----------|--------|-------------|------------------|----------------|-----------------|-------|
-| 10% | N/A | ~21MB | | | | |
-| 30% | N/A | ~21MB | | | | |
-| 50% | N/A | ~21MB | | | | |
+| - | - | - | - | - | - | Not testable due to architecture issue |
 
 **Observations**:
-- (pending test results)
+- WriteableBitmap approach requires different UI architecture
+- Need to add Image control overlay, not use context.DrawImage() directly
 
 ## Historical Data (from transcripts, pre-polygon)
 
