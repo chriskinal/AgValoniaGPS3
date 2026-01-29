@@ -864,20 +864,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         // Update bitmap with coverage cells
-        if (_bitmapNeedsFullRebuild)
+        // Always do full rebuild for now - incremental updates have coordinate issues
+        // when bounds expand (cells calculated relative to new bounds don't match old bitmap)
+        if (_bitmapNeedsFullRebuild || _bitmapNeedsIncrementalUpdate)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             int cellCount = UpdateCoverageBitmapFull();
             sw.Stop();
             Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
-            _bitmapNeedsIncrementalUpdate = false;
-        }
-        else if (_bitmapNeedsIncrementalUpdate && _coverageNewCellsProvider != null)
-        {
-            int newCellCount = UpdateCoverageBitmapIncremental();
-            if (newCellCount > 0)
-                Console.WriteLine($"[Timing] CovBitmap: Incremental {newCellCount} new cells");
             _bitmapNeedsIncrementalUpdate = false;
         }
     }
