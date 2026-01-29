@@ -305,7 +305,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // WriteableBitmap for PERF-004 bitmap-based coverage rendering
     // O(1) render time - blit pre-rendered bitmap each frame
     private WriteableBitmap? _coverageWriteableBitmap;
-    private const double COVERAGE_BITMAP_CELL_SIZE = 1.0; // 1.0m per pixel
+    private const double COVERAGE_BITMAP_CELL_SIZE = 0.5; // 0.5m per pixel (matches internal coverage resolution)
     private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
     private bool _bitmapNeedsFullRebuild = true;
@@ -822,12 +822,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (worldWidth <= 0 || worldHeight <= 0)
             return;
 
-        // Calculate required bitmap dimensions at 1.0m per pixel
+        // Calculate required bitmap dimensions at 0.5m per pixel
         int requiredWidth = (int)Math.Ceiling(worldWidth / COVERAGE_BITMAP_CELL_SIZE);
         int requiredHeight = (int)Math.Ceiling(worldHeight / COVERAGE_BITMAP_CELL_SIZE);
 
-        // Limit bitmap size for safety (max ~64MB at 4 bytes per pixel)
-        const int MAX_DIMENSION = 4096;
+        // Limit bitmap size for safety (max ~256MB at 4 bytes per pixel)
+        // 8192 pixels @ 0.5m = 4096m (4km) max field dimension
+        const int MAX_DIMENSION = 8192;
         if (requiredWidth > MAX_DIMENSION || requiredHeight > MAX_DIMENSION)
         {
             Console.WriteLine($"[Timing] CovBitmap: Too large {requiredWidth}x{requiredHeight}, skipping bitmap");
