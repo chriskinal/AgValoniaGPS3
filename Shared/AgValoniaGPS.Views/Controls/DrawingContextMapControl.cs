@@ -305,7 +305,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // WriteableBitmap for PERF-004 bitmap-based coverage rendering
     // O(1) render time - blit pre-rendered bitmap each frame
     private WriteableBitmap? _coverageWriteableBitmap;
-    private const double COVERAGE_BITMAP_CELL_SIZE = 0.1; // 0.1m per pixel (matches internal coverage detection)
+    private const double MIN_BITMAP_CELL_SIZE = 0.1; // Preferred resolution (matches RTK precision)
+    private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
+    private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
     private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
     private bool _bitmapNeedsFullRebuild = true;
@@ -743,7 +745,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         // Debug: log every 90 frames to see if this is being called
         if (_renderCounter % 90 == 1)
-            Console.WriteLine($"[Timing] DrawCov: UsePoly={UsePolygonCoverageRendering}, HasProvider={_coveragePolygonProvider != null}");
+            Console.WriteLine($"[Timing] DrawCov: UseBitmap={UseBitmapCoverageRendering}, BoundsProvider={_coverageBoundsProvider != null}, Bitmap={_coverageWriteableBitmap != null}");
 
         _profileSw.Restart();
 
@@ -822,18 +824,36 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (worldWidth <= 0 || worldHeight <= 0)
             return;
 
-        // Calculate required bitmap dimensions at 0.1m per pixel
-        int requiredWidth = (int)Math.Ceiling(worldWidth / COVERAGE_BITMAP_CELL_SIZE);
-        int requiredHeight = (int)Math.Ceiling(worldHeight / COVERAGE_BITMAP_CELL_SIZE);
+        // Calculate optimal cell size - start at 0.1m, scale up for large fields
+        // Max 50M pixels (~200MB) for smooth 30 FPS rendering
+        const long MAX_PIXELS = 50_000_000;
+        double cellSize = MIN_BITMAP_CELL_SIZE;
 
-        // Limit bitmap size for safety (max ~1GB at 4 bytes per pixel)
-        // 16384 pixels @ 0.1m = 1638m (~1 mile) max field dimension
-        const int MAX_DIMENSION = 16384;
-        if (requiredWidth > MAX_DIMENSION || requiredHeight > MAX_DIMENSION)
+        long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
+                              (long)Math.Ceiling(worldHeight / MIN_BITMAP_CELL_SIZE);
+
+        if (pixelsAtMinRes > MAX_PIXELS)
         {
-            Console.WriteLine($"[Timing] CovBitmap: Too large {requiredWidth}x{requiredHeight}, skipping bitmap");
-            return;
+            // Scale up cell size to fit within pixel limit
+            double scaleFactor = Math.Sqrt((double)pixelsAtMinRes / MAX_PIXELS);
+            cellSize = MIN_BITMAP_CELL_SIZE * scaleFactor;
+            // Round to nice values for large fields
+            if (cellSize <= 0.2) cellSize = 0.2;
+            else if (cellSize <= 0.25) cellSize = 0.25;
+            else if (cellSize <= 0.35) cellSize = 0.35;
+            else if (cellSize <= 0.5) cellSize = 0.5;
+            else if (cellSize <= 0.75) cellSize = 0.75;
+            else cellSize = Math.Ceiling(cellSize); // Round to 1m increments
         }
+
+        _actualBitmapCellSize = cellSize;
+
+        int requiredWidth = (int)Math.Ceiling(worldWidth / cellSize);
+        int requiredHeight = (int)Math.Ceiling(worldHeight / cellSize);
+
+        // Ensure valid dimensions
+        if (requiredWidth <= 0 || requiredHeight <= 0)
+            return;
 
         // Check if we need to rebuild the bitmap (bounds changed or first time)
         bool boundsChanged = _coverageWriteableBitmap == null ||
@@ -861,7 +881,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 Avalonia.Platform.PixelFormat.Bgra8888,
                 Avalonia.Platform.AlphaFormat.Premul);
 
-            Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
+            Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap @ {cellSize}m/pixel");
         }
 
         // Update bitmap with coverage cells
@@ -930,7 +950,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Buffer is already zeroed (transparent)
 
         int cellCount = 0;
-        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
+        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(_actualBitmapCellSize))
         {
             // Convert cell coordinates to bitmap pixel
             // CellY is relative to minN (increasing north)
@@ -971,7 +991,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         System.Runtime.InteropServices.Marshal.Copy(framebuffer.Address, buffer, 0, bufferSize);
 
         int cellCount = 0;
-        foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(COVERAGE_BITMAP_CELL_SIZE))
+        foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(_actualBitmapCellSize))
         {
             int px = cellX;
             int py = cellY; // No Y flip needed
