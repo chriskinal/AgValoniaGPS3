@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -153,12 +154,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Avalonia styled property for bitmap-based coverage rendering (PERF-004)
     // Renders coverage to a WriteableBitmap for O(1) render time regardless of coverage amount
-    // NOTE: Currently disabled - WriteableBitmap.Lock() triggers "Visual was invalidated during render pass"
-    // error in Avalonia. The proper pattern requires using an Image control with WriteableBitmap as Source,
-    // not direct context.DrawImage() in a custom Control's Render method.
-    // See: https://github.com/AvaloniaUI/Avalonia/discussions/17013
+    // Uses Image control pattern with lock-based synchronization to avoid render pass conflicts
     public static readonly StyledProperty<bool> UseBitmapCoverageRenderingProperty =
-        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseBitmapCoverageRendering), defaultValue: false);
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseBitmapCoverageRendering), defaultValue: true);
 
     public bool UseBitmapCoverageRendering
     {
@@ -306,8 +304,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private int _lastStrokePointCount = 0;
 
     // WriteableBitmap for PERF-004 bitmap-based coverage rendering
-    // This provides O(1) render time by blitting a pre-rendered bitmap each frame
+    // Uses Image control pattern per Avalonia best practices (not context.DrawImage)
     private WriteableBitmap? _coverageWriteableBitmap;
+    private Image? _coverageBitmapImage; // Image control for bitmap rendering
     private const double COVERAGE_BITMAP_CELL_SIZE = 1.0; // 1.0m per pixel (matches interface)
     private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
@@ -315,6 +314,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _bitmapNeedsIncrementalUpdate = false;
     private bool _bitmapUpdatePending = false; // Prevents re-entry during update
     private bool _isRendering = false; // Guard against operations during render pass
+    private readonly object _bitmapLock = new object(); // Lock for bitmap access
 
     // Provider for coverage bitmap data (from ICoverageMapService)
     private Func<(double MinE, double MaxE, double MinN, double MaxN)?>? _coverageBoundsProvider;
@@ -387,6 +387,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         Focusable = true;
         IsHitTestVisible = true;
         ClipToBounds = true;
+
+        // Create Image control for coverage bitmap rendering (PERF-004)
+        // The Image holds the WriteableBitmap but is hidden - we draw it ourselves
+        // This follows the Avalonia pattern of updating bitmap via Image.Source
+        _coverageBitmapImage = new Image
+        {
+            Stretch = Stretch.Fill,
+            IsHitTestVisible = false,
+            IsVisible = false, // Hidden - we draw the bitmap ourselves with world transform
+        };
+        // Add as visual child (required for proper bitmap lifecycle management)
+        LogicalChildren.Add(_coverageBitmapImage);
+        VisualChildren.Add(_coverageBitmapImage);
 
         // Initialize pens and brushes (thinner lines to test shimmer)
         _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
@@ -802,6 +815,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     /// <summary>
     /// Update coverage bitmap if needed. Called outside of render pass via Dispatcher.
+    /// Uses lock to prevent bitmap access during render.
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
@@ -832,52 +846,66 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             return;
         }
 
-        // Check if we need to rebuild the bitmap (bounds changed or first time)
-        bool boundsChanged = _coverageWriteableBitmap == null ||
-            Math.Abs(_bitmapMinE - minE) > 0.01 ||
-            Math.Abs(_bitmapMinN - minN) > 0.01 ||
-            _bitmapWidth != requiredWidth ||
-            _bitmapHeight != requiredHeight;
-
-        if (boundsChanged)
+        // Use lock to prevent bitmap modification during render
+        lock (_bitmapLock)
         {
-            // Bounds changed - need full rebuild
-            _bitmapNeedsFullRebuild = true;
-            _bitmapMinE = minE;
-            _bitmapMinN = minN;
-            _bitmapMaxE = maxE;
-            _bitmapMaxN = maxN;
-            _bitmapWidth = requiredWidth;
-            _bitmapHeight = requiredHeight;
+            // Check if we need to rebuild the bitmap (bounds changed or first time)
+            bool boundsChanged = _coverageWriteableBitmap == null ||
+                Math.Abs(_bitmapMinE - minE) > 0.01 ||
+                Math.Abs(_bitmapMinN - minN) > 0.01 ||
+                _bitmapWidth != requiredWidth ||
+                _bitmapHeight != requiredHeight;
 
-            // Dispose old bitmap and create new one
-            _coverageWriteableBitmap?.Dispose();
-            _coverageWriteableBitmap = new WriteableBitmap(
-                new PixelSize(requiredWidth, requiredHeight),
-                new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888,
-                Avalonia.Platform.AlphaFormat.Premul);
+            if (boundsChanged)
+            {
+                // Bounds changed - need full rebuild
+                _bitmapNeedsFullRebuild = true;
+                _bitmapMinE = minE;
+                _bitmapMinN = minN;
+                _bitmapMaxE = maxE;
+                _bitmapMaxN = maxN;
+                _bitmapWidth = requiredWidth;
+                _bitmapHeight = requiredHeight;
 
-            Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
+                // Dispose old bitmap and create new one
+                _coverageWriteableBitmap?.Dispose();
+                _coverageWriteableBitmap = new WriteableBitmap(
+                    new PixelSize(requiredWidth, requiredHeight),
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormat.Bgra8888,
+                    Avalonia.Platform.AlphaFormat.Premul);
+
+                // Set as Image source
+                if (_coverageBitmapImage != null)
+                {
+                    _coverageBitmapImage.Source = _coverageWriteableBitmap;
+                }
+
+                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap");
+            }
+
+            // Update bitmap with coverage cells
+            if (_bitmapNeedsFullRebuild)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                int cellCount = UpdateCoverageBitmapFull();
+                sw.Stop();
+                Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
+                _bitmapNeedsFullRebuild = false;
+                _bitmapNeedsIncrementalUpdate = false;
+            }
+            else if (_bitmapNeedsIncrementalUpdate && _coverageNewCellsProvider != null)
+            {
+                int newCellCount = UpdateCoverageBitmapIncremental();
+                if (newCellCount > 0)
+                    Console.WriteLine($"[Timing] CovBitmap: Incremental {newCellCount} new cells");
+                _bitmapNeedsIncrementalUpdate = false;
+            }
         }
 
-        // Update bitmap with coverage cells
-        if (_bitmapNeedsFullRebuild)
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            int cellCount = UpdateCoverageBitmapFull();
-            sw.Stop();
-            Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
-            _bitmapNeedsFullRebuild = false;
-            _bitmapNeedsIncrementalUpdate = false;
-        }
-        else if (_bitmapNeedsIncrementalUpdate && _coverageNewCellsProvider != null)
-        {
-            int newCellCount = UpdateCoverageBitmapIncremental();
-            if (newCellCount > 0)
-                Console.WriteLine($"[Timing] CovBitmap: Incremental {newCellCount} new cells");
-            _bitmapNeedsIncrementalUpdate = false;
-        }
+        // Invalidate the Image control (outside lock, on UI thread)
+        // This tells Avalonia to re-render the Image with updated bitmap
+        _coverageBitmapImage?.InvalidateVisual();
     }
 
     /// <summary>
@@ -887,40 +915,48 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private int DrawCoverageBitmap(DrawingContext context)
     {
-        // If bitmap not ready yet, fall back to polygons
-        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+        // Try to acquire lock - if we can't, bitmap is being updated, fall back to polygons
+        if (!Monitor.TryEnter(_bitmapLock))
         {
-            // Schedule initial bitmap creation for after render pass completes
-            // Don't try to create bitmap during render - just use polygon fallback
-            if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
-            {
-                _bitmapUpdatePending = true;
-                Dispatcher.UIThread.Post(() =>
-                {
-                    // Double-check we're not rendering when this executes
-                    if (!_isRendering)
-                    {
-                        UpdateCoverageBitmapIfNeeded();
-                    }
-                    _bitmapUpdatePending = false;
-                }, DispatcherPriority.Background);
-            }
             return DrawCoveragePolygons(context);
         }
 
-        // Just draw the bitmap - no modifications during render
-        double worldWidth = _bitmapMaxE - _bitmapMinE;
-        double worldHeight = _bitmapMaxN - _bitmapMinN;
+        try
+        {
+            // If bitmap not ready yet, fall back to polygons
+            if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+            {
+                // Schedule initial bitmap creation for after render pass completes
+                if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
+                {
+                    _bitmapUpdatePending = true;
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        UpdateCoverageBitmapIfNeeded();
+                        _bitmapUpdatePending = false;
+                    }, DispatcherPriority.Background);
+                }
+                return DrawCoveragePolygons(context);
+            }
 
-        // Source rect is entire bitmap
-        var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
+            // Draw the bitmap - safe because we hold the lock
+            double worldWidth = _bitmapMaxE - _bitmapMinE;
+            double worldHeight = _bitmapMaxN - _bitmapMinN;
 
-        // Destination rect in world coordinates
-        var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
+            // Source rect is entire bitmap
+            var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
 
-        context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+            // Destination rect in world coordinates
+            var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
-        return _bitmapWidth * _bitmapHeight;
+            context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+
+            return _bitmapWidth * _bitmapHeight;
+        }
+        finally
+        {
+            Monitor.Exit(_bitmapLock);
+        }
     }
 
     /// <summary>
