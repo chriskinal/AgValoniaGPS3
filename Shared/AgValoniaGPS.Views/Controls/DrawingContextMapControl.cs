@@ -389,17 +389,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         ClipToBounds = true;
 
         // Create Image control for coverage bitmap rendering (PERF-004)
-        // The Image holds the WriteableBitmap but is hidden - we draw it ourselves
-        // This follows the Avalonia pattern of updating bitmap via Image.Source
+        // The Image holds the WriteableBitmap reference but is NOT added as a child
+        // We draw the bitmap ourselves using context.DrawImage with world transform
         _coverageBitmapImage = new Image
         {
-            Stretch = Stretch.Fill,
             IsHitTestVisible = false,
-            IsVisible = false, // Hidden - we draw the bitmap ourselves with world transform
         };
-        // Add as visual child (required for proper bitmap lifecycle management)
-        LogicalChildren.Add(_coverageBitmapImage);
-        VisualChildren.Add(_coverageBitmapImage);
+        // Note: NOT adding to LogicalChildren/VisualChildren - we just use it to hold
+        // the bitmap reference. Adding as child can cause render invalidation issues.
 
         // Initialize pens and brushes (thinner lines to test shimmer)
         _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
@@ -903,9 +900,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
-        // Invalidate the Image control (outside lock, on UI thread)
-        // This tells Avalonia to re-render the Image with updated bitmap
-        _coverageBitmapImage?.InvalidateVisual();
+        // Note: We don't call InvalidateVisual here - the render timer already
+        // triggers InvalidateVisual every frame, and calling it from a dispatcher
+        // callback can trigger "Visual was invalidated during render pass" errors.
     }
 
     /// <summary>
