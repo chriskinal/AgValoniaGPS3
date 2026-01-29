@@ -134,6 +134,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         set => SetValue(UsePolygonCoverageRenderingProperty, value);
     }
 
+    // Avalonia styled property for stroke-based coverage rendering (draws centerlines with thick strokes)
+    // This is an alternative to polygon rendering that may be faster for large coverage areas
+    public static readonly StyledProperty<bool> UseStrokeCoverageRenderingProperty =
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(UseStrokeCoverageRendering), defaultValue: false);
+
+    public bool UseStrokeCoverageRendering
+    {
+        get => GetValue(UseStrokeCoverageRenderingProperty);
+        set => SetValue(UseStrokeCoverageRenderingProperty, value);
+    }
+
     // Avalonia styled property for vehicle visibility (can hide for headland editing)
     public static readonly StyledProperty<bool> ShowVehicleProperty =
         AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(ShowVehicle), defaultValue: true);
@@ -268,6 +279,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _polygonGeometryDirty = true;
     private readonly System.Diagnostics.Stopwatch _polygonRebuildThrottle = System.Diagnostics.Stopwatch.StartNew();
     private const double POLYGON_REBUILD_INTERVAL_MS = 1000; // Only rebuild geometry every 1 second
+
+    // Cached stroke geometry for stroke-based coverage rendering (alternative to polygons)
+    private Dictionary<int, (StreamGeometry Geometry, Pen Pen)> _cachedStrokeGeometry = new();
+    private int _lastStrokePointCount = 0;
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
@@ -701,8 +716,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         int drawnCount;
 
+        // Use stroke-based rendering if enabled (highest priority - experimental)
+        if (UseStrokeCoverageRendering && _coveragePolygonProvider != null)
+        {
+            drawnCount = DrawCoverageStrokes(context);
+        }
         // Use polygon-based rendering if enabled and provider is available
-        if (UsePolygonCoverageRendering && _coveragePolygonProvider != null)
+        else if (UsePolygonCoverageRendering && _coveragePolygonProvider != null)
         {
             drawnCount = DrawCoveragePolygons(context);
         }
@@ -767,6 +787,143 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         return _cachedPolygonGeometry.Count;
+    }
+
+    /// <summary>
+    /// Draw coverage using stroked lines (centerline with thick stroke width).
+    /// This is an alternative to filled polygons that may be faster.
+    /// </summary>
+    private int DrawCoverageStrokes(DrawingContext context)
+    {
+        if (_coveragePolygonProvider == null)
+            return 0;
+
+        // Use same throttling as polygon rendering
+        int cacheCount = _cachedStrokeGeometry.Count;
+        double elapsedMs = _polygonRebuildThrottle.Elapsed.TotalMilliseconds;
+        bool shouldRebuild = _polygonGeometryDirty &&
+            (cacheCount == 0 || elapsedMs >= POLYGON_REBUILD_INTERVAL_MS);
+
+        if (_renderCounter % 30 == 0)
+        {
+            Console.WriteLine($"[Timing] CovStroke: dirty={_polygonGeometryDirty}, cache={cacheCount}, elapsed={elapsedMs:F0}ms, rebuild={shouldRebuild}");
+        }
+
+        if (shouldRebuild)
+        {
+            _polygonGeometryDirty = false;
+            _polygonRebuildThrottle.Restart();
+
+            string reason = cacheCount == 0 ? "cache empty" : $"elapsed >= {POLYGON_REBUILD_INTERVAL_MS}ms";
+
+            var rebuildSw = System.Diagnostics.Stopwatch.StartNew();
+            RebuildStrokeGeometryCache();
+            rebuildSw.Stop();
+            Console.WriteLine($"[Timing] StrokeRebuildStart: reason={reason}, took={rebuildSw.ElapsedMilliseconds}ms");
+        }
+
+        // Draw cached stroke geometry
+        foreach (var (_, (geometry, pen)) in _cachedStrokeGeometry)
+        {
+            context.DrawGeometry(null, pen, geometry);
+        }
+
+        return _cachedStrokeGeometry.Count;
+    }
+
+    /// <summary>
+    /// Rebuild the cached stroke geometry from the coverage polygon provider.
+    /// Each pass gets a polyline centerline with stroke width = section width.
+    /// </summary>
+    private void RebuildStrokeGeometryCache()
+    {
+        if (_coveragePolygonProvider == null)
+        {
+            _cachedStrokeGeometry.Clear();
+            _lastStrokePointCount = 0;
+            return;
+        }
+
+        var newCache = new Dictionary<int, (StreamGeometry Geometry, Pen Pen)>();
+        int totalPoints = 0;
+        int strokeCount = 0;
+
+        // Decimation threshold - very aggressive for strokes since they're just visual indication
+        const double decimationThresholdSq = 2500.0; // 50m minimum spacing squared
+
+        foreach (var (sectionIndex, color, leftEdge, rightEdge) in _coveragePolygonProvider())
+        {
+            if (leftEdge.Count < 2) continue;
+
+            // Calculate average section width from edges (for stroke width)
+            double totalWidth = 0;
+            int widthSamples = 0;
+            for (int i = 0; i < Math.Min(leftEdge.Count, rightEdge.Count); i += Math.Max(1, leftEdge.Count / 10))
+            {
+                double dx = rightEdge[i].E - leftEdge[i].E;
+                double dy = rightEdge[i].N - leftEdge[i].N;
+                totalWidth += Math.Sqrt(dx * dx + dy * dy);
+                widthSamples++;
+            }
+            double strokeWidth = widthSamples > 0 ? totalWidth / widthSamples : 1.0;
+
+            // Create pen with section color and calculated width
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb(255, color.R, color.G, color.B)), strokeWidth)
+            {
+                LineCap = PenLineCap.Flat,
+                LineJoin = PenLineJoin.Round
+            };
+
+            // Build centerline geometry
+            var streamGeometry = new StreamGeometry();
+            using (var ctx = streamGeometry.Open())
+            {
+                // Calculate first centerline point
+                var firstLeft = leftEdge[0];
+                var firstRight = rightEdge[0];
+                double centerE = (firstLeft.E + firstRight.E) / 2;
+                double centerN = (firstLeft.N + firstRight.N) / 2;
+
+                ctx.BeginFigure(new Point(centerE, centerN), false); // false = not filled
+                var lastPt = (E: centerE, N: centerN);
+                int addedPoints = 1;
+
+                // Add centerline points with decimation
+                int minCount = Math.Min(leftEdge.Count, rightEdge.Count);
+                for (int i = 1; i < minCount; i++)
+                {
+                    centerE = (leftEdge[i].E + rightEdge[i].E) / 2;
+                    centerN = (leftEdge[i].N + rightEdge[i].N) / 2;
+
+                    double dx = centerE - lastPt.E;
+                    double dy = centerN - lastPt.N;
+
+                    // Always include last point, otherwise decimate
+                    if (dx * dx + dy * dy >= decimationThresholdSq || i == minCount - 1)
+                    {
+                        ctx.LineTo(new Point(centerE, centerN));
+                        lastPt = (centerE, centerN);
+                        addedPoints++;
+                    }
+                }
+
+                // Don't close the figure - it's a polyline, not a polygon
+                ctx.EndFigure(false);
+                totalPoints += addedPoints;
+            }
+
+            newCache[strokeCount] = (streamGeometry, pen);
+            strokeCount++;
+        }
+
+        _cachedStrokeGeometry = newCache;
+
+        if (strokeCount == 0)
+            Console.WriteLine($"[Timing] StrokeRebuild: WARNING cache empty!");
+        else
+            Console.WriteLine($"[Timing] StrokeRebuild: {strokeCount} strokes, {totalPoints} points");
+
+        _lastStrokePointCount = totalPoints;
     }
 
     /// <summary>
