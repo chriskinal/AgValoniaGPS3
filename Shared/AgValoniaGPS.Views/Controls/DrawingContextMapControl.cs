@@ -802,7 +802,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
         if (bounds == null)
+        {
+            // No coverage - clear the bitmap
+            if (_coverageWriteableBitmap != null)
+            {
+                Console.WriteLine("[Timing] CovBitmap: Clearing bitmap (no coverage)");
+                _coverageWriteableBitmap.Dispose();
+                _coverageWriteableBitmap = null;
+                _bitmapWidth = 0;
+                _bitmapHeight = 0;
+            }
             return;
+        }
 
         var (minE, maxE, minN, maxN) = bounds.Value;
         double worldWidth = maxE - minE;
