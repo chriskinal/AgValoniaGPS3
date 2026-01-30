@@ -44,17 +44,26 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     // When sections turn off at headland and back on, a new pass/polygon is started
     private readonly Dictionary<int, List<SectionVisualPolygon>> _sectionPolygons = new();
 
-    // ========== DETECTION LAYER (Bitmap) ==========
-    // Coverage bitmap for O(1) coverage detection (like AgOpenGPS GPU pixel readback)
-    // Each cell represents a small area; if present in the set, that cell is covered
-    // 0.1m resolution matches RTK GPS accuracy (~2cm) for precision agriculture
+    // ========== DETECTION LAYER (Bit Array) ==========
+    // Memory-efficient coverage detection using bit array instead of HashSet
+    // 520ha at 0.1m = 520M cells = 65MB (vs 7.5GB with HashSet)
     private const double BITMAP_CELL_SIZE = 0.1; // meters per cell (10cm = ~4in resolution)
-    private readonly HashSet<(int CellE, int CellN)> _coverageBitmap = new();
+
+    // Bit array for detection: 1 bit per cell (is this covered?)
+    private byte[]? _coverageBits;
+    private int _bitsWidth;  // Number of cells in E direction
+    private int _bitsHeight; // Number of cells in N direction
+    private int _bitsOriginE; // Cell coordinate of bit array origin (E)
+    private int _bitsOriginN; // Cell coordinate of bit array origin (N)
+
+    // Per-zone cell counters for acreage calculation (zone index -> cell count)
+    private readonly Dictionary<int, long> _cellCountPerZone = new();
 
     // Track newly added cells since last GetNewCoverageBitmapCells call
-    private readonly HashSet<(int CellE, int CellN)> _newCells = new();
+    // Still use HashSet for new cells (small, cleared frequently)
+    private readonly HashSet<(int CellE, int CellN, int Zone)> _newCells = new();
 
-    // Track bounds of coverage bitmap for efficient bounds calculation
+    // Track bounds of coverage for reporting
     private int _minCellE = int.MaxValue;
     private int _maxCellE = int.MinValue;
     private int _minCellN = int.MaxValue;
@@ -102,7 +111,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     public double TotalWorkedArea => _totalWorkedArea;
     public double TotalWorkedAreaUser => _totalWorkedAreaUser;
-    public int PatchCount => _coverageBitmap.Count; // Now represents bitmap cell count
+    public int PatchCount => (int)GetTotalCellCount(); // Total covered cells across all zones
     public bool IsAnyZoneMapping => _activeSections.Count > 0;
 
     // Debug: total polygon points across all sections (sum across all passes)
@@ -290,10 +299,10 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
                 // Check if cell center is inside quad (point-in-polygon test)
                 if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
                 {
-                    if (_coverageBitmap.Add((ce, cn)))
+                    if (MarkCellCovered(ce, cn, zoneIndex))
                     {
-                        // New cell - track it and update bounds
-                        _newCells.Add((ce, cn));
+                        // New cell - track it for incremental display update
+                        _newCells.Add((ce, cn, zoneIndex));
                         UpdateBounds(ce, cn);
                     }
                 }
@@ -345,7 +354,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
-            PatchCount = _coverageBitmap.Count,
+            PatchCount = (int)GetTotalCellCount(),
             AreaAdded = _pendingAreaAdded
         });
 
@@ -360,10 +369,10 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     public bool IsPointCovered(double easting, double northing)
     {
-        // O(1) bitmap lookup - convert to cell coordinates and check if covered
+        // O(1) bit array lookup - convert to cell coordinates and check if covered
         int cellE = (int)Math.Floor(easting / BITMAP_CELL_SIZE);
         int cellN = (int)Math.Floor(northing / BITMAP_CELL_SIZE);
-        return _coverageBitmap.Contains((cellE, cellN));
+        return IsCellCovered(cellE, cellN);
     }
 
     public CoverageResult GetSegmentCoverage(Vec2 sectionCenter, double heading, double halfWidth, double lookAheadDistance = 0)
@@ -402,7 +411,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             int cellE = (int)Math.Floor(sampleE / BITMAP_CELL_SIZE);
             int cellN = (int)Math.Floor(sampleN / BITMAP_CELL_SIZE);
 
-            if (_coverageBitmap.Contains((cellE, cellN)))
+            if (IsCellCovered(cellE, cellN))
                 coveredCount++;
         }
 
@@ -441,7 +450,8 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     /// </summary>
     private void RasterizeQuadToBitmapDirect(
         (double E, double N) p0, (double E, double N) p1,
-        (double E, double N) p2, (double E, double N) p3)
+        (double E, double N) p2, (double E, double N) p3,
+        int zone = 0)
     {
         // Find bounding box
         double minE = Math.Min(Math.Min(p0.E, p1.E), Math.Min(p2.E, p3.E));
@@ -465,7 +475,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
                 if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
                 {
-                    if (_coverageBitmap.Add((ce, cn)))
+                    if (MarkCellCovered(ce, cn, zone))
                     {
                         // Update bounds (don't track as new cell during file load)
                         UpdateBounds(ce, cn);
@@ -485,6 +495,92 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         if (cellN < _minCellN) _minCellN = cellN;
         if (cellN > _maxCellN) _maxCellN = cellN;
         _boundsValid = true;
+    }
+
+    /// <summary>
+    /// Mark a cell as covered. Returns true if cell was newly covered.
+    /// Also tracks the zone for acreage calculation.
+    /// </summary>
+    private bool MarkCellCovered(int cellE, int cellN, int zone)
+    {
+        if (_coverageBits == null || !_fieldBoundsSet)
+            return false;
+
+        // Convert to local coordinates
+        int localE = cellE - _bitsOriginE;
+        int localN = cellN - _bitsOriginN;
+
+        // Bounds check
+        if (localE < 0 || localE >= _bitsWidth || localN < 0 || localN >= _bitsHeight)
+            return false;
+
+        // Calculate bit position
+        long bitIndex = (long)localN * _bitsWidth + localE;
+        int byteIndex = (int)(bitIndex / 8);
+        int bitOffset = (int)(bitIndex % 8);
+
+        // Check if already set
+        byte mask = (byte)(1 << bitOffset);
+        if ((_coverageBits[byteIndex] & mask) != 0)
+            return false; // Already covered
+
+        // Mark as covered
+        _coverageBits[byteIndex] |= mask;
+
+        // Update per-zone counter
+        if (!_cellCountPerZone.TryGetValue(zone, out long count))
+            count = 0;
+        _cellCountPerZone[zone] = count + 1;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Check if a cell is covered.
+    /// </summary>
+    private bool IsCellCovered(int cellE, int cellN)
+    {
+        if (_coverageBits == null || !_fieldBoundsSet)
+            return false;
+
+        // Convert to local coordinates
+        int localE = cellE - _bitsOriginE;
+        int localN = cellN - _bitsOriginN;
+
+        // Bounds check
+        if (localE < 0 || localE >= _bitsWidth || localN < 0 || localN >= _bitsHeight)
+            return false;
+
+        // Calculate bit position
+        long bitIndex = (long)localN * _bitsWidth + localE;
+        int byteIndex = (int)(bitIndex / 8);
+        int bitOffset = (int)(bitIndex % 8);
+
+        byte mask = (byte)(1 << bitOffset);
+        return (_coverageBits[byteIndex] & mask) != 0;
+    }
+
+    /// <summary>
+    /// Get area covered by a specific zone in hectares.
+    /// </summary>
+    public double GetZoneArea(int zone)
+    {
+        if (!_cellCountPerZone.TryGetValue(zone, out long count))
+            return 0;
+        // Each cell is BITMAP_CELL_SIZE x BITMAP_CELL_SIZE meters
+        double cellAreaM2 = BITMAP_CELL_SIZE * BITMAP_CELL_SIZE;
+        return count * cellAreaM2 / 10000.0; // Convert to hectares
+    }
+
+    /// <summary>
+    /// Get total cell count across all zones (for statistics).
+    /// </summary>
+    public long GetTotalCellCount()
+    {
+        long total = 0;
+        foreach (var count in _cellCountPerZone.Values)
+            total += count;
+        return total;
     }
 
     /// <summary>
@@ -524,7 +620,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             return (_fieldMinE, _fieldMaxE, _fieldMinN, _fieldMaxN);
 
         // Fall back to coverage bounds (dynamic, can drift)
-        if (!_boundsValid || _coverageBitmap.Count == 0)
+        if (!_boundsValid || GetTotalCellCount() == 0)
             return null;
 
         // Convert cell coordinates to world coordinates
@@ -545,7 +641,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(
         double cellSize, double viewMinE, double viewMaxE, double viewMinN, double viewMaxN)
     {
-        if (_coverageBitmap.Count == 0)
+        if (_coverageBits == null || GetTotalCellCount() == 0)
             yield break;
 
         // Determine origin for coordinate calculations
@@ -579,7 +675,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             for (int cellN = internalMinCellN; cellN <= internalMaxCellN; cellN++)
             {
                 // O(1) HashSet lookup
-                if (_coverageBitmap.Contains((cellE, cellN)))
+                if (IsCellCovered(cellE, cellN))
                 {
                     // Convert to output cell coordinates
                     double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
@@ -628,10 +724,9 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
         // Use a HashSet to avoid duplicate cells when downsampling
         var outputCells = new HashSet<(int, int)>();
-        var defaultColor = GetZoneColor(0);
 
         // Convert each new cell to the requested cell size
-        foreach (var (cellE, cellN) in _newCells)
+        foreach (var (cellE, cellN, zone) in _newCells)
         {
             double worldE = (cellE + 0.5) * BITMAP_CELL_SIZE;
             double worldN = (cellN + 0.5) * BITMAP_CELL_SIZE;
@@ -641,7 +736,8 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
             if (outputCells.Add((outCellX, outCellY)))
             {
-                yield return (outCellX, outCellY, defaultColor);
+                var color = GetZoneColor(zone);
+                yield return (outCellX, outCellY, color);
             }
         }
 
@@ -666,9 +762,11 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         // Clear visual polygons
         _sectionPolygons.Clear();
 
-        // Clear coverage bitmap and new cells tracking
-        _coverageBitmap.Clear();
+        // Clear bit array coverage (zero out if allocated)
+        if (_coverageBits != null)
+            Array.Clear(_coverageBits, 0, _coverageBits.Length);
         _newCells.Clear();
+        _cellCountPerZone.Clear();
 
         // Reset bounds
         _minCellE = int.MaxValue;
@@ -698,6 +796,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     /// <summary>
     /// Set fixed field bounds for stable bitmap coordinate calculations.
+    /// Allocates the bit array for memory-efficient coverage detection.
     /// </summary>
     public void SetFieldBounds(double minE, double maxE, double minN, double maxN)
     {
@@ -706,7 +805,28 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         _fieldMinN = minN;
         _fieldMaxN = maxN;
         _fieldBoundsSet = true;
+
+        // Calculate bit array dimensions
+        _bitsOriginE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
+        _bitsOriginN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
+        int maxCellE = (int)Math.Ceiling(maxE / BITMAP_CELL_SIZE);
+        int maxCellN = (int)Math.Ceiling(maxN / BITMAP_CELL_SIZE);
+        _bitsWidth = maxCellE - _bitsOriginE + 1;
+        _bitsHeight = maxCellN - _bitsOriginN + 1;
+
+        // Allocate bit array: 1 bit per cell, packed into bytes
+        // Total bytes = (width * height + 7) / 8
+        long totalBits = (long)_bitsWidth * _bitsHeight;
+        long totalBytes = (totalBits + 7) / 8;
+
+        // Allocate the bit array
+        _coverageBits = new byte[totalBytes];
+
+        double areaMSq = (maxE - minE) * (maxN - minN);
+        double areaHa = areaMSq / 10000.0;
+        double memoryMB = totalBytes / (1024.0 * 1024.0);
         Console.WriteLine($"[Coverage] Field bounds set: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}]");
+        Console.WriteLine($"[Coverage] Bit array: {_bitsWidth}x{_bitsHeight} cells = {totalBits:N0} bits = {memoryMB:F1}MB for {areaHa:F0}ha field");
     }
 
     /// <summary>
@@ -715,6 +835,8 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     public void ClearFieldBounds()
     {
         _fieldBoundsSet = false;
+        _coverageBits = null;
+        _cellCountPerZone.Clear();
         Console.WriteLine("[Coverage] Field bounds cleared");
     }
 
@@ -790,7 +912,7 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
-            PatchCount = _coverageBitmap.Count,
+            PatchCount = (int)GetTotalCellCount(),
             AreaAdded = 0
         });
     }
