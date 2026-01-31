@@ -875,14 +875,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             return 0; // Bitmap not ready yet
         }
 
-        // Draw the bitmap
+        // Draw the bitmap with bilinear interpolation for smooth edges
         double worldWidth = _bitmapMaxE - _bitmapMinE;
         double worldHeight = _bitmapMaxN - _bitmapMinN;
 
         var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
         var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
-        context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+        // Use MediumQuality (bilinear) interpolation to smooth jagged edges
+        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.MediumQuality }))
+        {
+            context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+        }
 
         return _bitmapWidth * _bitmapHeight;
     }

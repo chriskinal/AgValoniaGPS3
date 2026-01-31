@@ -5,10 +5,18 @@ This document tracks performance testing of different coverage rendering approac
 **Naming Convention**: Each test has an ID (PERF-001, PERF-002, etc.) that appears in both this document and the git commit message for traceability.
 
 ## Test Environment
+
+### Development Machine
 - **Field**: 520ha test field
-- **Machine**: [Your machine specs]
 - **Avalonia Version**: 11.3.9
 - **Test Speed**: 44 kph (accelerated for faster coverage accumulation)
+
+### Target Test Devices
+Devices selected as realistic farmer-purchase hardware (~$150 used):
+- **iPad Pro 12.9" 2nd Gen (2017)** - A10X Fusion, 64GB - iOS target
+- **Samsung Galaxy Tab S7 FE 12.4" (2021)** - Snapdragon 750G, 64GB - Android target
+
+These represent large-screen tablets suitable for tractor cab use at price points farmers would pay.
 
 ## Metrics
 - **FPS**: Frames per second (use Avalonia DevTools F12 for accurate measurement)
@@ -104,44 +112,49 @@ This document tracks performance testing of different coverage rendering approac
 
 ---
 
-### PERF-004: WriteableBitmap Rendering (1.0m cells)
-- **Date**: 2026-01-28
-- **Commit**: b45c0a6
+### PERF-004: WriteableBitmap + Bit Array (Complete)
+- **Date**: 2026-01-28 to 2026-01-30
+- **Commits**: b45c0a6 → 4bcb821
 - **Branch**: `coverage-dual-buffer`
-- **Method**: Render coverage to WriteableBitmap, blit each frame
-- **Resolution**: 1.0m per pixel (~5.2M pixels for 520ha, ~21MB)
-- **Status**: BLOCKED - Avalonia architecture issue
+- **Method**: Bit array detection + WriteableBitmap display
+- **Status**: COMPLETE
 
-**Approach**:
-- Create WriteableBitmap sized to field bounds
-- When coverage added: paint new pixels incrementally
-- Each frame: single DrawImage() call
-- Expected: O(1) render time regardless of coverage amount
+**Architecture**:
+- **Detection**: Bit array at fixed 0.1m resolution (~65MB for 520ha)
+- **Display**: WriteableBitmap with dynamic resolution scaling
+- **Rendering**: Bilinear interpolation for smooth edges
 
-**Implementation**:
-- Added `GetCoverageBounds()`, `GetCoverageBitmapCells()`, `GetNewCoverageBitmapCells()` to `ICoverageMapService`
-- Added `DrawCoverageBitmap()` method in `DrawingContextMapControl`
-- Uses Marshal.Copy for safe memory access (no unsafe code)
+**Display Resolution Scaling** (50M pixel limit):
 
-**BLOCKED**: WriteableBitmap.Lock() triggers "Visual was invalidated during render pass" error.
-The Avalonia-recommended pattern is to use an `Image` control with WriteableBitmap as its Source
-and call `Image.InvalidateVisual()` after updating - NOT to use `context.DrawImage()` directly
-in a custom Control's Render method.
+| Field Size | Display Resolution |
+|------------|-------------------|
+| ≤ 50 ha | 0.1m |
+| 50 - 200 ha | 0.2m |
+| 200 - 312 ha | 0.25m |
+| 312 - 612 ha | 0.35m |
+| 612 - 1250 ha | 0.5m |
+| 1250 - 2812 ha | 0.75m |
+| 2812+ ha | 1.0m+ |
 
-**References**:
-- https://github.com/AvaloniaUI/Avalonia/issues/9618
-- https://github.com/AvaloniaUI/Avalonia/discussions/17013
+**Production Build Results (520ha field)**:
 
-**Future Fix**: Add an Image control overlay for coverage bitmap rendering instead of
-drawing directly in DrawingContextMapControl.Render().
+| Coverage | Memory Floor | Memory Peak | FPS | CPU |
+|----------|--------------|-------------|-----|-----|
+| 15% (load) | - | 1.38GB | - | - |
+| 30% | 1.15GB | - | 29 | 51.5% |
+| 50% | 1.12GB | 1.34GB | 29 | 55.1% |
+| 90% | 1.16GB | 1.36GB | 29 | 52% |
 
-| Coverage | Points | Bitmap Size | FPS (zoomed out) | FPS (mid-zoom) | FPS (zoomed in) | Notes |
-|----------|--------|-------------|------------------|----------------|-----------------|-------|
-| - | - | - | - | - | - | Not testable due to architecture issue |
+**Phase 3 (Polygon Removal)**:
+- Removed visual polygon storage (~800MB savings)
+- Switched to binary Coverage.bin format (RLE compressed)
+- Expected memory after Phase 3: ~300-400MB for 520ha
 
-**Observations**:
-- WriteableBitmap approach requires different UI architecture
-- Need to add Image control overlay, not use context.DrawImage() directly
+**Key Achievements**:
+- Memory FLAT from 30% to 90% coverage (no growth with coverage)
+- FPS stable at 29 (timer-limited to 30)
+- GC sawtooth pattern: ~1.12GB floor, ~1.34GB ceiling
+- 611 lines of polygon code removed
 
 ## Historical Data (from transcripts, pre-polygon)
 
