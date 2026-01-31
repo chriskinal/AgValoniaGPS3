@@ -145,7 +145,10 @@ public partial class MainView : UserControl
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    _mapControl?.MarkCoverageDirty();
+                    if (args.IsFullReload)
+                        _mapControl?.MarkCoverageFullRebuildNeeded();
+                    else
+                        _mapControl?.MarkCoverageDirty();
                     _viewModel?.RefreshCoverageStatistics();
                 });
             };

@@ -173,12 +173,15 @@ public partial class MainView : UserControl
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    _mapControl?.SetCoveragePatches(coverageService.GetPatches());
+                    if (args.IsFullReload)
+                        _mapControl?.MarkCoverageFullRebuildNeeded();
+                    else
+                        _mapControl?.MarkCoverageDirty();
                     _viewModel?.RefreshCoverageStatistics();
                 });
             };
-            // Set initial coverage (in case field was already loaded)
-            _mapControl.SetCoveragePatches(coverageService.GetPatches());
+            // Mark dirty in case field was already loaded with coverage
+            _mapControl.MarkCoverageDirty();
 
             // Set up bitmap-based coverage rendering (PERF-004)
             // allCellsProvider takes viewport bounds for spatial queries - O(viewport) not O(total coverage)

@@ -230,4 +230,9 @@ public class CoverageUpdatedEventArgs : EventArgs
     /// Area added in this update (square meters)
     /// </summary>
     public double AreaAdded { get; init; }
+
+    /// <summary>
+    /// True if this is a full reload (e.g., from file), requiring full bitmap rebuild
+    /// </summary>
+    public bool IsFullReload { get; init; }
 }

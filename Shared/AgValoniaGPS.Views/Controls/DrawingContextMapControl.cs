@@ -102,6 +102,9 @@ public interface ISharedMapControl
     // Mark coverage as needing refresh (call when coverage data changes)
     void MarkCoverageDirty();
 
+    // Mark coverage as needing full rebuild (call after loading from file)
+    void MarkCoverageFullRebuildNeeded();
+
     // Grid visibility property
     bool IsGridVisible { get; set; }
 
@@ -746,11 +749,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
+        Console.WriteLine($"[MapControl] UpdateCoverageBitmapIfNeeded: boundsProvider={_coverageBoundsProvider != null}, allCellsProvider={_coverageAllCellsProvider != null}");
         if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
             return;
 
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
+        Console.WriteLine($"[MapControl] UpdateCoverageBitmapIfNeeded: bounds={bounds}");
         if (bounds == null)
         {
             // No coverage - clear the bitmap
@@ -2139,6 +2144,24 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _bitmapUpdatePending = true;
             Dispatcher.UIThread.Post(() =>
             {
+                UpdateCoverageBitmapIfNeeded();
+                _bitmapUpdatePending = false;
+            }, DispatcherPriority.Background);
+        }
+    }
+
+    public void MarkCoverageFullRebuildNeeded()
+    {
+        Console.WriteLine("[MapControl] MarkCoverageFullRebuildNeeded() called");
+        _bitmapNeedsFullRebuild = true;
+
+        // Schedule bitmap update
+        if (!_bitmapUpdatePending)
+        {
+            _bitmapUpdatePending = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                Console.WriteLine("[MapControl] Running UpdateCoverageBitmapIfNeeded() from full rebuild request");
                 UpdateCoverageBitmapIfNeeded();
                 _bitmapUpdatePending = false;
             }, DispatcherPriority.Background);

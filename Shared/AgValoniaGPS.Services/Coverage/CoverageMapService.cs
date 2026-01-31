@@ -667,8 +667,10 @@ public class CoverageMapService : ICoverageMapService
             Math.Abs(_fieldMinN - minN) < 0.01 &&
             Math.Abs(_fieldMaxN - maxN) < 0.01)
         {
+            Console.WriteLine($"[Coverage] SetFieldBounds: bounds unchanged, skipping allocation");
             return;
         }
+        Console.WriteLine($"[Coverage] SetFieldBounds: ALLOCATING new array (bounds changed or first call)");
 
         _fieldMinE = minE;
         _fieldMaxE = maxE;
@@ -784,6 +786,9 @@ public class CoverageMapService : ICoverageMapService
             int height = reader.ReadInt32();
             double area = reader.ReadDouble();
 
+            Console.WriteLine($"[Coverage] File header: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}] cellSize={cellSize} {width}x{height} area={area:F2}m²");
+            Console.WriteLine($"[Coverage] Current bounds: E[{_fieldMinE:F1}, {_fieldMaxE:F1}] N[{_fieldMinN:F1}, {_fieldMaxN:F1}] set={_fieldBoundsSet}");
+
             // Verify cell size matches
             if (Math.Abs(cellSize - BITMAP_CELL_SIZE) > 0.001)
             {
@@ -796,15 +801,19 @@ public class CoverageMapService : ICoverageMapService
 
             // Read RLE-compressed bit array
             int i = 0;
+            int nonZeroBytes = 0;
+            Console.WriteLine($"[Coverage] Reading RLE: stream.Position={stream.Position}, stream.Length={stream.Length}, bits.Length={_coverageBits!.Length}");
             while (i < _coverageBits!.Length && stream.Position < stream.Length)
             {
                 byte runLength = reader.ReadByte();
                 byte value = reader.ReadByte();
+                if (value != 0) nonZeroBytes += runLength;
                 for (int j = 0; j < runLength && i < _coverageBits.Length; j++, i++)
                 {
                     _coverageBits[i] = value;
                 }
             }
+            Console.WriteLine($"[Coverage] RLE complete: read {i} bytes, {nonZeroBytes} non-zero");
 
             _totalWorkedArea = area;
             _totalWorkedAreaUser = area;
@@ -828,17 +837,20 @@ public class CoverageMapService : ICoverageMapService
             }
 
             Console.WriteLine($"[Coverage] Loaded {cellCount:N0} cells, {area:F2} m² from {path}");
+            Console.WriteLine($"[Coverage] GetTotalCellCount() = {GetTotalCellCount()}, _fieldBoundsSet = {_fieldBoundsSet}");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Coverage] Failed to load: {ex.Message}");
         }
 
+        Console.WriteLine($"[Coverage] Firing CoverageUpdated with IsFullReload=true, TotalCellCount={GetTotalCellCount()}");
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
             PatchCount = (int)GetTotalCellCount(),
-            AreaAdded = 0
+            AreaAdded = 0,
+            IsFullReload = true
         });
     }
 

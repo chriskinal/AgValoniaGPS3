@@ -141,7 +141,10 @@ public partial class MainWindow : Window
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    MapControl?.MarkCoverageDirty();
+                    if (args.IsFullReload)
+                        MapControl?.MarkCoverageFullRebuildNeeded();
+                    else
+                        MapControl?.MarkCoverageDirty();
                     ViewModel?.RefreshCoverageStatistics();
                 });
             };
