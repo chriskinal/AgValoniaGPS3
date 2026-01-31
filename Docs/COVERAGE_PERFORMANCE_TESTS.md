@@ -113,11 +113,11 @@ These represent large-screen tablets suitable for tractor cab use at price point
 ---
 
 ### PERF-004: WriteableBitmap + Bit Array (Complete)
-- **Date**: 2026-01-28 to 2026-01-30
-- **Commits**: b45c0a6 → 4bcb821
+- **Date**: 2026-01-28 to 2026-01-31
+- **Commits**: b45c0a6 → current
 - **Branch**: `coverage-dual-buffer`
 - **Method**: Bit array detection + WriteableBitmap display
-- **Status**: COMPLETE
+- **Status**: COMPLETE (Phase 3 Final)
 
 **Architecture**:
 - **Detection**: Bit array at fixed 0.1m resolution (~65MB for 520ha)
@@ -136,25 +136,29 @@ These represent large-screen tablets suitable for tractor cab use at price point
 | 1250 - 2812 ha | 0.75m |
 | 2812+ ha | 1.0m+ |
 
-**Production Build Results (520ha field)**:
+**Final Production Build Results (520ha field, macOS)**:
 
-| Coverage | Memory Floor | Memory Peak | FPS | CPU |
-|----------|--------------|-------------|-----|-----|
-| 15% (load) | - | 1.38GB | - | - |
-| 30% | 1.15GB | - | 29 | 51.5% |
-| 50% | 1.12GB | 1.34GB | 29 | 55.1% |
-| 90% | 1.16GB | 1.36GB | 29 | 52% |
-
-**Phase 3 (Polygon Removal)**:
-- Removed visual polygon storage (~800MB savings)
-- Switched to binary Coverage.bin format (RLE compressed)
-- Expected memory after Phase 3: ~300-400MB for 520ha
+| Coverage | Real Memory | CPU | FPS |
+|----------|-------------|-----|-----|
+| 15% | 367 MB | 41% | 29 |
+| 30% | 367 MB | 41% | 29 |
+| 50% | 362 MB | 45% | 29 |
+| 73% | 350-395 MB | 51% | 29 |
+| 91% | 510-525 MB | 47% | 29-30 |
 
 **Key Achievements**:
-- Memory FLAT from 30% to 90% coverage (no growth with coverage)
-- FPS stable at 29 (timer-limited to 30)
-- GC sawtooth pattern: ~1.12GB floor, ~1.34GB ceiling
+- Memory FLAT from 15% to 73% coverage (~360-395MB Real Memory)
+- Small bump at 91% (~510-525MB) - Avalonia rendering overhead
+- FPS rock solid at 29-30 (timer-limited)
+- CPU reasonable for tablet deployment (41-51%)
 - 611 lines of polygon code removed
+- Binary Coverage.bin format (RLE compressed)
+
+**Bug Fixes (Phase 3)**:
+- Triple SetFieldBounds allocation guard
+- Iterator memory leak (yield return → direct return)
+- Bitmap clear fix (GetCoverageBounds null check)
+- Reusable buffers to reduce allocation pressure
 
 ## Historical Data (from transcripts, pre-polygon)
 

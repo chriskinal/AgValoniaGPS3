@@ -57,6 +57,10 @@ public class CoverageMapService : ICoverageMapService
     // Still use HashSet for new cells (small, cleared frequently)
     private readonly HashSet<(int CellE, int CellN, int Zone)> _newCells = new();
 
+    // Reusable buffers for GetNewCoverageBitmapCells to avoid allocations
+    private readonly List<(int CellX, int CellY, CoverageColor Color)> _newCellsResult = new();
+    private readonly HashSet<(int, int)> _newCellsDedup = new();
+
     // Track bounds of coverage for reporting
     private int _minCellE = int.MaxValue;
     private int _maxCellE = int.MinValue;
@@ -468,12 +472,16 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     public (double MinE, double MaxE, double MinN, double MaxN)? GetCoverageBounds()
     {
+        // Return null if no coverage exists (even if field bounds are set)
+        if (GetTotalCellCount() == 0)
+            return null;
+
         // Use fixed field bounds if set (stable coordinate system)
         if (_fieldBoundsSet)
             return (_fieldMinE, _fieldMaxE, _fieldMinN, _fieldMaxN);
 
         // Fall back to coverage bounds (dynamic, can drift)
-        if (!_boundsValid || GetTotalCellCount() == 0)
+        if (!_boundsValid)
             return null;
 
         // Convert cell coordinates to world coordinates
@@ -553,7 +561,7 @@ public class CoverageMapService : ICoverageMapService
     public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetNewCoverageBitmapCells(double cellSize)
     {
         if (_newCells.Count == 0)
-            yield break;
+            return Array.Empty<(int, int, CoverageColor)>();
 
         // Determine origin for coordinate calculations
         double minE, minN;
@@ -569,14 +577,15 @@ public class CoverageMapService : ICoverageMapService
             if (!_boundsValid)
             {
                 _newCells.Clear();
-                yield break;
+                return Array.Empty<(int, int, CoverageColor)>();
             }
             minE = _minCellE * BITMAP_CELL_SIZE;
             minN = _minCellN * BITMAP_CELL_SIZE;
         }
 
-        // Use a HashSet to avoid duplicate cells when downsampling
-        var outputCells = new HashSet<(int, int)>();
+        // Reuse buffers to avoid allocations (clear first)
+        _newCellsDedup.Clear();
+        _newCellsResult.Clear();
 
         // Convert each new cell to the requested cell size
         foreach (var (cellE, cellN, zone) in _newCells)
@@ -587,15 +596,17 @@ public class CoverageMapService : ICoverageMapService
             int outCellX = (int)Math.Floor((worldE - minE) / cellSize);
             int outCellY = (int)Math.Floor((worldN - minN) / cellSize);
 
-            if (outputCells.Add((outCellX, outCellY)))
+            if (_newCellsDedup.Add((outCellX, outCellY)))
             {
                 var color = GetZoneColor(zone);
-                yield return (outCellX, outCellY, color);
+                _newCellsResult.Add((outCellX, outCellY, color));
             }
         }
 
-        // Clear for next call
+        // Clear source cells
         _newCells.Clear();
+
+        return _newCellsResult;
     }
 
     public IReadOnlyList<CoveragePatch> GetPatches()
@@ -649,6 +660,16 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     public void SetFieldBounds(double minE, double maxE, double minN, double maxN)
     {
+        // Skip if bounds unchanged (avoid redundant allocations)
+        if (_fieldBoundsSet &&
+            Math.Abs(_fieldMinE - minE) < 0.01 &&
+            Math.Abs(_fieldMaxE - maxE) < 0.01 &&
+            Math.Abs(_fieldMinN - minN) < 0.01 &&
+            Math.Abs(_fieldMaxN - maxN) < 0.01)
+        {
+            return;
+        }
+
         _fieldMinE = minE;
         _fieldMaxE = maxE;
         _fieldMinN = minN;

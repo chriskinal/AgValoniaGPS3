@@ -882,8 +882,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
         var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
-        // Use MediumQuality (bilinear) interpolation to smooth jagged edges
-        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.MediumQuality }))
+        // Use HighQuality (bicubic) interpolation to smooth jagged edges
+        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality }))
         {
             context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
         }

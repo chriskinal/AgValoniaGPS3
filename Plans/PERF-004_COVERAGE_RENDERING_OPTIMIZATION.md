@@ -1,6 +1,6 @@
 # PERF-004: Coverage Rendering Optimization
 
-## Status: Phase 2 Complete
+## Status: Phase 3 Complete (Final)
 
 ## Problem Statement
 
@@ -47,20 +47,34 @@ Coverage rendering was causing FPS to degrade as coverage increased:
 
 ### Achieved: ~1.1GB baseline (flat across all coverage levels)
 
-### Production Build Test Results (520ha field)
+Phase 2 test results showed ~1.1GB memory with legacy polygon data still loaded.
 
-| Coverage | Memory Floor | Memory Peak | FPS | CPU |
-|----------|--------------|-------------|-----|-----|
-| 15% (load) | - | 1.38GB | - | - |
-| 30% | 1.15GB | - | 29 | 51.5% |
-| 50% | 1.12GB | 1.34GB | 29 | 55.1% |
-| 90% | 1.16GB | 1.36GB | 29 | 52% |
+## Phase 3: Final Optimization (Complete)
+
+### Achieved: ~360-525MB Real Memory (520ha field)
+
+### Final Production Build Results (520ha field, macOS)
+
+| Coverage | Real Memory | CPU | FPS |
+|----------|-------------|-----|-----|
+| 15% | 367 MB | 41% | 29 |
+| 30% | 367 MB | 41% | 29 |
+| 50% | 362 MB | 45% | 29 |
+| 73% | 350-395 MB | 51% | 29 |
+| 91% | 510-525 MB | 47% | 29-30 |
 
 **Key findings:**
-- Memory is FLAT from 30% to 90% coverage (bit array working)
-- GC sawtooth pattern: ~1.12GB floor, ~1.34GB ceiling
-- FPS stable at 29 (timer-limited to 30)
-- ~1GB overhead is legacy polygon data from saved coverage file
+- Memory FLAT from 15% to 73% coverage (~360-395MB)
+- Small bump at 91% (~510-525MB) - likely Avalonia rendering overhead
+- GC sawtooth healthy: memory drops back after spikes
+- FPS rock solid at 29-30 (timer-limited)
+- CPU reasonable for tablet deployment (41-51%)
+
+### Bug Fixes Applied
+1. **Triple SetFieldBounds allocation** - Added bounds comparison guard
+2. **Iterator memory leak** - `yield return` prevented cleanup; converted to direct return
+3. **Bitmap not clearing** - `GetCoverageBounds()` returned field bounds even with 0 coverage
+4. **Allocation pressure** - Added reusable buffers (`_newCellsResult`, `_newCellsDedup`)
 
 ### Implementation (Complete)
 
