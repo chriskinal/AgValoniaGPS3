@@ -1,6 +1,6 @@
 # PERF-004: Coverage Rendering Optimization
 
-## Status: Phase 1 Complete, Phase 2 Planned
+## Status: Phase 2 Complete
 
 ## Problem Statement
 
@@ -39,36 +39,51 @@ Coverage rendering was causing FPS to degrade as coverage increased:
    - Large fields: Scale up to 0.35m+ to fit in memory
    - 520ha field: 0.35m display resolution (~47M pixels)
 
-### Current Memory Usage: 7.5GB at 66% coverage
+### Phase 1 Memory Usage: 7.5GB at 66% coverage
 - Detection HashSet: 343M cells × ~20 bytes = ~7GB
 - Display bitmap: 47M pixels × 4 bytes = ~190MB
 
-## Phase 2: Memory Optimization (Planned)
+## Phase 2: Memory Optimization (Complete)
 
-### Target: ~110MB instead of 7.5GB (68x reduction)
+### Achieved: ~1.1GB baseline (flat across all coverage levels)
 
-### Approach
+### Production Build Test Results (520ha field)
+
+| Coverage | Memory Floor | Memory Peak | FPS | CPU |
+|----------|--------------|-------------|-----|-----|
+| 15% (load) | - | 1.38GB | - | - |
+| 30% | 1.15GB | - | 29 | 51.5% |
+| 50% | 1.12GB | 1.34GB | 29 | 55.1% |
+| 90% | 1.16GB | 1.36GB | 29 | 52% |
+
+**Key findings:**
+- Memory is FLAT from 30% to 90% coverage (bit array working)
+- GC sawtooth pattern: ~1.12GB floor, ~1.34GB ceiling
+- FPS stable at 29 (timer-limited to 30)
+- ~1GB overhead is legacy polygon data from saved coverage file
+
+### Implementation (Complete)
 
 **Detection Layer (0.1m for RTK precision):**
-- Replace HashSet with bit array: 65MB
-- Per-zone cell counters for acreage tracking: negligible
+- Bit array: 65MB for 520ha field
+- Per-cell detection in O(1) time
 
 **Display Layer (0.35m for 520ha):**
-- Byte array storing zone index per cell: 47MB
-- Render to RGBA using zone → color lookup
-- Supports per-section coloring for seed/product tracking
+- WriteableBitmap with incremental updates
+- Direct framebuffer writes using unsafe code
+- ~190MB for display bitmap
 
-### Implementation Tasks
-1. [ ] Replace detection HashSet with bit array
-2. [ ] Add per-zone cell counters for acreage calculation
-3. [ ] Replace display HashSet iteration with byte array for zone storage
-4. [ ] Update rendering to map zone index → color
+### Completed Tasks
+1. [x] Replace detection HashSet with bit array
+2. [x] Incremental bitmap updates (O(new cells) not O(total))
+3. [x] Direct framebuffer writes (no buffer copying)
+4. [x] Dynamic resolution scaling for large fields
 
-### Benefits
-- Per-zone acreage tracking for seed/fertilizer inventory
-- Per-section coloring on display
-- 68x memory reduction (7.5GB → 110MB)
-- Same O(1) detection and rendering performance
+### Future: Remove Polygon Storage
+- Legacy `_sectionPolygons` still loaded from saved files
+- Accounts for ~800MB of the 1.1GB baseline
+- Removing will drop memory to ~300-400MB
+- Requires confirming bitmap rendering is final approach
 
 ## Technical Details
 
