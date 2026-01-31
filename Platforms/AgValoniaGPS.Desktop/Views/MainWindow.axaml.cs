@@ -146,9 +146,6 @@ public partial class MainWindow : Window
                 });
             };
 
-            // Set up polygon-based coverage rendering (one extruded polygon per section)
-            MapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
-
             // Set up bitmap-based coverage rendering (PERF-004)
             // allCellsProvider takes viewport bounds for spatial queries - O(viewport) not O(total coverage)
             MapControl.SetCoverageBitmapProviders(

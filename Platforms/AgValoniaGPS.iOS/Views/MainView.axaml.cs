@@ -180,9 +180,6 @@ public partial class MainView : UserControl
             // Set initial coverage (in case field was already loaded)
             _mapControl.SetCoveragePatches(coverageService.GetPatches());
 
-            // Set up polygon-based coverage rendering (one extruded polygon per section)
-            _mapControl.SetCoveragePolygonProvider(coverageService.GetSectionPolygons);
-
             // Set up bitmap-based coverage rendering (PERF-004)
             // allCellsProvider takes viewport bounds for spatial queries - O(viewport) not O(total coverage)
             _mapControl.SetCoverageBitmapProviders(

@@ -134,13 +134,6 @@ public interface ICoverageMapService
     IReadOnlyList<CoveragePatch> GetPatches();
 
     /// <summary>
-    /// Get visual polygon data for rendering - one continuous extruded polygon per section.
-    /// Much more efficient than individual patches or grid cells.
-    /// </summary>
-    /// <returns>Section polygons with left/right edge points</returns>
-    IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)> GetSectionPolygons();
-
-    /// <summary>
     /// Get coverage bitmap bounds in world coordinates.
     /// Returns null if no coverage exists.
     /// </summary>
@@ -166,11 +159,6 @@ public interface ICoverageMapService
     /// <param name="cellSize">Size of each cell in meters</param>
     /// <returns>Enumerable of (cellX, cellY, color) for newly added cells</returns>
     IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetNewCoverageBitmapCells(double cellSize);
-
-    /// <summary>
-    /// Number of visual polygons (one per section with coverage)
-    /// </summary>
-    int VisualPolygonCount { get; }
 
     /// <summary>
     /// Get patches for a specific zone
@@ -206,13 +194,13 @@ public interface ICoverageMapService
     void ResetUserArea();
 
     /// <summary>
-    /// Save coverage to Sections.txt file
+    /// Save coverage to Coverage.bin file (RLE-compressed bit array)
     /// </summary>
     /// <param name="fieldDirectory">Field directory path</param>
     void SaveToFile(string fieldDirectory);
 
     /// <summary>
-    /// Load coverage from Sections.txt file
+    /// Load coverage from Coverage.bin file
     /// </summary>
     /// <param name="fieldDirectory">Field directory path</param>
     void LoadFromFile(string fieldDirectory);

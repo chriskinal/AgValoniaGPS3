@@ -78,12 +78,8 @@ Coverage rendering was causing FPS to degrade as coverage increased:
 2. [x] Incremental bitmap updates (O(new cells) not O(total))
 3. [x] Direct framebuffer writes (no buffer copying)
 4. [x] Dynamic resolution scaling for large fields
-
-### Future: Remove Polygon Storage
-- Legacy `_sectionPolygons` still loaded from saved files
-- Accounts for ~800MB of the 1.1GB baseline
-- Removing will drop memory to ~300-400MB
-- Requires confirming bitmap rendering is final approach
+5. [x] Remove polygon storage - bitmap-only rendering
+6. [x] Binary coverage file format (Coverage.bin with RLE compression)
 
 ## Technical Details
 

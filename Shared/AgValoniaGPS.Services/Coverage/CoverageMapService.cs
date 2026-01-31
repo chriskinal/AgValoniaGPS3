@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
@@ -28,21 +27,16 @@ namespace AgValoniaGPS.Services.Coverage;
 /// <summary>
 /// Tracks and manages coverage (worked area) as the tool moves across the field.
 ///
-/// Architecture (dual-layer design):
-/// - VISUAL LAYER: One StreamGeometry polygon per section (16 max) for efficient rendering
-/// - DETECTION LAYER: HashSet bitmap with 0.5m cells for O(1) coverage detection
+/// Architecture:
+/// - DETECTION LAYER: Bit array with 0.1m cells for O(1) coverage detection (~65MB for 520ha)
+/// - DISPLAY LAYER: WriteableBitmap rendered from bit array (handled by DrawingContextMapControl)
 ///
 /// This replaces the old patch-based system which stored 50,000+ triangle strips
 /// and iterated through them for coverage detection (280-330ms per check).
 /// The new bitmap approach provides coverage detection in ~0.04ms.
 /// </summary>
-public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverageMapService
+public class CoverageMapService : ICoverageMapService
 {
-    // ========== VISUAL LAYER ==========
-    // Visual polygons per section - multiple passes per section (one polygon per pass)
-    // Each pass tracks left/right edge points to form a filled polygon
-    // When sections turn off at headland and back on, a new pass/polygon is started
-    private readonly Dictionary<int, List<SectionVisualPolygon>> _sectionPolygons = new();
 
     // ========== DETECTION LAYER (Bit Array) ==========
     // Memory-efficient coverage detection using bit array instead of HashSet
@@ -84,11 +78,6 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     // Track last edges per section for area calculation and bitmap rasterization
     private readonly Dictionary<int, ((double E, double N) Left, (double E, double N) Right)> _lastEdgesPerSection = new();
 
-    // Track last VISUAL edges per section for decimation (only add points if far enough apart)
-    // This is separate from _lastEdgesPerSection which tracks every point for bitmap rasterization
-    private readonly Dictionary<int, ((double E, double N) Left, (double E, double N) Right)> _lastVisualEdgesPerSection = new();
-    private const double VISUAL_DECIMATION_THRESHOLD_SQ = 25.0; // 5m minimum spacing squared for visual polygon
-
     // Area totals (calculated incrementally)
     private double _totalWorkedArea;
     private double _totalWorkedAreaUser;
@@ -97,30 +86,11 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     private bool _coverageDirty;
     private double _pendingAreaAdded;
 
-    /// <summary>
-    /// Tracks the visual polygon for a single section - left edge points forward,
-    /// right edge points will be reversed to close the polygon.
-    /// </summary>
-    private class SectionVisualPolygon
-    {
-        public List<(double E, double N)> LeftEdge { get; } = new();
-        public List<(double E, double N)> RightEdge { get; } = new();
-        public CoverageColor Color { get; set; }
-        public bool IsDirty { get; set; } = true;
-    }
-
     public double TotalWorkedArea => _totalWorkedArea;
     public double TotalWorkedAreaUser => _totalWorkedAreaUser;
     public int PatchCount => (int)GetTotalCellCount(); // Total covered cells across all zones
     public bool IsAnyZoneMapping => _activeSections.Count > 0;
-
-    // Debug: total polygon points across all sections (sum across all passes)
-    public int TotalPolygonPoints => _sectionPolygons.Values.Sum(passes => passes.Sum(p => p.LeftEdge.Count + p.RightEdge.Count));
     public int ActiveSectionCount => _activeSections.Count;
-
-    // Track the current active polygon for each section (last polygon in the list)
-    private SectionVisualPolygon? GetCurrentPolygon(int zoneIndex) =>
-        _sectionPolygons.TryGetValue(zoneIndex, out var passes) && passes.Count > 0 ? passes[^1] : null;
 
     public event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
 
@@ -130,30 +100,12 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         if (_activeSections.Contains(zoneIndex))
             return;
 
-        Console.WriteLine($"[Timing] CovStart zone {zoneIndex} at ({leftEdge.Easting:F1}, {leftEdge.Northing:F1})");
-
         _activeSections.Add(zoneIndex);
 
-        // Initialize pass list for this section if needed
-        if (!_sectionPolygons.TryGetValue(zoneIndex, out var passes))
-        {
-            passes = new List<SectionVisualPolygon>();
-            _sectionPolygons[zoneIndex] = passes;
-        }
-
-        // Always create a NEW polygon for each pass (prevents fold-back artifacts at U-turns)
-        var polygon = new SectionVisualPolygon { Color = color ?? GetZoneColor(zoneIndex) };
-        passes.Add(polygon);
-
-        // Store initial edge for area calculation
+        // Store initial edge for area calculation and bitmap rasterization
         _lastEdgesPerSection[zoneIndex] = (
             (leftEdge.Easting, leftEdge.Northing),
             (rightEdge.Easting, rightEdge.Northing));
-
-        // Add initial points to visual polygon
-        polygon.LeftEdge.Add((leftEdge.Easting, leftEdge.Northing));
-        polygon.RightEdge.Add((rightEdge.Easting, rightEdge.Northing));
-        polygon.IsDirty = true;
     }
 
     public void StopMapping(int zoneIndex)
@@ -161,13 +113,8 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         if (!_activeSections.Contains(zoneIndex))
             return;
 
-        var currentPolygon = GetCurrentPolygon(zoneIndex);
-        int passCount = _sectionPolygons.TryGetValue(zoneIndex, out var passes) ? passes.Count : 0;
-        Console.WriteLine($"[Timing] CovStop zone {zoneIndex}, pass {passCount} has {currentPolygon?.LeftEdge.Count ?? 0} pts");
-
         _activeSections.Remove(zoneIndex);
         _lastEdgesPerSection.Remove(zoneIndex);
-        _lastVisualEdgesPerSection.Remove(zoneIndex);
     }
 
     public void AddCoveragePoint(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge)
@@ -182,40 +129,10 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
             _lastEdgesPerSection[zoneIndex] = (
                 (leftEdge.Easting, leftEdge.Northing),
                 (rightEdge.Easting, rightEdge.Northing));
-            // Also store as last visual edge
-            _lastVisualEdgesPerSection[zoneIndex] = (
-                (leftEdge.Easting, leftEdge.Northing),
-                (rightEdge.Easting, rightEdge.Northing));
             return;
         }
 
-        // Add to visual polygon only if far enough from last visual point (decimation)
-        // This prevents unbounded polygon growth while keeping bitmap accurate
-        var currentPolygon = GetCurrentPolygon(zoneIndex);
-        if (currentPolygon != null)
-        {
-            bool shouldAddVisual = true;
-            if (_lastVisualEdgesPerSection.TryGetValue(zoneIndex, out var lastVisualEdges))
-            {
-                // Check distance from last visual point (use left edge as reference)
-                double dx = leftEdge.Easting - lastVisualEdges.Left.E;
-                double dy = leftEdge.Northing - lastVisualEdges.Left.N;
-                double distSq = dx * dx + dy * dy;
-                shouldAddVisual = distSq >= VISUAL_DECIMATION_THRESHOLD_SQ;
-            }
-
-            if (shouldAddVisual)
-            {
-                currentPolygon.LeftEdge.Add((leftEdge.Easting, leftEdge.Northing));
-                currentPolygon.RightEdge.Add((rightEdge.Easting, rightEdge.Northing));
-                currentPolygon.IsDirty = true;
-                _lastVisualEdgesPerSection[zoneIndex] = (
-                    (leftEdge.Easting, leftEdge.Northing),
-                    (rightEdge.Easting, rightEdge.Northing));
-            }
-        }
-
-        // Rasterize the quad to the coverage bitmap for O(1) detection (every point!)
+        // Rasterize the quad to the coverage bitmap for O(1) detection
         RasterizeQuadToBitmap(zoneIndex, leftEdge, rightEdge);
 
         // Calculate area of the quad (two triangles)
@@ -446,46 +363,6 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     }
 
     /// <summary>
-    /// Rasterize a quad directly to the bitmap (used during file loading).
-    /// </summary>
-    private void RasterizeQuadToBitmapDirect(
-        (double E, double N) p0, (double E, double N) p1,
-        (double E, double N) p2, (double E, double N) p3,
-        int zone = 0)
-    {
-        // Find bounding box
-        double minE = Math.Min(Math.Min(p0.E, p1.E), Math.Min(p2.E, p3.E));
-        double maxE = Math.Max(Math.Max(p0.E, p1.E), Math.Max(p2.E, p3.E));
-        double minN = Math.Min(Math.Min(p0.N, p1.N), Math.Min(p2.N, p3.N));
-        double maxN = Math.Max(Math.Max(p0.N, p1.N), Math.Max(p2.N, p3.N));
-
-        // Convert to cell coordinates
-        int cellMinE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
-        int cellMaxE = (int)Math.Floor(maxE / BITMAP_CELL_SIZE);
-        int cellMinN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
-        int cellMaxN = (int)Math.Floor(maxN / BITMAP_CELL_SIZE);
-
-        // Mark all cells in bounding box that are inside the quad
-        for (int ce = cellMinE; ce <= cellMaxE; ce++)
-        {
-            for (int cn = cellMinN; cn <= cellMaxN; cn++)
-            {
-                double cellCenterE = (ce + 0.5) * BITMAP_CELL_SIZE;
-                double cellCenterN = (cn + 0.5) * BITMAP_CELL_SIZE;
-
-                if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
-                {
-                    if (MarkCellCovered(ce, cn, zone))
-                    {
-                        // Update bounds (don't track as new cell during file load)
-                        UpdateBounds(ce, cn);
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// Update coverage bounds when a new cell is added.
     /// </summary>
     private void UpdateBounds(int cellE, int cellN)
@@ -583,30 +460,6 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         return total;
     }
 
-    /// <summary>
-    /// Get visual polygon data for rendering.
-    /// Returns section index, color, and edge points for each pass of each section.
-    /// Multiple passes per section are returned as separate polygons.
-    /// </summary>
-    public IEnumerable<(int SectionIndex, CoverageColor Color, IReadOnlyList<(double E, double N)> LeftEdge, IReadOnlyList<(double E, double N)> RightEdge)> GetSectionPolygons()
-    {
-        foreach (var (sectionIndex, passes) in _sectionPolygons)
-        {
-            foreach (var polygon in passes)
-            {
-                if (polygon.LeftEdge.Count >= 2)
-                {
-                    yield return (sectionIndex, polygon.Color, polygon.LeftEdge, polygon.RightEdge);
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Get the number of visual polygons (one per section with coverage)
-    /// </summary>
-    // Total number of polygon passes across all sections
-    public int VisualPolygonCount => _sectionPolygons.Values.Sum(passes => passes.Count);
 
     /// <summary>
     /// Get coverage bitmap bounds in world coordinates.
@@ -759,9 +612,6 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     public void ClearAll()
     {
-        // Clear visual polygons
-        _sectionPolygons.Clear();
-
         // Clear bit array coverage (zero out if allocated)
         if (_coverageBits != null)
             Array.Clear(_coverageBits, 0, _coverageBits.Length);
@@ -778,7 +628,6 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
         // Clear tracking state
         _activeSections.Clear();
         _lastEdgesPerSection.Clear();
-        _lastVisualEdgesPerSection.Clear();
 
         // Reset totals
         _totalWorkedArea = 0;
@@ -847,67 +696,122 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
 
     public void SaveToFile(string fieldDirectory)
     {
-        var filename = Path.Combine(fieldDirectory, "Sections.txt");
+        if (_coverageBits == null || !_fieldBoundsSet)
+            return;
 
-        // Save visual polygons in new format
-        // Format: section count, then for each section: index, color, point count, points
-        using var writer = new StreamWriter(filename, false);
+        var filename = Path.Combine(fieldDirectory, "Coverage.bin");
 
-        // Write header with format version
-        writer.WriteLine("V3"); // Version 3 = multi-pass polygon format
+        using var stream = new FileStream(filename, FileMode.Create);
+        using var writer = new BinaryWriter(stream);
 
-        foreach (var (sectionIndex, passes) in _sectionPolygons)
+        // Write header
+        writer.Write("COV1".ToCharArray()); // Magic + version
+        writer.Write(_fieldMinE);
+        writer.Write(_fieldMaxE);
+        writer.Write(_fieldMinN);
+        writer.Write(_fieldMaxN);
+        writer.Write(BITMAP_CELL_SIZE);
+        writer.Write(_bitsWidth);
+        writer.Write(_bitsHeight);
+        writer.Write(_totalWorkedArea);
+
+        // Write bit array (compressed with simple RLE)
+        // For sparse coverage, this can be much smaller than raw bits
+        int i = 0;
+        while (i < _coverageBits.Length)
         {
-            foreach (var polygon in passes)
+            byte value = _coverageBits[i];
+            int runLength = 1;
+            while (i + runLength < _coverageBits.Length &&
+                   _coverageBits[i + runLength] == value &&
+                   runLength < 255)
             {
-                if (polygon.LeftEdge.Count < 2) continue;
-
-                // Write section header: index, R, G, B, point count
-                // Note: same section index can appear multiple times (multiple passes)
-                writer.WriteLine($"{sectionIndex},{polygon.Color.R},{polygon.Color.G},{polygon.Color.B},{polygon.LeftEdge.Count}");
-
-                // Write left/right edge pairs
-                for (int i = 0; i < polygon.LeftEdge.Count; i++)
-                {
-                    var left = polygon.LeftEdge[i];
-                    var right = polygon.RightEdge[i];
-                    writer.WriteLine($"{left.E:F3},{left.N:F3},{right.E:F3},{right.N:F3}");
-                }
+                runLength++;
             }
+            writer.Write((byte)runLength);
+            writer.Write(value);
+            i += runLength;
         }
 
-        // Write total worked area at end for quick loading
-        writer.WriteLine($"AREA,{_totalWorkedArea:F2}");
+        Console.WriteLine($"[Coverage] Saved {_coverageBits.Length} bytes to {filename}");
     }
 
     public void LoadFromFile(string fieldDirectory)
     {
-        var path = Path.Combine(fieldDirectory, "Sections.txt");
+        var path = Path.Combine(fieldDirectory, "Coverage.bin");
         if (!File.Exists(path)) return;
 
-        ClearAll();
-
-        using var reader = new StreamReader(path);
-
-        // Check format version
-        var firstLine = reader.ReadLine();
-        if (string.IsNullOrWhiteSpace(firstLine)) return;
-
-        if (firstLine == "V2" || firstLine == "V3")
+        try
         {
-            // V2/V3 format - load visual polygons directly
-            // V3 supports multiple passes per section (same section index multiple times)
-            LoadNewFormat(reader);
-        }
-        else
-        {
-            // Legacy format - convert patches to visual polygons + bitmap
-            reader.BaseStream.Seek(0, SeekOrigin.Begin);
-            reader.DiscardBufferedData();
-            LoadLegacyFormat(reader);
-        }
+            using var stream = new FileStream(path, FileMode.Open);
+            using var reader = new BinaryReader(stream);
 
-        _totalWorkedAreaUser = _totalWorkedArea;
+            // Read and verify header
+            var magic = new string(reader.ReadChars(4));
+            if (magic != "COV1")
+            {
+                Console.WriteLine($"[Coverage] Unknown file format: {magic}");
+                return;
+            }
+
+            double minE = reader.ReadDouble();
+            double maxE = reader.ReadDouble();
+            double minN = reader.ReadDouble();
+            double maxN = reader.ReadDouble();
+            double cellSize = reader.ReadDouble();
+            int width = reader.ReadInt32();
+            int height = reader.ReadInt32();
+            double area = reader.ReadDouble();
+
+            // Verify cell size matches
+            if (Math.Abs(cellSize - BITMAP_CELL_SIZE) > 0.001)
+            {
+                Console.WriteLine($"[Coverage] Cell size mismatch: file={cellSize}, expected={BITMAP_CELL_SIZE}");
+                return;
+            }
+
+            // Set field bounds (allocates bit array)
+            SetFieldBounds(minE, maxE, minN, maxN);
+
+            // Read RLE-compressed bit array
+            int i = 0;
+            while (i < _coverageBits!.Length && stream.Position < stream.Length)
+            {
+                byte runLength = reader.ReadByte();
+                byte value = reader.ReadByte();
+                for (int j = 0; j < runLength && i < _coverageBits.Length; j++, i++)
+                {
+                    _coverageBits[i] = value;
+                }
+            }
+
+            _totalWorkedArea = area;
+            _totalWorkedAreaUser = area;
+
+            // Count cells for statistics (scan the bit array)
+            long cellCount = 0;
+            for (int b = 0; b < _coverageBits.Length; b++)
+            {
+                cellCount += BitCount(_coverageBits[b]);
+            }
+            _cellCountPerZone[0] = cellCount;
+
+            // Update bounds from loaded data
+            _boundsValid = cellCount > 0;
+            if (_boundsValid)
+            {
+                _minCellE = _bitsOriginE;
+                _maxCellE = _bitsOriginE + _bitsWidth - 1;
+                _minCellN = _bitsOriginN;
+                _maxCellN = _bitsOriginN + _bitsHeight - 1;
+            }
+
+            Console.WriteLine($"[Coverage] Loaded {cellCount:N0} cells, {area:F2} m² from {path}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Coverage] Failed to load: {ex.Message}");
+        }
 
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
@@ -918,165 +822,19 @@ public class CoverageMapService(IWorkedAreaService workedAreaService) : ICoverag
     }
 
     /// <summary>
-    /// Load coverage from new V2 format (visual polygons).
+    /// Count set bits in a byte (population count).
     /// </summary>
-    private void LoadNewFormat(StreamReader reader)
+    private static int BitCount(byte b)
     {
-        while (!reader.EndOfStream)
+        int count = 0;
+        while (b != 0)
         {
-            var line = reader.ReadLine();
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            // Check for area line at end
-            if (line.StartsWith("AREA,"))
-            {
-                if (double.TryParse(line.Substring(5), NumberStyles.Float, CultureInfo.InvariantCulture, out double area))
-                    _totalWorkedArea = area;
-                continue;
-            }
-
-            // Parse section header: index, R, G, B, point count
-            var parts = line.Split(',');
-            if (parts.Length < 5) continue;
-
-            if (!int.TryParse(parts[0], out int sectionIndex) ||
-                !byte.TryParse(parts[1], out byte r) ||
-                !byte.TryParse(parts[2], out byte g) ||
-                !byte.TryParse(parts[3], out byte b) ||
-                !int.TryParse(parts[4], out int pointCount))
-                continue;
-
-            var polygon = new SectionVisualPolygon
-            {
-                Color = new CoverageColor(r, g, b),
-                IsDirty = true
-            };
-
-            (double E, double N) prevLeft = (0, 0);
-            (double E, double N) prevRight = (0, 0);
-
-            // Read edge pairs
-            for (int i = 0; i < pointCount && !reader.EndOfStream; i++)
-            {
-                var edgeLine = reader.ReadLine();
-                if (string.IsNullOrWhiteSpace(edgeLine)) continue;
-
-                var edgeParts = edgeLine.Split(',');
-                if (edgeParts.Length >= 4 &&
-                    double.TryParse(edgeParts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double leftE) &&
-                    double.TryParse(edgeParts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double leftN) &&
-                    double.TryParse(edgeParts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double rightE) &&
-                    double.TryParse(edgeParts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out double rightN))
-                {
-                    polygon.LeftEdge.Add((leftE, leftN));
-                    polygon.RightEdge.Add((rightE, rightN));
-
-                    // Rasterize quad to bitmap (skip first point, need two for quad)
-                    if (i > 0)
-                    {
-                        RasterizeQuadToBitmapDirect(
-                            prevLeft, prevRight,
-                            (rightE, rightN), (leftE, leftN));
-                    }
-
-                    prevLeft = (leftE, leftN);
-                    prevRight = (rightE, rightN);
-                }
-            }
-
-            if (polygon.LeftEdge.Count >= 2)
-            {
-                // Add polygon as a new pass for this section
-                if (!_sectionPolygons.TryGetValue(sectionIndex, out var passes))
-                {
-                    passes = new List<SectionVisualPolygon>();
-                    _sectionPolygons[sectionIndex] = passes;
-                }
-                passes.Add(polygon);
-            }
+            count += b & 1;
+            b >>= 1;
         }
+        return count;
     }
 
-    /// <summary>
-    /// Load coverage from legacy patch format and convert to new structures.
-    /// </summary>
-    private void LoadLegacyFormat(StreamReader reader)
-    {
-        while (!reader.EndOfStream)
-        {
-            var line = reader.ReadLine();
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            if (!int.TryParse(line.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int vertCount))
-                continue;
-
-            var vertices = new List<Vec3>(vertCount);
-
-            // Read vertices
-            for (int i = 0; i < vertCount && !reader.EndOfStream; i++)
-            {
-                var vertLine = reader.ReadLine();
-                if (string.IsNullOrWhiteSpace(vertLine)) continue;
-
-                var parts = vertLine.Split(',');
-                if (parts.Length >= 3 &&
-                    double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double e) &&
-                    double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double n) &&
-                    double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double h))
-                {
-                    vertices.Add(new Vec3(e, n, h));
-                }
-            }
-
-            if (vertices.Count < 4) continue;
-
-            // First vertex is color
-            var color = CoverageColor.FromVec3(vertices[0]);
-
-            // Use section 0 for legacy patches (they don't have section info)
-            // Each legacy patch becomes a separate polygon (pass) for section 0
-            if (!_sectionPolygons.TryGetValue(0, out var passes))
-            {
-                passes = new List<SectionVisualPolygon>();
-                _sectionPolygons[0] = passes;
-            }
-            var polygon = new SectionVisualPolygon { Color = color, IsDirty = true };
-            passes.Add(polygon);
-
-            // Extract left/right edges and rasterize to bitmap
-            // Vertices: [color, left1, right1, left2, right2, ...]
-            for (int i = 1; i < vertices.Count - 1; i += 2)
-            {
-                var left = vertices[i];
-                var right = vertices[i + 1];
-                polygon.LeftEdge.Add((left.Easting, left.Northing));
-                polygon.RightEdge.Add((right.Easting, right.Northing));
-
-                // Rasterize quad to bitmap (need previous pair)
-                if (i >= 3)
-                {
-                    var prevLeft = vertices[i - 2];
-                    var prevRight = vertices[i - 1];
-                    RasterizeQuadToBitmapDirect(
-                        (prevLeft.Easting, prevLeft.Northing),
-                        (prevRight.Easting, prevRight.Northing),
-                        (right.Easting, right.Northing),
-                        (left.Easting, left.Northing));
-                }
-            }
-
-            // Calculate area for loaded patch
-            if (vertices.Count >= 5)
-            {
-                var points = vertices.ToArray();
-                for (int i = 4; i < points.Length; i += 2)
-                {
-                    double area = workedAreaService.CalculateTriangleStripArea(points, i - 3);
-                    _totalWorkedArea += area;
-                }
-            }
-        }
-    }
 
     /// <summary>
     /// Get color for a zone/section from configuration.
