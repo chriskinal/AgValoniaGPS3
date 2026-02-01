@@ -105,6 +105,10 @@ public interface ISharedMapControl
     // Mark coverage as needing full rebuild (call after loading from file)
     void MarkCoverageFullRebuildNeeded();
 
+    // Initialize coverage bitmap with field bounds (call on field load)
+    // If background image is set, composites it; otherwise initializes to black
+    void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN);
+
     // Direct pixel access for unified bitmap (service writes directly to bitmap)
     ushort GetCoveragePixel(int localX, int localY);
     void SetCoveragePixel(int localX, int localY, ushort rgb565);
@@ -215,6 +219,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Boundary data
     private Boundary? _boundary;
+    private int _boundaryPointsWhenSet; // Track point count when boundary was set (for debugging)
     private List<(double Easting, double Northing)>? _recordingPoints;
     private bool _showBoundaryOffsetIndicator = false;
     private double _boundaryOffsetMeters = 0.0;
@@ -279,6 +284,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
     private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
 
+    // Thumbnail bitmap for zoomed-out views (avoids expensive GPU downscaling)
+    private WriteableBitmap? _coverageThumbnail;
+    private const double THUMBNAIL_CELL_SIZE = 1.0; // 10x lower resolution than full
+    private const double THUMBNAIL_ZOOM_THRESHOLD = 0.3; // Use thumbnail when zoom < this
+    private int _thumbnailWidth, _thumbnailHeight;
+    private bool _thumbnailNeedsRebuild = true;
+
+    // Background compositing - background image is composited into coverage bitmap
+    private bool _backgroundComposited = false;
+    // Flag to preserve bitmap when explicitly initialized (don't dispose when no coverage)
+    private bool _bitmapExplicitlyInitialized = false;
+
     // EXPERIMENTAL: Use Rgb565 (16-bit) at full 0.1m resolution
     // If viable, WriteableBitmap can serve as both detection AND display
     private const bool USE_RGB565_FULL_RESOLUTION = true;
@@ -337,6 +354,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private static readonly System.Diagnostics.Stopwatch _profileSw = new();
     private static readonly System.Diagnostics.Stopwatch _renderSw = new();
     private static readonly RenderOptions _highQualityRenderOptions = new() { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality };
+    private static readonly RenderOptions _lowQualityRenderOptions = new() { BitmapInterpolationMode = BitmapInterpolationMode.LowQuality };
     private static double _lastCoverageRenderMs;
     private static double _lastSetCoveragePatchesMs;
     private static double _lastFullRenderMs;
@@ -444,6 +462,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var bounds = Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
 
+        // DEBUG: Log which control is rendering (reduced frequency)
+        // Console.WriteLine($"[Render] Control={GetHashCode()}, bounds={bounds.Width:F0}x{bounds.Height:F0}, explicit={_bitmapExplicitlyInitialized}");
+
         // Dark background
         context.DrawRectangle(new SolidColorBrush(Color.FromRgb(26, 26, 26)), null, new Rect(bounds.Size));
 
@@ -456,7 +477,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
         {
             // Draw background image first (under everything else)
-            if (_backgroundImage != null)
+            // Skip if background is composited into coverage bitmap
+            if (_backgroundImage != null && !_backgroundComposited)
             {
                 DrawBackgroundImage(context);
             }
@@ -467,13 +489,30 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 DrawGrid(context, viewWidth, viewHeight);
             }
 
-            // Draw boundary
+            // Draw coverage FIRST (bottom layer) - Rgb565 has no alpha, so it's opaque
+            // Everything else draws on top of coverage
+            var covSw = System.Diagnostics.Stopwatch.StartNew();
+            if (_coveragePatches.Count > 0 || _coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
+            {
+                DrawCoverage(context);
+            }
+            covSw.Stop();
+
+            // Draw boundary (on top of coverage)
+            var boundSw = System.Diagnostics.Stopwatch.StartNew();
             if (_boundary != null)
             {
                 DrawBoundary(context);
             }
+            boundSw.Stop();
 
-            // Draw headland line (before recording points and vehicle)
+            // Log timing every 60 frames
+            if (_renderCounter % 60 == 0)
+            {
+                Console.WriteLine($"[Timing] Render: zoom={_zoom:F3}, coverage={covSw.ElapsedMilliseconds}ms, boundary={boundSw.ElapsedMilliseconds}ms");
+            }
+
+            // Draw headland line (on top of coverage and boundary)
             if (_isHeadlandVisible && _headlandLine != null && _headlandLine.Count > 2)
             {
                 DrawHeadlandLine(context);
@@ -483,13 +522,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_headlandPreview != null && _headlandPreview.Count > 2)
             {
                 DrawHeadlandPreview(context);
-            }
-
-            // Draw coverage (worked area) - drawn early so it's under everything else
-            // Call if we have patches OR if bitmap-based rendering is enabled with a provider
-            if (_coveragePatches.Count > 0 || _coverageBoundsProvider != null)
-            {
-                DrawCoverage(context);
             }
 
             // Draw recording points
@@ -657,11 +689,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawBoundary(DrawingContext context)
     {
-        if (_boundary == null) return;
+        if (_boundary == null)
+        {
+            if (_renderCounter % 60 == 0)
+                Console.WriteLine("[MapControl] DrawBoundary: _boundary is null!");
+            return;
+        }
 
         // Draw outer boundary
         if (_boundary.OuterBoundary != null && _boundary.OuterBoundary.IsValid && _boundary.OuterBoundary.Points.Count > 1)
         {
+            // Log occasionally to confirm we're drawing
+            if (_renderCounter % 60 == 0)
+            {
+                Console.WriteLine($"[MapControl] DrawBoundary: Drawing outer boundary with {_boundary.OuterBoundary.Points.Count} points");
+            }
             var geometry = new StreamGeometry();
             using (var ctx = geometry.Open())
             {
@@ -675,6 +717,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 ctx.EndFigure(true);
             }
             context.DrawGeometry(null, _boundaryPenOuter, geometry);
+        }
+        else
+        {
+            // Log why we're not drawing
+            if (_renderCounter % 60 == 0)
+                Console.WriteLine($"[MapControl] DrawBoundary: NOT drawing outer! OuterBoundary={_boundary.OuterBoundary != null}, IsValid={_boundary.OuterBoundary?.IsValid}, Points={_boundary.OuterBoundary?.Points?.Count ?? 0}");
         }
 
         // Draw inner boundaries (holes)
@@ -736,8 +784,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         int drawnCount;
 
-        // Use bitmap-based rendering if provider is available
-        if (_coverageBoundsProvider != null)
+        // Use bitmap-based rendering if provider is available or bitmap was explicitly initialized
+        if (_coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
         {
             drawnCount = DrawCoverageBitmap(context);
         }
@@ -757,15 +805,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
+        Console.WriteLine($"[UpdateCovBitmapIfNeeded] boundsProvider={_coverageBoundsProvider != null}, cellsProvider={_coverageAllCellsProvider != null}, needsRebuild={_bitmapNeedsFullRebuild}");
+
         if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
+        {
+            Console.WriteLine("[UpdateCovBitmapIfNeeded] No providers, returning early");
             return;
+        }
 
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
+        Console.WriteLine($"[UpdateCovBitmapIfNeeded] bounds={bounds != null}, explicit={_bitmapExplicitlyInitialized}");
         if (bounds == null)
         {
-            // No coverage - clear the bitmap
-            if (_coverageWriteableBitmap != null)
+            // No coverage data - but if bitmap was explicitly initialized (with background),
+            // preserve it so the background stays visible
+            Console.WriteLine($"[UpdateCovBitmapIfNeeded] bounds=null, preserving bitmap (explicit={_bitmapExplicitlyInitialized})");
+            if (_coverageWriteableBitmap != null && !_bitmapExplicitlyInitialized)
             {
                 Console.WriteLine("[Timing] CovBitmap: Clearing bitmap (no coverage)");
                 _coverageWriteableBitmap.Dispose();
@@ -831,6 +887,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         if (boundsChanged)
         {
+            // Debug: log why bounds changed
+            Debug.WriteLine($"[MapControl] Coverage bitmap bounds changed: " +
+                $"bitmap null={_coverageWriteableBitmap == null}, " +
+                $"minE diff={Math.Abs(_bitmapMinE - minE):F3}, " +
+                $"minN diff={Math.Abs(_bitmapMinN - minN):F3}, " +
+                $"size {_bitmapWidth}x{_bitmapHeight} -> {requiredWidth}x{requiredHeight}");
+
             // Bounds changed - need full rebuild
             _bitmapNeedsFullRebuild = true;
             _bitmapMinE = minE;
@@ -863,6 +926,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
                 Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} Bgra8888 @ {cellSize}m/pixel");
             }
+
+            // Background will be composited in DrawCoverageBitmap
+            _backgroundComposited = false;
         }
 
         // Update bitmap with coverage cells
@@ -874,15 +940,340 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
             _bitmapNeedsIncrementalUpdate = false;
+            _thumbnailNeedsRebuild = true; // Rebuild thumbnail after full rebuild
         }
         else if (_bitmapNeedsIncrementalUpdate)
         {
             // Incremental update - only add new cells (fast, O(new cells) not O(total coverage))
             int cellCount = UpdateCoverageBitmapIncremental();
             if (cellCount > 0)
+            {
                 Console.WriteLine($"[Timing] CovBitmap: Incremental {cellCount} cells");
+                _thumbnailNeedsRebuild = true; // Rebuild thumbnail after incremental update
+            }
             _bitmapNeedsIncrementalUpdate = false;
         }
+
+        // Update thumbnail if needed (for fast zoomed-out rendering)
+        if (_thumbnailNeedsRebuild && _coverageWriteableBitmap != null)
+        {
+            UpdateCoverageThumbnail();
+            _thumbnailNeedsRebuild = false;
+        }
+    }
+
+    /// <summary>
+    /// Generate a low-resolution thumbnail from the full bitmap for fast zoomed-out rendering.
+    /// </summary>
+    private unsafe void UpdateCoverageThumbnail()
+    {
+        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+            return;
+
+        // Calculate thumbnail dimensions (10x smaller)
+        int scale = (int)(THUMBNAIL_CELL_SIZE / MIN_BITMAP_CELL_SIZE);
+        _thumbnailWidth = (_bitmapWidth + scale - 1) / scale;
+        _thumbnailHeight = (_bitmapHeight + scale - 1) / scale;
+
+        // Create or recreate thumbnail bitmap
+        if (_coverageThumbnail == null ||
+            _coverageThumbnail.PixelSize.Width != _thumbnailWidth ||
+            _coverageThumbnail.PixelSize.Height != _thumbnailHeight)
+        {
+            _coverageThumbnail?.Dispose();
+            _coverageThumbnail = new WriteableBitmap(
+                new PixelSize(_thumbnailWidth, _thumbnailHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Rgb565);
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        // Downsample from full bitmap to thumbnail
+        using var srcBuffer = _coverageWriteableBitmap.Lock();
+        using var dstBuffer = _coverageThumbnail.Lock();
+
+        ushort* src = (ushort*)srcBuffer.Address;
+        ushort* dst = (ushort*)dstBuffer.Address;
+        int srcStride = srcBuffer.RowBytes / 2; // ushort stride
+        int dstStride = dstBuffer.RowBytes / 2;
+
+        // Simple point sampling (take center pixel of each block)
+        for (int ty = 0; ty < _thumbnailHeight; ty++)
+        {
+            int sy = ty * scale + scale / 2;
+            if (sy >= _bitmapHeight) sy = _bitmapHeight - 1;
+
+            for (int tx = 0; tx < _thumbnailWidth; tx++)
+            {
+                int sx = tx * scale + scale / 2;
+                if (sx >= _bitmapWidth) sx = _bitmapWidth - 1;
+
+                dst[ty * dstStride + tx] = src[sy * srcStride + sx];
+            }
+        }
+
+        sw.Stop();
+        Console.WriteLine($"[Timing] Thumbnail: Created {_thumbnailWidth}x{_thumbnailHeight} in {sw.ElapsedMilliseconds}ms");
+    }
+
+    /// <summary>
+    /// Composite the background image into the coverage bitmap.
+    /// This allows us to draw a single bitmap instead of background + coverage separately.
+    /// </summary>
+    public unsafe void CompositeBackgroundIntoBitmap()
+    {
+        if (_backgroundImage == null || _coverageWriteableBitmap == null ||
+            _bitmapWidth == 0 || _bitmapHeight == 0)
+        {
+            _backgroundComposited = false;
+            return;
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        // Calculate the overlap between background bounds and coverage bounds
+        double overlapMinE = Math.Max(_bgMinX, _bitmapMinE);
+        double overlapMaxE = Math.Min(_bgMaxX, _bitmapMaxE);
+        double overlapMinN = Math.Max(_bgMinY, _bitmapMinN);
+        double overlapMaxN = Math.Min(_bgMaxY, _bitmapMaxN);
+
+        if (overlapMinE >= overlapMaxE || overlapMinN >= overlapMaxN)
+        {
+            Console.WriteLine("[Background] No overlap between background and coverage bounds");
+            _backgroundComposited = false;
+            return;
+        }
+
+        // Background image dimensions and world-to-pixel scale
+        int bgWidth = _backgroundImage.PixelSize.Width;
+        int bgHeight = _backgroundImage.PixelSize.Height;
+        double bgWorldWidth = _bgMaxX - _bgMinX;
+        double bgWorldHeight = _bgMaxY - _bgMinY;
+        double bgPixelsPerMeterX = bgWidth / bgWorldWidth;
+        double bgPixelsPerMeterY = bgHeight / bgWorldHeight;
+
+        // Copy background to a WriteableBitmap so we can read pixels
+        using var bgWriteable = new WriteableBitmap(
+            new PixelSize(bgWidth, bgHeight),
+            new Vector(96, 96),
+            Avalonia.Platform.PixelFormat.Bgra8888,
+            Avalonia.Platform.AlphaFormat.Premul);
+
+        // Render background image to the writeable bitmap
+        using (var bgBuffer = bgWriteable.Lock())
+        {
+            // Use RenderTargetBitmap to render the image
+            using var renderTarget = new RenderTargetBitmap(new PixelSize(bgWidth, bgHeight));
+            using (var ctx = renderTarget.CreateDrawingContext())
+            {
+                ctx.DrawImage(_backgroundImage, new Rect(0, 0, bgWidth, bgHeight));
+            }
+
+            // Now copy from RenderTargetBitmap to our buffer via SaveAsXxx workaround
+            // Actually, let's use a simpler approach - render directly and copy
+        }
+
+        // Alternative: Use SkiaSharp to decode the image directly
+        // For now, let's try rendering to a temp surface
+        byte[]? bgPixelData = null;
+        try
+        {
+            // Create temp WriteableBitmap and render the background to it
+            using var tempBitmap = new WriteableBitmap(
+                new PixelSize(bgWidth, bgHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Bgra8888,
+                Avalonia.Platform.AlphaFormat.Premul);
+
+            // We can't easily render an Avalonia Bitmap to a WriteableBitmap
+            // Instead, reload from file using SkiaSharp
+            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+            {
+                using var skBitmap = SKBitmap.Decode(_backgroundImagePath);
+                if (skBitmap != null)
+                {
+                    bgPixelData = new byte[skBitmap.Width * skBitmap.Height * 4];
+                    var pixels = skBitmap.Pixels;
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        bgPixelData[i * 4 + 0] = pixels[i].Blue;
+                        bgPixelData[i * 4 + 1] = pixels[i].Green;
+                        bgPixelData[i * 4 + 2] = pixels[i].Red;
+                        bgPixelData[i * 4 + 3] = pixels[i].Alpha;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Background] Failed to decode background: {ex.Message}");
+            _backgroundComposited = false;
+            return;
+        }
+
+        if (bgPixelData == null)
+        {
+            Console.WriteLine("[Background] Failed to get background pixel data");
+            _backgroundComposited = false;
+            return;
+        }
+
+        // Lock coverage bitmap for writing
+        using var covBuffer = _coverageWriteableBitmap.Lock();
+        ushort* covPixels = (ushort*)covBuffer.Address;
+        int covStride = covBuffer.RowBytes / 2;
+
+        // Sample background into coverage bitmap
+        // Coverage bitmap: pixel (x,y) corresponds to world (_bitmapMinE + x*cellSize, _bitmapMinN + y*cellSize)
+        int pixelsWritten = 0;
+        for (int cy = 0; cy < _bitmapHeight; cy++)
+        {
+            double worldN = _bitmapMinN + cy * _actualBitmapCellSize;
+            if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
+
+            // Background Y is flipped (0 = top = maxY)
+            int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
+            if (bgY < 0 || bgY >= bgHeight) continue;
+
+            for (int cx = 0; cx < _bitmapWidth; cx++)
+            {
+                double worldE = _bitmapMinE + cx * _actualBitmapCellSize;
+                if (worldE < overlapMinE || worldE >= overlapMaxE) continue;
+
+                int bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
+                if (bgX < 0 || bgX >= bgWidth) continue;
+
+                // Read BGRA from background
+                int bgIdx = (bgY * bgWidth + bgX) * 4;
+                byte b = bgPixelData[bgIdx];
+                byte g = bgPixelData[bgIdx + 1];
+                byte r = bgPixelData[bgIdx + 2];
+
+                // Convert to Rgb565
+                ushort rgb565 = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+
+                // Write to coverage bitmap
+                covPixels[cy * covStride + cx] = rgb565;
+                pixelsWritten++;
+            }
+        }
+
+        sw.Stop();
+        Console.WriteLine($"[Background] Composited {pixelsWritten} pixels into coverage bitmap in {sw.ElapsedMilliseconds}ms");
+        _backgroundComposited = true;
+        _thumbnailNeedsRebuild = true; // Thumbnail needs to include background too
+    }
+
+    /// <summary>
+    /// Clear background from coverage bitmap (fill with black).
+    /// Called when coverage is erased.
+    /// </summary>
+    public void ClearBackgroundFromBitmap()
+    {
+        _backgroundComposited = false;
+        // The bitmap will be cleared when coverage is cleared
+    }
+
+    /// <summary>
+    /// Composite background into an already-locked buffer.
+    /// Used during full rebuild to avoid double-locking.
+    /// </summary>
+    private unsafe void CompositeBackgroundIntoBuffer(ushort* covPixels, int covStride)
+    {
+        Console.WriteLine($"[CompositeBackground] Starting: path={_backgroundImagePath}");
+
+        // Only check path - we load from file via SkiaSharp, don't need _backgroundImage
+        if (string.IsNullOrEmpty(_backgroundImagePath) || !File.Exists(_backgroundImagePath))
+        {
+            Console.WriteLine("[CompositeBackground] FAILED: No background image path");
+            return;
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        // Calculate the overlap between background bounds and coverage bounds
+        double overlapMinE = Math.Max(_bgMinX, _bitmapMinE);
+        double overlapMaxE = Math.Min(_bgMaxX, _bitmapMaxE);
+        double overlapMinN = Math.Max(_bgMinY, _bitmapMinN);
+        double overlapMaxN = Math.Min(_bgMaxY, _bitmapMaxN);
+
+        Console.WriteLine($"[CompositeBackground] BG bounds: E[{_bgMinX:F1},{_bgMaxX:F1}] N[{_bgMinY:F1},{_bgMaxY:F1}]");
+        Console.WriteLine($"[CompositeBackground] Bitmap bounds: E[{_bitmapMinE:F1},{_bitmapMaxE:F1}] N[{_bitmapMinN:F1},{_bitmapMaxN:F1}]");
+        Console.WriteLine($"[CompositeBackground] Overlap: E[{overlapMinE:F1},{overlapMaxE:F1}] N[{overlapMinN:F1},{overlapMaxN:F1}]");
+
+        if (overlapMinE >= overlapMaxE || overlapMinN >= overlapMaxN)
+        {
+            Console.WriteLine("[CompositeBackground] FAILED: No overlap between bounds");
+            return;
+        }
+
+        // Load background using SkiaSharp
+        byte[]? bgPixelData = null;
+        int bgWidth = 0, bgHeight = 0;
+
+        try
+        {
+            using var skBitmap = SKBitmap.Decode(_backgroundImagePath);
+            if (skBitmap != null)
+            {
+                bgWidth = skBitmap.Width;
+                bgHeight = skBitmap.Height;
+                bgPixelData = new byte[bgWidth * bgHeight * 4];
+                var pixels = skBitmap.Pixels;
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    bgPixelData[i * 4 + 0] = pixels[i].Blue;
+                    bgPixelData[i * 4 + 1] = pixels[i].Green;
+                    bgPixelData[i * 4 + 2] = pixels[i].Red;
+                    bgPixelData[i * 4 + 3] = pixels[i].Alpha;
+                }
+            }
+        }
+        catch
+        {
+            return;
+        }
+
+        if (bgPixelData == null || bgWidth == 0 || bgHeight == 0)
+            return;
+
+        double bgWorldWidth = _bgMaxX - _bgMinX;
+        double bgWorldHeight = _bgMaxY - _bgMinY;
+        double bgPixelsPerMeterX = bgWidth / bgWorldWidth;
+        double bgPixelsPerMeterY = bgHeight / bgWorldHeight;
+
+        int pixelsWritten = 0;
+        for (int cy = 0; cy < _bitmapHeight; cy++)
+        {
+            double worldN = _bitmapMinN + cy * _actualBitmapCellSize;
+            if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
+
+            int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
+            if (bgY < 0 || bgY >= bgHeight) continue;
+
+            for (int cx = 0; cx < _bitmapWidth; cx++)
+            {
+                double worldE = _bitmapMinE + cx * _actualBitmapCellSize;
+                if (worldE < overlapMinE || worldE >= overlapMaxE) continue;
+
+                int bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
+                if (bgX < 0 || bgX >= bgWidth) continue;
+
+                int bgIdx = (bgY * bgWidth + bgX) * 4;
+                byte b = bgPixelData[bgIdx];
+                byte g = bgPixelData[bgIdx + 1];
+                byte r = bgPixelData[bgIdx + 2];
+
+                ushort rgb565 = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+                covPixels[cy * covStride + cx] = rgb565;
+                pixelsWritten++;
+            }
+        }
+
+        sw.Stop();
+        Console.WriteLine($"[Background] Composited {pixelsWritten} pixels in {sw.ElapsedMilliseconds}ms");
+        _backgroundComposited = true;
     }
 
     /// <summary>
@@ -892,9 +1283,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private int DrawCoverageBitmap(DrawingContext context)
     {
+        // Debug: Log what we have (only once per second to reduce spam)
+        // Console.WriteLine($"[DrawCovBitmap] bitmap={_coverageWriteableBitmap != null}, w={_bitmapWidth}, h={_bitmapHeight}, explicit={_bitmapExplicitlyInitialized}");
+
         // If bitmap not ready yet, check if we need to create one
         if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
         {
+            // Console.WriteLine("[DrawCovBitmap] Bitmap not ready, returning 0");
             // Only schedule bitmap creation if there's actual coverage to show
             // This prevents allocating closures every frame when there's no coverage
             if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
@@ -913,17 +1308,60 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             return 0; // Bitmap not ready yet
         }
 
-        // Draw the bitmap with bilinear interpolation for smooth edges
+        // Draw the bitmap
         double worldWidth = _bitmapMaxE - _bitmapMinE;
         double worldHeight = _bitmapMaxN - _bitmapMinN;
-
-        var srcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
         var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
-        // Use HighQuality (bicubic) interpolation to smooth jagged edges
-        using (context.PushRenderOptions(_highQualityRenderOptions))
+        // Use thumbnail when zoomed out to avoid expensive GPU downscaling
+        if (_zoom < THUMBNAIL_ZOOM_THRESHOLD && _coverageThumbnail != null)
         {
-            context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
+            // Using thumbnail for zoomed-out view
+            var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
+            using (context.PushRenderOptions(_lowQualityRenderOptions))
+            {
+                context.DrawImage(_coverageThumbnail, srcRect, destRect);
+            }
+            return _thumbnailWidth * _thumbnailHeight;
+        }
+        // Full bitmap path
+
+        // Use full-resolution bitmap when zoomed in
+        var fullSrcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
+
+        // Composite background into bitmap on first draw
+        if (!_backgroundComposited)
+        {
+            using (var fb = _coverageWriteableBitmap.Lock())
+            {
+                unsafe
+                {
+                    ushort* pixels = (ushort*)fb.Address;
+                    int stride = fb.RowBytes / 2;
+                    int count = _bitmapWidth * _bitmapHeight;
+
+                    // Check if background image file exists
+                    if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+                    {
+                        Console.WriteLine($"[DrawCovBitmap] Loading background from {_backgroundImagePath}");
+                        CompositeBackgroundIntoBuffer(pixels, stride);
+                    }
+                    else
+                    {
+                        // No background - fill with black
+                        for (int i = 0; i < count; i++)
+                            pixels[i] = 0;
+                    }
+                }
+            }
+            _backgroundComposited = true;
+        }
+
+        // Use LowQuality when moderately zoomed out, HighQuality when zoomed in
+        var renderOptions = _zoom < 0.5 ? _lowQualityRenderOptions : _highQualityRenderOptions;
+        using (context.PushRenderOptions(renderOptions))
+        {
+            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, destRect);
         }
 
         return _bitmapWidth * _bitmapHeight;
@@ -935,6 +1373,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private unsafe int UpdateCoverageBitmapFull()
     {
+        Console.WriteLine($"[UpdateCovBitmapFull] Called: control={GetHashCode()}, bitmap={_coverageWriteableBitmap != null}, provider={_coverageAllCellsProvider != null}, bgImage={_backgroundImage != null}, bgPath={_backgroundImagePath}");
+
         if (_coverageWriteableBitmap == null || _coverageAllCellsProvider == null)
             return 0;
 
@@ -943,9 +1383,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int bufferSize = stride * _bitmapHeight;
         byte* ptr = (byte*)framebuffer.Address;
 
-        // Clear framebuffer to transparent (all zeros)
-        // Use native memset via Span for efficiency
+        // Clear framebuffer to black first
         new Span<byte>(ptr, bufferSize).Clear();
+
+        // If background image exists, composite it into the bitmap
+        if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+        {
+            Console.WriteLine($"[UpdateCovBitmapFull] Compositing background from {_backgroundImagePath}");
+            CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+        }
+        else
+        {
+            Console.WriteLine($"[UpdateCovBitmapFull] No background to composite, path={_backgroundImagePath}");
+        }
 
         int cellCount = 0;
         // Query only cells within the bitmap bounds - O(viewport) not O(total coverage)
@@ -1097,7 +1547,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     }
 
     /// <summary>
-    /// Clear all coverage pixels to 0.
+    /// Clear all coverage pixels - resets to background image or black.
     /// </summary>
     public void ClearCoveragePixels()
     {
@@ -1105,11 +1555,26 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             return;
 
         using var framebuffer = _coverageWriteableBitmap.Lock();
-        int bufferSize = framebuffer.RowBytes * _bitmapHeight;
+        int stride = framebuffer.RowBytes;
+        int bufferSize = stride * _bitmapHeight;
         unsafe
         {
-            new Span<byte>((byte*)framebuffer.Address, bufferSize).Clear();
+            byte* ptr = (byte*)framebuffer.Address;
+
+            // Clear to black first
+            new Span<byte>(ptr, bufferSize).Clear();
+
+            // Re-composite background if available (check path only, load from file)
+            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+            {
+                Console.WriteLine($"[ClearCoveragePixels] Re-compositing background from {_backgroundImagePath}");
+                CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+            }
         }
+
+        // Rebuild thumbnail
+        _thumbnailNeedsRebuild = true;
+        InvalidateVisual();
     }
 
     /// <summary>
@@ -2229,7 +2694,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void SetBoundary(Boundary? boundary)
     {
+        var newOuterPoints = boundary?.OuterBoundary?.Points?.Count ?? 0;
+        Console.WriteLine($"[MapControl] SetBoundary called: boundary={boundary != null}, outerPoints={newOuterPoints}");
+
         _boundary = boundary;
+        _boundaryPointsWhenSet = newOuterPoints;
         InitializeCoverageBitmap();
     }
 
@@ -2245,11 +2714,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY)
     {
+        Console.WriteLine($"[MapControl] SetBackgroundImage: {imagePath}, control={GetHashCode()}");
+        Console.WriteLine($"[MapControl] Background bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
+
         _backgroundImagePath = imagePath;
         _bgMinX = minX;
         _bgMaxY = maxY;
         _bgMaxX = maxX;
         _bgMinY = minY;
+        _backgroundComposited = false;
 
         // Load the bitmap
         _backgroundImage?.Dispose();
@@ -2260,8 +2733,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             try
             {
                 _backgroundImage = new Bitmap(imagePath);
+                Console.WriteLine($"[MapControl] Loaded background image: {_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height}");
                 Debug.WriteLine($"[DrawingContextMapControl] Loaded background image: {imagePath} ({_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height})");
                 Debug.WriteLine($"  Bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
+
+                // Mark as not composited - DrawCoverageBitmap will do the compositing
+                _backgroundComposited = false;
+                Console.WriteLine("[MapControl] Background image loaded, will composite on next draw");
+                InvalidateVisual();
             }
             catch (Exception ex)
             {
@@ -2276,9 +2755,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void ClearBackground()
     {
-        _backgroundImagePath = null;
+        // Only clear in-memory bitmap, NOT the path - path is needed to reload from file
+        Console.WriteLine($"[MapControl] ClearBackground() called - disposing image but keeping path={_backgroundImagePath}");
         _backgroundImage?.Dispose();
         _backgroundImage = null;
+        // DON'T clear _backgroundImagePath - we need it to reload from file
+        // _backgroundComposited stays as-is since bitmap content is unchanged
     }
 
     public void SetBoundaryOffsetIndicator(bool show, double offsetMeters = 0.0)
@@ -2416,12 +2898,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void MarkCoverageFullRebuildNeeded()
     {
-        Console.WriteLine("[MapControl] MarkCoverageFullRebuildNeeded() called");
+        Console.WriteLine($"[MapControl] MarkCoverageFullRebuildNeeded() called, pending={_bitmapUpdatePending}");
         _bitmapNeedsFullRebuild = true;
 
         // Schedule bitmap update
         if (!_bitmapUpdatePending)
         {
+            Console.WriteLine("[MapControl] Scheduling UpdateCoverageBitmapIfNeeded via Dispatcher");
             _bitmapUpdatePending = true;
             Dispatcher.UIThread.Post(() =>
             {
@@ -2430,6 +2913,115 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 _bitmapUpdatePending = false;
             }, DispatcherPriority.Background);
         }
+    }
+
+    /// <summary>
+    /// Initialize coverage bitmap with explicit field bounds.
+    /// Called on field load to eagerly create the bitmap.
+    /// If background image is set, composites it; otherwise initializes to black.
+    /// </summary>
+    public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN)
+    {
+        Console.WriteLine($"[MapControl] InitializeCoverageBitmapWithBounds: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}], control={GetHashCode()}");
+
+        double worldWidth = maxE - minE;
+        double worldHeight = maxN - minN;
+
+        // Use the detection resolution (0.1m/pixel)
+        const double cellSize = 0.1;
+        int requiredWidth = (int)Math.Ceiling(worldWidth / cellSize);
+        int requiredHeight = (int)Math.Ceiling(worldHeight / cellSize);
+
+        // Ensure valid dimensions
+        if (requiredWidth <= 0 || requiredHeight <= 0)
+        {
+            Console.WriteLine($"[MapControl] Invalid bitmap dimensions: {requiredWidth}x{requiredHeight}");
+            return;
+        }
+
+        // Skip if bitmap already exists with same bounds (avoids wiping composited background)
+        if (_coverageWriteableBitmap != null &&
+            Math.Abs(_bitmapMinE - minE) < 0.01 &&
+            Math.Abs(_bitmapMaxE - maxE) < 0.01 &&
+            Math.Abs(_bitmapMinN - minN) < 0.01 &&
+            Math.Abs(_bitmapMaxN - maxN) < 0.01 &&
+            _bitmapWidth == requiredWidth &&
+            _bitmapHeight == requiredHeight)
+        {
+            Console.WriteLine($"[MapControl] Bitmap already initialized with same bounds, skipping");
+            return;
+        }
+
+        // Store bounds
+        _bitmapMinE = minE;
+        _bitmapMaxE = maxE;
+        _bitmapMinN = minN;
+        _bitmapMaxN = maxN;
+        _actualBitmapCellSize = cellSize;
+        _bitmapWidth = requiredWidth;
+        _bitmapHeight = requiredHeight;
+
+        // Dispose old bitmap and create new one
+        _coverageWriteableBitmap?.Dispose();
+
+        if (USE_RGB565_FULL_RESOLUTION)
+        {
+            _coverageWriteableBitmap = new WriteableBitmap(
+                new PixelSize(requiredWidth, requiredHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Rgb565);
+
+            long memMB = (long)requiredWidth * requiredHeight * 2 / 1024 / 1024;
+            Console.WriteLine($"[MapControl] Initialized {requiredWidth}x{requiredHeight} Rgb565 bitmap @ {cellSize}m/pixel (~{memMB}MB)");
+        }
+        else
+        {
+            _coverageWriteableBitmap = new WriteableBitmap(
+                new PixelSize(requiredWidth, requiredHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Bgra8888,
+                Avalonia.Platform.AlphaFormat.Premul);
+
+            Console.WriteLine($"[MapControl] Initialized {requiredWidth}x{requiredHeight} Bgra8888 bitmap @ {cellSize}m/pixel");
+        }
+
+        // Initialize bitmap - composite background if available, otherwise black
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
+        {
+            unsafe
+            {
+                int stride = framebuffer.RowBytes;
+                byte* ptr = (byte*)framebuffer.Address;
+                int bufferSize = stride * requiredHeight;
+
+                // Clear to black first
+                new Span<byte>(ptr, bufferSize).Clear();
+
+                // Composite background if available
+                if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+                {
+                    Console.WriteLine($"[MapControl] Compositing background from {_backgroundImagePath}");
+                    CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+                    _backgroundComposited = true;
+                }
+                else
+                {
+                    Console.WriteLine($"[MapControl] Initialized bitmap to black ({bufferSize} bytes), no background");
+                    _backgroundComposited = true; // No background to composite
+                }
+
+            }
+        }
+
+        // Trigger re-render
+        InvalidateVisual();
+
+        // Mark bitmap as ready
+        _bitmapNeedsFullRebuild = false;
+        _bitmapNeedsIncrementalUpdate = false;
+        _thumbnailNeedsRebuild = true;
+        _bitmapExplicitlyInitialized = true;
+        Console.WriteLine($"[MapControl] Bitmap initialized, composited={_backgroundComposited}");
     }
 
     private void RebuildCoverageGeometryCache()

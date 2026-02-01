@@ -210,4 +210,10 @@ public class MapService : IMapService
     {
         _mapControl?.SetActiveTrack(track);
     }
+
+    // Coverage bitmap initialization on field load
+    public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN)
+    {
+        _mapControl?.InitializeCoverageBitmapWithBounds(minE, maxE, minN, maxN);
+    }
 }

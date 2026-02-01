@@ -948,6 +948,25 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ActiveFieldArea));
         OnPropertyChanged(nameof(HasActiveField));
 
+        // Load background image before setting boundary (so it can be composited into coverage bitmap)
+        if (field?.BackgroundImage != null && field.BackgroundImage.IsEnabled && field.BackgroundImage.IsValid)
+        {
+            Console.WriteLine($"[Field] Loading background image: {field.BackgroundImage.ImagePath}");
+            Console.WriteLine($"[Field] Background bounds: E[{field.BackgroundImage.MinEasting:F1}, {field.BackgroundImage.MaxEasting:F1}] N[{field.BackgroundImage.MinNorthing:F1}, {field.BackgroundImage.MaxNorthing:F1}]");
+            _logger.LogDebug($"[Field] Loading background image from {field.BackgroundImage.ImagePath}");
+            // SetBackgroundImage expects: minX (west), maxY (north), maxX (east), minY (south)
+            _mapService.SetBackgroundImage(
+                field.BackgroundImage.ImagePath,
+                field.BackgroundImage.MinEasting,
+                field.BackgroundImage.MaxNorthing,
+                field.BackgroundImage.MaxEasting,
+                field.BackgroundImage.MinNorthing);
+        }
+        else
+        {
+            _mapService.ClearBackground();
+        }
+
         // Update field statistics service with new boundary
         if (field?.Boundary != null)
         {
@@ -2635,7 +2654,16 @@ public partial class MainViewModel : ObservableObject
             }
             // Add 50m padding to handle coverage near edges
             const double padding = 50.0;
-            _coverageMapService.SetFieldBounds(minE - padding, maxE + padding, minN - padding, maxN + padding);
+            double boundsMinE = minE - padding;
+            double boundsMaxE = maxE + padding;
+            double boundsMinN = minN - padding;
+            double boundsMaxN = maxN + padding;
+
+            _coverageMapService.SetFieldBounds(boundsMinE, boundsMaxE, boundsMinN, boundsMaxN);
+
+            // Initialize the coverage bitmap eagerly on field load
+            // Background will be composited into it when SetBackgroundImage is called
+            _mapService.InitializeCoverageBitmapWithBounds(boundsMinE, boundsMaxE, boundsMinN, boundsMaxN);
         }
         else
         {

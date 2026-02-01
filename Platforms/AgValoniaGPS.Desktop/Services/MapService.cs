@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models;
@@ -86,7 +87,14 @@ public class MapService : IMapService
 
     public void EndInteraction() => GetMapControl().EndPanRotate();
 
-    public void SetBoundary(Boundary? boundary) => GetMapControl().SetBoundary(boundary);
+    public void SetBoundary(Boundary? boundary)
+    {
+        Console.WriteLine($"[MapService] SetBoundary called: boundary={boundary != null}, mapControl={_mapControl != null}");
+        if (_mapControl != null)
+            _mapControl.SetBoundary(boundary);
+        else
+            Console.WriteLine("[MapService] WARNING: MapControl not set, boundary lost!");
+    }
 
     public void SetVehiclePosition(double easting, double northing, double headingRadians) =>
         GetMapControl().SetVehiclePosition(easting, northing, headingRadians);
@@ -138,4 +146,8 @@ public class MapService : IMapService
     // Active Track for guidance
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track) =>
         GetMapControl().SetActiveTrack(track);
+
+    // Coverage bitmap initialization on field load
+    public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN) =>
+        GetMapControl().InitializeCoverageBitmapWithBounds(minE, maxE, minN, maxN);
 }

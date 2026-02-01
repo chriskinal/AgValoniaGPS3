@@ -85,4 +85,9 @@ public interface IMapService
 
     // Active Track for guidance
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+
+    // Coverage bitmap initialization
+    // Initialize coverage bitmap with field bounds on field load
+    // If background image is set, composites it; otherwise initializes to black
+    void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN);
 }
