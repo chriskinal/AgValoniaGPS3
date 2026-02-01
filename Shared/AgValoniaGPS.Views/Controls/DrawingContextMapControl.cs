@@ -271,6 +271,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private const double MIN_BITMAP_CELL_SIZE = 0.1; // Preferred resolution (matches RTK precision)
     private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
     private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
+
+    // EXPERIMENTAL: Use Rgb565 (16-bit) at full 0.1m resolution
+    // If viable, WriteableBitmap can serve as both detection AND display
+    private const bool USE_RGB565_FULL_RESOLUTION = true;
     private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
     private bool _bitmapNeedsFullRebuild = true;
@@ -777,26 +781,34 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (worldWidth <= 0 || worldHeight <= 0)
             return;
 
-        // Calculate optimal cell size - start at 0.1m, scale up for large fields
-        // Max 50M pixels (~200MB) for smooth 30 FPS rendering
-        const long MAX_PIXELS = 50_000_000;
-        double cellSize = MIN_BITMAP_CELL_SIZE;
+        // Calculate optimal cell size
+        double cellSize;
 
-        long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
-                              (long)Math.Ceiling(worldHeight / MIN_BITMAP_CELL_SIZE);
-
-        if (pixelsAtMinRes > MAX_PIXELS)
+        if (USE_RGB565_FULL_RESOLUTION)
         {
-            // Scale up cell size to fit within pixel limit
-            double scaleFactor = Math.Sqrt((double)pixelsAtMinRes / MAX_PIXELS);
-            cellSize = MIN_BITMAP_CELL_SIZE * scaleFactor;
-            // Round to nice values for large fields
-            if (cellSize <= 0.2) cellSize = 0.2;
-            else if (cellSize <= 0.25) cellSize = 0.25;
-            else if (cellSize <= 0.35) cellSize = 0.35;
-            else if (cellSize <= 0.5) cellSize = 0.5;
-            else if (cellSize <= 0.75) cellSize = 0.75;
-            else cellSize = Math.Ceiling(cellSize); // Round to 1m increments
+            // Full 0.1m resolution - WriteableBitmap serves as both detection and display
+            cellSize = MIN_BITMAP_CELL_SIZE;
+        }
+        else
+        {
+            // Scale up for large fields to fit in ~200MB (32-bit BGRA)
+            const long MAX_PIXELS = 50_000_000;
+            cellSize = MIN_BITMAP_CELL_SIZE;
+
+            long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
+                                  (long)Math.Ceiling(worldHeight / MIN_BITMAP_CELL_SIZE);
+
+            if (pixelsAtMinRes > MAX_PIXELS)
+            {
+                double scaleFactor = Math.Sqrt((double)pixelsAtMinRes / MAX_PIXELS);
+                cellSize = MIN_BITMAP_CELL_SIZE * scaleFactor;
+                if (cellSize <= 0.2) cellSize = 0.2;
+                else if (cellSize <= 0.25) cellSize = 0.25;
+                else if (cellSize <= 0.35) cellSize = 0.35;
+                else if (cellSize <= 0.5) cellSize = 0.5;
+                else if (cellSize <= 0.75) cellSize = 0.75;
+                else cellSize = Math.Ceiling(cellSize);
+            }
         }
 
         _actualBitmapCellSize = cellSize;
@@ -828,13 +840,27 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             // Dispose old bitmap and create new one
             _coverageWriteableBitmap?.Dispose();
-            _coverageWriteableBitmap = new WriteableBitmap(
-                new PixelSize(requiredWidth, requiredHeight),
-                new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888,
-                Avalonia.Platform.AlphaFormat.Premul);
 
-            Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} bitmap @ {cellSize}m/pixel");
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                _coverageWriteableBitmap = new WriteableBitmap(
+                    new PixelSize(requiredWidth, requiredHeight),
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormat.Rgb565);
+
+                long memMB = (long)requiredWidth * requiredHeight * 2 / 1024 / 1024;
+                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} Rgb565 @ {cellSize}m/pixel (~{memMB}MB)");
+            }
+            else
+            {
+                _coverageWriteableBitmap = new WriteableBitmap(
+                    new PixelSize(requiredWidth, requiredHeight),
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormat.Bgra8888,
+                    Avalonia.Platform.AlphaFormat.Premul);
+
+                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} Bgra8888 @ {cellSize}m/pixel");
+            }
         }
 
         // Update bitmap with coverage cells
@@ -898,8 +924,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     /// <summary>
     /// Update coverage bitmap with all cells (full rebuild).
+    /// Writes directly to framebuffer - no managed buffer allocation.
     /// </summary>
-    private int UpdateCoverageBitmapFull()
+    private unsafe int UpdateCoverageBitmapFull()
     {
         if (_coverageWriteableBitmap == null || _coverageAllCellsProvider == null)
             return 0;
@@ -907,10 +934,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var framebuffer = _coverageWriteableBitmap.Lock();
         int stride = framebuffer.RowBytes;
         int bufferSize = stride * _bitmapHeight;
+        byte* ptr = (byte*)framebuffer.Address;
 
-        // Create a managed buffer to work with
-        var buffer = new byte[bufferSize];
-        // Buffer is already zeroed (transparent)
+        // Clear framebuffer to transparent (all zeros)
+        // Use native memset via Span for efficiency
+        new Span<byte>(ptr, bufferSize).Clear();
 
         int cellCount = 0;
         // Query only cells within the bitmap bounds - O(viewport) not O(total coverage)
@@ -925,17 +953,30 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
             {
-                int offset = py * stride + px * 4;
-                buffer[offset + 0] = color.B; // BGRA format
-                buffer[offset + 1] = color.G;
-                buffer[offset + 2] = color.R;
-                buffer[offset + 3] = 200; // Semi-transparent
+                if (USE_RGB565_FULL_RESOLUTION)
+                {
+                    // Rgb565 format: 2 bytes per pixel
+                    // Bits: RRRR RGGG GGGB BBBB (little-endian: low byte first)
+                    ushort* pixel = (ushort*)(ptr + py * stride + px * 2);
+                    ushort rgb565 = (ushort)(
+                        ((color.R >> 3) << 11) |  // 5 bits red
+                        ((color.G >> 2) << 5) |   // 6 bits green
+                        (color.B >> 3));          // 5 bits blue
+                    *pixel = rgb565;
+                }
+                else
+                {
+                    // Bgra8888 format: 4 bytes per pixel
+                    byte* pixel = ptr + py * stride + px * 4;
+                    pixel[0] = color.B;
+                    pixel[1] = color.G;
+                    pixel[2] = color.R;
+                    pixel[3] = 200; // Semi-transparent
+                }
                 cellCount++;
             }
         }
 
-        // Copy buffer to framebuffer
-        System.Runtime.InteropServices.Marshal.Copy(buffer, 0, framebuffer.Address, bufferSize);
         return cellCount;
     }
 
@@ -957,11 +998,25 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             if (cellX >= 0 && cellX < _bitmapWidth && cellY >= 0 && cellY < _bitmapHeight)
             {
-                byte* pixel = ptr + cellY * stride + cellX * 4;
-                pixel[0] = color.B; // BGRA format
-                pixel[1] = color.G;
-                pixel[2] = color.R;
-                pixel[3] = 200;
+                if (USE_RGB565_FULL_RESOLUTION)
+                {
+                    // Rgb565 format: 2 bytes per pixel
+                    ushort* pixel = (ushort*)(ptr + cellY * stride + cellX * 2);
+                    ushort rgb565 = (ushort)(
+                        ((color.R >> 3) << 11) |  // 5 bits red
+                        ((color.G >> 2) << 5) |   // 6 bits green
+                        (color.B >> 3));          // 5 bits blue
+                    *pixel = rgb565;
+                }
+                else
+                {
+                    // Bgra8888 format: 4 bytes per pixel
+                    byte* pixel = ptr + cellY * stride + cellX * 4;
+                    pixel[0] = color.B;
+                    pixel[1] = color.G;
+                    pixel[2] = color.R;
+                    pixel[3] = 200; // Semi-transparent
+                }
                 cellCount++;
             }
         }
