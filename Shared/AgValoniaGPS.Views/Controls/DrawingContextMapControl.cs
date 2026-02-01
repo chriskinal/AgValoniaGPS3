@@ -801,7 +801,61 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     }
 
     /// <summary>
+    /// THE ONLY PLACE the coverage WriteableBitmap is created.
+    /// Creates bitmap, loads background PNG if available, otherwise fills with black.
+    /// Call this on field load and when coverage is cleared/reset.
+    /// </summary>
+    private unsafe void CreateCoverageBitmap()
+    {
+        if (_bitmapWidth <= 0 || _bitmapHeight <= 0)
+        {
+            Console.WriteLine($"[CreateCoverageBitmap] Invalid dimensions: {_bitmapWidth}x{_bitmapHeight}");
+            return;
+        }
+
+        // Dispose old bitmap
+        _coverageWriteableBitmap?.Dispose();
+
+        // Create new bitmap - always use Rgb565 for consistency
+        _coverageWriteableBitmap = new WriteableBitmap(
+            new PixelSize(_bitmapWidth, _bitmapHeight),
+            new Vector(96, 96),
+            Avalonia.Platform.PixelFormat.Rgb565);
+
+        long memMB = (long)_bitmapWidth * _bitmapHeight * 2 / 1024 / 1024;
+        Console.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565 bitmap (~{memMB}MB)");
+
+        // Initialize bitmap content: background image or black
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
+        {
+            int stride = framebuffer.RowBytes;
+            byte* ptr = (byte*)framebuffer.Address;
+            int bufferSize = stride * _bitmapHeight;
+
+            // Clear to black first
+            new Span<byte>(ptr, bufferSize).Clear();
+
+            // Composite background if available
+            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+            {
+                Console.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
+                CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+            }
+            else
+            {
+                Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black");
+            }
+        }
+
+        // Set state flags
+        _backgroundComposited = true;
+        _thumbnailNeedsRebuild = true;
+        _bitmapExplicitlyInitialized = true;
+    }
+
+    /// <summary>
     /// Update coverage bitmap if needed. Called outside of render pass via Dispatcher.
+    /// Does NOT create the bitmap - only updates existing bitmap with coverage cells.
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
@@ -887,48 +941,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         if (boundsChanged)
         {
-            // Debug: log why bounds changed
-            Debug.WriteLine($"[MapControl] Coverage bitmap bounds changed: " +
-                $"bitmap null={_coverageWriteableBitmap == null}, " +
-                $"minE diff={Math.Abs(_bitmapMinE - minE):F3}, " +
-                $"minN diff={Math.Abs(_bitmapMinN - minN):F3}, " +
-                $"size {_bitmapWidth}x{_bitmapHeight} -> {requiredWidth}x{requiredHeight}");
-
-            // Bounds changed - need full rebuild
-            _bitmapNeedsFullRebuild = true;
+            // Bounds changed - update dimensions and create new bitmap
             _bitmapMinE = minE;
             _bitmapMinN = minN;
             _bitmapMaxE = maxE;
             _bitmapMaxN = maxN;
             _bitmapWidth = requiredWidth;
             _bitmapHeight = requiredHeight;
+            _bitmapNeedsFullRebuild = true;
 
-            // Dispose old bitmap and create new one
-            _coverageWriteableBitmap?.Dispose();
-
-            if (USE_RGB565_FULL_RESOLUTION)
-            {
-                _coverageWriteableBitmap = new WriteableBitmap(
-                    new PixelSize(requiredWidth, requiredHeight),
-                    new Vector(96, 96),
-                    Avalonia.Platform.PixelFormat.Rgb565);
-
-                long memMB = (long)requiredWidth * requiredHeight * 2 / 1024 / 1024;
-                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} Rgb565 @ {cellSize}m/pixel (~{memMB}MB)");
-            }
-            else
-            {
-                _coverageWriteableBitmap = new WriteableBitmap(
-                    new PixelSize(requiredWidth, requiredHeight),
-                    new Vector(96, 96),
-                    Avalonia.Platform.PixelFormat.Bgra8888,
-                    Avalonia.Platform.AlphaFormat.Premul);
-
-                Console.WriteLine($"[Timing] CovBitmap: Created {requiredWidth}x{requiredHeight} Bgra8888 @ {cellSize}m/pixel");
-            }
-
-            // Background will be composited in DrawCoverageBitmap
-            _backgroundComposited = false;
+            // Use unified bitmap creation
+            CreateCoverageBitmap();
         }
 
         // Update bitmap with coverage cells
@@ -1624,34 +1647,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     /// <summary>
     /// Set the coverage pixel buffer from a ushort array (for load operations).
-    /// Allocates/resizes bitmap if needed.
+    /// Allocates/resizes bitmap if needed using CreateCoverageBitmap().
     /// </summary>
     public void SetCoveragePixelBuffer(ushort[] pixels)
     {
         if (pixels == null || _bitmapWidth == 0 || _bitmapHeight == 0)
             return;
 
-        // Ensure bitmap exists with correct size
+        // Ensure bitmap exists with correct size - use unified creation
         if (_coverageWriteableBitmap == null ||
             _coverageWriteableBitmap.PixelSize.Width != _bitmapWidth ||
             _coverageWriteableBitmap.PixelSize.Height != _bitmapHeight)
         {
-            _coverageWriteableBitmap?.Dispose();
-            if (USE_RGB565_FULL_RESOLUTION)
-            {
-                _coverageWriteableBitmap = new WriteableBitmap(
-                    new PixelSize(_bitmapWidth, _bitmapHeight),
-                    new Vector(96, 96),
-                    Avalonia.Platform.PixelFormat.Rgb565);
-            }
-            else
-            {
-                _coverageWriteableBitmap = new WriteableBitmap(
-                    new PixelSize(_bitmapWidth, _bitmapHeight),
-                    new Vector(96, 96),
-                    Avalonia.Platform.PixelFormat.Bgra8888,
-                    Avalonia.Platform.AlphaFormat.Premul);
-            }
+            CreateCoverageBitmap();
         }
 
         using var framebuffer = _coverageWriteableBitmap.Lock();
@@ -2961,57 +2969,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _bitmapWidth = requiredWidth;
         _bitmapHeight = requiredHeight;
 
-        // Dispose old bitmap and create new one
-        _coverageWriteableBitmap?.Dispose();
-
-        if (USE_RGB565_FULL_RESOLUTION)
-        {
-            _coverageWriteableBitmap = new WriteableBitmap(
-                new PixelSize(requiredWidth, requiredHeight),
-                new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Rgb565);
-
-            long memMB = (long)requiredWidth * requiredHeight * 2 / 1024 / 1024;
-            Console.WriteLine($"[MapControl] Initialized {requiredWidth}x{requiredHeight} Rgb565 bitmap @ {cellSize}m/pixel (~{memMB}MB)");
-        }
-        else
-        {
-            _coverageWriteableBitmap = new WriteableBitmap(
-                new PixelSize(requiredWidth, requiredHeight),
-                new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888,
-                Avalonia.Platform.AlphaFormat.Premul);
-
-            Console.WriteLine($"[MapControl] Initialized {requiredWidth}x{requiredHeight} Bgra8888 bitmap @ {cellSize}m/pixel");
-        }
-
-        // Initialize bitmap - composite background if available, otherwise black
-        using (var framebuffer = _coverageWriteableBitmap.Lock())
-        {
-            unsafe
-            {
-                int stride = framebuffer.RowBytes;
-                byte* ptr = (byte*)framebuffer.Address;
-                int bufferSize = stride * requiredHeight;
-
-                // Clear to black first
-                new Span<byte>(ptr, bufferSize).Clear();
-
-                // Composite background if available
-                if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
-                {
-                    Console.WriteLine($"[MapControl] Compositing background from {_backgroundImagePath}");
-                    CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
-                    _backgroundComposited = true;
-                }
-                else
-                {
-                    Console.WriteLine($"[MapControl] Initialized bitmap to black ({bufferSize} bytes), no background");
-                    _backgroundComposited = true; // No background to composite
-                }
-
-            }
-        }
+        // Use unified bitmap creation (creates bitmap, composites background or fills black)
+        CreateCoverageBitmap();
 
         // Trigger re-render
         InvalidateVisual();
@@ -3019,9 +2978,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Mark bitmap as ready
         _bitmapNeedsFullRebuild = false;
         _bitmapNeedsIncrementalUpdate = false;
-        _thumbnailNeedsRebuild = true;
-        _bitmapExplicitlyInitialized = true;
-        Console.WriteLine($"[MapControl] Bitmap initialized, composited={_backgroundComposited}");
+        Console.WriteLine($"[MapControl] Bitmap initialized via CreateCoverageBitmap");
     }
 
     private void RebuildCoverageGeometryCache()
