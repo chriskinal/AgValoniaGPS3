@@ -56,9 +56,9 @@ public class CoverageMapService : ICoverageMapService
     // Per-zone cell counters for acreage calculation (zone index -> cell count)
     private readonly Dictionary<int, long> _cellCountPerZone = new();
 
-    // Fast detection set - tracks which cells are covered (no bitmap lock needed)
-    // This is tiny compared to the bitmap (~24 bytes per covered cell vs 2 bytes per total cell)
-    private readonly HashSet<long> _coveredCells = new();
+    // Bit array for fast detection - 1 bit per cell, fixed size regardless of coverage
+    // 582ha @ 0.1m = 582M cells / 8 = 72MB (much better than HashSet at high coverage)
+    private byte[]? _detectionBits;
 
     // Track newly added cells since last GetNewCoverageBitmapCells call
     // Still use HashSet for new cells (small, cleared frequently)
@@ -408,11 +408,11 @@ public class CoverageMapService : ICoverageMapService
 
     /// <summary>
     /// Mark a cell as covered. Returns true if cell was newly covered.
-    /// Uses HashSet for fast detection, batched write via _newCells for rendering.
+    /// Uses bit array for fast detection, batched write via _newCells for rendering.
     /// </summary>
     private bool MarkCellCovered(int cellE, int cellN, int zone)
     {
-        if (!_fieldBoundsSet)
+        if (_detectionBits == null || !_fieldBoundsSet)
             return false;
 
         // Convert to local coordinates
@@ -423,12 +423,18 @@ public class CoverageMapService : ICoverageMapService
         if (localE < 0 || localE >= _bitmapWidth || localN < 0 || localN >= _bitmapHeight)
             return false;
 
-        // Pack coordinates into single long for HashSet (faster than tuple)
-        long cellKey = ((long)cellE << 32) | (uint)cellN;
+        // Calculate bit position in detection array
+        long bitIndex = (long)localN * _bitmapWidth + localE;
+        int byteIndex = (int)(bitIndex / 8);
+        int bitOffset = (int)(bitIndex % 8);
+        byte mask = (byte)(1 << bitOffset);
 
-        // Check if already covered using HashSet (O(1), no bitmap lock)
-        if (!_coveredCells.Add(cellKey))
+        // Check if already covered using bit array (O(1), no bitmap lock)
+        if ((_detectionBits[byteIndex] & mask) != 0)
             return false; // Already covered
+
+        // Mark as covered in detection array
+        _detectionBits[byteIndex] |= mask;
 
         // Track for batched write by map control (via GetNewCoverageBitmapCells)
         _newCells.Add((cellE, cellN, zone));
@@ -446,12 +452,24 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     private bool IsCellCovered(int cellE, int cellN)
     {
-        if (!_fieldBoundsSet)
+        if (_detectionBits == null || !_fieldBoundsSet)
             return false;
 
-        // Pack coordinates into single long for HashSet lookup
-        long cellKey = ((long)cellE << 32) | (uint)cellN;
-        return _coveredCells.Contains(cellKey);
+        // Convert to local coordinates
+        int localE = cellE - _bitmapOriginE;
+        int localN = cellN - _bitmapOriginN;
+
+        // Bounds check
+        if (localE < 0 || localE >= _bitmapWidth || localN < 0 || localN >= _bitmapHeight)
+            return false;
+
+        // Calculate bit position
+        long bitIndex = (long)localN * _bitmapWidth + localE;
+        int byteIndex = (int)(bitIndex / 8);
+        int bitOffset = (int)(bitIndex % 8);
+        byte mask = (byte)(1 << bitOffset);
+
+        return (_detectionBits[byteIndex] & mask) != 0;
     }
 
     /// <summary>
@@ -640,7 +658,8 @@ public class CoverageMapService : ICoverageMapService
         // Clear bitmap via callback
         _clearAllPixels?.Invoke();
         _newCells.Clear();
-        _coveredCells.Clear();
+        if (_detectionBits != null)
+            Array.Clear(_detectionBits, 0, _detectionBits.Length);
         _cellCountPerZone.Clear();
 
         // Reset bounds
@@ -700,11 +719,18 @@ public class CoverageMapService : ICoverageMapService
         _bitmapHeight = maxCellN - _bitmapOriginN + 1;
 
         long totalPixels = (long)_bitmapWidth * _bitmapHeight;
+
+        // Allocate bit array for detection: 1 bit per cell
+        long totalBits = totalPixels;
+        long totalBytes = (totalBits + 7) / 8;
+        _detectionBits = new byte[totalBytes];
+
         double areaMSq = (maxE - minE) * (maxN - minN);
         double areaHa = areaMSq / 10000.0;
-        double memoryMB = totalPixels * 2 / (1024.0 * 1024.0); // 2 bytes per pixel (Rgb565)
+        double bitmapMB = totalPixels * 2 / (1024.0 * 1024.0); // 2 bytes per pixel (Rgb565)
+        double detectionMB = totalBytes / (1024.0 * 1024.0);
         Console.WriteLine($"[Coverage] Field bounds set: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}]");
-        Console.WriteLine($"[Coverage] Bitmap dimensions: {_bitmapWidth}x{_bitmapHeight} = {totalPixels:N0} pixels (~{memoryMB:F0}MB) for {areaHa:F0}ha field");
+        Console.WriteLine($"[Coverage] {_bitmapWidth}x{_bitmapHeight} = {totalPixels:N0} cells, detection={detectionMB:F1}MB, bitmap=~{bitmapMB:F0}MB for {areaHa:F0}ha");
     }
 
     /// <summary>
@@ -716,7 +742,7 @@ public class CoverageMapService : ICoverageMapService
         _bitmapWidth = 0;
         _bitmapHeight = 0;
         _cellCountPerZone.Clear();
-        _coveredCells.Clear();
+        _detectionBits = null;
         _clearAllPixels?.Invoke();
         Console.WriteLine("[Coverage] Field bounds cleared");
     }
@@ -877,23 +903,29 @@ public class CoverageMapService : ICoverageMapService
             // Pass pixel buffer to map control
             SetPixelBufferCallback(pixels);
 
-            // Populate detection HashSet from loaded pixels
-            _coveredCells.Clear();
-            for (int y = 0; y < height; y++)
+            // Populate detection bit array from loaded pixels
+            if (_detectionBits != null)
             {
-                for (int x = 0; x < width; x++)
+                Array.Clear(_detectionBits, 0, _detectionBits.Length);
+                long coveredCount = 0;
+                for (int y = 0; y < height; y++)
                 {
-                    long idx = (long)y * width + x;
-                    if (pixels[idx] != 0)
+                    for (int x = 0; x < width; x++)
                     {
-                        int cellE = _bitmapOriginE + x;
-                        int cellN = _bitmapOriginN + y;
-                        long cellKey = ((long)cellE << 32) | (uint)cellN;
-                        _coveredCells.Add(cellKey);
+                        long idx = (long)y * width + x;
+                        if (pixels[idx] != 0)
+                        {
+                            // Set bit in detection array
+                            long bitIndex = (long)y * width + x;
+                            int byteIndex = (int)(bitIndex / 8);
+                            int bitOffset = (int)(bitIndex % 8);
+                            _detectionBits[byteIndex] |= (byte)(1 << bitOffset);
+                            coveredCount++;
+                        }
                     }
                 }
+                Console.WriteLine($"[Coverage] Populated detection bits with {coveredCount:N0} cells");
             }
-            Console.WriteLine($"[Coverage] Populated detection set with {_coveredCells.Count:N0} cells");
 
             _totalWorkedArea = area;
             _totalWorkedAreaUser = area;
