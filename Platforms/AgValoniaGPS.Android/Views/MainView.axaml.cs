@@ -160,6 +160,17 @@ public partial class MainView : UserControl
                 (cellSize, minE, maxE, minN, maxN) => coverageService.GetCoverageBitmapCells(cellSize, minE, maxE, minN, maxN),
                 coverageService.GetNewCoverageBitmapCells);
 
+            // Set up unified bitmap pixel access (PERF-004 Phase 4)
+            // Service writes directly to map control's WriteableBitmap
+            coverageService.SetPixelAccessCallbacks(
+                _mapControl.GetCoveragePixel,
+                _mapControl.SetCoveragePixel,
+                _mapControl.ClearCoveragePixels);
+
+            // Set up buffer callbacks for save/load
+            coverageService.GetPixelBufferCallback = _mapControl.GetCoveragePixelBuffer;
+            coverageService.SetPixelBufferCallback = _mapControl.SetCoveragePixelBuffer;
+
             // Mark dirty in case field was already loaded with coverage
             _mapControl.MarkCoverageDirty();
         }

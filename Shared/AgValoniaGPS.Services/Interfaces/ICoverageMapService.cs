@@ -209,6 +209,36 @@ public interface ICoverageMapService
     /// Event fired when coverage is updated
     /// </summary>
     event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
+
+    /// <summary>
+    /// Set pixel access callbacks for unified WriteableBitmap storage.
+    /// The map control provides these callbacks to allow the service to read/write
+    /// directly to the bitmap without maintaining a separate copy.
+    /// </summary>
+    /// <param name="getPixel">Read pixel at (localX, localY) - returns Rgb565 value (0 = uncovered)</param>
+    /// <param name="setPixel">Write pixel at (localX, localY) with Rgb565 value</param>
+    /// <param name="clearAll">Clear all pixels to 0</param>
+    void SetPixelAccessCallbacks(
+        Func<int, int, ushort>? getPixel,
+        Action<int, int, ushort>? setPixel,
+        Action? clearAll);
+
+    /// <summary>
+    /// Get the raw pixel buffer for save/load operations.
+    /// Returns null if no bitmap is allocated.
+    /// </summary>
+    Func<ushort[]?>? GetPixelBufferCallback { get; set; }
+
+    /// <summary>
+    /// Set the raw pixel buffer after loading from file.
+    /// </summary>
+    Action<ushort[]>? SetPixelBufferCallback { get; set; }
+
+    /// <summary>
+    /// Get bitmap dimensions for coordinate calculations.
+    /// Returns (width, height, originE, originN) or null if not set.
+    /// </summary>
+    (int Width, int Height, int OriginE, int OriginN)? BitmapDimensions { get; }
 }
 
 /// <summary>

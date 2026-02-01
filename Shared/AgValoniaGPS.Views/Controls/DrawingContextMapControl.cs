@@ -105,6 +105,13 @@ public interface ISharedMapControl
     // Mark coverage as needing full rebuild (call after loading from file)
     void MarkCoverageFullRebuildNeeded();
 
+    // Direct pixel access for unified bitmap (service writes directly to bitmap)
+    ushort GetCoveragePixel(int localX, int localY);
+    void SetCoveragePixel(int localX, int localY, ushort rgb565);
+    void ClearCoveragePixels();
+    ushort[]? GetCoveragePixelBuffer();
+    void SetCoveragePixelBuffer(ushort[] pixels);
+
     // Grid visibility property
     bool IsGridVisible { get; set; }
 
@@ -329,6 +336,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Performance profiling
     private static readonly System.Diagnostics.Stopwatch _profileSw = new();
     private static readonly System.Diagnostics.Stopwatch _renderSw = new();
+    private static readonly RenderOptions _highQualityRenderOptions = new() { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality };
     private static double _lastCoverageRenderMs;
     private static double _lastSetCoveragePatchesMs;
     private static double _lastFullRenderMs;
@@ -711,10 +719,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawCoverage(DrawingContext context)
     {
-        // Debug: log every 90 frames to see if this is being called
-        if (_renderCounter % 90 == 1)
-            Console.WriteLine($"[Timing] DrawCov: UseBitmap={UseBitmapCoverageRendering}, BoundsProvider={_coverageBoundsProvider != null}, Bitmap={_coverageWriteableBitmap != null}");
-
         _profileSw.Restart();
 
         // Compute visible world bounds for viewport culling
@@ -753,13 +757,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
-        Console.WriteLine($"[MapControl] UpdateCoverageBitmapIfNeeded: boundsProvider={_coverageBoundsProvider != null}, allCellsProvider={_coverageAllCellsProvider != null}");
         if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
             return;
 
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
-        Console.WriteLine($"[MapControl] UpdateCoverageBitmapIfNeeded: bounds={bounds}");
         if (bounds == null)
         {
             // No coverage - clear the bitmap
@@ -890,18 +892,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private int DrawCoverageBitmap(DrawingContext context)
     {
-        // If bitmap not ready yet, schedule creation and return
+        // If bitmap not ready yet, check if we need to create one
         if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
         {
-            // Schedule initial bitmap creation
+            // Only schedule bitmap creation if there's actual coverage to show
+            // This prevents allocating closures every frame when there's no coverage
             if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
             {
-                _bitmapUpdatePending = true;
-                Dispatcher.UIThread.Post(() =>
+                var bounds = _coverageBoundsProvider();
+                if (bounds != null)
                 {
-                    UpdateCoverageBitmapIfNeeded();
-                    _bitmapUpdatePending = false;
-                }, DispatcherPriority.Background);
+                    _bitmapUpdatePending = true;
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        UpdateCoverageBitmapIfNeeded();
+                        _bitmapUpdatePending = false;
+                    }, DispatcherPriority.Background);
+                }
             }
             return 0; // Bitmap not ready yet
         }
@@ -914,7 +921,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
         // Use HighQuality (bicubic) interpolation to smooth jagged edges
-        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality }))
+        using (context.PushRenderOptions(_highQualityRenderOptions))
         {
             context.DrawImage(_coverageWriteableBitmap, srcRect, destRect);
         }
@@ -1022,6 +1029,208 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         return cellCount;
+    }
+
+    // ========== Direct Pixel Access Methods (for unified bitmap) ==========
+
+    /// <summary>
+    /// Get a coverage pixel value at the given local coordinates.
+    /// Returns 0 if out of bounds or bitmap not allocated.
+    /// </summary>
+    public ushort GetCoveragePixel(int localX, int localY)
+    {
+        if (_coverageWriteableBitmap == null ||
+            localX < 0 || localX >= _bitmapWidth ||
+            localY < 0 || localY >= _bitmapHeight)
+            return 0;
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        unsafe
+        {
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                ushort* ptr = (ushort*)framebuffer.Address;
+                return ptr[localY * _bitmapWidth + localX];
+            }
+            else
+            {
+                // Bgra8888 - convert to "is covered" check (non-zero alpha = covered)
+                byte* ptr = (byte*)framebuffer.Address;
+                int offset = localY * framebuffer.RowBytes + localX * 4;
+                return ptr[offset + 3] != 0 ? (ushort)1 : (ushort)0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set a coverage pixel value at the given local coordinates.
+    /// </summary>
+    public void SetCoveragePixel(int localX, int localY, ushort rgb565)
+    {
+        if (_coverageWriteableBitmap == null ||
+            localX < 0 || localX >= _bitmapWidth ||
+            localY < 0 || localY >= _bitmapHeight)
+            return;
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        unsafe
+        {
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                ushort* ptr = (ushort*)framebuffer.Address;
+                ptr[localY * _bitmapWidth + localX] = rgb565;
+            }
+            else
+            {
+                // Convert Rgb565 to Bgra8888
+                byte r = (byte)((rgb565 >> 11) << 3);
+                byte g = (byte)(((rgb565 >> 5) & 0x3F) << 2);
+                byte b = (byte)((rgb565 & 0x1F) << 3);
+                byte* ptr = (byte*)framebuffer.Address;
+                int offset = localY * framebuffer.RowBytes + localX * 4;
+                ptr[offset + 0] = b;
+                ptr[offset + 1] = g;
+                ptr[offset + 2] = r;
+                ptr[offset + 3] = 200; // Semi-transparent
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clear all coverage pixels to 0.
+    /// </summary>
+    public void ClearCoveragePixels()
+    {
+        if (_coverageWriteableBitmap == null)
+            return;
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        int bufferSize = framebuffer.RowBytes * _bitmapHeight;
+        unsafe
+        {
+            new Span<byte>((byte*)framebuffer.Address, bufferSize).Clear();
+        }
+    }
+
+    /// <summary>
+    /// Get the coverage pixel buffer as a ushort array (for save operations).
+    /// Returns null if bitmap not allocated.
+    /// </summary>
+    public ushort[]? GetCoveragePixelBuffer()
+    {
+        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+            return null;
+
+        var pixels = new ushort[_bitmapWidth * _bitmapHeight];
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        unsafe
+        {
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                // Direct copy - bitmap is already Rgb565
+                ushort* src = (ushort*)framebuffer.Address;
+                for (int i = 0; i < pixels.Length; i++)
+                    pixels[i] = src[i];
+            }
+            else
+            {
+                // Convert Bgra8888 to Rgb565
+                byte* src = (byte*)framebuffer.Address;
+                int stride = framebuffer.RowBytes;
+                for (int y = 0; y < _bitmapHeight; y++)
+                {
+                    for (int x = 0; x < _bitmapWidth; x++)
+                    {
+                        int offset = y * stride + x * 4;
+                        byte b = src[offset + 0];
+                        byte g = src[offset + 1];
+                        byte r = src[offset + 2];
+                        byte a = src[offset + 3];
+                        if (a == 0)
+                            pixels[y * _bitmapWidth + x] = 0;
+                        else
+                            pixels[y * _bitmapWidth + x] = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+                    }
+                }
+            }
+        }
+        return pixels;
+    }
+
+    /// <summary>
+    /// Set the coverage pixel buffer from a ushort array (for load operations).
+    /// Allocates/resizes bitmap if needed.
+    /// </summary>
+    public void SetCoveragePixelBuffer(ushort[] pixels)
+    {
+        if (pixels == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+            return;
+
+        // Ensure bitmap exists with correct size
+        if (_coverageWriteableBitmap == null ||
+            _coverageWriteableBitmap.PixelSize.Width != _bitmapWidth ||
+            _coverageWriteableBitmap.PixelSize.Height != _bitmapHeight)
+        {
+            _coverageWriteableBitmap?.Dispose();
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                _coverageWriteableBitmap = new WriteableBitmap(
+                    new PixelSize(_bitmapWidth, _bitmapHeight),
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormat.Rgb565);
+            }
+            else
+            {
+                _coverageWriteableBitmap = new WriteableBitmap(
+                    new PixelSize(_bitmapWidth, _bitmapHeight),
+                    new Vector(96, 96),
+                    Avalonia.Platform.PixelFormat.Bgra8888,
+                    Avalonia.Platform.AlphaFormat.Premul);
+            }
+        }
+
+        using var framebuffer = _coverageWriteableBitmap.Lock();
+        unsafe
+        {
+            if (USE_RGB565_FULL_RESOLUTION)
+            {
+                // Direct copy - bitmap is Rgb565
+                ushort* dst = (ushort*)framebuffer.Address;
+                int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
+                for (int i = 0; i < count; i++)
+                    dst[i] = pixels[i];
+            }
+            else
+            {
+                // Convert Rgb565 to Bgra8888
+                byte* dst = (byte*)framebuffer.Address;
+                int stride = framebuffer.RowBytes;
+                int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
+                for (int i = 0; i < count; i++)
+                {
+                    int x = i % _bitmapWidth;
+                    int y = i / _bitmapWidth;
+                    int offset = y * stride + x * 4;
+                    ushort rgb565 = pixels[i];
+                    if (rgb565 == 0)
+                    {
+                        dst[offset + 0] = 0;
+                        dst[offset + 1] = 0;
+                        dst[offset + 2] = 0;
+                        dst[offset + 3] = 0;
+                    }
+                    else
+                    {
+                        dst[offset + 0] = (byte)((rgb565 & 0x1F) << 3);        // B
+                        dst[offset + 1] = (byte)(((rgb565 >> 5) & 0x3F) << 2); // G
+                        dst[offset + 2] = (byte)((rgb565 >> 11) << 3);         // R
+                        dst[offset + 3] = 200;                                  // A
+                    }
+                }
+            }
+        }
+
+        InvalidateVisual();
     }
 
     /// <summary>

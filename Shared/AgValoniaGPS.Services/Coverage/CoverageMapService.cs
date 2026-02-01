@@ -37,21 +37,28 @@ namespace AgValoniaGPS.Services.Coverage;
 /// </summary>
 public class CoverageMapService : ICoverageMapService
 {
-
-    // ========== DETECTION LAYER (Bit Array) ==========
-    // Memory-efficient coverage detection using bit array instead of HashSet
-    // 520ha at 0.1m = 520M cells = 65MB (vs 7.5GB with HashSet)
+    // ========== UNIFIED BITMAP LAYER ==========
+    // WriteableBitmap owned by map control is the single source of truth
+    // Service accesses it via callbacks - no separate storage here
     private const double BITMAP_CELL_SIZE = 0.1; // meters per cell (10cm = ~4in resolution)
 
-    // Bit array for detection: 1 bit per cell (is this covered?)
-    private byte[]? _coverageBits;
-    private int _bitsWidth;  // Number of cells in E direction
-    private int _bitsHeight; // Number of cells in N direction
-    private int _bitsOriginE; // Cell coordinate of bit array origin (E)
-    private int _bitsOriginN; // Cell coordinate of bit array origin (N)
+    // Pixel access callbacks (provided by map control)
+    private Func<int, int, ushort>? _getPixel;      // (localX, localY) -> rgb565
+    private Action<int, int, ushort>? _setPixel;    // (localX, localY, rgb565) -> void
+    private Action? _clearAllPixels;
+
+    // Bitmap dimensions (set when field bounds are established)
+    private int _bitmapWidth;   // Number of cells in E direction
+    private int _bitmapHeight;  // Number of cells in N direction
+    private int _bitmapOriginE; // Cell coordinate of bitmap origin (E)
+    private int _bitmapOriginN; // Cell coordinate of bitmap origin (N)
 
     // Per-zone cell counters for acreage calculation (zone index -> cell count)
     private readonly Dictionary<int, long> _cellCountPerZone = new();
+
+    // Fast detection set - tracks which cells are covered (no bitmap lock needed)
+    // This is tiny compared to the bitmap (~24 bytes per covered cell vs 2 bytes per total cell)
+    private readonly HashSet<long> _coveredCells = new();
 
     // Track newly added cells since last GetNewCoverageBitmapCells call
     // Still use HashSet for new cells (small, cleared frequently)
@@ -97,6 +104,27 @@ public class CoverageMapService : ICoverageMapService
     public int ActiveSectionCount => _activeSections.Count;
 
     public event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
+
+    // Callbacks for save/load operations on the bitmap buffer
+    public Func<ushort[]?>? GetPixelBufferCallback { get; set; }
+    public Action<ushort[]>? SetPixelBufferCallback { get; set; }
+
+    // Expose bitmap dimensions for coordinate calculations
+    public (int Width, int Height, int OriginE, int OriginN)? BitmapDimensions =>
+        _fieldBoundsSet ? (_bitmapWidth, _bitmapHeight, _bitmapOriginE, _bitmapOriginN) : null;
+
+    /// <summary>
+    /// Set pixel access callbacks for unified WriteableBitmap storage.
+    /// </summary>
+    public void SetPixelAccessCallbacks(
+        Func<int, int, ushort>? getPixel,
+        Action<int, int, ushort>? setPixel,
+        Action? clearAll)
+    {
+        _getPixel = getPixel;
+        _setPixel = setPixel;
+        _clearAllPixels = clearAll;
+    }
 
     public void StartMapping(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge, CoverageColor? color = null)
     {
@@ -380,33 +408,30 @@ public class CoverageMapService : ICoverageMapService
 
     /// <summary>
     /// Mark a cell as covered. Returns true if cell was newly covered.
-    /// Also tracks the zone for acreage calculation.
+    /// Uses HashSet for fast detection, batched write via _newCells for rendering.
     /// </summary>
     private bool MarkCellCovered(int cellE, int cellN, int zone)
     {
-        if (_coverageBits == null || !_fieldBoundsSet)
+        if (!_fieldBoundsSet)
             return false;
 
         // Convert to local coordinates
-        int localE = cellE - _bitsOriginE;
-        int localN = cellN - _bitsOriginN;
+        int localE = cellE - _bitmapOriginE;
+        int localN = cellN - _bitmapOriginN;
 
         // Bounds check
-        if (localE < 0 || localE >= _bitsWidth || localN < 0 || localN >= _bitsHeight)
+        if (localE < 0 || localE >= _bitmapWidth || localN < 0 || localN >= _bitmapHeight)
             return false;
 
-        // Calculate bit position
-        long bitIndex = (long)localN * _bitsWidth + localE;
-        int byteIndex = (int)(bitIndex / 8);
-        int bitOffset = (int)(bitIndex % 8);
+        // Pack coordinates into single long for HashSet (faster than tuple)
+        long cellKey = ((long)cellE << 32) | (uint)cellN;
 
-        // Check if already set
-        byte mask = (byte)(1 << bitOffset);
-        if ((_coverageBits[byteIndex] & mask) != 0)
+        // Check if already covered using HashSet (O(1), no bitmap lock)
+        if (!_coveredCells.Add(cellKey))
             return false; // Already covered
 
-        // Mark as covered
-        _coverageBits[byteIndex] |= mask;
+        // Track for batched write by map control (via GetNewCoverageBitmapCells)
+        _newCells.Add((cellE, cellN, zone));
 
         // Update per-zone counter
         if (!_cellCountPerZone.TryGetValue(zone, out long count))
@@ -421,24 +446,12 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     private bool IsCellCovered(int cellE, int cellN)
     {
-        if (_coverageBits == null || !_fieldBoundsSet)
+        if (!_fieldBoundsSet)
             return false;
 
-        // Convert to local coordinates
-        int localE = cellE - _bitsOriginE;
-        int localN = cellN - _bitsOriginN;
-
-        // Bounds check
-        if (localE < 0 || localE >= _bitsWidth || localN < 0 || localN >= _bitsHeight)
-            return false;
-
-        // Calculate bit position
-        long bitIndex = (long)localN * _bitsWidth + localE;
-        int byteIndex = (int)(bitIndex / 8);
-        int bitOffset = (int)(bitIndex % 8);
-
-        byte mask = (byte)(1 << bitOffset);
-        return (_coverageBits[byteIndex] & mask) != 0;
+        // Pack coordinates into single long for HashSet lookup
+        long cellKey = ((long)cellE << 32) | (uint)cellN;
+        return _coveredCells.Contains(cellKey);
     }
 
     /// <summary>
@@ -502,7 +515,7 @@ public class CoverageMapService : ICoverageMapService
     public IEnumerable<(int CellX, int CellY, CoverageColor Color)> GetCoverageBitmapCells(
         double cellSize, double viewMinE, double viewMaxE, double viewMinN, double viewMaxN)
     {
-        if (_coverageBits == null || GetTotalCellCount() == 0)
+        if (_getPixel == null || GetTotalCellCount() == 0)
             yield break;
 
         // Determine origin for coordinate calculations
@@ -519,6 +532,7 @@ public class CoverageMapService : ICoverageMapService
             originN = _minCellN * BITMAP_CELL_SIZE;
         }
 
+        // Default color for legacy compatibility (actual colors are in the bitmap)
         var defaultColor = GetZoneColor(0);
 
         // Convert viewport bounds to internal cell coordinates
@@ -623,10 +637,10 @@ public class CoverageMapService : ICoverageMapService
 
     public void ClearAll()
     {
-        // Clear bit array coverage (zero out if allocated)
-        if (_coverageBits != null)
-            Array.Clear(_coverageBits, 0, _coverageBits.Length);
+        // Clear bitmap via callback
+        _clearAllPixels?.Invoke();
         _newCells.Clear();
+        _coveredCells.Clear();
         _cellCountPerZone.Clear();
 
         // Reset bounds
@@ -660,17 +674,16 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     public void SetFieldBounds(double minE, double maxE, double minN, double maxN)
     {
-        // Skip if bounds unchanged (avoid redundant allocations)
+        // Skip if bounds unchanged
         if (_fieldBoundsSet &&
             Math.Abs(_fieldMinE - minE) < 0.01 &&
             Math.Abs(_fieldMaxE - maxE) < 0.01 &&
             Math.Abs(_fieldMinN - minN) < 0.01 &&
             Math.Abs(_fieldMaxN - maxN) < 0.01)
         {
-            Console.WriteLine($"[Coverage] SetFieldBounds: bounds unchanged, skipping allocation");
+            Console.WriteLine($"[Coverage] SetFieldBounds: bounds unchanged");
             return;
         }
-        Console.WriteLine($"[Coverage] SetFieldBounds: ALLOCATING new array (bounds changed or first call)");
 
         _fieldMinE = minE;
         _fieldMaxE = maxE;
@@ -678,27 +691,20 @@ public class CoverageMapService : ICoverageMapService
         _fieldMaxN = maxN;
         _fieldBoundsSet = true;
 
-        // Calculate bit array dimensions
-        _bitsOriginE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
-        _bitsOriginN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
+        // Calculate bitmap dimensions (actual allocation done by map control)
+        _bitmapOriginE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
+        _bitmapOriginN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
         int maxCellE = (int)Math.Ceiling(maxE / BITMAP_CELL_SIZE);
         int maxCellN = (int)Math.Ceiling(maxN / BITMAP_CELL_SIZE);
-        _bitsWidth = maxCellE - _bitsOriginE + 1;
-        _bitsHeight = maxCellN - _bitsOriginN + 1;
+        _bitmapWidth = maxCellE - _bitmapOriginE + 1;
+        _bitmapHeight = maxCellN - _bitmapOriginN + 1;
 
-        // Allocate bit array: 1 bit per cell, packed into bytes
-        // Total bytes = (width * height + 7) / 8
-        long totalBits = (long)_bitsWidth * _bitsHeight;
-        long totalBytes = (totalBits + 7) / 8;
-
-        // Allocate the bit array
-        _coverageBits = new byte[totalBytes];
-
+        long totalPixels = (long)_bitmapWidth * _bitmapHeight;
         double areaMSq = (maxE - minE) * (maxN - minN);
         double areaHa = areaMSq / 10000.0;
-        double memoryMB = totalBytes / (1024.0 * 1024.0);
+        double memoryMB = totalPixels * 2 / (1024.0 * 1024.0); // 2 bytes per pixel (Rgb565)
         Console.WriteLine($"[Coverage] Field bounds set: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}]");
-        Console.WriteLine($"[Coverage] Bit array: {_bitsWidth}x{_bitsHeight} cells = {totalBits:N0} bits = {memoryMB:F1}MB for {areaHa:F0}ha field");
+        Console.WriteLine($"[Coverage] Bitmap dimensions: {_bitmapWidth}x{_bitmapHeight} = {totalPixels:N0} pixels (~{memoryMB:F0}MB) for {areaHa:F0}ha field");
     }
 
     /// <summary>
@@ -707,8 +713,11 @@ public class CoverageMapService : ICoverageMapService
     public void ClearFieldBounds()
     {
         _fieldBoundsSet = false;
-        _coverageBits = null;
+        _bitmapWidth = 0;
+        _bitmapHeight = 0;
         _cellCountPerZone.Clear();
+        _coveredCells.Clear();
+        _clearAllPixels?.Invoke();
         Console.WriteLine("[Coverage] Field bounds cleared");
     }
 
@@ -719,7 +728,11 @@ public class CoverageMapService : ICoverageMapService
 
     public void SaveToFile(string fieldDirectory)
     {
-        if (_coverageBits == null || !_fieldBoundsSet)
+        if (!_fieldBoundsSet || GetPixelBufferCallback == null)
+            return;
+
+        var pixels = GetPixelBufferCallback();
+        if (pixels == null || pixels.Length == 0)
             return;
 
         var filename = Path.Combine(fieldDirectory, "Coverage.bin");
@@ -727,42 +740,51 @@ public class CoverageMapService : ICoverageMapService
         using var stream = new FileStream(filename, FileMode.Create);
         using var writer = new BinaryWriter(stream);
 
-        // Write header
-        writer.Write("COV1".ToCharArray()); // Magic + version
+        // Write header - COV2 format (Rgb565 pixels)
+        writer.Write("COV2".ToCharArray()); // Magic + version
         writer.Write(_fieldMinE);
         writer.Write(_fieldMaxE);
         writer.Write(_fieldMinN);
         writer.Write(_fieldMaxN);
         writer.Write(BITMAP_CELL_SIZE);
-        writer.Write(_bitsWidth);
-        writer.Write(_bitsHeight);
+        writer.Write(_bitmapWidth);
+        writer.Write(_bitmapHeight);
         writer.Write(_totalWorkedArea);
 
-        // Write bit array (compressed with simple RLE)
-        // For sparse coverage, this can be much smaller than raw bits
-        int i = 0;
-        while (i < _coverageBits.Length)
+        // Write pixel array with RLE compression (ushort values)
+        // Format: [count:ushort][value:ushort] pairs
+        // Max run length is 65535
+        long i = 0;
+        long compressedSize = 0;
+        while (i < pixels.Length)
         {
-            byte value = _coverageBits[i];
+            ushort value = pixels[i];
             int runLength = 1;
-            while (i + runLength < _coverageBits.Length &&
-                   _coverageBits[i + runLength] == value &&
-                   runLength < 255)
+            while (i + runLength < pixels.Length &&
+                   pixels[i + runLength] == value &&
+                   runLength < 65535)
             {
                 runLength++;
             }
-            writer.Write((byte)runLength);
+            writer.Write((ushort)runLength);
             writer.Write(value);
+            compressedSize += 4;
             i += runLength;
         }
 
-        Console.WriteLine($"[Coverage] Saved {_coverageBits.Length} bytes to {filename}");
+        Console.WriteLine($"[Coverage] Saved {pixels.Length} pixels ({pixels.Length * 2 / 1024 / 1024}MB) -> {compressedSize / 1024}KB compressed to {filename}");
     }
 
     public void LoadFromFile(string fieldDirectory)
     {
         var path = Path.Combine(fieldDirectory, "Coverage.bin");
         if (!File.Exists(path)) return;
+
+        if (SetPixelBufferCallback == null)
+        {
+            Console.WriteLine("[Coverage] LoadFromFile: SetPixelBufferCallback not set");
+            return;
+        }
 
         try
         {
@@ -771,11 +793,6 @@ public class CoverageMapService : ICoverageMapService
 
             // Read and verify header
             var magic = new string(reader.ReadChars(4));
-            if (magic != "COV1")
-            {
-                Console.WriteLine($"[Coverage] Unknown file format: {magic}");
-                return;
-            }
 
             double minE = reader.ReadDouble();
             double maxE = reader.ReadDouble();
@@ -786,8 +803,7 @@ public class CoverageMapService : ICoverageMapService
             int height = reader.ReadInt32();
             double area = reader.ReadDouble();
 
-            Console.WriteLine($"[Coverage] File header: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}] cellSize={cellSize} {width}x{height} area={area:F2}m²");
-            Console.WriteLine($"[Coverage] Current bounds: E[{_fieldMinE:F1}, {_fieldMaxE:F1}] N[{_fieldMinN:F1}, {_fieldMaxN:F1}] set={_fieldBoundsSet}");
+            Console.WriteLine($"[Coverage] File header ({magic}): E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}] cellSize={cellSize} {width}x{height} area={area:F2}m²");
 
             // Verify cell size matches
             if (Math.Abs(cellSize - BITMAP_CELL_SIZE) > 0.001)
@@ -796,55 +812,111 @@ public class CoverageMapService : ICoverageMapService
                 return;
             }
 
-            // Set field bounds (allocates bit array)
+            // Set field bounds (sets dimensions, map control allocates bitmap)
             SetFieldBounds(minE, maxE, minN, maxN);
 
-            // Read RLE-compressed bit array
-            int i = 0;
-            int nonZeroBytes = 0;
-            Console.WriteLine($"[Coverage] Reading RLE: stream.Position={stream.Position}, stream.Length={stream.Length}, bits.Length={_coverageBits!.Length}");
-            while (i < _coverageBits!.Length && stream.Position < stream.Length)
+            // Allocate pixel buffer for loading
+            long totalPixels = (long)width * height;
+            var pixels = new ushort[totalPixels];
+
+            if (magic == "COV2")
             {
-                byte runLength = reader.ReadByte();
-                byte value = reader.ReadByte();
-                if (value != 0) nonZeroBytes += runLength;
-                for (int j = 0; j < runLength && i < _coverageBits.Length; j++, i++)
+                // COV2 format: RLE-compressed Rgb565 pixels
+                long i = 0;
+                long nonZeroPixels = 0;
+                while (i < pixels.Length && stream.Position < stream.Length)
                 {
-                    _coverageBits[i] = value;
+                    ushort runLength = reader.ReadUInt16();
+                    ushort value = reader.ReadUInt16();
+                    if (value != 0) nonZeroPixels += runLength;
+                    for (int j = 0; j < runLength && i < pixels.Length; j++, i++)
+                    {
+                        pixels[i] = value;
+                    }
+                }
+                Console.WriteLine($"[Coverage] COV2 RLE: read {i:N0} pixels, {nonZeroPixels:N0} non-zero");
+                _cellCountPerZone[0] = nonZeroPixels;
+            }
+            else if (magic == "COV1")
+            {
+                // Legacy COV1 format: RLE-compressed bit array - convert to green pixels
+                // Each bit becomes a pixel (0 or default green color)
+                ushort greenRgb565 = (ushort)(((0 >> 3) << 11) | ((255 >> 2) << 5) | (0 >> 3)); // Pure green
+                long bitIndex = 0;
+                long nonZeroBits = 0;
+                long totalBits = (long)width * height;
+                long totalBytes = (totalBits + 7) / 8;
+
+                while (stream.Position < stream.Length && bitIndex < totalBits)
+                {
+                    byte runLength = reader.ReadByte();
+                    byte value = reader.ReadByte();
+
+                    for (int j = 0; j < runLength && bitIndex / 8 < totalBytes; j++)
+                    {
+                        // Expand byte to 8 pixels
+                        for (int bit = 0; bit < 8 && bitIndex < totalBits; bit++, bitIndex++)
+                        {
+                            if ((value & (1 << bit)) != 0)
+                            {
+                                pixels[bitIndex] = greenRgb565;
+                                nonZeroBits++;
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine($"[Coverage] COV1 legacy: converted {nonZeroBits:N0} bits to green pixels");
+                _cellCountPerZone[0] = nonZeroBits;
+            }
+            else
+            {
+                Console.WriteLine($"[Coverage] Unknown file format: {magic}");
+                return;
+            }
+
+            // Pass pixel buffer to map control
+            SetPixelBufferCallback(pixels);
+
+            // Populate detection HashSet from loaded pixels
+            _coveredCells.Clear();
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    long idx = (long)y * width + x;
+                    if (pixels[idx] != 0)
+                    {
+                        int cellE = _bitmapOriginE + x;
+                        int cellN = _bitmapOriginN + y;
+                        long cellKey = ((long)cellE << 32) | (uint)cellN;
+                        _coveredCells.Add(cellKey);
+                    }
                 }
             }
-            Console.WriteLine($"[Coverage] RLE complete: read {i} bytes, {nonZeroBytes} non-zero");
+            Console.WriteLine($"[Coverage] Populated detection set with {_coveredCells.Count:N0} cells");
 
             _totalWorkedArea = area;
             _totalWorkedAreaUser = area;
 
-            // Count cells for statistics (scan the bit array)
-            long cellCount = 0;
-            for (int b = 0; b < _coverageBits.Length; b++)
-            {
-                cellCount += BitCount(_coverageBits[b]);
-            }
-            _cellCountPerZone[0] = cellCount;
-
             // Update bounds from loaded data
+            long cellCount = _cellCountPerZone.GetValueOrDefault(0, 0);
             _boundsValid = cellCount > 0;
             if (_boundsValid)
             {
-                _minCellE = _bitsOriginE;
-                _maxCellE = _bitsOriginE + _bitsWidth - 1;
-                _minCellN = _bitsOriginN;
-                _maxCellN = _bitsOriginN + _bitsHeight - 1;
+                _minCellE = _bitmapOriginE;
+                _maxCellE = _bitmapOriginE + _bitmapWidth - 1;
+                _minCellN = _bitmapOriginN;
+                _maxCellN = _bitmapOriginN + _bitmapHeight - 1;
             }
 
             Console.WriteLine($"[Coverage] Loaded {cellCount:N0} cells, {area:F2} m² from {path}");
-            Console.WriteLine($"[Coverage] GetTotalCellCount() = {GetTotalCellCount()}, _fieldBoundsSet = {_fieldBoundsSet}");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Coverage] Failed to load: {ex.Message}");
         }
 
-        Console.WriteLine($"[Coverage] Firing CoverageUpdated with IsFullReload=true, TotalCellCount={GetTotalCellCount()}");
+        Console.WriteLine($"[Coverage] Firing CoverageUpdated with IsFullReload=true");
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
@@ -852,20 +924,6 @@ public class CoverageMapService : ICoverageMapService
             AreaAdded = 0,
             IsFullReload = true
         });
-    }
-
-    /// <summary>
-    /// Count set bits in a byte (population count).
-    /// </summary>
-    private static int BitCount(byte b)
-    {
-        int count = 0;
-        while (b != 0)
-        {
-            count += b & 1;
-            b >>= 1;
-        }
-        return count;
     }
 
 
