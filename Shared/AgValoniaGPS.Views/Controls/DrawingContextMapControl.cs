@@ -1667,11 +1667,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             if (USE_RGB565_FULL_RESOLUTION)
             {
-                // Direct copy - bitmap is Rgb565
+                // Only copy non-black pixels (actual coverage) - preserves background
                 ushort* dst = (ushort*)framebuffer.Address;
                 int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
                 for (int i = 0; i < count; i++)
-                    dst[i] = pixels[i];
+                {
+                    if (pixels[i] != 0)  // Only copy coverage, not black (no-coverage)
+                        dst[i] = pixels[i];
+                }
             }
             else
             {
