@@ -763,6 +763,21 @@ public class CoverageMapService : ICoverageMapService
 
         var filename = Path.Combine(fieldDirectory, "Coverage.bin");
 
+        // Filter pixels using detection bits - only save actual coverage, not background
+        // This prevents background image pixels from being saved as "coverage"
+        if (_detectionBits != null)
+        {
+            for (long idx = 0; idx < pixels.Length; idx++)
+            {
+                int byteIndex = (int)(idx / 8);
+                int bitOffset = (int)(idx % 8);
+                bool isCovered = byteIndex < _detectionBits.Length &&
+                                 (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
+                if (!isCovered)
+                    pixels[idx] = 0; // Clear non-coverage pixels (background)
+            }
+        }
+
         using var stream = new FileStream(filename, FileMode.Create);
         using var writer = new BinaryWriter(stream);
 
