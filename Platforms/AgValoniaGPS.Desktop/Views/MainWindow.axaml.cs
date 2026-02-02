@@ -172,6 +172,7 @@ public partial class MainWindow : Window
             // Set up buffer callbacks for save/load
             coverageService.GetPixelBufferCallback = MapControl.GetCoveragePixelBuffer;
             coverageService.SetPixelBufferCallback = MapControl.SetCoveragePixelBuffer;
+            coverageService.GetDisplayBitmapInfoCallback = MapControl.GetDisplayBitmapInfo;
 
             // Mark dirty in case field was already loaded with coverage
             MapControl.MarkCoverageDirty();

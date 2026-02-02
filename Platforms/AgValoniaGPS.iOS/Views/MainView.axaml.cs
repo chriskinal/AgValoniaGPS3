@@ -206,6 +206,7 @@ public partial class MainView : UserControl
             // Set up buffer callbacks for save/load
             coverageService.GetPixelBufferCallback = _mapControl.GetCoveragePixelBuffer;
             coverageService.SetPixelBufferCallback = _mapControl.SetCoveragePixelBuffer;
+            coverageService.GetDisplayBitmapInfoCallback = _mapControl.GetDisplayBitmapInfo;
 
             // Mark dirty in case field was already loaded with coverage
             _mapControl.MarkCoverageDirty();

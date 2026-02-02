@@ -109,6 +109,9 @@ public class CoverageMapService : ICoverageMapService
     public Func<ushort[]?>? GetPixelBufferCallback { get; set; }
     public Action<ushort[]>? SetPixelBufferCallback { get; set; }
 
+    // Callback to get actual display bitmap dimensions (may differ from detection resolution)
+    public Func<(int Width, int Height, double CellSize)?>? GetDisplayBitmapInfoCallback { get; set; }
+
     // Expose bitmap dimensions for coordinate calculations
     public (int Width, int Height, int OriginE, int OriginN)? BitmapDimensions =>
         _fieldBoundsSet ? (_bitmapWidth, _bitmapHeight, _bitmapOriginE, _bitmapOriginN) : null;
@@ -1187,12 +1190,43 @@ public class CoverageMapService : ICoverageMapService
     /// </summary>
     private void SaveSectionDisplay(string fieldDirectory)
     {
-        if (!_fieldBoundsSet || GetPixelBufferCallback == null || _detectionBits == null)
+        if (!_fieldBoundsSet || GetPixelBufferCallback == null)
             return;
 
         var pixels = GetPixelBufferCallback();
         if (pixels == null || pixels.Length == 0)
             return;
+
+        // Get actual display bitmap dimensions (may differ from detection resolution)
+        int dispWidth, dispHeight;
+        double dispCellSize;
+        if (GetDisplayBitmapInfoCallback != null)
+        {
+            var displayInfo = GetDisplayBitmapInfoCallback();
+            if (displayInfo == null)
+            {
+                Console.WriteLine("[Coverage] SaveSectionDisplay: Display bitmap not initialized");
+                return;
+            }
+            dispWidth = displayInfo.Value.Width;
+            dispHeight = displayInfo.Value.Height;
+            dispCellSize = displayInfo.Value.CellSize;
+        }
+        else
+        {
+            // Fallback to detection dimensions (legacy)
+            dispWidth = _bitmapWidth;
+            dispHeight = _bitmapHeight;
+            dispCellSize = BITMAP_CELL_SIZE;
+        }
+
+        // Verify pixel count matches expected display dimensions
+        long expectedPixels = (long)dispWidth * dispHeight;
+        if (pixels.Length != expectedPixels)
+        {
+            Console.WriteLine($"[Coverage] SaveSectionDisplay: Pixel count mismatch: {pixels.Length} vs expected {expectedPixels}");
+            return;
+        }
 
         var filename = Path.Combine(fieldDirectory, "coverage_disp.bin");
 
@@ -1225,55 +1259,74 @@ public class CoverageMapService : ICoverageMapService
             palette.Add(singleColor);
         }
 
-        // Scan COVERED pixels only for any colors not in palette
-        // Iterate detection bytes - skip 8 uncovered pixels at once
-        for (int byteIdx = 0; byteIdx < _detectionBits.Length && palette.Count < 255; byteIdx++)
-        {
-            byte bits = _detectionBits[byteIdx];
-            if (bits == 0) continue; // Skip 8 uncovered pixels at once
+        // Calculate scale factor from detection to display resolution
+        double scaleRatio = BITMAP_CELL_SIZE / dispCellSize; // e.g., 0.1/0.2 = 0.5
 
-            long basePixelIdx = (long)byteIdx * 8;
-            for (int bit = 0; bit < 8 && palette.Count < 255; bit++)
+        // Scan COVERED pixels only - map detection coordinates to display coordinates
+        // This is O(covered cells) not O(total pixels)
+        var indices = new byte[pixels.Length];
+        if (_detectionBits != null)
+        {
+            for (int byteIdx = 0; byteIdx < _detectionBits.Length; byteIdx++)
             {
-                if ((bits & (1 << bit)) != 0)
+                byte bits = _detectionBits[byteIdx];
+                if (bits == 0) continue; // Skip 8 uncovered cells at once
+
+                // Calculate detection cell coordinates for this byte
+                long baseBitIdx = (long)byteIdx * 8;
+                for (int bit = 0; bit < 8; bit++)
                 {
-                    long pixelIdx = basePixelIdx + bit;
-                    if (pixelIdx < pixels.Length)
+                    if ((bits & (1 << bit)) == 0) continue;
+
+                    long bitIdx = baseBitIdx + bit;
+                    int detY = (int)(bitIdx / _bitmapWidth);
+                    int detX = (int)(bitIdx % _bitmapWidth);
+
+                    // Map detection cell to display pixel
+                    int dispX = (int)(detX * scaleRatio);
+                    int dispY = (int)(detY * scaleRatio);
+
+                    // Bounds check for display
+                    if (dispX >= dispWidth || dispY >= dispHeight) continue;
+
+                    long dispIdx = (long)dispY * dispWidth + dispX;
+                    if (dispIdx >= pixels.Length) continue;
+
+                    ushort color = pixels[dispIdx];
+                    if (color == 0) continue;
+
+                    // Add to palette if not seen
+                    if (!colorToIndex.ContainsKey(color) && palette.Count < 255)
                     {
-                        ushort color = pixels[pixelIdx];
-                        if (color != 0 && !colorToIndex.ContainsKey(color))
-                        {
-                            colorToIndex[color] = (byte)palette.Count;
-                            palette.Add(color);
-                        }
+                        colorToIndex[color] = (byte)palette.Count;
+                        palette.Add(color);
                     }
+
+                    // Set index (may overwrite same pixel multiple times when downscaling, that's fine)
+                    if (colorToIndex.TryGetValue(color, out byte idx))
+                        indices[dispIdx] = idx;
+                    else if (palette.Count > 1)
+                        indices[dispIdx] = FindClosestColorIndex(color, palette);
                 }
             }
         }
-
-        // Convert covered pixels to section indices
-        // Array is zero-initialized, so only set covered cells
-        var indices = new byte[pixels.Length];
-        for (int byteIdx = 0; byteIdx < _detectionBits.Length; byteIdx++)
+        else
         {
-            byte bits = _detectionBits[byteIdx];
-            if (bits == 0) continue; // Skip 8 uncovered pixels at once
-
-            long basePixelIdx = (long)byteIdx * 8;
-            for (int bit = 0; bit < 8; bit++)
+            // Fallback: iterate all pixels (slow but works without detection bits)
+            for (long i = 0; i < pixels.Length; i++)
             {
-                if ((bits & (1 << bit)) != 0)
+                ushort color = pixels[i];
+                if (color != 0)
                 {
-                    long pixelIdx = basePixelIdx + bit;
-                    if (pixelIdx < pixels.Length)
+                    if (!colorToIndex.ContainsKey(color) && palette.Count < 255)
                     {
-                        ushort color = pixels[pixelIdx];
-                        if (color != 0 && colorToIndex.TryGetValue(color, out byte idx))
-                            indices[pixelIdx] = idx;
-                        else if (color != 0)
-                            indices[pixelIdx] = FindClosestColorIndex(color, palette);
-                        // else: leave as 0 (uncovered)
+                        colorToIndex[color] = (byte)palette.Count;
+                        palette.Add(color);
                     }
+                    if (colorToIndex.TryGetValue(color, out byte idx))
+                        indices[i] = idx;
+                    else
+                        indices[i] = FindClosestColorIndex(color, palette);
                 }
             }
         }
@@ -1290,12 +1343,12 @@ public class CoverageMapService : ICoverageMapService
         foreach (var color in palette)
             writer.Write(color);
 
-        // Write bitmap info
-        writer.Write((float)BITMAP_CELL_SIZE); // Resolution when saved
+        // Write bitmap info - use ACTUAL display resolution and dimensions
+        writer.Write((float)dispCellSize);    // Resolution when saved
         writer.Write(_fieldMinE);              // Origin E
         writer.Write(_fieldMinN);              // Origin N
-        writer.Write((uint)_bitmapWidth);      // Width
-        writer.Write((uint)_bitmapHeight);     // Height
+        writer.Write((uint)dispWidth);         // Width at display resolution
+        writer.Write((uint)dispHeight);        // Height at display resolution
 
         // RLE compress section indices
         long compressedSize = 0;
@@ -1316,7 +1369,7 @@ public class CoverageMapService : ICoverageMapService
             idx2 += runLength;
         }
 
-        Console.WriteLine($"[Coverage] Saved section display: {palette.Count} colors, {indices.Length} cells -> {compressedSize / 1024}KB to {filename}");
+        Console.WriteLine($"[Coverage] Saved section display: {palette.Count} colors, {dispWidth}x{dispHeight} @ {dispCellSize}m -> {compressedSize / 1024}KB to {filename}");
     }
 
     /// <summary>
@@ -1334,6 +1387,29 @@ public class CoverageMapService : ICoverageMapService
         {
             Console.WriteLine("[Coverage] LoadSectionDisplay: SetPixelBufferCallback not set");
             return false;
+        }
+
+        // Get actual display bitmap dimensions (may differ from detection resolution)
+        int targetWidth, targetHeight;
+        double targetCellSize;
+        if (GetDisplayBitmapInfoCallback != null)
+        {
+            var displayInfo = GetDisplayBitmapInfoCallback();
+            if (displayInfo == null)
+            {
+                Console.WriteLine("[Coverage] LoadSectionDisplay: Display bitmap not initialized");
+                return false;
+            }
+            targetWidth = displayInfo.Value.Width;
+            targetHeight = displayInfo.Value.Height;
+            targetCellSize = displayInfo.Value.CellSize;
+        }
+        else
+        {
+            // Fallback to service dimensions (legacy)
+            targetWidth = _bitmapWidth;
+            targetHeight = _bitmapHeight;
+            targetCellSize = BITMAP_CELL_SIZE;
         }
 
         try
@@ -1357,19 +1433,20 @@ public class CoverageMapService : ICoverageMapService
             for (int i = 0; i < paletteSize; i++)
                 palette[i] = reader.ReadUInt16();
 
-            // Read bitmap info
+            // Read bitmap info from file
             float savedResolution = reader.ReadSingle();
             double originE = reader.ReadDouble();
             double originN = reader.ReadDouble();
             uint savedWidth = reader.ReadUInt32();
             uint savedHeight = reader.ReadUInt32();
 
-            // Check if resolution scaling is needed
-            bool needsScaling = Math.Abs(savedResolution - BITMAP_CELL_SIZE) > 0.001;
-            double scaleRatio = savedResolution / BITMAP_CELL_SIZE;
+            // Check if resolution scaling is needed (compare to actual display resolution, not detection)
+            bool needsScaling = Math.Abs(savedResolution - targetCellSize) > 0.001 ||
+                                savedWidth != targetWidth || savedHeight != targetHeight;
+            double scaleRatio = savedResolution / targetCellSize;
 
             if (needsScaling)
-                Console.WriteLine($"[Coverage] Section display v{version}: {savedWidth}x{savedHeight} @ {savedResolution}m -> scaling to {_bitmapWidth}x{_bitmapHeight} @ {BITMAP_CELL_SIZE}m (ratio {scaleRatio:F2})");
+                Console.WriteLine($"[Coverage] Section display v{version}: {savedWidth}x{savedHeight} @ {savedResolution}m -> scaling to {targetWidth}x{targetHeight} @ {targetCellSize}m (ratio {scaleRatio:F2})");
             else
                 Console.WriteLine($"[Coverage] Section display v{version}: {savedWidth}x{savedHeight} @ {savedResolution}m, {paletteSize} colors");
 
@@ -1390,9 +1467,17 @@ public class CoverageMapService : ICoverageMapService
                 }
             }
 
-            // Convert to RGB565 pixels, scaling if needed
-            long targetPixels = (long)_bitmapWidth * _bitmapHeight;
-            var pixels = new ushort[targetPixels];
+            // Validate: if we didn't fill the expected size, file is corrupt
+            // This catches old files where header dimensions didn't match actual data
+            if (destIndex < savedTotalPixels * 0.9) // Allow 10% tolerance for RLE edge cases
+            {
+                Console.WriteLine($"[Coverage] Section display file corrupt: only {destIndex} indices for {savedTotalPixels} expected pixels");
+                return false;
+            }
+
+            // Convert to RGB565 pixels, scaling if needed to match display bitmap
+            long totalTargetPixels = (long)targetWidth * targetHeight;
+            var pixels = new ushort[totalTargetPixels];
             long nonZeroPixels = 0;
 
             if (!needsScaling)
@@ -1412,21 +1497,21 @@ public class CoverageMapService : ICoverageMapService
             else
             {
                 // Scale using nearest-neighbor interpolation
-                // For each pixel in target, find corresponding pixel in source
-                for (int y = 0; y < _bitmapHeight; y++)
+                // For each pixel in target (display bitmap), find corresponding pixel in source (saved)
+                for (int y = 0; y < targetHeight; y++)
                 {
                     // Map target Y to source Y
                     int srcY = (int)(y * scaleRatio);
                     if (srcY >= savedHeight) srcY = (int)savedHeight - 1;
 
-                    for (int x = 0; x < _bitmapWidth; x++)
+                    for (int x = 0; x < targetWidth; x++)
                     {
                         // Map target X to source X
                         int srcX = (int)(x * scaleRatio);
                         if (srcX >= savedWidth) srcX = (int)savedWidth - 1;
 
                         long srcIdx = (long)srcY * savedWidth + srcX;
-                        long dstIdx = (long)y * _bitmapWidth + x;
+                        long dstIdx = (long)y * targetWidth + x;
 
                         if (srcIdx < savedIndices.Length && dstIdx < pixels.Length)
                         {

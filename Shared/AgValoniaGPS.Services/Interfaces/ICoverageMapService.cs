@@ -235,6 +235,11 @@ public interface ICoverageMapService
     Action<ushort[]>? SetPixelBufferCallback { get; set; }
 
     /// <summary>
+    /// Get actual display bitmap dimensions (may differ from detection resolution due to dynamic scaling).
+    /// </summary>
+    Func<(int Width, int Height, double CellSize)?>? GetDisplayBitmapInfoCallback { get; set; }
+
+    /// <summary>
     /// Get bitmap dimensions for coordinate calculations.
     /// Returns (width, height, originE, originN) or null if not set.
     /// </summary>

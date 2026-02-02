@@ -115,6 +115,7 @@ public interface ISharedMapControl
     void ClearCoveragePixels();
     ushort[]? GetCoveragePixelBuffer();
     void SetCoveragePixelBuffer(ushort[] pixels);
+    (int Width, int Height, double CellSize)? GetDisplayBitmapInfo();
 
     // Grid visibility property
     bool IsGridVisible { get; set; }
@@ -1574,6 +1575,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     }
 
     /// <summary>
+    /// Get display bitmap dimensions and resolution.
+    /// Returns null if bitmap not allocated.
+    /// </summary>
+    public (int Width, int Height, double CellSize)? GetDisplayBitmapInfo()
+    {
+        if (_bitmapWidth == 0 || _bitmapHeight == 0)
+            return null;
+        return (_bitmapWidth, _bitmapHeight, _actualBitmapCellSize);
+    }
+
+    /// <summary>
     /// Set the coverage pixel buffer from a ushort array (for load operations).
     /// Allocates/resizes bitmap if needed using CreateCoverageBitmap().
     /// </summary>
@@ -2838,8 +2850,35 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double worldWidth = maxE - minE;
         double worldHeight = maxN - minN;
 
-        // Use the detection resolution (0.1m/pixel)
-        const double cellSize = 0.1;
+        // Calculate optimal cell size using same logic as UpdateCoverageBitmapIfNeeded
+        // This ensures consistency between initialization and rendering
+        double cellSize;
+        if (USE_RGB565_FULL_RESOLUTION)
+        {
+            cellSize = MIN_BITMAP_CELL_SIZE;
+        }
+        else
+        {
+            // Scale up for large fields to fit in ~200MB
+            const long MAX_PIXELS = 50_000_000;
+            cellSize = MIN_BITMAP_CELL_SIZE;
+
+            long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
+                                  (long)Math.Ceiling(worldHeight / MIN_BITMAP_CELL_SIZE);
+
+            if (pixelsAtMinRes > MAX_PIXELS)
+            {
+                double scaleFactor = Math.Sqrt((double)pixelsAtMinRes / MAX_PIXELS);
+                cellSize = MIN_BITMAP_CELL_SIZE * scaleFactor;
+                if (cellSize <= 0.2) cellSize = 0.2;
+                else if (cellSize <= 0.25) cellSize = 0.25;
+                else if (cellSize <= 0.35) cellSize = 0.35;
+                else if (cellSize <= 0.5) cellSize = 0.5;
+                else if (cellSize <= 0.75) cellSize = 0.75;
+                else cellSize = Math.Ceiling(cellSize);
+            }
+        }
+
         int requiredWidth = (int)Math.Ceiling(worldWidth / cellSize);
         int requiredHeight = (int)Math.Ceiling(worldHeight / cellSize);
 
@@ -2881,7 +2920,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Mark bitmap as ready
         _bitmapNeedsFullRebuild = false;
         _bitmapNeedsIncrementalUpdate = false;
-        Console.WriteLine($"[MapControl] Bitmap initialized via CreateCoverageBitmap");
+        Console.WriteLine($"[MapControl] Bitmap initialized: {requiredWidth}x{requiredHeight} @ {cellSize}m");
     }
 
     private void RebuildCoverageGeometryCache()
