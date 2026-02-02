@@ -756,271 +756,33 @@ public class CoverageMapService : ICoverageMapService
 
     public void SaveToFile(string fieldDirectory)
     {
-        // Save detection bits to separate file (authoritative coverage data)
+        // Save detection bits (authoritative coverage data at 0.1m resolution)
         SaveDetectionBits(fieldDirectory);
 
-        // Save section display data (colors with palette for resolution independence)
+        // Save section display data (colors with palette, resolution-independent)
         SaveSectionDisplay(fieldDirectory);
-
-        if (!_fieldBoundsSet || GetPixelBufferCallback == null)
-            return;
-
-        var pixels = GetPixelBufferCallback();
-        if (pixels == null || pixels.Length == 0)
-            return;
-
-        var filename = Path.Combine(fieldDirectory, "Coverage.bin");
-
-        // Filter pixels using detection bits - only save actual coverage, not background
-        // This prevents background image pixels from being saved as "coverage"
-        if (_detectionBits != null)
-        {
-            for (long idx = 0; idx < pixels.Length; idx++)
-            {
-                int byteIndex = (int)(idx / 8);
-                int bitOffset = (int)(idx % 8);
-                bool isCovered = byteIndex < _detectionBits.Length &&
-                                 (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
-                if (!isCovered)
-                    pixels[idx] = 0; // Clear non-coverage pixels (background)
-            }
-        }
-
-        using var stream = new FileStream(filename, FileMode.Create);
-        using var writer = new BinaryWriter(stream);
-
-        // Write header - COV2 format (Rgb565 pixels)
-        writer.Write("COV2".ToCharArray()); // Magic + version
-        writer.Write(_fieldMinE);
-        writer.Write(_fieldMaxE);
-        writer.Write(_fieldMinN);
-        writer.Write(_fieldMaxN);
-        writer.Write(BITMAP_CELL_SIZE);
-        writer.Write(_bitmapWidth);
-        writer.Write(_bitmapHeight);
-        writer.Write(_totalWorkedArea);
-
-        // Write pixel array with RLE compression (ushort values)
-        // Format: [count:ushort][value:ushort] pairs
-        // Max run length is 65535
-        long i = 0;
-        long compressedSize = 0;
-        while (i < pixels.Length)
-        {
-            ushort value = pixels[i];
-            int runLength = 1;
-            while (i + runLength < pixels.Length &&
-                   pixels[i + runLength] == value &&
-                   runLength < 65535)
-            {
-                runLength++;
-            }
-            writer.Write((ushort)runLength);
-            writer.Write(value);
-            compressedSize += 4;
-            i += runLength;
-        }
-
-        Console.WriteLine($"[Coverage] Saved {pixels.Length} pixels ({pixels.Length * 2 / 1024 / 1024}MB) -> {compressedSize / 1024}KB compressed to {filename}");
     }
 
     public void LoadFromFile(string fieldDirectory)
     {
-        // Try to load detection bits first (authoritative coverage data)
+        // Load detection bits (authoritative coverage data at 0.1m resolution)
         bool hasDetectionBits = LoadDetectionBits(fieldDirectory);
 
-        // Try to load new section display format (COVS)
+        // Load section display (colors with palette, resolution-independent)
         bool hasSectionDisplay = LoadSectionDisplay(fieldDirectory);
 
-        if (hasSectionDisplay)
+        if (hasSectionDisplay || hasDetectionBits)
         {
-            // New format loaded successfully - fire event and return
-            Console.WriteLine("[Coverage] Using new COVS format for display");
+            Console.WriteLine($"[Coverage] Loaded: detectionBits={hasDetectionBits}, sectionDisplay={hasSectionDisplay}");
             CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
             {
                 TotalArea = _totalWorkedArea,
                 PatchCount = (int)GetTotalCellCount(),
                 AreaAdded = 0,
                 IsFullReload = true,
-                PixelsAlreadyLoaded = true
+                PixelsAlreadyLoaded = hasSectionDisplay  // Only skip repaint if we loaded display data
             });
-            return;
         }
-
-        // Fall back to legacy Coverage.bin (COV2 format)
-        var path = Path.Combine(fieldDirectory, "Coverage.bin");
-        if (!File.Exists(path))
-        {
-            // No display pixels file - if we loaded detection bits, fire event
-            if (hasDetectionBits)
-            {
-                CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
-                {
-                    TotalArea = _totalWorkedArea,
-                    PatchCount = (int)GetTotalCellCount(),
-                    AreaAdded = 0,
-                    IsFullReload = true,
-                    PixelsAlreadyLoaded = false  // Need to repaint from detection bits
-                });
-            }
-            return;
-        }
-
-        if (SetPixelBufferCallback == null)
-        {
-            Console.WriteLine("[Coverage] LoadFromFile: SetPixelBufferCallback not set");
-            return;
-        }
-
-        try
-        {
-            using var stream = new FileStream(path, FileMode.Open);
-            using var reader = new BinaryReader(stream);
-
-            // Read and verify header
-            var magic = new string(reader.ReadChars(4));
-
-            double minE = reader.ReadDouble();
-            double maxE = reader.ReadDouble();
-            double minN = reader.ReadDouble();
-            double maxN = reader.ReadDouble();
-            double cellSize = reader.ReadDouble();
-            int width = reader.ReadInt32();
-            int height = reader.ReadInt32();
-            double area = reader.ReadDouble();
-
-            Console.WriteLine($"[Coverage] File header ({magic}): E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}] cellSize={cellSize} {width}x{height} area={area:F2}m²");
-
-            // Verify cell size matches
-            if (Math.Abs(cellSize - BITMAP_CELL_SIZE) > 0.001)
-            {
-                Console.WriteLine($"[Coverage] Cell size mismatch: file={cellSize}, expected={BITMAP_CELL_SIZE}");
-                return;
-            }
-
-            // Set field bounds (sets dimensions, map control allocates bitmap)
-            SetFieldBounds(minE, maxE, minN, maxN);
-
-            // Allocate pixel buffer for loading
-            long totalPixels = (long)width * height;
-            var pixels = new ushort[totalPixels];
-
-            if (magic == "COV2")
-            {
-                // COV2 format: RLE-compressed Rgb565 pixels
-                long i = 0;
-                long nonZeroPixels = 0;
-                while (i < pixels.Length && stream.Position < stream.Length)
-                {
-                    ushort runLength = reader.ReadUInt16();
-                    ushort value = reader.ReadUInt16();
-                    if (value != 0) nonZeroPixels += runLength;
-                    for (int j = 0; j < runLength && i < pixels.Length; j++, i++)
-                    {
-                        pixels[i] = value;
-                    }
-                }
-                Console.WriteLine($"[Coverage] COV2 RLE: read {i:N0} pixels, {nonZeroPixels:N0} non-zero");
-                _cellCountPerZone[0] = nonZeroPixels;
-            }
-            else if (magic == "COV1")
-            {
-                // Legacy COV1 format: RLE-compressed bit array - convert to green pixels
-                // Each bit becomes a pixel (0 or default green color)
-                ushort greenRgb565 = (ushort)(((0 >> 3) << 11) | ((255 >> 2) << 5) | (0 >> 3)); // Pure green
-                long bitIndex = 0;
-                long nonZeroBits = 0;
-                long totalBits = (long)width * height;
-                long totalBytes = (totalBits + 7) / 8;
-
-                while (stream.Position < stream.Length && bitIndex < totalBits)
-                {
-                    byte runLength = reader.ReadByte();
-                    byte value = reader.ReadByte();
-
-                    for (int j = 0; j < runLength && bitIndex / 8 < totalBytes; j++)
-                    {
-                        // Expand byte to 8 pixels
-                        for (int bit = 0; bit < 8 && bitIndex < totalBits; bit++, bitIndex++)
-                        {
-                            if ((value & (1 << bit)) != 0)
-                            {
-                                pixels[bitIndex] = greenRgb565;
-                                nonZeroBits++;
-                            }
-                        }
-                    }
-                }
-                Console.WriteLine($"[Coverage] COV1 legacy: converted {nonZeroBits:N0} bits to green pixels");
-                _cellCountPerZone[0] = nonZeroBits;
-            }
-            else
-            {
-                Console.WriteLine($"[Coverage] Unknown file format: {magic}");
-                return;
-            }
-
-            // Pass pixel buffer to map control
-            SetPixelBufferCallback(pixels);
-
-            // Populate detection bit array from loaded pixels (only if not already loaded from detection file)
-            if (!hasDetectionBits && _detectionBits != null)
-            {
-                Array.Clear(_detectionBits, 0, _detectionBits.Length);
-                long coveredCount = 0;
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        long idx = (long)y * width + x;
-                        if (pixels[idx] != 0)
-                        {
-                            // Set bit in detection array
-                            long bitIndex = (long)y * width + x;
-                            int byteIndex = (int)(bitIndex / 8);
-                            int bitOffset = (int)(bitIndex % 8);
-                            _detectionBits[byteIndex] |= (byte)(1 << bitOffset);
-                            coveredCount++;
-                        }
-                    }
-                }
-                Console.WriteLine($"[Coverage] Populated detection bits from pixels: {coveredCount:N0} cells");
-            }
-            else if (hasDetectionBits)
-            {
-                Console.WriteLine("[Coverage] Using detection bits from coverage_detect.bin (authoritative)");
-            }
-
-            _totalWorkedArea = area;
-            _totalWorkedAreaUser = area;
-
-            // Update bounds from loaded data
-            long cellCount = _cellCountPerZone.GetValueOrDefault(0, 0);
-            _boundsValid = cellCount > 0;
-            if (_boundsValid)
-            {
-                _minCellE = _bitmapOriginE;
-                _maxCellE = _bitmapOriginE + _bitmapWidth - 1;
-                _minCellN = _bitmapOriginN;
-                _maxCellN = _bitmapOriginN + _bitmapHeight - 1;
-            }
-
-            Console.WriteLine($"[Coverage] Loaded {cellCount:N0} cells, {area:F2} m² from {path}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Coverage] Failed to load: {ex.Message}");
-        }
-
-        // Fire event - PixelsAlreadyLoaded prevents full rebuild (pixels loaded directly from file)
-        CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
-        {
-            TotalArea = _totalWorkedArea,
-            PatchCount = (int)GetTotalCellCount(),
-            AreaAdded = 0,
-            IsFullReload = true,
-            PixelsAlreadyLoaded = true  // Don't repaint - pixels loaded directly from file
-        });
     }
 
     /// <summary>

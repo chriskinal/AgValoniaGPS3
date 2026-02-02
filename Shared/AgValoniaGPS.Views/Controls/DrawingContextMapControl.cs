@@ -2701,12 +2701,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void ClearBackground()
     {
-        // Only clear in-memory bitmap, NOT the path - path is needed to reload from file
-        Console.WriteLine($"[MapControl] ClearBackground() called - disposing image but keeping path={_backgroundImagePath}");
+        Console.WriteLine($"[MapControl] ClearBackground() called - fully clearing background");
         _backgroundImage?.Dispose();
         _backgroundImage = null;
-        // DON'T clear _backgroundImagePath - we need it to reload from file
-        // _backgroundComposited stays as-is since bitmap content is unchanged
+        _backgroundImagePath = null;
+        _backgroundComposited = false;
+        _bgMinX = _bgMaxX = _bgMinY = _bgMaxY = 0;
     }
 
     public void SetBoundaryOffsetIndicator(bool show, double offsetMeters = 0.0)
