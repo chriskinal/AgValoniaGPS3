@@ -904,8 +904,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
         else
         {
-            // Scale up for large fields to fit in ~200MB (32-bit BGRA)
-            const long MAX_PIXELS = 50_000_000;
+            // Scale up for large fields to fit in ~600MB (RGB565)
+            const long MAX_PIXELS = 300_000_000;
             cellSize = MIN_BITMAP_CELL_SIZE;
 
             long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
@@ -2882,8 +2882,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
         else
         {
-            // Scale up for large fields to fit in ~200MB
-            const long MAX_PIXELS = 50_000_000;
+            // Scale up for large fields to fit in ~600MB (RGB565)
+            const long MAX_PIXELS = 300_000_000;
             cellSize = MIN_BITMAP_CELL_SIZE;
 
             long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
