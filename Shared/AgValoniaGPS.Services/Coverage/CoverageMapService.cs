@@ -753,6 +753,9 @@ public class CoverageMapService : ICoverageMapService
 
     public void SaveToFile(string fieldDirectory)
     {
+        // Save detection bits to separate file (authoritative coverage data)
+        SaveDetectionBits(fieldDirectory);
+
         if (!_fieldBoundsSet || GetPixelBufferCallback == null)
             return;
 
@@ -817,8 +820,26 @@ public class CoverageMapService : ICoverageMapService
 
     public void LoadFromFile(string fieldDirectory)
     {
+        // Try to load detection bits first (authoritative coverage data)
+        bool hasDetectionBits = LoadDetectionBits(fieldDirectory);
+
         var path = Path.Combine(fieldDirectory, "Coverage.bin");
-        if (!File.Exists(path)) return;
+        if (!File.Exists(path))
+        {
+            // No display pixels file - if we loaded detection bits, fire event
+            if (hasDetectionBits)
+            {
+                CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
+                {
+                    TotalArea = _totalWorkedArea,
+                    PatchCount = (int)GetTotalCellCount(),
+                    AreaAdded = 0,
+                    IsFullReload = true,
+                    PixelsAlreadyLoaded = false  // Need to repaint from detection bits
+                });
+            }
+            return;
+        }
 
         if (SetPixelBufferCallback == null)
         {
@@ -917,8 +938,8 @@ public class CoverageMapService : ICoverageMapService
             // Pass pixel buffer to map control
             SetPixelBufferCallback(pixels);
 
-            // Populate detection bit array from loaded pixels
-            if (_detectionBits != null)
+            // Populate detection bit array from loaded pixels (only if not already loaded from detection file)
+            if (!hasDetectionBits && _detectionBits != null)
             {
                 Array.Clear(_detectionBits, 0, _detectionBits.Length);
                 long coveredCount = 0;
@@ -938,7 +959,11 @@ public class CoverageMapService : ICoverageMapService
                         }
                     }
                 }
-                Console.WriteLine($"[Coverage] Populated detection bits with {coveredCount:N0} cells");
+                Console.WriteLine($"[Coverage] Populated detection bits from pixels: {coveredCount:N0} cells");
+            }
+            else if (hasDetectionBits)
+            {
+                Console.WriteLine("[Coverage] Using detection bits from coverage_detect.bin (authoritative)");
             }
 
             _totalWorkedArea = area;
@@ -973,6 +998,164 @@ public class CoverageMapService : ICoverageMapService
         });
     }
 
+    /// <summary>
+    /// Save detection bits to coverage_detect.bin (COVD format).
+    /// This is the authoritative source for coverage detection at 0.1m resolution.
+    /// Format: Header + RLE-compressed bit array
+    /// </summary>
+    private void SaveDetectionBits(string fieldDirectory)
+    {
+        if (!_fieldBoundsSet || _detectionBits == null)
+            return;
+
+        var filename = Path.Combine(fieldDirectory, "coverage_detect.bin");
+
+        using var stream = new FileStream(filename, FileMode.Create);
+        using var writer = new BinaryWriter(stream);
+
+        // Write header - COVD format
+        writer.Write("COVD".ToCharArray()); // Magic (4 bytes)
+        writer.Write((byte)1);               // Version
+        writer.Write((float)BITMAP_CELL_SIZE); // Resolution (always 0.1m)
+        writer.Write(_fieldMinE);            // Origin E
+        writer.Write(_fieldMinN);            // Origin N
+        writer.Write((uint)_bitmapWidth);    // Width in cells
+        writer.Write((uint)_bitmapHeight);   // Height in cells
+        writer.Write(_totalWorkedArea);      // Total area for quick restore
+
+        // RLE compress the bit array
+        // Format: [runLength:ushort][value:byte] pairs
+        // value is 0x00 (8 zero bits) or 0xFF (8 one bits) or actual mixed byte
+        long compressedSize = 0;
+        int i = 0;
+        while (i < _detectionBits.Length)
+        {
+            byte value = _detectionBits[i];
+            int runLength = 1;
+
+            // Only RLE consecutive identical bytes
+            while (i + runLength < _detectionBits.Length &&
+                   _detectionBits[i + runLength] == value &&
+                   runLength < 65535)
+            {
+                runLength++;
+            }
+
+            writer.Write((ushort)runLength);
+            writer.Write(value);
+            compressedSize += 3;
+            i += runLength;
+        }
+
+        Console.WriteLine($"[Coverage] Saved detection bits: {_detectionBits.Length / 1024}KB -> {compressedSize / 1024}KB compressed to {filename}");
+    }
+
+    /// <summary>
+    /// Load detection bits from coverage_detect.bin (COVD format).
+    /// Returns true if successfully loaded, false otherwise.
+    /// </summary>
+    private bool LoadDetectionBits(string fieldDirectory)
+    {
+        var path = Path.Combine(fieldDirectory, "coverage_detect.bin");
+        if (!File.Exists(path))
+            return false;
+
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open);
+            using var reader = new BinaryReader(stream);
+
+            // Read header
+            var magic = new string(reader.ReadChars(4));
+            if (magic != "COVD")
+            {
+                Console.WriteLine($"[Coverage] Invalid detection file magic: {magic}");
+                return false;
+            }
+
+            byte version = reader.ReadByte();
+            float resolution = reader.ReadSingle();
+            double originE = reader.ReadDouble();
+            double originN = reader.ReadDouble();
+            uint width = reader.ReadUInt32();
+            uint height = reader.ReadUInt32();
+            double area = reader.ReadDouble();
+
+            Console.WriteLine($"[Coverage] Detection file v{version}: {width}x{height} @ {resolution}m, origin=({originE:F1}, {originN:F1}), area={area:F2}m²");
+
+            // Verify resolution matches
+            if (Math.Abs(resolution - BITMAP_CELL_SIZE) > 0.001)
+            {
+                Console.WriteLine($"[Coverage] Resolution mismatch: file={resolution}, expected={BITMAP_CELL_SIZE}");
+                return false;
+            }
+
+            // Calculate expected bit array size
+            long totalCells = (long)width * height;
+            int expectedBytes = (int)((totalCells + 7) / 8);
+
+            // Allocate detection bits if needed
+            if (_detectionBits == null || _detectionBits.Length != expectedBytes)
+            {
+                _detectionBits = new byte[expectedBytes];
+            }
+            Array.Clear(_detectionBits, 0, _detectionBits.Length);
+
+            // RLE decompress
+            int destIndex = 0;
+            long setBits = 0;
+            while (destIndex < _detectionBits.Length && stream.Position < stream.Length)
+            {
+                ushort runLength = reader.ReadUInt16();
+                byte value = reader.ReadByte();
+
+                for (int j = 0; j < runLength && destIndex < _detectionBits.Length; j++, destIndex++)
+                {
+                    _detectionBits[destIndex] = value;
+                    // Count set bits for statistics
+                    setBits += CountBits(value);
+                }
+            }
+
+            // Update service state
+            _bitmapWidth = (int)width;
+            _bitmapHeight = (int)height;
+            _totalWorkedArea = area;
+            _totalWorkedAreaUser = area;
+            _cellCountPerZone[0] = setBits;
+            _boundsValid = setBits > 0;
+
+            if (_boundsValid)
+            {
+                _minCellE = _bitmapOriginE;
+                _maxCellE = _bitmapOriginE + _bitmapWidth - 1;
+                _minCellN = _bitmapOriginN;
+                _maxCellN = _bitmapOriginN + _bitmapHeight - 1;
+            }
+
+            Console.WriteLine($"[Coverage] Loaded detection bits: {setBits:N0} covered cells");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Coverage] Failed to load detection bits: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Count number of set bits in a byte (population count).
+    /// </summary>
+    private static int CountBits(byte value)
+    {
+        int count = 0;
+        while (value != 0)
+        {
+            count += value & 1;
+            value >>= 1;
+        }
+        return count;
+    }
 
     /// <summary>
     /// Get color for a zone/section from configuration.
