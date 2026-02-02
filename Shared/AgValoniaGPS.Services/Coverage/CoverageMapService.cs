@@ -1321,6 +1321,7 @@ public class CoverageMapService : ICoverageMapService
 
     /// <summary>
     /// Load section display data from coverage_disp.bin (COVS format).
+    /// Handles resolution scaling if saved resolution differs from current display resolution.
     /// Returns true if successfully loaded, false otherwise.
     /// </summary>
     private bool LoadSectionDisplay(string fieldDirectory)
@@ -1357,39 +1358,93 @@ public class CoverageMapService : ICoverageMapService
                 palette[i] = reader.ReadUInt16();
 
             // Read bitmap info
-            float resolution = reader.ReadSingle();
+            float savedResolution = reader.ReadSingle();
             double originE = reader.ReadDouble();
             double originN = reader.ReadDouble();
-            uint width = reader.ReadUInt32();
-            uint height = reader.ReadUInt32();
+            uint savedWidth = reader.ReadUInt32();
+            uint savedHeight = reader.ReadUInt32();
 
-            Console.WriteLine($"[Coverage] Section display v{version}: {width}x{height} @ {resolution}m, {paletteSize} colors");
+            // Check if resolution scaling is needed
+            bool needsScaling = Math.Abs(savedResolution - BITMAP_CELL_SIZE) > 0.001;
+            double scaleRatio = savedResolution / BITMAP_CELL_SIZE;
 
-            // Allocate pixel buffer
-            long totalPixels = (long)width * height;
-            var pixels = new ushort[totalPixels];
+            if (needsScaling)
+                Console.WriteLine($"[Coverage] Section display v{version}: {savedWidth}x{savedHeight} @ {savedResolution}m -> scaling to {_bitmapWidth}x{_bitmapHeight} @ {BITMAP_CELL_SIZE}m (ratio {scaleRatio:F2})");
+            else
+                Console.WriteLine($"[Coverage] Section display v{version}: {savedWidth}x{savedHeight} @ {savedResolution}m, {paletteSize} colors");
 
-            // RLE decompress section indices and convert to RGB565
+            // Allocate buffer for saved data (section indices)
+            long savedTotalPixels = (long)savedWidth * savedHeight;
+            var savedIndices = new byte[savedTotalPixels];
+
+            // RLE decompress section indices
             long destIndex = 0;
-            long nonZeroPixels = 0;
-            while (destIndex < pixels.Length && stream.Position < stream.Length)
+            while (destIndex < savedIndices.Length && stream.Position < stream.Length)
             {
                 ushort runLength = reader.ReadUInt16();
                 byte sectionIndex = reader.ReadByte();
 
-                ushort color = sectionIndex < palette.Length ? palette[sectionIndex] : (ushort)0;
-                if (color != 0) nonZeroPixels += runLength;
-
-                for (int j = 0; j < runLength && destIndex < pixels.Length; j++, destIndex++)
+                for (int j = 0; j < runLength && destIndex < savedIndices.Length; j++, destIndex++)
                 {
-                    pixels[destIndex] = color;
+                    savedIndices[destIndex] = sectionIndex;
+                }
+            }
+
+            // Convert to RGB565 pixels, scaling if needed
+            long targetPixels = (long)_bitmapWidth * _bitmapHeight;
+            var pixels = new ushort[targetPixels];
+            long nonZeroPixels = 0;
+
+            if (!needsScaling)
+            {
+                // No scaling - direct conversion
+                long count = Math.Min(savedIndices.Length, pixels.Length);
+                for (long i = 0; i < count; i++)
+                {
+                    byte idx = savedIndices[i];
+                    if (idx > 0 && idx < palette.Length)
+                    {
+                        pixels[i] = palette[idx];
+                        nonZeroPixels++;
+                    }
+                }
+            }
+            else
+            {
+                // Scale using nearest-neighbor interpolation
+                // For each pixel in target, find corresponding pixel in source
+                for (int y = 0; y < _bitmapHeight; y++)
+                {
+                    // Map target Y to source Y
+                    int srcY = (int)(y * scaleRatio);
+                    if (srcY >= savedHeight) srcY = (int)savedHeight - 1;
+
+                    for (int x = 0; x < _bitmapWidth; x++)
+                    {
+                        // Map target X to source X
+                        int srcX = (int)(x * scaleRatio);
+                        if (srcX >= savedWidth) srcX = (int)savedWidth - 1;
+
+                        long srcIdx = (long)srcY * savedWidth + srcX;
+                        long dstIdx = (long)y * _bitmapWidth + x;
+
+                        if (srcIdx < savedIndices.Length && dstIdx < pixels.Length)
+                        {
+                            byte idx = savedIndices[srcIdx];
+                            if (idx > 0 && idx < palette.Length)
+                            {
+                                pixels[dstIdx] = palette[idx];
+                                nonZeroPixels++;
+                            }
+                        }
+                    }
                 }
             }
 
             // Pass pixels to map control
             SetPixelBufferCallback(pixels);
 
-            Console.WriteLine($"[Coverage] Loaded section display: {nonZeroPixels:N0} covered pixels");
+            Console.WriteLine($"[Coverage] Loaded section display: {nonZeroPixels:N0} covered pixels{(needsScaling ? " (scaled)" : "")}");
             return true;
         }
         catch (Exception ex)

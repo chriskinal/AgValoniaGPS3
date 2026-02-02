@@ -180,3 +180,5 @@ This approach:
 - Could extend palette to include timestamps for coverage aging visualization
 - Could add overlap count per cell for application rate mapping
 - Could compress further with delta encoding for smooth coverage patterns
+- **Save progress indicator**: Show popup with animated spinner indicating which file is being saved (coverage_detect.bin, coverage_disp.bin) so user knows something is happening during field close
+- **Parallel processing**: For dense coverage (>50%), split index conversion across CPU cores
