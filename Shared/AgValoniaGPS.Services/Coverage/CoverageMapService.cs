@@ -1183,10 +1183,11 @@ public class CoverageMapService : ICoverageMapService
     /// Save section display data to coverage_disp.bin (COVS format).
     /// Stores section indices with color palette for resolution-independent display.
     /// Format: Header + Palette + RLE-compressed section indices
+    /// Uses detection bits to filter out background image pixels.
     /// </summary>
     private void SaveSectionDisplay(string fieldDirectory)
     {
-        if (!_fieldBoundsSet || GetPixelBufferCallback == null)
+        if (!_fieldBoundsSet || GetPixelBufferCallback == null || _detectionBits == null)
             return;
 
         var pixels = GetPixelBufferCallback();
@@ -1195,7 +1196,7 @@ public class CoverageMapService : ICoverageMapService
 
         var filename = Path.Combine(fieldDirectory, "coverage_disp.bin");
 
-        // Build palette from current tool config + any unique colors in the bitmap
+        // Build palette from current tool config
         var tool = ConfigurationStore.Instance.Tool;
         var palette = new List<ushort>();
         var colorToIndex = new Dictionary<ushort, byte>();
@@ -1224,21 +1225,33 @@ public class CoverageMapService : ICoverageMapService
             palette.Add(singleColor);
         }
 
-        // Scan pixels for any colors not in palette (shouldn't happen but be safe)
-        foreach (var pixel in pixels)
+        // Scan COVERED pixels only for any colors not in palette
+        // Use detection bits to filter out background image pixels
+        for (long i = 0; i < pixels.Length && palette.Count < 255; i++)
         {
-            if (pixel != 0 && !colorToIndex.ContainsKey(pixel) && palette.Count < 255)
+            int byteIndex = (int)(i / 8);
+            int bitOffset = (int)(i % 8);
+            bool isCovered = byteIndex < _detectionBits.Length &&
+                             (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
+
+            if (isCovered && pixels[i] != 0 && !colorToIndex.ContainsKey(pixels[i]))
             {
-                colorToIndex[pixel] = (byte)palette.Count;
-                palette.Add(pixel);
+                colorToIndex[pixels[i]] = (byte)palette.Count;
+                palette.Add(pixels[i]);
             }
         }
 
-        // Convert pixels to section indices
+        // Convert pixels to section indices (using detection bits to filter background)
         var indices = new byte[pixels.Length];
-        for (int i = 0; i < pixels.Length; i++)
+        for (long i = 0; i < pixels.Length; i++)
         {
-            if (pixels[i] == 0)
+            // Check detection bit - if not covered, index is 0 regardless of pixel color
+            int byteIndex = (int)(i / 8);
+            int bitOffset = (int)(i % 8);
+            bool isCovered = byteIndex < _detectionBits.Length &&
+                             (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
+
+            if (!isCovered || pixels[i] == 0)
                 indices[i] = 0;
             else if (colorToIndex.TryGetValue(pixels[i], out byte idx))
                 indices[i] = idx;

@@ -1,6 +1,6 @@
 # PERF-005: Dynamic Display Resolution with Two-File Save Format
 
-## Status: Phase 1 Complete, Phase 2 In Progress
+## Status: Phase 1 & 2 Complete
 
 ## Background
 
@@ -120,12 +120,12 @@ This approach:
 - [x] Add RLE compression for bit array
 - [ ] Test: Save field, reopen, detection bits match
 
-### Phase 2: Section Index Save/Load
-- [ ] Add section color palette to CoverageMapService
-- [ ] Implement `SaveSectionIndices()` with palette header
-- [ ] Implement `LoadSectionIndices()` with palette extraction
-- [ ] Map RGB565 pixels → section indices on save
-- [ ] Map section indices → RGB565 using saved palette on load
+### Phase 2: Section Index Save/Load ✓
+- [x] Add section color palette to CoverageMapService
+- [x] Implement `SaveSectionDisplay()` with palette header
+- [x] Implement `LoadSectionDisplay()` with palette extraction
+- [x] Map RGB565 pixels → section indices on save
+- [x] Map section indices → RGB565 using saved palette on load
 - [ ] Test: Multi-color coverage preserved through save/load
 
 ### Phase 3: Resolution Independence
