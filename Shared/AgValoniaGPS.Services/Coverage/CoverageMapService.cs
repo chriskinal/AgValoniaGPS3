@@ -1226,37 +1226,56 @@ public class CoverageMapService : ICoverageMapService
         }
 
         // Scan COVERED pixels only for any colors not in palette
-        // Use detection bits to filter out background image pixels
-        for (long i = 0; i < pixels.Length && palette.Count < 255; i++)
+        // Iterate detection bytes - skip 8 uncovered pixels at once
+        for (int byteIdx = 0; byteIdx < _detectionBits.Length && palette.Count < 255; byteIdx++)
         {
-            int byteIndex = (int)(i / 8);
-            int bitOffset = (int)(i % 8);
-            bool isCovered = byteIndex < _detectionBits.Length &&
-                             (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
+            byte bits = _detectionBits[byteIdx];
+            if (bits == 0) continue; // Skip 8 uncovered pixels at once
 
-            if (isCovered && pixels[i] != 0 && !colorToIndex.ContainsKey(pixels[i]))
+            long basePixelIdx = (long)byteIdx * 8;
+            for (int bit = 0; bit < 8 && palette.Count < 255; bit++)
             {
-                colorToIndex[pixels[i]] = (byte)palette.Count;
-                palette.Add(pixels[i]);
+                if ((bits & (1 << bit)) != 0)
+                {
+                    long pixelIdx = basePixelIdx + bit;
+                    if (pixelIdx < pixels.Length)
+                    {
+                        ushort color = pixels[pixelIdx];
+                        if (color != 0 && !colorToIndex.ContainsKey(color))
+                        {
+                            colorToIndex[color] = (byte)palette.Count;
+                            palette.Add(color);
+                        }
+                    }
+                }
             }
         }
 
-        // Convert pixels to section indices (using detection bits to filter background)
+        // Convert covered pixels to section indices
+        // Array is zero-initialized, so only set covered cells
         var indices = new byte[pixels.Length];
-        for (long i = 0; i < pixels.Length; i++)
+        for (int byteIdx = 0; byteIdx < _detectionBits.Length; byteIdx++)
         {
-            // Check detection bit - if not covered, index is 0 regardless of pixel color
-            int byteIndex = (int)(i / 8);
-            int bitOffset = (int)(i % 8);
-            bool isCovered = byteIndex < _detectionBits.Length &&
-                             (_detectionBits[byteIndex] & (1 << bitOffset)) != 0;
+            byte bits = _detectionBits[byteIdx];
+            if (bits == 0) continue; // Skip 8 uncovered pixels at once
 
-            if (!isCovered || pixels[i] == 0)
-                indices[i] = 0;
-            else if (colorToIndex.TryGetValue(pixels[i], out byte idx))
-                indices[i] = idx;
-            else
-                indices[i] = FindClosestColorIndex(pixels[i], palette); // Fallback for overflow
+            long basePixelIdx = (long)byteIdx * 8;
+            for (int bit = 0; bit < 8; bit++)
+            {
+                if ((bits & (1 << bit)) != 0)
+                {
+                    long pixelIdx = basePixelIdx + bit;
+                    if (pixelIdx < pixels.Length)
+                    {
+                        ushort color = pixels[pixelIdx];
+                        if (color != 0 && colorToIndex.TryGetValue(color, out byte idx))
+                            indices[pixelIdx] = idx;
+                        else if (color != 0)
+                            indices[pixelIdx] = FindClosestColorIndex(color, palette);
+                        // else: leave as 0 (uncovered)
+                    }
+                }
+            }
         }
 
         using var stream = new FileStream(filename, FileMode.Create);
