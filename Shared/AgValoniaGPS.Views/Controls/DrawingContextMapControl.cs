@@ -296,9 +296,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Flag to preserve bitmap when explicitly initialized (don't dispose when no coverage)
     private bool _bitmapExplicitlyInitialized = false;
 
-    // EXPERIMENTAL: Use Rgb565 (16-bit) at full 0.1m resolution
-    // If viable, WriteableBitmap can serve as both detection AND display
-    private const bool USE_RGB565_FULL_RESOLUTION = true;
+    // Dynamic display resolution: scale based on field size to fit ~50M pixels
+    // Detection stays at 0.1m (in CoverageMapService), display scales for large fields
+    private const bool USE_RGB565_FULL_RESOLUTION = false;
     private double _bitmapMinE, _bitmapMinN, _bitmapMaxE, _bitmapMaxN; // World coordinates of bitmap bounds
     private int _bitmapWidth, _bitmapHeight; // Pixel dimensions
     private bool _bitmapNeedsFullRebuild = true;
