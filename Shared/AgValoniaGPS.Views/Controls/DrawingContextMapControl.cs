@@ -1433,26 +1433,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
             {
-                if (USE_RGB565_FULL_RESOLUTION)
-                {
-                    // Rgb565 format: 2 bytes per pixel
-                    // Bits: RRRR RGGG GGGB BBBB (little-endian: low byte first)
-                    ushort* pixel = (ushort*)(ptr + py * stride + px * 2);
-                    ushort rgb565 = (ushort)(
-                        ((color.R >> 3) << 11) |  // 5 bits red
-                        ((color.G >> 2) << 5) |   // 6 bits green
-                        (color.B >> 3));          // 5 bits blue
-                    *pixel = rgb565;
-                }
-                else
-                {
-                    // Bgra8888 format: 4 bytes per pixel
-                    byte* pixel = ptr + py * stride + px * 4;
-                    pixel[0] = color.B;
-                    pixel[1] = color.G;
-                    pixel[2] = color.R;
-                    pixel[3] = 200; // Semi-transparent
-                }
+                // Bitmap is always Rgb565 format: 2 bytes per pixel
+                ushort* pixel = (ushort*)(ptr + py * stride + px * 2);
+                ushort rgb565 = (ushort)(
+                    ((color.R >> 3) << 11) |  // 5 bits red
+                    ((color.G >> 2) << 5) |   // 6 bits green
+                    (color.B >> 3));          // 5 bits blue
+                *pixel = rgb565;
                 cellCount++;
             }
         }
@@ -1478,25 +1465,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             if (cellX >= 0 && cellX < _bitmapWidth && cellY >= 0 && cellY < _bitmapHeight)
             {
-                if (USE_RGB565_FULL_RESOLUTION)
-                {
-                    // Rgb565 format: 2 bytes per pixel
-                    ushort* pixel = (ushort*)(ptr + cellY * stride + cellX * 2);
-                    ushort rgb565 = (ushort)(
-                        ((color.R >> 3) << 11) |  // 5 bits red
-                        ((color.G >> 2) << 5) |   // 6 bits green
-                        (color.B >> 3));          // 5 bits blue
-                    *pixel = rgb565;
-                }
-                else
-                {
-                    // Bgra8888 format: 4 bytes per pixel
-                    byte* pixel = ptr + cellY * stride + cellX * 4;
-                    pixel[0] = color.B;
-                    pixel[1] = color.G;
-                    pixel[2] = color.R;
-                    pixel[3] = 200; // Semi-transparent
-                }
+                // Bitmap is always Rgb565 format: 2 bytes per pixel
+                ushort* pixel = (ushort*)(ptr + cellY * stride + cellX * 2);
+                ushort rgb565 = (ushort)(
+                    ((color.R >> 3) << 11) |  // 5 bits red
+                    ((color.G >> 2) << 5) |   // 6 bits green
+                    (color.B >> 3));          // 5 bits blue
+                *pixel = rgb565;
                 cellCount++;
             }
         }
@@ -1520,18 +1495,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var framebuffer = _coverageWriteableBitmap.Lock();
         unsafe
         {
-            if (USE_RGB565_FULL_RESOLUTION)
-            {
-                ushort* ptr = (ushort*)framebuffer.Address;
-                return ptr[localY * _bitmapWidth + localX];
-            }
-            else
-            {
-                // Bgra8888 - convert to "is covered" check (non-zero alpha = covered)
-                byte* ptr = (byte*)framebuffer.Address;
-                int offset = localY * framebuffer.RowBytes + localX * 4;
-                return ptr[offset + 3] != 0 ? (ushort)1 : (ushort)0;
-            }
+            // Bitmap is always Rgb565 format
+            ushort* ptr = (ushort*)framebuffer.Address;
+            return ptr[localY * _bitmapWidth + localX];
         }
     }
 
@@ -1548,24 +1514,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var framebuffer = _coverageWriteableBitmap.Lock();
         unsafe
         {
-            if (USE_RGB565_FULL_RESOLUTION)
-            {
-                ushort* ptr = (ushort*)framebuffer.Address;
-                ptr[localY * _bitmapWidth + localX] = rgb565;
-            }
-            else
-            {
-                // Convert Rgb565 to Bgra8888
-                byte r = (byte)((rgb565 >> 11) << 3);
-                byte g = (byte)(((rgb565 >> 5) & 0x3F) << 2);
-                byte b = (byte)((rgb565 & 0x1F) << 3);
-                byte* ptr = (byte*)framebuffer.Address;
-                int offset = localY * framebuffer.RowBytes + localX * 4;
-                ptr[offset + 0] = b;
-                ptr[offset + 1] = g;
-                ptr[offset + 2] = r;
-                ptr[offset + 3] = 200; // Semi-transparent
-            }
+            // Bitmap is always Rgb565 format
+            ushort* ptr = (ushort*)framebuffer.Address;
+            ptr[localY * _bitmapWidth + localX] = rgb565;
         }
     }
 
@@ -1614,34 +1565,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var framebuffer = _coverageWriteableBitmap.Lock();
         unsafe
         {
-            if (USE_RGB565_FULL_RESOLUTION)
-            {
-                // Direct copy - bitmap is already Rgb565
-                ushort* src = (ushort*)framebuffer.Address;
-                for (int i = 0; i < pixels.Length; i++)
-                    pixels[i] = src[i];
-            }
-            else
-            {
-                // Convert Bgra8888 to Rgb565
-                byte* src = (byte*)framebuffer.Address;
-                int stride = framebuffer.RowBytes;
-                for (int y = 0; y < _bitmapHeight; y++)
-                {
-                    for (int x = 0; x < _bitmapWidth; x++)
-                    {
-                        int offset = y * stride + x * 4;
-                        byte b = src[offset + 0];
-                        byte g = src[offset + 1];
-                        byte r = src[offset + 2];
-                        byte a = src[offset + 3];
-                        if (a == 0)
-                            pixels[y * _bitmapWidth + x] = 0;
-                        else
-                            pixels[y * _bitmapWidth + x] = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
-                    }
-                }
-            }
+            // Bitmap is always Rgb565 - direct copy
+            ushort* src = (ushort*)framebuffer.Address;
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = src[i];
         }
         return pixels;
     }
@@ -1666,44 +1593,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var framebuffer = _coverageWriteableBitmap.Lock();
         unsafe
         {
-            if (USE_RGB565_FULL_RESOLUTION)
+            // Bitmap is always Rgb565 - only copy non-black pixels to preserve background
+            ushort* dst = (ushort*)framebuffer.Address;
+            int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
+            for (int i = 0; i < count; i++)
             {
-                // Only copy non-black pixels (actual coverage) - preserves background
-                ushort* dst = (ushort*)framebuffer.Address;
-                int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
-                for (int i = 0; i < count; i++)
-                {
-                    if (pixels[i] != 0)  // Only copy coverage, not black (no-coverage)
-                        dst[i] = pixels[i];
-                }
-            }
-            else
-            {
-                // Convert Rgb565 to Bgra8888
-                byte* dst = (byte*)framebuffer.Address;
-                int stride = framebuffer.RowBytes;
-                int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
-                for (int i = 0; i < count; i++)
-                {
-                    int x = i % _bitmapWidth;
-                    int y = i / _bitmapWidth;
-                    int offset = y * stride + x * 4;
-                    ushort rgb565 = pixels[i];
-                    if (rgb565 == 0)
-                    {
-                        dst[offset + 0] = 0;
-                        dst[offset + 1] = 0;
-                        dst[offset + 2] = 0;
-                        dst[offset + 3] = 0;
-                    }
-                    else
-                    {
-                        dst[offset + 0] = (byte)((rgb565 & 0x1F) << 3);        // B
-                        dst[offset + 1] = (byte)(((rgb565 >> 5) & 0x3F) << 2); // G
-                        dst[offset + 2] = (byte)((rgb565 >> 11) << 3);         // R
-                        dst[offset + 3] = 200;                                  // A
-                    }
-                }
+                if (pixels[i] != 0)  // Only copy coverage, not black (no-coverage)
+                    dst[i] = pixels[i];
             }
         }
 
