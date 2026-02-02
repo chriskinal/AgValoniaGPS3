@@ -1707,6 +1707,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
+        // Rebuild thumbnail so zoomed-out view shows loaded coverage
+        UpdateCoverageThumbnail();
+        _thumbnailNeedsRebuild = false;
         InvalidateVisual();
     }
 
