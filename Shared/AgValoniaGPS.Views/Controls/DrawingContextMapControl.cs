@@ -1014,6 +1014,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
         // Downsample from full bitmap to thumbnail
+        // Center-biased: sample center first, scan block only if center is black
         using var srcBuffer = _coverageWriteableBitmap.Lock();
         using var dstBuffer = _coverageThumbnail.Lock();
 
@@ -1022,18 +1023,40 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int srcStride = srcBuffer.RowBytes / 2; // ushort stride
         int dstStride = dstBuffer.RowBytes / 2;
 
-        // Simple point sampling (take center pixel of each block)
         for (int ty = 0; ty < _thumbnailHeight; ty++)
         {
-            int sy = ty * scale + scale / 2;
-            if (sy >= _bitmapHeight) sy = _bitmapHeight - 1;
+            int syStart = ty * scale;
+            int syCenter = Math.Min(syStart + scale / 2, _bitmapHeight - 1);
 
             for (int tx = 0; tx < _thumbnailWidth; tx++)
             {
-                int sx = tx * scale + scale / 2;
-                if (sx >= _bitmapWidth) sx = _bitmapWidth - 1;
+                int sxStart = tx * scale;
+                int sxCenter = Math.Min(sxStart + scale / 2, _bitmapWidth - 1);
 
-                dst[ty * dstStride + tx] = src[sy * srcStride + sx];
+                // Sample center pixel first (preserves natural look)
+                ushort result = src[syCenter * srcStride + sxCenter];
+
+                // If center is black, scan block for any coverage (catches thin strips)
+                if (result == 0)
+                {
+                    int syEnd = Math.Min(syStart + scale, _bitmapHeight);
+                    int sxEnd = Math.Min(sxStart + scale, _bitmapWidth);
+
+                    for (int sy = syStart; sy < syEnd && result == 0; sy++)
+                    {
+                        for (int sx = sxStart; sx < sxEnd; sx++)
+                        {
+                            ushort pixel = src[sy * srcStride + sx];
+                            if (pixel != 0)
+                            {
+                                result = pixel;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                dst[ty * dstStride + tx] = result;
             }
         }
 
