@@ -616,6 +616,20 @@ public partial class MainViewModel
         // Field close and resume commands
         CloseFieldCommand = new AsyncRelayCommand(async () =>
         {
+            // Save coverage BEFORE clearing field bounds
+            if (ActiveField != null && !string.IsNullOrEmpty(ActiveField.DirectoryPath))
+            {
+                try
+                {
+                    _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
+                    _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug($"[Coverage] Error saving coverage: {ex.Message}");
+                }
+            }
+
             CurrentFieldName = string.Empty;
             IsFieldOpen = false;
             SetCurrentBoundary(null);

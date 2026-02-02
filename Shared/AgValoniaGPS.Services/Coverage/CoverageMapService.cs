@@ -710,13 +710,12 @@ public class CoverageMapService : ICoverageMapService
         _fieldMaxN = maxN;
         _fieldBoundsSet = true;
 
-        // Calculate bitmap dimensions (actual allocation done by map control)
+        // Calculate bitmap dimensions - MUST match DrawingContextMapControl's calculation exactly
+        // Map control uses: (int)Math.Ceiling((max - min) / cellSize)
         _bitmapOriginE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
         _bitmapOriginN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
-        int maxCellE = (int)Math.Ceiling(maxE / BITMAP_CELL_SIZE);
-        int maxCellN = (int)Math.Ceiling(maxN / BITMAP_CELL_SIZE);
-        _bitmapWidth = maxCellE - _bitmapOriginE + 1;
-        _bitmapHeight = maxCellN - _bitmapOriginN + 1;
+        _bitmapWidth = (int)Math.Ceiling((maxE - minE) / BITMAP_CELL_SIZE);
+        _bitmapHeight = (int)Math.Ceiling((maxN - minN) / BITMAP_CELL_SIZE);
 
         long totalPixels = (long)_bitmapWidth * _bitmapHeight;
 
@@ -963,13 +962,14 @@ public class CoverageMapService : ICoverageMapService
             Console.WriteLine($"[Coverage] Failed to load: {ex.Message}");
         }
 
-        Console.WriteLine($"[Coverage] Firing CoverageUpdated with IsFullReload=true");
+        // Fire event - PixelsAlreadyLoaded prevents full rebuild (pixels loaded directly from file)
         CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
         {
             TotalArea = _totalWorkedArea,
             PatchCount = (int)GetTotalCellCount(),
             AreaAdded = 0,
-            IsFullReload = true
+            IsFullReload = true,
+            PixelsAlreadyLoaded = true  // Don't repaint - pixels loaded directly from file
         });
     }
 

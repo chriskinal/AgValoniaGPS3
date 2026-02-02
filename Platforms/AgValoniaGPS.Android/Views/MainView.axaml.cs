@@ -145,7 +145,13 @@ public partial class MainView : UserControl
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    if (args.IsFullReload)
+                    // Skip full rebuild if pixels were loaded directly from file
+                    if (args.PixelsAlreadyLoaded)
+                    {
+                        // Just mark dirty to refresh display - pixels already in bitmap
+                        _mapControl?.MarkCoverageDirty();
+                    }
+                    else if (args.IsFullReload)
                         _mapControl?.MarkCoverageFullRebuildNeeded();
                     else
                         _mapControl?.MarkCoverageDirty();

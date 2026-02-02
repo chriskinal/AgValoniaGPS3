@@ -265,4 +265,9 @@ public class CoverageUpdatedEventArgs : EventArgs
     /// True if this is a full reload (e.g., from file), requiring full bitmap rebuild
     /// </summary>
     public bool IsFullReload { get; init; }
+
+    /// <summary>
+    /// True if bitmap pixels were loaded directly from file - skip repainting
+    /// </summary>
+    public bool PixelsAlreadyLoaded { get; init; }
 }
