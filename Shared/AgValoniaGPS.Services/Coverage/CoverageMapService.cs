@@ -756,6 +756,9 @@ public class CoverageMapService : ICoverageMapService
         // Save detection bits to separate file (authoritative coverage data)
         SaveDetectionBits(fieldDirectory);
 
+        // Save section display data (colors with palette for resolution independence)
+        SaveSectionDisplay(fieldDirectory);
+
         if (!_fieldBoundsSet || GetPixelBufferCallback == null)
             return;
 
@@ -823,6 +826,25 @@ public class CoverageMapService : ICoverageMapService
         // Try to load detection bits first (authoritative coverage data)
         bool hasDetectionBits = LoadDetectionBits(fieldDirectory);
 
+        // Try to load new section display format (COVS)
+        bool hasSectionDisplay = LoadSectionDisplay(fieldDirectory);
+
+        if (hasSectionDisplay)
+        {
+            // New format loaded successfully - fire event and return
+            Console.WriteLine("[Coverage] Using new COVS format for display");
+            CoverageUpdated?.Invoke(this, new CoverageUpdatedEventArgs
+            {
+                TotalArea = _totalWorkedArea,
+                PatchCount = (int)GetTotalCellCount(),
+                AreaAdded = 0,
+                IsFullReload = true,
+                PixelsAlreadyLoaded = true
+            });
+            return;
+        }
+
+        // Fall back to legacy Coverage.bin (COV2 format)
         var path = Path.Combine(fieldDirectory, "Coverage.bin");
         if (!File.Exists(path))
         {
@@ -1155,6 +1177,235 @@ public class CoverageMapService : ICoverageMapService
             value >>= 1;
         }
         return count;
+    }
+
+    /// <summary>
+    /// Save section display data to coverage_disp.bin (COVS format).
+    /// Stores section indices with color palette for resolution-independent display.
+    /// Format: Header + Palette + RLE-compressed section indices
+    /// </summary>
+    private void SaveSectionDisplay(string fieldDirectory)
+    {
+        if (!_fieldBoundsSet || GetPixelBufferCallback == null)
+            return;
+
+        var pixels = GetPixelBufferCallback();
+        if (pixels == null || pixels.Length == 0)
+            return;
+
+        var filename = Path.Combine(fieldDirectory, "coverage_disp.bin");
+
+        // Build palette from current tool config + any unique colors in the bitmap
+        var tool = ConfigurationStore.Instance.Tool;
+        var palette = new List<ushort>();
+        var colorToIndex = new Dictionary<ushort, byte>();
+
+        // Index 0 is reserved for "not covered"
+        palette.Add(0);
+        colorToIndex[0] = 0;
+
+        // Add all section colors to palette
+        for (int i = 0; i < 16; i++)
+        {
+            uint rgb888 = tool.GetSectionColor(i);
+            ushort rgb565 = Rgb888ToRgb565(rgb888);
+            if (!colorToIndex.ContainsKey(rgb565))
+            {
+                colorToIndex[rgb565] = (byte)palette.Count;
+                palette.Add(rgb565);
+            }
+        }
+
+        // Add single coverage color
+        ushort singleColor = Rgb888ToRgb565(tool.SingleCoverageColor);
+        if (!colorToIndex.ContainsKey(singleColor))
+        {
+            colorToIndex[singleColor] = (byte)palette.Count;
+            palette.Add(singleColor);
+        }
+
+        // Scan pixels for any colors not in palette (shouldn't happen but be safe)
+        foreach (var pixel in pixels)
+        {
+            if (pixel != 0 && !colorToIndex.ContainsKey(pixel) && palette.Count < 255)
+            {
+                colorToIndex[pixel] = (byte)palette.Count;
+                palette.Add(pixel);
+            }
+        }
+
+        // Convert pixels to section indices
+        var indices = new byte[pixels.Length];
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i] == 0)
+                indices[i] = 0;
+            else if (colorToIndex.TryGetValue(pixels[i], out byte idx))
+                indices[i] = idx;
+            else
+                indices[i] = FindClosestColorIndex(pixels[i], palette); // Fallback for overflow
+        }
+
+        using var stream = new FileStream(filename, FileMode.Create);
+        using var writer = new BinaryWriter(stream);
+
+        // Write header - COVS format
+        writer.Write("COVS".ToCharArray());  // Magic (4 bytes)
+        writer.Write((byte)1);                // Version
+        writer.Write((byte)palette.Count);    // Palette size (1-255)
+
+        // Write palette (RGB565 colors)
+        foreach (var color in palette)
+            writer.Write(color);
+
+        // Write bitmap info
+        writer.Write((float)BITMAP_CELL_SIZE); // Resolution when saved
+        writer.Write(_fieldMinE);              // Origin E
+        writer.Write(_fieldMinN);              // Origin N
+        writer.Write((uint)_bitmapWidth);      // Width
+        writer.Write((uint)_bitmapHeight);     // Height
+
+        // RLE compress section indices
+        long compressedSize = 0;
+        int idx2 = 0;
+        while (idx2 < indices.Length)
+        {
+            byte value = indices[idx2];
+            int runLength = 1;
+            while (idx2 + runLength < indices.Length &&
+                   indices[idx2 + runLength] == value &&
+                   runLength < 65535)
+            {
+                runLength++;
+            }
+            writer.Write((ushort)runLength);
+            writer.Write(value);
+            compressedSize += 3;
+            idx2 += runLength;
+        }
+
+        Console.WriteLine($"[Coverage] Saved section display: {palette.Count} colors, {indices.Length} cells -> {compressedSize / 1024}KB to {filename}");
+    }
+
+    /// <summary>
+    /// Load section display data from coverage_disp.bin (COVS format).
+    /// Returns true if successfully loaded, false otherwise.
+    /// </summary>
+    private bool LoadSectionDisplay(string fieldDirectory)
+    {
+        var path = Path.Combine(fieldDirectory, "coverage_disp.bin");
+        if (!File.Exists(path))
+            return false;
+
+        if (SetPixelBufferCallback == null)
+        {
+            Console.WriteLine("[Coverage] LoadSectionDisplay: SetPixelBufferCallback not set");
+            return false;
+        }
+
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open);
+            using var reader = new BinaryReader(stream);
+
+            // Read header
+            var magic = new string(reader.ReadChars(4));
+            if (magic != "COVS")
+            {
+                Console.WriteLine($"[Coverage] Invalid section display file magic: {magic}");
+                return false;
+            }
+
+            byte version = reader.ReadByte();
+            byte paletteSize = reader.ReadByte();
+
+            // Read palette
+            var palette = new ushort[paletteSize];
+            for (int i = 0; i < paletteSize; i++)
+                palette[i] = reader.ReadUInt16();
+
+            // Read bitmap info
+            float resolution = reader.ReadSingle();
+            double originE = reader.ReadDouble();
+            double originN = reader.ReadDouble();
+            uint width = reader.ReadUInt32();
+            uint height = reader.ReadUInt32();
+
+            Console.WriteLine($"[Coverage] Section display v{version}: {width}x{height} @ {resolution}m, {paletteSize} colors");
+
+            // Allocate pixel buffer
+            long totalPixels = (long)width * height;
+            var pixels = new ushort[totalPixels];
+
+            // RLE decompress section indices and convert to RGB565
+            long destIndex = 0;
+            long nonZeroPixels = 0;
+            while (destIndex < pixels.Length && stream.Position < stream.Length)
+            {
+                ushort runLength = reader.ReadUInt16();
+                byte sectionIndex = reader.ReadByte();
+
+                ushort color = sectionIndex < palette.Length ? palette[sectionIndex] : (ushort)0;
+                if (color != 0) nonZeroPixels += runLength;
+
+                for (int j = 0; j < runLength && destIndex < pixels.Length; j++, destIndex++)
+                {
+                    pixels[destIndex] = color;
+                }
+            }
+
+            // Pass pixels to map control
+            SetPixelBufferCallback(pixels);
+
+            Console.WriteLine($"[Coverage] Loaded section display: {nonZeroPixels:N0} covered pixels");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Coverage] Failed to load section display: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Convert RGB888 (0xRRGGBB) to RGB565.
+    /// </summary>
+    private static ushort Rgb888ToRgb565(uint rgb888)
+    {
+        byte r = (byte)((rgb888 >> 16) & 0xFF);
+        byte g = (byte)((rgb888 >> 8) & 0xFF);
+        byte b = (byte)(rgb888 & 0xFF);
+        return (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+    }
+
+    /// <summary>
+    /// Find closest color index in palette (simple Euclidean distance in RGB565 space).
+    /// </summary>
+    private static byte FindClosestColorIndex(ushort color, List<ushort> palette)
+    {
+        // Extract RGB components from RGB565
+        int r1 = (color >> 11) & 0x1F;
+        int g1 = (color >> 5) & 0x3F;
+        int b1 = color & 0x1F;
+
+        int bestIndex = 1; // Default to first non-zero color
+        int bestDist = int.MaxValue;
+
+        for (int i = 1; i < palette.Count; i++) // Skip index 0 (not covered)
+        {
+            int r2 = (palette[i] >> 11) & 0x1F;
+            int g2 = (palette[i] >> 5) & 0x3F;
+            int b2 = palette[i] & 0x1F;
+
+            int dist = (r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestIndex = i;
+            }
+        }
+
+        return (byte)bestIndex;
     }
 
     /// <summary>

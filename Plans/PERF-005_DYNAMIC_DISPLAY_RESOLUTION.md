@@ -1,6 +1,6 @@
 # PERF-005: Dynamic Display Resolution with Two-File Save Format
 
-## Status: Planning
+## Status: Phase 1 Complete, Phase 2 In Progress
 
 ## Background
 
@@ -114,10 +114,10 @@ This approach:
 
 ## Implementation Steps
 
-### Phase 1: Detection Bits Save/Load
-- [ ] Implement `SaveDetectionBits()` in CoverageMapService
-- [ ] Implement `LoadDetectionBits()` in CoverageMapService
-- [ ] Add RLE compression for bit array
+### Phase 1: Detection Bits Save/Load ✓
+- [x] Implement `SaveDetectionBits()` in CoverageMapService
+- [x] Implement `LoadDetectionBits()` in CoverageMapService
+- [x] Add RLE compression for bit array
 - [ ] Test: Save field, reopen, detection bits match
 
 ### Phase 2: Section Index Save/Load
