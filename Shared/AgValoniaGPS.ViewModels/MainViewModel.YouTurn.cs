@@ -717,6 +717,33 @@ public partial class MainViewModel
         {
             var path = output.TurnPath;
 
+            // Check for spiral/pretzel pattern by measuring total heading change
+            // A proper U-turn should have ~180° total heading change, not 360°+
+            double totalHeadingChange = 0;
+            for (int i = 1; i < path.Count; i++)
+            {
+                double delta = path[i].Heading - path[i - 1].Heading;
+                // Normalize to -π to π
+                while (delta > Math.PI) delta -= 2 * Math.PI;
+                while (delta < -Math.PI) delta += 2 * Math.PI;
+                totalHeadingChange += Math.Abs(delta);
+            }
+
+            // If total heading change exceeds 270° (π * 1.5), it's likely a spiral - use simple fallback
+            if (totalHeadingChange > Math.PI * 1.5)
+            {
+                _logger.LogWarning($"[YouTurn] Service path has excessive heading change ({totalHeadingChange * 180 / Math.PI:F0}°) - using simple fallback");
+                var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
+                if (fallbackPath != null && fallbackPath.Count > 10)
+                {
+                    State.YouTurn.TurnPath = fallbackPath;
+                    _youTurnPath = fallbackPath;
+                    _youTurnCounter = 0;
+                    _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+                }
+                return;
+            }
+
             // Apply smoothing passes from config (1-50)
             int smoothingPasses = Guidance.UTurnSmoothing;
             if (smoothingPasses > 1 && path.Count > 4)
@@ -749,7 +776,15 @@ public partial class MainViewModel
         }
         else
         {
-            _logger.LogWarning($"[YouTurn] Service failed: {output.FailureReason ?? "unknown"}");
+            _logger.LogWarning($"[YouTurn] Service failed: {output.FailureReason ?? "unknown"} - using simple fallback");
+            var fallbackPath = CreateSimpleUTurnPath(currentPosition, headingRadians, abHeading, turnLeft);
+            if (fallbackPath != null && fallbackPath.Count > 10)
+            {
+                State.YouTurn.TurnPath = fallbackPath;
+                _youTurnPath = fallbackPath;
+                _youTurnCounter = 0;
+                _mapService.SetYouTurnPath(_youTurnPath.Select(p => (p.Easting, p.Northing)).ToList());
+            }
         }
     }
 
@@ -1217,6 +1252,211 @@ public partial class MainViewModel
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Create a simple geometric U-turn path with entry leg, semicircle arc, and exit leg.
+    /// This is used as a fallback when the YouTurnCreationService produces an invalid path.
+    /// </summary>
+    private List<Vec3> CreateSimpleUTurnPath(AgValoniaGPS.Models.Position currentPosition, double headingRadians, double abHeading, bool turnLeft)
+    {
+        var path = new List<Vec3>();
+
+        // Parameters - use the pre-calculated NextTrackTurnOffset which matches the cyan "next track" line
+        double pointSpacing = 0.5; // meters between path points
+        double turnOffset = NextTrackTurnOffset; // Use pre-calculated offset to match cyan line exactly
+
+        // Fallback if NextTrackTurnOffset wasn't set
+        if (turnOffset < 0.1)
+        {
+            int rowSkipWidth = UTurnSkipRows;
+            double trackWidth = ConfigStore.ActualToolWidth - Tool.Overlap;
+            turnOffset = trackWidth * (rowSkipWidth + 1);
+            _logger.LogDebug($"[YouTurn] Using fallback turnOffset calculation: {turnOffset:F2}m");
+        }
+
+        // Turn radius from config, with fallback calculation
+        double turnRadius = Guidance.UTurnRadius;
+
+        // If config radius is too small for the track offset, use geometric minimum
+        double geometricMinRadius = turnOffset / 2.0;
+        if (turnRadius < geometricMinRadius)
+        {
+            turnRadius = geometricMinRadius;
+        }
+
+        // Absolute minimum turn radius constraint
+        double minTurnRadius = 4.0;
+        if (turnRadius < minTurnRadius)
+        {
+            turnRadius = minTurnRadius;
+        }
+
+        // Get the heading we're traveling (adjusted for same/opposite to AB)
+        double travelHeading = abHeading;
+        if (!_isHeadingSameWay)
+        {
+            travelHeading += Math.PI;
+            if (travelHeading >= Math.PI * 2) travelHeading -= Math.PI * 2;
+        }
+
+        // Exit heading is 180° opposite (going back toward field)
+        double exitHeading = travelHeading + Math.PI;
+        if (exitHeading >= Math.PI * 2) exitHeading -= Math.PI * 2;
+
+        // Perpendicular direction (toward next track)
+        double perpAngle = turnLeft ? (travelHeading - Math.PI / 2) : (travelHeading + Math.PI / 2);
+
+        // Calculate the headland boundary point on CURRENT track
+        double distToHeadland = _distanceToHeadland;
+        double headlandBoundaryEasting = currentPosition.Easting + Math.Sin(travelHeading) * distToHeadland;
+        double headlandBoundaryNorthing = currentPosition.Northing + Math.Cos(travelHeading) * distToHeadland;
+
+        // Leg lengths
+        double distanceFromBoundary = Guidance.UTurnDistanceFromBoundary;
+        double headlandLegLength = HeadlandDistance - turnRadius - distanceFromBoundary;
+        double fieldLegLength = Guidance.UTurnExtension;
+
+        _logger.LogDebug($"[YouTurn] Simple path: turnOffset={turnOffset:F1}m, turnRadius={turnRadius:F1}m");
+        _logger.LogDebug($"[YouTurn] HeadlandDistance={HeadlandDistance:F1}m, headlandLegLength={headlandLegLength:F1}m");
+
+        // Calculate key waypoints
+        double entryStartE = headlandBoundaryEasting - Math.Sin(travelHeading) * fieldLegLength;
+        double entryStartN = headlandBoundaryNorthing - Math.Cos(travelHeading) * fieldLegLength;
+
+        double arcStartE = headlandBoundaryEasting + Math.Sin(travelHeading) * headlandLegLength;
+        double arcStartN = headlandBoundaryNorthing + Math.Cos(travelHeading) * headlandLegLength;
+
+        double arcCenterE = arcStartE + Math.Sin(perpAngle) * turnRadius;
+        double arcCenterN = arcStartN + Math.Cos(perpAngle) * turnRadius;
+
+        double arcDiameter = 2.0 * turnRadius;
+
+        // Boundary check for arc apex
+        double arcApexE = arcCenterE + Math.Sin(travelHeading) * turnRadius;
+        double arcApexN = arcCenterN + Math.Cos(travelHeading) * turnRadius;
+
+        if (!IsPointInsideBoundary(arcApexE, arcApexN))
+        {
+            _logger.LogDebug($"[YouTurn] Arc apex is outside boundary - not creating U-turn");
+            return path;
+        }
+
+        double exitEndE = entryStartE + Math.Sin(perpAngle) * turnOffset;
+        double exitEndN = entryStartN + Math.Cos(perpAngle) * turnOffset;
+
+        if (!IsPointInsideBoundary(exitEndE, exitEndN))
+        {
+            _logger.LogDebug($"[YouTurn] Exit end is outside boundary - not creating U-turn");
+            return path;
+        }
+
+        // Build entry leg
+        double totalEntryLength = fieldLegLength + headlandLegLength;
+        int totalEntryPoints = (int)(totalEntryLength / pointSpacing);
+
+        for (int i = 0; i <= totalEntryPoints; i++)
+        {
+            double dist = i * pointSpacing;
+            Vec3 pt = new Vec3
+            {
+                Easting = entryStartE + Math.Sin(travelHeading) * dist,
+                Northing = entryStartN + Math.Cos(travelHeading) * dist,
+                Heading = travelHeading
+            };
+            path.Add(pt);
+        }
+
+        // Build semicircle arc
+        int arcPoints = Math.Max((int)(Math.PI * turnRadius / pointSpacing), 20);
+
+        for (int i = 1; i <= arcPoints; i++)
+        {
+            double t = (double)i / arcPoints;
+            double startAngle = Math.Atan2(arcStartE - arcCenterE, arcStartN - arcCenterN);
+            double sweepAngle = turnLeft ? (-Math.PI * t) : (Math.PI * t);
+            double currentAngle = startAngle + sweepAngle;
+
+            double ptE = arcCenterE + Math.Sin(currentAngle) * turnRadius;
+            double ptN = arcCenterN + Math.Cos(currentAngle) * turnRadius;
+
+            double tangentHeading = currentAngle + (turnLeft ? -Math.PI / 2 : Math.PI / 2);
+            if (tangentHeading < 0) tangentHeading += Math.PI * 2;
+            if (tangentHeading >= Math.PI * 2) tangentHeading -= Math.PI * 2;
+
+            Vec3 pt = new Vec3
+            {
+                Easting = ptE,
+                Northing = ptN,
+                Heading = tangentHeading
+            };
+            path.Add(pt);
+        }
+
+        // Build exit leg
+        var lastArcPoint = path[path.Count - 1];
+        double actualArcEndE = lastArcPoint.Easting;
+        double actualArcEndN = lastArcPoint.Northing;
+
+        double exitStartE = arcStartE + Math.Sin(perpAngle) * turnOffset;
+        double exitStartN = arcStartN + Math.Cos(perpAngle) * turnOffset;
+
+        double arcToExitDist = Math.Sqrt(Math.Pow(exitStartE - actualArcEndE, 2) + Math.Pow(exitStartN - actualArcEndN, 2));
+        if (arcToExitDist > pointSpacing)
+        {
+            int connectPoints = (int)(arcToExitDist / pointSpacing);
+            for (int i = 1; i <= connectPoints; i++)
+            {
+                double t = (double)i / (connectPoints + 1);
+                Vec3 pt = new Vec3
+                {
+                    Easting = actualArcEndE + (exitStartE - actualArcEndE) * t,
+                    Northing = actualArcEndN + (exitStartN - actualArcEndN) * t,
+                    Heading = exitHeading
+                };
+                path.Add(pt);
+            }
+        }
+
+        int totalExitPoints = (int)(totalEntryLength / pointSpacing);
+
+        for (int i = 1; i <= totalExitPoints; i++)
+        {
+            double dist = i * pointSpacing;
+            Vec3 pt = new Vec3
+            {
+                Easting = exitStartE + Math.Sin(exitHeading) * dist,
+                Northing = exitStartN + Math.Cos(exitHeading) * dist,
+                Heading = exitHeading
+            };
+            path.Add(pt);
+        }
+
+        _logger.LogDebug($"[YouTurn] Simple fallback path has {path.Count} points");
+
+        // Apply smoothing passes from config
+        int smoothingPasses = Guidance.UTurnSmoothing;
+        if (smoothingPasses > 1 && path.Count > 4)
+        {
+            for (int pass = 0; pass < smoothingPasses; pass++)
+            {
+                for (int i = 2; i < path.Count - 2; i++)
+                {
+                    var prev = path[i - 1];
+                    var curr = path[i];
+                    var next = path[i + 1];
+
+                    path[i] = new Vec3
+                    {
+                        Easting = (prev.Easting + curr.Easting + next.Easting) / 3.0,
+                        Northing = (prev.Northing + curr.Northing + next.Northing) / 3.0,
+                        Heading = curr.Heading
+                    };
+                }
+            }
+        }
+
+        return path;
     }
 
     #endregion
