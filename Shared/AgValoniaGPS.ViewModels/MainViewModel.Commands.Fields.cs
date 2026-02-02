@@ -53,65 +53,18 @@ public partial class MainViewModel
             SelectedFieldInfo = null;
         });
 
-        ConfirmFieldSelectionDialogCommand = new RelayCommand(() =>
+        ConfirmFieldSelectionDialogCommand = new AsyncRelayCommand(async () =>
         {
             if (SelectedFieldInfo == null) return;
 
             var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
-            FieldsRootDirectory = _fieldSelectionDirectory;
-            CurrentFieldName = SelectedFieldInfo.Name;
-            IsFieldOpen = true;
-
-            _settingsService.Settings.LastOpenedField = SelectedFieldInfo.Name;
-            _settingsService.Save();
-
-            try
-            {
-                var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                if (fieldInfo.Origin != null)
-                {
-                    _fieldOriginLatitude = fieldInfo.Origin.Latitude;
-                    _fieldOriginLongitude = fieldInfo.Origin.Longitude;
-                    // Clear simulator LocalPlane so it recreates with field origin
-                    _simulatorLocalPlane = null;
-                    _logger.LogDebug($"[Field] Set origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
-
-                    // Move simulator to field origin (like AgOpenGPS does)
-                    SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
-                    _logger.LogDebug($"[Field] Moved simulator to field origin");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug($"[Field] Could not load Field.txt origin: {ex.Message}");
-            }
-
-            // Clear previous field's background image before loading new field
-            _mapService.ClearBackground();
-
-            var boundary = _boundaryFileService.LoadBoundary(fieldPath);
-            if (boundary != null)
-            {
-                SetCurrentBoundary(boundary);
-                CenterMapOnBoundary(boundary);
-            }
-
-            LoadBackgroundImage(fieldPath, boundary);
-
-            var field = new Field
-            {
-                Name = SelectedFieldInfo.Name,
-                DirectoryPath = fieldPath,
-                Boundary = boundary
-            };
-            _fieldService.SetActiveField(field);
-
-            _ = HandleNtripProfileForFieldAsync(SelectedFieldInfo.Name);
+            var fieldName = SelectedFieldInfo.Name;
 
             State.UI.CloseDialog();
-            IsJobMenuPanelVisible = false;
-            StatusMessage = $"Opened field: {SelectedFieldInfo.Name}";
             SelectedFieldInfo = null;
+
+            await OpenFieldAsync(fieldPath, fieldName);
+            IsJobMenuPanelVisible = false;
         });
 
         DeleteSelectedFieldCommand = new RelayCommand(() =>
@@ -616,49 +569,13 @@ public partial class MainViewModel
         // Field close and resume commands
         CloseFieldCommand = new AsyncRelayCommand(async () =>
         {
-            // Save coverage BEFORE clearing field bounds
-            if (ActiveField != null && !string.IsNullOrEmpty(ActiveField.DirectoryPath))
-            {
-                try
-                {
-                    _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
-                    _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug($"[Coverage] Error saving coverage: {ex.Message}");
-                }
-            }
-
-            CurrentFieldName = string.Empty;
-            IsFieldOpen = false;
-            SetCurrentBoundary(null);
-
-            // Clear headland
-            LoadHeadlandFromField(null);
-
-            // Clear background image
-            _mapService.ClearBackground();
-
-            // Save tracks before clearing (preserves pass number via NudgeDistance)
-            SaveTracksToFile();
-
-            // Clear tracks
-            State.Field.Tracks.Clear();
-            SavedTracks.Clear();
-            SelectedTrack = null;
-
-            // Clear U-turn state
-            ClearYouTurnState();
+            await CloseFieldAsync();
 
             // Disconnect NTRIP if connected
             if (_ntripService.IsConnected)
             {
                 await _ntripService.DisconnectAsync();
             }
-
-            // Clear field service state
-            _fieldService.SetActiveField(null);
 
             StatusMessage = "Field closed";
         });
@@ -672,7 +589,7 @@ public partial class MainViewModel
             }
         });
 
-        ResumeFieldCommand = new RelayCommand(() =>
+        ResumeFieldCommand = new AsyncRelayCommand(async () =>
         {
             var lastField = _settingsService.Settings.LastOpenedField;
             if (string.IsNullOrEmpty(lastField))
@@ -681,7 +598,7 @@ public partial class MainViewModel
                 return;
             }
 
-            // Get fields directory from settings (same pattern as ConfirmFieldSelectionDialogCommand)
+            // Get fields directory from settings
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
             if (string.IsNullOrEmpty(fieldsDir))
             {
@@ -698,78 +615,8 @@ public partial class MainViewModel
                 return;
             }
 
-            try
-            {
-                FieldsRootDirectory = fieldsDir;
-                CurrentFieldName = lastField;
-                IsFieldOpen = true;
-
-                // Load field origin from Field.txt (for coordinate conversions)
-                try
-                {
-                    var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                    if (fieldInfo.Origin != null)
-                    {
-                        _fieldOriginLatitude = fieldInfo.Origin.Latitude;
-                        _fieldOriginLongitude = fieldInfo.Origin.Longitude;
-                        // Clear simulator LocalPlane so it recreates with field origin
-                        _simulatorLocalPlane = null;
-                        _logger.LogDebug($"[Field] Set origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
-
-                        // Move simulator to field origin (like AgOpenGPS does)
-                        SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
-                        _logger.LogDebug($"[Field] Moved simulator to field origin");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug($"[Field] Could not load Field.txt origin: {ex.Message}");
-                }
-
-                // Clear previous field's background image before loading new field
-                _mapService.ClearBackground();
-
-                // Load boundary from field (same pattern as ConfirmFieldSelectionDialogCommand)
-                var boundary = _boundaryFileService.LoadBoundary(fieldPath);
-                if (boundary != null)
-                {
-                    SetCurrentBoundary(boundary);
-                    CenterMapOnBoundary(boundary);
-
-                    // Debug: show boundary extents
-                    if (boundary.OuterBoundary?.Points.Count > 0)
-                    {
-                        var pts = boundary.OuterBoundary.Points;
-                        double minE = pts.Min(p => p.Easting);
-                        double maxE = pts.Max(p => p.Easting);
-                        double minN = pts.Min(p => p.Northing);
-                        double maxN = pts.Max(p => p.Northing);
-                        _logger.LogDebug($"[Boundary] Extents (local): E({minE:F1} to {maxE:F1}), N({minN:F1} to {maxN:F1})");
-                    }
-                }
-
-                // Load background image from field
-                LoadBackgroundImage(fieldPath, boundary);
-
-                // Set the active field so headland and other field-specific data loads
-                var field = new Field
-                {
-                    Name = lastField,
-                    DirectoryPath = fieldPath,
-                    Boundary = boundary
-                };
-                _fieldService.SetActiveField(field);
-
-                // Handle NTRIP profile for this field
-                _ = HandleNtripProfileForFieldAsync(lastField);
-
-                IsJobMenuPanelVisible = false;
-                StatusMessage = $"Resumed field: {lastField}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Failed to load field: {ex.Message}";
-            }
+            await OpenFieldAsync(fieldPath, lastField);
+            IsJobMenuPanelVisible = false;
         });
     }
 }

@@ -908,110 +908,198 @@ public partial class MainViewModel : ObservableObject
 
     private void OnActiveFieldChanged(object? sender, Field? field)
     {
-        // Marshal to UI thread
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
-        {
-            UpdateActiveField(field);
-        }
-        else
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => UpdateActiveField(field));
-        }
-    }
-
-    private void UpdateActiveField(Field? field)
-    {
-        // Save coverage to previous field before switching
-        var previousField = ActiveField;
-        if (previousField != null && !string.IsNullOrEmpty(previousField.DirectoryPath))
-        {
-            try
-            {
-                _coverageMapService.SaveToFile(previousField.DirectoryPath);
-                _logger.LogDebug($"[Coverage] Saved coverage to {previousField.DirectoryPath}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug($"[Coverage] Error saving coverage: {ex.Message}");
-            }
-        }
-
-        // Clear coverage when switching fields
-        _coverageMapService.ClearAll();
-
-        // Update centralized state
+        // This event is now only used for state synchronization, not for save/load
+        // Save/load is handled by OpenFieldAsync and CloseFieldAsync
         State.Field.ActiveField = field;
-
-        // Legacy property
         ActiveField = field;
         OnPropertyChanged(nameof(ActiveFieldName));
         OnPropertyChanged(nameof(ActiveFieldArea));
         OnPropertyChanged(nameof(HasActiveField));
+    }
 
-        // Load background image before setting boundary (so it can be composited into coverage bitmap)
-        if (field?.BackgroundImage != null && field.BackgroundImage.IsEnabled && field.BackgroundImage.IsValid)
-        {
-            Console.WriteLine($"[Field] Loading background image: {field.BackgroundImage.ImagePath}");
-            Console.WriteLine($"[Field] Background bounds: E[{field.BackgroundImage.MinEasting:F1}, {field.BackgroundImage.MaxEasting:F1}] N[{field.BackgroundImage.MinNorthing:F1}, {field.BackgroundImage.MaxNorthing:F1}]");
-            _logger.LogDebug($"[Field] Loading background image from {field.BackgroundImage.ImagePath}");
-            // SetBackgroundImage expects: minX (west), maxY (north), maxX (east), minY (south)
-            _mapService.SetBackgroundImage(
-                field.BackgroundImage.ImagePath,
-                field.BackgroundImage.MinEasting,
-                field.BackgroundImage.MaxNorthing,
-                field.BackgroundImage.MaxEasting,
-                field.BackgroundImage.MinNorthing);
-        }
-        else
-        {
-            _mapService.ClearBackground();
-        }
+    /// <summary>
+    /// Opens a field from the specified path. This is the single entry point for all field opening.
+    /// Handles: closing previous field, loading boundary, background, coverage, tracks, headland.
+    /// </summary>
+    public async Task OpenFieldAsync(string fieldPath, string fieldName)
+    {
+        _logger.LogDebug($"[Field] OpenFieldAsync: {fieldName} at {fieldPath}");
 
-        // Update field statistics service with new boundary
-        if (field?.Boundary != null)
-        {
-            // Sync boundary to State.Field.CurrentBoundary for section control and stats
-            SetCurrentBoundary(field.Boundary);
+        // Close current field first (saves coverage, clears state)
+        await CloseFieldAsync();
 
-            // Calculate boundary area and pass as list (outer boundary only for now)
-            var boundaryAreas = new List<double> { field.Boundary.AreaHectares * 10000 }; // Convert ha to sq meters
-            _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
-            OnPropertyChanged(nameof(BoundaryAreaDisplay));
-            OnPropertyChanged(nameof(WorkedAreaDisplay));
-            OnPropertyChanged(nameof(RemainingPercent));
-        }
-        else
-        {
-            // No boundary - clear it
-            SetCurrentBoundary(null);
-        }
+        // Show busy overlay for loading
+        State.UI.BusyMessage = "Loading field...";
+        State.UI.IsBusy = true;
+        Console.WriteLine($"[Busy] OpenFieldAsync: Loading field '{fieldName}'");
 
-        // Load headland from Headlines.txt if not already loaded from HeadlandPolygon
-        // (HeadlandPolygon is loaded in SetCurrentBoundary from Headland.Txt)
-        if (_currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+        try
         {
-            LoadHeadlandFromField(field);
-        }
+            // Force UI to render busy overlay
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(50);
 
-        // Load AB lines from field directory if available
-        LoadTracksFromField(field);
+            // Update field state
+            CurrentFieldName = fieldName;
+            IsFieldOpen = true;
+            FieldsRootDirectory = Path.GetDirectoryName(fieldPath) ?? string.Empty;
 
-        // Load coverage from field directory if available
-        if (field != null && !string.IsNullOrEmpty(field.DirectoryPath))
-        {
+            // Load field origin from Field.txt
             try
             {
-                _coverageMapService.LoadFromFile(field.DirectoryPath);
-                _logger.LogDebug($"[Coverage] Loaded coverage from {field.DirectoryPath}");
-
-                // Refresh coverage statistics and notify UI
-                RefreshCoverageStatistics();
+                var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
+                if (fieldInfo.Origin != null)
+                {
+                    _fieldOriginLatitude = fieldInfo.Origin.Latitude;
+                    _fieldOriginLongitude = fieldInfo.Origin.Longitude;
+                    _simulatorLocalPlane = null;
+                    _logger.LogDebug($"[Field] Set origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
+                    SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogDebug($"[Coverage] Error loading coverage: {ex.Message}");
+                _logger.LogDebug($"[Field] Could not load Field.txt origin: {ex.Message}");
             }
+
+            // Load boundary
+            var boundary = _boundaryFileService.LoadBoundary(fieldPath);
+            if (boundary != null)
+            {
+                SetCurrentBoundary(boundary);
+                CenterMapOnBoundary(boundary);
+
+                var boundaryAreas = new List<double> { boundary.AreaHectares * 10000 };
+                _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
+                OnPropertyChanged(nameof(BoundaryAreaDisplay));
+            }
+
+            // Load background image
+            LoadBackgroundImage(fieldPath, boundary);
+
+            // Create field object and set as active
+            var field = new Field
+            {
+                Name = fieldName,
+                DirectoryPath = fieldPath,
+                Boundary = boundary
+            };
+
+            // Update field service (triggers OnActiveFieldChanged for state sync only)
+            _fieldService.SetActiveField(field);
+
+            // Load headland
+            LoadHeadlandFromField(field);
+
+            // Load tracks
+            LoadTracksFromField(field);
+
+            // Load coverage
+            State.UI.BusyMessage = "Loading coverage...";
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+            _coverageMapService.LoadFromFile(fieldPath);
+            _logger.LogDebug($"[Coverage] Loaded coverage from {fieldPath}");
+            RefreshCoverageStatistics();
+
+            // Handle NTRIP profile
+            _ = HandleNtripProfileForFieldAsync(fieldName);
+
+            // Save as last opened field
+            _settingsService.Settings.LastOpenedField = fieldName;
+            _settingsService.Save();
+
+            StatusMessage = $"Opened field: {fieldName}";
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"[Field] Error opening field: {fieldName}");
+            StatusMessage = $"Failed to open field: {ex.Message}";
+        }
+        finally
+        {
+            State.UI.IsBusy = false;
+            Console.WriteLine($"[Busy] OpenFieldAsync: Complete");
+        }
+    }
+
+    /// <summary>
+    /// Closes the current field. This is the single entry point for all field closing.
+    /// Handles: saving coverage, saving tracks, clearing all field state.
+    /// </summary>
+    public async Task CloseFieldAsync()
+    {
+        if (ActiveField == null || string.IsNullOrEmpty(ActiveField.DirectoryPath))
+        {
+            // No field to close, just clear state
+            ClearFieldState();
+            return;
+        }
+
+        _logger.LogDebug($"[Field] CloseFieldAsync: {ActiveField.Name}");
+
+        // Show busy overlay for saving
+        State.UI.BusyMessage = "Saving field...";
+        State.UI.IsBusy = true;
+        Console.WriteLine($"[Busy] CloseFieldAsync: Saving field '{ActiveField.Name}'");
+
+        try
+        {
+            // Force UI to render busy overlay
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(50);
+
+            // Save coverage
+            _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
+            _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
+
+            // Save tracks
+            SaveTracksToFile();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"[Field] Error saving field: {ActiveField.Name}");
+        }
+        finally
+        {
+            State.UI.IsBusy = false;
+            Console.WriteLine($"[Busy] CloseFieldAsync: Complete");
+        }
+
+        // Clear all field state
+        ClearFieldState();
+    }
+
+    /// <summary>
+    /// Clears all field-related state without saving.
+    /// </summary>
+    private void ClearFieldState()
+    {
+        CurrentFieldName = string.Empty;
+        IsFieldOpen = false;
+
+        // Clear boundary
+        SetCurrentBoundary(null);
+
+        // Clear headland
+        LoadHeadlandFromField(null);
+
+        // Clear background
+        _mapService.ClearBackground();
+
+        // Clear tracks
+        State.Field.Tracks.Clear();
+        SavedTracks.Clear();
+        SelectedTrack = null;
+
+        // Clear U-turn state
+        ClearYouTurnState();
+
+        // Clear coverage
+        _coverageMapService.ClearAll();
+
+        // Update field service
+        _fieldService.SetActiveField(null);
     }
 
     /// <summary>

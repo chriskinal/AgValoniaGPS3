@@ -168,6 +168,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </Border>
 
     <!-- Modal Dialog Overlays (shared across platforms) -->
-    <controls:DialogOverlayHost DataContext="{Binding}"/>
+    <controls:DialogOverlayHost DataContext="{Binding}" ZIndex="100"/>
     </Panel>
 </Window>

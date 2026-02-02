@@ -122,6 +122,21 @@ public class UIState : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSectionControlPanelVisible, value);
     }
 
+    // Busy overlay state (for blocking operations like file save/load)
+    private bool _isBusy;
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set => this.RaiseAndSetIfChanged(ref _isBusy, value);
+    }
+
+    private string _busyMessage = "";
+    public string BusyMessage
+    {
+        get => _busyMessage;
+        set => this.RaiseAndSetIfChanged(ref _busyMessage, value);
+    }
+
     // Selection state (shared across dialogs)
     private object? _selectedItem;
     public object? SelectedItem
