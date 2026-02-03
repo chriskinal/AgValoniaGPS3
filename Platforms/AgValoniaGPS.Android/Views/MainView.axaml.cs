@@ -194,12 +194,15 @@ public partial class MainView : UserControl
         // Note: Tool/vehicle position sync happens when simulator is enabled
         // (see IsSimulatorEnabled handler in OnViewModelPropertyChanged)
 
-        // Subscribe to FPS updates from map control
-        DrawingContextMapControl.FpsUpdated += fps =>
+        // Subscribe to FPS updates from map control (instance-based)
+        if (_mapControl != null)
         {
-            if (viewModel != null)
-                viewModel.CurrentFps = fps;
-        };
+            _mapControl.FpsUpdated += fps =>
+            {
+                if (viewModel != null)
+                    viewModel.CurrentFps = fps;
+            };
+        }
 
         Console.WriteLine("[MainView] DataContext set.");
     }

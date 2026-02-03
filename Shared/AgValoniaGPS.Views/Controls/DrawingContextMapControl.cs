@@ -346,10 +346,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Render timer
     private readonly DispatcherTimer _renderTimer;
 
-    // FPS tracking
-    private static DateTime _lastFpsUpdate = DateTime.UtcNow;
-    private static int _frameCount;
-    private static double _currentFps;
+    // FPS tracking (instance-based to avoid double-counting when multiple controls exist)
+    private DateTime _lastFpsUpdate = DateTime.UtcNow;
+    private int _frameCount;
+    private double _currentFps;
 
     // Performance profiling
     private static readonly System.Diagnostics.Stopwatch _profileSw = new();
@@ -365,12 +365,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// <summary>
     /// Current frames per second (updated every second)
     /// </summary>
-    public static double CurrentFps => _currentFps;
+    public double CurrentFps => _currentFps;
 
     /// <summary>
     /// Event raised when FPS is updated (every second)
     /// </summary>
-    public static event Action<double>? FpsUpdated;
+    public event Action<double>? FpsUpdated;
+
+    /// <summary>
+    /// Static FPS for legacy bindings (returns main control's FPS if available)
+    /// </summary>
+    private static DrawingContextMapControl? _mainControl;
+    public static double StaticCurrentFps => _mainControl?._currentFps ?? 0;
 
     public DrawingContextMapControl()
     {
@@ -418,6 +424,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _renderTimer.Tick += OnRenderTimerTick;
         _renderTimer.Start();
 
+        // Handle visibility changes to stop/start timer for hidden controls
+        PropertyChanged += OnControlPropertyChanged;
+
         // Wire up mouse events
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -429,6 +438,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         // Just trigger render - don't count here (we count actual completed renders)
         InvalidateVisual();
+    }
+
+    private void OnControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == nameof(IsVisible))
+        {
+            bool isNowVisible = e.NewValue is true;
+            if (isNowVisible)
+            {
+                if (!_renderTimer.IsEnabled)
+                {
+                    _renderTimer.Start();
+                    Console.WriteLine($"[MapControl] Started render timer (control became visible)");
+                }
+                // Track the main visible control for static FPS access
+                _mainControl = this;
+            }
+            else
+            {
+                if (_renderTimer.IsEnabled)
+                {
+                    _renderTimer.Stop();
+                    Console.WriteLine($"[MapControl] Stopped render timer (control hidden)");
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -1172,14 +1207,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int covStride = covBuffer.RowBytes / 2;
 
         // Sample background into coverage bitmap
-        // Coverage bitmap: pixel (x,y) corresponds to world (_bitmapMinE + x*cellSize, _bitmapMinN + y*cellSize)
+        // Coverage bitmap row 0 should contain NORTH content (to match rendering Y-flip)
+        // cy=0 -> worldN = maxN (north), cy=max -> worldN = minN (south)
         int pixelsWritten = 0;
         for (int cy = 0; cy < _bitmapHeight; cy++)
         {
-            double worldN = _bitmapMinN + cy * _actualBitmapCellSize;
+            double worldN = _bitmapMaxN - cy * _actualBitmapCellSize;
             if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
 
-            // Background Y is flipped (0 = top = maxY)
+            // Background image: bgY=0 is top (north), bgY=max is bottom (south)
             int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
             if (bgY < 0 || bgY >= bgHeight) continue;
 
@@ -1285,6 +1321,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (bgPixelData == null || bgWidth == 0 || bgHeight == 0)
             return;
 
+        // Use raw bounds for pixel scaling (image dimensions match raw bounds)
         double bgWorldWidth = _bgMaxX - _bgMinX;
         double bgWorldHeight = _bgMaxY - _bgMinY;
         double bgPixelsPerMeterX = bgWidth / bgWorldWidth;
@@ -1293,9 +1330,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int pixelsWritten = 0;
         for (int cy = 0; cy < _bitmapHeight; cy++)
         {
-            double worldN = _bitmapMinN + cy * _actualBitmapCellSize;
+            // Coverage bitmap row 0 should contain NORTH content (to match rendering Y-flip)
+            // cy=0 -> worldN = maxN (north), cy=max -> worldN = minN (south)
+            double worldN = _bitmapMaxN - cy * _actualBitmapCellSize;
             if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
 
+            // Background image: bgY=0 is top (north), bgY=max is bottom (south)
             int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
             if (bgY < 0 || bgY >= bgHeight) continue;
 
@@ -1304,6 +1344,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 double worldE = _bitmapMinE + cx * _actualBitmapCellSize;
                 if (worldE < overlapMinE || worldE >= overlapMaxE) continue;
 
+                // Map world easting to background image X pixel
+                // bgX=0 is the left of the image (west edge of background)
                 int bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
                 if (bgX < 0 || bgX >= bgWidth) continue;
 
@@ -1365,9 +1407,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             // Using thumbnail for zoomed-out view
             var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
+
+            // Calculate center for Y-flip transform (same pattern as full bitmap)
+            double thumbCenterX = (_bitmapMinE + _bitmapMaxE) / 2;
+            double thumbCenterY = (_bitmapMinN + _bitmapMaxN) / 2;
+
+            // Apply Y-flip around bitmap center
+            using (context.PushTransform(Matrix.CreateTranslation(thumbCenterX, thumbCenterY)))
+            using (context.PushTransform(Matrix.CreateScale(1, -1)))
             using (context.PushRenderOptions(_lowQualityRenderOptions))
             {
-                context.DrawImage(_coverageThumbnail, srcRect, destRect);
+                var flippedDestRect = new Rect(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight);
+                context.DrawImage(_coverageThumbnail, srcRect, flippedDestRect);
             }
             return _thumbnailWidth * _thumbnailHeight;
         }
@@ -1406,9 +1457,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // Use LowQuality when moderately zoomed out, HighQuality when zoomed in
         var renderOptions = _zoom < 0.5 ? _lowQualityRenderOptions : _highQualityRenderOptions;
+
+        // Calculate center for Y-flip transform (same pattern as background image drawing)
+        double centerX = (_bitmapMinE + _bitmapMaxE) / 2;
+        double centerY = (_bitmapMinN + _bitmapMaxN) / 2;
+
+        // Apply Y-flip around bitmap center - image pixels have Y increasing downward,
+        // but we're in a Y-up world coordinate system
+        using (context.PushTransform(Matrix.CreateTranslation(centerX, centerY)))
+        using (context.PushTransform(Matrix.CreateScale(1, -1)))
         using (context.PushRenderOptions(renderOptions))
         {
-            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, destRect);
+            var flippedDestRect = new Rect(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight);
+            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, flippedDestRect);
         }
 
         return _bitmapWidth * _bitmapHeight;
@@ -2668,9 +2729,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _bgMaxY = maxY;
         _bgMaxX = maxX;
         _bgMinY = minY;
-        _backgroundComposited = false;
 
-        // Load the bitmap
+        // Load the bitmap for potential direct drawing (fallback)
         _backgroundImage?.Dispose();
         _backgroundImage = null;
 
@@ -2683,19 +2743,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 Debug.WriteLine($"[DrawingContextMapControl] Loaded background image: {imagePath} ({_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height})");
                 Debug.WriteLine($"  Bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
 
-                // Mark as not composited - DrawCoverageBitmap will do the compositing
-                _backgroundComposited = false;
-                Console.WriteLine("[MapControl] Background image loaded, will composite on next draw");
+                // If coverage bitmap already exists, composite the background into it immediately
+                // This handles the case where boundary is set before background (new field creation)
+                if (_coverageWriteableBitmap != null && _bitmapWidth > 0 && _bitmapHeight > 0)
+                {
+                    Console.WriteLine("[MapControl] Coverage bitmap exists, compositing background immediately");
+                    CompositeBackgroundIntoBitmap();
+                    _backgroundComposited = true;
+                }
+                else
+                {
+                    // No coverage bitmap yet - will composite when bitmap is created
+                    _backgroundComposited = false;
+                    Console.WriteLine("[MapControl] No coverage bitmap yet, will composite when created");
+                }
                 InvalidateVisual();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[DrawingContextMapControl] Failed to load background image: {ex.Message}");
+                _backgroundComposited = false;
             }
         }
         else
         {
             Debug.WriteLine($"[DrawingContextMapControl] Background image path invalid or not found: {imagePath}");
+            _backgroundComposited = false;
         }
     }
 

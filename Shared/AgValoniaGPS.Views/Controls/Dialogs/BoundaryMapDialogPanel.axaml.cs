@@ -196,6 +196,7 @@ public partial class BoundaryMapDialogPanel : UserControl
     {
         _boundaryPoints.Add((lat, lon));
         Debug.WriteLine($"[BoundaryPoint] Added point #{_boundaryPoints.Count}: ({lat:F8}, {lon:F8})");
+        Console.WriteLine($"[BoundaryPoint] #{_boundaryPoints.Count}: lat={lat:F6}, lon={lon:F6}");
 
         // Add point marker
         var mercator = SphericalMercator.FromLonLat(lon, lat);
@@ -384,6 +385,7 @@ public partial class BoundaryMapDialogPanel : UserControl
             // Convert extent corners to WGS84
             var nw = SphericalMercator.ToLonLat(worldMin.worldX, worldMax.worldY);
             var se = SphericalMercator.ToLonLat(worldMax.worldX, worldMin.worldY);
+
 
             // Export the map to a bitmap
             var tempDir = Path.Combine(Path.GetTempPath(), "AgValoniaGPS_Mapsui");

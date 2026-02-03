@@ -2591,9 +2591,9 @@ public partial class MainViewModel : ObservableObject
             var nwLocal = localPlane.ConvertWgs84ToGeoCoord(nwWgs);
             var seLocal = localPlane.ConvertWgs84ToGeoCoord(seWgs);
 
-            // CORRECTION: Mapsui's viewport-to-world coordinate conversion has a ~150m northward offset
-            // from actual tile rendering position. Shift image bounds 150m north to compensate.
-            const double NorthingCorrectionMeters = 150.0;
+            // Apply northing correction to compensate for Mapsui viewport/tile rendering offset
+            // The background image appears ~17m south of where it should be without this correction
+            const double NorthingCorrectionMeters = 17.0;
             double correctedNwNorthing = nwLocal.Northing + NorthingCorrectionMeters;
             double correctedSeNorthing = seLocal.Northing + NorthingCorrectionMeters;
 
