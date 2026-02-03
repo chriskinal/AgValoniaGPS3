@@ -298,22 +298,18 @@ public partial class MainViewModel
                              _distanceToHeadland < maxDistanceToCreate &&
                              isAlignedWithABLine;
 
-        // Prevent creating a new U-turn if we just completed one and haven't traveled far enough
-        // This stops the oscillation that happens when the far headland is within range
-        bool tooCloseToLastTurn = false;
+        // Small buffer after completing a turn to let vehicle settle into new heading
+        // The raycast direction handles the rest - it only sees headland ahead, not behind
+        bool justCompletedTurn = false;
         if (_lastTurnCompletionPosition != null)
         {
             double distFromLastTurn = Math.Sqrt(
                 Math.Pow(currentPosition.Easting - _lastTurnCompletionPosition.Value.Easting, 2) +
                 Math.Pow(currentPosition.Northing - _lastTurnCompletionPosition.Value.Northing, 2));
-            tooCloseToLastTurn = distFromLastTurn < 20.0; // Must travel at least 20m before next turn
-            if (tooCloseToLastTurn && _youTurnCounter % 30 == 0)
-            {
-                _logger.LogDebug($"[YouTurn] Too close to last turn completion ({distFromLastTurn:F1}m), waiting...");
-            }
+            justCompletedTurn = distFromLastTurn < 10.0; // Just 10m buffer to prevent immediate re-trigger
         }
 
-        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead && !tooCloseToLastTurn)
+        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead && !justCompletedTurn)
         {
             // Check if a U-turn would put us outside the boundary
             if (WouldNextLineBeInsideBoundary(track, abHeading))
