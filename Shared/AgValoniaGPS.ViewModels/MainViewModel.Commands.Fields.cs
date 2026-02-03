@@ -163,6 +163,19 @@ public partial class MainViewModel
                 IsFieldOpen = true;
                 _simulatorLocalPlane = null;
 
+                // Set field origin for coordinate transformations
+                _fieldOriginLatitude = NewFieldLatitude;
+                _fieldOriginLongitude = NewFieldLongitude;
+
+                // Create field object and set as active (required for headland/track saving)
+                var field = new Field
+                {
+                    Name = NewFieldName,
+                    DirectoryPath = fieldPath,
+                    Boundary = null
+                };
+                _fieldService.SetActiveField(field);
+
                 _settingsService.Settings.LastOpenedField = NewFieldName;
                 _settingsService.Save();
 
