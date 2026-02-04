@@ -144,7 +144,7 @@ public partial class MainViewModel
                 Directory.CreateDirectory(fieldPath);
 
                 var originFile = Path.Combine(fieldPath, "field.origin");
-                File.WriteAllText(originFile, $"{NewFieldLatitude},{NewFieldLongitude}");
+                File.WriteAllText(originFile, $"{NewFieldLatitude:F8},{NewFieldLongitude:F8}");
 
                 var fieldTxtPath = Path.Combine(fieldPath, "Field.txt");
                 var fieldTxtContent = $"{DateTime.Now:yyyy-MMM-dd hh:mm:ss tt}\n" +
@@ -155,7 +155,7 @@ public partial class MainViewModel
                                       "Convergence\n" +
                                       "0\n" +
                                       "StartFix\n" +
-                                      $"{NewFieldLatitude},{NewFieldLongitude}\n";
+                                      $"{NewFieldLatitude:F8},{NewFieldLongitude:F8}\n";
                 File.WriteAllText(fieldTxtPath, fieldTxtContent);
 
                 CurrentFieldName = NewFieldName;
@@ -432,7 +432,7 @@ public partial class MainViewModel
                 Directory.CreateDirectory(newFieldPath);
 
                 var originFile = Path.Combine(newFieldPath, "field.origin");
-                File.WriteAllText(originFile, $"{KmlCenterLatitude},{KmlCenterLongitude}");
+                File.WriteAllText(originFile, $"{KmlCenterLatitude:F8},{KmlCenterLongitude:F8}");
 
                 var origin = new Wgs84(KmlCenterLatitude, KmlCenterLongitude);
                 var sharedProps = new SharedFieldProperties();

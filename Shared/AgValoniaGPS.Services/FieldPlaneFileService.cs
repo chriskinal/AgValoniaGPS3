@@ -155,9 +155,9 @@ public class FieldPlaneFileService
             writer.WriteLine("Convergence");
             writer.WriteLine(field.Convergence.ToString(CultureInfo.InvariantCulture));
 
-            // Lines 8-9: StartFix (origin)
+            // Lines 8-9: StartFix (origin) - use F8 for consistent precision (8 decimal places ≈ 1mm)
             writer.WriteLine("StartFix");
-            writer.WriteLine($"{field.Origin.Latitude.ToString(CultureInfo.InvariantCulture)},{field.Origin.Longitude.ToString(CultureInfo.InvariantCulture)}");
+            writer.WriteLine($"{field.Origin.Latitude.ToString("F8", CultureInfo.InvariantCulture)},{field.Origin.Longitude.ToString("F8", CultureInfo.InvariantCulture)}");
         }
     }
 

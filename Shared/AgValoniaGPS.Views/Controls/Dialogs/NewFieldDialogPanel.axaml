@@ -139,11 +139,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <StackPanel Orientation="Horizontal" Spacing="20">
                                 <TextBlock Foreground="White" FontSize="14">
                                     <Run Text="Lat: " Foreground="#95A5A6"/>
-                                    <Run Text="{Binding NewFieldLatitude, StringFormat='{}{0:F6}'}"/>
+                                    <Run Text="{Binding NewFieldLatitude, StringFormat='{}{0:F8}'}"/>
                                 </TextBlock>
                                 <TextBlock Foreground="White" FontSize="14">
                                     <Run Text="Lon: " Foreground="#95A5A6"/>
-                                    <Run Text="{Binding NewFieldLongitude, StringFormat='{}{0:F6}'}"/>
+                                    <Run Text="{Binding NewFieldLongitude, StringFormat='{}{0:F8}'}"/>
                                 </TextBlock>
                             </StackPanel>
                         </StackPanel>
