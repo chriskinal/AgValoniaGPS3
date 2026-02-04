@@ -36,6 +36,7 @@ using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
+using Mapsui.Rendering.Skia;
 using NetTopologySuite.Geometries;
 using NtsPoint = NetTopologySuite.Geometries.Point;
 
@@ -70,10 +71,13 @@ public partial class BoundaryMapDialogPanel : UserControl
     {
         var map = new Mapsui.Map();
 
-        // Use ESRI World Imagery (Google may block requests)
-        // Note: We previously tested Google and ESRI - both showed same 150m offset,
-        // confirming the issue is NOT with tile provider georeferencing
-        var useGoogle = false; // ESRI is more reliable for tile loading
+        // Explicitly set the map CRS to SphericalMercator (EPSG:3857)
+        // This ensures all layers use consistent coordinate system
+        map.CRS = "EPSG:3857";
+
+        // Test with different tile providers to diagnose offset issue
+        // Set to false to use ESRI instead of Google
+        var useGoogle = false; // Testing ESRI to compare with Google
 
         if (useGoogle)
         {
@@ -138,6 +142,14 @@ public partial class BoundaryMapDialogPanel : UserControl
 
         // Convert to SphericalMercator
         var center = SphericalMercator.FromLonLat(lon, lat);
+        Console.WriteLine($"[BoundaryMap] Input WGS84: lat={lat:F8}, lon={lon:F8}");
+        Console.WriteLine($"[BoundaryMap] Mercator center: x={center.x:F2}, y={center.y:F2}");
+
+        // Verify round-trip conversion
+        var verify = SphericalMercator.ToLonLat(center.x, center.y);
+        Console.WriteLine($"[BoundaryMap] Round-trip WGS84: lat={verify.lat:F8}, lon={verify.lon:F8}");
+        Console.WriteLine($"[BoundaryMap] Round-trip error: lat={Math.Abs(lat - verify.lat) * 111132:F2}m, lon={Math.Abs(lon - verify.lon) * 111132 * Math.Cos(lat * Math.PI / 180):F2}m");
+
         map.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), map.Navigator.Resolutions[16]);
 
         MapControl.Map = map;
@@ -322,6 +334,7 @@ public partial class BoundaryMapDialogPanel : UserControl
             var includeBackground = vm.BoundaryMapIncludeBackground;
             string? backgroundPath = null;
             double nwLat = 0, nwLon = 0, seLat = 0, seLon = 0;
+            double mercMinX = 0, mercMaxX = 0, mercMinY = 0, mercMaxY = 0;
 
             // Capture background if requested
             if (includeBackground)
@@ -338,6 +351,10 @@ public partial class BoundaryMapDialogPanel : UserControl
                         nwLon = result.Value.NwLon;
                         seLat = result.Value.SeLat;
                         seLon = result.Value.SeLon;
+                        mercMinX = result.Value.MercMinX;
+                        mercMaxX = result.Value.MercMaxX;
+                        mercMinY = result.Value.MercMinY;
+                        mercMaxY = result.Value.MercMaxY;
                     }
                 }
                 finally
@@ -358,6 +375,10 @@ public partial class BoundaryMapDialogPanel : UserControl
             vm.BoundaryMapResultNwLon = nwLon;
             vm.BoundaryMapResultSeLat = seLat;
             vm.BoundaryMapResultSeLon = seLon;
+            vm.BoundaryMapResultMercMinX = mercMinX;
+            vm.BoundaryMapResultMercMaxX = mercMaxX;
+            vm.BoundaryMapResultMercMinY = mercMinY;
+            vm.BoundaryMapResultMercMaxY = mercMaxY;
 
             // Execute confirm command
             vm.ConfirmBoundaryMapDialogCommand?.Execute(null);
@@ -371,21 +392,25 @@ public partial class BoundaryMapDialogPanel : UserControl
         }
     }
 
-    private async Task<(string Path, double NwLat, double NwLon, double SeLat, double SeLon)?> CaptureBackgroundImageAsync()
+    private async Task<(string Path, double NwLat, double NwLon, double SeLat, double SeLon,
+        double MercMinX, double MercMaxX, double MercMinY, double MercMaxY)?> CaptureBackgroundImageAsync()
     {
         try
         {
-            // Get current viewport bounds - capture exactly what the user is seeing
+            // Get current viewport - this defines what area to capture
             var viewport = MapControl.Map.Navigator.Viewport;
 
-            // Get the extent from viewport
-            var worldMin = viewport.ScreenToWorldXY(0, viewport.Height);
-            var worldMax = viewport.ScreenToWorldXY(viewport.Width, 0);
+            // Compute Mercator bounds from viewport center and resolution
+            double halfWidthMeters = (viewport.Width / 2.0) * viewport.Resolution;
+            double halfHeightMeters = (viewport.Height / 2.0) * viewport.Resolution;
+            double mercMinX = viewport.CenterX - halfWidthMeters;
+            double mercMaxX = viewport.CenterX + halfWidthMeters;
+            double mercMinY = viewport.CenterY - halfHeightMeters;
+            double mercMaxY = viewport.CenterY + halfHeightMeters;
 
             // Convert extent corners to WGS84
-            var nw = SphericalMercator.ToLonLat(worldMin.worldX, worldMax.worldY);
-            var se = SphericalMercator.ToLonLat(worldMax.worldX, worldMin.worldY);
-
+            var nw = SphericalMercator.ToLonLat(mercMinX, mercMaxY);  // NW = west X, north Y
+            var se = SphericalMercator.ToLonLat(mercMaxX, mercMinY);  // SE = east X, south Y
 
             // Export the map to a bitmap
             var tempDir = Path.Combine(Path.GetTempPath(), "AgValoniaGPS_Mapsui");
@@ -413,23 +438,32 @@ public partial class BoundaryMapDialogPanel : UserControl
             // Small additional delay for rendering to complete
             await Task.Delay(200);
 
-            // Get the size of the MapControl
-            var bounds = MapControl.Bounds;
-
             // Get the actual pixel size accounting for DPI scaling
             var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
-            var pixelWidth = (int)(bounds.Width * scaling);
-            var pixelHeight = (int)(bounds.Height * scaling);
-            var pixelSize = new PixelSize(pixelWidth, pixelHeight);
 
-            if (pixelSize.Width > 0 && pixelSize.Height > 0)
+            // Use Mapsui's MapRenderer to render directly - this ensures correct coordinate alignment
+            // because it uses Mapsui's internal rendering pipeline, not Avalonia's
+            var map = MapControl.Map;
+            var renderer = new MapRenderer();
+
+            using var bitmapStream = renderer.RenderToBitmapStream(map, pixelDensity: (float)scaling);
+
+            if (bitmapStream != null && bitmapStream.Length > 0)
             {
-                // Create a RenderTargetBitmap to capture the control at the correct DPI
+                bitmapStream.Position = 0;
+                using var fileStream = File.Create(savedBackgroundPath);
+                bitmapStream.CopyTo(fileStream);
+            }
+            else
+            {
+                Debug.WriteLine("[Capture] MapRenderer returned null/empty - falling back to RenderTargetBitmap");
+                // Fallback to Avalonia rendering if MapRenderer fails
+                var pixelWidth = (int)(viewport.Width * scaling);
+                var pixelHeight = (int)(viewport.Height * scaling);
+                var pixelSize = new PixelSize(pixelWidth, pixelHeight);
                 var dpi = new Vector(96 * scaling, 96 * scaling);
                 var renderTarget = new RenderTargetBitmap(pixelSize, dpi);
                 renderTarget.Render(MapControl);
-
-                // Save the bitmap to a file
                 renderTarget.Save(savedBackgroundPath);
             }
 
@@ -438,12 +472,12 @@ public partial class BoundaryMapDialogPanel : UserControl
             if (_polygonLayer != null) _polygonLayer.Enabled = true;
             MapControl.Refresh();
 
-            // Create geo-reference file content
+            // Create geo-reference file content (includes Mercator bounds)
             var geoPath = Path.Combine(tempDir, "BackPic.txt");
-            var geoContent = $"$BackPic\ntrue\n{nw.lat.ToString(CultureInfo.InvariantCulture)}\n{nw.lon.ToString(CultureInfo.InvariantCulture)}\n{se.lat.ToString(CultureInfo.InvariantCulture)}\n{se.lon.ToString(CultureInfo.InvariantCulture)}";
+            var geoContent = $"$BackPic\ntrue\n{nw.lat.ToString(CultureInfo.InvariantCulture)}\n{nw.lon.ToString(CultureInfo.InvariantCulture)}\n{se.lat.ToString(CultureInfo.InvariantCulture)}\n{se.lon.ToString(CultureInfo.InvariantCulture)}\n{mercMinX.ToString(CultureInfo.InvariantCulture)}\n{mercMaxX.ToString(CultureInfo.InvariantCulture)}\n{mercMinY.ToString(CultureInfo.InvariantCulture)}\n{mercMaxY.ToString(CultureInfo.InvariantCulture)}";
             File.WriteAllText(geoPath, geoContent);
 
-            return (savedBackgroundPath, nw.lat, nw.lon, se.lat, se.lon);
+            return (savedBackgroundPath, nw.lat, nw.lon, se.lat, se.lon, mercMinX, mercMaxX, mercMinY, mercMaxY);
         }
         catch (Exception ex)
         {

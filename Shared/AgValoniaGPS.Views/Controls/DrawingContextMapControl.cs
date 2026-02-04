@@ -71,6 +71,9 @@ public interface ISharedMapControl
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();
     void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY);
+    void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon);
     void ClearBackground();
 
     // Boundary recording indicator
@@ -230,6 +233,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private Bitmap? _backgroundImage;
     private double _bgMinX, _bgMaxY, _bgMaxX, _bgMinY; // Geo-reference bounds (local coordinates)
 
+    // Web Mercator bounds for proper satellite tile sampling
+    private double _bgMercatorMinX, _bgMercatorMaxX, _bgMercatorMinY, _bgMercatorMaxY;
+    private double _fieldOriginLat, _fieldOriginLon;
+    private double _metersPerDegreeLat, _metersPerDegreeLon;
+    private bool _useMercatorSampling;
+
     // Headland data
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec3>? _headlandLine;
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _headlandPreview;
@@ -350,6 +359,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
     private int _frameCount;
     private double _currentFps;
+    private int _lastDestRectLogSecond = -1;
 
     // Performance profiling
     private static readonly System.Diagnostics.Stopwatch _profileSw = new();
@@ -704,22 +714,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_backgroundImage == null) return;
 
         // Calculate the rectangle in world coordinates where the image should be drawn
-        // The bounds are: minX (west), maxY (north), maxX (east), minY (south)
         double width = _bgMaxX - _bgMinX;
         double height = _bgMaxY - _bgMinY;
 
-        // Calculate image center for proper Y-flip
+        // The camera transform flips Y (world Y-up to screen Y-down).
+        // The image was captured with north at top (row 0 = north).
+        //
+        // Problem: DrawImage places row 0 at the rect's "top" (smaller Y in Avalonia).
+        // After camera Y-flip, smaller world Y (south) appears at screen bottom.
+        // So without correction, image row 0 (north) ends up at screen bottom = WRONG.
+        //
+        // Fix: Apply an additional Y-flip around the image center to cancel out
+        // the camera's flip for this specific image. Two flips = no flip for content,
+        // but the positioning remains correct.
         double centerX = (_bgMinX + _bgMaxX) / 2;
         double centerY = (_bgMinY + _bgMaxY) / 2;
 
-        // Draw image with Y-flip around image center
-        // The image needs to be flipped vertically because we're in a Y-up coordinate system
-        // but image pixels have Y increasing downward
-        using (context.PushTransform(Matrix.CreateTranslation(centerX, centerY)))
-        using (context.PushTransform(Matrix.CreateScale(1, -1)))
+        // Flip around center: translate to origin, flip Y, translate back
+        var flipTransform = Matrix.CreateTranslation(-centerX, -centerY) *
+                           Matrix.CreateScale(1, -1) *
+                           Matrix.CreateTranslation(centerX, centerY);
+
+        using (context.PushTransform(flipTransform))
         {
-            var destRect = new Rect(-width / 2, -height / 2, width, height);
-            context.DrawImage(_backgroundImage, destRect);
+            var sourceRect = new Rect(0, 0, _backgroundImage.PixelSize.Width, _backgroundImage.PixelSize.Height);
+            var destRect = new Rect(_bgMinX, _bgMinY, width, height);
+            context.DrawImage(_backgroundImage, sourceRect, destRect);
         }
     }
 
@@ -735,10 +755,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Draw outer boundary
         if (_boundary.OuterBoundary != null && _boundary.OuterBoundary.IsValid && _boundary.OuterBoundary.Points.Count > 1)
         {
-            // Log occasionally to confirm we're drawing
+            // Log occasionally to confirm we're drawing and show actual vertices
             if (_renderCounter % 60 == 0)
             {
                 Console.WriteLine($"[MapControl] DrawBoundary: Drawing outer boundary with {_boundary.OuterBoundary.Points.Count} points");
+                var pts = _boundary.OuterBoundary.Points;
+                if (pts.Count > 0)
+                {
+                    Console.WriteLine($"[MapControl]   First point: ({pts[0].Easting:F2}, {pts[0].Northing:F2})");
+                    if (pts.Count > 1)
+                        Console.WriteLine($"[MapControl]   Last point: ({pts[pts.Count-1].Easting:F2}, {pts[pts.Count-1].Northing:F2})");
+                }
             }
             var geometry = new StreamGeometry();
             using (var ctx = geometry.Open())
@@ -861,30 +888,28 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         long memMB = (long)_bitmapWidth * _bitmapHeight * 2 / 1024 / 1024;
         Console.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565 bitmap (~{memMB}MB)");
 
-        // Initialize bitmap content: background image or black
+        // Clear bitmap to black first
         using (var framebuffer = _coverageWriteableBitmap.Lock())
         {
             int stride = framebuffer.RowBytes;
             byte* ptr = (byte*)framebuffer.Address;
             int bufferSize = stride * _bitmapHeight;
-
-            // Clear to black first
             new Span<byte>(ptr, bufferSize).Clear();
+        }
 
-            // Composite background if available
-            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
-            {
-                Console.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
-                CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
-            }
-            else
-            {
-                Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black");
-            }
+        // Composite background if available (uses its own lock)
+        if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+        {
+            Console.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
+            CompositeBackgroundIntoBitmap();
+        }
+        else
+        {
+            Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black");
+            _backgroundComposited = false;
         }
 
         // Set state flags
-        _backgroundComposited = true;
         _thumbnailNeedsRebuild = true;
         _bitmapExplicitlyInitialized = true;
     }
@@ -1122,7 +1147,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         if (overlapMinE >= overlapMaxE || overlapMinN >= overlapMaxN)
         {
-            Console.WriteLine("[Background] No overlap between background and coverage bounds");
+            Debug.WriteLine("[Background] No overlap between background and coverage bounds");
             _backgroundComposited = false;
             return;
         }
@@ -1189,14 +1214,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Background] Failed to decode background: {ex.Message}");
+            Debug.WriteLine($"[Background] Failed to decode background: {ex.Message}");
             _backgroundComposited = false;
             return;
         }
 
         if (bgPixelData == null)
         {
-            Console.WriteLine("[Background] Failed to get background pixel data");
+            Debug.WriteLine("[Background] Failed to get background pixel data");
             _backgroundComposited = false;
             return;
         }
@@ -1206,26 +1231,71 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         ushort* covPixels = (ushort*)covBuffer.Address;
         int covStride = covBuffer.RowBytes / 2;
 
-        // Sample background into coverage bitmap
-        // Coverage bitmap row 0 should contain NORTH content (to match rendering Y-flip)
-        // cy=0 -> worldN = maxN (north), cy=max -> worldN = minN (south)
+        // Composite using GATHER approach with proper coordinate transform chain:
+        // Local Plane → WGS84 → Web Mercator → sample background pixel
+        // This is the inverse of: Web Mercator → WGS84 → Local Plane (used for boundary points)
         int pixelsWritten = 0;
+        double halfCell = _actualBitmapCellSize / 2.0;
+
+        // Web Mercator constants
+        const double R = 6378137.0; // Earth radius for EPSG:3857
+        const double DEG_TO_RAD = Math.PI / 180.0;
+
+        // Pre-compute Mercator scaling factors
+        double mercXRange = _bgMercatorMaxX - _bgMercatorMinX;
+        double mercYRange = _bgMercatorMaxY - _bgMercatorMinY;
+        bool useMercator = _useMercatorSampling && mercXRange > 0 && mercYRange > 0;
+
+        // Helper function matching LocalPlane.MetersPerDegreeLon(lat)
+        static double MetersPerDegreeLon(double lat)
+        {
+            double latRad = lat * Math.PI / 180.0;
+            return 111412.84 * Math.Cos(latRad)
+                - 93.5 * Math.Cos(3.0 * latRad)
+                + 0.118 * Math.Cos(5.0 * latRad);
+        }
+
+        // Use direct local-to-pixel mapping (linear)
+        // This is consistent with how the background bounds are computed
+        useMercator = false;
+
         for (int cy = 0; cy < _bitmapHeight; cy++)
         {
-            double worldN = _bitmapMaxN - cy * _actualBitmapCellSize;
+            // Row 0 = south edge of coverage bitmap (_bitmapMinN)
+            // destRect places bitmap at (_bitmapMinE, _bitmapMinN), so row 0 maps to south
+            double worldN = _bitmapMinN + cy * _actualBitmapCellSize + halfCell;
             if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
-
-            // Background image: bgY=0 is top (north), bgY=max is bottom (south)
-            int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
-            if (bgY < 0 || bgY >= bgHeight) continue;
 
             for (int cx = 0; cx < _bitmapWidth; cx++)
             {
-                double worldE = _bitmapMinE + cx * _actualBitmapCellSize;
+                double worldE = _bitmapMinE + cx * _actualBitmapCellSize + halfCell;
                 if (worldE < overlapMinE || worldE >= overlapMaxE) continue;
 
-                int bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
-                if (bgX < 0 || bgX >= bgWidth) continue;
+                int bgX, bgY;
+
+                if (useMercator)
+                {
+                    // Step 1: Local Plane → WGS84 (matching LocalPlane.ConvertGeoCoordToWgs84)
+                    double lat = _fieldOriginLat + (worldN / _metersPerDegreeLat);
+                    double lon = _fieldOriginLon + (worldE / MetersPerDegreeLon(lat)); // Use lat-dependent formula!
+
+                    // Step 2: WGS84 → Web Mercator (EPSG:3857)
+                    double mercX = R * lon * DEG_TO_RAD;
+                    double latRad = lat * DEG_TO_RAD;
+                    double mercY = R * Math.Log(Math.Tan(Math.PI / 4.0 + latRad / 2.0));
+
+                    // Step 3: Web Mercator → background image pixel
+                    bgX = (int)((mercX - _bgMercatorMinX) / mercXRange * bgWidth);
+                    bgY = (int)((_bgMercatorMaxY - mercY) / mercYRange * bgHeight);
+                }
+                else
+                {
+                    // Fallback: linear sampling (when Mercator bounds not available)
+                    bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
+                    bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
+                }
+
+                if (bgX < 0 || bgX >= bgWidth || bgY < 0 || bgY >= bgHeight) continue;
 
                 // Read BGRA from background
                 int bgIdx = (bgY * bgWidth + bgX) * 4;
@@ -1243,9 +1313,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         sw.Stop();
-        Console.WriteLine($"[Background] Composited {pixelsWritten} pixels into coverage bitmap in {sw.ElapsedMilliseconds}ms");
+        Debug.WriteLine($"[Background] Composited {pixelsWritten} pixels into coverage bitmap in {sw.ElapsedMilliseconds}ms");
         _backgroundComposited = true;
-        _thumbnailNeedsRebuild = true; // Thumbnail needs to include background too
+
+        // Rebuild thumbnail immediately so zoomed-out view shows correct background
+        UpdateCoverageThumbnail();
+        _thumbnailNeedsRebuild = false;
     }
 
     /// <summary>
@@ -1256,113 +1329,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _backgroundComposited = false;
         // The bitmap will be cleared when coverage is cleared
-    }
-
-    /// <summary>
-    /// Composite background into an already-locked buffer.
-    /// Used during full rebuild to avoid double-locking.
-    /// </summary>
-    private unsafe void CompositeBackgroundIntoBuffer(ushort* covPixels, int covStride)
-    {
-        Console.WriteLine($"[CompositeBackground] Starting: path={_backgroundImagePath}");
-
-        // Only check path - we load from file via SkiaSharp, don't need _backgroundImage
-        if (string.IsNullOrEmpty(_backgroundImagePath) || !File.Exists(_backgroundImagePath))
-        {
-            Console.WriteLine("[CompositeBackground] FAILED: No background image path");
-            return;
-        }
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-        // Calculate the overlap between background bounds and coverage bounds
-        double overlapMinE = Math.Max(_bgMinX, _bitmapMinE);
-        double overlapMaxE = Math.Min(_bgMaxX, _bitmapMaxE);
-        double overlapMinN = Math.Max(_bgMinY, _bitmapMinN);
-        double overlapMaxN = Math.Min(_bgMaxY, _bitmapMaxN);
-
-        Console.WriteLine($"[CompositeBackground] BG bounds: E[{_bgMinX:F1},{_bgMaxX:F1}] N[{_bgMinY:F1},{_bgMaxY:F1}]");
-        Console.WriteLine($"[CompositeBackground] Bitmap bounds: E[{_bitmapMinE:F1},{_bitmapMaxE:F1}] N[{_bitmapMinN:F1},{_bitmapMaxN:F1}]");
-        Console.WriteLine($"[CompositeBackground] Overlap: E[{overlapMinE:F1},{overlapMaxE:F1}] N[{overlapMinN:F1},{overlapMaxN:F1}]");
-
-        if (overlapMinE >= overlapMaxE || overlapMinN >= overlapMaxN)
-        {
-            Console.WriteLine("[CompositeBackground] FAILED: No overlap between bounds");
-            return;
-        }
-
-        // Load background using SkiaSharp
-        byte[]? bgPixelData = null;
-        int bgWidth = 0, bgHeight = 0;
-
-        try
-        {
-            using var skBitmap = SKBitmap.Decode(_backgroundImagePath);
-            if (skBitmap != null)
-            {
-                bgWidth = skBitmap.Width;
-                bgHeight = skBitmap.Height;
-                bgPixelData = new byte[bgWidth * bgHeight * 4];
-                var pixels = skBitmap.Pixels;
-                for (int i = 0; i < pixels.Length; i++)
-                {
-                    bgPixelData[i * 4 + 0] = pixels[i].Blue;
-                    bgPixelData[i * 4 + 1] = pixels[i].Green;
-                    bgPixelData[i * 4 + 2] = pixels[i].Red;
-                    bgPixelData[i * 4 + 3] = pixels[i].Alpha;
-                }
-            }
-        }
-        catch
-        {
-            return;
-        }
-
-        if (bgPixelData == null || bgWidth == 0 || bgHeight == 0)
-            return;
-
-        // Use raw bounds for pixel scaling (image dimensions match raw bounds)
-        double bgWorldWidth = _bgMaxX - _bgMinX;
-        double bgWorldHeight = _bgMaxY - _bgMinY;
-        double bgPixelsPerMeterX = bgWidth / bgWorldWidth;
-        double bgPixelsPerMeterY = bgHeight / bgWorldHeight;
-
-        int pixelsWritten = 0;
-        for (int cy = 0; cy < _bitmapHeight; cy++)
-        {
-            // Coverage bitmap row 0 should contain NORTH content (to match rendering Y-flip)
-            // cy=0 -> worldN = maxN (north), cy=max -> worldN = minN (south)
-            double worldN = _bitmapMaxN - cy * _actualBitmapCellSize;
-            if (worldN < overlapMinN || worldN >= overlapMaxN) continue;
-
-            // Background image: bgY=0 is top (north), bgY=max is bottom (south)
-            int bgY = (int)((_bgMaxY - worldN) * bgPixelsPerMeterY);
-            if (bgY < 0 || bgY >= bgHeight) continue;
-
-            for (int cx = 0; cx < _bitmapWidth; cx++)
-            {
-                double worldE = _bitmapMinE + cx * _actualBitmapCellSize;
-                if (worldE < overlapMinE || worldE >= overlapMaxE) continue;
-
-                // Map world easting to background image X pixel
-                // bgX=0 is the left of the image (west edge of background)
-                int bgX = (int)((worldE - _bgMinX) * bgPixelsPerMeterX);
-                if (bgX < 0 || bgX >= bgWidth) continue;
-
-                int bgIdx = (bgY * bgWidth + bgX) * 4;
-                byte b = bgPixelData[bgIdx];
-                byte g = bgPixelData[bgIdx + 1];
-                byte r = bgPixelData[bgIdx + 2];
-
-                ushort rgb565 = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
-                covPixels[cy * covStride + cx] = rgb565;
-                pixelsWritten++;
-            }
-        }
-
-        sw.Stop();
-        Console.WriteLine($"[Background] Composited {pixelsWritten} pixels in {sw.ElapsedMilliseconds}ms");
-        _backgroundComposited = true;
     }
 
     /// <summary>
@@ -1402,23 +1368,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double worldHeight = _bitmapMaxN - _bitmapMinN;
         var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
 
+        // Debug: Log destRect once per second
+        if (DateTime.Now.Second != _lastDestRectLogSecond)
+        {
+            _lastDestRectLogSecond = DateTime.Now.Second;
+            Console.WriteLine($"[DrawCovBitmap] destRect: ({_bitmapMinE:F2}, {_bitmapMinN:F2}) size ({worldWidth:F2}, {worldHeight:F2})");
+        }
+
         // Use thumbnail when zoomed out to avoid expensive GPU downscaling
         if (_zoom < THUMBNAIL_ZOOM_THRESHOLD && _coverageThumbnail != null)
         {
             // Using thumbnail for zoomed-out view
             var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
-
-            // Calculate center for Y-flip transform (same pattern as full bitmap)
-            double thumbCenterX = (_bitmapMinE + _bitmapMaxE) / 2;
-            double thumbCenterY = (_bitmapMinN + _bitmapMaxN) / 2;
-
-            // Apply Y-flip around bitmap center
-            using (context.PushTransform(Matrix.CreateTranslation(thumbCenterX, thumbCenterY)))
-            using (context.PushTransform(Matrix.CreateScale(1, -1)))
             using (context.PushRenderOptions(_lowQualityRenderOptions))
             {
-                var flippedDestRect = new Rect(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight);
-                context.DrawImage(_coverageThumbnail, srcRect, flippedDestRect);
+                context.DrawImage(_coverageThumbnail, srcRect, destRect);
             }
             return _thumbnailWidth * _thumbnailHeight;
         }
@@ -1430,46 +1394,34 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Composite background into bitmap on first draw
         if (!_backgroundComposited)
         {
-            using (var fb = _coverageWriteableBitmap.Lock())
+            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
             {
-                unsafe
+                Console.WriteLine($"[DrawCovBitmap] Compositing background from {_backgroundImagePath}");
+                CompositeBackgroundIntoBitmap();
+            }
+            else
+            {
+                // No background - fill with black
+                using (var fb = _coverageWriteableBitmap.Lock())
                 {
-                    ushort* pixels = (ushort*)fb.Address;
-                    int stride = fb.RowBytes / 2;
-                    int count = _bitmapWidth * _bitmapHeight;
-
-                    // Check if background image file exists
-                    if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+                    unsafe
                     {
-                        Console.WriteLine($"[DrawCovBitmap] Loading background from {_backgroundImagePath}");
-                        CompositeBackgroundIntoBuffer(pixels, stride);
-                    }
-                    else
-                    {
-                        // No background - fill with black
+                        int count = _bitmapWidth * _bitmapHeight;
+                        ushort* pixels = (ushort*)fb.Address;
                         for (int i = 0; i < count; i++)
                             pixels[i] = 0;
                     }
                 }
+                _backgroundComposited = true;
             }
-            _backgroundComposited = true;
         }
 
         // Use LowQuality when moderately zoomed out, HighQuality when zoomed in
         var renderOptions = _zoom < 0.5 ? _lowQualityRenderOptions : _highQualityRenderOptions;
 
-        // Calculate center for Y-flip transform (same pattern as background image drawing)
-        double centerX = (_bitmapMinE + _bitmapMaxE) / 2;
-        double centerY = (_bitmapMinN + _bitmapMaxN) / 2;
-
-        // Apply Y-flip around bitmap center - image pixels have Y increasing downward,
-        // but we're in a Y-up world coordinate system
-        using (context.PushTransform(Matrix.CreateTranslation(centerX, centerY)))
-        using (context.PushTransform(Matrix.CreateScale(1, -1)))
         using (context.PushRenderOptions(renderOptions))
         {
-            var flippedDestRect = new Rect(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight);
-            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, flippedDestRect);
+            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, destRect);
         }
 
         return _bitmapWidth * _bitmapHeight;
@@ -1481,51 +1433,52 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private unsafe int UpdateCoverageBitmapFull()
     {
-        Console.WriteLine($"[UpdateCovBitmapFull] Called: control={GetHashCode()}, bitmap={_coverageWriteableBitmap != null}, provider={_coverageAllCellsProvider != null}, bgImage={_backgroundImage != null}, bgPath={_backgroundImagePath}");
+        Console.WriteLine($"[UpdateCovBitmapFull] Called: control={GetHashCode()}, bitmap={_coverageWriteableBitmap != null}, provider={_coverageAllCellsProvider != null}, bgPath={_backgroundImagePath}");
 
         if (_coverageWriteableBitmap == null || _coverageAllCellsProvider == null)
             return 0;
 
-        using var framebuffer = _coverageWriteableBitmap.Lock();
-        int stride = framebuffer.RowBytes;
-        int bufferSize = stride * _bitmapHeight;
-        byte* ptr = (byte*)framebuffer.Address;
+        // Step 1: Clear to black
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
+        {
+            int bufferSize = framebuffer.RowBytes * _bitmapHeight;
+            new Span<byte>((byte*)framebuffer.Address, bufferSize).Clear();
+        }
 
-        // Clear framebuffer to black first
-        new Span<byte>(ptr, bufferSize).Clear();
-
-        // If background image exists, composite it into the bitmap
+        // Step 2: Composite background if available (uses its own lock)
         if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
         {
             Console.WriteLine($"[UpdateCovBitmapFull] Compositing background from {_backgroundImagePath}");
-            CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+            CompositeBackgroundIntoBitmap();
         }
         else
         {
-            Console.WriteLine($"[UpdateCovBitmapFull] No background to composite, path={_backgroundImagePath}");
+            Console.WriteLine($"[UpdateCovBitmapFull] No background to composite");
         }
 
+        // Step 3: Write coverage cells
         int cellCount = 0;
-        // Query only cells within the bitmap bounds - O(viewport) not O(total coverage)
-        foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(
-            _actualBitmapCellSize, _bitmapMinE, _bitmapMaxE, _bitmapMinN, _bitmapMaxN))
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
         {
-            // Convert cell coordinates to bitmap pixel
-            // CellY is relative to minN (increasing north)
-            // Don't flip Y - bitmap top-left is at (minE, minN) which matches cell (0,0)
-            int px = cellX;
-            int py = cellY;
+            int stride = framebuffer.RowBytes;
+            byte* ptr = (byte*)framebuffer.Address;
 
-            if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
+            foreach (var (cellX, cellY, color) in _coverageAllCellsProvider(
+                _actualBitmapCellSize, _bitmapMinE, _bitmapMaxE, _bitmapMinN, _bitmapMaxN))
             {
-                // Bitmap is always Rgb565 format: 2 bytes per pixel
-                ushort* pixel = (ushort*)(ptr + py * stride + px * 2);
-                ushort rgb565 = (ushort)(
-                    ((color.R >> 3) << 11) |  // 5 bits red
-                    ((color.G >> 2) << 5) |   // 6 bits green
-                    (color.B >> 3));          // 5 bits blue
-                *pixel = rgb565;
-                cellCount++;
+                int px = cellX;
+                int py = cellY;
+
+                if (px >= 0 && px < _bitmapWidth && py >= 0 && py < _bitmapHeight)
+                {
+                    ushort* pixel = (ushort*)(ptr + py * stride + px * 2);
+                    ushort rgb565 = (ushort)(
+                        ((color.R >> 3) << 11) |
+                        ((color.G >> 2) << 5) |
+                        (color.B >> 3));
+                    *pixel = rgb565;
+                    cellCount++;
+                }
             }
         }
 
@@ -1613,22 +1566,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_coverageWriteableBitmap == null)
             return;
 
-        using var framebuffer = _coverageWriteableBitmap.Lock();
-        int stride = framebuffer.RowBytes;
-        int bufferSize = stride * _bitmapHeight;
-        unsafe
+        // Clear to black first
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
         {
-            byte* ptr = (byte*)framebuffer.Address;
-
-            // Clear to black first
-            new Span<byte>(ptr, bufferSize).Clear();
-
-            // Re-composite background if available (check path only, load from file)
-            if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+            int bufferSize = framebuffer.RowBytes * _bitmapHeight;
+            unsafe
             {
-                Console.WriteLine($"[ClearCoveragePixels] Re-compositing background from {_backgroundImagePath}");
-                CompositeBackgroundIntoBuffer((ushort*)ptr, stride / 2);
+                new Span<byte>((byte*)framebuffer.Address, bufferSize).Clear();
             }
+        }
+
+        // Re-composite background if available (uses its own lock)
+        if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
+        {
+            Console.WriteLine($"[ClearCoveragePixels] Re-compositing background from {_backgroundImagePath}");
+            CompositeBackgroundIntoBitmap();
         }
 
         // Rebuild thumbnail immediately (otherwise zoomed-out view shows stale data)
@@ -2704,6 +2656,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var newOuterPoints = boundary?.OuterBoundary?.Points?.Count ?? 0;
         Console.WriteLine($"[MapControl] SetBoundary called: boundary={boundary != null}, outerPoints={newOuterPoints}");
 
+        // Log boundary vertices to verify they match what we expect
+        if (boundary?.OuterBoundary?.Points != null && boundary.OuterBoundary.Points.Count > 0)
+        {
+            var pts = boundary.OuterBoundary.Points;
+            Console.WriteLine($"[MapControl] SetBoundary vertices:");
+            for (int i = 0; i < pts.Count; i++)
+            {
+                Console.WriteLine($"[MapControl]   Point {i}: E={pts[i].Easting:F2}, N={pts[i].Northing:F2}");
+            }
+        }
+
         _boundary = boundary;
         _boundaryPointsWhenSet = newOuterPoints;
         InitializeCoverageBitmap();
@@ -2772,6 +2735,32 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
+    public void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon)
+    {
+        // Store Mercator bounds for proper sampling
+        _bgMercatorMinX = mercMinX;
+        _bgMercatorMaxX = mercMaxX;
+        _bgMercatorMinY = mercMinY;
+        _bgMercatorMaxY = mercMaxY;
+        _fieldOriginLat = originLat;
+        _fieldOriginLon = originLon;
+        _useMercatorSampling = true;
+
+        // Pre-compute meters per degree for this origin
+        double originLatRad = originLat * Math.PI / 180.0;
+        _metersPerDegreeLat = 111132.92 - 559.82 * Math.Cos(2.0 * originLatRad)
+            + 1.175 * Math.Cos(4.0 * originLatRad) - 0.0023 * Math.Cos(6.0 * originLatRad);
+        _metersPerDegreeLon = 111412.84 * Math.Cos(originLatRad)
+            - 93.5 * Math.Cos(3.0 * originLatRad) + 0.118 * Math.Cos(5.0 * originLatRad);
+
+        Console.WriteLine($"[MapControl] SetBackgroundImageWithMercator: Mercator bounds Y[{mercMinY:F1}, {mercMaxY:F1}]");
+
+        // Call the regular method for the rest
+        SetBackgroundImage(imagePath, minX, maxY, maxX, minY);
+    }
+
     public void ClearBackground()
     {
         Console.WriteLine($"[MapControl] ClearBackground() called - fully clearing background");
@@ -2779,6 +2768,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _backgroundImage = null;
         _backgroundImagePath = null;
         _backgroundComposited = false;
+        _useMercatorSampling = false;
         _bgMinX = _bgMaxX = _bgMinY = _bgMaxY = 0;
     }
 

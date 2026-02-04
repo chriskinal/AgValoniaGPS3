@@ -68,19 +68,16 @@ public partial class MainViewModel
                     var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
                     var boundary = _boundaryFileService.LoadBoundary(fieldPath) ?? new Boundary();
 
-                    double centerLat, centerLon;
-                    if (!string.IsNullOrEmpty(BoundaryMapResultBackgroundPath))
-                    {
-                        centerLat = (BoundaryMapResultNwLat + BoundaryMapResultSeLat) / 2;
-                        centerLon = (BoundaryMapResultNwLon + BoundaryMapResultSeLon) / 2;
-                    }
-                    else
-                    {
-                        centerLat = BoundaryMapResultPoints.Average(p => p.Latitude);
-                        centerLon = BoundaryMapResultPoints.Average(p => p.Longitude);
-                    }
+                    // Use the EXISTING field origin for LocalPlane conversion - do NOT change it!
+                    // The field origin is set when the field is created and should remain constant.
+                    // Changing it would break all local coordinate systems.
+                    var originLat = _fieldOriginLatitude;
+                    var originLon = _fieldOriginLongitude;
 
-                    var origin = new Wgs84(centerLat, centerLon);
+                    Console.WriteLine($"[BoundaryMap] Using existing field origin: ({originLat:F8}, {originLon:F8})");
+                    Console.WriteLine($"[BoundaryMap] Current simulator position: ({Latitude:F8}, {Longitude:F8})");
+
+                    var origin = new Wgs84(originLat, originLon);
                     var sharedProps = new SharedFieldProperties();
                     var localPlane = new LocalPlane(origin, sharedProps);
 
@@ -90,20 +87,15 @@ public partial class MainViewModel
                         var wgs84 = new Wgs84(lat, lon);
                         var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
                         outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
+                        Console.WriteLine($"[BoundaryMap] Point WGS84: ({lat:F8}, {lon:F8}) -> Local: ({geoCoord.Easting:F2}, {geoCoord.Northing:F2})");
                     }
 
                     boundary.OuterBoundary = outerPolygon;
                     _boundaryFileService.SaveBoundary(boundary, fieldPath);
 
-                    _fieldOriginLatitude = centerLat;
-                    _fieldOriginLongitude = centerLon;
-                    try
-                    {
-                        var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                        fieldInfo.Origin = new Position { Latitude = centerLat, Longitude = centerLon };
-                        _fieldPlaneFileService.SaveField(fieldInfo, fieldPath);
-                    }
-                    catch { }
+                    // NOTE: Do NOT overwrite the field origin - it should stay constant!
+                    // The simulator coordinates and field origin should not change when
+                    // the user draws a boundary on the map.
 
                     SetCurrentBoundary(boundary);
 
@@ -134,7 +126,9 @@ public partial class MainViewModel
                     {
                         SaveBackgroundImage(BoundaryMapResultBackgroundPath, fieldPath,
                             BoundaryMapResultNwLat, BoundaryMapResultNwLon,
-                            BoundaryMapResultSeLat, BoundaryMapResultSeLon);
+                            BoundaryMapResultSeLat, BoundaryMapResultSeLon,
+                            BoundaryMapResultMercMinX, BoundaryMapResultMercMaxX,
+                            BoundaryMapResultMercMinY, BoundaryMapResultMercMaxY);
                     }
 
                     RefreshBoundaryList();
@@ -574,34 +568,16 @@ public partial class MainViewModel
                 try
                 {
                     var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-                    LocalPlane? localPlane = null;
+
+                    // Use the EXISTING field origin - do NOT change it!
+                    // The field origin is set when the field is created and should remain constant.
+                    Console.WriteLine($"[BoundaryMapDesktop] Using existing field origin: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
+
+                    var origin = new Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
+                    var sharedProps = new SharedFieldProperties();
+                    var localPlane = new LocalPlane(origin, sharedProps);
 
                     if (result.BoundaryPoints.Count >= 3)
-                    {
-                        double sumLat = 0, sumLon = 0;
-                        foreach (var point in result.BoundaryPoints)
-                        {
-                            sumLat += point.Latitude;
-                            sumLon += point.Longitude;
-                        }
-                        double centerLat = sumLat / result.BoundaryPoints.Count;
-                        double centerLon = sumLon / result.BoundaryPoints.Count;
-
-                        var origin = new Wgs84(centerLat, centerLon);
-                        var sharedProps = new SharedFieldProperties();
-                        localPlane = new LocalPlane(origin, sharedProps);
-                    }
-                    else if (result.HasBackgroundImage)
-                    {
-                        double centerLat = (result.NorthWestLat + result.SouthEastLat) / 2;
-                        double centerLon = (result.NorthWestLon + result.SouthEastLon) / 2;
-
-                        var origin = new Wgs84(centerLat, centerLon);
-                        var sharedProps = new SharedFieldProperties();
-                        localPlane = new LocalPlane(origin, sharedProps);
-                    }
-
-                    if (result.BoundaryPoints.Count >= 3 && localPlane != null)
                     {
                         var boundary = new Boundary();
                         var outerPolygon = new BoundaryPolygon();
@@ -616,17 +592,7 @@ public partial class MainViewModel
                         boundary.OuterBoundary = outerPolygon;
                         _boundaryFileService.SaveBoundary(boundary, fieldPath);
 
-                        double originLat = localPlane.Origin.Latitude;
-                        double originLon = localPlane.Origin.Longitude;
-                        _fieldOriginLatitude = originLat;
-                        _fieldOriginLongitude = originLon;
-                        try
-                        {
-                            var fieldInfo = _fieldPlaneFileService.LoadField(fieldPath);
-                            fieldInfo.Origin = new Position { Latitude = originLat, Longitude = originLon };
-                            _fieldPlaneFileService.SaveField(fieldInfo, fieldPath);
-                        }
-                        catch { }
+                        // NOTE: Do NOT overwrite the field origin - it should stay constant!
 
                         SetCurrentBoundary(boundary);
                         CenterMapOnBoundary(boundary);
@@ -635,9 +601,11 @@ public partial class MainViewModel
 
                     if (result.HasBackgroundImage && !string.IsNullOrEmpty(result.BackgroundImagePath))
                     {
+                        // AgShare downloads don't have Mercator bounds - use zeros (will fall back to linear sampling)
                         SaveBackgroundImage(result.BackgroundImagePath, fieldPath,
                             result.NorthWestLat, result.NorthWestLon,
-                            result.SouthEastLat, result.SouthEastLon);
+                            result.SouthEastLat, result.SouthEastLon,
+                            0, 0, 0, 0);
                     }
 
                     var msgParts = new System.Collections.Generic.List<string>();

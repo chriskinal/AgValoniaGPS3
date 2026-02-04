@@ -24,7 +24,7 @@
     <PackageReference Include="Avalonia" Version="11.3.9" />
     <PackageReference Include="Avalonia.Labs.Controls" Version="11.3.1" />
     <PackageReference Include="Avalonia.Labs.Gif" Version="11.3.1" />
-    <PackageReference Include="Mapsui.Avalonia" Version="5.0.0" />
+    <PackageReference Include="Mapsui.Avalonia" Version="5.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 

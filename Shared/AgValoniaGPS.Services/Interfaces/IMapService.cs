@@ -69,6 +69,9 @@ public interface IMapService
 
     // Background imagery
     void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY);
+    void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon);
     void ClearBackground();
 
     // Headland visualization

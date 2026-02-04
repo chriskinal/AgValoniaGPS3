@@ -167,6 +167,14 @@ public class MapService : IMapService
         _mapControl?.SetBackgroundImage(imagePath, minX, maxY, maxX, minY);
     }
 
+    public void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon)
+    {
+        _mapControl?.SetBackgroundImageWithMercator(imagePath, minX, maxY, maxX, minY,
+            mercMinX, mercMaxX, mercMinY, mercMaxY, originLat, originLon);
+    }
+
     public void ClearBackground()
     {
         _mapControl?.ClearBackground();
@@ -209,5 +217,11 @@ public class MapService : IMapService
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track)
     {
         _mapControl?.SetActiveTrack(track);
+    }
+
+    // Coverage bitmap initialization on field load
+    public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN)
+    {
+        _mapControl?.InitializeCoverageBitmapWithBounds(minE, maxE, minN, maxN);
     }
 }

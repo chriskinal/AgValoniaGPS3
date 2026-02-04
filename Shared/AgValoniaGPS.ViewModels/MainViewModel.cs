@@ -1633,6 +1633,11 @@ public partial class MainViewModel : ObservableObject
     public double BoundaryMapResultNwLon { get; set; }
     public double BoundaryMapResultSeLat { get; set; }
     public double BoundaryMapResultSeLon { get; set; }
+    // Web Mercator bounds for proper satellite tile sampling
+    public double BoundaryMapResultMercMinX { get; set; }
+    public double BoundaryMapResultMercMaxX { get; set; }
+    public double BoundaryMapResultMercMinY { get; set; }
+    public double BoundaryMapResultMercMaxY { get; set; }
 
     public ICommand? ShowBoundaryMapDialogCommand { get; private set; }
     public ICommand? CancelBoundaryMapDialogCommand { get; private set; }
@@ -2537,14 +2542,16 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// Save background image and geo-reference file to field directory, then load it.
     /// </summary>
-    private void SaveBackgroundImage(string sourcePath, string fieldPath, double nwLat, double nwLon, double seLat, double seLon)
+    private void SaveBackgroundImage(string sourcePath, string fieldPath, double nwLat, double nwLon, double seLat, double seLon,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY)
     {
         // Copy image to field directory
         var destPath = Path.Combine(fieldPath, "BackPic.png");
         File.Copy(sourcePath, destPath, overwrite: true);
 
-        // Save geo-reference file (WGS84 format)
-        var geoContent = $"$BackPic\ntrue\n{nwLat.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n{nwLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n{seLat.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n{seLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        // Save geo-reference file (WGS84 format + Mercator bounds)
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var geoContent = $"$BackPic\ntrue\n{nwLat.ToString(inv)}\n{nwLon.ToString(inv)}\n{seLat.ToString(inv)}\n{seLon.ToString(inv)}\n{mercMinX.ToString(inv)}\n{mercMaxX.ToString(inv)}\n{mercMinY.ToString(inv)}\n{mercMaxY.ToString(inv)}";
         var geoPath = Path.Combine(fieldPath, "BackPic.txt");
         File.WriteAllText(geoPath, geoContent);
 
@@ -2563,7 +2570,7 @@ public partial class MainViewModel : ObservableObject
                 return;
 
             // Read the geo-reference file
-            // Format: $BackPic, true, nwLat, nwLon, seLat, seLon
+            // Format: $BackPic, true, nwLat, nwLon, seLat, seLon[, mercMinX, mercMaxX, mercMinY, mercMaxY]
             var lines = File.ReadAllLines(backPicGeoPath);
             if (lines.Length < 6 || lines[0] != "$BackPic")
                 return;
@@ -2572,12 +2579,23 @@ public partial class MainViewModel : ObservableObject
             if (!bool.TryParse(lines[1], out bool enabled) || !enabled)
                 return;
 
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var style = System.Globalization.NumberStyles.Float;
+
             // Parse WGS84 bounds
-            if (!double.TryParse(lines[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double nwLat) ||
-                !double.TryParse(lines[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double nwLon) ||
-                !double.TryParse(lines[4], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double seLat) ||
-                !double.TryParse(lines[5], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double seLon))
+            if (!double.TryParse(lines[2], style, inv, out double nwLat) ||
+                !double.TryParse(lines[3], style, inv, out double nwLon) ||
+                !double.TryParse(lines[4], style, inv, out double seLat) ||
+                !double.TryParse(lines[5], style, inv, out double seLon))
                 return;
+
+            // Parse Mercator bounds (optional for backwards compatibility)
+            double mercMinX = 0, mercMaxX = 0, mercMinY = 0, mercMaxY = 0;
+            bool hasMercator = lines.Length >= 10 &&
+                double.TryParse(lines[6], style, inv, out mercMinX) &&
+                double.TryParse(lines[7], style, inv, out mercMaxX) &&
+                double.TryParse(lines[8], style, inv, out mercMinY) &&
+                double.TryParse(lines[9], style, inv, out mercMaxY);
 
             // Use field origin for LocalPlane (same origin used for boundary coordinates)
             // This ensures the background image aligns with the boundary
@@ -2585,20 +2603,35 @@ public partial class MainViewModel : ObservableObject
             var sharedProps = new SharedFieldProperties();
             var localPlane = new LocalPlane(origin, sharedProps);
 
+            Console.WriteLine($"[LoadBG] Field origin from ViewModel: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
+            Console.WriteLine($"[LoadBG] LocalPlane origin: ({localPlane.Origin.Latitude:F8}, {localPlane.Origin.Longitude:F8})");
+            Console.WriteLine($"[LoadBG] WGS84 bounds: NW=({nwLat:F8}, {nwLon:F8}), SE=({seLat:F8}, {seLon:F8})");
+
             // Convert WGS84 to local coordinates
             var nwWgs = new Wgs84(nwLat, nwLon);
             var seWgs = new Wgs84(seLat, seLon);
             var nwLocal = localPlane.ConvertWgs84ToGeoCoord(nwWgs);
             var seLocal = localPlane.ConvertWgs84ToGeoCoord(seWgs);
 
-            // Apply northing correction to compensate for Mapsui viewport/tile rendering offset
-            // The background image appears ~17m south of where it should be without this correction
-            const double NorthingCorrectionMeters = 17.0;
-            double correctedNwNorthing = nwLocal.Northing + NorthingCorrectionMeters;
-            double correctedSeNorthing = seLocal.Northing + NorthingCorrectionMeters;
+            Console.WriteLine($"[LoadBG] Local bounds: NW=({nwLocal.Easting:F2}, {nwLocal.Northing:F2}), SE=({seLocal.Easting:F2}, {seLocal.Northing:F2})");
 
-            // SetBackgroundImage expects: minX (west), maxY (north), maxX (east), minY (south)
-            _mapService.SetBackgroundImage(backPicPath, nwLocal.Easting, correctedNwNorthing, seLocal.Easting, correctedSeNorthing);
+            // Verify field origin converts to (0,0) in local coords
+            var originWgs = new Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
+            var originLocal = localPlane.ConvertWgs84ToGeoCoord(originWgs);
+            Console.WriteLine($"[LoadBG] Field origin in local coords (should be ~0,0): ({originLocal.Easting:F2}, {originLocal.Northing:F2})");
+
+            // Use Mercator-aware method if bounds available, otherwise fall back to linear
+            if (hasMercator)
+            {
+                _mapService.SetBackgroundImageWithMercator(backPicPath,
+                    nwLocal.Easting, nwLocal.Northing, seLocal.Easting, seLocal.Northing,
+                    mercMinX, mercMaxX, mercMinY, mercMaxY,
+                    _fieldOriginLatitude, _fieldOriginLongitude);
+            }
+            else
+            {
+                _mapService.SetBackgroundImage(backPicPath, nwLocal.Easting, nwLocal.Northing, seLocal.Easting, seLocal.Northing);
+            }
         }
         catch (Exception ex)
         {

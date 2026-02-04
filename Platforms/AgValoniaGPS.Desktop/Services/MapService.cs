@@ -120,6 +120,12 @@ public class MapService : IMapService
     public void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY) =>
         GetMapControl().SetBackgroundImage(imagePath, minX, maxY, maxX, minY);
 
+    public void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon) =>
+        GetMapControl().SetBackgroundImageWithMercator(imagePath, minX, maxY, maxX, minY,
+            mercMinX, mercMaxX, mercMinY, mercMaxY, originLat, originLon);
+
     public void ClearBackground() => GetMapControl().ClearBackground();
 
     // Headland visualization

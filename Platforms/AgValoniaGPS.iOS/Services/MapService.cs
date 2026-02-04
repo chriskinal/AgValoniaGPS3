@@ -167,6 +167,14 @@ public class MapService : IMapService
         _mapControl?.SetBackgroundImage(imagePath, minX, maxY, maxX, minY);
     }
 
+    public void SetBackgroundImageWithMercator(string imagePath, double minX, double maxY, double maxX, double minY,
+        double mercMinX, double mercMaxX, double mercMinY, double mercMaxY,
+        double originLat, double originLon)
+    {
+        _mapControl?.SetBackgroundImageWithMercator(imagePath, minX, maxY, maxX, minY,
+            mercMinX, mercMaxX, mercMinY, mercMaxY, originLat, originLon);
+    }
+
     public void ClearBackground()
     {
         _mapControl?.ClearBackground();
