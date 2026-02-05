@@ -54,7 +54,20 @@ public partial class MainViewModel
     public double NextTrackTurnOffset { get; private set; }
 
     private int _howManyPathsAway; // Which parallel offset line we're on (like AgOpenGPS)
-    private Vec2? _lastTurnCompletionPosition; // Position where last U-turn completed - used to prevent immediate re-triggering
+
+    // Zone tracking - single state for tractor location
+    public enum TractorZone { OutsideBoundary = 0, InHeadland = 1, InCultivatedArea = 2 }
+    private TractorZone _currentZone = TractorZone.OutsideBoundary;
+
+    // Debug: expose zone for UI display
+    public TractorZone CurrentZone => _currentZone;
+    public string CurrentZoneDisplay => _currentZone switch
+    {
+        TractorZone.OutsideBoundary => "Outside",
+        TractorZone.InHeadland => "Headland",
+        TractorZone.InCultivatedArea => "Cultivated",
+        _ => "Unknown"
+    };
 
     #endregion
 
@@ -104,7 +117,7 @@ public partial class MainViewModel
         _isYouTurnTriggered = false;
         _isInYouTurn = false;
         _youTurnCounter = 0;
-        _lastTurnCompletionPosition = null;
+        _currentZone = TractorZone.OutsideBoundary;
 
         _mapService.SetYouTurnPath(null);
         _mapService.SetNextTrack(null);
@@ -289,33 +302,34 @@ public partial class MainViewModel
             _distanceToHeadland = double.MaxValue;  // Don't detect headland if not aligned
         }
 
-        // Create U-turn path when approaching the headland ahead
-        // For boundary tracks without headland, use manual U-turn buttons instead
-        double minDistanceToCreate = 10.0;  // meters - don't create if we're already too close (mid-turn)
-        double maxDistanceToCreate = 60.0;  // meters - create when getting close to headland, not immediately on line acquisition
+        // Update zone tracking
+        _currentZone = DetermineCurrentZone(currentPosition.Easting, currentPosition.Northing);
 
-        bool headlandAhead = _distanceToHeadland > minDistanceToCreate &&
-                             _distanceToHeadland < maxDistanceToCreate &&
-                             isAlignedWithABLine;
+        bool isInCultivatedArea = _currentZone == TractorZone.InCultivatedArea;
+        bool isInHeadlandZone = _currentZone == TractorZone.InHeadland;
 
-        // Small buffer after completing a turn to let vehicle settle into new heading
-        // The raycast direction handles the rest - it only sees headland ahead, not behind
-        bool justCompletedTurn = false;
-        if (_lastTurnCompletionPosition != null)
+        // AgOpenGPS creates turns while in CULTIVATED AREA approaching headland
+        // The turn path has a leg that extends back into the cultivated area
+        // Distance-based creation window: 10-60m from headland
+        double minDistanceToCreate = 10.0;
+        double maxDistanceToCreate = 60.0;
+        bool headlandInRange = _distanceToHeadland > minDistanceToCreate &&
+                               _distanceToHeadland < maxDistanceToCreate;
+
+        // Debug logging
+        if (_youTurnPath == null && !_isInYouTurn && _distanceToHeadland < 100)
         {
-            double distFromLastTurn = Math.Sqrt(
-                Math.Pow(currentPosition.Easting - _lastTurnCompletionPosition.Value.Easting, 2) +
-                Math.Pow(currentPosition.Northing - _lastTurnCompletionPosition.Value.Northing, 2));
-            justCompletedTurn = distFromLastTurn < 10.0; // Just 10m buffer to prevent immediate re-trigger
+            _logger.LogDebug($"[YouTurn] Zone={_currentZone}, dist={_distanceToHeadland:F1}m, aligned={isAlignedWithABLine}, inRange={headlandInRange}");
         }
 
-        if (_youTurnPath == null && _youTurnCounter >= 4 && !_isInYouTurn && headlandAhead && !justCompletedTurn)
+        // TURN CREATION: In cultivated area, approaching headland, aligned with track
+        if (_youTurnPath == null && !_isInYouTurn && isInCultivatedArea && headlandInRange && isAlignedWithABLine)
         {
-            // Check if a U-turn would put us outside the boundary
-            if (WouldNextLineBeInsideBoundary(track, abHeading))
+            bool nextLineInside = WouldNextLineBeInsideBoundary(track, abHeading);
+            _logger.LogDebug($"[YouTurn] Creating turn? nextLineInside={nextLineInside}");
+            if (nextLineInside)
             {
-                _logger.LogDebug($"[YouTurn] Auto-creating turn path - headland dist: {_distanceToHeadland:F1}m");
-                // Use alternating pattern for automatic headland turns
+                _logger.LogDebug($"[YouTurn] Creating turn path at {_distanceToHeadland:F1}m from headland");
                 _isTurnLeft = _isHeadingSameWay;
                 _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
                 ComputeNextTrack(track, abHeading);
@@ -327,24 +341,33 @@ public partial class MainViewModel
                 StatusMessage = "End of field reached";
             }
         }
-        // If we have a valid path and approaching headland, trigger the turn
+        // TURN TRIGGER: When path is ready, trigger when close to turn start point
         else if (_youTurnPath != null && _youTurnPath.Count > 2 && !_isYouTurnTriggered && !_isInYouTurn)
         {
-            // Trigger when within 3 meters of the headland boundary
-            // This is more reliable than checking distance to turn start point,
-            // which may not be exactly on the vehicle's path for offset tracks
-            if (_distanceToHeadland <= 3.0 && _distanceToHeadland > 0)
+            var turnStart = _youTurnPath[0];
+            double distToTurnStart = Math.Sqrt(
+                Math.Pow(currentPosition.Easting - turnStart.Easting, 2) +
+                Math.Pow(currentPosition.Northing - turnStart.Northing, 2));
+
+            // Trigger when within 2 meters of turn start
+            if (distToTurnStart <= 2.0)
             {
-                // Update centralized state
                 State.YouTurn.IsTriggered = true;
                 State.YouTurn.IsExecuting = true;
-
                 _isYouTurnTriggered = true;
                 _isInYouTurn = true;
                 StatusMessage = "YouTurn triggered!";
-                _logger.LogDebug($"[YouTurn] Triggered at {_distanceToHeadland:F2}m from headland");
-                // Note: ComputeNextTrack was already called when the path was created
+                _logger.LogDebug($"[YouTurn] Triggered at {distToTurnStart:F2}m from turn start");
             }
+        }
+        // RESET: If entered headland with untriggered turn, reset (drove past turn start)
+        else if (_youTurnPath != null && !_isYouTurnTriggered && isInHeadlandZone)
+        {
+            _logger.LogDebug("[YouTurn] Entered headland without triggering - resetting turn");
+            _youTurnPath = null;
+            _nextTrack = null;
+            _mapService.SetYouTurnPath(null);
+            _mapService.SetNextTrack(null);
         }
 
         // Check if U-turn is complete (vehicle reached end of turn path)
@@ -578,13 +601,6 @@ public partial class MainViewModel
             return;
         }
 
-        // Save the turn completion position (end of turn path) to prevent immediate re-triggering
-        if (_youTurnPath != null && _youTurnPath.Count > 0)
-        {
-            var endPoint = _youTurnPath[_youTurnPath.Count - 1];
-            _lastTurnCompletionPosition = new Vec2(endPoint.Easting, endPoint.Northing);
-        }
-
         // Following AgOpenGPS approach exactly:
         // Determine offset direction using XOR
         int rowSkipWidth = UTurnSkipRows;  // Use runtime property from bottom nav button (0 = adjacent, 1 = skip 1, etc.)
@@ -678,6 +694,53 @@ public partial class MainViewModel
         }
 
         return minDistance;
+    }
+
+    /// <summary>
+    /// Determine which zone the tractor is currently in based on boundary polygons.
+    /// Uses ray casting algorithm without allocations.
+    /// </summary>
+    private TractorZone DetermineCurrentZone(double easting, double northing)
+    {
+        // Check if inside headland (cultivated area) first - most common case
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+        {
+            if (IsPointInPolygon(_currentHeadlandLine, easting, northing))
+                return TractorZone.InCultivatedArea;
+        }
+
+        // Check if inside outer boundary (headland zone)
+        if (_currentBoundary?.OuterBoundary != null && _currentBoundary.OuterBoundary.IsValid)
+        {
+            if (_currentBoundary.OuterBoundary.IsPointInside(easting, northing))
+                return TractorZone.InHeadland;
+        }
+
+        // Outside everything
+        return TractorZone.OutsideBoundary;
+    }
+
+    /// <summary>
+    /// Ray casting point-in-polygon test for Vec3 list (headland line).
+    /// </summary>
+    private static bool IsPointInPolygon(List<Vec3> polygon, double easting, double northing)
+    {
+        int n = polygon.Count;
+        bool inside = false;
+
+        for (int i = 0, j = n - 1; i < n; j = i++)
+        {
+            var pi = polygon[i];
+            var pj = polygon[j];
+
+            if (((pi.Northing > northing) != (pj.Northing > northing)) &&
+                (easting < (pj.Easting - pi.Easting) * (northing - pi.Northing) / (pj.Northing - pi.Northing) + pi.Easting))
+            {
+                inside = !inside;
+            }
+        }
+
+        return inside;
     }
 
     #endregion
@@ -1328,15 +1391,10 @@ public partial class MainViewModel
 
         double arcDiameter = 2.0 * turnRadius;
 
-        // Boundary check for arc apex
-        double arcApexE = arcCenterE + Math.Sin(travelHeading) * turnRadius;
-        double arcApexN = arcCenterN + Math.Cos(travelHeading) * turnRadius;
-
-        if (!IsPointInsideBoundary(arcApexE, arcApexN))
-        {
-            _logger.LogDebug($"[YouTurn] Arc apex is outside boundary - not creating U-turn");
-            return path;
-        }
+        // Note: Arc apex boundary check removed - it was too restrictive.
+        // The arc extends into the headland zone which exists precisely for turns.
+        // WouldNextLineBeInsideBoundary already validates the next track is valid.
+        // The exit end check below ensures we end up on a valid track.
 
         double exitEndE = entryStartE + Math.Sin(perpAngle) * turnOffset;
         double exitEndN = entryStartN + Math.Cos(perpAngle) * turnOffset;

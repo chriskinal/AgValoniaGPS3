@@ -124,8 +124,10 @@ public partial class MainViewModel
             transformedPosition.Easting, transformedPosition.Northing);
 
         // Auto-disengage autosteer if vehicle is outside the outer boundary
-        // BUT skip this check on first pass (howManyPathsAway == 0) if track runs along boundary
-        bool skipBoundaryCheck = _isSelectedTrackOnBoundary && _howManyPathsAway == 0;
+        // BUT skip this check:
+        // - On first pass (howManyPathsAway == 0) if track runs along boundary
+        // - During U-turn execution (arc extends into headland which may be outside outer boundary)
+        bool skipBoundaryCheck = (_isSelectedTrackOnBoundary && _howManyPathsAway == 0) || _isInYouTurn;
         if (IsAutoSteerEngaged && !skipBoundaryCheck && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
         {
             IsAutoSteerEngaged = false;
