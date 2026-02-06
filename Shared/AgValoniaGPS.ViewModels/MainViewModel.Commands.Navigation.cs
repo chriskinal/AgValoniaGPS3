@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using CommunityToolkit.Mvvm.Input;
+using System.Reactive;
+using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -26,91 +27,91 @@ public partial class MainViewModel
     private void InitializeNavigationCommands()
     {
         // Panel toggle commands
-        ToggleViewSettingsPanelCommand = new RelayCommand(() =>
+        ToggleViewSettingsPanelCommand = ReactiveCommand.Create(() =>
         {
             IsViewSettingsPanelVisible = !IsViewSettingsPanelVisible;
         });
 
-        ToggleFileMenuPanelCommand = new RelayCommand(() =>
+        ToggleFileMenuPanelCommand = ReactiveCommand.Create(() =>
         {
             IsFileMenuPanelVisible = !IsFileMenuPanelVisible;
         });
 
-        ToggleToolsPanelCommand = new RelayCommand(() =>
+        ToggleToolsPanelCommand = ReactiveCommand.Create(() =>
         {
             IsToolsPanelVisible = !IsToolsPanelVisible;
         });
 
-        ToggleConfigurationPanelCommand = new RelayCommand(() =>
+        ToggleConfigurationPanelCommand = ReactiveCommand.Create(() =>
         {
             IsConfigurationPanelVisible = !IsConfigurationPanelVisible;
         });
 
-        ToggleJobMenuPanelCommand = new RelayCommand(() =>
+        ToggleJobMenuPanelCommand = ReactiveCommand.Create(() =>
         {
             IsJobMenuPanelVisible = !IsJobMenuPanelVisible;
         });
 
-        ToggleFieldToolsPanelCommand = new RelayCommand(() =>
+        ToggleFieldToolsPanelCommand = ReactiveCommand.Create(() =>
         {
             IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
         });
 
         // View mode commands
-        ToggleGridCommand = new RelayCommand(() =>
+        ToggleGridCommand = ReactiveCommand.Create(() =>
         {
             IsGridOn = !IsGridOn;
         });
 
-        ToggleDayNightCommand = new RelayCommand(() =>
+        ToggleDayNightCommand = ReactiveCommand.Create(() =>
         {
             IsDayMode = !IsDayMode;
         });
 
-        Toggle2D3DCommand = new RelayCommand(() =>
+        Toggle2D3DCommand = ReactiveCommand.Create(() =>
         {
             Is2DMode = !Is2DMode;
         });
 
-        ToggleNorthUpCommand = new RelayCommand(() =>
+        ToggleNorthUpCommand = ReactiveCommand.Create(() =>
         {
             IsNorthUp = !IsNorthUp;
         });
 
         // Camera controls
-        IncreaseCameraPitchCommand = new RelayCommand(() =>
+        IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
             CameraPitch += 5.0;
         });
 
-        DecreaseCameraPitchCommand = new RelayCommand(() =>
+        DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
             CameraPitch -= 5.0;
         });
 
         // Brightness controls
-        IncreaseBrightnessCommand = new RelayCommand(() =>
+        IncreaseBrightnessCommand = ReactiveCommand.Create(() =>
         {
             Brightness += 5;
         });
 
-        DecreaseBrightnessCommand = new RelayCommand(() =>
+        DecreaseBrightnessCommand = ReactiveCommand.Create(() =>
         {
             Brightness -= 5;
         });
 
         // iOS Sheet toggle commands
-        ToggleFileMenuCommand = new RelayCommand(() =>
+        ToggleFileMenuCommand = ReactiveCommand.Create(() =>
         {
             IsFileMenuVisible = !IsFileMenuVisible;
         });
 
-        ToggleFieldToolsCommand = new RelayCommand(() =>
+        ToggleFieldToolsCommand = ReactiveCommand.Create(() =>
         {
             IsFieldToolsVisible = !IsFieldToolsVisible;
         });
 
-        ToggleSettingsCommand = new RelayCommand(() =>
+        ToggleSettingsCommand = ReactiveCommand.Create(() =>
         {
             IsSettingsVisible = !IsSettingsVisible;
         });

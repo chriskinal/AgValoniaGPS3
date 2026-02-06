@@ -17,6 +17,7 @@
 using System;
 using Avalonia;
 using Avalonia.iOS;
+using Avalonia.ReactiveUI;
 using Foundation;
 using UIKit;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,7 @@ public partial class AppDelegate : AvaloniaAppDelegate<App>
             // Explicitly configure for iOS - this ensures no desktop window chrome
             var result = base.CustomizeAppBuilder(builder)
                 .UseiOS()
+                .UseReactiveUI()
                 .LogToTrace();
             Console.WriteLine("[AppDelegate] CustomizeAppBuilder completed.");
             return result;

@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring antenna height.
 /// </summary>
-public partial class AntennaHeightStepViewModel : WizardStepViewModel
+public class AntennaHeightStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -35,11 +35,19 @@ public partial class AntennaHeightStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => true; // Optional setting
 
-    [ObservableProperty]
     private double _antennaHeight;
+    public double AntennaHeight
+    {
+        get => _antennaHeight;
+        set => this.RaiseAndSetIfChanged(ref _antennaHeight, value);
+    }
 
-    [ObservableProperty]
     private string _unit = "m";
+    public string Unit
+    {
+        get => _unit;
+        set => this.RaiseAndSetIfChanged(ref _unit, value);
+    }
 
     public AntennaHeightStepViewModel(IConfigurationService configService)
     {

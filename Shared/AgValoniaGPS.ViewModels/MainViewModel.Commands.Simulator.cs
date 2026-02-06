@@ -15,7 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using CommunityToolkit.Mvvm.Input;
+using System.Reactive;
+using ReactiveUI;
 using AgValoniaGPS.Models.State;
 
 namespace AgValoniaGPS.ViewModels;
@@ -27,25 +28,25 @@ public partial class MainViewModel
 {
     private void InitializeSimulatorCommands()
     {
-        ToggleSimulatorPanelCommand = new RelayCommand(() =>
+        ToggleSimulatorPanelCommand = ReactiveCommand.Create(() =>
         {
             IsSimulatorPanelVisible = !IsSimulatorPanelVisible;
         });
 
-        ResetSimulatorCommand = new RelayCommand(() =>
+        ResetSimulatorCommand = ReactiveCommand.Create(() =>
         {
             _simulatorService.Reset();
             SimulatorSteerAngle = 0;
             StatusMessage = "Simulator Reset";
         });
 
-        ResetSteerAngleCommand = new RelayCommand(() =>
+        ResetSteerAngleCommand = ReactiveCommand.Create(() =>
         {
             SimulatorSteerAngle = 0;
             StatusMessage = "Steer Angle Reset to 0";
         });
 
-        SimulatorForwardCommand = new RelayCommand(() =>
+        SimulatorForwardCommand = ReactiveCommand.Create(() =>
         {
             _simulatorService.StepDistance = 0;
             _simulatorService.IsAcceleratingForward = true;
@@ -53,18 +54,18 @@ public partial class MainViewModel
             StatusMessage = "Sim: Accelerating Forward";
         });
 
-        SimulatorStopCommand = new RelayCommand(() =>
+        SimulatorStopCommand = ReactiveCommand.Create(() =>
         {
             _simulatorService.IsAcceleratingForward = false;
             _simulatorService.IsAcceleratingBackward = false;
             _simulatorService.StepDistance = 0;
             _simulatorSpeedKph = 0;
-            OnPropertyChanged(nameof(SimulatorSpeedKph));
-            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
+            this.RaisePropertyChanged(nameof(SimulatorSpeedKph));
+            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
             StatusMessage = "Sim: Stopped";
         });
 
-        SimulatorReverseCommand = new RelayCommand(() =>
+        SimulatorReverseCommand = ReactiveCommand.Create(() =>
         {
             _simulatorService.StepDistance = 0;
             _simulatorService.IsAcceleratingBackward = true;
@@ -72,7 +73,7 @@ public partial class MainViewModel
             StatusMessage = "Sim: Accelerating Reverse";
         });
 
-        SimulatorReverseDirectionCommand = new RelayCommand(() =>
+        SimulatorReverseDirectionCommand = ReactiveCommand.Create(() =>
         {
             var newHeading = _simulatorService.HeadingRadians + Math.PI;
             if (newHeading > Math.PI * 2)
@@ -81,20 +82,20 @@ public partial class MainViewModel
             StatusMessage = "Sim: Direction Reversed";
         });
 
-        SimulatorSteerLeftCommand = new RelayCommand(() =>
+        SimulatorSteerLeftCommand = ReactiveCommand.Create(() =>
         {
             SimulatorSteerAngle -= 5.0;
             StatusMessage = $"Steer: {SimulatorSteerAngle:F1}";
         });
 
-        SimulatorSteerRightCommand = new RelayCommand(() =>
+        SimulatorSteerRightCommand = ReactiveCommand.Create(() =>
         {
             SimulatorSteerAngle += 5.0;
             StatusMessage = $"Steer: {SimulatorSteerAngle:F1}";
         });
 
         // Simulator coordinates dialog commands
-        ShowSimCoordsDialogCommand = new RelayCommand(() =>
+        ShowSimCoordsDialogCommand = ReactiveCommand.Create(() =>
         {
             if (IsSimulatorEnabled)
             {
@@ -107,12 +108,12 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.SimCoords);
         });
 
-        CancelSimCoordsDialogCommand = new RelayCommand(() =>
+        CancelSimCoordsDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
         });
 
-        ConfirmSimCoordsDialogCommand = new RelayCommand(() =>
+        ConfirmSimCoordsDialogCommand = ReactiveCommand.Create(() =>
         {
             double lat = (double)(SimCoordsDialogLatitude ?? 0m);
             double lon = (double)(SimCoordsDialogLongitude ?? 0m);

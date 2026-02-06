@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring Danfoss hydraulic valve support.
 /// </summary>
-public partial class DanfossStepViewModel : WizardStepViewModel
+public class DanfossStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -36,8 +36,12 @@ public partial class DanfossStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => true;
 
-    [ObservableProperty]
     private bool _danfossEnabled;
+    public bool DanfossEnabled
+    {
+        get => _danfossEnabled;
+        set => this.RaiseAndSetIfChanged(ref _danfossEnabled, value);
+    }
 
     public DanfossStepViewModel(IConfigurationService configService)
     {

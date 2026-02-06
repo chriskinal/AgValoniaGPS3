@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring antenna pivot distance.
 /// </summary>
-public partial class AntennaPivotStepViewModel : WizardStepViewModel
+public class AntennaPivotStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -34,11 +34,19 @@ public partial class AntennaPivotStepViewModel : WizardStepViewModel
         "Positive values mean the antenna is ahead of the rear axle, " +
         "negative values mean it's behind.";
 
-    [ObservableProperty]
     private double _antennaPivot;
+    public double AntennaPivot
+    {
+        get => _antennaPivot;
+        set => this.RaiseAndSetIfChanged(ref _antennaPivot, value);
+    }
 
-    [ObservableProperty]
     private string _unit = "m";
+    public string Unit
+    {
+        get => _unit;
+        set => this.RaiseAndSetIfChanged(ref _unit, value);
+    }
 
     public AntennaPivotStepViewModel(IConfigurationService configService)
     {

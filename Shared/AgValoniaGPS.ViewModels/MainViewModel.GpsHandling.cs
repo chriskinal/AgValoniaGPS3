@@ -16,6 +16,7 @@
 
 using System;
 using System.Linq;
+using ReactiveUI;
 using AgValoniaGPS.Models;
 
 namespace AgValoniaGPS.ViewModels;
@@ -45,49 +46,49 @@ public partial class MainViewModel
     public double Latitude
     {
         get => _latitude;
-        set => SetProperty(ref _latitude, value);
+        set => this.RaiseAndSetIfChanged(ref _latitude, value);
     }
 
     public double Longitude
     {
         get => _longitude;
-        set => SetProperty(ref _longitude, value);
+        set => this.RaiseAndSetIfChanged(ref _longitude, value);
     }
 
     public double Speed
     {
         get => _speed;
-        set => SetProperty(ref _speed, value);
+        set => this.RaiseAndSetIfChanged(ref _speed, value);
     }
 
     public int SatelliteCount
     {
         get => _satelliteCount;
-        set => SetProperty(ref _satelliteCount, value);
+        set => this.RaiseAndSetIfChanged(ref _satelliteCount, value);
     }
 
     public string FixQuality
     {
         get => _fixQuality;
-        set => SetProperty(ref _fixQuality, value);
+        set => this.RaiseAndSetIfChanged(ref _fixQuality, value);
     }
 
     public double Easting
     {
         get => _easting;
-        set => SetProperty(ref _easting, value);
+        set => this.RaiseAndSetIfChanged(ref _easting, value);
     }
 
     public double Northing
     {
         get => _northing;
-        set => SetProperty(ref _northing, value);
+        set => this.RaiseAndSetIfChanged(ref _northing, value);
     }
 
     public double Heading
     {
         get => _heading;
-        set => SetProperty(ref _heading, value);
+        set => this.RaiseAndSetIfChanged(ref _heading, value);
     }
 
     #endregion
@@ -181,8 +182,8 @@ public partial class MainViewModel
         // Update UI periodically (every 5 points to avoid excessive updates)
         if (_recordedCurvePoints.Count % 5 == 0)
         {
-            OnPropertyChanged(nameof(RecordedCurvePointCount));
-            OnPropertyChanged(nameof(ABCreationInstructions)); // Update instruction text with point count
+            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions)); // Update instruction text with point count
             StatusMessage = $"Recording curve: {_recordedCurvePoints.Count} points";
         }
     }

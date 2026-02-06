@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// Step for selecting the motor driver type.
 /// Options: IBT2 (dual H-bridge) or Cytron (single direction PWM)
 /// </summary>
-public partial class MotorDriverStepViewModel : WizardStepViewModel
+public class MotorDriverStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -37,8 +37,17 @@ public partial class MotorDriverStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => false;
 
-    [ObservableProperty]
     private int _motorDriver;
+    public int MotorDriver
+    {
+        get => _motorDriver;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _motorDriver, value);
+            this.RaisePropertyChanged(nameof(IsIBT2Selected));
+            this.RaisePropertyChanged(nameof(IsCytronSelected));
+        }
+    }
 
     /// <summary>
     /// True when IBT2 driver is selected.
@@ -63,12 +72,6 @@ public partial class MotorDriverStepViewModel : WizardStepViewModel
     protected override void OnLeaving()
     {
         _configService.Store.AutoSteer.MotorDriver = MotorDriver;
-    }
-
-    partial void OnMotorDriverChanged(int value)
-    {
-        OnPropertyChanged(nameof(IsIBT2Selected));
-        OnPropertyChanged(nameof(IsCytronSelected));
     }
 
     public void SelectIBT2() => MotorDriver = 0;

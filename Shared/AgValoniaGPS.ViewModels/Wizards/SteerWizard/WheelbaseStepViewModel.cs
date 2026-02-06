@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring vehicle wheelbase.
 /// </summary>
-public partial class WheelbaseStepViewModel : WizardStepViewModel
+public class WheelbaseStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -33,11 +33,19 @@ public partial class WheelbaseStepViewModel : WizardStepViewModel
         "Enter the wheelbase of your vehicle - the distance from the center of the front axle " +
         "to the center of the rear axle.";
 
-    [ObservableProperty]
     private double _wheelbase;
+    public double Wheelbase
+    {
+        get => _wheelbase;
+        set => this.RaiseAndSetIfChanged(ref _wheelbase, value);
+    }
 
-    [ObservableProperty]
     private string _unit = "m";
+    public string Unit
+    {
+        get => _unit;
+        set => this.RaiseAndSetIfChanged(ref _unit, value);
+    }
 
     public WheelbaseStepViewModel(IConfigurationService configService)
     {
@@ -46,13 +54,11 @@ public partial class WheelbaseStepViewModel : WizardStepViewModel
 
     protected override void OnEntering()
     {
-        // Load current value
         Wheelbase = _configService.Store.Vehicle.Wheelbase;
     }
 
     protected override void OnLeaving()
     {
-        // Save value
         _configService.Store.Vehicle.Wheelbase = Wheelbase;
     }
 

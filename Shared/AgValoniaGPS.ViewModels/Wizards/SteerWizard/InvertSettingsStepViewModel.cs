@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// Step for configuring signal inversions.
 /// Allows inverting WAS, motor direction, and relay outputs.
 /// </summary>
-public partial class InvertSettingsStepViewModel : WizardStepViewModel
+public class InvertSettingsStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -37,14 +37,26 @@ public partial class InvertSettingsStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => true;
 
-    [ObservableProperty]
     private bool _invertWas;
+    public bool InvertWas
+    {
+        get => _invertWas;
+        set => this.RaiseAndSetIfChanged(ref _invertWas, value);
+    }
 
-    [ObservableProperty]
     private bool _invertMotor;
+    public bool InvertMotor
+    {
+        get => _invertMotor;
+        set => this.RaiseAndSetIfChanged(ref _invertMotor, value);
+    }
 
-    [ObservableProperty]
     private bool _invertRelays;
+    public bool InvertRelays
+    {
+        get => _invertRelays;
+        set => this.RaiseAndSetIfChanged(ref _invertRelays, value);
+    }
 
     public InvertSettingsStepViewModel(IConfigurationService configService)
     {

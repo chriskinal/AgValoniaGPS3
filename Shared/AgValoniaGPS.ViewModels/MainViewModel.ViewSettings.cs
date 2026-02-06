@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using ReactiveUI;
+
 namespace AgValoniaGPS.ViewModels;
 
 /// <summary>
@@ -39,43 +41,43 @@ public partial class MainViewModel
     public bool IsViewSettingsPanelVisible
     {
         get => _isViewSettingsPanelVisible;
-        set => SetProperty(ref _isViewSettingsPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isViewSettingsPanelVisible, value);
     }
 
     public bool IsFileMenuPanelVisible
     {
         get => _isFileMenuPanelVisible;
-        set => SetProperty(ref _isFileMenuPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isFileMenuPanelVisible, value);
     }
 
     public bool IsToolsPanelVisible
     {
         get => _isToolsPanelVisible;
-        set => SetProperty(ref _isToolsPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isToolsPanelVisible, value);
     }
 
     public bool IsConfigurationPanelVisible
     {
         get => _isConfigurationPanelVisible;
-        set => SetProperty(ref _isConfigurationPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isConfigurationPanelVisible, value);
     }
 
     public bool IsJobMenuPanelVisible
     {
         get => _isJobMenuPanelVisible;
-        set => SetProperty(ref _isJobMenuPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isJobMenuPanelVisible, value);
     }
 
     public bool IsFieldToolsPanelVisible
     {
         get => _isFieldToolsPanelVisible;
-        set => SetProperty(ref _isFieldToolsPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isFieldToolsPanelVisible, value);
     }
 
     public bool IsSimulatorPanelVisible
     {
         get => _isSimulatorPanelVisible;
-        set => SetProperty(ref _isSimulatorPanelVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
     }
 
     #endregion
@@ -89,7 +91,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsGridOn = value;
-            OnPropertyChanged();
+            this.RaisePropertyChanged();
         }
     }
 
@@ -99,7 +101,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsDayMode = value;
-            OnPropertyChanged();
+            this.RaisePropertyChanged();
         }
     }
 
@@ -109,8 +111,8 @@ public partial class MainViewModel
         set
         {
             _displaySettings.CameraPitch = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Is2DMode));
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(Is2DMode));
         }
     }
 
@@ -120,7 +122,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Is2DMode = value;
-            OnPropertyChanged();
+            this.RaisePropertyChanged();
         }
     }
 
@@ -130,7 +132,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsNorthUp = value;
-            OnPropertyChanged();
+            this.RaisePropertyChanged();
         }
     }
 
@@ -140,8 +142,8 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Brightness = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(BrightnessDisplay));
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(BrightnessDisplay));
         }
     }
 

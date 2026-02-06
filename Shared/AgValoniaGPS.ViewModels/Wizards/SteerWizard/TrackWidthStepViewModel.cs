@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring vehicle track width.
 /// </summary>
-public partial class TrackWidthStepViewModel : WizardStepViewModel
+public class TrackWidthStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -33,11 +33,19 @@ public partial class TrackWidthStepViewModel : WizardStepViewModel
         "Enter the track width of your vehicle - the distance between the centers of the " +
         "left and right wheels (or tracks).";
 
-    [ObservableProperty]
     private double _trackWidth;
+    public double TrackWidth
+    {
+        get => _trackWidth;
+        set => this.RaiseAndSetIfChanged(ref _trackWidth, value);
+    }
 
-    [ObservableProperty]
     private string _unit = "m";
+    public string Unit
+    {
+        get => _unit;
+        set => this.RaiseAndSetIfChanged(ref _unit, value);
+    }
 
     public TrackWidthStepViewModel(IConfigurationService configService)
     {

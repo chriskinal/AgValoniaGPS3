@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// Step for configuring how AutoSteer is enabled.
 /// Options: None (software only), Switch (physical toggle), Button (momentary)
 /// </summary>
-public partial class SteerEnableStepViewModel : WizardStepViewModel
+public class SteerEnableStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -36,8 +36,18 @@ public partial class SteerEnableStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => false;
 
-    [ObservableProperty]
     private int _externalEnable;
+    public int ExternalEnable
+    {
+        get => _externalEnable;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _externalEnable, value);
+            this.RaisePropertyChanged(nameof(IsNoneSelected));
+            this.RaisePropertyChanged(nameof(IsSwitchSelected));
+            this.RaisePropertyChanged(nameof(IsButtonSelected));
+        }
+    }
 
     /// <summary>
     /// True when no external enable is selected (software only).
@@ -67,13 +77,6 @@ public partial class SteerEnableStepViewModel : WizardStepViewModel
     protected override void OnLeaving()
     {
         _configService.Store.AutoSteer.ExternalEnable = ExternalEnable;
-    }
-
-    partial void OnExternalEnableChanged(int value)
-    {
-        OnPropertyChanged(nameof(IsNoneSelected));
-        OnPropertyChanged(nameof(IsSwitchSelected));
-        OnPropertyChanged(nameof(IsButtonSelected));
     }
 
     public void SelectNone() => ExternalEnable = 0;

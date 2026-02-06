@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// Step for selecting the A/D converter type.
 /// Options: Differential (ADS1115) or Single-ended
 /// </summary>
-public partial class ADConverterStepViewModel : WizardStepViewModel
+public class ADConverterStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -37,8 +37,17 @@ public partial class ADConverterStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => true;
 
-    [ObservableProperty]
     private int _adConverter;
+    public int AdConverter
+    {
+        get => _adConverter;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _adConverter, value);
+            this.RaisePropertyChanged(nameof(IsDifferentialSelected));
+            this.RaisePropertyChanged(nameof(IsSingleSelected));
+        }
+    }
 
     /// <summary>
     /// True when differential ADC is selected.
@@ -63,12 +72,6 @@ public partial class ADConverterStepViewModel : WizardStepViewModel
     protected override void OnLeaving()
     {
         _configService.Store.AutoSteer.AdConverter = AdConverter;
-    }
-
-    partial void OnAdConverterChanged(int value)
-    {
-        OnPropertyChanged(nameof(IsDifferentialSelected));
-        OnPropertyChanged(nameof(IsSingleSelected));
     }
 
     public void SelectDifferential() => AdConverter = 0;

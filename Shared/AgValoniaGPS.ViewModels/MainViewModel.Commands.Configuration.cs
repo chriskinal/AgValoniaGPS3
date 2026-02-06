@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using CommunityToolkit.Mvvm.Input;
+using System.Reactive;
+using ReactiveUI;
 using AgValoniaGPS.Models.State;
 
 namespace AgValoniaGPS.ViewModels;
@@ -27,15 +28,15 @@ public partial class MainViewModel
     private void InitializeConfigurationCommands()
     {
         // Data IO Dialog
-        ShowDataIODialogCommand = new RelayCommand(() =>
+        ShowDataIODialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.ShowDialog(DialogType.DataIO);
         });
 
-        CloseDataIODialogCommand = new RelayCommand(CloseDataIODialog);
+        CloseDataIODialogCommand = ReactiveCommand.Create(CloseDataIODialog);
 
         // Configuration Dialog
-        ShowConfigurationDialogCommand = new RelayCommand(() =>
+        ShowConfigurationDialogCommand = ReactiveCommand.Create(() =>
         {
             ConfigurationViewModel = new ConfigurationViewModel(_configurationService);
             ConfigurationViewModel.CloseRequested += (s, e) =>
@@ -45,21 +46,21 @@ public partial class MainViewModel
             ConfigurationViewModel.IsDialogVisible = true;
         });
 
-        CancelConfigurationDialogCommand = new RelayCommand(() =>
+        CancelConfigurationDialogCommand = ReactiveCommand.Create(() =>
         {
             if (ConfigurationViewModel != null)
                 ConfigurationViewModel.IsDialogVisible = false;
         });
 
         // AutoSteer Configuration Panel
-        ShowAutoSteerConfigCommand = new RelayCommand(() =>
+        ShowAutoSteerConfigCommand = ReactiveCommand.Create(() =>
         {
             AutoSteerConfigViewModel ??= new AutoSteerConfigViewModel(_configurationService, _udpService, _autoSteerService);
             AutoSteerConfigViewModel.IsPanelVisible = true;
         });
 
         // Profile management
-        ShowLoadProfileDialogCommand = new RelayCommand(() =>
+        ShowLoadProfileDialogCommand = ReactiveCommand.Create(() =>
         {
             AvailableProfiles.Clear();
             foreach (var profile in _configurationService.GetAvailableProfiles())
@@ -70,24 +71,24 @@ public partial class MainViewModel
             IsProfileSelectionVisible = true;
         });
 
-        LoadSelectedProfileCommand = new RelayCommand(() =>
+        LoadSelectedProfileCommand = ReactiveCommand.Create(() =>
         {
             if (!string.IsNullOrEmpty(SelectedProfile))
             {
                 _configurationService.LoadProfile(SelectedProfile);
                 _settingsService.Settings.LastUsedVehicleProfile = SelectedProfile;
                 _settingsService.Save();
-                OnPropertyChanged(nameof(CurrentProfileName));
+                this.RaisePropertyChanged(nameof(CurrentProfileName));
             }
             IsProfileSelectionVisible = false;
         });
 
-        CancelProfileSelectionCommand = new RelayCommand(() =>
+        CancelProfileSelectionCommand = ReactiveCommand.Create(() =>
         {
             IsProfileSelectionVisible = false;
         });
 
-        ShowNewProfileDialogCommand = new RelayCommand(() =>
+        ShowNewProfileDialogCommand = ReactiveCommand.Create(() =>
         {
             var baseName = "New Profile";
             var profileName = baseName;
@@ -101,7 +102,7 @@ public partial class MainViewModel
             _configurationService.CreateProfile(profileName);
             _settingsService.Settings.LastUsedVehicleProfile = profileName;
             _settingsService.Save();
-            OnPropertyChanged(nameof(CurrentProfileName));
+            this.RaisePropertyChanged(nameof(CurrentProfileName));
         });
     }
 }

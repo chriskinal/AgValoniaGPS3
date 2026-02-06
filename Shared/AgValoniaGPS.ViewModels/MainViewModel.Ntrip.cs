@@ -16,6 +16,7 @@
 
 using System;
 using System.Threading.Tasks;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -45,13 +46,13 @@ public partial class MainViewModel
     public bool IsNtripConnected
     {
         get => _isNtripConnected;
-        set => SetProperty(ref _isNtripConnected, value);
+        set => this.RaiseAndSetIfChanged(ref _isNtripConnected, value);
     }
 
     public string NtripStatus
     {
         get => _ntripStatus;
-        set => SetProperty(ref _ntripStatus, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripStatus, value);
     }
 
     public string NtripBytesReceived
@@ -62,31 +63,31 @@ public partial class MainViewModel
     public string NtripCasterAddress
     {
         get => _ntripCasterAddress;
-        set => SetProperty(ref _ntripCasterAddress, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripCasterAddress, value);
     }
 
     public int NtripCasterPort
     {
         get => _ntripCasterPort;
-        set => SetProperty(ref _ntripCasterPort, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripCasterPort, value);
     }
 
     public string NtripMountPoint
     {
         get => _ntripMountPoint;
-        set => SetProperty(ref _ntripMountPoint, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripMountPoint, value);
     }
 
     public string NtripUsername
     {
         get => _ntripUsername;
-        set => SetProperty(ref _ntripUsername, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripUsername, value);
     }
 
     public string NtripPassword
     {
         get => _ntripPassword;
-        set => SetProperty(ref _ntripPassword, value);
+        set => this.RaiseAndSetIfChanged(ref _ntripPassword, value);
     }
 
     #endregion
@@ -217,7 +218,7 @@ public partial class MainViewModel
 
         // Legacy property updates
         _ntripBytesReceived = _ntripService.TotalBytesReceived;
-        OnPropertyChanged(nameof(NtripBytesReceived));
+        this.RaisePropertyChanged(nameof(NtripBytesReceived));
     }
 
     #endregion

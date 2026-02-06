@@ -16,17 +16,18 @@
 
 using System;
 using System.Collections.ObjectModel;
+using System.Reactive;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels.Wizards;
 
 /// <summary>
 /// Base ViewModel for wizards. Manages step navigation and progress tracking.
 /// </summary>
-public abstract class WizardViewModel : ObservableObject
+public abstract class WizardViewModel : ReactiveObject
 {
     /// <summary>
     /// All steps in this wizard.
@@ -47,7 +48,7 @@ public abstract class WizardViewModel : ObservableObject
                 if (_currentStep != null)
                     _currentStep.IsActive = false;
 
-                SetProperty(ref _currentStep, value);
+                this.RaiseAndSetIfChanged(ref _currentStep, value);
 
                 if (_currentStep != null)
                     _currentStep.IsActive = true;
@@ -66,11 +67,13 @@ public abstract class WizardViewModel : ObservableObject
         get => _currentStepIndex;
         private set
         {
-            if (SetProperty(ref _currentStepIndex, value))
+            var oldValue = _currentStepIndex;
+            this.RaiseAndSetIfChanged(ref _currentStepIndex, value);
+            if (oldValue != value)
             {
-                OnPropertyChanged(nameof(Progress));
-                OnPropertyChanged(nameof(ProgressPercent));
-                OnPropertyChanged(nameof(StepDisplay));
+                this.RaisePropertyChanged(nameof(Progress));
+                this.RaisePropertyChanged(nameof(ProgressPercent));
+                this.RaisePropertyChanged(nameof(StepDisplay));
             }
         }
     }
@@ -107,7 +110,7 @@ public abstract class WizardViewModel : ObservableObject
     public bool IsDialogVisible
     {
         get => _isDialogVisible;
-        set => SetProperty(ref _isDialogVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isDialogVisible, value);
     }
 
     private bool _canGoNext;
@@ -117,7 +120,7 @@ public abstract class WizardViewModel : ObservableObject
     public bool CanGoNext
     {
         get => _canGoNext;
-        private set => SetProperty(ref _canGoNext, value);
+        private set => this.RaiseAndSetIfChanged(ref _canGoNext, value);
     }
 
     private bool _canGoBack;
@@ -127,7 +130,7 @@ public abstract class WizardViewModel : ObservableObject
     public bool CanGoBack
     {
         get => _canGoBack;
-        private set => SetProperty(ref _canGoBack, value);
+        private set => this.RaiseAndSetIfChanged(ref _canGoBack, value);
     }
 
     private bool _canSkip;
@@ -137,7 +140,7 @@ public abstract class WizardViewModel : ObservableObject
     public bool CanSkip
     {
         get => _canSkip;
-        private set => SetProperty(ref _canSkip, value);
+        private set => this.RaiseAndSetIfChanged(ref _canSkip, value);
     }
 
     private bool _isOnLastStep;
@@ -147,7 +150,7 @@ public abstract class WizardViewModel : ObservableObject
     public bool IsOnLastStep
     {
         get => _isOnLastStep;
-        private set => SetProperty(ref _isOnLastStep, value);
+        private set => this.RaiseAndSetIfChanged(ref _isOnLastStep, value);
     }
 
     private bool _isOnFirstStep;
@@ -157,33 +160,33 @@ public abstract class WizardViewModel : ObservableObject
     public bool IsOnFirstStep
     {
         get => _isOnFirstStep;
-        private set => SetProperty(ref _isOnFirstStep, value);
+        private set => this.RaiseAndSetIfChanged(ref _isOnFirstStep, value);
     }
 
     /// <summary>
     /// Command to go to the next step.
     /// </summary>
-    public ICommand NextCommand { get; }
+    public ReactiveCommand<Unit, Unit> NextCommand { get; }
 
     /// <summary>
     /// Command to go to the previous step.
     /// </summary>
-    public ICommand BackCommand { get; }
+    public ReactiveCommand<Unit, Unit> BackCommand { get; }
 
     /// <summary>
     /// Command to skip the current step.
     /// </summary>
-    public ICommand SkipCommand { get; }
+    public ReactiveCommand<Unit, Unit> SkipCommand { get; }
 
     /// <summary>
     /// Command to cancel the wizard.
     /// </summary>
-    public ICommand CancelCommand { get; }
+    public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>
     /// Command to finish the wizard (on last step).
     /// </summary>
-    public ICommand FinishCommand { get; }
+    public ReactiveCommand<Unit, Unit> FinishCommand { get; }
 
     /// <summary>
     /// Event raised when the wizard is completed successfully.
@@ -202,11 +205,16 @@ public abstract class WizardViewModel : ObservableObject
 
     protected WizardViewModel()
     {
-        NextCommand = new AsyncRelayCommand(GoNextAsync, () => CanGoNext);
-        BackCommand = new RelayCommand(GoBack, () => CanGoBack);
-        SkipCommand = new RelayCommand(Skip, () => CanSkip);
-        CancelCommand = new RelayCommand(Cancel);
-        FinishCommand = new AsyncRelayCommand(FinishAsync, () => IsOnLastStep);
+        var canGoNext = this.WhenAnyValue(x => x.CanGoNext).ObserveOn(RxApp.MainThreadScheduler);
+        var canGoBack = this.WhenAnyValue(x => x.CanGoBack).ObserveOn(RxApp.MainThreadScheduler);
+        var canSkip = this.WhenAnyValue(x => x.CanSkip).ObserveOn(RxApp.MainThreadScheduler);
+        var isOnLastStep = this.WhenAnyValue(x => x.IsOnLastStep).ObserveOn(RxApp.MainThreadScheduler);
+
+        NextCommand = ReactiveCommand.CreateFromTask(GoNextAsync, canGoNext);
+        BackCommand = ReactiveCommand.Create(GoBack, canGoBack);
+        SkipCommand = ReactiveCommand.Create(Skip, canSkip);
+        CancelCommand = ReactiveCommand.Create(Cancel);
+        FinishCommand = ReactiveCommand.CreateFromTask(FinishAsync, isOnLastStep);
     }
 
     /// <summary>
@@ -316,12 +324,6 @@ public abstract class WizardViewModel : ObservableObject
         CanGoBack = !IsOnFirstStep && (CurrentStep?.CanGoBack ?? true);
         CanGoNext = !IsOnLastStep && (CurrentStep?.CanGoNext ?? true);
         CanSkip = CurrentStep?.CanSkip ?? false;
-
-        // Notify commands to re-evaluate CanExecute
-        (NextCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
-        (BackCommand as RelayCommand)?.NotifyCanExecuteChanged();
-        (SkipCommand as RelayCommand)?.NotifyCanExecuteChanged();
-        (FinishCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
     }
 
     /// <summary>
@@ -340,6 +342,6 @@ public abstract class WizardViewModel : ObservableObject
     protected void AddStep(WizardStepViewModel step)
     {
         Steps.Add(step);
-        OnPropertyChanged(nameof(TotalSteps));
+        this.RaisePropertyChanged(nameof(TotalSteps));
     }
 }

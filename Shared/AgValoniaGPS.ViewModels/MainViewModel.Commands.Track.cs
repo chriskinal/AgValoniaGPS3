@@ -16,7 +16,8 @@
 
 using System;
 using System.Linq;
-using CommunityToolkit.Mvvm.Input;
+using System.Reactive;
+using ReactiveUI;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Base;
@@ -34,39 +35,39 @@ public partial class MainViewModel
     private void InitializeTrackCommands()
     {
         // AB Line Guidance Commands - Bottom Bar
-        SnapLeftCommand = new RelayCommand(() =>
+        SnapLeftCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Snap to Left Track - not yet implemented";
         });
 
-        SnapRightCommand = new RelayCommand(() =>
+        SnapRightCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Snap to Right Track - not yet implemented";
         });
 
-        StopGuidanceCommand = new RelayCommand(() =>
+        StopGuidanceCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Guidance Stopped";
         });
 
-        UTurnCommand = new RelayCommand(() =>
+        UTurnCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "U-Turn - not yet implemented";
         });
 
         // AB Line Guidance Commands - Flyout Menu
-        ShowTracksDialogCommand = new RelayCommand(() =>
+        ShowTracksDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.ShowDialog(DialogType.Tracks);
         });
 
-        CloseTracksDialogCommand = new RelayCommand(() =>
+        CloseTracksDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
         });
 
         // Track management commands
-        DeleteSelectedTrackCommand = new RelayCommand(() =>
+        DeleteSelectedTrackCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedTrack != null)
             {
@@ -77,7 +78,7 @@ public partial class MainViewModel
             }
         });
 
-        SwapABPointsCommand = new RelayCommand(() =>
+        SwapABPointsCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedTrack != null && SelectedTrack.Points.Count >= 2)
             {
@@ -86,7 +87,7 @@ public partial class MainViewModel
             }
         });
 
-        SelectTrackAsActiveCommand = new RelayCommand(() =>
+        SelectTrackAsActiveCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedTrack != null)
             {
@@ -104,43 +105,43 @@ public partial class MainViewModel
         });
 
         // Quick AB Selector
-        ShowQuickABSelectorCommand = new RelayCommand(() =>
+        ShowQuickABSelectorCommand = ReactiveCommand.Create(() =>
         {
             State.UI.ShowDialog(DialogType.QuickABSelector);
         });
 
-        CloseQuickABSelectorCommand = new RelayCommand(() =>
+        CloseQuickABSelectorCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
         });
 
-        ShowDrawABDialogCommand = new RelayCommand(() =>
+        ShowDrawABDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.ShowDialog(DialogType.DrawAB);
         });
 
-        CloseDrawABDialogCommand = new RelayCommand(() =>
+        CloseDrawABDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
         });
 
-        StartNewABLineCommand = new RelayCommand(() =>
+        StartNewABLineCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Starting new AB Line - not yet implemented";
         });
 
-        StartNewABCurveCommand = new RelayCommand(() =>
+        StartNewABCurveCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Starting new AB Curve - not yet implemented";
         });
 
-        StartAPlusLineCommand = new RelayCommand(() =>
+        StartAPlusLineCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             StatusMessage = "A+ Line mode: Line created from current position and heading";
         });
 
-        StartDriveABCommand = new RelayCommand(() =>
+        StartDriveABCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DriveAB;
@@ -149,7 +150,7 @@ public partial class MainViewModel
             StatusMessage = ABCreationInstructions;
         });
 
-        StartCurveRecordingCommand = new RelayCommand(() =>
+        StartCurveRecordingCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.Curve;
@@ -170,12 +171,12 @@ public partial class MainViewModel
             }
 
             StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
-            OnPropertyChanged(nameof(IsRecordingCurve));
-            OnPropertyChanged(nameof(RecordedCurvePointCount));
-            OnPropertyChanged(nameof(ABCreationInstructions));
+            this.RaisePropertyChanged(nameof(IsRecordingCurve));
+            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions));
         });
 
-        FinishCurveRecordingCommand = new RelayCommand(() =>
+        FinishCurveRecordingCommand = ReactiveCommand.Create(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.Curve)
             {
@@ -219,11 +220,11 @@ public partial class MainViewModel
             CurrentABCreationMode = ABCreationMode.None;
             _recordedCurvePoints.Clear();
             _lastCurvePoint = null;
-            OnPropertyChanged(nameof(IsRecordingCurve));
-            OnPropertyChanged(nameof(RecordedCurvePointCount));
+            this.RaisePropertyChanged(nameof(IsRecordingCurve));
+            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
         });
 
-        StartDrawABModeCommand = new RelayCommand(() =>
+        StartDrawABModeCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DrawAB;
@@ -232,18 +233,18 @@ public partial class MainViewModel
             StatusMessage = ABCreationInstructions;
         });
 
-        StartDrawCurveModeCommand = new RelayCommand(() =>
+        StartDrawCurveModeCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DrawCurve;
             _drawnCurvePoints.Clear();
             StatusMessage = ABCreationInstructions;
-            OnPropertyChanged(nameof(IsDrawingCurve));
-            OnPropertyChanged(nameof(DrawnCurvePointCount));
-            OnPropertyChanged(nameof(ABCreationInstructions));
+            this.RaisePropertyChanged(nameof(IsDrawingCurve));
+            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions));
         });
 
-        FinishDrawCurveCommand = new RelayCommand(() =>
+        FinishDrawCurveCommand = ReactiveCommand.Create(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.DrawCurve)
             {
@@ -301,11 +302,11 @@ public partial class MainViewModel
             // Reset state
             CurrentABCreationMode = ABCreationMode.None;
             _drawnCurvePoints.Clear();
-            OnPropertyChanged(nameof(IsDrawingCurve));
-            OnPropertyChanged(nameof(DrawnCurvePointCount));
+            this.RaisePropertyChanged(nameof(IsDrawingCurve));
+            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
         });
 
-        UndoLastDrawnPointCommand = new RelayCommand(() =>
+        UndoLastDrawnPointCommand = ReactiveCommand.Create(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.DrawCurve || _drawnCurvePoints.Count == 0)
             {
@@ -325,12 +326,12 @@ public partial class MainViewModel
                 _mapService.ClearRecordingPoints();
             }
 
-            OnPropertyChanged(nameof(DrawnCurvePointCount));
-            OnPropertyChanged(nameof(ABCreationInstructions));
+            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions));
             StatusMessage = $"Removed last point ({_drawnCurvePoints.Count} points remaining)";
         });
 
-        SetABPointCommand = new RelayCommand<object?>(param =>
+        SetABPointCommand = ReactiveCommand.Create<object?>(param =>
         {
             _logger.LogDebug($"[SetABPointCommand] Called with param={param?.GetType().Name ?? "null"}, Mode={CurrentABCreationMode}, Step={CurrentABPointStep}");
 
@@ -366,8 +367,8 @@ public partial class MainViewModel
                 var displayPoints = _drawnCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
                 _mapService.SetRecordingPoints(displayPoints);
 
-                OnPropertyChanged(nameof(DrawnCurvePointCount));
-                OnPropertyChanged(nameof(ABCreationInstructions));
+                this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
+                this.RaisePropertyChanged(nameof(ABCreationInstructions));
                 StatusMessage = $"Added point {_drawnCurvePoints.Count} - tap more points or Finish";
                 _logger.LogDebug($"[SetABPointCommand] DrawCurve - Added point {_drawnCurvePoints.Count}: E={curveMapPos.Easting:F2}, N={curveMapPos.Northing:F2}");
                 return;
@@ -442,7 +443,7 @@ public partial class MainViewModel
             }
         });
 
-        CancelABCreationCommand = new RelayCommand(() =>
+        CancelABCreationCommand = ReactiveCommand.Create(() =>
         {
             // Clean up curve recording state if active
             if (CurrentABCreationMode == ABCreationMode.Curve)
@@ -450,8 +451,8 @@ public partial class MainViewModel
                 _mapService.ClearRecordingPoints(); // Clear recording display from map
                 _recordedCurvePoints.Clear();
                 _lastCurvePoint = null;
-                OnPropertyChanged(nameof(IsRecordingCurve));
-                OnPropertyChanged(nameof(RecordedCurvePointCount));
+                this.RaisePropertyChanged(nameof(IsRecordingCurve));
+                this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
             }
 
             // Clean up draw curve state if active
@@ -459,8 +460,8 @@ public partial class MainViewModel
             {
                 _mapService.ClearRecordingPoints(); // Clear drawing display from map
                 _drawnCurvePoints.Clear();
-                OnPropertyChanged(nameof(IsDrawingCurve));
-                OnPropertyChanged(nameof(DrawnCurvePointCount));
+                this.RaisePropertyChanged(nameof(IsDrawingCurve));
+                this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
             }
 
             CurrentABCreationMode = ABCreationMode.None;
@@ -469,54 +470,54 @@ public partial class MainViewModel
             StatusMessage = "AB line/curve creation cancelled";
         });
 
-        CycleABLinesCommand = new RelayCommand(() =>
+        CycleABLinesCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Cycle AB Lines - not yet implemented";
         });
 
-        SmoothABLineCommand = new RelayCommand(() =>
+        SmoothABLineCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Smooth AB Line - not yet implemented";
         });
 
         // Nudge commands
-        NudgeLeftCommand = new RelayCommand(() =>
+        NudgeLeftCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Nudge Left - not yet implemented";
         });
 
-        NudgeRightCommand = new RelayCommand(() =>
+        NudgeRightCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Nudge Right - not yet implemented";
         });
 
-        FineNudgeLeftCommand = new RelayCommand(() =>
+        FineNudgeLeftCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Fine Nudge Left - not yet implemented";
         });
 
-        FineNudgeRightCommand = new RelayCommand(() =>
+        FineNudgeRightCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Fine Nudge Right - not yet implemented";
         });
 
         // Bottom Strip Commands
-        ChangeMappingColorCommand = new RelayCommand(() =>
+        ChangeMappingColorCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Section Mapping Color - not yet implemented";
         });
 
-        SnapToPivotCommand = new RelayCommand(() =>
+        SnapToPivotCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Snap to Pivot - not yet implemented";
         });
 
-        ToggleYouSkipCommand = new RelayCommand(() =>
+        ToggleYouSkipCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "YouSkip Toggle - not yet implemented";
         });
 
-        ToggleUTurnSkipRowsCommand = new RelayCommand(() =>
+        ToggleUTurnSkipRowsCommand = ReactiveCommand.Create(() =>
         {
             IsUTurnSkipRowsEnabled = !IsUTurnSkipRowsEnabled;
             StatusMessage = IsUTurnSkipRowsEnabled
@@ -524,35 +525,35 @@ public partial class MainViewModel
                 : "U-Turn skip rows: OFF";
         });
 
-        CycleUTurnSkipRowsCommand = new RelayCommand(() =>
+        CycleUTurnSkipRowsCommand = ReactiveCommand.Create(() =>
         {
             UTurnSkipRows = (UTurnSkipRows + 1) % 10;
             StatusMessage = $"Skip rows: {UTurnSkipRows}";
         });
 
         // Flags Commands
-        PlaceRedFlagCommand = new RelayCommand(() =>
+        PlaceRedFlagCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Place Red Flag - not yet implemented";
         });
 
-        PlaceGreenFlagCommand = new RelayCommand(() =>
+        PlaceGreenFlagCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Place Green Flag - not yet implemented";
         });
 
-        PlaceYellowFlagCommand = new RelayCommand(() =>
+        PlaceYellowFlagCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Place Yellow Flag - not yet implemented";
         });
 
-        DeleteAllFlagsCommand = new RelayCommand(() =>
+        DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
             StatusMessage = "Delete All Flags - not yet implemented";
         });
 
         // Section control commands
-        ToggleManualModeCommand = new RelayCommand(() =>
+        ToggleManualModeCommand = ReactiveCommand.Create(() =>
         {
             IsManualSectionMode = !IsManualSectionMode;
             if (IsManualSectionMode)
@@ -567,7 +568,7 @@ public partial class MainViewModel
             StatusMessage = IsManualSectionMode ? "All sections ON" : "All sections OFF";
         });
 
-        ToggleSectionMasterCommand = new RelayCommand(() =>
+        ToggleSectionMasterCommand = ReactiveCommand.Create(() =>
         {
             IsSectionMasterOn = !IsSectionMasterOn;
             if (IsSectionMasterOn)
@@ -582,7 +583,7 @@ public partial class MainViewModel
             StatusMessage = IsSectionMasterOn ? "All sections AUTO" : "All sections OFF";
         });
 
-        ToggleSectionCommand = new RelayCommand<object>(param =>
+        ToggleSectionCommand = ReactiveCommand.Create<object>(param =>
         {
             if (param == null) return;
 
@@ -610,16 +611,16 @@ public partial class MainViewModel
             StatusMessage = $"Section {sectionIndex + 1}: {newState}";
         });
 
-        ToggleYouTurnCommand = new RelayCommand(() =>
+        ToggleYouTurnCommand = ReactiveCommand.Create(() =>
         {
             IsYouTurnEnabled = !IsYouTurnEnabled;
             StatusMessage = IsYouTurnEnabled ? "YouTurn enabled" : "YouTurn disabled";
         });
 
-        ManualYouTurnLeftCommand = new RelayCommand(TriggerManualYouTurnLeft);
-        ManualYouTurnRightCommand = new RelayCommand(TriggerManualYouTurnRight);
+        ManualYouTurnLeftCommand = ReactiveCommand.Create(TriggerManualYouTurnLeft);
+        ManualYouTurnRightCommand = ReactiveCommand.Create(TriggerManualYouTurnRight);
 
-        ToggleAutoSteerCommand = new RelayCommand(() =>
+        ToggleAutoSteerCommand = ReactiveCommand.Create(() =>
         {
             if (!IsAutoSteerAvailable)
             {
@@ -657,13 +658,13 @@ public partial class MainViewModel
         });
 
         // Contour commands
-        ToggleContourModeCommand = new RelayCommand(() =>
+        ToggleContourModeCommand = ReactiveCommand.Create(() =>
         {
             IsContourModeOn = !IsContourModeOn;
             StatusMessage = IsContourModeOn ? "Contour mode ON" : "Contour mode OFF";
         });
 
-        DeleteContoursCommand = new RelayCommand(() =>
+        DeleteContoursCommand = ReactiveCommand.Create(() =>
         {
             _coverageMapService.ClearAll();
             // Reset track guidance state to force global search for nearest segment
@@ -676,7 +677,7 @@ public partial class MainViewModel
             StatusMessage = "Coverage/contours cleared";
         });
 
-        DeleteAppliedAreaCommand = new RelayCommand(() =>
+        DeleteAppliedAreaCommand = ReactiveCommand.Create(() =>
         {
             ShowConfirmationDialog(
                 "Delete Applied Area",
@@ -735,19 +736,19 @@ public partial class MainViewModel
         });
 
         // Map zoom commands
-        Toggle3DModeCommand = new RelayCommand(() =>
+        Toggle3DModeCommand = ReactiveCommand.Create(() =>
         {
             _mapService.Toggle3DMode();
             Is2DMode = !_mapService.Is3DMode;
         });
 
-        ZoomInCommand = new RelayCommand(() =>
+        ZoomInCommand = ReactiveCommand.Create(() =>
         {
             _mapService.Zoom(1.2);
             ZoomInRequested?.Invoke();
         });
 
-        ZoomOutCommand = new RelayCommand(() =>
+        ZoomOutCommand = ReactiveCommand.Create(() =>
         {
             _mapService.Zoom(0.8);
             ZoomOutRequested?.Invoke();

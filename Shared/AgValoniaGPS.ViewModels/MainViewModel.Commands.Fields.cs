@@ -17,8 +17,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.Input;
+using ReactiveUI;
 using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
@@ -33,7 +34,7 @@ public partial class MainViewModel
     private void InitializeFieldCommands()
     {
         // Field Selection Dialog
-        ShowFieldSelectionDialogCommand = new RelayCommand(() =>
+        ShowFieldSelectionDialogCommand = ReactiveCommand.Create(() =>
         {
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
             if (string.IsNullOrWhiteSpace(fieldsDir))
@@ -47,13 +48,13 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.FieldSelection);
         });
 
-        CancelFieldSelectionDialogCommand = new RelayCommand(() =>
+        CancelFieldSelectionDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             SelectedFieldInfo = null;
         });
 
-        ConfirmFieldSelectionDialogCommand = new AsyncRelayCommand(async () =>
+        ConfirmFieldSelectionDialogCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             if (SelectedFieldInfo == null) return;
 
@@ -67,7 +68,7 @@ public partial class MainViewModel
             IsJobMenuPanelVisible = false;
         });
 
-        DeleteSelectedFieldCommand = new RelayCommand(() =>
+        DeleteSelectedFieldCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedFieldInfo == null) return;
 
@@ -88,7 +89,7 @@ public partial class MainViewModel
             }
         });
 
-        SortFieldsCommand = new RelayCommand(() =>
+        SortFieldsCommand = ReactiveCommand.Create(() =>
         {
             _fieldsSortedAZ = !_fieldsSortedAZ;
             var sorted = _fieldsSortedAZ
@@ -102,7 +103,7 @@ public partial class MainViewModel
         });
 
         // New Field Dialog
-        ShowNewFieldDialogCommand = new RelayCommand(() =>
+        ShowNewFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             NewFieldLatitude = Latitude != 0 ? Latitude : 40.7128;
             NewFieldLongitude = Longitude != 0 ? Longitude : -74.0060;
@@ -110,13 +111,13 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.NewField);
         });
 
-        CancelNewFieldDialogCommand = new RelayCommand(() =>
+        CancelNewFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             NewFieldName = string.Empty;
         });
 
-        ConfirmNewFieldDialogCommand = new RelayCommand(() =>
+        ConfirmNewFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             if (string.IsNullOrWhiteSpace(NewFieldName))
             {
@@ -190,7 +191,7 @@ public partial class MainViewModel
         });
 
         // From Existing Field Dialog
-        ShowFromExistingFieldDialogCommand = new RelayCommand(() =>
+        ShowFromExistingFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
             if (string.IsNullOrWhiteSpace(fieldsDir))
@@ -217,14 +218,14 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.FromExistingField);
         });
 
-        CancelFromExistingFieldDialogCommand = new RelayCommand(() =>
+        CancelFromExistingFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             FromExistingSelectedField = null;
             FromExistingFieldName = string.Empty;
         });
 
-        ConfirmFromExistingFieldDialogCommand = new RelayCommand(() =>
+        ConfirmFromExistingFieldDialogCommand = ReactiveCommand.Create(() =>
         {
             if (FromExistingSelectedField == null)
             {
@@ -331,7 +332,7 @@ public partial class MainViewModel
         });
 
         // Field name helper commands
-        AppendVehicleNameCommand = new RelayCommand(() =>
+        AppendVehicleNameCommand = ReactiveCommand.Create(() =>
         {
             var vehicleName = Vehicle.VehicleTypeDisplayName;
             if (!string.IsNullOrWhiteSpace(vehicleName))
@@ -340,19 +341,19 @@ public partial class MainViewModel
             }
         });
 
-        AppendDateCommand = new RelayCommand(() =>
+        AppendDateCommand = ReactiveCommand.Create(() =>
         {
             var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
             FromExistingFieldName = (FromExistingFieldName + " " + dateStr).Trim();
         });
 
-        AppendTimeCommand = new RelayCommand(() =>
+        AppendTimeCommand = ReactiveCommand.Create(() =>
         {
             var timeStr = DateTime.Now.ToString("HH-mm");
             FromExistingFieldName = (FromExistingFieldName + " " + timeStr).Trim();
         });
 
-        BackspaceFieldNameCommand = new RelayCommand(() =>
+        BackspaceFieldNameCommand = ReactiveCommand.Create(() =>
         {
             if (FromExistingFieldName.Length > 0)
             {
@@ -360,13 +361,13 @@ public partial class MainViewModel
             }
         });
 
-        ToggleCopyFlagsCommand = new RelayCommand(() => CopyFlags = !CopyFlags);
-        ToggleCopyMappingCommand = new RelayCommand(() => CopyMapping = !CopyMapping);
-        ToggleCopyHeadlandCommand = new RelayCommand(() => CopyHeadland = !CopyHeadland);
-        ToggleCopyLinesCommand = new RelayCommand(() => CopyLines = !CopyLines);
+        ToggleCopyFlagsCommand = ReactiveCommand.Create(() => CopyFlags = !CopyFlags);
+        ToggleCopyMappingCommand = ReactiveCommand.Create(() => CopyMapping = !CopyMapping);
+        ToggleCopyHeadlandCommand = ReactiveCommand.Create(() => CopyHeadland = !CopyHeadland);
+        ToggleCopyLinesCommand = ReactiveCommand.Create(() => CopyLines = !CopyLines);
 
         // KML Import Dialog
-        ShowKmlImportDialogCommand = new RelayCommand(() =>
+        ShowKmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             PopulateAvailableKmlFiles();
             KmlImportFieldName = string.Empty;
@@ -384,14 +385,14 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.KmlImport);
         });
 
-        CancelKmlImportDialogCommand = new RelayCommand(() =>
+        CancelKmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             SelectedKmlFile = null;
             KmlImportFieldName = string.Empty;
         });
 
-        ConfirmKmlImportDialogCommand = new RelayCommand(() =>
+        ConfirmKmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedKmlFile == null)
             {
@@ -466,19 +467,19 @@ public partial class MainViewModel
             }
         });
 
-        KmlAppendDateCommand = new RelayCommand(() =>
+        KmlAppendDateCommand = ReactiveCommand.Create(() =>
         {
             var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
             KmlImportFieldName = (KmlImportFieldName + " " + dateStr).Trim();
         });
 
-        KmlAppendTimeCommand = new RelayCommand(() =>
+        KmlAppendTimeCommand = ReactiveCommand.Create(() =>
         {
             var timeStr = DateTime.Now.ToString("HH-mm");
             KmlImportFieldName = (KmlImportFieldName + " " + timeStr).Trim();
         });
 
-        KmlBackspaceFieldNameCommand = new RelayCommand(() =>
+        KmlBackspaceFieldNameCommand = ReactiveCommand.Create(() =>
         {
             if (KmlImportFieldName.Length > 0)
             {
@@ -487,7 +488,7 @@ public partial class MainViewModel
         });
 
         // ISO-XML Import Dialog
-        ShowIsoXmlImportDialogCommand = new RelayCommand(() =>
+        ShowIsoXmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             PopulateAvailableIsoXmlFiles();
             IsoXmlImportFieldName = string.Empty;
@@ -501,14 +502,14 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.IsoXmlImport);
         });
 
-        CancelIsoXmlImportDialogCommand = new RelayCommand(() =>
+        CancelIsoXmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             State.UI.CloseDialog();
             SelectedIsoXmlFile = null;
             IsoXmlImportFieldName = string.Empty;
         });
 
-        ConfirmIsoXmlImportDialogCommand = new RelayCommand(() =>
+        ConfirmIsoXmlImportDialogCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedIsoXmlFile == null)
             {
@@ -559,19 +560,19 @@ public partial class MainViewModel
             }
         });
 
-        IsoXmlAppendDateCommand = new RelayCommand(() =>
+        IsoXmlAppendDateCommand = ReactiveCommand.Create(() =>
         {
             var dateStr = DateTime.Now.ToString("yyyy-MMM-dd");
             IsoXmlImportFieldName = (IsoXmlImportFieldName + " " + dateStr).Trim();
         });
 
-        IsoXmlAppendTimeCommand = new RelayCommand(() =>
+        IsoXmlAppendTimeCommand = ReactiveCommand.Create(() =>
         {
             var timeStr = DateTime.Now.ToString("HH-mm");
             IsoXmlImportFieldName = (IsoXmlImportFieldName + " " + timeStr).Trim();
         });
 
-        IsoXmlBackspaceFieldNameCommand = new RelayCommand(() =>
+        IsoXmlBackspaceFieldNameCommand = ReactiveCommand.Create(() =>
         {
             if (IsoXmlImportFieldName.Length > 0)
             {
@@ -580,7 +581,7 @@ public partial class MainViewModel
         });
 
         // Field close and resume commands
-        CloseFieldCommand = new AsyncRelayCommand(async () =>
+        CloseFieldCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await CloseFieldAsync();
 
@@ -593,7 +594,7 @@ public partial class MainViewModel
             StatusMessage = "Field closed";
         });
 
-        DriveInCommand = new RelayCommand(() =>
+        DriveInCommand = ReactiveCommand.Create(() =>
         {
             // Start a new field at current GPS position
             if (Latitude != 0 && Longitude != 0)
@@ -602,7 +603,7 @@ public partial class MainViewModel
             }
         });
 
-        ResumeFieldCommand = new AsyncRelayCommand(async () =>
+        ResumeFieldCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var lastField = _settingsService.Settings.LastOpenedField;
             if (string.IsNullOrEmpty(lastField))

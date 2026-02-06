@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels;
@@ -73,97 +74,97 @@ public partial class MainViewModel
     public bool Section1Active
     {
         get => _section1Active;
-        set => SetProperty(ref _section1Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section1Active, value);
     }
 
     public bool Section2Active
     {
         get => _section2Active;
-        set => SetProperty(ref _section2Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section2Active, value);
     }
 
     public bool Section3Active
     {
         get => _section3Active;
-        set => SetProperty(ref _section3Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section3Active, value);
     }
 
     public bool Section4Active
     {
         get => _section4Active;
-        set => SetProperty(ref _section4Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section4Active, value);
     }
 
     public bool Section5Active
     {
         get => _section5Active;
-        set => SetProperty(ref _section5Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section5Active, value);
     }
 
     public bool Section6Active
     {
         get => _section6Active;
-        set => SetProperty(ref _section6Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section6Active, value);
     }
 
     public bool Section7Active
     {
         get => _section7Active;
-        set => SetProperty(ref _section7Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section7Active, value);
     }
 
     public bool Section8Active
     {
         get => _section8Active;
-        set => SetProperty(ref _section8Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section8Active, value);
     }
 
     public bool Section9Active
     {
         get => _section9Active;
-        set => SetProperty(ref _section9Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section9Active, value);
     }
 
     public bool Section10Active
     {
         get => _section10Active;
-        set => SetProperty(ref _section10Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section10Active, value);
     }
 
     public bool Section11Active
     {
         get => _section11Active;
-        set => SetProperty(ref _section11Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section11Active, value);
     }
 
     public bool Section12Active
     {
         get => _section12Active;
-        set => SetProperty(ref _section12Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section12Active, value);
     }
 
     public bool Section13Active
     {
         get => _section13Active;
-        set => SetProperty(ref _section13Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section13Active, value);
     }
 
     public bool Section14Active
     {
         get => _section14Active;
-        set => SetProperty(ref _section14Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section14Active, value);
     }
 
     public bool Section15Active
     {
         get => _section15Active;
-        set => SetProperty(ref _section15Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section15Active, value);
     }
 
     public bool Section16Active
     {
         get => _section16Active;
-        set => SetProperty(ref _section16Active, value);
+        set => this.RaiseAndSetIfChanged(ref _section16Active, value);
     }
 
     #endregion
@@ -174,97 +175,97 @@ public partial class MainViewModel
     public int Section1ColorCode
     {
         get => _section1ColorCode;
-        set => SetProperty(ref _section1ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section1ColorCode, value);
     }
 
     public int Section2ColorCode
     {
         get => _section2ColorCode;
-        set => SetProperty(ref _section2ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section2ColorCode, value);
     }
 
     public int Section3ColorCode
     {
         get => _section3ColorCode;
-        set => SetProperty(ref _section3ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section3ColorCode, value);
     }
 
     public int Section4ColorCode
     {
         get => _section4ColorCode;
-        set => SetProperty(ref _section4ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section4ColorCode, value);
     }
 
     public int Section5ColorCode
     {
         get => _section5ColorCode;
-        set => SetProperty(ref _section5ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section5ColorCode, value);
     }
 
     public int Section6ColorCode
     {
         get => _section6ColorCode;
-        set => SetProperty(ref _section6ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section6ColorCode, value);
     }
 
     public int Section7ColorCode
     {
         get => _section7ColorCode;
-        set => SetProperty(ref _section7ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section7ColorCode, value);
     }
 
     public int Section8ColorCode
     {
         get => _section8ColorCode;
-        set => SetProperty(ref _section8ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section8ColorCode, value);
     }
 
     public int Section9ColorCode
     {
         get => _section9ColorCode;
-        set => SetProperty(ref _section9ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section9ColorCode, value);
     }
 
     public int Section10ColorCode
     {
         get => _section10ColorCode;
-        set => SetProperty(ref _section10ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section10ColorCode, value);
     }
 
     public int Section11ColorCode
     {
         get => _section11ColorCode;
-        set => SetProperty(ref _section11ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section11ColorCode, value);
     }
 
     public int Section12ColorCode
     {
         get => _section12ColorCode;
-        set => SetProperty(ref _section12ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section12ColorCode, value);
     }
 
     public int Section13ColorCode
     {
         get => _section13ColorCode;
-        set => SetProperty(ref _section13ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section13ColorCode, value);
     }
 
     public int Section14ColorCode
     {
         get => _section14ColorCode;
-        set => SetProperty(ref _section14ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section14ColorCode, value);
     }
 
     public int Section15ColorCode
     {
         get => _section15ColorCode;
-        set => SetProperty(ref _section15ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section15ColorCode, value);
     }
 
     public int Section16ColorCode
     {
         get => _section16ColorCode;
-        set => SetProperty(ref _section16ColorCode, value);
+        set => this.RaiseAndSetIfChanged(ref _section16ColorCode, value);
     }
 
     #endregion
@@ -319,7 +320,7 @@ public partial class MainViewModel
     public int NumSections
     {
         get => _numSections;
-        private set => SetProperty(ref _numSections, value);
+        private set => this.RaiseAndSetIfChanged(ref _numSections, value);
     }
 
     #endregion

@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Linq;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 using Avalonia.Threading;
 
@@ -39,19 +40,19 @@ public partial class MainViewModel
     public bool IsBoundaryRecording
     {
         get => _isBoundaryRecording;
-        set => SetProperty(ref _isBoundaryRecording, value);
+        set => this.RaiseAndSetIfChanged(ref _isBoundaryRecording, value);
     }
 
     public int BoundaryPointCount
     {
         get => _boundaryPointCount;
-        set => SetProperty(ref _boundaryPointCount, value);
+        set => this.RaiseAndSetIfChanged(ref _boundaryPointCount, value);
     }
 
     public double BoundaryAreaHectares
     {
         get => _boundaryAreaHectares;
-        set => SetProperty(ref _boundaryAreaHectares, value);
+        set => this.RaiseAndSetIfChanged(ref _boundaryAreaHectares, value);
     }
 
     #endregion

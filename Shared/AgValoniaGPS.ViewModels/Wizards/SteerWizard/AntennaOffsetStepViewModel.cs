@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
+using System.Reactive;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using ReactiveUI;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -24,7 +25,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// <summary>
 /// Step for configuring antenna lateral offset.
 /// </summary>
-public partial class AntennaOffsetStepViewModel : WizardStepViewModel
+public class AntennaOffsetStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
@@ -37,11 +38,25 @@ public partial class AntennaOffsetStepViewModel : WizardStepViewModel
 
     public override bool CanSkip => true; // Optional setting
 
-    [ObservableProperty]
     private double _antennaOffset;
+    public double AntennaOffset
+    {
+        get => _antennaOffset;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _antennaOffset, value);
+            this.RaisePropertyChanged(nameof(IsLeft));
+            this.RaisePropertyChanged(nameof(IsCenter));
+            this.RaisePropertyChanged(nameof(IsRight));
+        }
+    }
 
-    [ObservableProperty]
     private string _unit = "m";
+    public string Unit
+    {
+        get => _unit;
+        set => this.RaiseAndSetIfChanged(ref _unit, value);
+    }
 
     /// <summary>
     /// Whether the antenna is on the left side.
@@ -58,9 +73,17 @@ public partial class AntennaOffsetStepViewModel : WizardStepViewModel
     /// </summary>
     public bool IsRight => AntennaOffset > 0;
 
+    public ReactiveCommand<Unit, Unit> SetLeftCommand { get; }
+    public ReactiveCommand<Unit, Unit> SetCenterCommand { get; }
+    public ReactiveCommand<Unit, Unit> SetRightCommand { get; }
+
     public AntennaOffsetStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
+
+        SetLeftCommand = ReactiveCommand.Create(() => { AntennaOffset = -0.5; });
+        SetCenterCommand = ReactiveCommand.Create(() => { AntennaOffset = 0; });
+        SetRightCommand = ReactiveCommand.Create(() => { AntennaOffset = 0.5; });
     }
 
     protected override void OnEntering()
@@ -72,22 +95,6 @@ public partial class AntennaOffsetStepViewModel : WizardStepViewModel
     {
         _configService.Store.Vehicle.AntennaOffset = AntennaOffset;
     }
-
-    partial void OnAntennaOffsetChanged(double value)
-    {
-        OnPropertyChanged(nameof(IsLeft));
-        OnPropertyChanged(nameof(IsCenter));
-        OnPropertyChanged(nameof(IsRight));
-    }
-
-    [RelayCommand]
-    private void SetLeft() => AntennaOffset = -0.5;
-
-    [RelayCommand]
-    private void SetCenter() => AntennaOffset = 0;
-
-    [RelayCommand]
-    private void SetRight() => AntennaOffset = 0.5;
 
     public override Task<bool> ValidateAsync()
     {
