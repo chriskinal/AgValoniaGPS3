@@ -931,7 +931,7 @@ public partial class MainViewModel : ReactiveObject
         // Show busy overlay for loading
         State.UI.BusyMessage = "Loading field...";
         State.UI.IsBusy = true;
-        Console.WriteLine($"[Busy] OpenFieldAsync: Loading field '{fieldName}'");
+        _logger.LogDebug("[Busy] OpenFieldAsync: Loading field '{FieldName}'", fieldName);
 
         try
         {
@@ -1019,7 +1019,7 @@ public partial class MainViewModel : ReactiveObject
         finally
         {
             State.UI.IsBusy = false;
-            Console.WriteLine($"[Busy] OpenFieldAsync: Complete");
+            _logger.LogDebug("[Busy] OpenFieldAsync: Complete");
         }
     }
 
@@ -1041,7 +1041,7 @@ public partial class MainViewModel : ReactiveObject
         // Show busy overlay for saving
         State.UI.BusyMessage = "Saving field...";
         State.UI.IsBusy = true;
-        Console.WriteLine($"[Busy] CloseFieldAsync: Saving field '{ActiveField.Name}'");
+        _logger.LogDebug("[Busy] CloseFieldAsync: Saving field '{FieldName}'", ActiveField.Name);
 
         try
         {
@@ -1063,7 +1063,7 @@ public partial class MainViewModel : ReactiveObject
         finally
         {
             State.UI.IsBusy = false;
-            Console.WriteLine($"[Busy] CloseFieldAsync: Complete");
+            _logger.LogDebug("[Busy] CloseFieldAsync: Complete");
         }
 
         // Clear all field state
@@ -1311,12 +1311,12 @@ public partial class MainViewModel : ReactiveObject
                     if (widthMinusOverlap > 0.1)
                     {
                         _howManyPathsAway = (int)Math.Round(value.NudgeDistance / widthMinusOverlap);
-                        Console.WriteLine($"[NUDGE] SelectedTrack setter: '{value.Name}' NudgeDistance={value.NudgeDistance:F2}m -> _howManyPathsAway={_howManyPathsAway}");
+                        _logger.LogDebug($"[NUDGE] SelectedTrack setter: '{value.Name}' NudgeDistance={value.NudgeDistance:F2}m -> _howManyPathsAway={_howManyPathsAway}");
                     }
                     else
                     {
                         _howManyPathsAway = 0;
-                        Console.WriteLine($"[NUDGE] SelectedTrack setter: '{value.Name}' widthMinusOverlap too small, _howManyPathsAway=0");
+                        _logger.LogDebug("[NUDGE] SelectedTrack setter: '{TrackName}' widthMinusOverlap too small, _howManyPathsAway=0", value.Name);
                     }
 
                     // Check if track runs along boundary (skip disengage on first pass)
@@ -1869,7 +1869,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isBoundarySectionControlOn;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value) != value) return;
+            this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value);
             StatusMessage = value ? "Boundary records when section is on" : "Boundary section control off";
         }
     }
@@ -1880,7 +1880,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isDrawRightSide;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isDrawRightSide, value) != value) return;
+            this.RaiseAndSetIfChanged(ref _isDrawRightSide, value);
             StatusMessage = value ? "Boundary on right side" : "Boundary on left side";
             UpdateBoundaryOffsetIndicator();
         }
@@ -1892,7 +1892,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isDrawAtPivot;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value) != value) return;
+            this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value);
             StatusMessage = value ? "Recording at pivot point" : "Recording at tool";
         }
     }
@@ -2606,9 +2606,9 @@ public partial class MainViewModel : ReactiveObject
             var sharedProps = new SharedFieldProperties();
             var localPlane = new LocalPlane(origin, sharedProps);
 
-            Console.WriteLine($"[LoadBG] Field origin from ViewModel: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
-            Console.WriteLine($"[LoadBG] LocalPlane origin: ({localPlane.Origin.Latitude:F8}, {localPlane.Origin.Longitude:F8})");
-            Console.WriteLine($"[LoadBG] WGS84 bounds: NW=({nwLat:F8}, {nwLon:F8}), SE=({seLat:F8}, {seLon:F8})");
+            _logger.LogDebug($"[LoadBG] Field origin from ViewModel: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
+            _logger.LogDebug($"[LoadBG] LocalPlane origin: ({localPlane.Origin.Latitude:F8}, {localPlane.Origin.Longitude:F8})");
+            _logger.LogDebug($"[LoadBG] WGS84 bounds: NW=({nwLat:F8}, {nwLon:F8}), SE=({seLat:F8}, {seLon:F8})");
 
             // Convert WGS84 to local coordinates
             var nwWgs = new Wgs84(nwLat, nwLon);
@@ -2616,12 +2616,12 @@ public partial class MainViewModel : ReactiveObject
             var nwLocal = localPlane.ConvertWgs84ToGeoCoord(nwWgs);
             var seLocal = localPlane.ConvertWgs84ToGeoCoord(seWgs);
 
-            Console.WriteLine($"[LoadBG] Local bounds: NW=({nwLocal.Easting:F2}, {nwLocal.Northing:F2}), SE=({seLocal.Easting:F2}, {seLocal.Northing:F2})");
+            _logger.LogDebug($"[LoadBG] Local bounds: NW=({nwLocal.Easting:F2}, {nwLocal.Northing:F2}), SE=({seLocal.Easting:F2}, {seLocal.Northing:F2})");
 
             // Verify field origin converts to (0,0) in local coords
             var originWgs = new Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
             var originLocal = localPlane.ConvertWgs84ToGeoCoord(originWgs);
-            Console.WriteLine($"[LoadBG] Field origin in local coords (should be ~0,0): ({originLocal.Easting:F2}, {originLocal.Northing:F2})");
+            _logger.LogDebug($"[LoadBG] Field origin in local coords (should be ~0,0): ({originLocal.Easting:F2}, {originLocal.Northing:F2})");
 
             // Use Mercator-aware method if bounds available, otherwise fall back to linear
             if (hasMercator)
@@ -4000,23 +4000,23 @@ public partial class MainViewModel : ReactiveObject
         {
             double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
             SelectedTrack.NudgeDistance = _howManyPathsAway * widthMinusOverlap;
-            Console.WriteLine($"[NUDGE] SaveTracksToFile: SelectedTrack '{SelectedTrack.Name}' NudgeDistance = {_howManyPathsAway} * {widthMinusOverlap:F2} = {SelectedTrack.NudgeDistance:F2}m");
+            _logger.LogDebug($"[NUDGE] SaveTracksToFile: SelectedTrack '{SelectedTrack.Name}' NudgeDistance = {_howManyPathsAway} * {widthMinusOverlap:F2} = {SelectedTrack.NudgeDistance:F2}m");
         }
 
         // Debug: Log all tracks' NudgeDistance before saving
         foreach (var track in SavedTracks)
         {
-            Console.WriteLine($"[NUDGE] SaveTracksToFile: Saving '{track.Name}': NudgeDistance={track.NudgeDistance:F2}m");
+            _logger.LogDebug($"[NUDGE] SaveTracksToFile: Saving '{track.Name}': NudgeDistance={track.NudgeDistance:F2}m");
         }
 
         try
         {
             Services.TrackFilesService.SaveTracks(activeField.DirectoryPath, SavedTracks.ToList());
-            Console.WriteLine($"[NUDGE] SaveTracksToFile: Saved {SavedTracks.Count} tracks");
+            _logger.LogDebug("[NUDGE] SaveTracksToFile: Saved {TrackCount} tracks", SavedTracks.Count);
         }
         catch (System.Exception ex)
         {
-            Console.WriteLine($"[NUDGE] SaveTracksToFile: FAILED - {ex.Message}");
+            _logger.LogDebug("[NUDGE] SaveTracksToFile: FAILED - {ErrorMessage}", ex.Message);
         }
     }
 
@@ -4083,7 +4083,7 @@ public partial class MainViewModel : ReactiveObject
                     SavedTracks.Add(track);
 
                     // Debug: log track details
-                    Console.WriteLine($"[TrackFiles] Track: '{track.Name}', Points: {track.Points.Count}, Type: {track.Type}, IsCurve: {track.IsCurve}");
+                    _logger.LogDebug("[TrackFiles] Track: '{TrackName}', Points: {PointCount}, Type: {TrackType}, IsCurve: {IsCurve}", track.Name, track.Points.Count, track.Type, track.IsCurve);
 
                     if (loadedCount == 0)
                     {

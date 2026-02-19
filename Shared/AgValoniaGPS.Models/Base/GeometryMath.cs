@@ -216,65 +216,56 @@ namespace AgValoniaGPS.Models.Base
 
         public static double Distance(double east1, double north1, double east2, double north2)
         {
-            return Math.Sqrt(
-                Math.Pow(east1 - east2, 2)
-                + Math.Pow(north1 - north2, 2));
+            double de = east1 - east2, dn = north1 - north2;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec2 first, Vec2 second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec2 first, Vec3 second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec3 first, Vec2 second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec3 first, Vec3 second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec2 first, double east, double north)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - east, 2)
-                + Math.Pow(first.Northing - north, 2));
+            double de = first.Easting - east, dn = first.Northing - north;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(Vec3 first, double east, double north)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - east, 2)
-                + Math.Pow(first.Northing - north, 2));
+            double de = first.Easting - east, dn = first.Northing - north;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(VecFix2Fix first, Vec2 second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         public static double Distance(VecFix2Fix first, VecFix2Fix second)
         {
-            return Math.Sqrt(
-                Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2));
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return Math.Sqrt(de * de + dn * dn);
         }
 
         #endregion
@@ -286,37 +277,38 @@ namespace AgValoniaGPS.Models.Base
         /// </summary>
         public static double DistanceSquared(double northing1, double easting1, double northing2, double easting2)
         {
-            return Math.Pow(easting1 - easting2, 2) + Math.Pow(northing1 - northing2, 2);
+            double de = easting1 - easting2, dn = northing1 - northing2;
+            return de * de + dn * dn;
         }
 
         public static double DistanceSquared(Vec3 first, Vec2 second)
         {
-            return Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2);
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return de * de + dn * dn;
         }
 
         public static double DistanceSquared(Vec2 first, Vec3 second)
         {
-            return Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2);
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return de * de + dn * dn;
         }
 
         public static double DistanceSquared(Vec3 first, Vec3 second)
         {
-            return Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2);
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return de * de + dn * dn;
         }
 
         public static double DistanceSquared(Vec2 first, Vec2 second)
         {
-            return Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2);
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return de * de + dn * dn;
         }
 
         public static double DistanceSquared(VecFix2Fix first, Vec2 second)
         {
-            return Math.Pow(first.Easting - second.Easting, 2)
-                + Math.Pow(first.Northing - second.Northing, 2);
+            double de = first.Easting - second.Easting, dn = first.Northing - second.Northing;
+            return de * de + dn * dn;
         }
 
         #endregion

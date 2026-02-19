@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using ReactiveUI;
+using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.State;
@@ -75,8 +76,8 @@ public partial class MainViewModel
                     var originLat = _fieldOriginLatitude;
                     var originLon = _fieldOriginLongitude;
 
-                    Console.WriteLine($"[BoundaryMap] Using existing field origin: ({originLat:F8}, {originLon:F8})");
-                    Console.WriteLine($"[BoundaryMap] Current simulator position: ({Latitude:F8}, {Longitude:F8})");
+                    _logger.LogDebug($"[BoundaryMap] Using existing field origin: ({originLat:F8}, {originLon:F8})");
+                    _logger.LogDebug($"[BoundaryMap] Current simulator position: ({Latitude:F8}, {Longitude:F8})");
 
                     var origin = new Wgs84(originLat, originLon);
                     var sharedProps = new SharedFieldProperties();
@@ -88,7 +89,7 @@ public partial class MainViewModel
                         var wgs84 = new Wgs84(lat, lon);
                         var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
                         outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                        Console.WriteLine($"[BoundaryMap] Point WGS84: ({lat:F8}, {lon:F8}) -> Local: ({geoCoord.Easting:F2}, {geoCoord.Northing:F2})");
+                        _logger.LogDebug($"[BoundaryMap] Point WGS84: ({lat:F8}, {lon:F8}) -> Local: ({geoCoord.Easting:F2}, {geoCoord.Northing:F2})");
                     }
 
                     boundary.OuterBoundary = outerPolygon;
@@ -572,7 +573,7 @@ public partial class MainViewModel
 
                     // Use the EXISTING field origin - do NOT change it!
                     // The field origin is set when the field is created and should remain constant.
-                    Console.WriteLine($"[BoundaryMapDesktop] Using existing field origin: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
+                    _logger.LogDebug($"[BoundaryMapDesktop] Using existing field origin: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
 
                     var origin = new Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
                     var sharedProps = new SharedFieldProperties();

@@ -16,6 +16,7 @@
 
 using System;
 using ReactiveUI;
+using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Services.Interfaces;
 
@@ -63,13 +64,13 @@ public partial class MainViewModel
             {
                 // Use field origin so coordinates match the field's boundary/track data
                 origin = new AgValoniaGPS.Models.Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
-                Console.WriteLine($"[Simulator] Using field origin: {_fieldOriginLatitude}, {_fieldOriginLongitude}");
+                _logger.LogDebug("[Simulator] Using field origin: {FieldOriginLatitude}, {FieldOriginLongitude}", _fieldOriginLatitude, _fieldOriginLongitude);
             }
             else
             {
                 // No field loaded, use simulator position as origin
                 origin = simulatedData.Position;
-                Console.WriteLine($"[Simulator] Using simulator position as origin: {origin.Latitude}, {origin.Longitude}");
+                _logger.LogDebug("[Simulator] Using simulator position as origin: {Latitude}, {Longitude}", origin.Latitude, origin.Longitude);
             }
 
             _simulatorLocalPlane = new AgValoniaGPS.Models.LocalPlane(origin, sharedProps);
@@ -276,7 +277,7 @@ public partial class MainViewModel
     /// </summary>
     public void SetSimulatorCoordinates(double latitude, double longitude)
     {
-        Console.WriteLine($"[SimCoords] Setting simulator to: {latitude}, {longitude}");
+        _logger.LogDebug("[SimCoords] Setting simulator to: {Latitude}, {Longitude}", latitude, longitude);
 
         // Reinitialize simulator with new coordinates
         _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(latitude, longitude));

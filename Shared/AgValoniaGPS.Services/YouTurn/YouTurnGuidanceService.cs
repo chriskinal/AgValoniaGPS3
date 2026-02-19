@@ -142,7 +142,7 @@ namespace AgValoniaGPS.Services.YouTurn
 
             // Fix the circular error - get it from -Pi/2 to Pi/2
             if (abFixHeadingDelta > Math.PI) abFixHeadingDelta -= Math.PI;
-            else if (abFixHeadingDelta < Math.PI) abFixHeadingDelta += Math.PI;
+            else if (abFixHeadingDelta < -Math.PI) abFixHeadingDelta += Math.PI;
             if (abFixHeadingDelta > PIBy2) abFixHeadingDelta -= Math.PI;
             else if (abFixHeadingDelta < -PIBy2) abFixHeadingDelta += Math.PI;
 

@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -121,7 +120,7 @@ public partial class MainWindow : Window
         // Use the shared DrawingContextMapControl (cross-platform)
         var mapControl = new DrawingContextMapControl();
         MapControl = mapControl;
-        Console.WriteLine("Using DrawingContextMapControl (cross-platform)");
+        System.Diagnostics.Debug.WriteLine("Using DrawingContextMapControl (cross-platform)");
 
         // Set the map control as the content of the container
         MapControlContainer.Content = mapControl;
@@ -189,7 +188,7 @@ public partial class MainWindow : Window
     {
         if (ViewModel == null) return;
 
-        Console.WriteLine($"[OnMapClicked] Mode={ViewModel.CurrentABCreationMode}, Step={ViewModel.CurrentABPointStep}, Easting={e.Easting:F2}, Northing={e.Northing:F2}");
+        System.Diagnostics.Debug.WriteLine($"[OnMapClicked] Mode={ViewModel.CurrentABCreationMode}, Step={ViewModel.CurrentABPointStep}, Easting={e.Easting:F2}, Northing={e.Northing:F2}");
 
         // For DriveAB mode, we use current GPS position (not the clicked position)
         // For DrawAB mode, we use the clicked map position
@@ -197,7 +196,7 @@ public partial class MainWindow : Window
         if (ViewModel.CurrentABCreationMode == ABCreationMode.DriveAB)
         {
             // In DriveAB mode, any tap triggers setting the point at current GPS position
-            Console.WriteLine($"[OnMapClicked] DriveAB - Using GPS position: E={ViewModel.Easting:F2}, N={ViewModel.Northing:F2}");
+            System.Diagnostics.Debug.WriteLine($"[OnMapClicked] DriveAB - Using GPS position: E={ViewModel.Easting:F2}, N={ViewModel.Northing:F2}");
             ViewModel.SetABPointCommand?.Execute(null);
         }
         else if (ViewModel.CurrentABCreationMode == ABCreationMode.DrawAB)
@@ -208,13 +207,13 @@ public partial class MainWindow : Window
                 Easting = e.Easting,
                 Northing = e.Northing
             };
-            Console.WriteLine($"[OnMapClicked] DrawAB - Using map position: E={e.Easting:F2}, N={e.Northing:F2}");
+            System.Diagnostics.Debug.WriteLine($"[OnMapClicked] DrawAB - Using map position: E={e.Easting:F2}, N={e.Northing:F2}");
             ViewModel.SetABPointCommand?.Execute(mapPosition);
         }
         else if (ViewModel.CurrentABCreationMode == ABCreationMode.Curve)
         {
             // In Curve mode, tap finishes recording
-            Console.WriteLine($"[OnMapClicked] Curve - Finishing with {ViewModel.RecordedCurvePointCount} points");
+            System.Diagnostics.Debug.WriteLine($"[OnMapClicked] Curve - Finishing with {ViewModel.RecordedCurvePointCount} points");
             ViewModel.SetABPointCommand?.Execute(null);
         }
         else if (ViewModel.CurrentABCreationMode == ABCreationMode.DrawCurve)
@@ -225,7 +224,7 @@ public partial class MainWindow : Window
                 Easting = e.Easting,
                 Northing = e.Northing
             };
-            Console.WriteLine($"[OnMapClicked] DrawCurve - Adding point: E={e.Easting:F2}, N={e.Northing:F2}");
+            System.Diagnostics.Debug.WriteLine($"[OnMapClicked] DrawCurve - Adding point: E={e.Easting:F2}, N={e.Northing:F2}");
             ViewModel.SetABPointCommand?.Execute(mapPosition);
         }
     }
@@ -348,11 +347,11 @@ public partial class MainWindow : Window
             try
             {
                 coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
-                Console.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
+                System.Diagnostics.Debug.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
             }
         }
 
@@ -790,326 +789,4 @@ public partial class MainWindow : Window
     // Removed: BtnAgShareSettings_Click, BtnAgShareDownload_Click, BtnAgShareUpload_Click
     // These are now handled by ViewModel commands via IDialogService
 
-    // ========== Boundary Recording Panel Handlers ==========
-    // NOTE: Boundary recording service is now handled entirely by MainViewModel via _mapService.
-    // The handlers below are legacy code-behind that should be migrated to ViewModel commands.
-
-    private BoundaryType _currentBoundaryType = BoundaryType.Outer;
-
-    // Helper to get BoundaryRecordingService from DI (legacy - prefer ViewModel commands)
-    private IBoundaryRecordingService? GetBoundaryRecordingService()
-        => App.Services?.GetService<IBoundaryRecordingService>();
-
-    // Add new boundary button - shows choice panel (kept for AddBoundaryChoicePanel)
-    private void BtnAddBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        // Show the Add Boundary Choice panel
-        var choicePanel = this.FindControl<Border>("AddBoundaryChoicePanel");
-        if (choicePanel != null)
-        {
-            choicePanel.IsVisible = true;
-        }
-    }
-
-    // Import KML button - open file dialog to import KML boundary
-    private void BtnImportKml_Click(object? sender, RoutedEventArgs e)
-    {
-        // Hide the choice panel
-        var choicePanel = this.FindControl<Border>("AddBoundaryChoicePanel");
-        if (choicePanel != null)
-        {
-            choicePanel.IsVisible = false;
-        }
-
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "KML import not yet implemented";
-        }
-        // TODO: Implement KML file import
-    }
-
-    // Drive/Record button - show BoundaryPlayerPanel
-    private void BtnDriveRecord_Click(object? sender, RoutedEventArgs e)
-    {
-        // Hide the choice panel
-        var choicePanel = this.FindControl<Border>("AddBoundaryChoicePanel");
-        if (choicePanel != null)
-        {
-            choicePanel.IsVisible = false;
-        }
-
-        // Hide the main boundary panel
-        if (ViewModel != null)
-        {
-            ViewModel.IsBoundaryPanelVisible = false;
-        }
-
-        // Show the BoundaryPlayerPanel via ViewModel
-        if (ViewModel != null)
-        {
-            ViewModel.IsBoundaryPlayerPanelVisible = true;
-            ViewModel.StatusMessage = "Boundary recording ready - Click Record (R) to start";
-        }
-    }
-
-    // Cancel add boundary choice
-    private void BtnCancelAddBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        // Hide the choice panel
-        var choicePanel = this.FindControl<Border>("AddBoundaryChoicePanel");
-        if (choicePanel != null)
-        {
-            choicePanel.IsVisible = false;
-        }
-    }
-
-    // Close boundary panel
-    private void BtnCloseBoundaryPanel_Click(object? sender, RoutedEventArgs e)
-    {
-        if (ViewModel != null)
-        {
-            ViewModel.IsBoundaryPanelVisible = false;
-        }
-    }
-
-    // Select outer boundary type
-    private void BtnOuterBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        _currentBoundaryType = BoundaryType.Outer;
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Outer boundary selected";
-        }
-    }
-
-    // Select inner boundary type
-    private void BtnInnerBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        _currentBoundaryType = BoundaryType.Inner;
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Inner boundary selected";
-        }
-    }
-
-    // Determine which boundary type is selected
-    private BoundaryType GetSelectedBoundaryType()
-    {
-        return _currentBoundaryType;
-    }
-
-    // Start/Resume recording boundary
-    private void BtnRecordBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        if (GetBoundaryRecordingService() == null) return;
-
-        var state = GetBoundaryRecordingService().State;
-        if (state == BoundaryRecordingState.Idle)
-        {
-            // Start new recording
-            var boundaryType = GetSelectedBoundaryType();
-            GetBoundaryRecordingService().StartRecording(boundaryType);
-            UpdateBoundaryStatusDisplay();
-
-            // Show recording status panel
-            var recordingStatusPanel = this.FindControl<Border>("RecordingStatusPanel");
-            var recordingControlsPanel = this.FindControl<Grid>("RecordingControlsPanel");
-            if (recordingStatusPanel != null) recordingStatusPanel.IsVisible = true;
-            if (recordingControlsPanel != null) recordingControlsPanel.IsVisible = true;
-
-            // Update accept button
-            var acceptBtn = this.FindControl<Button>("BtnAcceptBoundary");
-            if (acceptBtn != null) acceptBtn.IsEnabled = true;
-
-            if (ViewModel != null)
-            {
-                ViewModel.StatusMessage = $"Recording {boundaryType} boundary - drive around the perimeter";
-            }
-        }
-        else if (state == BoundaryRecordingState.Paused)
-        {
-            // Resume recording
-            GetBoundaryRecordingService().ResumeRecording();
-            UpdateBoundaryStatusDisplay();
-            if (ViewModel != null)
-            {
-                ViewModel.StatusMessage = "Resumed boundary recording";
-            }
-        }
-    }
-
-    // Pause recording
-    private void BtnPauseBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        if (GetBoundaryRecordingService() == null) return;
-
-        if (GetBoundaryRecordingService().State == BoundaryRecordingState.Recording)
-        {
-            GetBoundaryRecordingService().PauseRecording();
-            UpdateBoundaryStatusDisplay();
-            if (ViewModel != null)
-            {
-                ViewModel.StatusMessage = "Boundary recording paused";
-            }
-        }
-    }
-
-    // Stop recording and save boundary
-    private void BtnStopBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        if (GetBoundaryRecordingService() == null || App.Services == null || ViewModel == null) return;
-
-        if (GetBoundaryRecordingService().State != BoundaryRecordingState.Idle)
-        {
-            // Get the current boundary type before stopping
-            var isOuter = GetBoundaryRecordingService().CurrentBoundaryType == BoundaryType.Outer;
-            var polygon = GetBoundaryRecordingService().StopRecording();
-
-            if (polygon != null && polygon.Points.Count >= 3)
-            {
-                // Save the boundary to the current field
-                var settingsService = App.Services.GetRequiredService<ISettingsService>();
-                var boundaryFileService = App.Services.GetRequiredService<BoundaryFileService>();
-
-                if (!string.IsNullOrEmpty(ViewModel.CurrentFieldName))
-                {
-                    var fieldPath = Path.Combine(settingsService.Settings.FieldsDirectory, ViewModel.CurrentFieldName);
-
-                    // Load existing boundary or create new one
-                    var boundary = boundaryFileService.LoadBoundary(fieldPath) ?? new Models.Boundary();
-
-                    if (isOuter)
-                    {
-                        boundary.OuterBoundary = polygon;
-                    }
-                    else
-                    {
-                        boundary.InnerBoundaries.Add(polygon);
-                    }
-
-                    // Save boundary
-                    boundaryFileService.SaveBoundary(boundary, fieldPath);
-
-                    // Update map display
-                    if (MapControl != null)
-                    {
-                        MapControl.SetBoundary(boundary);
-                    }
-
-                    ViewModel.StatusMessage = $"Saved {(isOuter ? "outer" : "inner")} boundary ({polygon.Points.Count} points, {polygon.AreaHectares:F2} ha)";
-
-                    // Refresh the boundary list
-                    ViewModel?.RefreshBoundaryList();
-                }
-                else
-                {
-                    ViewModel.StatusMessage = "No field open - boundary not saved";
-                }
-            }
-            else
-            {
-                ViewModel.StatusMessage = "Boundary cancelled (not enough points)";
-            }
-
-            // Hide recording panels
-            var recordingStatusPanel = this.FindControl<Border>("RecordingStatusPanel");
-            var recordingControlsPanel = this.FindControl<Grid>("RecordingControlsPanel");
-            if (recordingStatusPanel != null) recordingStatusPanel.IsVisible = false;
-            if (recordingControlsPanel != null) recordingControlsPanel.IsVisible = false;
-
-            // Update accept button
-            var acceptBtn = this.FindControl<Button>("BtnAcceptBoundary");
-            if (acceptBtn != null) acceptBtn.IsEnabled = false;
-
-            UpdateBoundaryStatusDisplay();
-        }
-    }
-
-    // Undo last boundary point
-    private void BtnUndoBoundaryPoint_Click(object? sender, RoutedEventArgs e)
-    {
-        var service = GetBoundaryRecordingService();
-        if (service == null) return;
-
-        if (service.RemoveLastPoint())
-        {
-            UpdateBoundaryStatusDisplay();
-            // Map display is updated by ViewModel via StateChanged event
-            if (ViewModel != null)
-            {
-                ViewModel.StatusMessage = $"Removed point ({service.PointCount} remaining)";
-            }
-        }
-    }
-
-    // Clear all boundary points
-    private void BtnClearBoundary_Click(object? sender, RoutedEventArgs e)
-    {
-        if (GetBoundaryRecordingService() == null) return;
-
-        GetBoundaryRecordingService().ClearPoints();
-        UpdateBoundaryStatusDisplay();
-        if (ViewModel != null)
-        {
-            ViewModel.StatusMessage = "Boundary points cleared";
-        }
-    }
-
-    // Update the boundary status display text blocks
-    private void UpdateBoundaryStatusDisplay()
-    {
-        if (GetBoundaryRecordingService() == null) return;
-
-        var statusText = this.FindControl<TextBlock>("BoundaryStatusLabel");
-        var pointsText = this.FindControl<TextBlock>("BoundaryPointsLabel");
-        var areaText = this.FindControl<TextBlock>("BoundaryAreaLabel");
-
-        if (statusText != null)
-        {
-            statusText.Text = GetBoundaryRecordingService().State.ToString();
-        }
-
-        if (pointsText != null)
-        {
-            pointsText.Text = GetBoundaryRecordingService().PointCount.ToString();
-        }
-
-        if (areaText != null)
-        {
-            areaText.Text = $"{GetBoundaryRecordingService().AreaHectares:F2} Ha";
-        }
-
-        // Update button enabled states
-        var recordBtn = this.FindControl<Button>("BtnRecordBoundary");
-        var pauseBtn = this.FindControl<Button>("BtnPauseBoundary");
-        var stopBtn = this.FindControl<Button>("BtnStopBoundary");
-
-        var state = GetBoundaryRecordingService().State;
-        if (recordBtn != null)
-        {
-            recordBtn.IsEnabled = state == BoundaryRecordingState.Idle || state == BoundaryRecordingState.Paused;
-        }
-        if (pauseBtn != null)
-        {
-            pauseBtn.IsEnabled = state == BoundaryRecordingState.Recording;
-        }
-        if (stopBtn != null)
-        {
-            stopBtn.IsEnabled = state != BoundaryRecordingState.Idle;
-        }
-    }
-
-    // NOTE: BoundaryRecordingPanel and BoundaryPlayerPanel drag handlers removed.
-    // These panels are now children of LeftNavigationPanel (shared control) and
-    // handle their own dragging internally.
-
-    // BtnBoundaryRestart now handled by ViewModel's ClearBoundaryCommand
-    // Legacy button handlers above should be migrated to ViewModel commands:
-    // - BtnBoundaryOffset -> ViewModel's ShowBoundaryOffsetDialogCommand
-    // - BtnBoundarySectionControl -> ViewModel's IsBoundarySectionControlOn binding
-    // - BtnBoundaryLeftRight -> ViewModel's ToggleBoundaryLeftRightCommand
-    // - BtnBoundaryAntennaTool -> ViewModel's ToggleBoundaryAntennaToolCommand
-    // - BtnBoundaryDeleteLast -> ViewModel's UndoBoundaryPointCommand
-    // - BtnBoundaryAddPoint -> ViewModel's AddBoundaryPointCommand
-    // NOTE: CalculateOffsetPosition is now in MainViewModel
 }

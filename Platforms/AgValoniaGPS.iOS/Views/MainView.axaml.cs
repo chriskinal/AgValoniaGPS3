@@ -47,9 +47,9 @@ public partial class MainView : UserControl
 
     public MainView()
     {
-        Console.WriteLine("[MainView] Constructor starting...");
+        System.Diagnostics.Debug.WriteLine("[MainView] Constructor starting...");
         InitializeComponent();
-        Console.WriteLine("[MainView] InitializeComponent completed.");
+        System.Diagnostics.Debug.WriteLine("[MainView] InitializeComponent completed.");
 
         // Get reference to map control
         _mapControl = this.FindControl<DrawingContextMapControl>("MapControl");
@@ -151,7 +151,7 @@ public partial class MainView : UserControl
 
     public MainView(MainViewModel viewModel, MapService mapService, ICoverageMapService coverageService) : this()
     {
-        Console.WriteLine("[MainView] Setting DataContext to MainViewModel...");
+        System.Diagnostics.Debug.WriteLine("[MainView] Setting DataContext to MainViewModel...");
         DataContext = viewModel;
         _viewModel = viewModel;
 
@@ -159,7 +159,7 @@ public partial class MainView : UserControl
         if (_mapControl != null)
         {
             mapService.RegisterMapControl(_mapControl);
-            Console.WriteLine("[MainView] MapControl registered with MapService.");
+            System.Diagnostics.Debug.WriteLine("[MainView] MapControl registered with MapService.");
 
             viewModel.ZoomInRequested += () => _mapControl.Zoom(1.2);
             viewModel.ZoomOutRequested += () => _mapControl.Zoom(0.8);
@@ -234,7 +234,7 @@ public partial class MainView : UserControl
             };
         }
 
-        Console.WriteLine("[MainView] DataContext set.");
+        System.Diagnostics.Debug.WriteLine("[MainView] DataContext set.");
     }
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)

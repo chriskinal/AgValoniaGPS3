@@ -306,11 +306,7 @@ public class BoundaryPolygon
             }
         }
 
-        // Check endpoints
-        bool leftInside = IsPointInside(
-            sectionCenter.Easting - Math.Cos(heading) * halfWidth + Math.Sin(heading) * 0,
-            sectionCenter.Northing + Math.Sin(heading) * halfWidth + Math.Cos(heading) * 0);
-        // Correct: perpendicular to heading
+        // Check endpoints: perpendicular to heading
         double perpHeading = heading + Math.PI / 2.0;
         bool leftEdgeInside = IsPointInside(
             sectionCenter.Easting + Math.Sin(perpHeading) * (-halfWidth),

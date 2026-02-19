@@ -47,9 +47,9 @@ public partial class MainView : UserControl
 
     public MainView()
     {
-        Console.WriteLine("[MainView] Constructor starting...");
+        System.Diagnostics.Debug.WriteLine("[MainView] Constructor starting...");
         InitializeComponent();
-        Console.WriteLine("[MainView] InitializeComponent completed.");
+        System.Diagnostics.Debug.WriteLine("[MainView] InitializeComponent completed.");
 
         // Get reference to map control
         _mapControl = this.FindControl<DrawingContextMapControl>("MapControl");
@@ -62,6 +62,31 @@ public partial class MainView : UserControl
 
         // Restore panel positions from ConfigurationStore
         RestorePanelPositions();
+
+        // Handle view resize to keep panels in bounds
+        this.PropertyChanged += MainView_PropertyChanged;
+    }
+
+    private void MainView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == nameof(Bounds))
+        {
+            ConstrainPanelsToView();
+        }
+    }
+
+    private void ConstrainPanelsToView()
+    {
+        PanelConstraintHelper.ConstrainPanelWithExtent(_leftNavPanel, Bounds.Width, Bounds.Height,
+            subPanelExtent: 410, defaultLeft: 20, defaultTop: 50);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_rightNavPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 600, defaultTop: 50);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_bottomNavPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 200, defaultTop: 420);
+        PanelConstraintHelper.ConstrainLeftTopPanel(_sectionControlPanel, Bounds.Width, Bounds.Height,
+            defaultLeft: 200, defaultTop: 500);
+        PanelConstraintHelper.ConstrainSubPanels(_leftNavPanel, Bounds.Width, Bounds.Height,
+            PanelConstraintHelper.LeftNavSubPanelNames, defaultRelativeTop: 0);
     }
 
     private void RestorePanelPositions()
@@ -124,7 +149,7 @@ public partial class MainView : UserControl
 
     public MainView(MainViewModel viewModel, MapService mapService, ICoverageMapService coverageService) : this()
     {
-        Console.WriteLine("[MainView] Setting DataContext to MainViewModel...");
+        System.Diagnostics.Debug.WriteLine("[MainView] Setting DataContext to MainViewModel...");
         DataContext = viewModel;
         _viewModel = viewModel;
 
@@ -132,7 +157,7 @@ public partial class MainView : UserControl
         if (_mapControl != null)
         {
             mapService.RegisterMapControl(_mapControl);
-            Console.WriteLine("[MainView] MapControl registered with MapService.");
+            System.Diagnostics.Debug.WriteLine("[MainView] MapControl registered with MapService.");
 
             viewModel.ZoomInRequested += () => _mapControl.Zoom(1.2);
             viewModel.ZoomOutRequested += () => _mapControl.Zoom(0.8);
@@ -204,7 +229,7 @@ public partial class MainView : UserControl
             };
         }
 
-        Console.WriteLine("[MainView] DataContext set.");
+        System.Diagnostics.Debug.WriteLine("[MainView] DataContext set.");
     }
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)

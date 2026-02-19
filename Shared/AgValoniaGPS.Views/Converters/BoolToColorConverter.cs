@@ -263,82 +263,6 @@ public class InverseBoolConverter : IValueConverter
 }
 
 /// <summary>
-/// Compares an int value with a parameter for equality (useful for tab selection).
-/// Returns true (or visibility) when values match.
-/// </summary>
-public class IntEqualsConverter : IValueConverter
-{
-    public static readonly IntEqualsConverter Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is int intValue && parameter != null)
-        {
-            if (int.TryParse(parameter.ToString(), out int paramValue))
-            {
-                return intValue == paramValue;
-            }
-        }
-        return false;
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool boolValue && boolValue && parameter != null)
-        {
-            if (int.TryParse(parameter.ToString(), out int paramValue))
-            {
-                return paramValue;
-            }
-        }
-        return 0;
-    }
-}
-
-/// <summary>
-/// Compares an enum value with a parameter for equality.
-/// Returns true when values match.
-/// </summary>
-public class EnumEqualsConverter : IValueConverter
-{
-    public static readonly EnumEqualsConverter Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value == null || parameter == null)
-            return false;
-
-        var enumType = value.GetType();
-        if (!enumType.IsEnum)
-            return false;
-
-        var paramString = parameter.ToString();
-        if (string.IsNullOrEmpty(paramString))
-            return false;
-
-        if (Enum.TryParse(enumType, paramString, true, out var paramValue))
-        {
-            return value.Equals(paramValue);
-        }
-
-        return false;
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool boolValue && boolValue && parameter != null && targetType.IsEnum)
-        {
-            var paramString = parameter.ToString();
-            if (!string.IsNullOrEmpty(paramString) && Enum.TryParse(targetType, paramString, true, out var enumValue))
-            {
-                return enumValue;
-            }
-        }
-        return BindingOperations.DoNothing;
-    }
-}
-
-/// <summary>
 /// Compares an enum value with a parameter for equality.
 /// Returns a highlight brush when matched, transparent when not.
 /// </summary>
@@ -373,31 +297,6 @@ public class EnumToSelectionBrushConverter : IValueConverter
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         return BindingOperations.DoNothing;
-    }
-}
-
-/// <summary>
-/// Converts int to bool (for tab index selection bindings)
-/// </summary>
-public class IntToBoolConverter : IValueConverter
-{
-    public static readonly IntToBoolConverter Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is int intValue && parameter != null)
-        {
-            if (int.TryParse(parameter.ToString(), out int paramValue))
-            {
-                return intValue == paramValue;
-            }
-        }
-        return false;
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
     }
 }
 
