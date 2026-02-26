@@ -40,6 +40,7 @@ Thank you for your interest in contributing to AgValoniaGPS! This document lists
 - **Platform code** (~8%): Located in `Platforms/`
   - `AgValoniaGPS.Desktop/` - Windows/macOS/Linux
   - `AgValoniaGPS.iOS/` - iOS/iPadOS
+  - `AgValoniaGPS.Android/` - Android
 
 ## Features Needing Implementation
 
@@ -49,19 +50,19 @@ These features are good starting points for new contributors.
 
 #### About Dialog
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 80)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 96)
 - **Task**: Create an About dialog showing app version, credits, and links
 - **Skills needed**: XAML, basic ViewModel
 
 #### Help Documentation
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 79)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 95)
 - **Task**: Create help dialog or link to online documentation
 - **Skills needed**: XAML, basic ViewModel
 
 #### App Colors / Theme
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 59)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 75)
 - **Task**: Create dialog to customize application color scheme/theme
 - **Skills needed**: XAML, Avalonia theming, settings persistence
 
@@ -91,13 +92,13 @@ These features are good starting points for new contributors.
 
 #### U-Turn Skip Rows On/Off
 - **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 142)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 143)
 - **Task**: Implement ToggleUTurnSkipRowsCommand to enable/disable row skipping during U-turns
 - **Skills needed**: U-turn system, guidance
 
 #### Reset Tool Heading
 - **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 157)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 158)
 - **Task**: Implement ResetToolHeadingCommand to reset implement heading to vehicle heading
 - **Skills needed**: Vehicle/tool geometry
 
@@ -121,14 +122,12 @@ These features are good starting points for new contributors.
   - Hardware Messages toggle
 - **Skills needed**: Audio playback, UI visibility bindings
 
-#### View Settings Panel - Wire Up Settings
+#### View Settings Panel - Wire Up Remaining Settings
 - **Location**: View Settings Panel (opened from left nav)
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ViewSettingsPanel.axaml`
-- **Task**: Wire up view settings to actually affect rendering. Only Grid works currently:
-  - Day/Night mode (IsDayMode not used)
-  - 2D/3D toggle (Is2DMode not used)
-  - North Up/Track Up (IsNorthUp not used)
-  - Camera Tilt Up/Down (CameraPitch not used)
+- **Task**: Wire up remaining view settings to actually affect rendering. Grid, 2D/3D, and Camera Tilt work. Still need:
+  - Day/Night mode (IsDayMode toggles but doesn't change rendering colors)
+  - North Up/Track Up (IsNorthUp toggles but map doesn't orient to north)
   - Brightness +/- (IsBrightnessSupported returns false)
 - **Skills needed**: DrawingContext rendering, camera transforms
 
@@ -140,37 +139,37 @@ These features require more understanding of the codebase.
 
 #### Log Viewer
 - **Button location**: Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 61)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 78)
 - **Task**: Create a log viewer to display application diagnostic logs
 - **Skills needed**: XAML, logging infrastructure, virtualized lists
 
 #### Flag By Lat/Lon
 - **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 105)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 121)
 - **Task**: Allow user to place a flag/marker at specific GPS coordinates
 - **Skills needed**: XAML, coordinate conversion, map integration
 
 #### Recorded Path Display
 - **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 114)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 131)
 - **Task**: Display the GPS path/trail that has been recorded
 - **Skills needed**: XAML, GPS data, DrawingContext rendering
 
 #### Import Tracks
 - **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 121)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 138)
 - **Task**: Import track/guidance line data from external files (KML, shapefile, etc.)
 - **Skills needed**: File parsing, coordinate systems, Track model
 
 #### Draw AB Line on Map
 - **Button location**: Bottom Navigation Panel (AB Line Options section)
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 239)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 240)
 - **Task**: Implement ShowDrawABDialogCommand to allow drawing curved or multipoint lines on map
 - **Skills needed**: Map interaction, Track model, dialog system
 
 #### Smooth AB Curve
 - **Button location**: Bottom Navigation Panel (AB Line Options section)
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 254)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 255)
 - **Task**: Implement SmoothABLineCommand to smooth/simplify curve points
 - **Skills needed**: Geometry algorithms, Track model
 
@@ -188,25 +187,25 @@ These features require more understanding of the codebase.
 
 #### Hotkeys Configuration
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 60)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 76)
 - **Task**: Create dialog to view and configure keyboard shortcuts
 - **Skills needed**: XAML, key binding system, settings persistence
 
 #### App Directories
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 58)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 74)
 - **Task**: Show dialog displaying data directory locations with option to open in file manager
 - **Skills needed**: XAML, platform file system APIs
 
 #### View All Settings
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 57)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 73)
 - **Task**: Create comprehensive settings viewer/editor
 - **Skills needed**: XAML, reflection or settings enumeration
 
 #### Reset All Settings
 - **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 52)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 68)
 - **Task**: Implement settings reset with confirmation dialog
 - **Skills needed**: Settings persistence, confirmation dialogs
 
@@ -224,37 +223,37 @@ These features require deep understanding of agricultural guidance or complex im
 
 #### Steer Chart
 - **Button location**: Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 69)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 86)
 - **Task**: Real-time chart showing steering angle commands vs actual response
 - **Skills needed**: Charting library or custom rendering, real-time data, autosteer system
 
 #### Heading Chart
 - **Button location**: Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 75)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 92)
 - **Task**: Real-time chart showing heading data over time
 - **Skills needed**: Charting library or custom rendering, GPS data
 
 #### XTE Chart (Cross-Track Error)
 - **Button location**: Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 83)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 100)
 - **Task**: Real-time chart showing cross-track error history
 - **Skills needed**: Charting library or custom rendering, guidance system
 
 #### Roll Correction
 - **Button location**: Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 89)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ToolsPanel.axaml` (Line 106)
 - **Task**: Interface for configuring GPS antenna roll/tilt correction
 - **Skills needed**: IMU/GPS concepts, coordinate transforms
 
 #### Tram Lines
 - **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 82)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 98)
 - **Task**: Display and manage tram line (tramline) patterns for controlled traffic farming
 - **Skills needed**: Agricultural concepts, track system, rendering
 
 #### Tram Lines Builder
 - **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 89)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 105)
 - **Task**: Create interface to build/edit tram line patterns
 - **Skills needed**: Agricultural concepts, complex UI, track generation
 
@@ -266,19 +265,19 @@ These features require deep understanding of agricultural guidance or complex im
 
 #### AutoSteer Setup Wizard
 - **Button location**: AutoSteer Config dialog
-- **File**: `Shared/AgValoniaGPS.ViewModels/AutoSteerConfigViewModel.cs` (Line 945)
+- **File**: `Shared/AgValoniaGPS.ViewModels/AutoSteerConfigViewModel.cs` (Line 959)
 - **Task**: Step-by-step wizard for configuring autosteer system
 - **Skills needed**: Autosteer concepts, multi-step wizard UI, UDP communication
 
 #### Hardware Pin Configuration Upload
 - **Button location**: Configuration dialog
-- **File**: `Shared/AgValoniaGPS.ViewModels/ConfigurationViewModel.cs` (Line 1488)
+- **File**: `Shared/AgValoniaGPS.ViewModels/ConfigurationViewModel.cs` (Line 1502)
 - **Task**: Read current pin configuration from machine module via UDP
 - **Skills needed**: UDP protocol, AgOpenGPS hardware protocol
 
 #### Send Machine Configuration
 - **Button location**: Configuration dialog
-- **File**: `Shared/AgValoniaGPS.ViewModels/ConfigurationViewModel.cs` (Line 1494)
+- **File**: `Shared/AgValoniaGPS.ViewModels/ConfigurationViewModel.cs` (Line 1508)
 - **Task**: Send configuration to machine module via UDP
 - **Skills needed**: UDP protocol, AgOpenGPS hardware protocol
 
@@ -289,12 +288,12 @@ These features require deep understanding of agricultural guidance or complex im
 These features may not be needed or have lower priority.
 
 #### Language/Localization
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 50)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 67)
 - **Note**: Requires localization infrastructure to be set up first
 
 #### Section Mapping Colors
 - **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 151)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 153)
 - **Note**: May be redundant with App Colors/Theme configuration
 
 ---
@@ -324,7 +323,7 @@ These features may not be needed or have lower priority.
 4. **For dialogs**, follow the existing pattern:
    - Add `IsMyDialogVisible` property to ViewModel
    - Create dialog panel in `Shared/AgValoniaGPS.Views/Controls/Dialogs/`
-   - Add dialog to both `MainWindow.axaml` and `MainView.axaml`
+   - Add dialog to `MainWindow.axaml` (Desktop) and `MainView.axaml` (iOS/Android)
 
 ## Questions?
 
