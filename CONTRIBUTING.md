@@ -125,7 +125,9 @@ These features are good starting points for new contributors.
 #### View Settings Panel - Wire Up Remaining Settings
 - **Location**: View Settings Panel (opened from left nav)
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/ViewSettingsPanel.axaml`
-- **Task**: Wire up remaining view settings to actually affect rendering. Grid, 2D/3D, and Camera Tilt work. Still need:
+- **Task**: Wire up remaining view settings to actually affect rendering. Grid works. Still need:
+  - 2D/3D toggle (Is2DMode toggles but renderer doesn't use it)
+  - Camera Tilt Up/Down (CameraPitch changes but renderer doesn't use it)
   - Day/Night mode (IsDayMode toggles but doesn't change rendering colors)
   - North Up/Track Up (IsNorthUp toggles but map doesn't orient to north)
   - Brightness +/- (IsBrightnessSupported returns false)
