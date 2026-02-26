@@ -219,13 +219,13 @@ jobs:
       - name: Build iOS
         run: |
           dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
-            -c Release \
+            -c Debug \
             -f net10.0-ios \
             -r iossimulator-arm64
 
       - name: Package iOS app
         run: |
-          APP=$(find Platforms/AgValoniaGPS.iOS/bin/Release -name "*.app" -type d | head -1)
+          APP=$(find Platforms/AgValoniaGPS.iOS/bin/Debug -name "*.app" -type d | head -1)
           if [ -n "$APP" ]; then
             cd "$(dirname "$APP")"
             zip -r "$GITHUB_WORKSPACE/AgValoniaGPS-iOS-Simulator.zip" "$(basename "$APP")"
