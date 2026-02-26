@@ -74,19 +74,21 @@ public partial class MainViewModel
             }
         });
 
-        DeleteNtripProfileCommand = ReactiveCommand.CreateFromTask(async () =>
+        DeleteNtripProfileCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedNtripProfile != null)
             {
-                var confirmed = await _dialogService.ShowConfirmationAsync(
+                var profileToDelete = SelectedNtripProfile;
+                ShowConfirmationDialog(
                     "Delete NTRIP Profile",
-                    $"Are you sure you want to delete the profile '{SelectedNtripProfile.Name}'?");
-                if (!confirmed) return;
-
-                await _ntripProfileService.DeleteProfileAsync(SelectedNtripProfile.Id);
-                RefreshNtripProfiles();
-                SelectedNtripProfile = null;
-                StatusMessage = "NTRIP profile deleted";
+                    $"Are you sure you want to delete the profile '{profileToDelete.Name}'?",
+                    async () =>
+                    {
+                        await _ntripProfileService.DeleteProfileAsync(profileToDelete.Id);
+                        RefreshNtripProfiles();
+                        SelectedNtripProfile = null;
+                        StatusMessage = "NTRIP profile deleted";
+                    });
             }
         });
 

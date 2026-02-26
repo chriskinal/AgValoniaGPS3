@@ -177,7 +177,6 @@ Services use interface-based design in `Shared/AgValoniaGPS.Services/Interfaces/
 - `IFieldService` - Field loading/saving/management
 - `IBoundaryRecordingService` - Recording field boundaries
 - `IMapService` - Map control registration and track/boundary rendering
-- `IDialogService` - Platform dialog abstractions
 
 ## Platform-Specific Code
 
@@ -185,7 +184,6 @@ Services use interface-based design in `Shared/AgValoniaGPS.Services/Interfaces/
 - `App.axaml/cs` - Application entry point
 - `Program.cs` - Main entry point
 - `MainWindow.axaml/cs` - Window with drag handlers, styles
-- `Services/DialogService.cs` - Stub (dialogs handled by shared overlays)
 - `Services/MapService.cs` - Map control registration
 - `DependencyInjection/ServiceCollectionExtensions.cs` - DI setup
 - `ViewLocator.cs` - View resolution

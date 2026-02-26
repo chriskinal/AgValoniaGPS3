@@ -119,8 +119,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConfigurationService, ConfigurationService>();
 
         // Platform-specific services (Desktop implementations)
-        services.AddSingleton<DialogService>();
-        services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DialogService>());
         services.AddSingleton<MapService>();
         services.AddSingleton<IMapService>(sp => sp.GetRequiredService<MapService>());
 

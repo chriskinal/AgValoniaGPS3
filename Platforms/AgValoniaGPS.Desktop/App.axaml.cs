@@ -23,7 +23,6 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.Desktop.DependencyInjection;
-using AgValoniaGPS.Desktop.Services;
 using AgValoniaGPS.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -70,10 +69,6 @@ public partial class App : Application
 
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
-
-            // Set up DialogService with the main window
-            var dialogService = Services.GetRequiredService<DialogService>();
-            dialogService.SetParentWindow(mainWindow);
 
             desktop.Exit += (sender, args) =>
             {

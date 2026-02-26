@@ -504,7 +504,7 @@ public partial class MainViewModel
 
         DeleteBoundaryCommand = ReactiveCommand.Create(DeleteSelectedBoundary);
 
-        ImportKmlBoundaryCommand = ReactiveCommand.CreateFromTask(async () =>
+        ImportKmlBoundaryCommand = ReactiveCommand.Create(() =>
         {
             if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
             {
@@ -512,37 +512,7 @@ public partial class MainViewModel
                 return;
             }
 
-            var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-            var result = await _dialogService.ShowKmlImportDialogAsync(_settingsService.Settings.FieldsDirectory, fieldPath);
-
-            if (result != null && result.BoundaryPoints.Count > 0)
-            {
-                try
-                {
-                    var boundary = _boundaryFileService.LoadBoundary(fieldPath) ?? new Boundary();
-                    var origin = new Wgs84(result.CenterLatitude, result.CenterLongitude);
-                    var sharedProps = new SharedFieldProperties();
-                    var localPlane = new LocalPlane(origin, sharedProps);
-
-                    var outerPolygon = new BoundaryPolygon();
-                    foreach (var (lat, lon) in result.BoundaryPoints)
-                    {
-                        var wgs84 = new Wgs84(lat, lon);
-                        var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                        outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                    }
-
-                    boundary.OuterBoundary = outerPolygon;
-                    _boundaryFileService.SaveBoundary(boundary, fieldPath);
-                    SetCurrentBoundary(boundary);
-                    RefreshBoundaryList();
-                    StatusMessage = $"Boundary imported from KML ({outerPolygon.Points.Count} points)";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error importing KML boundary: {ex.Message}";
-                }
-            }
+            State.UI.ShowDialog(DialogType.KmlImport);
         });
 
         DrawMapBoundaryCommand = ReactiveCommand.Create(() =>
@@ -553,76 +523,6 @@ public partial class MainViewModel
                 return;
             }
             ShowBoundaryMapDialogCommand?.Execute(null);
-        });
-
-        DrawMapBoundaryDesktopCommand = ReactiveCommand.CreateFromTask(async () =>
-        {
-            if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
-            {
-                StatusMessage = "Open a field first to add boundary";
-                return;
-            }
-
-            var result = await _dialogService.ShowMapBoundaryDialogAsync(Latitude, Longitude);
-
-            if (result != null && (result.BoundaryPoints.Count >= 3 || result.HasBackgroundImage))
-            {
-                try
-                {
-                    var fieldPath = Path.Combine(_settingsService.Settings.FieldsDirectory, CurrentFieldName);
-
-                    // Use the EXISTING field origin - do NOT change it!
-                    // The field origin is set when the field is created and should remain constant.
-                    _logger.LogDebug($"[BoundaryMapDesktop] Using existing field origin: ({_fieldOriginLatitude:F8}, {_fieldOriginLongitude:F8})");
-
-                    var origin = new Wgs84(_fieldOriginLatitude, _fieldOriginLongitude);
-                    var sharedProps = new SharedFieldProperties();
-                    var localPlane = new LocalPlane(origin, sharedProps);
-
-                    if (result.BoundaryPoints.Count >= 3)
-                    {
-                        var boundary = new Boundary();
-                        var outerPolygon = new BoundaryPolygon();
-
-                        foreach (var point in result.BoundaryPoints)
-                        {
-                            var wgs84 = new Wgs84(point.Latitude, point.Longitude);
-                            var geoCoord = localPlane.ConvertWgs84ToGeoCoord(wgs84);
-                            outerPolygon.Points.Add(new BoundaryPoint(geoCoord.Easting, geoCoord.Northing, 0));
-                        }
-
-                        boundary.OuterBoundary = outerPolygon;
-                        _boundaryFileService.SaveBoundary(boundary, fieldPath);
-
-                        // NOTE: Do NOT overwrite the field origin - it should stay constant!
-
-                        SetCurrentBoundary(boundary);
-                        CenterMapOnBoundary(boundary);
-                        RefreshBoundaryList();
-                    }
-
-                    if (result.HasBackgroundImage && !string.IsNullOrEmpty(result.BackgroundImagePath))
-                    {
-                        // AgShare downloads don't have Mercator bounds - use zeros (will fall back to linear sampling)
-                        SaveBackgroundImage(result.BackgroundImagePath, fieldPath,
-                            result.NorthWestLat, result.NorthWestLon,
-                            result.SouthEastLat, result.SouthEastLon,
-                            0, 0, 0, 0);
-                    }
-
-                    var msgParts = new System.Collections.Generic.List<string>();
-                    if (result.BoundaryPoints.Count >= 3)
-                        msgParts.Add($"boundary ({result.BoundaryPoints.Count} pts)");
-                    if (result.HasBackgroundImage)
-                        msgParts.Add("background image");
-
-                    StatusMessage = $"Imported from satellite map: {string.Join(" + ", msgParts)}";
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error importing: {ex.Message}";
-                }
-            }
         });
 
         BuildFromTracksCommand = ReactiveCommand.Create(() =>

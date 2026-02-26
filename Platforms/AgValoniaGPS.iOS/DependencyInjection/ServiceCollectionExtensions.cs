@@ -119,7 +119,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConfigurationService, ConfigurationService>();
 
         // iOS-specific services
-        services.AddSingleton<IDialogService, DialogService>();
         services.AddSingleton<IMapService, MapService>();
 
         return services;

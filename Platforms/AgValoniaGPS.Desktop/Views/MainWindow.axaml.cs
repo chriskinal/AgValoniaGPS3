@@ -421,10 +421,10 @@ public partial class MainWindow : Window
     // These are now handled by ViewModel commands (ShowSimCoordsDialogCommand, Toggle3DModeCommand)
 
     // Removed: BtnFields_Click, BtnNewField_Click, BtnOpenField_Click, BtnCloseField_Click, BtnFromExisting_Click, CopyFileIfExists
-    // These are now handled by ViewModel commands via IDialogService
+    // These are now handled by ViewModel commands
 
     // Removed: BtnIsoXml_Click, BtnKml_Click, BtnDriveIn_Click, BtnResumeField_Click
-    // These are now handled by ViewModel commands via IDialogService
+    // These are now handled by ViewModel commands
 
     // Drag functionality for Section Control
     private void SectionControl_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -787,6 +787,6 @@ public partial class MainWindow : Window
 
     // AgShare Settings button click
     // Removed: BtnAgShareSettings_Click, BtnAgShareDownload_Click, BtnAgShareUpload_Click
-    // These are now handled by ViewModel commands via IDialogService
+    // These are now handled by ViewModel commands
 
 }

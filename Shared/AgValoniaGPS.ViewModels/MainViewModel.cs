@@ -51,7 +51,6 @@ public partial class MainViewModel : ReactiveObject
     private readonly AgValoniaGPS.Services.Interfaces.IFieldStatisticsService _fieldStatistics;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsSimulationService _simulatorService;
     private readonly ISettingsService _settingsService;
-    private readonly IDialogService _dialogService;
     private readonly IMapService _mapService;
     private readonly IBoundaryRecordingService _boundaryRecordingService;
     private readonly BoundaryFileService _boundaryFileService;
@@ -142,7 +141,6 @@ public partial class MainViewModel : ReactiveObject
         AgValoniaGPS.Services.Interfaces.IFieldStatisticsService fieldStatistics,
         AgValoniaGPS.Services.Interfaces.IGpsSimulationService simulatorService,
         ISettingsService settingsService,
-        IDialogService dialogService,
         IMapService mapService,
         IBoundaryRecordingService boundaryRecordingService,
         BoundaryFileService boundaryFileService,
@@ -172,7 +170,6 @@ public partial class MainViewModel : ReactiveObject
         _fieldStatistics = fieldStatistics;
         _simulatorService = simulatorService;
         _settingsService = settingsService;
-        _dialogService = dialogService;
         _mapService = mapService;
         _boundaryRecordingService = boundaryRecordingService;
         _boundaryFileService = boundaryFileService;
@@ -2433,7 +2430,6 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DeleteBoundaryCommand { get; private set; }
     public ICommand? ImportKmlBoundaryCommand { get; private set; }
     public ICommand? DrawMapBoundaryCommand { get; private set; }
-    public ICommand? DrawMapBoundaryDesktopCommand { get; private set; }
     public ICommand? BuildFromTracksCommand { get; private set; }
     public ICommand? DriveAroundFieldCommand { get; private set; }
     public ICommand? ToggleRecordingCommand { get; private set; }
