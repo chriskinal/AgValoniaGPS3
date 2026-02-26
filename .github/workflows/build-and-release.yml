@@ -191,20 +191,60 @@ jobs:
           path: AgValoniaGPS-Android.apk
           retention-days: 30
 
-  # Build iOS - DISABLED until GitHub runners have Xcode 26.2+
-  # .NET 10.0 iOS SDK requires Xcode 26.2, but runners currently have 16.4
-  # build-ios:
-  #   needs: check-changes
-  #   if: needs.check-changes.outputs.should_build == 'true'
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     ... (iOS build steps)
+  # Build iOS (simulator .app bundle)
+  build-ios:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true'
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install iOS workload
+        run: |
+          for i in 1 2 3; do
+            dotnet workload install ios && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+
+      - name: Restore dependencies
+        run: dotnet restore Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj
+
+      - name: Build iOS
+        run: |
+          dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj \
+            -c Release \
+            -f net10.0-ios \
+            -r iossimulator-arm64
+
+      - name: Package iOS app
+        run: |
+          APP=$(find Platforms/AgValoniaGPS.iOS/bin/Release -name "*.app" -type d | head -1)
+          if [ -n "$APP" ]; then
+            cd "$(dirname "$APP")"
+            zip -r "$GITHUB_WORKSPACE/AgValoniaGPS-iOS-Simulator.zip" "$(basename "$APP")"
+          else
+            echo "No .app bundle found!"
+            exit 1
+          fi
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgValoniaGPS-iOS-Simulator
+          path: AgValoniaGPS-iOS-Simulator.zip
+          retention-days: 30
 
   # Create a release with all artifacts
   create-release:
-    needs: [check-changes, build-desktop, build-android]
-    if: always() && needs.check-changes.outputs.should_build == 'true' && (needs.build-desktop.result == 'success' || needs.build-android.result == 'success')
+    needs: [check-changes, build-desktop, build-android, build-ios]
+    if: always() && needs.check-changes.outputs.should_build == 'true' && (needs.build-desktop.result == 'success' || needs.build-android.result == 'success' || needs.build-ios.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
@@ -262,6 +302,7 @@ jobs:
             | macOS x64 (Intel) | `AgValoniaGPS-macOS-x64.zip` |
             | Linux x64 | `AgValoniaGPS-Linux-x64.zip` |
             | Android | `AgValoniaGPS-Android.apk` |
+            | iOS Simulator (ARM64) | `AgValoniaGPS-iOS-Simulator.zip` |
 
             ### Installation Notes
             All desktop builds are self-contained - no .NET runtime install needed.
@@ -269,10 +310,7 @@ jobs:
             - **macOS**: Extract, right-click the app and select "Open" (first time only)
             - **Linux**: Extract, `chmod +x` the binary, then run
             - **Android**: Enable "Install from unknown sources", then install the APK
-
-            ### iOS Builds
-            iOS builds are temporarily disabled - .NET 10.0 iOS SDK requires Xcode 26.2,
-            which is not yet available on GitHub runners. Build locally with Xcode for iOS.
+            - **iOS Simulator**: Extract .app, install with `xcrun simctl install booted AgValoniaGPS.iOS.app`
 
             ---
             *Built automatically from the latest master branch*
