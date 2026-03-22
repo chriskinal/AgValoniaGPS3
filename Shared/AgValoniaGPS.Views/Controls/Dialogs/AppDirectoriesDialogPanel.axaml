@@ -1,0 +1,69 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.AppDirectoriesDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsAppDirectoriesDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsAppDirectoriesDialogVisible}">
+
+    <!-- Full screen overlay with backdrop -->
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Centered dialog -->
+        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="420" MaxWidth="600">
+            <StackPanel Spacing="16">
+                <!-- Title -->
+                <TextBlock Text="App Directories" FontSize="20" FontWeight="Bold"
+                           Foreground="#3498DB" HorizontalAlignment="Center"/>
+
+                <!-- Directory list -->
+                <ItemsControl ItemsSource="{Binding AppDirectories}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AppDirectoryInfo">
+                            <Border Background="#34495E" CornerRadius="6" Padding="12,8" Margin="0,4">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="#3498DB"/>
+                                    <TextBlock Text="{Binding Path}" FontSize="12"
+                                               Foreground="#BDC3C7" TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis" MaxLines="2"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Close button -->
+                <Button Content="Close" Margin="0,8,0,0"
+                        Command="{Binding CloseAppDirectoriesDialogCommand}"
+                        Background="#3498DB" Foreground="White"
+                        HorizontalAlignment="Stretch" Height="44" FontSize="16" FontWeight="Bold"
+                        HorizontalContentAlignment="Center" CornerRadius="6"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
