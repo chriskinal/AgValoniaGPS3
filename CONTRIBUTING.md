@@ -90,11 +90,11 @@ These features are good starting points for new contributors.
 - **Task**: Implement SnapToPivotCommand to snap to pivot point
 - **Skills needed**: Track model, geometry
 
-#### U-Turn Skip Rows On/Off
+#### U-Turn Skip Rows - Return Pass
 - **Button location**: Bottom Navigation Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 143)
-- **Task**: Implement ToggleUTurnSkipRowsCommand to enable/disable row skipping during U-turns
-- **Skills needed**: U-turn system, guidance
+- **Task**: Implement the return pass logic for skip rows. Currently skipping rows widens U-turn offset but there is no logic to track which rows were skipped and guide back to fill them at the far boundary. The full pattern: skip rows going one direction, then return to fill gaps — avoids omega turns.
+- **Skills needed**: U-turn system, guidance, track state management
 
 #### Reset Tool Heading
 - **Button location**: Bottom Navigation Panel
@@ -163,12 +163,6 @@ These features require more understanding of the codebase.
 - **Task**: Import track/guidance line data from external files (KML, shapefile, etc.)
 - **Skills needed**: File parsing, coordinate systems, Track model
 
-#### Draw AB Line on Map
-- **Button location**: Bottom Navigation Panel (AB Line Options section)
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 240)
-- **Task**: Implement ShowDrawABDialogCommand to allow drawing curved or multipoint lines on map
-- **Skills needed**: Map interaction, Track model, dialog system
-
 #### Smooth AB Curve
 - **Button location**: Bottom Navigation Panel (AB Line Options section)
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 255)
@@ -184,8 +178,8 @@ These features require more understanding of the codebase.
 #### Contour Mode On/Off
 - **Button location**: Right Navigation Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/RightNavigationPanel.axaml` (Line 95)
-- **Task**: Implement ToggleContourModeCommand to toggle contour guidance mode
-- **Skills needed**: Guidance system, contour tracking
+- **Task**: Implement contour following - record driven path as guidance reference, or offset parallel to boundary. Currently just toggles a boolean with no guidance backend.
+- **Skills needed**: Guidance system, contour tracking, geometry
 
 #### View All Settings
 - **Button location**: File Menu Panel
@@ -198,12 +192,6 @@ These features require more understanding of the codebase.
 ### Difficulty: Hard
 
 These features require deep understanding of agricultural guidance or complex implementations.
-
-#### Headland Builder
-- **Button location**: Field Tools Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FieldToolsPanel.axaml` (Line 87)
-- **Task**: Implement ShowHeadlandBuilderCommand to create/edit headland zones interactively
-- **Skills needed**: Boundary geometry, polygon operations, map interaction
 
 #### Steer Chart
 - **Button location**: Tools Panel
