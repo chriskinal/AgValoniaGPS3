@@ -50,6 +50,7 @@ public class ConfigurationStore : ReactiveObject
     public MachineConfig Machine { get; } = new();
     public TramConfig Tram { get; } = new();
     public AutoSteerConfig AutoSteer { get; } = new();
+    public HotkeyConfig Hotkeys { get; } = new();
 
     // Profile management
     private string _activeProfileName = "Default";

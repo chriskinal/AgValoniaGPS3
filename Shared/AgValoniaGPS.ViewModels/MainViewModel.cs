@@ -243,6 +243,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeTrackCommands();
         InitializeNtripCommands();
         InitializeWizardCommands();
+        InitializeHotkeyCommands();
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings
