@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 
 namespace AgValoniaGPS.Models
 {
@@ -89,5 +90,8 @@ namespace AgValoniaGPS.Models
 
         // Vehicle profile settings
         public string LastUsedVehicleProfile { get; set; } = string.Empty;
+
+        // Hotkey bindings (empty = use defaults)
+        public Dictionary<string, string> HotkeyBindings { get; set; } = new();
     }
 }
