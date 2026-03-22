@@ -327,6 +327,12 @@ public class ConfigurationService(
         store.Connections.GpsUpdateRate = settings.GpsUpdateRate;
         store.Connections.UseRtk = settings.UseRtk;
 
+        // Hotkey bindings
+        if (settings.HotkeyBindings.Count > 0)
+        {
+            store.Hotkeys.LoadFromDictionary(settings.HotkeyBindings);
+        }
+
         // Simulator config - always restore from settings
         store.Simulator.Enabled = settings.SimulatorEnabled;
         store.Simulator.Latitude = settings.SimulatorLatitude;
@@ -384,6 +390,9 @@ public class ConfigurationService(
         settings.SimulatorLongitude = store.Simulator.Longitude;
         settings.SimulatorSpeed = store.Simulator.Speed;
         settings.SimulatorSteerAngle = store.Simulator.SteerAngle;
+
+        // Hotkey bindings
+        settings.HotkeyBindings = store.Hotkeys.ToDictionary();
 
         // Active profile
         settings.LastUsedVehicleProfile = store.ActiveProfileName;

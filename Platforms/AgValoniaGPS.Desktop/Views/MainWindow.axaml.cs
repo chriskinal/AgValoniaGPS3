@@ -360,23 +360,41 @@ public partial class MainWindow : Window
 
     private void MainWindow_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F3 && MapControl != null)
+        // Skip when typing in text fields
+        if (e.Source is TextBox) return;
+
+        // Fixed keys (not configurable)
+        switch (e.Key)
         {
-            MapControl.Toggle3DMode();
-            e.Handled = true;
+            case Key.F3:
+                MapControl?.Toggle3DMode();
+                e.Handled = true;
+                return;
+            case Key.PageUp:
+                MapControl?.SetPitch(0.05);
+                e.Handled = true;
+                return;
+            case Key.PageDown:
+                MapControl?.SetPitch(-0.05);
+                e.Handled = true;
+                return;
         }
-        else if (e.Key == Key.PageUp && MapControl != null)
-        {
-            // Increase pitch (tilt camera up)
-            MapControl.SetPitch(0.05);
+
+        // Configurable hotkeys
+        var keyStr = KeyToString(e.Key);
+        if (keyStr != null && ViewModel?.HandleHotkey(keyStr) == true)
             e.Handled = true;
-        }
-        else if (e.Key == Key.PageDown && MapControl != null)
-        {
-            // Decrease pitch (tilt camera down)
-            MapControl.SetPitch(-0.05);
-            e.Handled = true;
-        }
+    }
+
+    private static string? KeyToString(Key key)
+    {
+        if (key >= Key.A && key <= Key.Z)
+            return ((char)('A' + (key - Key.A))).ToString();
+        if (key >= Key.D0 && key <= Key.D9)
+            return ((char)('0' + (key - Key.D0))).ToString();
+        if (key >= Key.NumPad0 && key <= Key.NumPad9)
+            return ((char)('0' + (key - Key.NumPad0))).ToString();
+        return null;
     }
 
     private void MainWindow_PropertyChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)

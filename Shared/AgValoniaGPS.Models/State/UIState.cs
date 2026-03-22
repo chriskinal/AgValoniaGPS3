@@ -62,6 +62,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsConfirmationDialogVisible));
                 this.RaisePropertyChanged(nameof(IsErrorDialogVisible));
                 this.RaisePropertyChanged(nameof(IsAppDirectoriesDialogVisible));
+                this.RaisePropertyChanged(nameof(IsHotkeyConfigDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -94,6 +95,7 @@ public class UIState : ReactiveObject
     public bool IsConfirmationDialogVisible => ActiveDialog == DialogType.Confirmation;
     public bool IsErrorDialogVisible => ActiveDialog == DialogType.Error;
     public bool IsAppDirectoriesDialogVisible => ActiveDialog == DialogType.AppDirectories;
+    public bool IsHotkeyConfigDialogVisible => ActiveDialog == DialogType.HotkeyConfig;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -205,7 +207,8 @@ public enum DialogType
     NtripProfileEditor,
     Confirmation,
     Error,
-    AppDirectories
+    AppDirectories,
+    HotkeyConfig
 }
 
 /// <summary>

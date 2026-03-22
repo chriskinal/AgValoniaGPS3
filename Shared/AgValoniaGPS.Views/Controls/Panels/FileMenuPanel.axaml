@@ -75,7 +75,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Button Classes="ModernButton" Content="App Directories" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowAppDirectoriesDialogCommand}"/>
             <Button Classes="ModernButton" Content="App Colors" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
-            <Button Classes="ModernButton" Content="Hotkeys" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
+            <Button Classes="ModernButton" Content="Hotkeys" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+                    Command="{Binding ShowHotkeyConfigDialogCommand}"/>
 
             <Separator Height="1" Background="#444" Margin="0,4"/>
 
