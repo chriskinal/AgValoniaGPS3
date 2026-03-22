@@ -187,12 +187,6 @@ These features require more understanding of the codebase.
 - **Task**: Implement ToggleContourModeCommand to toggle contour guidance mode
 - **Skills needed**: Guidance system, contour tracking
 
-#### Hotkeys Configuration
-- **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 76)
-- **Task**: Create dialog to view and configure keyboard shortcuts
-- **Skills needed**: XAML, key binding system, settings persistence
-
 #### App Directories
 - **Button location**: File Menu Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 74)
