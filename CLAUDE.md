@@ -1,6 +1,6 @@
 <!--
 AgValoniaGPS
-Copyright (C) 2024-2025 AgValoniaGPS Contributors
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,22 +31,30 @@ AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built wi
 - U-turn path generation and following
 - Section control for sprayers/planters
 - NTRIP RTK corrections support
+- Configurable keyboard hotkeys
 - Integration with AgOpenGPS ecosystem via UDP
 
 ## Architecture
 
 ```
 AgValoniaGPS3/
-├── Shared/                              # 91.7% - Platform-agnostic code
-│   ├── AgValoniaGPS.Models/            # Data models, geometry, DTOs
+├── Shared/                              # ~92% - Platform-agnostic code
+│   ├── AgValoniaGPS.Models/            # Data models, geometry, configuration, DTOs
 │   ├── AgValoniaGPS.Services/          # Business logic, GPS, NTRIP, UDP
 │   ├── AgValoniaGPS.ViewModels/        # MVVM ViewModels (ReactiveUI)
 │   └── AgValoniaGPS.Views/             # Shared UI controls, panels, dialogs
 │
-├── Platforms/                           # 8.3% - Platform-specific code
-│   ├── AgValoniaGPS.Desktop/           # Windows/macOS/Linux (5.7%)
-│   └── AgValoniaGPS.iOS/               # iOS/iPadOS (2.6%)
+├── Platforms/                           # ~8% - Platform-specific code
+│   ├── AgValoniaGPS.Desktop/           # Windows/macOS/Linux
+│   ├── AgValoniaGPS.iOS/              # iOS/iPadOS
+│   └── AgValoniaGPS.Android/          # Android
 │
+├── Tests/                              # NUnit test projects
+│   ├── AgValoniaGPS.Models.Tests/     # Geometry, coordinate conversion (72 tests)
+│   ├── AgValoniaGPS.Services.Tests/   # NMEA parsing, guidance (21 tests)
+│   └── AgValoniaGPS.UI.Tests/         # Headless UI tests via Avalonia.Headless (18 tests)
+│
+├── TestRunner/                         # Legacy test harness for guidance algorithms
 └── AgValoniaGPS.sln                    # Solution file
 ```
 
@@ -57,8 +65,8 @@ AgValoniaGPS3/
 | Windows | AgValoniaGPS.Desktop | Same codebase as macOS/Linux |
 | macOS | AgValoniaGPS.Desktop | Same codebase as Windows/Linux |
 | Linux | AgValoniaGPS.Desktop | Same codebase as Windows/macOS |
-| iOS/iPadOS | AgValoniaGPS.iOS | Requires Xcode, runs on ARM64 simulator |
-| Android | Future | Not yet implemented |
+| iOS/iPadOS | AgValoniaGPS.iOS | Requires Xcode 26.2+, runs on ARM64 simulator |
+| Android | AgValoniaGPS.Android | APK build, sideload install |
 
 ## Build Commands
 
@@ -67,7 +75,7 @@ AgValoniaGPS3/
 dotnet build Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
 dotnet run --project Platforms/AgValoniaGPS.Desktop/AgValoniaGPS.Desktop.csproj
 
-# Build iOS (requires macOS with Xcode)
+# Build iOS (requires macOS with Xcode 26.2+)
 dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj -c Debug -f net10.0-ios -r iossimulator-arm64
 
 # Deploy and run iOS on simulator
@@ -77,14 +85,20 @@ dotnet build Platforms/AgValoniaGPS.iOS/AgValoniaGPS.iOS.csproj -c Debug -f net1
 xcrun simctl install booted Platforms/AgValoniaGPS.iOS/bin/Debug/net10.0-ios/iossimulator-arm64/AgValoniaGPS.iOS.app
 xcrun simctl launch booted com.agvaloniaagps.ios
 
+# Build Android APK
+dotnet build Platforms/AgValoniaGPS.Android/AgValoniaGPS.Android.csproj
+
 # Build entire solution
 dotnet build AgValoniaGPS.sln
+
+# Run tests
+dotnet test Tests/
 ```
 
 ## Key Design Decisions
 
 ### Rendering: DrawingContext (not OpenGL/SkiaSharp)
-Both Desktop and iOS use Avalonia's `DrawingContext` for map rendering via `DrawingContextMapControl`. This provides:
+All platforms use Avalonia's `DrawingContext` for map rendering via `DrawingContextMapControl`. This provides:
 - Consistent rendering across all platforms
 - No platform-specific graphics APIs needed
 - 30 FPS default (configurable in `DrawingContextMapControl.cs`)
@@ -92,14 +106,66 @@ Both Desktop and iOS use Avalonia's `DrawingContext` for map rendering via `Draw
 ### Shared UI Components
 All panels, dialogs, and controls live in `AgValoniaGPS.Views`:
 - `Controls/DrawingContextMapControl.cs` - Main map rendering
+- `Controls/DialogOverlayHost.axaml` - Hosts all modal dialog overlays (shared across platforms)
 - `Controls/Panels/` - LeftNavigationPanel, SimulatorPanel, SectionControlPanel, etc.
 - `Controls/Dialogs/` - All modal dialogs (FieldSelection, DataIO, AgShare, etc.)
 - `Converters/` - Shared value converters (BoolToColor, FixQualityToColor, etc.)
 
-### Dialog Pattern
-Dialogs use overlay panels controlled by ViewModel visibility properties:
+### Dialog System
+Dialogs use a centralized state machine in `UIState`. Only one dialog can be open at a time.
+
+**To show a dialog from a ViewModel:**
+```csharp
+State.UI.ShowDialog(DialogType.YourDialog);  // Opens dialog
+State.UI.CloseDialog();                       // Closes any open dialog
+```
+
+**Dialog visibility in AXAML** binds to computed properties on `UIState`:
 ```xml
-<dialogs:FieldSelectionDialogPanel/>  <!-- Visibility bound to IsFieldSelectionDialogVisible -->
+<dialogs:YourDialogPanel
+    IsVisible="{Binding State.UI.IsYourDialogVisible}"
+    IsHitTestVisible="{Binding State.UI.IsYourDialogVisible}"/>
+```
+
+All dialog panels are registered in `DialogOverlayHost.axaml` (shared, not per-platform).
+
+**Confirmation dialogs** use a callback pattern:
+```csharp
+ShowConfirmationDialog("Title", "Message", () => { /* on confirm */ });
+```
+
+### MainViewModel Structure
+`MainViewModel` is a large partial class split across ~19 files by domain:
+
+| File | Domain |
+|------|--------|
+| `MainViewModel.cs` | Core state, constructor, DI, properties |
+| `MainViewModel.Commands.Track.cs` | Track/AB line commands |
+| `MainViewModel.Commands.Boundary.cs` | Boundary, headland, AgShare commands |
+| `MainViewModel.Commands.Fields.cs` | Field open/close/create commands |
+| `MainViewModel.Commands.Ntrip.cs` | NTRIP profile management |
+| `MainViewModel.Commands.Navigation.cs` | View settings, camera, zoom |
+| `MainViewModel.Commands.Hotkeys.cs` | Hotkey configuration and dispatch |
+| `MainViewModel.Commands.Settings.cs` | App directories, reset settings |
+| `MainViewModel.Commands.Simulator.cs` | Simulator controls |
+| `MainViewModel.Commands.Configuration.cs` | Vehicle/tool configuration |
+| `MainViewModel.Commands.Wizards.cs` | Setup wizards |
+| `MainViewModel.YouTurn.cs` | U-turn path generation and following |
+| `MainViewModel.Guidance.cs` | Guidance algorithm orchestration |
+| `MainViewModel.GpsHandling.cs` | GPS data processing |
+| `MainViewModel.SectionControl.cs` | Section on/off logic |
+| `MainViewModel.BoundaryRecording.cs` | Boundary recording state |
+| `MainViewModel.Ntrip.cs` | NTRIP connection management |
+| `MainViewModel.Simulator.cs` | GPS simulator state |
+| `MainViewModel.ViewSettings.cs` | Display/view settings |
+
+### ConfigurationStore
+`ConfigurationStore` is a reactive singleton holding all runtime configuration (vehicle, tool, guidance, hotkeys, etc.). It syncs to/from `AppSettings` JSON via `ConfigurationService`.
+
+```csharp
+ConfigStore.Vehicle.AntennaHeight    // Vehicle config
+ConfigStore.Tool.ToolWidth           // Tool/implement config
+ConfigStore.Hotkeys.GetActionForKey("A")  // Hotkey lookup
 ```
 
 ### Draggable Panels
@@ -149,23 +215,30 @@ AgValoniaGPS may use different/improved formats from AgOpenGPS when it benefits 
 - **Avalonia 11.3.9** - Cross-platform UI framework
 - **ReactiveUI 20.1.1** - MVVM framework with reactive extensions
 - **Microsoft.Extensions.DependencyInjection** - Dependency injection
+- **NUnit 4.3 + Avalonia.Headless.NUnit** - Testing framework
+- **NSubstitute** - Mocking for UI tests
 
 ## Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| `Shared/AgValoniaGPS.ViewModels/MainViewModel.cs` | Main application state, commands, GPS data |
+| `Shared/AgValoniaGPS.ViewModels/MainViewModel.cs` | Main application state, constructor, DI |
 | `Shared/AgValoniaGPS.Views/Controls/DrawingContextMapControl.cs` | Map rendering (30 FPS) |
+| `Shared/AgValoniaGPS.Views/Controls/DialogOverlayHost.axaml` | All dialog overlay registrations |
 | `Shared/AgValoniaGPS.Views/Controls/Panels/LeftNavigationPanel.axaml` | Main navigation sidebar |
 | `Shared/AgValoniaGPS.Models/Track/Track.cs` | Unified track model (AB lines + curves) |
 | `Shared/AgValoniaGPS.Models/Base/GeometryMath.cs` | Shared geometry utilities |
+| `Shared/AgValoniaGPS.Models/State/UIState.cs` | Dialog state machine, panel visibility |
+| `Shared/AgValoniaGPS.Models/Configuration/ConfigurationStore.cs` | Reactive config singleton |
+| `Shared/AgValoniaGPS.Models/Configuration/HotkeyConfig.cs` | Hotkey bindings model |
 | `Shared/AgValoniaGPS.Services/Track/TrackGuidanceService.cs` | Pure Pursuit + Stanley guidance |
 | `Shared/AgValoniaGPS.Services/YouTurn/YouTurnGuidanceService.cs` | U-turn path following |
 | `Shared/AgValoniaGPS.Services/NtripClientService.cs` | NTRIP RTK corrections |
 | `Shared/AgValoniaGPS.Services/GpsService.cs` | GPS data processing |
+| `Shared/AgValoniaGPS.Services/ConfigurationService.cs` | AppSettings ↔ ConfigurationStore sync |
 | `Platforms/AgValoniaGPS.Desktop/Views/MainWindow.axaml` | Desktop main window |
 | `Platforms/AgValoniaGPS.iOS/Views/MainView.axaml` | iOS main view |
-| `TestRunner/Program.cs` | Test harness for guidance algorithms |
+| `Tests/AgValoniaGPS.UI.Tests/MainViewModelBuilder.cs` | Test helper: builds fully-mocked MainViewModel |
 
 ## Service Interfaces
 
@@ -177,31 +250,54 @@ Services use interface-based design in `Shared/AgValoniaGPS.Services/Interfaces/
 - `IFieldService` - Field loading/saving/management
 - `IBoundaryRecordingService` - Recording field boundaries
 - `IMapService` - Map control registration and track/boundary rendering
+- `IConfigurationService` - AppSettings ↔ ConfigurationStore sync, vehicle profiles
+- `IVehicleProfileService` - Vehicle profile CRUD
+- `INtripProfileService` - NTRIP profile CRUD
+- `IAutoSteerService` - Zero-copy GPS→steering pipeline
+- `ISettingsService` - AppSettings JSON persistence
+- `ICoverageMapService` - Worked area tracking (triangle strips)
+- `ISectionControlService` - Automatic section on/off based on coverage/boundaries
 
 ## Platform-Specific Code
 
-### Desktop (1,681 lines)
-- `App.axaml/cs` - Application entry point
+Platform projects contain only what **must** differ per platform. All UI, dialogs, and business logic live in Shared.
+
+### Desktop
+- `App.axaml/cs` - Application entry point, DI container setup
 - `Program.cs` - Main entry point
-- `MainWindow.axaml/cs` - Window with drag handlers, styles
+- `MainWindow.axaml/cs` - Window with drag handlers, hotkey dispatch, styles
 - `Services/MapService.cs` - Map control registration
 - `DependencyInjection/ServiceCollectionExtensions.cs` - DI setup
-- `ViewLocator.cs` - View resolution
 
-### iOS (765 lines)
+### iOS
 - `App.axaml/cs` - Application entry point
 - `AppDelegate.cs` - iOS app delegate
 - `MainView.axaml/cs` - Main view with drag handlers
-- `Services/` - Platform service implementations
+- `Services/MapService.cs` - Map control registration
 - `Info.plist` - iOS app configuration
+
+### Android
+- `App.axaml/cs` - Application entry point
+- `MainActivity.cs` - Android activity with immersive mode
+- `MainView.axaml/cs` - Main view with drag handlers
+- `Services/MapService.cs` - Map control registration
 
 ## Common Tasks
 
 ### Adding a New Dialog
-1. Create `YourDialogPanel.axaml/cs` in `Shared/AgValoniaGPS.Views/Controls/Dialogs/`
-2. Add visibility property to `MainViewModel.cs`: `IsYourDialogVisible`
-3. Add command to show dialog: `ShowYourDialogCommand`
-4. Add `<dialogs:YourDialogPanel/>` to both `MainWindow.axaml` and `MainView.axaml`
+1. Add a new `DialogType` enum value in `Shared/AgValoniaGPS.Models/State/UIState.cs`
+2. Add `IsYourDialogVisible` computed property and `RaisePropertyChanged` call in `UIState`
+3. Create `YourDialogPanel.axaml/cs` in `Shared/AgValoniaGPS.Views/Controls/Dialogs/`
+   - Bind `IsVisible` and `IsHitTestVisible` to `State.UI.IsYourDialogVisible`
+   - Include semi-transparent backdrop with `PointerPressed` handler to close
+4. Register in `Shared/AgValoniaGPS.Views/Controls/DialogOverlayHost.axaml`
+5. Add show/close commands in a `MainViewModel.Commands.*.cs` partial class file:
+   ```csharp
+   ShowYourDialogCommand = ReactiveCommand.Create(() =>
+       State.UI.ShowDialog(DialogType.YourDialog));
+   CloseYourDialogCommand = ReactiveCommand.Create(() =>
+       State.UI.CloseDialog());
+   ```
 
 ### Adding a New Panel
 1. Create `YourPanel.axaml/cs` in `Shared/AgValoniaGPS.Views/Controls/Panels/`
@@ -231,30 +327,38 @@ User-Agent: NTRIP AgValoniaGPS
 
 1. **iOS simulator issues**: Use `xcrun simctl` commands directly if `dotnet build -t:Run` fails
 2. **Frame rate**: ARM64 Macs handle 60 FPS fine; Intel Macs may need 10-15 FPS due to emulation
-3. **Dialog not showing**: Check ViewModel visibility property binding
+3. **Dialog not showing**: Check `DialogType` enum, `UIState` visibility property, and `DialogOverlayHost.axaml` registration
 4. **Panel not dragging**: Verify Canvas positioning and pointer event handlers
+5. **iOS Release builds hang in CI**: Use Debug configuration (Release triggers AOT compilation that hangs on runners)
 
 ## Code Style
 
 - Use `Classes.Active` binding for state-based styling instead of converters where possible
 - Keep platform code minimal - prefer shared code
-- Dialogs are overlay panels, not separate windows
+- Dialogs are overlay panels via `DialogOverlayHost`, not separate windows
 - Use dependency injection for services
 - Use shared `GeometryMath` utilities instead of duplicating distance/angle calculations
+- New dialog state goes through `UIState.ShowDialog(DialogType.X)`, not ad-hoc boolean properties
 
 ## Testing
 
-Run guidance algorithm tests:
 ```bash
+# Run all tests (111 total: 72 model + 21 service + 18 UI)
+dotnet test Tests/
+
+# Run specific test project
+dotnet test Tests/AgValoniaGPS.Models.Tests/
+dotnet test Tests/AgValoniaGPS.Services.Tests/
+dotnet test Tests/AgValoniaGPS.UI.Tests/
+
+# Legacy guidance algorithm test harness
 dotnet run --project TestRunner/TestRunner.csproj
 ```
 
-Tests verify:
-- AB Line Pure Pursuit steering
-- Curve Pure Pursuit steering
-- AB Line Stanley steering
-- Vehicle on-line behavior (XTE ≈ 0)
-- Track model conversion (ABLine ↔ Track)
+**Test projects:**
+- `AgValoniaGPS.Models.Tests` - GeometryMath, GeoConversion, boundary/curve utilities
+- `AgValoniaGPS.Services.Tests` - NMEA parsing, TrackGuidanceService
+- `AgValoniaGPS.UI.Tests` - Headless Avalonia UI tests using `[AvaloniaTest]` attribute, `MainViewModelBuilder` for fully-mocked VM construction
 
 ## U-Turn System
 
@@ -265,12 +369,22 @@ U-turns are generated in `MainViewModel.CreateSimpleUTurnPath()`:
 
 Key parameters:
 - `HeadlandDistance` - width of headland zone (green to yellow line)
-- `turnRadius` - half of track offset (based on implement width × row skip)
+- `turnRadius` - half of track offset (based on implement width x row skip)
 - Arc positioning: `headlandLegLength = max(HeadlandDistance - turnRadius, 2.0)`
 
 The arc must fit between the headland boundary (green line) and outer boundary (yellow line). If the headland is too narrow for the turn radius, the arc will extend past the outer boundary.
+
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/build-and-release.yml`) builds all platforms on every push to master:
+- **Desktop**: Windows x64, macOS ARM64, macOS x64, Linux x64
+- **Android**: APK via ubuntu-latest
+- **iOS**: Simulator .app via macos-26 (Debug config to avoid AOT hang)
+
+Manual workflow dispatch accepts an optional **release tag** (e.g. `v26.2.0`). With a tag, it creates a proper GitHub release. Without a tag, it creates a nightly prerelease.
 
 ## Legacy Code
 
 - `ABLine.cs` - Marked `[Obsolete]`, retained only for AgOpenGPS file I/O compatibility
 - Use `Track` model for all new guidance code
+- `TestRunner/` - Legacy console test harness, superseded by NUnit test projects in `Tests/`
