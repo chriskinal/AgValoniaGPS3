@@ -243,6 +243,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeTrackCommands();
         InitializeNtripCommands();
         InitializeWizardCommands();
+        InitializeSettingsCommands();
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings
@@ -1394,6 +1395,18 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? SaveNtripProfileCommand { get; private set; }
     public ICommand? CancelNtripProfileEditCommand { get; private set; }
     public ICommand? TestNtripConnectionCommand { get; private set; }
+
+    // Settings Commands
+    public ICommand? ShowAppDirectoriesDialogCommand { get; private set; }
+    public ICommand? CloseAppDirectoriesDialogCommand { get; private set; }
+    public ICommand? ResetAllSettingsCommand { get; private set; }
+
+    private ObservableCollection<AppDirectoryInfo> _appDirectories = new();
+    public ObservableCollection<AppDirectoryInfo> AppDirectories
+    {
+        get => _appDirectories;
+        set => this.RaiseAndSetIfChanged(ref _appDirectories, value);
+    }
 
     private string _ntripTestStatus = string.Empty;
     public string NtripTestStatus

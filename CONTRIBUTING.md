@@ -193,23 +193,11 @@ These features require more understanding of the codebase.
 - **Task**: Create dialog to view and configure keyboard shortcuts
 - **Skills needed**: XAML, key binding system, settings persistence
 
-#### App Directories
-- **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 74)
-- **Task**: Show dialog displaying data directory locations with option to open in file manager
-- **Skills needed**: XAML, platform file system APIs
-
 #### View All Settings
 - **Button location**: File Menu Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 73)
 - **Task**: Create comprehensive settings viewer/editor
 - **Skills needed**: XAML, reflection or settings enumeration
-
-#### Reset All Settings
-- **Button location**: File Menu Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 68)
-- **Task**: Implement settings reset with confirmation dialog
-- **Skills needed**: Settings persistence, confirmation dialogs
 
 ---
 
