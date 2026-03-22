@@ -1,0 +1,93 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.HotkeyConfigDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsHotkeyConfigDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsHotkeyConfigDialogVisible}"
+             Focusable="True">
+
+    <UserControl.Styles>
+        <Style Selector="Button.HotkeyButton">
+            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.HotkeyButton:pointerover">
+            <Setter Property="Background" Value="#DD475A6E"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Centered dialog -->
+        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="420" MaxWidth="520" MaxHeight="650">
+            <StackPanel Spacing="12">
+                <!-- Title -->
+                <TextBlock Text="Hotkey Configuration" FontSize="20" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Click a key button, then press a new key to reassign."
+                           FontSize="12" Foreground="#AAA" HorizontalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center"/>
+
+                <Separator Height="1" Background="#444" Margin="0,4"/>
+
+                <!-- Scrollable hotkey list -->
+                <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="4" x:Name="HotkeyListPanel">
+                        <!-- Rows are populated in code-behind -->
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Separator Height="1" Background="#444" Margin="0,4"/>
+
+                <!-- Bottom buttons -->
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <Button Grid.Column="1" Content="Reset Defaults" Margin="0,0,8,0"
+                            Command="{Binding ResetHotkeysToDefaultCommand}"
+                            Background="#E67E22" Foreground="White"
+                            Width="130" Height="40" FontSize="14"
+                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                    <Button Grid.Column="2" Content="OK"
+                            Command="{Binding CloseHotkeyConfigDialogCommand}"
+                            Background="#3498DB" Foreground="White"
+                            Width="80" Height="40" FontSize="16" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
