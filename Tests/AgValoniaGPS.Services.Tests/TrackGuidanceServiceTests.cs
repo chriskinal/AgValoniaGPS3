@@ -191,4 +191,207 @@ public class TrackGuidanceServiceTests
     }
 
     #endregion
+
+    #region Edge Cases - Degenerate Input
+
+    [Test]
+    public void SinglePointTrack_ReturnsErrorSentinel()
+    {
+        var track = new TrackModel
+        {
+            Name = "Bad",
+            Points = new List<Vec3> { new(0, 0, 0) }
+        };
+
+        var input = CreateDefaultInput(track);
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(output.DistanceFromLinePivot, Is.EqualTo(32000));
+    }
+
+    [Test]
+    public void NullTrack_ReturnsErrorSentinel()
+    {
+        var input = CreateDefaultInput(null!);
+        input.Track = null!;
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(output.DistanceFromLinePivot, Is.EqualTo(32000));
+    }
+
+    #endregion
+
+    #region Edge Cases - Heading Direction
+
+    [Test]
+    public void ABLine_HeadingOpposite_FlipsXTESign()
+    {
+        var track = TrackModel.FromABLine("Test", new Vec3(0, 0, 0), new Vec3(0, 100, 0));
+
+        // Vehicle heading south (PI radians) - opposite to track heading north (0)
+        var input = CreateDefaultInput(track);
+        input.PivotPosition = new Vec3(2, 50, Math.PI);
+        input.SteerPosition = new Vec3(2, 47.5, Math.PI);
+        input.FixHeading = Math.PI;
+        input.IsHeadingSameWay = false;
+
+        var output = _service.CalculateGuidance(input);
+
+        // XTE sign should be flipped when heading opposite
+        Assert.That(output.CrossTrackError, Is.EqualTo(-2.0).Within(0.2));
+    }
+
+    [Test]
+    public void ABLine_VehicleFarFromLine_ReturnsLargeXTE()
+    {
+        var track = TrackModel.FromABLine("Test", new Vec3(0, 0, 0), new Vec3(0, 100, 0));
+
+        var input = CreateDefaultInput(track);
+        input.PivotPosition = new Vec3(50, 50, 0); // 50m off the line
+        input.SteerPosition = new Vec3(50, 52.5, 0);
+
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(Math.Abs(output.CrossTrackError), Is.GreaterThan(40));
+        Assert.That(double.IsNaN(output.SteerAngle), Is.False);
+    }
+
+    #endregion
+
+    #region Edge Cases - Stanley Algorithm
+
+    [Test]
+    public void Stanley_VehicleOnLine_NearZeroSteering()
+    {
+        var track = TrackModel.FromABLine("Test", new Vec3(0, 0, 0), new Vec3(0, 100, 0));
+
+        var input = CreateDefaultInput(track);
+        input.UseStanley = true;
+        input.PivotPosition = new Vec3(0, 50, 0);
+        input.SteerPosition = new Vec3(0, 52.5, 0);
+        input.StanleyHeadingErrorGain = 1.0;
+        input.StanleyDistanceErrorGain = 0.8;
+
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(Math.Abs(output.SteerAngle), Is.LessThan(1.0));
+        Assert.That(Math.Abs(output.CrossTrackError), Is.LessThan(0.01));
+    }
+
+    [Test]
+    public void Stanley_LowSpeed_StillWorks()
+    {
+        var track = TrackModel.FromABLine("Test", new Vec3(0, 0, 0), new Vec3(0, 100, 0));
+
+        var input = CreateDefaultInput(track);
+        input.UseStanley = true;
+        input.PivotPosition = new Vec3(1, 50, 0);
+        input.SteerPosition = new Vec3(1, 52.5, 0);
+        input.StanleyHeadingErrorGain = 1.0;
+        input.StanleyDistanceErrorGain = 0.8;
+        input.AvgSpeed = 0.5; // Very slow
+
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(double.IsNaN(output.SteerAngle), Is.False);
+        Assert.That(double.IsInfinity(output.SteerAngle), Is.False);
+    }
+
+    #endregion
+
+    #region Multi-Frame State Continuity
+
+    [Test]
+    public void PurePursuit_StateCarriesOverBetweenCalls()
+    {
+        var track = TrackModel.FromABLine("Test", new Vec3(0, 0, 0), new Vec3(0, 100, 0));
+
+        var input = CreateDefaultInput(track);
+        input.PivotPosition = new Vec3(1, 10, 0);
+        input.SteerPosition = new Vec3(1, 12.5, 0);
+        input.IsAutoSteerOn = true;
+
+        var output1 = _service.CalculateGuidance(input);
+        Assert.That(output1.State, Is.Not.Null);
+
+        // Second call uses previous state
+        input.PreviousState = output1.State;
+        input.CurrentLocationIndex = output1.CurrentLocationIndex;
+        input.FindGlobalNearest = false;
+        input.PivotPosition = new Vec3(0.8, 15, 0);
+        input.SteerPosition = new Vec3(0.8, 17.5, 0);
+
+        var output2 = _service.CalculateGuidance(input);
+
+        Assert.That(output2.State, Is.Not.Null);
+        Assert.That(double.IsNaN(output2.SteerAngle), Is.False);
+    }
+
+    #endregion
+
+    #region Curve Edge Cases
+
+    [Test]
+    public void Curve_VehicleAtEnd_DoesNotCrash()
+    {
+        var points = new List<Vec3>();
+        for (int i = 0; i <= 5; i++)
+            points.Add(new Vec3(0, i * 10.0, 0));
+
+        var track = TrackModel.FromCurve("Short", points);
+
+        var input = CreateDefaultInput(track);
+        input.PivotPosition = new Vec3(0, 55, 0); // Past end
+        input.SteerPosition = new Vec3(0, 57.5, 0);
+
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(double.IsNaN(output.SteerAngle), Is.False);
+    }
+
+    [Test]
+    public void Curve_ThreePoints_MinimumViable()
+    {
+        var track = TrackModel.FromCurve("Tiny", new List<Vec3>
+        {
+            new(0, 0, 0),
+            new(5, 10, 0.5),
+            new(10, 20, 0.5)
+        });
+
+        var input = CreateDefaultInput(track);
+        input.PivotPosition = new Vec3(2, 5, 0.3);
+        input.SteerPosition = new Vec3(2, 7.5, 0.3);
+        input.FixHeading = 0.3;
+
+        var output = _service.CalculateGuidance(input);
+
+        Assert.That(double.IsNaN(output.SteerAngle), Is.False);
+        Assert.That(Math.Abs(output.SteerAngle), Is.LessThanOrEqualTo(35));
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private static TrackGuidanceInput CreateDefaultInput(TrackModel track)
+    {
+        return new TrackGuidanceInput
+        {
+            Track = track,
+            PivotPosition = new Vec3(0, 50, 0),
+            SteerPosition = new Vec3(0, 52.5, 0),
+            UseStanley = false,
+            Wheelbase = 2.5,
+            MaxSteerAngle = 35,
+            GoalPointDistance = 5,
+            FixHeading = 0,
+            AvgSpeed = 10,
+            IsHeadingSameWay = true,
+            FindGlobalNearest = true,
+            IsAutoSteerOn = true
+        };
+    }
+
+    #endregion
 }
