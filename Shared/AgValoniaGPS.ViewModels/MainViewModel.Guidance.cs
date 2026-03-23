@@ -91,10 +91,10 @@ public partial class MainViewModel
         double steerEasting = currentPosition.Easting + Math.Sin(headingRadians) * Vehicle.Wheelbase;
         double steerNorthing = currentPosition.Northing + Math.Cos(headingRadians) * Vehicle.Wheelbase;
 
-        // Calculate parallel offset based on _howManyPathsAway
+        // Calculate parallel offset based on _howManyPathsAway + fine nudge
         // Same logic for both AB lines and curves
         double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
-        double distAway = widthMinusOverlap * _howManyPathsAway;
+        double distAway = widthMinusOverlap * _howManyPathsAway + _nudgeOffset;
 
         if (_youTurnCounter % 30 == 0)
         {

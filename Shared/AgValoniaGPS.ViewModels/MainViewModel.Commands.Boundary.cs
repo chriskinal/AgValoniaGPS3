@@ -226,7 +226,14 @@ public partial class MainViewModel
 
         ResetToolHeadingCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Tool heading reset";
+            // Reset tool heading to match vehicle heading
+            // This synchronizes the implement direction with the tractor
+            double vehicleHeadingRadians = Heading * Math.PI / 180.0;
+            ToolHeadingRadians = vehicleHeadingRadians;
+            _toolPositionService.ResetTrailingState(
+                new Models.Base.Vec3(Easting, Northing, vehicleHeadingRadians),
+                vehicleHeadingRadians);
+            StatusMessage = "Tool heading reset to vehicle heading";
         });
 
         BuildHeadlandCommand = ReactiveCommand.Create(() =>

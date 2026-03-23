@@ -55,6 +55,7 @@ public partial class MainViewModel
     public double NextTrackTurnOffset { get; private set; }
 
     private int _howManyPathsAway; // Which parallel offset line we're on (like AgOpenGPS)
+    private double _nudgeOffset; // Fine nudge offset in meters (added on top of pass offset)
 
     // Zone tracking - single state for tractor location
     public enum TractorZone { OutsideBoundary = 0, InHeadland = 1, InCultivatedArea = 2 }
