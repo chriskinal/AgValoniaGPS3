@@ -1304,17 +1304,19 @@ public partial class MainViewModel : ReactiveObject
                     // Show the track on the map when activated
                     _mapService.SetActiveTrack(value);
 
-                    // Initialize pass number from saved NudgeDistance
-                    // NudgeDistance = widthMinusOverlap * howManyPathsAway
+                    // Initialize pass number and nudge offset from saved NudgeDistance
+                    // NudgeDistance = widthMinusOverlap * howManyPathsAway + nudgeOffset
                     double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
                     if (widthMinusOverlap > 0.1)
                     {
                         _howManyPathsAway = (int)Math.Round(value.NudgeDistance / widthMinusOverlap);
-                        _logger.LogDebug($"[NUDGE] SelectedTrack setter: '{value.Name}' NudgeDistance={value.NudgeDistance:F2}m -> _howManyPathsAway={_howManyPathsAway}");
+                        _nudgeOffset = value.NudgeDistance - (_howManyPathsAway * widthMinusOverlap);
+                        _logger.LogDebug($"[NUDGE] SelectedTrack setter: '{value.Name}' NudgeDistance={value.NudgeDistance:F2}m -> _howManyPathsAway={_howManyPathsAway}, _nudgeOffset={_nudgeOffset:F3}m");
                     }
                     else
                     {
                         _howManyPathsAway = 0;
+                        _nudgeOffset = 0;
                         _logger.LogDebug("[NUDGE] SelectedTrack setter: '{TrackName}' widthMinusOverlap too small, _howManyPathsAway=0", value.Name);
                     }
 
@@ -4005,12 +4007,12 @@ public partial class MainViewModel : ReactiveObject
             return; // No active field to save to
         }
 
-        // Update selected track's NudgeDistance from current pass number before saving
+        // Update selected track's NudgeDistance from current pass number + nudge offset before saving
         if (SelectedTrack != null)
         {
             double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
-            SelectedTrack.NudgeDistance = _howManyPathsAway * widthMinusOverlap;
-            _logger.LogDebug($"[NUDGE] SaveTracksToFile: SelectedTrack '{SelectedTrack.Name}' NudgeDistance = {_howManyPathsAway} * {widthMinusOverlap:F2} = {SelectedTrack.NudgeDistance:F2}m");
+            SelectedTrack.NudgeDistance = _howManyPathsAway * widthMinusOverlap + _nudgeOffset;
+            _logger.LogDebug($"[NUDGE] SaveTracksToFile: SelectedTrack '{SelectedTrack.Name}' NudgeDistance = {_howManyPathsAway} * {widthMinusOverlap:F2} + {_nudgeOffset:F3} = {SelectedTrack.NudgeDistance:F2}m");
         }
 
         // Debug: Log all tracks' NudgeDistance before saving

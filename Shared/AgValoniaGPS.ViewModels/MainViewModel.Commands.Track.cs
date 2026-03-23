@@ -37,12 +37,30 @@ public partial class MainViewModel
         // AB Line Guidance Commands - Bottom Bar
         SnapLeftCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Snap to Left Track - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected";
+                return;
+            }
+            _howManyPathsAway -= _isHeadingSameWay ? 1 : -1;
+            _nudgeOffset = 0;
+            _trackGuidanceState = null; // Force global search for nearest segment
+            double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+            StatusMessage = $"Snapped left to path {_howManyPathsAway} ({Math.Abs(widthMinusOverlap * _howManyPathsAway):F1}m offset)";
         });
 
         SnapRightCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Snap to Right Track - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected";
+                return;
+            }
+            _howManyPathsAway += _isHeadingSameWay ? 1 : -1;
+            _nudgeOffset = 0;
+            _trackGuidanceState = null; // Force global search for nearest segment
+            double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+            StatusMessage = $"Snapped right to path {_howManyPathsAway} ({Math.Abs(widthMinusOverlap * _howManyPathsAway):F1}m offset)";
         });
 
         StopGuidanceCommand = ReactiveCommand.Create(() =>
@@ -483,22 +501,22 @@ public partial class MainViewModel
         // Nudge commands
         NudgeLeftCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Nudge Left - not yet implemented";
+            NudgeTrack(-ConfigStore.AutoSteer.NudgeDistance * 0.01); // cm to m, negative = left
         });
 
         NudgeRightCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Nudge Right - not yet implemented";
+            NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.01); // cm to m, positive = right
         });
 
         FineNudgeLeftCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Fine Nudge Left - not yet implemented";
+            NudgeTrack(-ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, left
         });
 
         FineNudgeRightCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Fine Nudge Right - not yet implemented";
+            NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, right
         });
 
         // Bottom Strip Commands
@@ -509,7 +527,20 @@ public partial class MainViewModel
 
         SnapToPivotCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Snap to Pivot - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected";
+                return;
+            }
+            // Snap by nudging the track by the current cross-track error (XTE)
+            // This aligns the guidance line to the vehicle's current position
+            double xte = State.Guidance.CrossTrackError;
+            if (Math.Abs(xte) < 0.001)
+            {
+                StatusMessage = "Already on track";
+                return;
+            }
+            NudgeTrack(xte);
         });
 
         ToggleYouSkipCommand = ReactiveCommand.Create(() =>
@@ -669,8 +700,9 @@ public partial class MainViewModel
             _coverageMapService.ClearAll();
             // Reset track guidance state to force global search for nearest segment
             _trackGuidanceState = null;
-            // Reset pass counter and track offset on ALL tracks
+            // Reset pass counter, nudge offset, and track offset on ALL tracks
             _howManyPathsAway = 0;
+            _nudgeOffset = 0;
             foreach (var track in SavedTracks)
                 track.NudgeDistance = 0;
             SaveTracksToFile();
@@ -707,9 +739,10 @@ public partial class MainViewModel
                     // Otherwise it will continue from where coverage ended
                     _trackGuidanceState = null;
 
-                    // Reset pass counter and track offset to go back to the original track
-                    _logger.LogDebug("[NUDGE] Resetting _howManyPathsAway from {HowManyPathsAway} to 0", _howManyPathsAway);
+                    // Reset pass counter, nudge offset, and track offset to go back to the original track
+                    _logger.LogDebug("[NUDGE] Resetting _howManyPathsAway from {HowManyPathsAway} to 0, _nudgeOffset from {NudgeOffset:F3} to 0", _howManyPathsAway, _nudgeOffset);
                     _howManyPathsAway = 0;
+                    _nudgeOffset = 0;
 
                     // Reset NudgeDistance on ALL tracks, not just selected
                     _logger.LogDebug("[NUDGE] Resetting NudgeDistance on {TrackCount} tracks", SavedTracks.Count);
@@ -944,5 +977,32 @@ public partial class MainViewModel
         _logger.LogDebug($"[Curve] Extended start by {extendStart:F1}m, end by {extendEnd:F1}m");
 
         return result;
+    }
+
+    /// <summary>
+    /// Nudge the current guidance line by a distance in meters.
+    /// Positive = right, Negative = left (when heading same way as track).
+    /// Accounts for heading direction: if driving opposite to track, nudge is inverted.
+    /// </summary>
+    private void NudgeTrack(double distanceMeters)
+    {
+        if (SelectedTrack == null)
+        {
+            StatusMessage = "No track selected";
+            return;
+        }
+
+        // Account for heading direction (like AgOpenGPS)
+        double adjustedDist = _isHeadingSameWay ? distanceMeters : -distanceMeters;
+        _nudgeOffset += adjustedDist;
+
+        // Invalidate guidance state to force recalculation
+        _trackGuidanceState = null;
+
+        double totalOffset = (ConfigStore.ActualToolWidth - Tool.Overlap) * _howManyPathsAway + _nudgeOffset;
+        _logger.LogDebug("[NUDGE] NudgeTrack: dist={Dist:F3}m (adjusted={Adj:F3}m), nudgeOffset={Offset:F3}m, totalOffset={Total:F3}m",
+            distanceMeters, adjustedDist, _nudgeOffset, totalOffset);
+
+        StatusMessage = $"Nudged {(distanceMeters > 0 ? "right" : "left")} {Math.Abs(distanceMeters * 100):F1}cm (total offset: {totalOffset:F2}m)";
     }
 }

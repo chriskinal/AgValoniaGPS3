@@ -66,41 +66,11 @@ These features are good starting points for new contributors.
 - **Task**: Create dialog to customize application color scheme/theme
 - **Skills needed**: XAML, Avalonia theming, settings persistence
 
-#### Nudge AB Left/Right
-- **Button location**: Bottom Navigation Panel (AB Line Options section)
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 271-278)
-- **Task**: Implement NudgeLeftCommand and NudgeRightCommand to shift track by standard offset
-- **Skills needed**: Track model, geometry
-
-#### Fine Nudge AB Left/Right
-- **Button location**: Bottom Navigation Panel (AB Line Options section)
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 283-290)
-- **Task**: Implement FineNudgeLeftCommand and FineNudgeRightCommand for small track adjustments
-- **Skills needed**: Track model, geometry
-
-#### Snap to Left/Right Track
-- **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Lines 192-203)
-- **Task**: Implement SnapLeftCommand and SnapRightCommand to jump to adjacent tracks
-- **Skills needed**: Track model, guidance system
-
-#### Snap to Pivot
-- **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 206)
-- **Task**: Implement SnapToPivotCommand to snap to pivot point
-- **Skills needed**: Track model, geometry
-
 #### U-Turn Skip Rows - Return Pass
 - **Button location**: Bottom Navigation Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 143)
 - **Task**: Implement the return pass logic for skip rows. Currently skipping rows widens U-turn offset but there is no logic to track which rows were skipped and guide back to fill them at the far boundary. The full pattern: skip rows going one direction, then return to fill gaps — avoids omega turns.
 - **Skills needed**: U-turn system, guidance, track state management
-
-#### Reset Tool Heading
-- **Button location**: Bottom Navigation Panel
-- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 158)
-- **Task**: Implement ResetToolHeadingCommand to reset implement heading to vehicle heading
-- **Skills needed**: Vehicle/tool geometry
 
 #### Display Options - Wire Up Settings
 - **Location**: Configuration Dialog → Display Options tab
