@@ -56,9 +56,35 @@ jobs:
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
+  # Run all tests before building
+  test:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run Model Tests
+        run: dotnet test Tests/AgValoniaGPS.Models.Tests/ --verbosity normal
+
+      - name: Run Service Tests
+        run: dotnet test Tests/AgValoniaGPS.Services.Tests/ --verbosity normal
+
+      - name: Run UI Tests
+        run: dotnet test Tests/AgValoniaGPS.UI.Tests/ --verbosity normal
+
+      - name: Run Guidance Algorithm Tests
+        run: dotnet run --project TestRunner/TestRunner.csproj
+
   # Build Desktop versions (Windows, macOS, Linux)
   build-desktop:
-    needs: check-changes
+    needs: [check-changes, test]
     if: needs.check-changes.outputs.should_build == 'true'
     strategy:
       fail-fast: false
@@ -143,7 +169,7 @@ jobs:
 
   # Build Android APK
   build-android:
-    needs: check-changes
+    needs: [check-changes, test]
     if: needs.check-changes.outputs.should_build == 'true'
     runs-on: ubuntu-latest
 
@@ -198,7 +224,7 @@ jobs:
 
   # Build iOS (simulator .app bundle)
   build-ios:
-    needs: check-changes
+    needs: [check-changes, test]
     if: needs.check-changes.outputs.should_build == 'true'
     runs-on: macos-26
 
@@ -248,8 +274,8 @@ jobs:
 
   # Create a release with all artifacts
   create-release:
-    needs: [check-changes, build-desktop, build-android, build-ios]
-    if: always() && needs.check-changes.outputs.should_build == 'true' && (needs.build-desktop.result == 'success' || needs.build-android.result == 'success' || needs.build-ios.result == 'success')
+    needs: [check-changes, test, build-desktop, build-android, build-ios]
+    if: always() && needs.check-changes.outputs.should_build == 'true' && needs.test.result == 'success' && (needs.build-desktop.result == 'success' || needs.build-android.result == 'success' || needs.build-ios.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
