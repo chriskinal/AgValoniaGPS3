@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -391,7 +391,7 @@ jobs:
             - **iOS Simulator**: Extract .app, install with `xcrun simctl install booted AgValoniaGPS.iOS.app`
 
             ---
-            *Built automatically from the latest master branch*
+            *Built automatically from the latest commit*
           draft: false
           prerelease: true
           files: |
