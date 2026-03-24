@@ -393,6 +393,7 @@ public partial class MainViewModel : ReactiveObject
                 State.Connections.IsMachineDataOk = machineOk;
                 State.Connections.IsImuDataOk = imuOk;
                 State.Connections.IsGpsDataOk = gpsOk;
+                State.Connections.IsGpsConnected = gpsOk;
 
                 // Legacy property updates (for existing bindings - will be removed in Phase 5)
                 IsAutoSteerDataOk = steerOk;
