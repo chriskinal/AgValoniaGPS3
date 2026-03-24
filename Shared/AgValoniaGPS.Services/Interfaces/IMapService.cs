@@ -62,6 +62,10 @@ public interface IMapService
     // Grid
     bool IsGridVisible { get; set; }
 
+    // View settings
+    void SetNorthUp(bool isNorthUp);
+    void SetDayMode(bool isDayMode);
+
     // Boundary recording visualization
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();
