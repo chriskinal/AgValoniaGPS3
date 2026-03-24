@@ -70,7 +70,24 @@ public partial class MainViewModel
 
         UTurnCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "U-Turn - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected for U-turn";
+                return;
+            }
+
+            if (!IsAutoSteerEngaged)
+            {
+                StatusMessage = "Enable autosteer before triggering U-turn";
+                return;
+            }
+
+            if (!HasBoundary && !HasHeadland)
+            {
+                _logger.LogDebug("[UTurn] No boundary/headland, triggering manual U-turn left");
+            }
+
+            TriggerManualYouTurn(turnLeft: true);
         });
 
         // AB Line Guidance Commands - Flyout Menu
@@ -490,7 +507,16 @@ public partial class MainViewModel
 
         CycleABLinesCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Cycle AB Lines - not yet implemented";
+            if (SavedTracks.Count == 0)
+            {
+                StatusMessage = "No tracks to cycle";
+                return;
+            }
+
+            int currentIndex = SelectedTrack != null ? SavedTracks.IndexOf(SelectedTrack) : -1;
+            int nextIndex = (currentIndex + 1) % SavedTracks.Count;
+            SelectedTrack = SavedTracks[nextIndex];
+            StatusMessage = $"Active track: {SelectedTrack.Name}";
         });
 
         SmoothABLineCommand = ReactiveCommand.Create(() =>
@@ -565,22 +591,24 @@ public partial class MainViewModel
         // Flags Commands
         PlaceRedFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Red Flag - not yet implemented";
+            PlaceFlag("Red");
         });
 
         PlaceGreenFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Green Flag - not yet implemented";
+            PlaceFlag("Green");
         });
 
         PlaceYellowFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Yellow Flag - not yet implemented";
+            PlaceFlag("Yellow");
         });
 
         DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Delete All Flags - not yet implemented";
+            int count = _flagPoints.Count;
+            _flagPoints.Clear();
+            StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
         });
 
         // Section control commands
