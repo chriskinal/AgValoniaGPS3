@@ -145,12 +145,35 @@ public partial class MainViewModel
 
         StartNewABLineCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Starting new AB Line - not yet implemented";
+            State.UI.CloseDialog();
+            CurrentABCreationMode = ABCreationMode.DriveAB;
+            CurrentABPointStep = ABPointStep.SettingPointA;
+            PendingPointA = null;
+            StatusMessage = "Drive-in AB Line: tap to set Point A at current position";
         });
 
         StartNewABCurveCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Starting new AB Curve - not yet implemented";
+            State.UI.CloseDialog();
+            CurrentABCreationMode = ABCreationMode.Curve;
+            _recordedCurvePoints.Clear();
+            _lastCurvePoint = null;
+
+            if (Easting != 0 || Northing != 0)
+            {
+                var headingRadians = Heading * Math.PI / 180.0;
+                var firstPoint = new Vec3(Easting, Northing, headingRadians);
+                _recordedCurvePoints.Add(firstPoint);
+                _lastCurvePoint = firstPoint;
+
+                var displayPoints = _recordedCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+                _mapService.SetRecordingPoints(displayPoints);
+            }
+
+            StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
+            this.RaisePropertyChanged(nameof(IsRecordingCurve));
+            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions));
         });
 
         StartAPlusLineCommand = ReactiveCommand.Create(() =>
