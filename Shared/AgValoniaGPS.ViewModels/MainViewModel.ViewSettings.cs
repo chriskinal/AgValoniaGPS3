@@ -152,4 +152,14 @@ public partial class MainViewModel
         : "??";
 
     #endregion
+    // Speedometer Visibility Property
+    public bool SpeedometerVisible
+    {
+        get => _displaySettings.SpeedometerVisible;
+        set
+        {
+            _displaySettings.SpeedometerVisible = value;
+            this.RaisePropertyChanged();
+        }
+    }
 }
