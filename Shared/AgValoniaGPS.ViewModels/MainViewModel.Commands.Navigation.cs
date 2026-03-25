@@ -66,27 +66,32 @@ public partial class MainViewModel
         ToggleDayNightCommand = ReactiveCommand.Create(() =>
         {
             IsDayMode = !IsDayMode;
+            _mapService.SetDayMode(IsDayMode);
         });
 
         Toggle2D3DCommand = ReactiveCommand.Create(() =>
         {
             Is2DMode = !Is2DMode;
+            _mapService.Set3DMode(!Is2DMode);
         });
 
         ToggleNorthUpCommand = ReactiveCommand.Create(() =>
         {
             IsNorthUp = !IsNorthUp;
+            _mapService.SetNorthUp(IsNorthUp);
         });
 
         // Camera controls
         IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
             CameraPitch += 5.0;
+            _mapService.SetPitchAbsolute(CameraPitch * Math.PI / 180.0);
         });
 
         DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
             CameraPitch -= 5.0;
+            _mapService.SetPitchAbsolute(CameraPitch * Math.PI / 180.0);
         });
 
         // Brightness controls
