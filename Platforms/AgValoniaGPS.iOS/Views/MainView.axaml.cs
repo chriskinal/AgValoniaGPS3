@@ -22,14 +22,11 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
-using Microsoft.Extensions.DependencyInjection;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Views.Controls;
 using AgValoniaGPS.Views.Behaviors;
 using AgValoniaGPS.iOS.Services;
 using AgValoniaGPS.Models;
-using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.iOS.Views;
@@ -68,40 +65,6 @@ public partial class MainView : UserControl
 
         // Handle window resize to keep panels in view
         this.PropertyChanged += MainView_PropertyChanged;
-
-        // Save coverage and settings when view is unloaded (app exit/backgrounded)
-        this.Unloaded += MainView_Unloaded;
-    }
-
-    private void MainView_Unloaded(object? sender, RoutedEventArgs e)
-    {
-        if (App.Services == null) return;
-
-        SavePanelPositions();
-
-        if (_viewModel != null)
-        {
-            var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-            display.GridVisible = _viewModel.IsGridOn;
-        }
-
-        var configService = App.Services.GetRequiredService<IConfigurationService>();
-        configService.SaveAppSettings();
-
-        var fieldService = App.Services.GetRequiredService<IFieldService>();
-        var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
-        if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
-        {
-            try
-            {
-                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
-            }
-        }
     }
 
     private void MainView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

@@ -55,7 +55,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:NtripProfileEditorPanel/>
         <dialogs:AppDirectoriesDialogPanel/>
         <dialogs:HotkeyConfigDialogPanel/>
-        <dialogs:AboutDialogPanel/>
         <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
         <dialogs:AutoSteerConfigPanel DataContext="{Binding AutoSteerConfigViewModel}"/>
 

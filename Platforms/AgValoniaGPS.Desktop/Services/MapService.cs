@@ -109,10 +109,6 @@ public class MapService : IMapService
         }
     }
 
-    public void SetNorthUp(bool isNorthUp) => GetMapControl().SetNorthUp(isNorthUp);
-
-    public void SetDayMode(bool isDayMode) => GetMapControl().SetDayMode(isDayMode);
-
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points) =>
         GetMapControl().SetRecordingPoints(points);
 

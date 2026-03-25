@@ -216,14 +216,6 @@ public partial class MainViewModel : ReactiveObject
             {
                 NumSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
             }
-            else if (e.PropertyName == nameof(Models.Configuration.ConfigurationStore.IsMetric))
-            {
-                // Refresh all unit-dependent displays
-                this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
-                this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
-                this.RaisePropertyChanged(nameof(WorkRateDisplay));
-                this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
-            }
         };
 
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
@@ -401,7 +393,6 @@ public partial class MainViewModel : ReactiveObject
                 State.Connections.IsMachineDataOk = machineOk;
                 State.Connections.IsImuDataOk = imuOk;
                 State.Connections.IsGpsDataOk = gpsOk;
-                State.Connections.IsGpsConnected = gpsOk;
 
                 // Legacy property updates (for existing bindings - will be removed in Phase 5)
                 IsAutoSteerDataOk = steerOk;
@@ -855,12 +846,13 @@ public partial class MainViewModel : ReactiveObject
     {
         get
         {
+            // Use CurrentBoundary area directly (more reliable than pre-calculated field.TotalArea)
             var boundary = State.Field.CurrentBoundary;
             if (boundary != null && boundary.IsValid)
             {
-                return FormatArea(boundary.AreaHectares * 10000); // Convert ha back to m²
+                return $"{boundary.AreaHectares:F2} ha";
             }
-            return ConfigStore.IsMetric ? "0.00 ha" : "0.00 ac";
+            return "0.00 ha";
         }
     }
 
@@ -886,25 +878,21 @@ public partial class MainViewModel : ReactiveObject
         get
         {
             // Rate = Speed (m/h) × Tool Width (m) = m²/h
+            // Convert: Speed is in m/s, need m/h; result in ha/hr
             double speedMetersPerHour = Speed * 3600; // m/s to m/h
-            double squareMetersPerHour = speedMetersPerHour * ToolWidth;
+            double toolWidthMeters = ToolWidth; // Already in meters
+            double squareMetersPerHour = speedMetersPerHour * toolWidthMeters;
             double hectaresPerHour = squareMetersPerHour / 10000.0;
-
-            if (ConfigStore.IsMetric)
-                return $"{hectaresPerHour:F1} ha/hr";
-            else
-                return $"{hectaresPerHour * 2.47105:F1} ac/hr";
+            return $"{hectaresPerHour:F1} ha/hr";
         }
     }
 
-    // Helper method to format area with metric/imperial support
+    // Helper method to format area
     private string FormatArea(double squareMeters)
     {
+        // Convert to hectares
         double hectares = squareMeters * 0.0001;
-        if (ConfigStore.IsMetric)
-            return $"{hectares:F2} ha";
-        else
-            return $"{hectares * 2.47105:F2} ac";
+        return $"{hectares:F2} ha";
     }
 
     /// <summary>
@@ -1373,23 +1361,6 @@ public partial class MainViewModel : ReactiveObject
         }
     }
 
-    // Flag points (simple Vec3 list for basic flag placement)
-    private readonly List<(Vec3 Position, string Color)> _flagPoints = new();
-
-    private void PlaceFlag(string color)
-    {
-        if (Easting == 0 && Northing == 0)
-        {
-            StatusMessage = "No GPS position - cannot place flag";
-            return;
-        }
-
-        var headingRadians = Heading * Math.PI / 180.0;
-        var point = new Vec3(Easting, Northing, headingRadians);
-        _flagPoints.Add((point, color));
-        StatusMessage = $"{color} flag #{_flagPoints.Count} placed at E:{Easting:F1} N:{Northing:F1}";
-    }
-
     // Track management commands
     public ICommand? DeleteSelectedTrackCommand { get; private set; }
     public ICommand? SwapABPointsCommand { get; private set; }
@@ -1431,8 +1402,6 @@ public partial class MainViewModel : ReactiveObject
     // Settings Commands
     public ICommand? ShowAppDirectoriesDialogCommand { get; private set; }
     public ICommand? CloseAppDirectoriesDialogCommand { get; private set; }
-    public ICommand? ShowAboutDialogCommand { get; private set; }
-    public ICommand? CloseAboutDialogCommand { get; private set; }
     public ICommand? ResetAllSettingsCommand { get; private set; }
 
     private ObservableCollection<AppDirectoryInfo> _appDirectories = new();
@@ -3087,22 +3056,6 @@ public partial class MainViewModel : ReactiveObject
                 });
             }
         }
-    }
-
-    /// <summary>
-    /// Adjust headland distance by a delta and rebuild the headland polygon.
-    /// Positive delta extends (widens) the headland, negative shrinks it.
-    /// </summary>
-    private void AdjustHeadlandDistance(double deltaMeters)
-    {
-        if (!HasHeadland)
-        {
-            StatusMessage = "No headland to adjust - build one first";
-            return;
-        }
-
-        HeadlandDistance += deltaMeters;
-        BuildHeadlandFromBoundary();
     }
 
     /// <summary>

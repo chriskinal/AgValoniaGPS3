@@ -264,18 +264,9 @@ public partial class MainViewModel
         }
     }
 
-    public string SimulatorSpeedDisplay
-    {
-        get
-        {
-            double speed = _isSimulatorSpeed10x ? _simulatorSpeedKph * 10 : _simulatorSpeedKph;
-            string suffix = _isSimulatorSpeed10x ? " (10x)" : "";
-            if (ConfigStore.IsMetric)
-                return $"Speed: {speed:F1} kph{suffix}";
-            else
-                return $"Speed: {speed * 0.621371:F1} mph{suffix}";
-        }
-    }
+    public string SimulatorSpeedDisplay => _isSimulatorSpeed10x
+        ? $"Speed: {_simulatorSpeedKph * 10:F0} kph (10x)"
+        : $"Speed: {_simulatorSpeedKph:F1} kph";
 
     #endregion
 

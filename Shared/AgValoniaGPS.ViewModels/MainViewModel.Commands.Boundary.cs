@@ -307,22 +307,22 @@ public partial class MainViewModel
 
         ExtendHeadlandACommand = ReactiveCommand.Create(() =>
         {
-            AdjustHeadlandDistance(1.0);
+            StatusMessage = "Extend A - not yet implemented";
         });
 
         ExtendHeadlandBCommand = ReactiveCommand.Create(() =>
         {
-            AdjustHeadlandDistance(0.25);
+            StatusMessage = "Extend B - not yet implemented";
         });
 
         ShrinkHeadlandACommand = ReactiveCommand.Create(() =>
         {
-            AdjustHeadlandDistance(-1.0);
+            StatusMessage = "Shrink A - not yet implemented";
         });
 
         ShrinkHeadlandBCommand = ReactiveCommand.Create(() =>
         {
-            AdjustHeadlandDistance(-0.25);
+            StatusMessage = "Shrink B - not yet implemented";
         });
 
         ResetHeadlandCommand = ReactiveCommand.Create(() =>

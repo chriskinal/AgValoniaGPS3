@@ -63,7 +63,6 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsErrorDialogVisible));
                 this.RaisePropertyChanged(nameof(IsAppDirectoriesDialogVisible));
                 this.RaisePropertyChanged(nameof(IsHotkeyConfigDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAboutDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -97,7 +96,6 @@ public class UIState : ReactiveObject
     public bool IsErrorDialogVisible => ActiveDialog == DialogType.Error;
     public bool IsAppDirectoriesDialogVisible => ActiveDialog == DialogType.AppDirectories;
     public bool IsHotkeyConfigDialogVisible => ActiveDialog == DialogType.HotkeyConfig;
-    public bool IsAboutDialogVisible => ActiveDialog == DialogType.About;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -210,8 +208,7 @@ public enum DialogType
     Confirmation,
     Error,
     AppDirectories,
-    HotkeyConfig,
-    About
+    HotkeyConfig
 }
 
 /// <summary>

@@ -147,10 +147,6 @@ public class MapService : IMapService
         _mapControl?.SetVehiclePosition(easting, northing, headingRadians);
     }
 
-    public void SetNorthUp(bool isNorthUp) => _mapControl?.SetNorthUp(isNorthUp);
-
-    public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);
-
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)
     {
         _mapControl?.SetRecordingPoints(points);

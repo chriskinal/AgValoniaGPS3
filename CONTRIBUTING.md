@@ -48,6 +48,12 @@ Thank you for your interest in contributing to AgValoniaGPS! This document lists
 
 These features are good starting points for new contributors.
 
+#### About Dialog
+- **Button location**: File Menu Panel
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 96)
+- **Task**: Create an About dialog showing app version, credits, and links
+- **Skills needed**: XAML, basic ViewModel
+
 #### Help Documentation
 - **Button location**: File Menu Panel
 - **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/FileMenuPanel.axaml` (Line 95)
@@ -74,6 +80,7 @@ These features are good starting points for new contributors.
   - Auto Day/Night brightness, Svenn Arrow, Start Fullscreen
   - Elevation Log, Field Texture, Grid, Extra Guidelines
   - Line Smooth, Direction Markers, Section Lines
+  - Metric/Imperial units
 - **Skills needed**: DrawingContext rendering, MainViewModel integration
 
 #### Additional Options - Wire Up Settings
@@ -126,6 +133,11 @@ These features require more understanding of the codebase.
 - **Task**: Import track/guidance line data from external files (KML, shapefile, etc.)
 - **Skills needed**: File parsing, coordinate systems, Track model
 
+#### Smooth AB Curve
+- **Button location**: Bottom Navigation Panel (AB Line Options section)
+- **File**: `Shared/AgValoniaGPS.Views/Controls/Panels/BottomNavigationPanel.axaml` (Line 255)
+- **Task**: Implement SmoothABLineCommand to smooth/simplify curve points
+- **Skills needed**: Geometry algorithms, Track model
 
 #### Delete Contours
 - **Button location**: Bottom Navigation Panel (AB Line Options section)
