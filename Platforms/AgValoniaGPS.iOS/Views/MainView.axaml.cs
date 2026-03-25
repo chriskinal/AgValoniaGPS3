@@ -29,6 +29,7 @@ using AgValoniaGPS.Views.Controls;
 using AgValoniaGPS.Views.Behaviors;
 using AgValoniaGPS.iOS.Services;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.iOS.Views;
