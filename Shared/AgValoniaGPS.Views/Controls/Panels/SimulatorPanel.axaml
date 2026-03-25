@@ -126,7 +126,38 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <Separator Background="#555" Height="1" Margin="0,4"/>
 
-              
+                  <!-- Row 4: Speed Slider (-10 to +25 kph) -->
+                <StackPanel Spacing="4" IsVisible="{Binding Display.SpeedometerVisible}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Speed" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <CheckBox Grid.Column="1" Content="10x" IsChecked="{Binding IsSimulatorSpeed10x}"
+                              FontSize="10" Foreground="#AAA" Margin="0,0,0,0"
+                              ToolTip.Tip="10x speed multiplier for large fields"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" Text="-10" Foreground="#888" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <Slider Grid.Column="1" Margin="0"
+                            Minimum="-10" Maximum="25"
+                            Value="{Binding SimulatorSpeedKph, Mode=TwoWay}"
+                            TickFrequency="5"
+                            IsSnapToTickEnabled="False"
+                            ToolTip.Tip="Speed in kph (-10 reverse to +25 forward)"/>
+                    <TextBlock Grid.Column="2" Text="25" Foreground="#888" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                </Grid>
+
+                <!-- Speed Display -->
+                <TextBlock Text="{Binding SimulatorSpeedDisplay, Mode=OneWay}"
+                           HorizontalAlignment="Center"
+                           FontSize="12"
+                           Foreground="#DDD"/>
+
+                <!-- Stop Button -->
+                <Button Classes="ModernButton" ClickMode="Press"
+                        Command="{Binding SimulatorStopCommand}"
+                        ToolTip.Tip="Stop (set speed to 0)" HorizontalAlignment="Center" Width="80">
+                    <TextBlock Text="STOP" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
+                </Button>
+                </StackPanel>
 
                 <!-- Row 5: Reverse Direction -->
                 <Button Classes="ModernButton" ClickMode="Press"
