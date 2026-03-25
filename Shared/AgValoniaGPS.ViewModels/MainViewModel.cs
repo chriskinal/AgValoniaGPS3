@@ -1373,6 +1373,23 @@ public partial class MainViewModel : ReactiveObject
         }
     }
 
+    // Flag points (simple Vec3 list for basic flag placement)
+    private readonly List<(Vec3 Position, string Color)> _flagPoints = new();
+
+    private void PlaceFlag(string color)
+    {
+        if (Easting == 0 && Northing == 0)
+        {
+            StatusMessage = "No GPS position - cannot place flag";
+            return;
+        }
+
+        var headingRadians = Heading * Math.PI / 180.0;
+        var point = new Vec3(Easting, Northing, headingRadians);
+        _flagPoints.Add((point, color));
+        StatusMessage = $"{color} flag #{_flagPoints.Count} placed at E:{Easting:F1} N:{Northing:F1}";
+    }
+
     // Track management commands
     public ICommand? DeleteSelectedTrackCommand { get; private set; }
     public ICommand? SwapABPointsCommand { get; private set; }
@@ -3070,6 +3087,22 @@ public partial class MainViewModel : ReactiveObject
                 });
             }
         }
+    }
+
+    /// <summary>
+    /// Adjust headland distance by a delta and rebuild the headland polygon.
+    /// Positive delta extends (widens) the headland, negative shrinks it.
+    /// </summary>
+    private void AdjustHeadlandDistance(double deltaMeters)
+    {
+        if (!HasHeadland)
+        {
+            StatusMessage = "No headland to adjust - build one first";
+            return;
+        }
+
+        HeadlandDistance += deltaMeters;
+        BuildHeadlandFromBoundary();
     }
 
     /// <summary>
