@@ -143,7 +143,14 @@ public class GpsService : IGpsService
     /// </summary>
     public bool IsGpsDataOk()
     {
-        return (DateTime.Now - _lastGpsDataReceived).TotalMilliseconds < GPS_TIMEOUT_MS;
+        bool ok = (DateTime.Now - _lastGpsDataReceived).TotalMilliseconds < GPS_TIMEOUT_MS;
+
+        if (!ok && IsConnected)
+        {
+            IsConnected = false;
+        }
+
+        return ok;
     }
 
     /// <summary>

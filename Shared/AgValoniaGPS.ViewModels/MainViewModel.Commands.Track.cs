@@ -70,7 +70,24 @@ public partial class MainViewModel
 
         UTurnCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "U-Turn - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected for U-turn";
+                return;
+            }
+
+            if (!IsAutoSteerEngaged)
+            {
+                StatusMessage = "Enable autosteer before triggering U-turn";
+                return;
+            }
+
+            if (!HasBoundary && !HasHeadland)
+            {
+                _logger.LogDebug("[UTurn] No boundary/headland, triggering manual U-turn left");
+            }
+
+            TriggerManualYouTurn(turnLeft: true);
         });
 
         // AB Line Guidance Commands - Flyout Menu
@@ -145,12 +162,35 @@ public partial class MainViewModel
 
         StartNewABLineCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Starting new AB Line - not yet implemented";
+            State.UI.CloseDialog();
+            CurrentABCreationMode = ABCreationMode.DriveAB;
+            CurrentABPointStep = ABPointStep.SettingPointA;
+            PendingPointA = null;
+            StatusMessage = "Drive-in AB Line: tap to set Point A at current position";
         });
 
         StartNewABCurveCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Starting new AB Curve - not yet implemented";
+            State.UI.CloseDialog();
+            CurrentABCreationMode = ABCreationMode.Curve;
+            _recordedCurvePoints.Clear();
+            _lastCurvePoint = null;
+
+            if (Easting != 0 || Northing != 0)
+            {
+                var headingRadians = Heading * Math.PI / 180.0;
+                var firstPoint = new Vec3(Easting, Northing, headingRadians);
+                _recordedCurvePoints.Add(firstPoint);
+                _lastCurvePoint = firstPoint;
+
+                var displayPoints = _recordedCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
+                _mapService.SetRecordingPoints(displayPoints);
+            }
+
+            StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
+            this.RaisePropertyChanged(nameof(IsRecordingCurve));
+            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+            this.RaisePropertyChanged(nameof(ABCreationInstructions));
         });
 
         StartAPlusLineCommand = ReactiveCommand.Create(() =>
@@ -490,12 +530,47 @@ public partial class MainViewModel
 
         CycleABLinesCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Cycle AB Lines - not yet implemented";
+            if (SavedTracks.Count == 0)
+            {
+                StatusMessage = "No tracks to cycle";
+                return;
+            }
+
+            int currentIndex = SelectedTrack != null ? SavedTracks.IndexOf(SelectedTrack) : -1;
+            int nextIndex = (currentIndex + 1) % SavedTracks.Count;
+            SelectedTrack = SavedTracks[nextIndex];
+            StatusMessage = $"Active track: {SelectedTrack.Name}";
         });
 
         SmoothABLineCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Smooth AB Line - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected";
+                return;
+            }
+            if (SelectedTrack.IsABLine)
+            {
+                StatusMessage = "Cannot smooth AB lines (only 2 points)";
+                return;
+            }
+            if (SelectedTrack.Points.Count < 5)
+            {
+                StatusMessage = "Too few points to smooth (need at least 5)";
+                return;
+            }
+
+            int beforeCount = SelectedTrack.Points.Count;
+            var smoothed = Models.Guidance.CurveProcessing.SmoothWithCatmullRom(SelectedTrack.Points, 4);
+            smoothed = Models.Guidance.CurveProcessing.CalculateHeadings(smoothed);
+            SelectedTrack.Points = smoothed;
+
+            // Invalidate guidance state so it recalculates from the new curve
+            _trackGuidanceState = null;
+            _mapService.SetActiveTrack(SelectedTrack);
+            SaveTracksToFile();
+
+            StatusMessage = $"Smoothed '{SelectedTrack.Name}': {beforeCount} -> {smoothed.Count} points";
         });
 
         // Nudge commands
@@ -565,22 +640,24 @@ public partial class MainViewModel
         // Flags Commands
         PlaceRedFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Red Flag - not yet implemented";
+            PlaceFlag("Red");
         });
 
         PlaceGreenFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Green Flag - not yet implemented";
+            PlaceFlag("Green");
         });
 
         PlaceYellowFlagCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Place Yellow Flag - not yet implemented";
+            PlaceFlag("Yellow");
         });
 
         DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Delete All Flags - not yet implemented";
+            int count = _flagPoints.Count;
+            _flagPoints.Clear();
+            StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
         });
 
         // Section control commands

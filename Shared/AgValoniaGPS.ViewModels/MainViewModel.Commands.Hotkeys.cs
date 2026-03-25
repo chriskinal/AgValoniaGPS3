@@ -75,9 +75,9 @@ public partial class MainViewModel
         _hotkeyDispatch = new Dictionary<HotkeyAction, ICommand?>
         {
             { HotkeyAction.AutoSteer, ToggleAutoSteerCommand },
-            { HotkeyAction.CycleLines, null },
+            { HotkeyAction.CycleLines, CycleABLinesCommand },
             { HotkeyAction.FieldMenu, ShowFieldSelectionDialogCommand },
-            { HotkeyAction.Flag, null },
+            { HotkeyAction.Flag, PlaceRedFlagCommand },
             { HotkeyAction.ManualSection, ToggleSectionMasterCommand },
             { HotkeyAction.AutoSection, ToggleSectionMasterCommand },
             { HotkeyAction.SnapPivot, SnapToPivotCommand },

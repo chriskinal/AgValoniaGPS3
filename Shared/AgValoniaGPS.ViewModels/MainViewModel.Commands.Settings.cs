@@ -36,6 +36,16 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        ShowAboutDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.About);
+        });
+
+        CloseAboutDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
         ResetAllSettingsCommand = ReactiveCommand.Create(() =>
         {
             ShowConfirmationDialog(

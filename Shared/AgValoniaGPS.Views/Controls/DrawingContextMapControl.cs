@@ -68,6 +68,8 @@ public interface ISharedMapControl
     void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY);
     void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null);
     void SetGridVisible(bool visible);
+    void SetNorthUp(bool isNorthUp);
+    void SetDayMode(bool isDayMode);
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();
     void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY);
@@ -189,6 +191,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _cameraPitch = 0.0;
     private double _cameraDistance = 100.0;
     private bool _is3DMode = false;
+    private bool _isNorthUp = false;
+    private bool _isDayMode = true;
 
     // Auto-pan settings
     private bool _autoPanEnabled = true;
@@ -328,8 +332,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private AgValoniaGPS.Models.Position? _pendingPointA; // Point A while waiting for Point B
 
     // Pens and brushes (reused for performance)
-    private readonly Pen _gridPenMinor;
-    private readonly Pen _gridPenMajor;
+    private IBrush _backgroundBrush;
+    private Pen _gridPenMinor;
+    private Pen _gridPenMajor;
     private readonly Pen _gridPenAxisX;
     private readonly Pen _gridPenAxisY;
     private readonly Pen _boundaryPenOuter;
@@ -397,7 +402,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         IsHitTestVisible = true;
         ClipToBounds = true;
 
-        // Initialize pens and brushes (thinner lines to test shimmer)
+        // Initialize pens and brushes
+        _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
         _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
         _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(128, 77, 77, 77)), 0.5);
         _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(204, 204, 51, 51)), 1);
@@ -511,8 +517,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // DEBUG: Log which control is rendering (reduced frequency)
         // Console.WriteLine($"[Render] Control={GetHashCode()}, bounds={bounds.Width:F0}x{bounds.Height:F0}, explicit={_bitmapExplicitlyInitialized}");
 
-        // Dark background
-        context.DrawRectangle(new SolidColorBrush(Color.FromRgb(26, 26, 26)), null, new Rect(bounds.Size));
+        // Background (day/night aware)
+        context.DrawRectangle(_backgroundBrush, null, new Rect(bounds.Size));
 
         // Calculate view transformation
         double aspect = bounds.Width / bounds.Height;
@@ -637,11 +643,20 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Transform from world coordinates to screen coordinates
         // 1. Translate so camera center is at origin
         // 2. Scale from world units (meters) to pixels
-        // 3. Rotate around center
-        // 4. Translate to screen center
+        // 3. Apply camera pitch (pseudo-3D perspective compression)
+        // 4. Rotate around center
+        // 5. Translate to screen center
 
         double scaleX = bounds.Width / viewWidth;
         double scaleY = -bounds.Height / viewHeight; // Flip Y (screen Y is down, world Y is up)
+
+        // Apply camera pitch as Y-axis compression for pseudo-3D effect
+        // _cameraPitch 0 = top-down (no compression), PI/3 = ~60° tilt (significant compression)
+        if (_is3DMode && _cameraPitch > 0.01)
+        {
+            double pitchFactor = Math.Cos(_cameraPitch); // 1.0 at 0°, 0.5 at 60°
+            scaleY *= Math.Max(0.3, pitchFactor); // Clamp to prevent extreme compression
+        }
 
         var matrix = Matrix.Identity;
 
@@ -2536,11 +2551,56 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _cameraPitch = Math.Clamp(pitchRadians, 0.0, Math.PI / 2.5);
     }
 
+    public void SetNorthUp(bool isNorthUp)
+    {
+        _isNorthUp = isNorthUp;
+        if (isNorthUp)
+        {
+            _rotation = 0;
+        }
+        else
+        {
+            _rotation = -_vehicleHeading;
+        }
+    }
+
+    public void SetDayMode(bool isDayMode)
+    {
+        if (_isDayMode != isDayMode)
+        {
+            _isDayMode = isDayMode;
+            UpdateDayNightColors();
+        }
+    }
+
+    private void UpdateDayNightColors()
+    {
+        if (_isDayMode)
+        {
+            _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
+            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
+            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(128, 77, 77, 77)), 0.5);
+        }
+        else
+        {
+            // Night mode: darker background, dimmer grid
+            _backgroundBrush = new SolidColorBrush(Color.FromRgb(10, 10, 10));
+            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(40, 60, 60, 60)), 0.5);
+            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(70, 60, 60, 60)), 0.5);
+        }
+    }
+
     public void SetVehiclePosition(double x, double y, double heading)
     {
         _vehicleX = x;
         _vehicleY = y;
         _vehicleHeading = heading;
+
+        // Track-up rotation: rotate map so vehicle heading is always "up"
+        if (!_isNorthUp)
+        {
+            _rotation = -heading;
+        }
 
         // Auto-pan to keep vehicle visible
         if (_autoPanEnabled && Bounds.Width > 0 && Bounds.Height > 0)
