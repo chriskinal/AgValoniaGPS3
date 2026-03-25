@@ -495,7 +495,33 @@ public partial class MainViewModel
 
         SmoothABLineCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Smooth AB Line - not yet implemented";
+            if (SelectedTrack == null)
+            {
+                StatusMessage = "No track selected";
+                return;
+            }
+            if (SelectedTrack.IsABLine)
+            {
+                StatusMessage = "Cannot smooth AB lines (only 2 points)";
+                return;
+            }
+            if (SelectedTrack.Points.Count < 5)
+            {
+                StatusMessage = "Too few points to smooth (need at least 5)";
+                return;
+            }
+
+            int beforeCount = SelectedTrack.Points.Count;
+            var smoothed = Models.Guidance.CurveProcessing.SmoothWithCatmullRom(SelectedTrack.Points, 4);
+            smoothed = Models.Guidance.CurveProcessing.CalculateHeadings(smoothed);
+            SelectedTrack.Points = smoothed;
+
+            // Invalidate guidance state so it recalculates from the new curve
+            _trackGuidanceState = null;
+            _mapService.SetActiveTrack(SelectedTrack);
+            SaveTracksToFile();
+
+            StatusMessage = $"Smoothed '{SelectedTrack.Name}': {beforeCount} -> {smoothed.Count} points";
         });
 
         // Nudge commands
