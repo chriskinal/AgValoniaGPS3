@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using AgValoniaGPS.Models.Configuration;
 using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
@@ -150,6 +151,89 @@ public partial class MainViewModel
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    #endregion
+
+    #region Display Config Forwarding
+
+    /// <summary>
+    /// Handles PropertyChanged from DisplayConfig (fired when Configuration dialog toggles
+    /// are changed). Syncs the display settings service and raises property changed notifications
+    /// so the rendering layer (MainWindow/MapControl) can react.
+    /// </summary>
+    private void OnDisplayConfigChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        var display = ConfigStore.Display;
+
+        switch (e.PropertyName)
+        {
+            case nameof(DisplayConfig.GridVisible):
+                // Sync DisplaySettingsService (which fires GridVisibilityChanged)
+                _displaySettings.IsGridOn = display.GridVisible;
+                this.RaisePropertyChanged(nameof(IsGridOn));
+                break;
+
+            case nameof(DisplayConfig.IsDayMode):
+                _displaySettings.IsDayMode = display.IsDayMode;
+                this.RaisePropertyChanged(nameof(IsDayMode));
+                break;
+
+            case nameof(DisplayConfig.Is2DMode):
+                _displaySettings.Is2DMode = display.Is2DMode;
+                this.RaisePropertyChanged(nameof(Is2DMode));
+                break;
+
+            case nameof(DisplayConfig.IsNorthUp):
+                _displaySettings.IsNorthUp = display.IsNorthUp;
+                this.RaisePropertyChanged(nameof(IsNorthUp));
+                break;
+
+            case nameof(DisplayConfig.CameraPitch):
+                _displaySettings.CameraPitch = display.CameraPitch;
+                this.RaisePropertyChanged(nameof(CameraPitch));
+                break;
+
+            // Display toggle properties - raise so platform code can forward to MapControl
+            case nameof(DisplayConfig.StartFullscreen):
+                this.RaisePropertyChanged(nameof(DisplayStartFullscreen));
+                break;
+
+            // All remaining display toggle properties use a naming convention:
+            // "Display" prefix + property name. Platform code (MainWindow) reacts to these.
+            case nameof(DisplayConfig.PolygonsVisible):
+            case nameof(DisplayConfig.SpeedometerVisible):
+            case nameof(DisplayConfig.KeyboardEnabled):
+            case nameof(DisplayConfig.HeadlandDistanceVisible):
+            case nameof(DisplayConfig.AutoDayNight):
+            case nameof(DisplayConfig.SvennArrowVisible):
+            case nameof(DisplayConfig.ElevationLogEnabled):
+            case nameof(DisplayConfig.FieldTextureVisible):
+            case nameof(DisplayConfig.ExtraGuidelines):
+            case nameof(DisplayConfig.ExtraGuidelinesCount):
+            case nameof(DisplayConfig.LineSmoothEnabled):
+            case nameof(DisplayConfig.DirectionMarkersVisible):
+            case nameof(DisplayConfig.SectionLinesVisible):
+                this.RaisePropertyChanged("Display" + e.PropertyName);
+                break;
+        }
+    }
+
+    // Display config convenience properties (read from ConfigurationStore.Display)
+    // These are raised by OnDisplayConfigChanged when the Configuration dialog changes them.
+    public bool DisplayPolygonsVisible => ConfigStore.Display.PolygonsVisible;
+    public bool DisplaySpeedometerVisible => ConfigStore.Display.SpeedometerVisible;
+    public bool DisplayKeyboardEnabled => ConfigStore.Display.KeyboardEnabled;
+    public bool DisplayHeadlandDistanceVisible => ConfigStore.Display.HeadlandDistanceVisible;
+    public bool DisplayAutoDayNight => ConfigStore.Display.AutoDayNight;
+    public bool DisplaySvennArrowVisible => ConfigStore.Display.SvennArrowVisible;
+    public bool DisplayStartFullscreen => ConfigStore.Display.StartFullscreen;
+    public bool DisplayElevationLogEnabled => ConfigStore.Display.ElevationLogEnabled;
+    public bool DisplayFieldTextureVisible => ConfigStore.Display.FieldTextureVisible;
+    public bool DisplayExtraGuidelines => ConfigStore.Display.ExtraGuidelines;
+    public int DisplayExtraGuidelinesCount => ConfigStore.Display.ExtraGuidelinesCount;
+    public bool DisplayLineSmoothEnabled => ConfigStore.Display.LineSmoothEnabled;
+    public bool DisplayDirectionMarkersVisible => ConfigStore.Display.DirectionMarkersVisible;
+    public bool DisplaySectionLinesVisible => ConfigStore.Display.SectionLinesVisible;
 
     #endregion
 }

@@ -380,7 +380,10 @@ public partial class MainWindow : Window
                 return;
         }
 
-        // Configurable hotkeys
+        // Configurable hotkeys (only when keyboard shortcuts are enabled in Display Config)
+        if (!AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.KeyboardEnabled)
+            return;
+
         var keyStr = KeyToString(e.Key);
         if (keyStr != null && ViewModel?.HandleHotkey(keyStr) == true)
             e.Handled = true;
@@ -566,11 +569,17 @@ public partial class MainWindow : Window
         }
         else if (e.PropertyName == nameof(MainViewModel.IsDayMode))
         {
-            // TODO: Implement theme switching (background color, grid color, etc.)
+            if (ViewModel != null && MapControl != null)
+            {
+                MapControl.SetDayMode(ViewModel.IsDayMode);
+            }
         }
         else if (e.PropertyName == nameof(MainViewModel.IsNorthUp))
         {
-            // TODO: Implement camera rotation locking to north
+            if (ViewModel != null && MapControl != null)
+            {
+                MapControl.SetNorthUp(ViewModel.IsNorthUp);
+            }
         }
         else if (e.PropertyName == nameof(MainViewModel.Brightness))
         {
