@@ -126,13 +126,22 @@ public interface ISharedMapControl
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
 }
-
+bool SpeedometerVisible { get; set; }
 /// <summary>
 /// Cross-platform map control using Avalonia's DrawingContext.
 /// Works on Desktop, iOS, and Android without platform-specific rendering code.
 /// </summary>
 public class DrawingContextMapControl : Control, ISharedMapControl
 {
+    // Avalonia styled property for speedometer visibility
+    public static readonly StyledProperty<bool> SpeedometerVisibleProperty =
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(SpeedometerVisible), defaultValue: true);
+
+    public bool SpeedometerVisible
+    {
+        get => GetValue(SpeedometerVisibleProperty);
+        set => SetValue(SpeedometerVisibleProperty, value);
+    }
     // Avalonia styled property for grid visibility
     public static readonly StyledProperty<bool> IsGridVisibleProperty =
         AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(IsGridVisible), defaultValue: false);
@@ -2360,10 +2369,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Note: Y is flipped in world coordinates, so we need to handle that
         // The camera transform already handles the flip, so just draw normally
         // But text will appear upside down - we need to flip it back
+        
         using (context.PushTransform(Matrix.CreateScale(1, -1) * Matrix.CreateTranslation(x, y)))
         {
-            context.DrawText(formattedText, new Point(0, -fontSize));
-        }
+            // Only draw the label if it's a critical marker (A or B) or if SpeedometerVisible is true
+            if (text == "A" || text == "B" || SpeedometerVisible)
+            {
+                context.DrawText(formattedText, new Point(0, -fontSize));
+                }
+                }
     }
 
     // Mouse event handlers
