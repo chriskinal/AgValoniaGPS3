@@ -185,8 +185,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <TextBlock Grid.Row="4" Classes="Label" Text="Longitude:" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding State.Vehicle.Longitude, StringFormat='{}{0:F6}°'}" Foreground="White" Margin="0,6,0,0"/>
 
-                                    <TextBlock Grid.Row="5" Classes="Label" Text="Speed:" Margin="0,6,0,0"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding State.Vehicle.Speed, StringFormat='{}{0:F2} m/s'}" Foreground="White" Margin="0,6,0,0"/>
+                                    <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal"
+                                    IsVisible="{Binding Display.SpeedometerVisible}">
+                                    <TextBlock Classes="Label" Text="Speed:" Margin="0,6,0,0"/>
+                                    <TextBlock Text="{Binding State.Vehicle.Speed, StringFormat='{}{0:F2} m/s'}"
+                                    Foreground="White" Margin="5,6,0,0"/>
+                                    </StackPanel>
+
+                                    
                                 </Grid>
                             </StackPanel>
                         </Border>
