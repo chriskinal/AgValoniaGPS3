@@ -866,6 +866,20 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
         {
             drawnCount = DrawCoverageBitmap(context);
+
+            // Draw section line overlays on top of bitmap when enabled
+            if (AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SectionLinesVisible
+                && _cachedCoverageGeometry.Count > 0)
+            {
+                for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+                {
+                    var cached = _cachedCoverageGeometry[i];
+                    if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
+                        cached.MaxY < visMinY || cached.MinY > visMaxY)
+                        continue;
+                    context.DrawGeometry(null, _coverageSectionLinePen, cached.Geometry);
+                }
+            }
         }
         else
         {
@@ -1680,6 +1694,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Update tracking for active vs finalized patches
         UpdateColorBatchesIncremental();
 
+        var sectionPen = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SectionLinesVisible
+            ? _coverageSectionLinePen : null;
+
         // Draw only visible patches from the cache
         int drawnCount = 0;
         for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
@@ -1691,7 +1708,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 cached.MaxY < visMinY || cached.MinY > visMaxY)
                 continue;
 
-            context.DrawGeometry(cached.Brush, null, cached.Geometry);
+            context.DrawGeometry(cached.Brush, sectionPen, cached.Geometry);
             drawnCount++;
         }
 
@@ -1956,6 +1973,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
     private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
     private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
+    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)), 0.15);
 
     private void DrawTool(DrawingContext context)
     {
