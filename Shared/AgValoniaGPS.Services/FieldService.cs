@@ -109,9 +109,9 @@ public class FieldService : IFieldService
         {
             GeoJsonFieldService.Save(field, tracks: null);
         }
-        catch
+        catch (Exception ex)
         {
-            // GeoJSON save is best-effort during migration; legacy files are authoritative
+            System.Diagnostics.Debug.WriteLine($"GeoJSON save failed: {ex.Message}");
         }
     }
 

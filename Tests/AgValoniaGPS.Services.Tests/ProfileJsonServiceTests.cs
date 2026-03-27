@@ -214,6 +214,20 @@ public class ProfileJsonServiceTests
         Assert.That(root.TryGetProperty("general", out _), Is.True);
     }
 
+    [Test]
+    public void UTurnCompensation_RoundTrips_ToBothLocations()
+    {
+        var profile = CreateTestProfile("UTurnComp");
+        profile.Vehicle.UTurnCompensation = 1.75;
+        profile.YouTurn.UTurnCompensation = 1.75;
+
+        ProfileJsonService.Save(_tempDir, profile);
+        var loaded = ProfileJsonService.Load(_tempDir, "UTurnComp")!;
+
+        Assert.That(loaded.Vehicle.UTurnCompensation, Is.EqualTo(1.75).Within(1e-6));
+        Assert.That(loaded.YouTurn.UTurnCompensation, Is.EqualTo(1.75).Within(1e-6));
+    }
+
 #pragma warning restore CS0612
 
     // ---------------------------------------------------------------

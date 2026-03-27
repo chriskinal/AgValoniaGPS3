@@ -268,6 +268,67 @@ public class GeoJsonFieldServiceTests
     }
 
     // ---------------------------------------------------------------
+    // FieldService integration (auto-detect path)
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void FieldService_SaveCreatesGeoJson_LoadPrefersIt()
+    {
+        // Save via FieldService (writes legacy + GeoJSON)
+        var fieldService = new FieldService();
+        var field = CreateTestField();
+        field.Boundary = new Boundary
+        {
+            OuterBoundary = CreateSquarePolygon(0, 0, 100)
+        };
+
+        // Create Field.txt so legacy path is valid
+        fieldService.SaveField(field);
+
+        // Verify both formats exist
+        Assert.That(File.Exists(Path.Combine(_tempDir, "Field.txt")), Is.True, "Legacy Field.txt");
+        Assert.That(File.Exists(Path.Combine(_tempDir, "field.geojson")), Is.True, "GeoJSON file");
+
+        // Load via FieldService -- should prefer GeoJSON
+        var loaded = fieldService.LoadField(_tempDir);
+        Assert.That(loaded.Origin.Latitude, Is.EqualTo(OriginLat).Within(1e-6));
+        Assert.That(loaded.Boundary, Is.Not.Null);
+        Assert.That(loaded.Boundary!.OuterBoundary, Is.Not.Null);
+        Assert.That(loaded.Boundary.OuterBoundary!.Points, Has.Count.EqualTo(4));
+    }
+
+    [Test]
+    public void FieldService_LoadsFallbackToLegacy_WhenNoGeoJson()
+    {
+        // Create legacy field only (no GeoJSON)
+        var fieldService = new FieldService();
+        var field = CreateTestField();
+        fieldService.SaveField(field);
+
+        // Delete the GeoJSON file to force legacy path
+        var geoJsonPath = Path.Combine(_tempDir, "field.geojson");
+        if (File.Exists(geoJsonPath))
+            File.Delete(geoJsonPath);
+
+        var loaded = fieldService.LoadField(_tempDir);
+        Assert.That(loaded.Origin.Latitude, Is.EqualTo(OriginLat).Within(1e-6));
+    }
+
+    [Test]
+    public void FieldService_FieldExists_DetectsGeoJson()
+    {
+        var fieldService = new FieldService();
+
+        Assert.That(fieldService.FieldExists(_tempDir), Is.False);
+
+        // Create only a GeoJSON file (no Field.txt)
+        var field = CreateTestField();
+        GeoJsonFieldService.Save(field, tracks: null);
+
+        Assert.That(fieldService.FieldExists(_tempDir), Is.True);
+    }
+
+    // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
 
