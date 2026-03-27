@@ -20,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Tool;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Services.Profile;
 
 namespace AgValoniaGPS.Services;
 
@@ -55,20 +56,31 @@ public class VehicleProfileService : IVehicleProfileService
         if (!Directory.Exists(VehiclesDirectory))
             return new List<string>();
 
-        return Directory.GetFiles(VehiclesDirectory, "*.XML")
-            .Select(f => Path.GetFileNameWithoutExtension(f))
+        var xmlProfiles = Directory.GetFiles(VehiclesDirectory, "*.XML")
+            .Select(f => Path.GetFileNameWithoutExtension(f));
+        var jsonProfiles = Directory.GetFiles(VehiclesDirectory, "*.json")
+            .Select(f => Path.GetFileNameWithoutExtension(f));
+
+        return xmlProfiles.Concat(jsonProfiles)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n)
             .ToList();
     }
 
     public VehicleProfile? Load(string profileName)
     {
-        var filePath = Path.Combine(VehiclesDirectory, $"{profileName}.XML");
-        if (!File.Exists(filePath))
-            return null;
-
         try
         {
+            // Prefer JSON format
+            var jsonProfile = ProfileJsonService.Load(VehiclesDirectory, profileName);
+            if (jsonProfile != null)
+                return jsonProfile;
+
+            // Fall back to legacy XML
+            var filePath = Path.Combine(VehiclesDirectory, $"{profileName}.XML");
+            if (!File.Exists(filePath))
+                return null;
+
             var doc = XDocument.Load(filePath);
             var settings = ParseSettings(doc);
 
@@ -99,6 +111,10 @@ public class VehicleProfileService : IVehicleProfileService
 
     public void Save(VehicleProfile profile)
     {
+        // Always save JSON (new canonical format)
+        ProfileJsonService.Save(VehiclesDirectory, profile);
+
+        // Also save legacy XML for backwards compatibility
         var filePath = string.IsNullOrEmpty(profile.FilePath)
             ? Path.Combine(VehiclesDirectory, $"{profile.Name}.XML")
             : profile.FilePath;
