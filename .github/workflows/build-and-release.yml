@@ -3,6 +3,8 @@ name: Build and Release
 on:
   push:
     branches: [master, develop]
+  pull_request:
+    branches: [develop]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -85,7 +87,7 @@ jobs:
   # Build Desktop versions (Windows, macOS, Linux)
   build-desktop:
     needs: [check-changes, test]
-    if: needs.check-changes.outputs.should_build == 'true'
+    if: needs.check-changes.outputs.should_build == 'true' && github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -170,7 +172,7 @@ jobs:
   # Build Android APK
   build-android:
     needs: [check-changes, test]
-    if: needs.check-changes.outputs.should_build == 'true'
+    if: needs.check-changes.outputs.should_build == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
@@ -225,7 +227,7 @@ jobs:
   # Build iOS (simulator .app bundle)
   build-ios:
     needs: [check-changes, test]
-    if: needs.check-changes.outputs.should_build == 'true'
+    if: needs.check-changes.outputs.should_build == 'true' && github.event_name != 'pull_request'
     runs-on: macos-26
 
     steps:
