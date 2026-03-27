@@ -550,6 +550,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
             covSw.Stop();
 
+            // Draw direction markers on coverage patches
+            if (AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.DirectionMarkersVisible
+                && _coveragePatches.Count > 0)
+            {
+                DrawDirectionMarkers(context);
+            }
+
             // Draw boundary (on top of coverage)
             var boundSw = System.Diagnostics.Stopwatch.StartNew();
             if (_boundary != null)
@@ -2122,6 +2129,62 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             context.DrawLine(_svennArrowPen, tip, leftWing);
             context.DrawLine(_svennArrowPen, tip, rightWing);
+        }
+    }
+
+    private static readonly SolidColorBrush _directionMarkerTipBrush = new SolidColorBrush(Color.FromArgb(220, 220, 220, 255));
+
+    private void DrawDirectionMarkers(DrawingContext context)
+    {
+        // Minimum vertex count for direction markers (matching AgOpenGPS: >42 vertices)
+        const int minVertices = 43;
+
+        for (int p = 0; p < _coveragePatches.Count; p++)
+        {
+            var patch = _coveragePatches[p];
+            if (!patch.IsRenderable || patch.Vertices.Count < minVertices) continue;
+
+            var verts = patch.Vertices;
+
+            // Calculate heading from vertices 37 and 39 (left-edge vertices, 0-indexed)
+            double headZ = Math.Atan2(
+                verts[39].Easting - verts[37].Easting,
+                verts[39].Northing - verts[37].Northing);
+
+            // Left and right points interpolated between vertex 37 (left) and 38 (right)
+            double leftFactor = 0.37;
+            double rightFactor = 0.63;
+            double leftX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * leftFactor;
+            double leftY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * leftFactor;
+            double rightX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * rightFactor;
+            double rightY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * rightFactor;
+
+            // Calculate tip point ahead of the center between left and right
+            double centerX = (leftX + rightX) * 0.5;
+            double centerY = (leftY + rightY) * 0.5;
+            double dist = Math.Sqrt((rightX - leftX) * (rightX - leftX) + (rightY - leftY) * (rightY - leftY)) * 1.5;
+            double tipX = centerX + Math.Sin(headZ) * dist;
+            double tipY = centerY + Math.Cos(headZ) * dist;
+
+            // Inverted section color for base of arrow
+            var baseBrush = new SolidColorBrush(Color.FromArgb(150,
+                (byte)(255 - patch.Color.R), (byte)(255 - patch.Color.G), (byte)(255 - patch.Color.B)));
+
+            // Draw triangle arrow
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                ctx.BeginFigure(new Point(leftX, leftY), true);
+                ctx.LineTo(new Point(rightX, rightY));
+                ctx.LineTo(new Point(tipX, tipY));
+                ctx.EndFigure(true);
+            }
+            context.DrawGeometry(baseBrush, null, geometry);
+
+            // Draw a small highlight at the tip
+            double tipSize = dist * 0.25;
+            context.DrawEllipse(_directionMarkerTipBrush, null,
+                new Point(tipX, tipY), tipSize, tipSize);
         }
     }
 
