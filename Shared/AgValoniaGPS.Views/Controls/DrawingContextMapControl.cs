@@ -618,6 +618,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 DrawVehicle(context);
             }
 
+            // Draw Svenn arrow (direction chevron ahead of vehicle)
+            if (ShowVehicle && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SvennArrowVisible)
+            {
+                DrawSvennArrow(context);
+            }
+
             // Draw boundary offset indicator
             if (_showBoundaryOffsetIndicator)
             {
@@ -2070,6 +2076,28 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 }
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
             }
+        }
+    }
+
+    private static readonly Pen _svennArrowPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 220, 0)), 0.4);
+
+    private void DrawSvennArrow(DrawingContext context)
+    {
+        // V-shaped chevron ahead of vehicle indicating travel direction
+        double aheadDistance = 8.0;  // meters ahead of vehicle
+        double wingSpan = 3.0;      // half-width of the chevron
+        double wingDepth = 3.0;     // how far back the wings extend
+
+        using (context.PushTransform(Matrix.CreateTranslation(_vehicleX, _vehicleY)))
+        using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading)))
+        {
+            // Chevron tip is ahead, wings extend back and outward
+            var tip = new Point(0, aheadDistance);
+            var leftWing = new Point(-wingSpan, aheadDistance - wingDepth);
+            var rightWing = new Point(wingSpan, aheadDistance - wingDepth);
+
+            context.DrawLine(_svennArrowPen, tip, leftWing);
+            context.DrawLine(_svennArrowPen, tip, rightWing);
         }
     }
 
