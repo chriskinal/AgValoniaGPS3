@@ -868,22 +868,41 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         int drawnCount;
 
+        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        bool wireframe = !displayConfig.PolygonsVisible;
+
         // Use bitmap-based rendering if provider is available or bitmap was explicitly initialized
         if (_coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
         {
-            drawnCount = DrawCoverageBitmap(context);
-
-            // Draw section line overlays on top of bitmap when enabled
-            if (AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SectionLinesVisible
-                && _cachedCoverageGeometry.Count > 0)
+            // In wireframe mode, skip bitmap and draw only outlines from geometry cache
+            if (wireframe)
             {
+                drawnCount = 0;
                 for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
                 {
                     var cached = _cachedCoverageGeometry[i];
                     if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
                         cached.MaxY < visMinY || cached.MinY > visMaxY)
                         continue;
-                    context.DrawGeometry(null, _coverageSectionLinePen, cached.Geometry);
+                    context.DrawGeometry(null, _coverageWireframePen, cached.Geometry);
+                    drawnCount++;
+                }
+            }
+            else
+            {
+                drawnCount = DrawCoverageBitmap(context);
+
+                // Draw section line overlays on top of bitmap when enabled
+                if (displayConfig.SectionLinesVisible && _cachedCoverageGeometry.Count > 0)
+                {
+                    for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+                    {
+                        var cached = _cachedCoverageGeometry[i];
+                        if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
+                            cached.MaxY < visMinY || cached.MinY > visMaxY)
+                            continue;
+                        context.DrawGeometry(null, _coverageSectionLinePen, cached.Geometry);
+                    }
                 }
             }
         }
@@ -1695,13 +1714,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// <summary>
     /// Draw coverage using triangle strip patches (detailed, original method).
     /// </summary>
+    private static readonly Pen _coverageWireframePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 150, 150, 150)), 0.2);
+
     private int DrawCoveragePatches(DrawingContext context, double visMinX, double visMaxX, double visMinY, double visMaxY)
     {
         // Update tracking for active vs finalized patches
         UpdateColorBatchesIncremental();
 
-        var sectionPen = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SectionLinesVisible
-            ? _coverageSectionLinePen : null;
+        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        bool wireframe = !displayConfig.PolygonsVisible;
+        var pen = wireframe ? _coverageWireframePen
+            : displayConfig.SectionLinesVisible ? _coverageSectionLinePen
+            : null;
 
         // Draw only visible patches from the cache
         int drawnCount = 0;
@@ -1714,7 +1738,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 cached.MaxY < visMinY || cached.MinY > visMaxY)
                 continue;
 
-            context.DrawGeometry(cached.Brush, sectionPen, cached.Geometry);
+            context.DrawGeometry(wireframe ? null : cached.Brush, pen, cached.Geometry);
             drawnCount++;
         }
 
