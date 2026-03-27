@@ -252,7 +252,11 @@ public partial class MainWindow : Window
             Position = new PixelPoint((int)display.WindowX, (int)display.WindowY);
         }
 
-        if (display.WindowMaximized)
+        if (display.StartFullscreen)
+        {
+            WindowState = WindowState.FullScreen;
+        }
+        else if (display.WindowMaximized)
         {
             WindowState = WindowState.Maximized;
         }
