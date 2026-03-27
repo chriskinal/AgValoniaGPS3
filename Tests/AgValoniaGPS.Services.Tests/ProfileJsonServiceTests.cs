@@ -75,6 +75,7 @@ public class ProfileJsonServiceTests
         profile.Tool.IsToolTrailing = true;
         profile.Tool.IsToolTBT = false;
         profile.Tool.NumOfSections = 4;
+        profile.NumSections = 4;
         profile.Tool.MinCoverage = 80;
         profile.Tool.IsHeadlandSectionControl = true;
 

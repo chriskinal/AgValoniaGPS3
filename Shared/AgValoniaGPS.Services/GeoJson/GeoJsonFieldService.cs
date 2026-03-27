@@ -25,7 +25,7 @@ using AgValoniaGPS.Models.GeoJson;
 using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.Services.Geometry;
 
-namespace AgValoniaGPS.Services.Field;
+namespace AgValoniaGPS.Services.GeoJson;
 
 /// <summary>
 /// Loads and saves field data as GeoJSON FeatureCollections.

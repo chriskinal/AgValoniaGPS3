@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AgValoniaGPS.Models;
-using AgValoniaGPS.Services.Field;
+using AgValoniaGPS.Services.GeoJson;
 
 namespace AgValoniaGPS.Services;
 
@@ -84,7 +84,7 @@ public class FieldService : IFieldService
     /// <summary>
     /// Save a complete field. Writes both GeoJSON and legacy formats for backwards compatibility.
     /// </summary>
-    public void SaveField(Models.Field field)
+    public void SaveField(Field field)
     {
         if (string.IsNullOrWhiteSpace(field.DirectoryPath))
         {
