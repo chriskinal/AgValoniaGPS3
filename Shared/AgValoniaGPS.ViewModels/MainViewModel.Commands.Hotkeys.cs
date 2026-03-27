@@ -99,6 +99,7 @@ public partial class MainViewModel
 
     public bool HandleHotkey(string key)
     {
+        if (!ConfigStore.Display.KeyboardEnabled) return false;
         if (State.UI.IsDialogOpen) return false;
 
         var action = ConfigStore.Hotkeys.GetActionForKey(key);
