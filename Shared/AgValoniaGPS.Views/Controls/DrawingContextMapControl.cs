@@ -663,14 +663,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Center on screen
         matrix = matrix * Matrix.CreateTranslation(bounds.Width / 2, bounds.Height / 2);
 
-        // Apply rotation around center
+        // Scale from world to screen (includes Y-flip for screen coordinates)
+        matrix = Matrix.CreateScale(scaleX, scaleY) * matrix;
+
+        // Apply rotation in world space (before Y-flip so vehicle heading
+        // and camera rotation cancel correctly in track-up mode)
         if (Math.Abs(_rotation) > 0.001)
         {
             matrix = Matrix.CreateRotation(-_rotation) * matrix;
         }
-
-        // Scale from world to screen
-        matrix = Matrix.CreateScale(scaleX, scaleY) * matrix;
 
         // Translate camera position
         matrix = Matrix.CreateTranslation(-_cameraX, -_cameraY) * matrix;
