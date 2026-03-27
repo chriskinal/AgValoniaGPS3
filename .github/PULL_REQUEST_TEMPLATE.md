@@ -6,8 +6,9 @@
 
 <!-- Link the issue: Closes #123 or Relates to #123 -->
 
-## Testing done
+## Pre-submit checklist
 
+- [ ] `dotnet build` succeeds with no errors
 - [ ] `dotnet test` passes
 - [ ] Tested on: <!-- platform(s) -->
 
