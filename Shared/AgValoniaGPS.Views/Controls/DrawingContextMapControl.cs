@@ -2010,7 +2010,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
     private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
     private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
-    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)), 0.15);
+    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)), 0.3);
 
     private void DrawTool(DrawingContext context)
     {
