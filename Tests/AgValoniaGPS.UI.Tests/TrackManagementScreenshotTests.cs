@@ -358,7 +358,9 @@ public class TrackManagementScreenshotTests
     {
         var vm = new MainViewModelBuilder().Build();
         vm.SavedTracks.Add(CreateABLine("AB Line Test", 0, 0, 0, 100));
-        vm.SavedTracks.Add(CreateCurve("Curve Test", 10, 0));
+        var curveTrack = CreateCurve("Curve Test", 10, 0);
+        curveTrack.IsActive = true; // Mark one track as active
+        vm.SavedTracks.Add(curveTrack);
         vm.SavedTracks.Add(CreateContourStrip("Contour Test", 20, 0));
         vm.SavedTracks.Add(CreateRecordedPath("Path Test", 30, 0));
 
@@ -369,6 +371,7 @@ public class TrackManagementScreenshotTests
             string typeLabel = track.IsContour ? "Contour" : track.IsRecordedPath ? "Path" :
                 track.IsCurve ? "Curve" : "Line";
             var typeColor = track.IsContour ? "#27AE60" : track.IsRecordedPath ? "#8E44AD" : "#BDC3C7";
+            var activeColor = track.IsActive ? "#27AE60" : "#7F8C8D";
 
             trackRows.Children.Add(new Border
             {
@@ -386,7 +389,7 @@ public class TrackManagementScreenshotTests
                             FontSize = 14, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                             [Grid.ColumnProperty] = 1 },
-                        new Ellipse { Width = 16, Height = 16, Fill = new SolidColorBrush(Color.Parse("#7F8C8D")),
+                        new Ellipse { Width = 16, Height = 16, Fill = new SolidColorBrush(Color.Parse(activeColor)),
                             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                             [Grid.ColumnProperty] = 2 }
