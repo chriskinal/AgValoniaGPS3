@@ -34,8 +34,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
     <converters:EqualityConverter x:Key="EqualityConverter"/>
 
-    <!-- Dark theme overrides: use dark gray instead of pure black -->
+    <!-- Theme overrides for both variants -->
     <ResourceDictionary.ThemeDictionaries>
+        <!-- Light: replace semi-transparent overlays with solid colors for readability -->
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="#FAFAFA"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumBrush" Color="#E8E8E8"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="#EFEFEF"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundListLowBrush" Color="#F2F2F2"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="#CCCCCC"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumLowBrush" Color="#BBBBBB"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumBrush" Color="#AAAAAA"/>
+            <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrush" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="SystemControlForegroundBaseMediumHighBrush" Color="#333333"/>
+            <SolidColorBrush x:Key="SystemControlForegroundBaseMediumBrush" Color="#555555"/>
+            <SolidColorBrush x:Key="SystemControlForegroundBaseLowBrush" Color="#888888"/>
+        </ResourceDictionary>
+        <!-- Dark: use dark blue-gray instead of pure black -->
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="#1E1E2E"/>
             <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumBrush" Color="#282838"/>
