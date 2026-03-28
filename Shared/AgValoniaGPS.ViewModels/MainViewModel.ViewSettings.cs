@@ -202,10 +202,6 @@ public partial class MainViewModel
 
     #region ConfigurationStore Display Forwarding
 
-    /// <summary>Whether text speed indicator is visible (from DisplayConfig).</summary>
-    public bool IsSpeedometerVisible =>
-        ConfigurationStore.Instance.Display.SpeedometerVisible;
-
     /// <summary>
     /// UTurn button visible when track available AND config allows it.
     /// </summary>
