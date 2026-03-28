@@ -264,6 +264,9 @@ public partial class MainViewModel : ReactiveObject
         // Apply theme variant based on saved day/night mode
         ApplyThemeVariant(IsDayMode);
 
+        // Initialize auto day/night timer
+        InitializeAutoDayNight();
+
         // Start UDP communication (fire-and-forget but explicit)
         _ = InitializeAsync();
     }

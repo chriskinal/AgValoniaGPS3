@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using AgValoniaGPS.Models.Configuration;
+using Avalonia.Threading;
 using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
@@ -151,6 +153,41 @@ public partial class MainViewModel
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    #endregion
+
+    #region Auto Day/Night
+
+    private DispatcherTimer? _autoDayNightTimer;
+
+    private void InitializeAutoDayNight()
+    {
+        _autoDayNightTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(60)
+        };
+        _autoDayNightTimer.Tick += (_, _) => CheckAutoDayNight();
+        _autoDayNightTimer.Start();
+    }
+
+    /// <summary>
+    /// Switch day/night mode automatically based on local time.
+    /// Day: 6:00 AM to 8:00 PM, Night: 8:00 PM to 6:00 AM.
+    /// Only applies when AutoDayNight is enabled in DisplayConfig.
+    /// </summary>
+    private void CheckAutoDayNight()
+    {
+        if (!ConfigurationStore.Instance.Display.AutoDayNight) return;
+
+        int hour = DateTime.Now.Hour;
+        bool shouldBeDay = hour >= 6 && hour < 20;
+
+        if (IsDayMode != shouldBeDay)
+        {
+            IsDayMode = shouldBeDay;
+            _mapService.SetDayMode(shouldBeDay);
+        }
+    }
 
     #endregion
 
