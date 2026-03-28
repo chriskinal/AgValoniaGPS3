@@ -30,13 +30,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Header">
-            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
@@ -61,7 +61,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#C0392B"/>
         </Style>
         <Style Selector="Button.ToolbarButton">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Width" Value="48"/>
@@ -85,10 +85,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -97,9 +97,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -112,7 +112,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Row="0" Classes="Header" Text="AB Line Tracks"/>
 
                 <!-- Toolbar -->
-                <Border Grid.Row="1" Background="#34495E" CornerRadius="6" Padding="4" Margin="0,0,0,12">
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="6" Padding="4" Margin="0,0,0,12">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <!-- Delete Track -->
                         <Button Classes="ToolbarButton" ToolTip.Tip="Delete Selected Track"
@@ -128,7 +128,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Width="28" Height="28" Stretch="Uniform"/>
                         </Button>
 
-                        <Separator Background="#555" Width="2" Margin="4"/>
+                        <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Width="2" Margin="4"/>
 
                         <!-- Select/Activate Track -->
                         <Button Classes="ToolbarButton" ToolTip.Tip="Activate Selected Track"
@@ -140,11 +140,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Column Headers -->
-                <Border Grid.Row="2" Background="#34495E" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
                     <Grid ColumnDefinitions="*,80,60">
-                        <TextBlock Grid.Column="0" Text="Track Name" Foreground="#BDC3C7" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="Type" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="Active" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="Track Name" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="Type" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="Active" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -160,15 +160,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <DataTemplate x:DataType="track:Track">
                             <!-- Background="Transparent" makes entire row clickable, not just text -->
                             <Grid ColumnDefinitions="*,80,60" Background="Transparent" PointerReleased="TrackItem_PointerReleased">
-                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <Panel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="Curve" Foreground="#BDC3C7" FontSize="14" IsVisible="{Binding IsCurve}"/>
-                                    <TextBlock Text="Line" Foreground="#BDC3C7" FontSize="14" IsVisible="{Binding !IsCurve}"/>
+                                    <TextBlock Text="Curve" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding IsCurve}"/>
+                                    <TextBlock Text="Line" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding !IsCurve}"/>
                                 </Panel>
                                 <Panel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Ellipse Width="16" Height="16" Fill="#27AE60" IsVisible="{Binding IsActive}"/>
-                                    <Ellipse Width="16" Height="16" Fill="#7F8C8D" IsVisible="{Binding !IsActive}"/>
+                                    <Ellipse Width="16" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" IsVisible="{Binding !IsActive}"/>
                                 </Panel>
                             </Grid>
                         </DataTemplate>

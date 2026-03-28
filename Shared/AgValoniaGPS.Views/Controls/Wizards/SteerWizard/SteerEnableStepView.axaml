@@ -30,14 +30,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Margin="0,0,0,12"/>
 
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -51,13 +51,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="60" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <TextBlock Text="SW"
                                    FontSize="20"
                                    FontWeight="Bold"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                     </Border>
@@ -65,10 +65,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="None (Software Only)"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable/disable AutoSteer from the touchscreen"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -81,13 +81,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="60" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <Canvas Width="40" Height="40">
                             <!-- Toggle switch icon -->
                             <Rectangle Canvas.Left="5" Canvas.Top="15" Width="30" Height="10"
-                                       Fill="#7F8C8D" RadiusX="5" RadiusY="5"/>
+                                       Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" RadiusX="5" RadiusY="5"/>
                             <Ellipse Canvas.Left="20" Canvas.Top="10" Width="20" Height="20"
                                      Fill="#1ABC9C"/>
                         </Canvas>
@@ -96,10 +96,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Toggle Switch"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Physical ON/OFF switch - AutoSteer active when switch is ON"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -112,13 +112,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="60" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <Canvas Width="40" Height="40">
                             <!-- Momentary button icon -->
                             <Ellipse Canvas.Left="8" Canvas.Top="8" Width="24" Height="24"
-                                     Fill="#7F8C8D" Stroke="#95A5A6" StrokeThickness="2"/>
+                                     Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Stroke="{DynamicResource SystemControlForegroundBaseMediumBrush}" StrokeThickness="2"/>
                             <Ellipse Canvas.Left="12" Canvas.Top="12" Width="16" Height="16"
                                      Fill="#E74C3C"/>
                         </Canvas>
@@ -127,10 +127,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Momentary Button"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Press to toggle AutoSteer ON/OFF - latching behavior"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -145,7 +145,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>
@@ -153,7 +153,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.option-button">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>

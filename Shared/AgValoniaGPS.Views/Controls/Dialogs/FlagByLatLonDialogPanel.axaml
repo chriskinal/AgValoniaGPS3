@@ -27,7 +27,7 @@ the Free Software Foundation, either version 3 of the License, or
                 MinWidth="400" MaxWidth="500">
             <StackPanel Spacing="16">
                 <TextBlock Text="Place Flag by Lat/Lon" FontSize="20" FontWeight="Bold"
-                           Foreground="#3498DB" HorizontalAlignment="Center"/>
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Enter WGS84 coordinates in decimal degrees"
                            FontSize="12"
@@ -62,18 +62,18 @@ the Free Software Foundation, either version 3 of the License, or
                            IsVisible="{Binding FlagByLatLonError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            HorizontalAlignment="Center"/>
 
-                <Separator Height="1" Background="#444"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
                 <!-- Buttons -->
                 <Grid ColumnDefinitions="*,12,*">
                     <Button Grid.Column="0" Content="Cancel"
                             Command="{Binding CloseFlagByLatLonDialogCommand}"
-                            Background="#7F8C8D" Foreground="White"
+                            Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
                     <Button Grid.Column="2" Content="Place Flag"
                             Command="{Binding PlaceFlagByLatLonCommand}"
-                            Background="#27AE60" Foreground="White"
+                            Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
                 </Grid>

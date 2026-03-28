@@ -30,14 +30,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Margin="0,0,0,12"/>
 
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -45,14 +45,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
             <!-- Track Width Diagram - top/rear view of vehicle -->
-            <Border Background="#2C3E50"
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="8"
                     Padding="20"
                     HorizontalAlignment="Center">
                 <Canvas Width="280" Height="100">
                     <!-- Vehicle body (top view) -->
                     <Rectangle Canvas.Left="90" Canvas.Top="10" Width="100" Height="80"
-                               Fill="#34495E" RadiusX="4" RadiusY="4"/>
+                               Fill="{DynamicResource SystemControlBackgroundBaseLowBrush}" RadiusX="4" RadiusY="4"/>
                     <!-- Left wheel -->
                     <Rectangle Canvas.Left="50" Canvas.Top="30" Width="30" Height="40"
                                Fill="#1ABC9C" RadiusX="4" RadiusY="4"/>
@@ -62,18 +62,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Track width arrow line -->
                     <Line StartPoint="0,0" EndPoint="150,0"
                           Canvas.Left="65" Canvas.Top="80"
-                          Stroke="#3498DB" StrokeThickness="2"/>
+                          Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <!-- Arrow heads -->
-                    <Polygon Canvas.Left="60" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="#3498DB"/>
-                    <Polygon Canvas.Left="210" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                    <Polygon Canvas.Left="60" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                    <Polygon Canvas.Left="210" Canvas.Top="75" Points="0,5 10,5 5,0" Fill="{DynamicResource SystemControlHighlightAccentBrush}"/>
                     <!-- Track width label -->
                     <TextBlock Canvas.Left="110" Canvas.Top="83" Text="Track Width"
-                               Foreground="#3498DB" FontSize="12" FontWeight="SemiBold"/>
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12" FontWeight="SemiBold"/>
                 </Canvas>
             </Border>
 
             <!-- Input -->
-            <Border Background="#2C3E50"
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="12"
                     Padding="24,16"
                     HorizontalAlignment="Center">
@@ -88,13 +88,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Width="180"
                                    HorizontalContentAlignment="Center"
                                    Background="#1E2A35"
-                                   Foreground="White"
-                                   BorderBrush="#3498DB"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"
                                    CornerRadius="8"/>
                     <TextBlock Text="{Binding Unit}"
                                FontSize="24"
-                               Foreground="#95A5A6"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                VerticalAlignment="Center"
                                Margin="8,0,0,0"/>
                 </StackPanel>
@@ -109,7 +109,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>

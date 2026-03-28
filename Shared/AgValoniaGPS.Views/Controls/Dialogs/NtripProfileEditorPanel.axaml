@@ -29,13 +29,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Header">
-            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="TextBlock.Label">
-            <Setter Property="Foreground" Value="#BDC3C7"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
@@ -48,10 +48,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="FontSize" Value="14"/>
         </Style>
         <Style Selector="TextBox:focus">
-            <Setter Property="BorderBrush" Value="#3498DB"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
@@ -86,9 +86,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -106,10 +106,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
 
                 <!-- Separator -->
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Caster Settings Section -->
-                <TextBlock Text="Caster Settings" Foreground="#3498DB" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="Caster Settings" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
 
                 <!-- Host -->
                 <StackPanel>
@@ -147,17 +147,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding TestNtripConnectionCommand}"
                             IsEnabled="{Binding !IsTestingNtripConnection}"/>
                     <TextBlock Grid.Column="1" Text="{Binding NtripTestStatus}"
-                               Foreground="#BDC3C7"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                FontSize="13" VerticalAlignment="Center" Margin="12,0,0,0"
                                TextWrapping="Wrap"/>
                 </Grid>
 
                 <!-- Separator -->
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Field Associations Section -->
-                <TextBlock Text="Associated Fields" Foreground="#3498DB" FontSize="14" FontWeight="SemiBold"/>
-                <TextBlock Text="Select fields that will use this NTRIP profile:" Foreground="#7F8C8D" FontSize="12" Margin="0,0,0,4"/>
+                <TextBlock Text="Associated Fields" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="Select fields that will use this NTRIP profile:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Margin="0,0,0,4"/>
 
                 <Border Background="#1E2930" BorderBrush="#4A5F73" BorderThickness="1" CornerRadius="4"
                         MaxHeight="120" Padding="4">
@@ -166,16 +166,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="ntrip:FieldAssociationItem">
                                     <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding FieldName}"
-                                              Foreground="White" FontSize="13" Margin="4,2"/>
+                                              Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="13" Margin="4,2"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
                 </Border>
-                <TextBlock Text="Fields not selected will use the default profile (if set)." Foreground="#7F8C8D" FontSize="11" Margin="0,4,0,0"/>
+                <TextBlock Text="Fields not selected will use the default profile (if set)." Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,4,0,0"/>
 
                 <!-- Separator -->
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Options -->
                 <CheckBox IsChecked="{Binding EditingNtripProfile.AutoConnectOnFieldLoad, FallbackValue=True}"

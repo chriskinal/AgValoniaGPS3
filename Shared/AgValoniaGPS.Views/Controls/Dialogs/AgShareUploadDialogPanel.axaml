@@ -40,13 +40,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog Content -->
-        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="20"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="400" MaxWidth="500" MaxHeight="600">
             <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
                 <!-- Header -->
                 <TextBlock Grid.Row="0" Text="Upload to AgShare"
-                           FontSize="20" FontWeight="Bold" Foreground="White"
+                           FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
                 <!-- Field List -->
@@ -56,16 +56,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <ItemsControl x:Name="FieldList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#34495E" CornerRadius="4" Padding="10" Margin="2">
+                                    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4" Padding="10" Margin="2">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <CheckBox Grid.Column="0"
                                                       IsChecked="{Binding IsSelected}"
                                                       VerticalAlignment="Center"/>
                                             <StackPanel Grid.Column="1" Margin="10,0">
                                                 <TextBlock Text="{Binding Name}"
-                                                           Foreground="White" FontWeight="SemiBold"/>
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="{Binding HasBoundaryDisplay}"
-                                                           Foreground="#BDC3C7" FontSize="12"/>
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding HasBoundaryDisplay}"
@@ -83,9 +83,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Grid.Row="2" Margin="0,10">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Button Content="Select All" Click="SelectAll_Click"
-                                Background="#3498DB" Foreground="White" Padding="10,5" CornerRadius="4"/>
+                                Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="10,5" CornerRadius="4"/>
                         <Button Content="Deselect All" Click="DeselectAll_Click"
-                                Background="#7F8C8D" Foreground="White" Padding="10,5" CornerRadius="4"/>
+                                Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="10,5" CornerRadius="4"/>
                     </StackPanel>
                     <CheckBox x:Name="PublicCheckBox" Content="Make fields public" Margin="0,10,0,0"/>
                 </StackPanel>
@@ -94,9 +94,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Grid.Row="3" Margin="0,5">
                     <ProgressBar x:Name="ProgressBar" IsVisible="False"
                                  Height="8" Minimum="0" Maximum="100"
-                                 Foreground="#3498DB" Background="#1a1a1a"/>
+                                 Foreground="{DynamicResource SystemControlHighlightAccentBrush}" Background="#1a1a1a"/>
                     <TextBlock x:Name="StatusLabel" Text="Select fields to upload"
-                               Foreground="#BDC3C7" FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
                                HorizontalAlignment="Center" Margin="0,5"/>
                 </StackPanel>
 
@@ -104,10 +104,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0">
                     <Button Grid.Column="1" x:Name="BtnUpload" Content="Upload"
                             Classes="DialogButton" IsEnabled="False"
-                            Background="#27AE60" Foreground="White"
+                            Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Click="Upload_Click" Margin="0,0,10,0"/>
                     <Button Grid.Column="2" Content="Cancel" Classes="DialogButton"
-                            Background="#7F8C8D" Foreground="White"
+                            Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Click="Cancel_Click"/>
                 </Grid>
             </Grid>

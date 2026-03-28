@@ -28,14 +28,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Sub-tab styling - give TabControl a solid background -->
         <Style Selector="TabControl.SubTabs">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,0,2,0"/>
-            <Setter Property="Background" Value="#DD2C3E50"/>
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:selected">
             <Setter Property="Background" Value="#DD1E8449"/>
@@ -48,7 +48,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <TextBlock Text="Tool/Implement Configuration" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+        <TextBlock Text="Tool/Implement Configuration" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="16,12,16,8"/>
 
         <!-- Sub-Tab Control with solid background -->
         <TabControl Grid.Row="1" Classes="SubTabs" Margin="8,0,8,8">

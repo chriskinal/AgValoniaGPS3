@@ -30,14 +30,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Margin="0,0,0,12"/>
 
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -51,13 +51,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="80" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <TextBlock Text="IBT2"
                                    FontSize="18"
                                    FontWeight="Bold"
-                                   Foreground="#3498DB"
+                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                     </Border>
@@ -65,10 +65,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="IBT2 (Dual H-Bridge)"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Most common driver - uses two PWM signals for direction control"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -81,7 +81,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="80" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <TextBlock Text="Cytron"
@@ -95,10 +95,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Cytron (PWM + DIR)"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Single PWM signal with separate direction pin"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -113,7 +113,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>
@@ -121,7 +121,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.option-button">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>

@@ -26,14 +26,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.SettingRow">
-            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,4"/>
         </Style>
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -45,8 +45,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.DirectionBtn">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -62,15 +62,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ToolOffsetPositiveRight.png" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Tool Offset" FontWeight="SemiBold" Foreground="White"/>
-                    <TextBlock Text="Lateral offset from centerline" Foreground="#888" FontSize="11" Margin="0,2,0,6"/>
+                    <TextBlock Text="Tool Offset" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <TextBlock Text="Lateral offset from centerline" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,2,0,6"/>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Classes="DirectionBtn" Content="Left"/>
                         <Button Classes="DirectionBtn" Content="Right"/>
                         <Button Classes="TappableValue" Command="{Binding EditToolOffsetCommand}">
-                            <TextBlock Text="{Binding Tool.Offset, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Tool.Offset, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                         </Button>
-                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="White" Padding="8,6"/>
+                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -81,15 +81,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ToolOverlap.png" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Overlap / Gap" FontWeight="SemiBold" Foreground="White"/>
-                    <TextBlock Text="Pass overlap (positive) or gap (negative)" Foreground="#888" FontSize="11" Margin="0,2,0,6"/>
+                    <TextBlock Text="Overlap / Gap" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <TextBlock Text="Pass overlap (positive) or gap (negative)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,2,0,6"/>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Classes="DirectionBtn" Content="Overlap"/>
                         <Button Classes="DirectionBtn" Content="Gap"/>
                         <Button Classes="TappableValue" Command="{Binding EditToolOverlapCommand}">
-                            <TextBlock Text="{Binding Tool.Overlap, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Tool.Overlap, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                         </Button>
-                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="White" Padding="8,6"/>
+                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -98,15 +98,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
-                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Offset"/>
                         <Run Text=" - Use when tool is not centered on tractor (side-mounted sprayer)"/>
                     </TextBlock>
-                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Overlap"/>
                         <Run Text=" - Ensure complete coverage with slight overlap between passes"/>
                     </TextBlock>
-                    <TextBlock Foreground="#AAA" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Gap"/>
                         <Run Text=" - Leave intentional gap (skip rows, tramlines)"/>
                     </TextBlock>

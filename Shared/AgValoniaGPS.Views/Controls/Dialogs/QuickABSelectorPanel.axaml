@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.ModeButton">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="12"/>
@@ -64,17 +64,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Compact selector panel - centered -->
-        <Border Background="#2C3E50" CornerRadius="12"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Padding="20" BoxShadow="0 8 32 #40000000">
             <StackPanel Spacing="16">
                 <!-- Title -->
                 <TextBlock Text="Quick AB Line Creator"
-                           Foreground="White" FontSize="18" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Select creation mode:"
-                           Foreground="#BDC3C7" FontSize="14"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14"
                            HorizontalAlignment="Center"/>
 
                 <!-- Mode buttons in a row -->

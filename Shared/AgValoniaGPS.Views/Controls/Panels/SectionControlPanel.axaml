@@ -69,14 +69,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </UserControl.Styles>
 
     <!-- Floating panel with section indicators -->
-    <Border Background="#DD2C3E50" CornerRadius="12" Padding="12"
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="12"
             BoxShadow="0 4 16 2 #40000000">
         <StackPanel Orientation="Horizontal" Spacing="8">
             <!-- Drag handle and label -->
             <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="0,0,4,0">
-                <TextBlock Text="&#x2261;" Foreground="#888" FontSize="16" FontWeight="Bold"
+                <TextBlock Text="&#x2261;" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Sect" Foreground="White" FontSize="10" FontWeight="Bold"
+                <TextBlock Text="Sect" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
             </StackPanel>
 

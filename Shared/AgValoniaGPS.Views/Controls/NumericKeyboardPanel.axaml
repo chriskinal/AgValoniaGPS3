@@ -23,7 +23,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Button.KeypadButton">
             <Setter Property="FontSize" Value="24"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Margin" Value="3"/>
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*" Background="#2C3E50">
+    <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
         <!-- Row 1: 1, 2, 3, Back -->
         <Button Grid.Row="0" Grid.Column="0" Content="1" Classes="KeypadButton" Click="OnDigitClick"/>
         <Button Grid.Row="0" Grid.Column="1" Content="2" Classes="KeypadButton" Click="OnDigitClick"/>

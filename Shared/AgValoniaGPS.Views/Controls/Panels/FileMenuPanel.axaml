@@ -28,14 +28,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -44,31 +44,31 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
     <Border Classes="FloatingPanel" MinWidth="200" IsVisible="{Binding IsFileMenuPanelVisible}">
         <StackPanel Spacing="4">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Application Settings" Foreground="White" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="Application Settings" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
-                        Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
                         Command="{Binding ToggleFileMenuPanelCommand}" Margin="8,0,8,0"/>
             </Grid>
 
-            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
             <!-- General Settings -->
             <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"/>
             <Button Classes="ModernButton" Content="Reset All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ResetAllSettingsCommand}"/>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- App Configuration -->
             <Button Classes="ModernButton" Content="View All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
@@ -80,19 +80,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Button Classes="ModernButton" Content="Hotkeys" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowHotkeyConfigDialogCommand}"/>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- NTRIP Profiles -->
             <Button Classes="ModernButton" Content="NTRIP Profiles" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowNtripProfilesDialogCommand}"/>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Simulator -->
             <Button Classes="ModernButton" Content="Simulator" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ToggleSimulatorPanelCommand}"/>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Help & Info -->
             <Button Classes="ModernButton" Content="AgShare API" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"

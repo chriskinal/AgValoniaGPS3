@@ -28,13 +28,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Header">
-            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
@@ -59,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2ECC71"/>
         </Style>
         <Style Selector="Button.ToolButton">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
@@ -91,35 +91,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
 
         <Style Selector="TextBox.DialogInput">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#7F8C8D"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="CaretBrush" Value="White"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#3498DB"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput:pointerover">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="TextBox.DialogInput /template/ TextBlock">
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus /template/ Border#PART_BorderElement">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -128,7 +128,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 MaxWidth="650"
                 MaxHeight="550"
@@ -141,7 +141,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Row="0" Classes="Header" Text="Create Field From Existing"/>
 
                 <!-- Column Headers -->
-                <Border Grid.Row="1" Background="#34495E" CornerRadius="4,4,0,0" Padding="12,8">
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8">
                     <Grid ColumnDefinitions="*,80,80">
                         <TextBlock Grid.Column="0" Text="Field Name" Foreground="#E74C3C" FontWeight="Bold" FontSize="14"/>
                         <TextBlock Grid.Column="1" Text="Distance" Foreground="#E74C3C" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
@@ -159,9 +159,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="*,80,80">
-                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Distance, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Area, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Distance, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" TextAlignment="Right" FontSize="14"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Area, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" TextAlignment="Right" FontSize="14"/>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -169,7 +169,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Name input row -->
                 <StackPanel Grid.Row="3" Margin="0,12,0,0" Spacing="6">
-                    <TextBlock Text="New Field Name:" Foreground="#BDC3C7" FontSize="13"/>
+                    <TextBlock Text="New Field Name:" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBox Grid.Column="0"
                                  Classes="DialogInput"
@@ -186,7 +186,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" Margin="0,12,0,0">
                     <!-- Name append buttons -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock Text="+" Foreground="White" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="+" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Classes="ToolButton" Width="48" Height="48"
                                 Command="{Binding AppendVehicleNameCommand}" ToolTip.Tip="Append vehicle name">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png" Width="32" Height="32"/>
@@ -194,7 +194,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="4,0,0,0">
-                        <TextBlock Text="+" Foreground="White" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="+" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Classes="ToolButton" Width="48" Height="48"
                                 Command="{Binding AppendDateCommand}" ToolTip.Tip="Append date">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameCalendar.png" Width="32" Height="32"/>
@@ -202,7 +202,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0">
-                        <TextBlock Text="+" Foreground="White" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="+" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Classes="ToolButton" Width="48" Height="48"
                                 Command="{Binding AppendTimeCommand}" ToolTip.Tip="Append time">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameTime.png" Width="32" Height="32"/>
@@ -218,7 +218,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyFlagsCommand}" ToolTip.Tip="Include Flags">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="24" Height="24"/>
-                            <TextBlock Text="Flags" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Flags" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -227,7 +227,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyMappingCommand}" ToolTip.Tip="Include Mapping">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/MappingOn.png" Width="24" Height="24"/>
-                            <TextBlock Text="Map" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Map" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -236,7 +236,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyHeadlandCommand}" ToolTip.Tip="Include Headland">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Width="24" Height="24"/>
-                            <TextBlock Text="Head" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Head" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -245,7 +245,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyLinesCommand}" ToolTip.Tip="Include AB Lines">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png" Width="24" Height="24"/>
-                            <TextBlock Text="Lines" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Lines" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </Grid>

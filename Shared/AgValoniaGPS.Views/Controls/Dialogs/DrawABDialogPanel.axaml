@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.ModeButton">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="12"/>
@@ -64,17 +64,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Draw AB panel - centered -->
-        <Border Background="#2C3E50" CornerRadius="12"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Padding="20" BoxShadow="0 8 32 #40000000">
             <StackPanel Spacing="16">
                 <!-- Title -->
                 <TextBlock Text="Draw Track on Map"
-                           Foreground="White" FontSize="18" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Tap on the map to place points"
-                           Foreground="#BDC3C7" FontSize="14"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14"
                            HorizontalAlignment="Center"/>
 
                 <!-- Mode selection buttons -->
@@ -86,7 +86,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
                             <TextBlock Text="Straight" FontSize="12" HorizontalAlignment="Center"/>
-                            <TextBlock Text="(2 pts)" FontSize="10" Foreground="#BDC3C7" HorizontalAlignment="Center"/>
+                            <TextBlock Text="(2 pts)" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -97,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
                             <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"/>
-                            <TextBlock Text="(3+ pts)" FontSize="10" Foreground="#BDC3C7" HorizontalAlignment="Center"/>
+                            <TextBlock Text="(3+ pts)" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -113,14 +113,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
 
                 <!-- Instructions for straight line -->
-                <Border Background="#34495E" CornerRadius="8" Padding="12">
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="8" Padding="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Straight Line:" Foreground="White" FontWeight="Bold" FontSize="13"/>
+                        <TextBlock Text="Straight Line:" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13"/>
                         <TextBlock Text="Tap 2 points to create a straight AB line"
-                                   Foreground="#BDC3C7" FontSize="12"/>
-                        <TextBlock Text="Curve:" Foreground="White" FontWeight="Bold" FontSize="13" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
+                        <TextBlock Text="Curve:" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13" Margin="0,8,0,0"/>
                         <TextBlock Text="Tap 3+ points, then tap Finish in the status bar"
-                                   Foreground="#BDC3C7" FontSize="12"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

@@ -30,21 +30,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Margin="0,0,0,16"/>
 
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="15"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="24"
                    Margin="0,0,0,24"/>
 
         <!-- Icon/Image area -->
         <Border Grid.Row="2"
-                Background="#2C3E50"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 Padding="20"
                 HorizontalAlignment="Center"
@@ -57,20 +57,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Configuration Wizard"
                            FontSize="18"
-                           Foreground="#95A5A6"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Tip -->
         <Border Grid.Row="3"
-                Background="#34495E"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                 CornerRadius="8"
                 Padding="12"
                 Margin="0,20,0,0">
             <TextBlock Text="Tip: Have your vehicle measurements ready before starting."
                        FontSize="13"
-                       Foreground="#95A5A6"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        TextWrapping="Wrap"/>
         </Border>
     </Grid>

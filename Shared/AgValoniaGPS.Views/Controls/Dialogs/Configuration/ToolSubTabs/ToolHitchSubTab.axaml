@@ -26,14 +26,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.SettingRow">
-            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,4"/>
         </Style>
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -66,11 +66,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Classes="SettingRow" IsVisible="{Binding !Tool.IsToolTrailing}">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                        <TextBlock Text="Hitch Length" Foreground="White" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
                     <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                     </Button>
                 </Grid>
             </Border>
@@ -79,11 +79,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTrailing}">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                        <TextBlock Text="Trailing Hitch Length" Foreground="White" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
                     <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                     </Button>
                 </Grid>
             </Border>
@@ -92,11 +92,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTBT}">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                        <TextBlock Text="Trailing Hitch Length" Foreground="White" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to implement" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from hitch to implement" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
                     <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                     </Button>
                 </Grid>
             </Border>
@@ -105,11 +105,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Classes="SettingRow" IsVisible="{Binding Tool.IsToolTBT}">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                        <TextBlock Text="Tank Trailing Hitch" Foreground="White" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from implement to tank trailer" Foreground="#888" FontSize="12"/>
+                        <TextBlock Text="Tank Trailing Hitch" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Distance from implement to tank trailer" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
                     <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTankHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TankTrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Tool.TankTrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                     </Button>
                 </Grid>
             </Border>
@@ -119,7 +119,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="4">
                     <TextBlock Text="Note:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
                     <TextBlock Text="Values are entered as positive numbers. The system automatically applies the correct sign based on tool type (negative for rear, positive for front)."
-                               Foreground="#AAA" FontSize="12" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

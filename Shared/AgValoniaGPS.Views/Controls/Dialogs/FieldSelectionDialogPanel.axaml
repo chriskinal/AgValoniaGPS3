@@ -28,13 +28,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Header">
-            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
@@ -70,10 +70,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -84,9 +84,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -99,12 +99,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Row="0" Classes="Header" Text="Select Field to Open"/>
 
                 <!-- Column Headers -->
-                <Border Grid.Row="1" Background="#34495E" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
                     <Grid ColumnDefinitions="*,120,80,80">
-                        <TextBlock Grid.Column="0" Text="Field Name" Foreground="#BDC3C7" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="NTRIP Profile" Foreground="#BDC3C7" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Distance" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Right"/>
-                        <TextBlock Grid.Column="3" Text="Area (ha)" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="0" Text="Field Name" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="NTRIP Profile" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="2" Text="Distance" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="3" Text="Area (ha)" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
                     </Grid>
                 </Border>
 
@@ -119,11 +119,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="*,120,80,80">
-                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"/>
-                                <TextBlock Grid.Column="1" Text="{Binding NtripProfileName}" Foreground="#7F8C8D" FontSize="13"
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"/>
+                                <TextBlock Grid.Column="1" Text="{Binding NtripProfileName}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"
                                            TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Distance, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
-                                <TextBlock Grid.Column="3" Text="{Binding Area, StringFormat='{}{0:F1}'}" Foreground="#BDC3C7" TextAlignment="Right" FontSize="14"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Distance, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" TextAlignment="Right" FontSize="14"/>
+                                <TextBlock Grid.Column="3" Text="{Binding Area, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" TextAlignment="Right" FontSize="14"/>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

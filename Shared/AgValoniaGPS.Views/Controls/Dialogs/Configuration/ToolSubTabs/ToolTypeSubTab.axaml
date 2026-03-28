@@ -26,7 +26,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="RadioButton.TypeCard">
-            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="4"/>
@@ -62,9 +62,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Front Fixed -->
                 <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolFrontFixed}">
                     <StackPanel>
-                        <TextBlock Text="Front Fixed" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Front Fixed" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Front-mounted implement (harvester header, front loader)"
-                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolChkFront.png"
                                Height="60" Stretch="Uniform" Margin="0,8,0,0"/>
                     </StackPanel>
@@ -73,9 +73,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Rear Fixed -->
                 <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolRearFixed}">
                     <StackPanel>
-                        <TextBlock Text="Rear Fixed" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Rear Fixed" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="3-point hitch mounted implement (cultivator, planter)"
-                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolChkRear.png"
                                Height="60" Stretch="Uniform" Margin="0,8,0,0"/>
                     </StackPanel>
@@ -84,9 +84,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- TBT (Tow Between Tanks) -->
                 <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolTBT}">
                     <StackPanel>
-                        <TextBlock Text="TBT (Tow Between)" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="TBT (Tow Between)" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Tool between tractor and tank trailer (sprayer setup)"
-                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolChkTBT.png"
                                Height="60" Stretch="Uniform" Margin="0,8,0,0"/>
                     </StackPanel>
@@ -95,9 +95,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Trailing -->
                 <RadioButton Classes="TypeCard" GroupName="ToolType" IsChecked="{Binding Tool.IsToolTrailing}">
                     <StackPanel>
-                        <TextBlock Text="Trailing" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="Trailing" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Towed implement on drawbar (grain drill, air seeder)"
-                                   Foreground="#AAA" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolChkTrailing.png"
                                Height="60" Stretch="Uniform" Margin="0,8,0,0"/>
                     </StackPanel>

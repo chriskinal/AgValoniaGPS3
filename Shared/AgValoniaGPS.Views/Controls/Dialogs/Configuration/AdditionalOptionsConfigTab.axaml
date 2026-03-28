@@ -49,7 +49,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Section Panel -->
         <Style Selector="Border.SectionPanel">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="16"/>
         </Style>
@@ -65,7 +65,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <TextBlock Text="Additional Options" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+        <TextBlock Text="Additional Options" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="16,12,16,8"/>
 
         <ScrollViewer Grid.Row="1">
             <StackPanel Spacing="16" Margin="16,8,16,16">
@@ -84,7 +84,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_UTurnMenu.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="U-Turn" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="U-Turn" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Lateral Button -->
@@ -96,7 +96,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSnapNudgeMenu.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="Lateral" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Lateral" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
@@ -116,7 +116,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SteerSound.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="Auto Steer" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Auto Steer" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- U-Turn Sound -->
@@ -128,7 +128,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_TurnSound.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="U-Turn" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="U-Turn" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Hydraulic Sound -->
@@ -140,7 +140,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_HydLiftSound.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="Hydraulic" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Hydraulic" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Sections Sound -->
@@ -152,7 +152,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SoundSections.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="Sections" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Sections" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -172,7 +172,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ModulesMachine.png"
                                            Width="60" Height="60" Stretch="Uniform"/>
                                 </Button>
-                                <TextBlock Text="Messages" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Messages" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>

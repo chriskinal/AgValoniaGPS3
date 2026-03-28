@@ -28,8 +28,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Tappable Value Button -->
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="16,8"/>
@@ -64,7 +64,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Parameter Card -->
         <Style Selector="Border.ParamCard">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="16"/>
         </Style>
@@ -72,7 +72,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <TextBlock Text="Tram Lines" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+        <TextBlock Text="Tram Lines" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="16,12,16,8"/>
 
         <ScrollViewer Grid.Row="1">
             <!-- Two-column layout -->
@@ -88,15 +88,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Passes Value -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Passes" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Passes" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <Button Classes="TappableValue" Command="{Binding EditTramPassesCommand}" HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Guidance.TramPasses}" Foreground="White" FontWeight="Bold" FontSize="24"/>
+                                <TextBlock Text="{Binding Guidance.TramPasses}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="24"/>
                             </Button>
                         </StackPanel>
 
                         <!-- Display Toggle -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Display" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Display" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <Button Classes="ToggleButton"
                                     Background="{Binding Guidance.TramDisplay, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Guidance.TramDisplay, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
@@ -119,9 +119,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Tram Line Value -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Tram Line" Foreground="#AAA" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Tram Line" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <Button Classes="TappableValue" Command="{Binding EditTramLineCommand}" HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Guidance.TramLine}" Foreground="White" FontWeight="Bold" FontSize="24"/>
+                                <TextBlock Text="{Binding Guidance.TramLine}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="24"/>
                             </Button>
                         </StackPanel>
                     </StackPanel>

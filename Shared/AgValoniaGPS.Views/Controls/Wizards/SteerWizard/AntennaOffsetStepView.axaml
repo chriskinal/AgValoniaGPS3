@@ -30,8 +30,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="White"/>
-            <Border Background="#34495E"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
                     Padding="8,4"
                     Margin="12,0,0,0"
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     IsVisible="{Binding CanSkip}">
                 <TextBlock Text="Optional"
                            FontSize="11"
-                           Foreground="#95A5A6"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </Border>
         </StackPanel>
 
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -55,20 +55,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
             <!-- Antenna Offset Diagram - rear view showing lateral offset -->
-            <Border Background="#2C3E50"
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="8"
                     Padding="20"
                     HorizontalAlignment="Center">
                 <Canvas Width="280" Height="100">
                     <!-- Vehicle body (rear view) -->
                     <Rectangle Canvas.Left="90" Canvas.Top="20" Width="100" Height="60"
-                               Fill="#34495E" RadiusX="4" RadiusY="4"/>
+                               Fill="{DynamicResource SystemControlBackgroundBaseLowBrush}" RadiusX="4" RadiusY="4"/>
                     <!-- Left wheel -->
                     <Rectangle Canvas.Left="60" Canvas.Top="50" Width="20" Height="35"
-                               Fill="#7F8C8D" RadiusX="3" RadiusY="3"/>
+                               Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" RadiusX="3" RadiusY="3"/>
                     <!-- Right wheel -->
                     <Rectangle Canvas.Left="200" Canvas.Top="50" Width="20" Height="35"
-                               Fill="#7F8C8D" RadiusX="3" RadiusY="3"/>
+                               Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" RadiusX="3" RadiusY="3"/>
                     <!-- Center line -->
                     <Line StartPoint="0,0" EndPoint="0,75"
                           Canvas.Left="140" Canvas.Top="15"
@@ -79,17 +79,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Offset arrow -->
                     <Line StartPoint="0,0" EndPoint="20,0"
                           Canvas.Left="140" Canvas.Top="12"
-                          Stroke="#3498DB" StrokeThickness="2"/>
-                    <Polygon Canvas.Left="157" Canvas.Top="7" Points="0,5 10,5 5,0" Fill="#3498DB"/>
+                          Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
+                    <Polygon Canvas.Left="157" Canvas.Top="7" Points="0,5 10,5 5,0" Fill="{DynamicResource SystemControlHighlightAccentBrush}"/>
                     <!-- Labels -->
                     <TextBlock Canvas.Left="130" Canvas.Top="88" Text="Center"
                                Foreground="#E74C3C" FontSize="9"/>
                     <TextBlock Canvas.Left="175" Canvas.Top="5" Text="GPS"
                                Foreground="#1ABC9C" FontSize="9"/>
                     <TextBlock Canvas.Left="20" Canvas.Top="40" Text="Left"
-                               Foreground="#7F8C8D" FontSize="10"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                     <TextBlock Canvas.Left="245" Canvas.Top="40" Text="Right"
-                               Foreground="#7F8C8D" FontSize="10"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                 </Canvas>
             </Border>
 
@@ -99,29 +99,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Spacing="12">
                 <Button Content="Left"
                         Width="80" Height="44"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="8"
                         FontWeight="SemiBold"
                         Command="{Binding SetLeftCommand}"/>
                 <Button Content="Center"
                         Width="80" Height="44"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="8"
                         FontWeight="SemiBold"
                         Command="{Binding SetCenterCommand}"/>
                 <Button Content="Right"
                         Width="80" Height="44"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="8"
                         FontWeight="SemiBold"
                         Command="{Binding SetRightCommand}"/>
             </StackPanel>
 
             <!-- Input -->
-            <Border Background="#2C3E50"
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="12"
                     Padding="24,16"
                     HorizontalAlignment="Center">
@@ -136,13 +136,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Width="180"
                                    HorizontalContentAlignment="Center"
                                    Background="#1E2A35"
-                                   Foreground="White"
-                                   BorderBrush="#3498DB"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"
                                    CornerRadius="8"/>
                     <TextBlock Text="{Binding Unit}"
                                FontSize="24"
-                               Foreground="#95A5A6"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                VerticalAlignment="Center"
                                Margin="8,0,0,0"/>
                 </StackPanel>
@@ -151,7 +151,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Hint -->
             <TextBlock Text="Positive = right of center, Negative = left of center"
                        FontSize="12"
-                       Foreground="#7F8C8D"
+                       Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>
 
@@ -163,7 +163,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>

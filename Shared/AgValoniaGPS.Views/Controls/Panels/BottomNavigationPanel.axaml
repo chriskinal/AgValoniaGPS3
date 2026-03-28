@@ -35,16 +35,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Floating Panel Style -->
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="6"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- Bottom Panel Button Style -->
         <Style Selector="Button.BottomPanelButton">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
@@ -53,10 +53,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.BottomPanelButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.BottomPanelButton:pressed">
-            <Setter Property="Background" Value="#DD3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
         </Style>
 
         <!-- Active State for toggle buttons -->
@@ -69,7 +69,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Menu Button (opens flyout) -->
         <Style Selector="Button.MenuButton">
-            <Setter Property="Background" Value="#DD2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
@@ -89,13 +89,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#EE1E2A38"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- Panel Separator -->
         <Style Selector="Separator.BottomPanelSeparator">
-            <Setter Property="Background" Value="#444"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="Width" Value="2"/>
             <Setter Property="Margin" Value="4,8"/>
         </Style>
@@ -109,12 +109,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Touch Handle: Tap to rotate, Hold to drag -->
                 <Grid x:Name="DragHandle" Width="40" Margin="0"
-                      Background="#DD2C3E50"
+                      Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                       Cursor="Hand"
                       ToolTip.Tip="Tap to rotate | Hold and drag to move">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                        <TextBlock Text="=" Foreground="#AAA" FontSize="16" FontWeight="Bold" IsHitTestVisible="False"/>
-                        <TextBlock Text="R" Foreground="#AAA" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
                     </StackPanel>
                 </Grid>
 
@@ -127,11 +127,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding CycleUTurnSkipRowsCommand}"
                         IsVisible="{Binding HasActiveTrack}"
                         ToolTip.Tip="U-Turn Skip Rows (tap to cycle 0-9)"
-                        Background="#DD34495E"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
                         Padding="0">
                     <TextBlock Text="{Binding UTurnSkipRows}"
-                               Foreground="White"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                FontSize="28"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
@@ -246,7 +246,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png" Stretch="Uniform"/>
                 </Button>
 
-                <Separator Background="#444" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>
 
                 <!-- Cycle Lines -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Cycle AB Lines"
@@ -269,7 +269,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png" Stretch="Uniform"/>
                 </Button>
 
-                <Separator Background="#444" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>
 
                 <!-- Nudge Controls -->
                 <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
@@ -320,7 +320,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Stretch="Uniform"/>
                 </Button>
 
-                <Separator Background="#444" Height="2" Margin="4"/>
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4"/>
 
                 <!-- Delete Flags -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Delete All Flags"

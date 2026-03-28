@@ -21,31 +21,31 @@ the Free Software Foundation, either version 3 of the License, or
     <Grid>
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
-        <Border Background="#2C3E50" CornerRadius="12" Padding="0"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="0"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Width="650" Height="520">
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header -->
-                <Border Grid.Row="0" Background="#1A252F" CornerRadius="12,12,0,0" Padding="16,12">
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12,12,0,0" Padding="16,12">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">
                         <TextBlock Text="All Settings" FontSize="18" FontWeight="Bold"
-                                   Foreground="#3498DB" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="Read-only view of current configuration values"
-                                   FontSize="11" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                                   FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Settings tree -->
-                <Border Grid.Row="1" Margin="8" Background="#1A252F" CornerRadius="6" Padding="4">
+                <Border Grid.Row="1" Margin="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding SettingsTree}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SettingsGroupItem">
                                     <StackPanel Margin="0,4">
                                         <!-- Group header -->
-                                        <Border Background="#253545" CornerRadius="4" Padding="10,6" Margin="4,2">
+                                        <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="4" Padding="10,6" Margin="4,2">
                                             <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold"
-                                                       Foreground="#3498DB"/>
+                                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
                                         </Border>
                                         <!-- Values -->
                                         <ItemsControl ItemsSource="{Binding Items}" Margin="16,2,4,0">
@@ -53,10 +53,10 @@ the Free Software Foundation, either version 3 of the License, or
                                                 <DataTemplate x:DataType="vm:SettingsValueItem">
                                                     <Grid ColumnDefinitions="200,*" Margin="0,1">
                                                         <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                                   Foreground="#95A5A6" FontSize="12"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12"
                                                                    VerticalAlignment="Center"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Value}"
-                                                                   Foreground="#ECF0F1" FontSize="12"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                                                    FontFamily="Consolas"
                                                                    TextWrapping="Wrap"
                                                                    VerticalAlignment="Center"/>
@@ -74,7 +74,7 @@ the Free Software Foundation, either version 3 of the License, or
                 <!-- Close button -->
                 <Button Grid.Row="2" Content="Close" Margin="16,4,16,12"
                         Command="{Binding CloseViewSettingsDialogCommand}"
-                        Background="#3498DB" Foreground="White"
+                        Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
             </Grid>

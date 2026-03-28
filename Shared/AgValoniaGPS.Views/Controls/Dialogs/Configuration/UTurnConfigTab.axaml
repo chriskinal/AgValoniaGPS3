@@ -27,8 +27,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Tappable Value Button -->
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="16,8"/>
@@ -42,7 +42,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Parameter Card -->
         <Style Selector="Border.ParamCard">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="12"/>
         </Style>
@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <TextBlock Text="U-Turn Settings" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+        <TextBlock Text="U-Turn Settings" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="16,12,16,8"/>
 
         <ScrollViewer Grid.Row="1">
             <!-- 3-Column Layout matching AgOpenGPS -->
@@ -67,12 +67,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Value Display -->
                         <Button Classes="TappableValue" Command="{Binding EditUTurnExtensionCommand}" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding Guidance.UTurnExtension, StringFormat='{}{0:F1} m'}"
-                                       Foreground="White" FontWeight="Bold" FontSize="18"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18"/>
                         </Button>
 
                         <!-- Tip Text -->
                         <TextBlock Text="Set extension length to 2 or 3x Radius"
-                                   Foreground="#AAA" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" TextWrapping="Wrap"
                                    HorizontalAlignment="Center" TextAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -88,12 +88,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Value Display -->
                         <Button Classes="TappableValue" Command="{Binding EditUTurnSmoothingCommand}" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding Guidance.UTurnSmoothing}"
-                                       Foreground="White" FontWeight="Bold" FontSize="18"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18"/>
                         </Button>
 
                         <!-- Tip Text -->
                         <TextBlock Text="Set Smoothing 3-4x Radius"
-                                   Foreground="#AAA" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" TextWrapping="Wrap"
                                    HorizontalAlignment="Center" TextAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -112,8 +112,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Button Classes="TappableValue" Command="{Binding EditUTurnRadiusCommand}" HorizontalAlignment="Center">
                                 <StackPanel>
                                     <TextBlock Text="{Binding Guidance.UTurnRadius, StringFormat='{}{0:F2}'}"
-                                               Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="m" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="m" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -131,8 +131,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Button Classes="TappableValue" Command="{Binding EditUTurnDistanceCommand}" HorizontalAlignment="Center">
                                 <StackPanel>
                                     <TextBlock Text="{Binding Guidance.UTurnDistanceFromBoundary, StringFormat='{}{0:F2}'}"
-                                               Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="m" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="m" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

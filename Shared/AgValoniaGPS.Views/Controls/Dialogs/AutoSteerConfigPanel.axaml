@@ -29,23 +29,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Tab styling for compact mode (top tabs) -->
         <Style Selector="TabControl.SteerTabs > TabItem">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="Margin" Value="2,0"/>
             <Setter Property="MinWidth" Value="56"/>
             <Setter Property="MinHeight" Value="56"/>
         </Style>
         <Style Selector="TabControl.SteerTabs > TabItem:selected">
-            <Setter Property="Background" Value="#DD4A9A7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TabControl.SteerTabs > TabItem:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
 
         <!-- Tappable Value Button -->
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,6"/>
@@ -59,20 +59,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Toggle Button -->
         <Style Selector="Button.ToggleButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ToggleButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
 
         <!-- Icon Toggle Button - preserves background binding on hover -->
         <Style Selector="Button.IconToggle">
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="4"/>
@@ -84,7 +84,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Parameter Card -->
         <Style Selector="Border.ParamCard">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12"/>
         </Style>
@@ -97,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Status label -->
         <Style Selector="TextBlock.StatusLabel">
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="FontSize" Value="11"/>
         </Style>
         <Style Selector="TextBlock.StatusValue">
@@ -110,22 +110,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <!-- Full screen modal overlay -->
     <Grid Background="#80000000">
         <!-- Main dialog container -->
-        <Border Background="#DD1E2A38"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="8"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 BoxShadow="0 8 32 #80000000">
 
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header -->
-                <Border Grid.Row="0" Background="#DD2C3E50" Padding="12,8">
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,8">
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="Auto Steer Configuration" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Auto Steer Configuration" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <Button Grid.Column="1" Command="{Binding ClosePanelCommand}"
                                 Background="Transparent" BorderThickness="0" Padding="8,4" Cursor="Hand">
-                            <TextBlock Text="X" FontSize="16" Foreground="#AAA"/>
+                            <TextBlock Text="X" FontSize="16" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
                         </Button>
                     </Grid>
                 </Border>
@@ -140,7 +140,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Grid.ColumnDefinitions>
 
                     <!-- LEFT SIDE: Compact Mode Tabs -->
-                    <Border Grid.Column="0" Background="#DD253545" Padding="8">
+                    <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Padding="8">
                         <Grid RowDefinitions="*,Auto">
                             <!-- Tab Headers -->
                             <TabControl Grid.Row="0" Classes="SteerTabs"
@@ -173,7 +173,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Spacing="8">
                                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                                             <TextBlock Text="Fast" Foreground="#4A9A7E" FontSize="12"/>
-                                                            <TextBlock Grid.Column="1" Text="Steer Response" Foreground="White"
+                                                            <TextBlock Grid.Column="1" Text="Steer Response" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                        HorizontalAlignment="Center" FontWeight="SemiBold"/>
                                                             <TextBlock Grid.Column="2" Text="Slow" Foreground="#E74C3C" FontSize="12"/>
                                                         </Grid>
@@ -181,7 +181,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                             <Button Classes="TappableValue" Command="{Binding EditSteerResponseCommand}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding AutoSteer.SteerResponseHold, StringFormat='{}{0:F1}'}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                             </Button>
                                                             <Slider Grid.Column="1" Minimum="1" Maximum="10"
                                                                     Value="{Binding AutoSteer.SteerResponseHold}"
@@ -193,13 +193,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Integral (Pure Pursuit) -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Integral" Foreground="White" FontWeight="SemiBold"
+                                                        <TextBlock Text="Integral" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditIntegralGainCommand}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding AutoSteer.IntegralGain, StringFormat='{}{0:P0}'}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                             </Button>
                                                             <Slider Grid.Column="1" Minimum="0" Maximum="1"
                                                                     Value="{Binding AutoSteer.IntegralGain}"
@@ -221,13 +221,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Aggressiveness -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Aggressiveness" Foreground="White" FontWeight="SemiBold"
+                                                        <TextBlock Text="Aggressiveness" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyAggressivenessCommand}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding AutoSteer.StanleyAggressiveness, StringFormat='{}{0:F1}'}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                             </Button>
                                                             <Slider Grid.Column="1" Minimum="0" Maximum="10"
                                                                     Value="{Binding AutoSteer.StanleyAggressiveness}"
@@ -239,13 +239,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Overshoot Reduction -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Overshoot Reduction" Foreground="White" FontWeight="SemiBold"
+                                                        <TextBlock Text="Overshoot Reduction" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyOvershootCommand}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding AutoSteer.StanleyOvershootReduction, StringFormat='{}{0:F1}'}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                             </Button>
                                                             <Slider Grid.Column="1" Minimum="0" Maximum="10"
                                                                     Value="{Binding AutoSteer.StanleyOvershootReduction}"
@@ -257,13 +257,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Integral (Stanley) -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Integral" Foreground="White" FontWeight="SemiBold"
+                                                        <TextBlock Text="Integral" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyIntegralCommand}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding AutoSteer.IntegralGain, StringFormat='{}{0:F1}'}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                             </Button>
                                                             <Slider Grid.Column="1" Minimum="0" Maximum="1"
                                                                     Value="{Binding AutoSteer.IntegralGain}"
@@ -290,11 +290,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <StackPanel Spacing="8" HorizontalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                                                         <TextBlock Text="-->" Foreground="#4A9A7E"/>
-                                                        <TextBlock Text="{Binding AutoSteer.WasOffset}" Foreground="White"
+                                                        <TextBlock Text="{Binding AutoSteer.WasOffset}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                    FontWeight="Bold" FontSize="18"/>
                                                         <TextBlock Text="&lt;--" Foreground="#4A9A7E"/>
                                                     </StackPanel>
-                                                    <TextBlock Text="Was Zero" Foreground="#AAA" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="Was Zero" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
                                                     <Button Content="Zero WAS" Command="{Binding ZeroWasCommand}"
                                                             HorizontalAlignment="Center" Padding="16,6"/>
                                                 </StackPanel>
@@ -306,13 +306,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditCountsPerDegreeCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.CountsPerDegree, StringFormat='{}{0:F0}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="1" Maximum="255"
                                                                 Value="{Binding AutoSteer.CountsPerDegree}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Counts Per Degree" Foreground="#AAA" FontSize="11"/>
+                                                    <TextBlock Text="Counts Per Degree" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -322,13 +322,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditAckermannCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.Ackermann}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="0" Maximum="200"
                                                                 Value="{Binding AutoSteer.Ackermann}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Ackermann" Foreground="#AAA" FontSize="11"/>
+                                                    <TextBlock Text="Ackermann" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -338,13 +338,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditMaxSteerAngleCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.MaxSteerAngle, StringFormat='{}{0}°'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="10" Maximum="90"
                                                                 Value="{Binding AutoSteer.MaxSteerAngle}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Max Steer Angle" Foreground="#AAA" FontSize="11"/>
+                                                    <TextBlock Text="Max Steer Angle" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
@@ -361,7 +361,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
                                             <!-- Deadzone Header -->
-                                            <TextBlock Text="---Deadzone---" FontSize="14" FontWeight="Bold" Foreground="White"
+                                            <TextBlock Text="---Deadzone---" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Deadzone values in a row -->
@@ -371,9 +371,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <Button Classes="TappableValue" Command="{Binding EditDeadzoneHeadingCommand}"
                                                                 HorizontalAlignment="Center">
                                                             <TextBlock Text="{Binding AutoSteer.DeadzoneHeading, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
-                                                        <TextBlock Text="Heading" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Heading" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
@@ -382,9 +382,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <Button Classes="TappableValue" Command="{Binding EditDeadzoneDelayCommand}"
                                                                 HorizontalAlignment="Center">
                                                             <TextBlock Text="{Binding AutoSteer.DeadzoneDelay}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
-                                                        <TextBlock Text="On-Delay" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="On-Delay" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
@@ -393,12 +393,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Speed Factor -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Speed Factor" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Speed Factor" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditSpeedFactorCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.SpeedFactor, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="0.5" Maximum="3"
                                                                 Value="{Binding AutoSteer.SpeedFactor}"
@@ -410,12 +410,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Acquire Factor -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Acquire Factor" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Acquire Factor" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditAcquireFactorCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.AcquireFactor, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="0.5" Maximum="1"
                                                                 Value="{Binding AutoSteer.AcquireFactor}"
@@ -444,12 +444,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Proportional Gain -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Proportional Gain" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Proportional Gain" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditProportionalGainCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.ProportionalGain}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="1" Maximum="100"
                                                                 Value="{Binding AutoSteer.ProportionalGain}"
@@ -461,12 +461,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Max PWM -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Max Limit" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Max Limit" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditMaxPwmCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.MaxPwm}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="50" Maximum="255"
                                                                 Value="{Binding AutoSteer.MaxPwm}"
@@ -478,12 +478,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Min PWM -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Minimum to Move" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Minimum to Move" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditMinPwmCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.MinPwm}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="1" Maximum="50"
                                                                 Value="{Binding AutoSteer.MinPwm}"
@@ -497,7 +497,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             </TabControl>
 
                             <!-- TEST MODE PANEL (Full Mode Only) -->
-                            <Border Grid.Row="1" Background="#DD1E2A38" CornerRadius="6" Padding="8" Margin="0,8,0,0"
+                            <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Margin="0,8,0,0"
                                     IsVisible="{Binding IsFullMode}">
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="Test Mode" FontSize="14" FontWeight="Bold" Foreground="#F39C12"
@@ -515,7 +515,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                        Width="32" Height="32" Stretch="Uniform"
                                                        IsVisible="{Binding !IsFreeDriveMode}"/>
                                             </Grid>
-                                            <TextBlock Grid.Column="1" Text="Free Drive" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="Free Drive" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Button>
 
@@ -534,18 +534,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </StackPanel>
 
                                     <!-- Commanded Angle & PWM Display -->
-                                    <Border Background="#DD2C3E50" CornerRadius="4" Padding="12,6"
+                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="4" Padding="12,6"
                                             HorizontalAlignment="Center" IsVisible="{Binding IsFreeDriveMode}">
                                         <StackPanel Orientation="Horizontal" Spacing="16">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <TextBlock Text="Set:" Foreground="#AAA" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Set:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{Binding FreeDriveSteerAngle, StringFormat='{}{0:F0}°'}"
                                                            Foreground="#F39C12" FontWeight="Bold"
                                                            FontSize="16" VerticalAlignment="Center" Width="40" TextAlignment="Right"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <TextBlock Text="PWM:" Foreground="#AAA" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{Binding PwmDisplay}" Foreground="White" FontWeight="Bold"
+                                                <TextBlock Text="PWM:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding PwmDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                                            FontSize="16" VerticalAlignment="Center" Width="30" TextAlignment="Right"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -555,9 +555,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Border Classes="ParamCard" IsEnabled="{Binding IsFreeDriveMode}">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
-                                                       Foreground="White" FontWeight="Bold" FontSize="18"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18"
                                                        HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Actual Steer Angle" Foreground="#AAA" FontSize="10"
+                                            <TextBlock Text="Actual Steer Angle" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"
                                                        HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
@@ -567,7 +567,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- RIGHT SIDE: Full Mode Additional Content (5 tabs) -->
-                    <Border Grid.Column="1" Background="#DD2C3E50" Padding="8"
+                    <Border Grid.Column="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="8"
                             IsVisible="{Binding IsFullMode}" Width="420">
                         <Grid RowDefinitions="*,Auto">
                             <!-- Right Side Tabs -->
@@ -588,7 +588,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <StackPanel Spacing="8">
                                                     <TextBlock Text="Turn Sensor" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
-                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
                                                                 Background="{Binding AutoSteer.TurnSensorEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleTurnSensorCommand}"
@@ -600,11 +600,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Counts field - visible when Turn Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.TurnSensorEnabled}"
                                                                     Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                                            <TextBlock Text="Counts" Foreground="#AAA" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="Counts" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                                                             <Button Classes="TappableValue" Command="{Binding EditTurnSensorCountsCommand}"
                                                                     Padding="16,8">
                                                                 <TextBlock Text="{Binding AutoSteer.TurnSensorCounts}"
-                                                                           Foreground="White" FontWeight="Bold" FontSize="18"/>
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18"/>
                                                             </Button>
                                                         </StackPanel>
                                                     </Grid>
@@ -616,7 +616,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <StackPanel Spacing="8">
                                                     <TextBlock Text="Pressure Turn" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
-                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
                                                                 Background="{Binding AutoSteer.PressureSensorEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding TogglePressureSensorCommand}"
@@ -628,17 +628,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Pressure fields - visible when Pressure Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.PressureSensorEnabled}"
                                                                     Spacing="4">
-                                                            <TextBlock Text="Off at %" Foreground="#AAA" HorizontalAlignment="Center" FontSize="12"/>
+                                                            <TextBlock Text="Off at %" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
                                                             <!-- Actual pressure reading from PGN -->
                                                             <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActualPressurePercent}"
-                                                                         Height="16" Foreground="#3498DB"/>
+                                                                         Height="16" Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
                                                             <!-- Trip point slider -->
                                                             <Grid ColumnDefinitions="*,Auto">
                                                                 <Slider Grid.Column="0" Minimum="0" Maximum="99"
                                                                         Value="{Binding AutoSteer.PressureTripPoint}"
                                                                         VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="1" Text="{Binding AutoSteer.PressureTripPoint, StringFormat='{}{0}%'}"
-                                                                           Foreground="White" FontWeight="Bold" MinWidth="40" Margin="8,0,0,0"
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" MinWidth="40" Margin="8,0,0,0"
                                                                            VerticalAlignment="Center"/>
                                                             </Grid>
                                                         </StackPanel>
@@ -651,7 +651,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <StackPanel Spacing="8">
                                                     <TextBlock Text="Current Turn" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
-                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
                                                                 Background="{Binding AutoSteer.CurrentSensorEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleCurrentSensorCommand}"
@@ -663,17 +663,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Current fields - visible when Current Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.CurrentSensorEnabled}"
                                                                     Spacing="4">
-                                                            <TextBlock Text="Off at %" Foreground="#AAA" HorizontalAlignment="Center" FontSize="12"/>
+                                                            <TextBlock Text="Off at %" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
                                                             <!-- Actual current reading from PGN -->
                                                             <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActualCurrentPercent}"
-                                                                         Height="16" Foreground="#3498DB"/>
+                                                                         Height="16" Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
                                                             <!-- Trip point slider -->
                                                             <Grid ColumnDefinitions="*,Auto">
                                                                 <Slider Grid.Column="0" Minimum="0" Maximum="99"
                                                                         Value="{Binding AutoSteer.CurrentTripPoint}"
                                                                         VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="1" Text="{Binding AutoSteer.CurrentTripPoint, StringFormat='{}{0}%'}"
-                                                                           Foreground="White" FontWeight="Bold" MinWidth="40" Margin="8,0,0,0"
+                                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" MinWidth="40" Margin="8,0,0,0"
                                                                            VerticalAlignment="Center"/>
                                                             </Grid>
                                                         </StackPanel>
@@ -700,7 +700,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                     <!-- Danfoss -->
                                                     <StackPanel Margin="4">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.DanfossEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleDanfossCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -708,12 +708,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Danfoss" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Danfoss" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert WAS -->
                                                     <StackPanel Margin="4">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.InvertWas, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleInvertWasCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -721,12 +721,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert WAS" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Invert WAS" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert Motor -->
                                                     <StackPanel Margin="4">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.InvertMotor, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleInvertMotorCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -734,12 +734,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert Motor" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Invert Motor" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert Relays -->
                                                     <StackPanel Margin="4">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.InvertRelays, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleInvertRelaysCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -747,7 +747,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert Relays" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Invert Relays" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </WrapPanel>
                                             </Border>
@@ -756,7 +756,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Motor Driver" Foreground="White" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Motor Driver" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.MotorDriver}"
                                                                   Width="120">
                                                             <ComboBoxItem Content="IBT2"/>
@@ -765,7 +765,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="AD Converter" Foreground="White" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="AD Converter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.AdConverter}"
                                                                   Width="120">
                                                             <ComboBoxItem Content="Differential"/>
@@ -774,7 +774,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="External Enable" Foreground="White" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="External Enable" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.ExternalEnable}"
                                                                   Width="120">
                                                             <ComboBoxItem Content="None"/>
@@ -784,7 +784,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="IMU Axis Swap" Foreground="White" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="IMU Axis Swap" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.ImuAxisSwap}"
                                                                   Width="120">
                                                             <ComboBoxItem Content="X"/>
@@ -813,11 +813,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <Button Classes="ToggleButton" Command="{Binding ToggleStanleyModeCommand}"
                                                         HorizontalAlignment="Stretch">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Algorithm" Foreground="White"/>
+                                                        <TextBlock Text="Algorithm" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                                         <Grid Grid.Column="1">
                                                             <TextBlock Text="Stanley" Foreground="#4A9A7E" FontWeight="Bold"
                                                                        IsVisible="{Binding AutoSteer.IsStanleyMode}"/>
-                                                            <TextBlock Text="Pure Pursuit" Foreground="#3498DB" FontWeight="Bold"
+                                                            <TextBlock Text="Pure Pursuit" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontWeight="Bold"
                                                                        IsVisible="{Binding !AutoSteer.IsStanleyMode}"/>
                                                         </Grid>
                                                     </Grid>
@@ -829,14 +829,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <StackPanel Spacing="4">
                                                     <Grid ColumnDefinitions="Auto,*,Auto">
                                                         <TextBlock Text="Out" Foreground="#E74C3C" FontSize="11"/>
-                                                        <TextBlock Grid.Column="1" Text="U-Turn Compensation" Foreground="White"
+                                                        <TextBlock Grid.Column="1" Text="U-Turn Compensation" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                    HorizontalAlignment="Center" FontWeight="SemiBold"/>
                                                         <TextBlock Grid.Column="2" Text="In" Foreground="#4A9A7E" FontSize="11"/>
                                                     </Grid>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditUTurnCompensationCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.UTurnCompensation, StringFormat='{}{0:F0}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="-100" Maximum="100"
                                                                 Value="{Binding AutoSteer.UTurnCompensation}"
@@ -848,12 +848,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Sidehill Compensation -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Sidehill / Degree" Foreground="White" FontWeight="SemiBold"
+                                                    <TextBlock Text="Sidehill / Degree" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditSidehillCompensationCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.SideHillCompensation, StringFormat='{}{0:F2}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
                                                         <Slider Grid.Column="1" Minimum="0" Maximum="1"
                                                                 Value="{Binding AutoSteer.SideHillCompensation}"
@@ -867,7 +867,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <Button Classes="ToggleButton" Command="{Binding ToggleSteerInReverseCommand}"
                                                         HorizontalAlignment="Stretch">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Steer in Reverse" Foreground="White"/>
+                                                        <TextBlock Text="Steer in Reverse" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                                         <Grid Grid.Column="1">
                                                             <TextBlock Text="ON" Foreground="#4A9A7E" FontWeight="Bold"
                                                                        IsVisible="{Binding AutoSteer.SteerInReverse}"/>
@@ -899,12 +899,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/con_VehicleFunctionSpeedLimit.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Manual Turns" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Manual Turns" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditManualTurnsSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.ManualTurnsSpeed, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="km/h" Foreground="#777" FontSize="10"
@@ -914,12 +914,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_MinAutoSteer.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Min Speed" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Min Speed" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditMinSteerSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.MinSteerSpeed, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="km/h" Foreground="#777" FontSize="10"
@@ -929,12 +929,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_MaxAutoSteer.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Max Speed" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Max Speed" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditMaxSteerSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.MaxSteerSpeed, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="km/h" Foreground="#777" FontSize="10"
@@ -964,12 +964,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" Margin="0,0,4,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_LineWith.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Line Width" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Line Width" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditLineWidthCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.LineWidth}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="pixels" Foreground="#777" FontSize="10"
@@ -979,12 +979,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="1" Margin="4,0,0,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_SnapDistance.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Nudge Distance" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Nudge Distance" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditNudgeDistanceCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.NudgeDistance}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="cm" Foreground="#777" FontSize="10"
@@ -1000,12 +1000,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" Margin="0,0,4,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_GuidanceLookAhead.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Next Guidance" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Next Guidance" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditNextGuidanceTimeCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.NextGuidanceTime, StringFormat='{}{0:F1}'}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="sec" Foreground="#777" FontSize="10"
@@ -1015,12 +1015,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="1" Margin="4,0,0,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_CmPixel.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Cm -> Pixel" Foreground="#AAA" FontSize="11"
+                                                        <TextBlock Text="Cm -> Pixel" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditCmPerPixelCommand}"
                                                                 HorizontalAlignment="Stretch">
                                                             <TextBlock Text="{Binding AutoSteer.CmPerPixel}"
-                                                                       Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
                                                         <TextBlock Text="cm/px" Foreground="#777" FontSize="10"
@@ -1034,7 +1034,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <Grid ColumnDefinitions="*,*,*" HorizontalAlignment="Stretch">
                                                     <!-- Lightbar -->
                                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.LightbarEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleLightbarCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -1042,11 +1042,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Lightbar" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Lightbar" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Steering Bar -->
                                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                                        <Border CornerRadius="4" BorderBrush="#555" BorderThickness="1"
+                                                        <Border CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Background="{Binding AutoSteer.SteerBarEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}">
                                                             <Button Command="{Binding ToggleSteerBarCommand}"
                                                                     Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
@@ -1054,7 +1054,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Steer Bar" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="Steer Bar" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- On/Off (Guidance Bar) -->
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
@@ -1069,7 +1069,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        IsVisible="{Binding !AutoSteer.GuidanceBarOn}"/>
                                                             </Grid>
                                                         </Button>
-                                                        <TextBlock Text="On/Off" Foreground="#AAA" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="On/Off" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -1086,7 +1086,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/WizardWand.png"
                                                Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Wizard" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Wizard" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Reset -->
@@ -1095,12 +1095,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
                                                Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Defaults" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Defaults" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Send+Save with unsaved changes warning -->
                                 <Button Grid.Column="2" Margin="2" Padding="4"
-                                        Background="#DD4A9A7E" Command="{Binding SendAndSaveCommand}">
+                                        Background="{DynamicResource SystemControlHighlightAccentBrush}" Command="{Binding SendAndSaveCommand}">
                                     <StackPanel HorizontalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
                                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolAcceptChange.png"
@@ -1110,7 +1110,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                    Width="24" Height="24" Stretch="Uniform" VerticalAlignment="Center"
                                                    IsVisible="{Binding HasUnsavedRightSideChanges}"/>
                                         </StackPanel>
-                                        <TextBlock Text="Send+Save" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Send+Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Close -->
@@ -1125,7 +1125,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Grid>
 
                 <!-- Footer: Status Bar -->
-                <Border Grid.Row="2" Background="#DD2C3E50" Padding="12,8">
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,8">
                     <Grid ColumnDefinitions="*,Auto">
                         <!-- Status Values - Fixed width columns to prevent layout shift -->
                         <StackPanel Orientation="Horizontal" Spacing="16">
@@ -1149,13 +1149,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Expand/Collapse Button -->
                         <Button Grid.Column="1" Command="{Binding ToggleFullModeCommand}"
-                                Background="#DD4A9A7E" Padding="12,6" CornerRadius="4">
+                                Background="{DynamicResource SystemControlHighlightAccentBrush}" Padding="12,6" CornerRadius="4">
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <TextBlock Text="|||" Foreground="White" FontWeight="Bold"/>
+                                <TextBlock Text="|||" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                                 <Grid>
-                                    <TextBlock Text="◀" Foreground="White" FontWeight="Bold"
+                                    <TextBlock Text="◀" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                                IsVisible="{Binding IsFullMode}"/>
-                                    <TextBlock Text="▶" Foreground="White" FontWeight="Bold"
+                                    <TextBlock Text="▶" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                                IsVisible="{Binding !IsFullMode}"/>
                                 </Grid>
                             </StackPanel>
@@ -1169,24 +1169,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#CC000000"
                 IsVisible="{Binding IsNumericInputVisible}"
                 ZIndex="100">
-            <Border Background="#DD1E2A38" CornerRadius="12" Padding="20"
+            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
                     Width="320" Height="400"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    BorderBrush="#555" BorderThickness="1">
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
                 <Grid RowDefinitions="Auto,Auto,*,Auto">
                     <!-- Title -->
                     <TextBlock Grid.Row="0" Text="{Binding NumericInputTitle}"
-                               FontSize="18" FontWeight="Bold" Foreground="White"
+                               FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
                     <!-- Value Display -->
-                    <Border Grid.Row="1" Background="#DD2C3E50" CornerRadius="6"
+                    <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6"
                             Padding="16,12" Margin="0,0,0,12">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <TextBlock Text="{Binding NumericInputDisplayText}"
-                                       FontSize="28" FontWeight="Bold" Foreground="White"/>
+                                       FontSize="28" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             <TextBlock Text="{Binding NumericInputUnit}"
-                                       FontSize="16" Foreground="#AAA" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                       FontSize="16" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
                         </StackPanel>
                     </Border>
 
@@ -1209,9 +1209,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Confirm/Cancel -->
                     <Grid Grid.Row="3" ColumnDefinitions="*,*" Margin="0,12,0,0">
                         <Button Grid.Column="0" Content="Cancel" Command="{Binding CancelNumericInputCommand}"
-                                Margin="0,0,4,0" Background="#DD34495E"/>
+                                Margin="0,0,4,0" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                         <Button Grid.Column="1" Content="OK" Command="{Binding ConfirmNumericInputCommand}"
-                                Margin="4,0,0,0" Background="#DD4A9A7E"/>
+                                Margin="4,0,0,0" Background="{DynamicResource SystemControlHighlightAccentBrush}"/>
                     </Grid>
                 </Grid>
             </Border>
@@ -1221,7 +1221,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#CC000000"
                 IsVisible="{Binding IsResetConfirmVisible}"
                 ZIndex="100">
-            <Border Background="#DD1E2A38" CornerRadius="12" Padding="24"
+            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="24"
                     Width="320"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     BorderBrush="#E74C3C" BorderThickness="2">
@@ -1230,18 +1230,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
                                Width="40" Height="40" Stretch="Uniform"/>
-                        <TextBlock Text="Reset to Defaults?" FontSize="18" FontWeight="Bold" Foreground="White"
+                        <TextBlock Text="Reset to Defaults?" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Warning Message -->
                     <TextBlock Text="This will reset ALL AutoSteer settings to factory defaults and send them to the module."
-                               TextWrapping="Wrap" Foreground="#AAA" TextAlignment="Center"/>
+                               TextWrapping="Wrap" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" TextAlignment="Center"/>
 
                     <!-- Buttons -->
                     <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
                         <Button Grid.Column="0" Content="Cancel" Command="{Binding CancelResetCommand}"
-                                Margin="0,0,4,0" Padding="16,10" Background="#DD34495E"/>
+                                Margin="0,0,4,0" Padding="16,10" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                         <Button Grid.Column="1" Content="Reset" Command="{Binding ConfirmResetCommand}"
                                 Margin="4,0,0,0" Padding="16,10" Background="#DDE74C3C"/>
                     </Grid>

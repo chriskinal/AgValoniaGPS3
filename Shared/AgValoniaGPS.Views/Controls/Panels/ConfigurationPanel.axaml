@@ -28,14 +28,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -44,7 +44,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -52,17 +52,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border Classes="FloatingPanel" MinWidth="360" IsVisible="{Binding IsConfigurationPanelVisible}">
         <StackPanel Spacing="4">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Vehicle Configuration" Foreground="White" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="Vehicle Configuration" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
-                        Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
                         Command="{Binding ToggleConfigurationPanelCommand}" Margin="8,0,8,0"/>
             </Grid>
 
-            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4">
                 <!-- Row 0: Profile Management -->
@@ -94,7 +94,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Current Profile Display -->
             <Border Background="#DD1E8449" CornerRadius="6" Padding="8,4" Margin="0,8,0,0">
                 <TextBlock Text="{Binding CurrentProfileName, StringFormat='Profile: {0}'}"
-                           Foreground="White"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            FontSize="13"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
@@ -107,25 +107,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border Classes="FloatingPanel" MinWidth="300" IsVisible="{Binding IsProfileSelectionVisible}"
             HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel Spacing="8">
-            <TextBlock Text="Select Profile" FontSize="16" FontWeight="Bold" Foreground="White"
+            <TextBlock Text="Select Profile" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        HorizontalAlignment="Center" Margin="0,4,0,8"/>
 
             <ListBox ItemsSource="{Binding AvailableProfiles}"
                      SelectedItem="{Binding SelectedProfile}"
-                     MaxHeight="200" MinWidth="260" Background="#DD2C3E50">
+                     MaxHeight="200" MinWidth="260" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}" Foreground="White" FontSize="14" Padding="8,6"/>
+                        <TextBlock Text="{Binding}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" Padding="8,6"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
                 <Button Grid.Column="0" Content="Cancel" HorizontalContentAlignment="Center"
-                        Background="#E74C3C" Foreground="White" CornerRadius="6" Height="36"
+                        Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="6" Height="36"
                         Command="{Binding CancelProfileSelectionCommand}"/>
                 <Button Grid.Column="1" Content="Load" HorizontalContentAlignment="Center"
-                        Background="#4A9A7E" Foreground="White" CornerRadius="6" Height="36"
+                        Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="6" Height="36"
                         Command="{Binding LoadSelectedProfileCommand}"/>
             </Grid>
         </StackPanel>
