@@ -149,6 +149,12 @@ public partial class MainViewModel
         {
             AddCurvePoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
         }
+
+        // Add contour point if contour recording is active
+        if (IsRecordingContour)
+        {
+            AddContourPoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
+        }
     }
 
     /// <summary>

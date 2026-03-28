@@ -44,7 +44,13 @@ public enum TrackType
     BoundaryCurve = 32,
 
     /// <summary>Water pivot - circular, closed loop</summary>
-    WaterPivot = 64
+    WaterPivot = 64,
+
+    /// <summary>Recorded path - previously driven path for display only</summary>
+    RecordedPath = 128,
+
+    /// <summary>Contour - contour guidance strip</summary>
+    Contour = 256
 }
 
 /// <summary>
@@ -202,6 +208,48 @@ public class Track : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Create a recorded path track from a list of points.
+    /// Recorded paths are display-only (not used for guidance).
+    /// </summary>
+    public static Track FromRecordedPath(string name, List<Vec3> points)
+    {
+        return new Track
+        {
+            Name = name,
+            Type = TrackType.RecordedPath,
+            Points = new List<Vec3>(points),
+            IsClosed = false,
+            IsVisible = true
+        };
+    }
+
+    /// <summary>
+    /// Create a contour track from a list of points.
+    /// Contours are used for contour guidance mode.
+    /// </summary>
+    public static Track FromContour(string name, List<Vec3> points)
+    {
+        return new Track
+        {
+            Name = name,
+            Type = TrackType.Contour,
+            Points = new List<Vec3>(points),
+            IsClosed = false,
+            IsVisible = true
+        };
+    }
+
+    /// <summary>
+    /// Whether this is a recorded path (display only, not for guidance).
+    /// </summary>
+    public bool IsRecordedPath => Type == TrackType.RecordedPath;
+
+    /// <summary>
+    /// Whether this is a contour strip (for contour guidance).
+    /// </summary>
+    public bool IsContour => Type == TrackType.Contour;
+
+    /// <summary>
     /// Create a track from an existing ABLine model (migration helper).
     /// </summary>
     /// <param name="abLine">Legacy ABLine model</param>
@@ -270,7 +318,7 @@ public class Track : INotifyPropertyChanged
     /// <summary>
     /// Map legacy TrackMode to TrackType.
     /// </summary>
-    private static TrackType MapTrackMode(TrackMode mode) => mode switch
+    internal static TrackType MapTrackMode(TrackMode mode) => mode switch
     {
         TrackMode.AB => TrackType.ABLine,
         TrackMode.Curve => TrackType.Curve,
@@ -278,6 +326,8 @@ public class Track : INotifyPropertyChanged
         TrackMode.BndTrackInner => TrackType.BoundaryInner,
         TrackMode.BndCurve => TrackType.BoundaryCurve,
         TrackMode.WaterPivot => TrackType.WaterPivot,
+        TrackMode.RecordedPath => TrackType.RecordedPath,
+        TrackMode.Contour => TrackType.Contour,
         _ => TrackType.ABLine
     };
 
@@ -292,6 +342,8 @@ public class Track : INotifyPropertyChanged
         TrackType.BoundaryInner => TrackMode.BndTrackInner,
         TrackType.BoundaryCurve => TrackMode.BndCurve,
         TrackType.WaterPivot => TrackMode.WaterPivot,
+        TrackType.RecordedPath => TrackMode.RecordedPath,
+        TrackType.Contour => TrackMode.Contour,
         _ => TrackMode.AB
     };
 }

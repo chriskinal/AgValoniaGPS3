@@ -43,7 +43,9 @@ public enum TrackMode
     BndTrackOuter = 8,
     BndTrackInner = 16,
     BndCurve = 32,
-    WaterPivot = 64
+    WaterPivot = 64,
+    RecordedPath = 128,
+    Contour = 256
 }
 
 /// <summary>

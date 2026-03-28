@@ -114,9 +114,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Toolbar -->
                 <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="6" Padding="4" Margin="0,0,0,12">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <!-- Delete Track -->
+                        <!-- Delete Track (with confirmation) -->
                         <Button Classes="ToolbarButton" ToolTip.Tip="Delete Selected Track"
-                                Command="{Binding DeleteSelectedTrackCommand}">
+                                Command="{Binding DeleteContourTrackCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Cancel64.png"
                                    Width="28" Height="28" Stretch="Uniform"/>
                         </Button>
@@ -135,6 +135,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Command="{Binding SelectTrackAsActiveCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png"
                                    Width="28" Height="28" Stretch="Uniform"/>
+                        </Button>
+
+                        <Separator Background="#555" Width="2" Margin="4"/>
+
+                        <!-- Import Tracks -->
+                        <Button Classes="ToolbarButton" ToolTip.Tip="Import Tracks from Another Field"
+                                Command="{Binding ImportTracksCommand}">
+                            <TextBlock Text="IMP" Foreground="White" FontSize="11" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Toggle Recorded Paths -->
+                        <Button Classes="ToolbarButton" ToolTip.Tip="Toggle Recorded Path Display"
+                                Command="{Binding ToggleRecordedPathsCommand}">
+                            <TextBlock Text="REC" Foreground="White" FontSize="11" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </StackPanel>
                 </Border>
@@ -163,8 +179,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <Panel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="Contour" Foreground="#27AE60" FontSize="14" IsVisible="{Binding IsContour}"/>
+                                    <TextBlock Text="Path" Foreground="#8E44AD" FontSize="14" IsVisible="{Binding IsRecordedPath}"/>
                                     <TextBlock Text="Curve" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding IsCurve}"/>
-                                    <TextBlock Text="Line" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding !IsCurve}"/>
+                                    <TextBlock Text="Line" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding IsABLine}"/>
                                 </Panel>
                                 <Panel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Ellipse Width="16" Height="16" Fill="#27AE60" IsVisible="{Binding IsActive}"/>

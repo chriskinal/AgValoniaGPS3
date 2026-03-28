@@ -249,6 +249,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeFieldCommands();
         InitializeBoundaryCommands();
         InitializeTrackCommands();
+        InitializeTrackManagementCommands();
         InitializeNtripCommands();
         InitializeWizardCommands();
         InitializeSettingsCommands();
@@ -512,6 +513,27 @@ public partial class MainViewModel : ReactiveObject
         get => _isContourModeOn;
         set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
     }
+
+    private bool _showRecordedPaths;
+    public bool ShowRecordedPaths
+    {
+        get => _showRecordedPaths;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _showRecordedPaths, value);
+            UpdateRecordedPathsOnMap();
+        }
+    }
+
+    private bool _isRecordingContour;
+    public bool IsRecordingContour
+    {
+        get => _isRecordingContour;
+        set => this.RaiseAndSetIfChanged(ref _isRecordingContour, value);
+    }
+
+    public ObservableCollection<Track> ContourStrips { get; } = new();
+    public ObservableCollection<Track> RecordedPathTracks { get; } = new();
 
     // Button state tracking - these just track what the convenience buttons last did
     private bool _isManualAllOn;
@@ -2569,6 +2591,14 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleContourModeCommand { get; private set; }
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
+    public ICommand? ToggleRecordedPathsCommand { get; private set; }
+    public ICommand? StartContourRecordingCommand { get; private set; }
+    public ICommand? StopContourRecordingCommand { get; private set; }
+    public ICommand? DeleteContourTrackCommand { get; private set; }
+    public ICommand? ImportTracksCommand { get; private set; }
+    public ICommand? ImportTracksFromFieldCommand { get; private set; }
+    public ICommand? CloseImportTracksDialogCommand { get; private set; }
+    public ObservableCollection<string> ImportFieldsList { get; } = new();
     public ICommand? ToggleManualModeCommand { get; private set; }
     public ICommand? ToggleSectionMasterCommand { get; private set; }
     public ICommand? ToggleSectionCommand { get; private set; }
@@ -4161,6 +4191,9 @@ public partial class MainViewModel : ReactiveObject
                 }
 
                 _logger.LogDebug($"[TrackFiles] Loaded {loadedCount} tracks from TrackLines.txt");
+
+                // Rebuild recorded paths and contour strips from loaded tracks
+                RebuildRecordedPathsAndContours();
 
                 // Don't auto-activate any track - user must explicitly select one
                 // HasActiveTrack and IsAutoSteerAvailable stay false until user selects

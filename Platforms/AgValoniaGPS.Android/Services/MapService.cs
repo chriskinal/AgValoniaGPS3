@@ -223,6 +223,17 @@ public class MapService : IMapService
         _mapControl?.SetActiveTrack(track);
     }
 
+    // Recorded path / contour strip visualization
+    public void SetRecordedPaths(System.Collections.Generic.IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths)
+    {
+        _mapControl?.SetRecordedPaths(paths);
+    }
+
+    public void SetContourStrips(System.Collections.Generic.IReadOnlyList<AgValoniaGPS.Models.Track.Track> strips)
+    {
+        _mapControl?.SetContourStrips(strips);
+    }
+
     // Coverage bitmap initialization on field load
     public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN)
     {
