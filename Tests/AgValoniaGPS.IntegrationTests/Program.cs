@@ -23,6 +23,7 @@ using AgValoniaGPS.Desktop;
 using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.IntegrationTests;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -111,6 +112,14 @@ sealed class Program
         // a new instance each time. The MainWindow has the real one.
         var vm = (MainViewModel)window.DataContext!;
         var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+
+        // Configure realistic implement: 12m sprayer with 6 sections (2m each)
+        var config = ConfigurationStore.Instance;
+        config.Tool.Width = 12.0;
+        config.NumSections = 6;
+        for (int i = 0; i < 6; i++)
+            config.Tool.SetSectionWidth(i, 200.0); // 200cm = 2m per section
+        Console.WriteLine($"[Setup] Tool: {config.Tool.Width}m, {config.NumSections} sections, actual={config.ActualToolWidth}m");
 
         // Step 1: App startup
         Console.Write("[Step 1] App startup... ");
