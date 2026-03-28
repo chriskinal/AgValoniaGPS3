@@ -378,12 +378,13 @@ public class QuickWinScreenshotTests
 
     private static void CaptureWholeUI(string fileName, ThemeVariant theme, string screenshotDir)
     {
-        // Set theme BEFORE building layout so ThemeBrush() resolves correctly
+        // Set theme and pump dispatcher so ActualThemeVariant updates
+        // BEFORE ThemeBrush() calls in CreateUIOnly()
         if (Application.Current != null)
             Application.Current.RequestedThemeVariant = theme;
+        Dispatcher.UIThread.RunJobs();
 
-        var (window, vm) = ScreenshotCaptureTests.CreateUIOnly();
-        // Set on window so child AXAML DynamicResource bindings inherit the variant
+        var (window, vm) = ScreenshotCaptureTests.CreateUIOnly(theme);
         window.RequestedThemeVariant = theme;
         window.Show();
         window.UpdateLayout();

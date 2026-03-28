@@ -19,6 +19,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Coverage;
@@ -121,15 +122,18 @@ public class ScreenshotCaptureTests
     }
 
     internal static (Window window, MainViewModel vm) CreateUIOnly()
+        => CreateUIOnly(null);
+
+    internal static (Window window, MainViewModel vm) CreateUIOnly(ThemeVariant? theme)
     {
         var vm = new MainViewModelBuilder().Build();
 
         var panelCanvas = CreatePanelCanvas(vm);
-        var zoomButtons = CreateZoomButtons();
+        var zoomButtons = CreateZoomButtons(theme);
 
         var placeholder = new Border
         {
-            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", "#1a1a1a")
+            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", theme, "#1a1a1a")
         };
 
         var mapArea = new Grid();
@@ -140,9 +144,9 @@ public class ScreenshotCaptureTests
         var rootGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,*"),
-            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", "#1a1a1a")
+            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", theme, "#1a1a1a")
         };
-        var statusBar = CreateStatusBar();
+        var statusBar = CreateStatusBar(theme);
         Grid.SetRow(statusBar, 0);
         Grid.SetRow(mapArea, 1);
         rootGrid.Children.Add(statusBar);
@@ -168,22 +172,24 @@ public class ScreenshotCaptureTests
     /// Falls back to the provided default if the resource is not found.
     /// </summary>
     internal static IBrush ThemeBrush(string key, string fallback = "#1a1a1a")
+        => ThemeBrush(key, Application.Current?.ActualThemeVariant, fallback);
+
+    internal static IBrush ThemeBrush(string key, ThemeVariant? variant, string fallback = "#1a1a1a")
     {
         var app = Application.Current;
-        if (app != null)
+        if (app != null && variant != null)
         {
-            var variant = app.ActualThemeVariant;
-            if (app.TryGetResource(key, variant, out var value) && value is IBrush brush)
-                return brush;
+            if (app.TryGetResource(key, variant, out var value) && value is ISolidColorBrush scb)
+                return new SolidColorBrush(scb.Color);
         }
         return new SolidColorBrush(Color.Parse(fallback));
     }
 
-    private static Border CreateStatusBar()
+    private static Border CreateStatusBar(ThemeVariant? theme = null)
     {
         return new Border
         {
-            Background = ThemeBrush("SystemControlBackgroundChromeMediumBrush", "#2d2d2d"),
+            Background = ThemeBrush("SystemControlBackgroundChromeMediumBrush", theme, "#2d2d2d"),
             Padding = new Thickness(10),
             Child = new StackPanel
             {
@@ -192,11 +198,11 @@ public class ScreenshotCaptureTests
                 Children =
                 {
                     new TextBlock { Text = "Ready", Foreground = Brushes.LimeGreen, FontSize = 14 },
-                    new TextBlock { Text = "RTK Fix", Foreground = ThemeBrush("SystemControlHighlightAccentBrush", "#3498DB"), FontSize = 12 },
+                    new TextBlock { Text = "RTK Fix", Foreground = ThemeBrush("SystemControlHighlightAccentBrush", theme, "#3498DB"), FontSize = 12 },
                     new TextBlock { Text = "FPS: 30", Foreground = new SolidColorBrush(Color.Parse("#F1C40F")), FontSize = 12 },
                     new TextBlock { Text = "Lat: 2.1ms", Foreground = new SolidColorBrush(Color.Parse("#F39C12")), FontSize = 12 },
                     new Border { Width = 200 },
-                    new TextBlock { Text = "12.4 ha", Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"), FontSize = 12 },
+                    new TextBlock { Text = "12.4 ha", Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", theme, "#FFFFFF"), FontSize = 12 },
                     new TextBlock { Text = "5.2 ha done", Foreground = Brushes.LimeGreen, FontSize = 12, FontWeight = FontWeight.Bold },
                     new TextBlock { Text = "58%", Foreground = new SolidColorBrush(Color.Parse("#F39C12")), FontSize = 12 },
                 }
@@ -230,7 +236,7 @@ public class ScreenshotCaptureTests
         return canvas;
     }
 
-    private static StackPanel CreateZoomButtons()
+    private static StackPanel CreateZoomButtons(ThemeVariant? theme = null)
     {
         return new StackPanel
         {
@@ -246,8 +252,8 @@ public class ScreenshotCaptureTests
                     FontWeight = FontWeight.Bold,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center,
-                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", "#4A5568"),
-                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"),
+                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", theme, "#4A5568"),
+                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", theme, "#FFFFFF"),
                     CornerRadius = new CornerRadius(8)
                 },
                 new Button
@@ -256,8 +262,8 @@ public class ScreenshotCaptureTests
                     FontWeight = FontWeight.Bold,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center,
-                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", "#4A5568"),
-                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"),
+                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", theme, "#4A5568"),
+                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", theme, "#FFFFFF"),
                     CornerRadius = new CornerRadius(8)
                 },
             }
