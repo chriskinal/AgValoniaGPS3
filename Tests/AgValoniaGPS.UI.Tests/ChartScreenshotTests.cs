@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Views.Controls;
 using AgValoniaGPS.Views.Controls.Panels;
 
@@ -10,21 +10,73 @@ namespace AgValoniaGPS.UI.Tests;
 
 /// <summary>
 /// Headless screenshot capture tests for chart panels.
-/// Renders each chart panel in a headless window and captures
-/// before/after screenshots with mock data.
+/// Renders each chart panel with empty and populated data,
+/// following the shared capture pattern from ScreenshotCaptureTests.
+/// Screenshots go to screenshots/charts/ subdirectory.
 /// </summary>
 [TestFixture]
 public class ChartScreenshotTests
 {
-    private string _screenshotDir = null!;
+    private const int ChartWidth = 440;
+    private const int ChartHeight = 260;
 
-    [SetUp]
-    public void SetUp()
+    private static string ScreenshotBaseDir
     {
-        _screenshotDir = Path.Combine(
-            TestContext.CurrentContext.TestDirectory, "screenshots");
-        Directory.CreateDirectory(_screenshotDir);
+        get
+        {
+            var dir = Path.Combine(
+                TestContext.CurrentContext.WorkDirectory,
+                "screenshots", "charts");
+            Directory.CreateDirectory(dir);
+            return dir;
+        }
     }
+
+    // ---------------------------------------------------------------
+    // Capture helpers (consistent with ScreenshotCaptureTests pattern)
+    // ---------------------------------------------------------------
+
+    private static void CaptureScreenshot(Window window, string filePath)
+    {
+        window.UpdateLayout();
+
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        var renderTarget = new RenderTargetBitmap(
+            new PixelSize(ChartWidth, ChartHeight), new Vector(96, 96));
+        renderTarget.Render(window);
+        renderTarget.Save(filePath);
+    }
+
+    private static void AssertScreenshotExists(string path, string label)
+    {
+        Assert.That(File.Exists(path), Is.True, $"{label} screenshot not created: {path}");
+        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), $"{label} screenshot is empty");
+    }
+
+    // ---------------------------------------------------------------
+    // Window + panel builders
+    // ---------------------------------------------------------------
+
+    private static (Window window, TPanel panel) CreateChartWindow<TPanel>(
+        Action<MainViewModel> setVisible) where TPanel : UserControl, new()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        setVisible(vm);
+
+        var panel = new TPanel { DataContext = vm };
+        var window = new Window
+        {
+            Content = panel,
+            Width = ChartWidth,
+            Height = ChartHeight,
+            SizeToContent = SizeToContent.Manual
+        };
+        return (window, panel);
+    }
+
+    // ---------------------------------------------------------------
+    // Mock data generators (25 seconds at 10Hz to fill 20s window)
+    // ---------------------------------------------------------------
 
     private static ChartDataServiceFake CreateFakeChartData()
     {
@@ -33,11 +85,9 @@ public class ChartScreenshotTests
 
     private static void PopulateSteerData(ChartDataServiceFake chartData)
     {
-        // Simulate 25 seconds of steer data at 10Hz to fill the 20s rolling window
         for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
-            // Realistic oscillating steer pattern: correction cycles
             double setAngle = 18.0 * Math.Sin(t * 0.4) + 5.0 * Math.Sin(t * 1.2);
             double actualAngle = setAngle * 0.85 + 2.0 * Math.Sin(t * 0.4 - 0.3);
             double pwm = Math.Clamp(Math.Abs(setAngle) * 5.5, 0, 255);
@@ -51,7 +101,6 @@ public class ChartScreenshotTests
 
     private static void PopulateHeadingData(ChartDataServiceFake chartData)
     {
-        // 25 seconds at 10Hz -- heading error centered near zero, GPS/IMU near 180
         for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
@@ -68,7 +117,6 @@ public class ChartScreenshotTests
 
     private static void PopulateXTEData(ChartDataServiceFake chartData)
     {
-        // 25 seconds at 10Hz -- XTE oscillating around zero
         for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
@@ -79,146 +127,82 @@ public class ChartScreenshotTests
         chartData.SetCurrentTime(25.0);
     }
 
-    private static void CaptureScreenshot(Window window, string filePath)
-    {
-        var dir = Path.GetDirectoryName(filePath);
-        if (dir != null) Directory.CreateDirectory(dir);
+    // ---------------------------------------------------------------
+    // Chart capture helper: empty + populated for a chart type
+    // ---------------------------------------------------------------
 
-        var frame = window.CaptureRenderedFrame();
-        if (frame != null)
-            frame.Save(filePath);
+    private void CaptureChartToggle<TPanel>(
+        string chartName,
+        Action<MainViewModel> setVisible,
+        Action<TPanel, ChartDataServiceFake> configureChart,
+        Action<ChartDataServiceFake> populateData) where TPanel : UserControl, new()
+    {
+        var baseDir = ScreenshotBaseDir;
+
+        // Empty baseline
+        {
+            var (window, panel) = CreateChartWindow<TPanel>(setVisible);
+            var emptyData = CreateFakeChartData();
+            configureChart(panel, emptyData);
+            window.Show();
+
+            var path = Path.Combine(baseDir, $"{chartName}_empty.png");
+            CaptureScreenshot(window, path);
+            window.Close();
+
+            AssertScreenshotExists(path, $"{chartName}/empty");
+            TestContext.Out.WriteLine($"[{chartName}] empty: {path}");
+        }
+
+        // With data
+        {
+            var (window, panel) = CreateChartWindow<TPanel>(setVisible);
+            var chartData = CreateFakeChartData();
+            populateData(chartData);
+            configureChart(panel, chartData);
+            window.Show();
+
+            var path = Path.Combine(baseDir, $"{chartName}_data.png");
+            CaptureScreenshot(window, path);
+            window.Close();
+
+            AssertScreenshotExists(path, $"{chartName}/data");
+            TestContext.Out.WriteLine($"[{chartName}] data:  {path}");
+        }
     }
 
-    // ---- Steer Chart Screenshots ----
+    // ---------------------------------------------------------------
+    // Tests
+    // ---------------------------------------------------------------
 
     [AvaloniaTest]
-    public void SteerChart_EmptyBaseline_CapturesScreenshot()
+    public void Capture_SteerChart()
     {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsSteerChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        var panel = new SteerChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "steer_chart_empty.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "Steer chart empty screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
-    }
-
-    [AvaloniaTest]
-    public void SteerChart_WithData_CapturesScreenshot()
-    {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsSteerChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        PopulateSteerData(chartData);
-
-        var panel = new SteerChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "steer_chart.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "Steer chart data screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
-    }
-
-    // ---- Heading Chart Screenshots ----
-
-    [AvaloniaTest]
-    public void HeadingChart_EmptyBaseline_CapturesScreenshot()
-    {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsHeadingChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        var panel = new HeadingChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "heading_chart_empty.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "Heading chart empty screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
+        CaptureChartToggle<SteerChartPanel>(
+            "steer_chart",
+            vm => vm.IsSteerChartPanelVisible = true,
+            (panel, data) => panel.ConfigureChart(data),
+            PopulateSteerData);
     }
 
     [AvaloniaTest]
-    public void HeadingChart_WithData_CapturesScreenshot()
+    public void Capture_HeadingChart()
     {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsHeadingChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        PopulateHeadingData(chartData);
-
-        var panel = new HeadingChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "heading_chart.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "Heading chart data screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
-    }
-
-    // ---- XTE Chart Screenshots ----
-
-    [AvaloniaTest]
-    public void XTEChart_EmptyBaseline_CapturesScreenshot()
-    {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsXTEChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        var panel = new XTEChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "xte_chart_empty.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "XTE chart empty screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
+        CaptureChartToggle<HeadingChartPanel>(
+            "heading_chart",
+            vm => vm.IsHeadingChartPanelVisible = true,
+            (panel, data) => panel.ConfigureChart(data),
+            PopulateHeadingData);
     }
 
     [AvaloniaTest]
-    public void XTEChart_WithData_CapturesScreenshot()
+    public void Capture_XTEChart()
     {
-        var vm = new MainViewModelBuilder().Build();
-        vm.IsXTEChartPanelVisible = true;
-
-        var chartData = CreateFakeChartData();
-        PopulateXTEData(chartData);
-
-        var panel = new XTEChartPanel { DataContext = vm };
-        panel.ConfigureChart(chartData);
-
-        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
-        window.Show();
-
-        var path = Path.Combine(_screenshotDir, "xte_chart.png");
-        CaptureScreenshot(window, path);
-
-        Assert.That(File.Exists(path), Is.True, "XTE chart data screenshot was saved");
-        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Screenshot file is not empty");
+        CaptureChartToggle<XTEChartPanel>(
+            "xte_chart",
+            vm => vm.IsXTEChartPanelVisible = true,
+            (panel, data) => panel.ConfigureChart(data),
+            PopulateXTEData);
     }
 }
 
