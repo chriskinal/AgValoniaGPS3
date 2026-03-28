@@ -520,6 +520,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var bounds = Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
 
+        // Apply line smooth setting (anti-aliasing toggle)
+        var edgeMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.LineSmoothEnabled
+            ? EdgeMode.Unspecified  // default: anti-aliased
+            : EdgeMode.Aliased;
+        RenderOptions.SetEdgeMode(this, edgeMode);
+
         // DEBUG: Log which control is rendering (reduced frequency)
         // Console.WriteLine($"[Render] Control={GetHashCode()}, bounds={bounds.Width:F0}x{bounds.Height:F0}, explicit={_bitmapExplicitlyInitialized}");
 
@@ -607,6 +613,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_clipLine.HasValue || (_clipPath != null && _clipPath.Count >= 2))
             {
                 DrawClipLine(context);
+            }
+
+            // Draw extra guidelines (parallel lines around active track)
+            var displayCfg = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+            if (displayCfg.ExtraGuidelines && _activeTrack != null && _activeTrack.Points.Count >= 2)
+            {
+                DrawExtraGuidelines(context, displayCfg.ExtraGuidelinesCount);
             }
 
             // Draw Track (active track, pending Point A, recorded paths, contour strips)
@@ -2530,6 +2543,94 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
             DrawLabel(context, "B", pointB.X + labelOffset, pointB.Y, worldPerPixel, Brushes.Red);
+        }
+    }
+
+    /// <summary>
+    /// Draw parallel offset guidelines on both sides of the active track.
+    /// Offset spacing is the tool width (same as track pass spacing).
+    /// </summary>
+    private void DrawExtraGuidelines(DrawingContext context, int count)
+    {
+        if (_activeTrack == null || _activeTrack.Points.Count < 2) return;
+
+        double spacing = _toolWidth > 0.1 ? _toolWidth : 6.0; // fallback to 6m
+        double viewHeight = 200.0 / _zoom;
+        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
+        double worldPerPixel = viewHeight / screenHeight;
+        double lineThickness = 1 * worldPerPixel;
+
+        var guidelinePen = new Pen(
+            new SolidColorBrush(Color.FromArgb(60, 255, 165, 0)), lineThickness);
+
+        var track = _activeTrack;
+        if (track.Points.Count == 2)
+        {
+            // AB line: offset perpendicular
+            var pA = track.Points[0];
+            var pB = track.Points[track.Points.Count - 1];
+            double dx = pB.Easting - pA.Easting;
+            double dy = pB.Northing - pA.Northing;
+            double length = Math.Sqrt(dx * dx + dy * dy);
+            if (length < 0.01) return;
+
+            // Unit perpendicular (left)
+            double px = -dy / length;
+            double py = dx / length;
+
+            // Extend line well beyond view
+            double nx = dx / length;
+            double ny = dy / length;
+            double ext = 500.0;
+
+            for (int i = 1; i <= count; i++)
+            {
+                double offset = i * spacing;
+
+                // Left side
+                var lA = new Point(pA.Easting + px * offset - nx * ext,
+                                   pA.Northing + py * offset - ny * ext);
+                var lB = new Point(pB.Easting + px * offset + nx * ext,
+                                   pB.Northing + py * offset + ny * ext);
+                context.DrawLine(guidelinePen, lA, lB);
+
+                // Right side
+                var rA = new Point(pA.Easting - px * offset - nx * ext,
+                                   pA.Northing - py * offset - ny * ext);
+                var rB = new Point(pB.Easting - px * offset + nx * ext,
+                                   pB.Northing - py * offset + ny * ext);
+                context.DrawLine(guidelinePen, rA, rB);
+            }
+        }
+        else
+        {
+            // Curve: offset each segment perpendicular
+            for (int i = 1; i <= count; i++)
+            {
+                double offset = i * spacing;
+
+                for (int j = 0; j < track.Points.Count - 1; j++)
+                {
+                    var p1 = track.Points[j];
+                    var p2 = track.Points[j + 1];
+                    double dx = p2.Easting - p1.Easting;
+                    double dy = p2.Northing - p1.Northing;
+                    double segLen = Math.Sqrt(dx * dx + dy * dy);
+                    if (segLen < 0.001) continue;
+
+                    double px = -dy / segLen;
+                    double py = dx / segLen;
+
+                    // Left
+                    context.DrawLine(guidelinePen,
+                        new Point(p1.Easting + px * offset, p1.Northing + py * offset),
+                        new Point(p2.Easting + px * offset, p2.Northing + py * offset));
+                    // Right
+                    context.DrawLine(guidelinePen,
+                        new Point(p1.Easting - px * offset, p1.Northing - py * offset),
+                        new Point(p2.Easting - px * offset, p2.Northing - py * offset));
+                }
+            }
         }
     }
 
