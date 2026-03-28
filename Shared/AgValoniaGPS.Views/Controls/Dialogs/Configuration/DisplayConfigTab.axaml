@@ -93,9 +93,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <ScrollViewer Grid.Row="1">
             <StackPanel Spacing="16" Margin="16,8,16,16">
-                <!-- Main Toggle Grid: 4 columns x 4 rows -->
+                <!-- Main Toggle Grid: 4 columns x 5 rows -->
                 <Border Background="#DD253545" CornerRadius="8" Padding="20">
-                    <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                    <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                           RowSpacing="12" ColumnSpacing="12" HorizontalAlignment="Center">
 
                         <!-- Row 0: Polygons, Speedo, Keyboard, Headland Dist -->
@@ -285,6 +285,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                            Width="28" Height="28" Stretch="Uniform"/>
                                 </Button>
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- Row 4: App Theme -->
+                        <StackPanel Grid.Row="4" Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
+                            <Button Classes="DisplayToggle"
+                                    Background="{Binding Display.IsDayMode, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                    BorderBrush="{Binding Display.IsDayMode, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                    Command="{Binding ToggleDayNightThemeCommand}">
+                                <TextBlock Text="Light" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <TextBlock Text="Light Theme" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
+                            <Button Classes="DisplayToggle"
+                                    Background="{Binding !Display.IsDayMode, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                    BorderBrush="{Binding !Display.IsDayMode, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                    Command="{Binding ToggleDayNightThemeCommand}">
+                                <TextBlock Text="Dark" Foreground="White" FontSize="14" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <TextBlock Text="Dark Theme" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                 </Border>

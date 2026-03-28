@@ -260,6 +260,9 @@ public partial class MainViewModel : ReactiveObject
         _displaySettings.LoadSettings();
         RestoreSettings();
 
+        // Apply theme variant based on saved day/night mode
+        ApplyThemeVariant(IsDayMode);
+
         // Start UDP communication (fire-and-forget but explicit)
         _ = InitializeAsync();
     }

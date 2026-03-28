@@ -15,6 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Reactive;
+using Avalonia;
+using Avalonia.Styling;
 using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
@@ -67,6 +69,7 @@ public partial class MainViewModel
         {
             IsDayMode = !IsDayMode;
             _mapService.SetDayMode(IsDayMode);
+            ApplyThemeVariant(IsDayMode);
         });
 
         Toggle2D3DCommand = ReactiveCommand.Create(() =>
@@ -120,5 +123,19 @@ public partial class MainViewModel
         {
             IsSettingsVisible = !IsSettingsVisible;
         });
+    }
+
+    /// <summary>
+    /// Applies the Avalonia theme variant based on day/night mode.
+    /// Day mode = Light theme, Night mode = Dark theme.
+    /// </summary>
+    internal static void ApplyThemeVariant(bool isDayMode)
+    {
+        if (Application.Current != null)
+        {
+            Application.Current.RequestedThemeVariant = isDayMode
+                ? ThemeVariant.Light
+                : ThemeVariant.Dark;
+        }
     }
 }
