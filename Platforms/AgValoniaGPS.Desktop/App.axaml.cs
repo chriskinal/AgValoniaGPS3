@@ -37,8 +37,14 @@ public partial class App : Application
 
     public static IServiceProvider? Services { get; set; }
 
-    // Hooks for integration test harness
+    /// <summary>
+    /// Hook for integration tests to replace services before DI build.
+    /// </summary>
     public static Action<IServiceCollection>? ConfigureTestServices { get; set; }
+
+    /// <summary>
+    /// Hook for integration tests to run scenarios after MainWindow is shown.
+    /// </summary>
     public static Func<IClassicDesktopStyleApplicationLifetime, Task>? OnAppReady { get; set; }
 
     public override void Initialize()
@@ -95,6 +101,29 @@ public partial class App : Application
                 settingsService.Save();
                 _host?.Dispose();
             };
+
+            // Integration test hook: run scenarios after window is ready
+            if (OnAppReady != null)
+            {
+                var callback = OnAppReady;
+                Dispatcher.UIThread.Post(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(1000); // Let window fully render
+                        await callback(desktop);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[IntTest] SCENARIO FAILED: {ex.Message}");
+                        Console.WriteLine(ex.StackTrace);
+                    }
+                    finally
+                    {
+                        desktop.Shutdown();
+                    }
+                });
+            }
         }
 
         base.OnFrameworkInitializationCompleted();

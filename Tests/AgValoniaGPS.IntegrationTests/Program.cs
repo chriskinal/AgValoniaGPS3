@@ -233,6 +233,69 @@ sealed class Program
         vm.CloseViewSettingsDialogCommand?.Execute(null);
         await Delay(200);
         Console.WriteLine("OK");
+
+        // --- Track Management Scenarios (PR #80) ---
+        await RunTrackManagementScenario(window, vm);
+    }
+
+    static async Task RunTrackManagementScenario(Window window, MainViewModel vm)
+    {
+        Console.WriteLine("\n--- Track Management Scenarios ---");
+
+        // Track 1: Open tracks dialog showing the loaded AB line
+        Console.Write("[Tracks 1] Tracks dialog with AB line listed... ");
+        vm.ShowTracksDialogCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[SavedTracks={vm.SavedTracks.Count}] ");
+        CaptureScreenshot(window, "tracks_01_dialog_with_track");
+        Console.WriteLine("OK");
+
+        // Track 2: Activate the AB line via SelectedTrack setter (activates + closes dialog)
+        Console.Write("[Tracks 2] Activate AB line track... ");
+        vm.State.UI.CloseDialog();
+        if (vm.SavedTracks.Count > 0)
+        {
+            // SelectedTrack setter activates the track and updates the map
+            vm.SelectedTrack = vm.SavedTracks[0];
+            Console.Write($"[Active={vm.SelectedTrack?.Name ?? "none"}, IsActive={vm.SelectedTrack?.IsActive}] ");
+        }
+        await Delay(500);
+        CaptureScreenshot(window, "tracks_02_guidance_line_active");
+        Console.WriteLine("OK");
+
+        // Track 3: Drive simulator along the active track to show guidance with XTE
+        Console.Write("[Tracks 3] Drive along track with guidance... ");
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
+        // Drive 80 ticks with slight steer offset to show cross-track error
+        for (int i = 0; i < 80; i++)
+        {
+            simService.Tick(i < 20 ? 2.0 : 0.0); // Slight right steer then straight
+            await Delay(33);
+        }
+        Console.Write($"[XTE={vm.State.Guidance.CrossTrackError:F2}m] ");
+        CaptureScreenshot(window, "tracks_03_guidance_driving");
+        Console.WriteLine("OK");
+
+        // Track 4: Open import tracks dialog
+        Console.Write("[Tracks 4] Import tracks dialog... ");
+        vm.ImportTracksCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[ImportFields={vm.ImportFieldsList.Count}] ");
+        CaptureScreenshot(window, "tracks_04_import_dialog");
+        vm.State.UI.CloseDialog();
+        Console.WriteLine("OK");
+
+        // Track 5: Toggle recorded paths display
+        Console.Write("[Tracks 5] Toggle recorded paths... ");
+        vm.ToggleRecordedPathsCommand?.Execute(null);
+        await Delay(300);
+        Console.Write($"[ShowRecordedPaths={vm.ShowRecordedPaths}] ");
+        CaptureScreenshot(window, "tracks_05_recorded_paths_toggle");
+        Console.WriteLine("OK");
+
+        Console.WriteLine("--- Track Management Scenarios Complete ---");
     }
 
     /// <summary>
