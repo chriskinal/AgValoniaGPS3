@@ -113,6 +113,16 @@ public class Track : INotifyPropertyChanged
     public double NudgeDistance { get; set; }
 
     /// <summary>
+    /// Set of path numbers that have been worked (driven with sections on).
+    /// Used by skip-and-fill mode to find the next unworked path.
+    /// </summary>
+    public HashSet<int> WorkedPaths { get; set; } = new();
+
+    public void MarkPathWorked(int pathNumber) => WorkedPaths.Add(pathNumber);
+    public bool IsPathWorked(int pathNumber) => WorkedPaths.Contains(pathNumber);
+    public void ClearWorkedPaths() => WorkedPaths.Clear();
+
+    /// <summary>
     /// True if this is a 2-point track (AB line behavior).
     /// AB lines use infinite extension along the heading.
     /// </summary>

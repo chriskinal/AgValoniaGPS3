@@ -142,7 +142,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Button Classes="BottomPanelButton" ToolTip.Tip="U-Turn Skip Rows On/Off"
                         Command="{Binding ToggleUTurnSkipRowsCommand}"
                         IsVisible="{Binding HasActiveTrack}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouSkipOff.png" Stretch="Uniform"/>
+                    <Panel>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouSkipOn.png" Stretch="Uniform"
+                               IsVisible="{Binding IsUTurnSkipRowsEnabled}"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouSkipOff.png" Stretch="Uniform"
+                               IsVisible="{Binding IsUTurnSkipRowsEnabled, Converter={StaticResource InverseBoolConverter}}"/>
+                    </Panel>
                 </Button>
 
                 <!-- === ALWAYS VISIBLE BUTTONS === -->

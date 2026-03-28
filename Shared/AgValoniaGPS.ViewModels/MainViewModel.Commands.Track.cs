@@ -620,14 +620,21 @@ public partial class MainViewModel
 
         ToggleYouSkipCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "YouSkip Toggle - not yet implemented";
+            IsSkipWorkedMode = !IsSkipWorkedMode;
+            StatusMessage = IsSkipWorkedMode
+                ? "Skip worked tracks: ON — will skip already-worked rows"
+                : "Skip worked tracks: OFF — fixed skip pattern";
         });
 
         ToggleUTurnSkipRowsCommand = ReactiveCommand.Create(() =>
         {
             IsUTurnSkipRowsEnabled = !IsUTurnSkipRowsEnabled;
+            IsSkipWorkedMode = IsUTurnSkipRowsEnabled;
+            // Reset snake sequence so it rebuilds on next turn
+            _snakeSequence = null;
+            _snakeIndex = -1;
             StatusMessage = IsUTurnSkipRowsEnabled
-                ? $"U-Turn skip rows: ON ({UTurnSkipRows} rows)"
+                ? $"U-Turn skip rows: ON ({UTurnSkipRows} rows, snake pattern)"
                 : "U-Turn skip rows: OFF";
         });
 
@@ -777,11 +784,14 @@ public partial class MainViewModel
             _coverageMapService.ClearAll();
             // Reset track guidance state to force global search for nearest segment
             _trackGuidanceState = null;
-            // Reset pass counter, nudge offset, and track offset on ALL tracks
+            // Reset pass counter, nudge offset, worked paths, and track offset on ALL tracks
             _howManyPathsAway = 0;
             _nudgeOffset = 0;
             foreach (var track in SavedTracks)
+            {
                 track.NudgeDistance = 0;
+                track.ClearWorkedPaths();
+            }
             SaveTracksToFile();
             StatusMessage = "Coverage/contours cleared";
         });

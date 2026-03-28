@@ -736,6 +736,12 @@ public partial class MainViewModel : ReactiveObject
 
         // Flush coverage updates after all sections processed (fires event once, not 16 times)
         _coverageMapService.FlushCoverageUpdate();
+
+        // Record worked path for skip-and-fill mode (any section painting = path is worked)
+        if (states.Any(s => s.IsOn) && SelectedTrack != null)
+        {
+            SelectedTrack.MarkPathWorked(_howManyPathsAway);
+        }
     }
 
 

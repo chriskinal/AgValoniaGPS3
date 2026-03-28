@@ -56,6 +56,11 @@ public partial class MainViewModel
 
     private int _howManyPathsAway; // Which parallel offset line we're on (like AgOpenGPS)
     private double _nudgeOffset; // Fine nudge offset in meters (added on top of pass offset)
+    private int? _returnPassTargetPath; // When set, CompleteYouTurn jumps directly to this path instead of using skip logic
+
+    // Pre-computed snake/spiral sequence for skip-and-fill pattern
+    private List<int>? _snakeSequence;
+    private int _snakeIndex = -1;
 
     // Zone tracking - single state for tractor location
     public enum TractorZone { OutsideBoundary = 0, InHeadland = 1, InCultivatedArea = 2 }
@@ -103,6 +108,17 @@ public partial class MainViewModel
     {
         get => _isUTurnSkipRowsEnabled;
         set => this.RaiseAndSetIfChanged(ref _isUTurnSkipRowsEnabled, value);
+    }
+
+    private bool _isSkipWorkedMode;
+    /// <summary>
+    /// When true, U-turns skip over already-worked paths to find the next unworked one.
+    /// This enables the skip-and-fill pattern: work every Nth row, then return to fill gaps.
+    /// </summary>
+    public bool IsSkipWorkedMode
+    {
+        get => _isSkipWorkedMode;
+        set => this.RaiseAndSetIfChanged(ref _isSkipWorkedMode, value);
     }
 
     #endregion
@@ -324,23 +340,91 @@ public partial class MainViewModel
             _logger.LogDebug($"[YouTurn] Zone={_currentZone}, dist={_distanceToHeadland:F1}m, aligned={isAlignedWithABLine}, inRange={headlandInRange}");
         }
 
-        // TURN CREATION: In cultivated area, approaching headland, aligned with track
-        if (_youTurnPath == null && !_isInYouTurn && isInCultivatedArea && headlandInRange && isAlignedWithABLine)
+        // TURN CREATION: Approaching headland, aligned with track
+        // In snake mode, also trigger from headland zone (tractor may be in headland at far end of field)
+        bool canCreateTurn = isInCultivatedArea && headlandInRange;
+        if (!canCreateTurn && _isSkipWorkedMode && isInHeadlandZone && isAlignedWithABLine
+            && _snakeSequence != null && _youTurnPath == null && !_isInYouTurn)
         {
-            bool nextLineInside = WouldNextLineBeInsideBoundary(track, abHeading);
-            _logger.LogDebug($"[YouTurn] Creating turn? nextLineInside={nextLineInside}");
-            if (nextLineInside)
+            // In headland at far end: check if we have more paths in the sequence
+            canCreateTurn = GetNextSnakePath().HasValue;
+        }
+        if (_youTurnPath == null && !_isInYouTurn && canCreateTurn && isAlignedWithABLine)
+        {
+            // SNAKE MODE: Use pre-computed sequence for skip-and-fill
+            if (_isSkipWorkedMode)
             {
-                _logger.LogDebug($"[YouTurn] Creating turn path at {_distanceToHeadland:F1}m from headland");
-                _isTurnLeft = _isHeadingSameWay;
-                _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
-                ComputeNextTrack(track, abHeading);
-                CreateYouTurnPath(currentPosition, headingRadians, abHeading);
+                // Build snake sequence on first turn
+                if (_snakeSequence == null)
+                {
+                    BuildSnakeSequence(track, abHeading);
+                }
+
+                int? nextPath = GetNextSnakePath();
+                if (nextPath.HasValue)
+                {
+                    double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+                    double nextDistAway = widthMinusOverlap * nextPath.Value;
+                    int pathDiff = nextPath.Value - _howManyPathsAway;
+
+                    // Determine turn direction from path difference
+                    bool positiveOffset = pathDiff > 0;
+                    _isTurnLeft = positiveOffset ^ _isHeadingSameWay;
+                    _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
+                    NextTrackTurnOffset = Math.Abs(pathDiff) * widthMinusOverlap;
+
+                    // Build next track at exact offset
+                    var refA = track.Points[0];
+                    var refB = track.Points[track.Points.Count - 1];
+                    double perpAngle = abHeading + Math.PI / 2;
+
+                    if (track.Points.Count == 2)
+                    {
+                        double offsetE = Math.Sin(perpAngle) * nextDistAway;
+                        double offsetN = Math.Cos(perpAngle) * nextDistAway;
+                        _nextTrack = Track.FromABLine($"Path {nextPath.Value}",
+                            new Vec3(refA.Easting + offsetE, refA.Northing + offsetN, abHeading),
+                            new Vec3(refB.Easting + offsetE, refB.Northing + offsetN, abHeading));
+                    }
+                    else
+                    {
+                        var offsetPoints = Models.Guidance.CurveProcessing.CreateOffsetCurve(track.Points, nextDistAway);
+                        _nextTrack = Track.FromCurve($"Path {nextPath.Value}", offsetPoints, track.IsClosed);
+                    }
+                    _nextTrack.IsActive = false;
+
+                    // Store target for CompleteYouTurn
+                    _returnPassTargetPath = nextPath.Value;
+
+                    _logger.LogDebug($"[YouTurn] Snake: path {_howManyPathsAway} -> {nextPath.Value} (diff={pathDiff}, offset={nextDistAway:F1}m, turnLeft={_isTurnLeft})");
+                    _mapService.SetNextTrack(_nextTrack);
+                    _mapService.SetIsInYouTurn(true);
+                    CreateYouTurnPath(currentPosition, headingRadians, abHeading);
+                }
+                else
+                {
+                    _logger.LogDebug("[YouTurn] Snake sequence complete — field done");
+                    StatusMessage = "Field complete — all tracks worked";
+                }
             }
+            // NORMAL MODE: Standard skip logic
             else
             {
-                _logger.LogDebug("[YouTurn] Next line would be outside boundary - stopping U-turns");
-                StatusMessage = "End of field reached";
+                bool nextLineInside = WouldNextLineBeInsideBoundary(track, abHeading);
+                _logger.LogDebug($"[YouTurn] Creating turn? nextLineInside={nextLineInside}");
+                if (nextLineInside)
+                {
+                    _logger.LogDebug($"[YouTurn] Creating turn path at {_distanceToHeadland:F1}m from headland");
+                    _isTurnLeft = _isHeadingSameWay;
+                    _wasHeadingSameWayAtTurnStart = _isHeadingSameWay;
+                    ComputeNextTrack(track, abHeading);
+                    CreateYouTurnPath(currentPosition, headingRadians, abHeading);
+                }
+                else
+                {
+                    _logger.LogDebug("[YouTurn] Next line would be outside boundary - stopping U-turns");
+                    StatusMessage = "End of field reached";
+                }
             }
         }
         // TURN TRIGGER: When path is ready, trigger when close to turn start point
@@ -407,27 +491,77 @@ public partial class MainViewModel
         if (currentTrack.Points.Count < 2)
             return true; // Invalid track, assume OK
 
+        // Calculate next path offset using SAME logic as ComputeNextTrack
+        // Normal turn: _isTurnLeft = _isHeadingSameWay, so positiveOffset = false (always negative)
+        // This matches ComputeNextTrack's XOR: _isTurnLeft ^ _isHeadingSameWay
+        int rowSkipWidth = UTurnSkipRows;
+        int pathsToMove = rowSkipWidth + 1;
+        bool positiveOffset = false; // _isHeadingSameWay ^ _isHeadingSameWay = false
+        int offsetChange = positiveOffset ? pathsToMove : -pathsToMove;
+        int nextPathsAway = _howManyPathsAway + offsetChange;
+
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        double nextDistAway = widthMinusOverlap * nextPathsAway;
+
+        _logger.LogDebug($"[NextTrack] currentPath={_howManyPathsAway}, nextPath={nextPathsAway}, dist={nextDistAway:F1}m");
+
+        // Use same perpAngle as ComputeNextTrack (always + PI/2, sign in distance)
         var pointA = currentTrack.Points[0];
         var pointB = currentTrack.Points[currentTrack.Points.Count - 1];
+        double perpAngle = abHeading + Math.PI / 2;
+        double offsetEasting = Math.Sin(perpAngle) * nextDistAway;
+        double offsetNorthing = Math.Cos(perpAngle) * nextDistAway;
 
-        // Calculate where the next line would be (use runtime skip rows property)
-        // skipWidth=0 means adjacent passes, skipWidth=1 means skip 1 row, etc.
-        int rowSkipWidth = UTurnSkipRows; // Use runtime property (matches ComputeNextTrack)
-        double actualWidth = ConfigStore.ActualToolWidth;
-        double overlap = Tool.Overlap;
-        double offsetDistance = (rowSkipWidth + 1) * (actualWidth - overlap);
-        _logger.LogDebug($"[NextTrack] ActualToolWidth={actualWidth:F2}m, Overlap={overlap:F2}m, SkipWidth={rowSkipWidth}, OffsetDistance={offsetDistance:F2}m");
-
-        // Perpendicular offset direction
-        double perpAngle = abHeading + (_isHeadingSameWay ? -Math.PI / 2 : Math.PI / 2);
-        double offsetEasting = Math.Sin(perpAngle) * offsetDistance;
-        double offsetNorthing = Math.Cos(perpAngle) * offsetDistance;
-
-        // Check if midpoint of next line would be inside boundary
+        // Check midpoint of next line against cultivated area (headland boundary)
         double midEasting = (pointA.Easting + pointB.Easting) / 2 + offsetEasting;
         double midNorthing = (pointA.Northing + pointB.Northing) / 2 + offsetNorthing;
 
+        bool inside = IsPointInsideCultivatedArea(midEasting, midNorthing);
+        _logger.LogDebug($"[NextTrack] NextLine midpoint ({midEasting:F1}, {midNorthing:F1}) inside cultivated area: {inside}");
+        return inside;
+    }
+
+    /// <summary>
+    /// Check if a specific path offset would be inside the field boundary.
+    /// Used by skip-worked mode to validate return paths.
+    /// </summary>
+    private bool WouldPathBeInsideBoundary(Track currentTrack, double abHeading, bool positiveDirection, int pathsToMove)
+    {
+        if (_currentBoundary?.OuterBoundary == null || !_currentBoundary.OuterBoundary.IsValid)
+            return true;
+        if (currentTrack.Points.Count < 2)
+            return true;
+
+        var pointA = currentTrack.Points[0];
+        var pointB = currentTrack.Points[currentTrack.Points.Count - 1];
+
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        int targetPath = _howManyPathsAway + (positiveDirection ? pathsToMove : -pathsToMove);
+        double offsetDistance = widthMinusOverlap * targetPath;
+
+        // Perpendicular offset from reference track
+        double perpAngle = abHeading + Math.PI / 2;
+        double midEasting = (pointA.Easting + pointB.Easting) / 2 + Math.Sin(perpAngle) * offsetDistance;
+        double midNorthing = (pointA.Northing + pointB.Northing) / 2 + Math.Cos(perpAngle) * offsetDistance;
+
         return IsPointInsideBoundary(midEasting, midNorthing);
+    }
+
+    /// <summary>
+    /// Check if a point is inside the cultivated area (inside headland line if it exists,
+    /// otherwise inside outer boundary). Uses _currentHeadlandLine which is the live
+    /// headland polygon used by zone detection.
+    /// </summary>
+    private bool IsPointInsideCultivatedArea(double easting, double northing)
+    {
+        // Use _currentHeadlandLine (the orange line used for zone detection)
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+        {
+            return IsPointInPolygon(_currentHeadlandLine, easting, northing);
+        }
+
+        // Fall back to outer boundary if no headland defined
+        return IsPointInsideBoundary(easting, northing);
     }
 
     /// <summary>
@@ -547,6 +681,13 @@ public partial class MainViewModel
 
         // Calculate offset direction using XOR
         bool positiveOffset = _isTurnLeft ^ _isHeadingSameWay;
+
+        // Skip-worked mode: find next unworked path instead of fixed skip
+        if (_isSkipWorkedMode && SelectedTrack != null)
+        {
+            pathsToMove = GetNextUnworkedPathSkip(_howManyPathsAway, positiveOffset, pathsToMove);
+        }
+
         int offsetChange = positiveOffset ? pathsToMove : -pathsToMove;
         int nextPathsAway = _howManyPathsAway + offsetChange;
 
@@ -603,20 +744,37 @@ public partial class MainViewModel
             return;
         }
 
-        // Following AgOpenGPS approach exactly:
-        // Determine offset direction using XOR
-        int rowSkipWidth = UTurnSkipRows;  // Use runtime property from bottom nav button (0 = adjacent, 1 = skip 1, etc.)
-        int pathsToMove = rowSkipWidth + 1;  // skip=0 moves 1 path, skip=1 moves 2 paths, etc.
+        // If target path was set (by snake sequence or boundary-hit block), jump directly to it
+        if (_returnPassTargetPath.HasValue)
+        {
+            _logger.LogDebug($"[YouTurn] Turn complete! Jumping to path {_returnPassTargetPath.Value} (was {_howManyPathsAway})");
+            _howManyPathsAway = _returnPassTargetPath.Value;
+            _returnPassTargetPath = null;
+            AdvanceSnakeSequence();
+        }
+        else
+        {
+            // Normal path: determine offset using XOR
+            int rowSkipWidth = UTurnSkipRows;
+            int pathsToMove = rowSkipWidth + 1;
 
-        // Calculate offset direction using XOR
-        // IMPORTANT: Use _wasHeadingSameWayAtTurnStart (saved at turn creation), NOT _isHeadingSameWay
-        // (which has now flipped because we completed a 180° turn)
-        bool positiveOffset = _isTurnLeft ^ _wasHeadingSameWayAtTurnStart;
-        int offsetChange = positiveOffset ? pathsToMove : -pathsToMove;
-        _howManyPathsAway += offsetChange;
+            // IMPORTANT: Use _wasHeadingSameWayAtTurnStart (saved at turn creation), NOT _isHeadingSameWay
+            // (which has now flipped because we completed a 180° turn)
+            bool positiveOffset = _isTurnLeft ^ _wasHeadingSameWayAtTurnStart;
 
-        _logger.LogDebug($"[YouTurn] Turn complete! Turn was {(_isTurnLeft ? "LEFT" : "RIGHT")}, heading WAS {(_wasHeadingSameWayAtTurnStart ? "SAME" : "OPPOSITE")} at start");
-        _logger.LogDebug($"[YouTurn] Offset {(positiveOffset ? "positive" : "negative")} by {offsetChange}, now on path {_howManyPathsAway}");
+            // Skip-worked mode: find next unworked path
+            if (_isSkipWorkedMode && SelectedTrack != null)
+            {
+                pathsToMove = GetNextUnworkedPathSkip(_howManyPathsAway, positiveOffset, pathsToMove);
+            }
+
+            int offsetChange = positiveOffset ? pathsToMove : -pathsToMove;
+            _howManyPathsAway += offsetChange;
+
+            _logger.LogDebug($"[YouTurn] Turn complete! Normal: offset {(positiveOffset ? "positive" : "negative")} by {offsetChange}");
+        }
+
+        _logger.LogDebug($"[YouTurn] Now on path {_howManyPathsAway} ({(ConfigStore.ActualToolWidth - Tool.Overlap) * _howManyPathsAway:F1}m from reference)");
         _logger.LogDebug($"[YouTurn] Total offset: {(ConfigStore.ActualToolWidth - Tool.Overlap) * _howManyPathsAway:F1}m from reference line");
 
         // Remember this turn direction for alternating pattern
@@ -648,6 +806,119 @@ public partial class MainViewModel
         _mapService.SetIsInYouTurn(false);
 
         StatusMessage = $"Following path {_howManyPathsAway} ({(ConfigStore.ActualToolWidth - Tool.Overlap) * Math.Abs(_howManyPathsAway):F1}m offset)";
+    }
+
+    /// <summary>
+    /// Find how many paths to skip to reach the next unworked path.
+    /// Starts from the normal goal lane and increments until an unworked path is found.
+    /// Matches AgOpenGPS GetNextNotWorkedTrack() logic.
+    /// </summary>
+    private int GetNextUnworkedPathSkip(int currentPath, bool positiveDirection, int initialSkip)
+    {
+        if (SelectedTrack == null) return initialSkip;
+
+        int goalLane = currentPath + (positiveDirection ? initialSkip : -initialSkip);
+        int iterations = 0;
+
+        while (SelectedTrack.IsPathWorked(goalLane) && iterations < 100)
+        {
+            if (positiveDirection)
+                goalLane++;
+            else
+                goalLane--;
+            iterations++;
+        }
+
+        // Return the actual skip distance (always positive)
+        int actualSkip = Math.Abs(goalLane - currentPath);
+        if (actualSkip < 1) actualSkip = initialSkip; // Fallback
+
+        _logger.LogDebug($"[YouTurn] SkipWorked: initial skip {initialSkip}, actual skip {actualSkip} (goal lane {goalLane}, {iterations} iterations)");
+        return actualSkip;
+    }
+
+    /// <summary>
+    /// Build the pre-computed snake sequence for the cultivated area.
+    /// Determines how many tracks fit, generates the sequence, and finds the current position in it.
+    /// </summary>
+    private void BuildSnakeSequence(Track referenceTrack, double abHeading)
+    {
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
+        if (widthMinusOverlap < 0.5) return;
+
+        // Find the range of path numbers that fit inside the cultivated area
+        var pointA = referenceTrack.Points[0];
+        var pointB = referenceTrack.Points[referenceTrack.Points.Count - 1];
+        double perpAngle = abHeading + Math.PI / 2;
+        double midE = (pointA.Easting + pointB.Easting) / 2;
+        double midN = (pointA.Northing + pointB.Northing) / 2;
+
+        int minPath = 0, maxPath = 0;
+
+        // Search positive direction
+        for (int p = 0; p <= 200; p++)
+        {
+            double offsetDist = widthMinusOverlap * p;
+            double testE = midE + Math.Sin(perpAngle) * offsetDist;
+            double testN = midN + Math.Cos(perpAngle) * offsetDist;
+            if (!IsPointInsideCultivatedArea(testE, testN)) break;
+            maxPath = p;
+        }
+
+        // Search negative direction
+        for (int p = -1; p >= -200; p--)
+        {
+            double offsetDist = widthMinusOverlap * p;
+            double testE = midE + Math.Sin(perpAngle) * offsetDist;
+            double testN = midN + Math.Cos(perpAngle) * offsetDist;
+            if (!IsPointInsideCultivatedArea(testE, testN)) break;
+            minPath = p;
+        }
+
+        var fullSequence = Services.Track.SwathOrderingService.GeneratePathSequence(
+            minPath, maxPath, Services.Track.SwathPattern.Snake);
+
+        // Rotate the sequence so it starts from the current path.
+        // The tractor may start anywhere in the field, not necessarily at path 0.
+        int currentIdx = fullSequence.IndexOf(_howManyPathsAway);
+        if (currentIdx > 0)
+        {
+            // Take everything from currentIdx onward, then wrap the beginning
+            _snakeSequence = fullSequence.Skip(currentIdx).Concat(fullSequence.Take(currentIdx)).ToList();
+        }
+        else
+        {
+            _snakeSequence = fullSequence;
+        }
+        _snakeIndex = 0; // Always start at the beginning of the rotated sequence
+
+        _logger.LogDebug($"[YouTurn] Built snake sequence (rotated from path {_howManyPathsAway}): [{string.Join(", ", _snakeSequence)}]");
+    }
+
+    /// <summary>
+    /// Get the next path number from the pre-computed snake sequence.
+    /// Returns null if the sequence is exhausted (field complete).
+    /// </summary>
+    private int? GetNextSnakePath()
+    {
+        if (_snakeSequence == null || _snakeIndex < 0) return null;
+
+        int nextIndex = _snakeIndex + 1;
+        if (nextIndex >= _snakeSequence.Count) return null; // Field complete
+
+        return _snakeSequence[nextIndex];
+    }
+
+    /// <summary>
+    /// Advance the snake sequence to the next position.
+    /// </summary>
+    private void AdvanceSnakeSequence()
+    {
+        if (_snakeSequence != null && _snakeIndex < _snakeSequence.Count - 1)
+        {
+            _snakeIndex++;
+            _logger.LogDebug($"[YouTurn] Snake advanced to index {_snakeIndex}: path {_snakeSequence[_snakeIndex]}");
+        }
     }
 
     /// <summary>
