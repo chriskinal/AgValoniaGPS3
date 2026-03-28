@@ -96,19 +96,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Text="Select a field to import its tracks into the current field:"/>
 
                 <!-- Field list -->
-                <ListBox x:Name="FieldsListBox"
-                         Grid.Row="2"
-                         MinHeight="150"
-                         MaxHeight="250"
-                         ItemsSource="{Binding ImportFieldsList}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding}" Foreground="White" FontSize="14"
-                                       VerticalAlignment="Center"
-                                       PointerReleased="FieldItem_PointerReleased"/>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <ScrollViewer Grid.Row="2" MinHeight="150" MaxHeight="250">
+                    <ItemsControl x:Name="FieldsListBox"
+                                  ItemsSource="{Binding ImportFieldsList}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent" Padding="12,10" Margin="2" CornerRadius="4"
+                                        PointerReleased="FieldItem_PointerReleased">
+                                    <TextBlock Text="{Binding}" Foreground="White" FontSize="14"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
 
                 <!-- Buttons -->
                 <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,12,0,0">

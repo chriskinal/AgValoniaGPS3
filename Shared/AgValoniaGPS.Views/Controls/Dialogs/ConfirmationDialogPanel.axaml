@@ -52,12 +52,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding CancelConfirmationDialogCommand}"
                             Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Padding="0" CornerRadius="6"/>
                     <Button Grid.Column="1" Content="Yes" Margin="8,0,0,0"
                             Command="{Binding ConfirmConfirmationDialogCommand}"
                             Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" CornerRadius="6"/>
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Padding="0" CornerRadius="6"/>
                 </Grid>
             </StackPanel>
         </Border>

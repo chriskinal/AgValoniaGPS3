@@ -43,9 +43,9 @@ public partial class TracksDialogPanel : UserControl
         if (DataContext is not AgValoniaGPS.ViewModels.MainViewModel vm)
             return;
 
-        // Get the track from the clicked item's DataContext
-        var grid = sender as Grid;
-        var clickedTrack = grid?.DataContext as Track;
+        // Get the track from the clicked item's DataContext (Border wraps the Grid)
+        var element = sender as Avalonia.Controls.Control;
+        var clickedTrack = element?.DataContext as Track;
 
         if (clickedTrack == null)
             return;

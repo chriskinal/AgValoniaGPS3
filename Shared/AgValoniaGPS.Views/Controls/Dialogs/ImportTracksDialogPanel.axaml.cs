@@ -39,8 +39,9 @@ public partial class ImportTracksDialogPanel : UserControl
         if (DataContext is not AgValoniaGPS.ViewModels.MainViewModel vm)
             return;
 
-        var textBlock = sender as TextBlock;
-        var fieldName = textBlock?.Text;
+        // Get field name from the Border's DataContext (string binding)
+        var element = sender as Avalonia.Controls.Control;
+        var fieldName = element?.DataContext as string;
 
         if (!string.IsNullOrEmpty(fieldName))
         {
