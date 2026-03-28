@@ -252,7 +252,11 @@ public partial class MainWindow : Window
             Position = new PixelPoint((int)display.WindowX, (int)display.WindowY);
         }
 
-        if (display.WindowMaximized)
+        if (display.StartFullscreen)
+        {
+            WindowState = WindowState.FullScreen;
+        }
+        else if (display.WindowMaximized)
         {
             WindowState = WindowState.Maximized;
         }
@@ -566,11 +570,17 @@ public partial class MainWindow : Window
         }
         else if (e.PropertyName == nameof(MainViewModel.IsDayMode))
         {
-            // TODO: Implement theme switching (background color, grid color, etc.)
+            if (ViewModel != null && MapControl != null)
+            {
+                MapControl.SetDayMode(ViewModel.IsDayMode);
+            }
         }
         else if (e.PropertyName == nameof(MainViewModel.IsNorthUp))
         {
-            // TODO: Implement camera rotation locking to north
+            if (ViewModel != null && MapControl != null)
+            {
+                MapControl.SetNorthUp(ViewModel.IsNorthUp);
+            }
         }
         else if (e.PropertyName == nameof(MainViewModel.Brightness))
         {

@@ -550,6 +550,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
             covSw.Stop();
 
+            // Draw direction markers on coverage patches
+            if (AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.DirectionMarkersVisible
+                && _coveragePatches.Count > 0)
+            {
+                DrawDirectionMarkers(context);
+            }
+
             // Draw boundary (on top of coverage)
             var boundSw = System.Diagnostics.Stopwatch.StartNew();
             if (_boundary != null)
@@ -616,6 +623,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (ShowVehicle)
             {
                 DrawVehicle(context);
+            }
+
+            // Draw Svenn arrow (direction chevron ahead of vehicle)
+            if (ShowVehicle && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SvennArrowVisible)
+            {
+                DrawSvennArrow(context);
             }
 
             // Draw boundary offset indicator
@@ -863,10 +876,43 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         int drawnCount;
 
+        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        bool wireframe = !displayConfig.PolygonsVisible;
+
         // Use bitmap-based rendering if provider is available or bitmap was explicitly initialized
         if (_coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
         {
-            drawnCount = DrawCoverageBitmap(context);
+            // In wireframe mode, skip bitmap and draw only outlines from geometry cache
+            if (wireframe)
+            {
+                drawnCount = 0;
+                for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+                {
+                    var cached = _cachedCoverageGeometry[i];
+                    if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
+                        cached.MaxY < visMinY || cached.MinY > visMaxY)
+                        continue;
+                    context.DrawGeometry(null, _coverageWireframePen, cached.Geometry);
+                    drawnCount++;
+                }
+            }
+            else
+            {
+                drawnCount = DrawCoverageBitmap(context);
+
+                // Draw section line overlays on top of bitmap when enabled
+                if (displayConfig.SectionLinesVisible && _cachedCoverageGeometry.Count > 0)
+                {
+                    for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+                    {
+                        var cached = _cachedCoverageGeometry[i];
+                        if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
+                            cached.MaxY < visMinY || cached.MinY > visMaxY)
+                            continue;
+                        context.DrawGeometry(null, _coverageSectionLinePen, cached.Geometry);
+                    }
+                }
+            }
         }
         else
         {
@@ -1676,10 +1722,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// <summary>
     /// Draw coverage using triangle strip patches (detailed, original method).
     /// </summary>
+    private static readonly Pen _coverageWireframePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 150, 150, 150)), 0.2);
+
     private int DrawCoveragePatches(DrawingContext context, double visMinX, double visMaxX, double visMinY, double visMaxY)
     {
         // Update tracking for active vs finalized patches
         UpdateColorBatchesIncremental();
+
+        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        bool wireframe = !displayConfig.PolygonsVisible;
+        var pen = wireframe ? _coverageWireframePen
+            : displayConfig.SectionLinesVisible ? _coverageSectionLinePen
+            : null;
 
         // Draw only visible patches from the cache
         int drawnCount = 0;
@@ -1692,7 +1746,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 cached.MaxY < visMinY || cached.MinY > visMaxY)
                 continue;
 
-            context.DrawGeometry(cached.Brush, null, cached.Geometry);
+            context.DrawGeometry(wireframe ? null : cached.Brush, pen, cached.Geometry);
             drawnCount++;
         }
 
@@ -1957,6 +2011,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
     private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
     private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
+    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)), 0.3);
 
     private void DrawTool(DrawingContext context)
     {
@@ -2053,6 +2108,84 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 }
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
             }
+        }
+    }
+
+    private static readonly Pen _svennArrowPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 220, 0)), 0.4);
+
+    private void DrawSvennArrow(DrawingContext context)
+    {
+        // V-shaped chevron ahead of vehicle indicating travel direction
+        double aheadDistance = 8.0;  // meters ahead of vehicle
+        double wingSpan = 3.0;      // half-width of the chevron
+        double wingDepth = 3.0;     // how far back the wings extend
+
+        using (context.PushTransform(Matrix.CreateTranslation(_vehicleX, _vehicleY)))
+        using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading)))
+        {
+            // Chevron tip is ahead, wings extend back and outward
+            var tip = new Point(0, aheadDistance);
+            var leftWing = new Point(-wingSpan, aheadDistance - wingDepth);
+            var rightWing = new Point(wingSpan, aheadDistance - wingDepth);
+
+            context.DrawLine(_svennArrowPen, tip, leftWing);
+            context.DrawLine(_svennArrowPen, tip, rightWing);
+        }
+    }
+
+    private static readonly SolidColorBrush _directionMarkerTipBrush = new SolidColorBrush(Color.FromArgb(220, 220, 220, 255));
+
+    private void DrawDirectionMarkers(DrawingContext context)
+    {
+        // Minimum vertex count for direction markers (matching AgOpenGPS: >42 vertices)
+        const int minVertices = 43;
+
+        for (int p = 0; p < _coveragePatches.Count; p++)
+        {
+            var patch = _coveragePatches[p];
+            if (!patch.IsRenderable || patch.Vertices.Count < minVertices) continue;
+
+            var verts = patch.Vertices;
+
+            // Calculate heading from vertices 37 and 39 (left-edge vertices, 0-indexed)
+            double headZ = Math.Atan2(
+                verts[39].Easting - verts[37].Easting,
+                verts[39].Northing - verts[37].Northing);
+
+            // Left and right points interpolated between vertex 37 (left) and 38 (right)
+            double leftFactor = 0.37;
+            double rightFactor = 0.63;
+            double leftX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * leftFactor;
+            double leftY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * leftFactor;
+            double rightX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * rightFactor;
+            double rightY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * rightFactor;
+
+            // Calculate tip point ahead of the center between left and right
+            double centerX = (leftX + rightX) * 0.5;
+            double centerY = (leftY + rightY) * 0.5;
+            double dist = Math.Sqrt((rightX - leftX) * (rightX - leftX) + (rightY - leftY) * (rightY - leftY)) * 1.5;
+            double tipX = centerX + Math.Sin(headZ) * dist;
+            double tipY = centerY + Math.Cos(headZ) * dist;
+
+            // Inverted section color for base of arrow
+            var baseBrush = new SolidColorBrush(Color.FromArgb(150,
+                (byte)(255 - patch.Color.R), (byte)(255 - patch.Color.G), (byte)(255 - patch.Color.B)));
+
+            // Draw triangle arrow
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                ctx.BeginFigure(new Point(leftX, leftY), true);
+                ctx.LineTo(new Point(rightX, rightY));
+                ctx.LineTo(new Point(tipX, tipY));
+                ctx.EndFigure(true);
+            }
+            context.DrawGeometry(baseBrush, null, geometry);
+
+            // Draw a small highlight at the tip
+            double tipSize = dist * 0.25;
+            context.DrawEllipse(_directionMarkerTipBrush, null,
+                new Point(tipX, tipY), tipSize, tipSize);
         }
     }
 
