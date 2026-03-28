@@ -31,6 +31,7 @@
   <!-- Project references -->
   <ItemGroup>
     <ProjectReference Include="..\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
+    <ProjectReference Include="..\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
     <ProjectReference Include="..\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
   </ItemGroup>
 
