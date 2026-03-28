@@ -250,31 +250,53 @@ sealed class Program
         CaptureScreenshot(window, "tracks_01_dialog_with_track");
         Console.WriteLine("OK");
 
-        // Track 2: Activate the AB line via SelectedTrack setter (activates + closes dialog)
-        Console.Write("[Tracks 2] Activate AB line track... ");
+        // Track 1.5: Build headland from boundary (enables autosteer validation)
+        Console.Write("[Tracks 1b] Build headland... ");
+        vm.State.UI.CloseDialog();
+        vm.HeadlandDistance = 12.0; // 12m headland for 200x160m field
+        vm.BuildHeadlandCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[HasHeadland={vm.HasHeadland}] ");
+        CaptureScreenshot(window, "tracks_01b_headland_built");
+        Console.WriteLine("OK");
+
+        // Track 2: Activate AB line + engage autosteer for real guidance
+        Console.Write("[Tracks 2] Activate AB line + autosteer... ");
         vm.State.UI.CloseDialog();
         if (vm.SavedTracks.Count > 0)
         {
-            // SelectedTrack setter activates the track and updates the map
             vm.SelectedTrack = vm.SavedTracks[0];
-            Console.Write($"[Active={vm.SelectedTrack?.Name ?? "none"}, IsActive={vm.SelectedTrack?.IsActive}] ");
+            // Engage autosteer via command (headland was built in step 1b)
+            vm.ToggleAutoSteerCommand?.Execute(null);
+            Console.Write($"[Active={vm.SelectedTrack?.Name}, AutoSteer={vm.IsAutoSteerEngaged}] ");
         }
         await Delay(500);
         CaptureScreenshot(window, "tracks_02_guidance_line_active");
         Console.WriteLine("OK");
 
-        // Track 3: Drive simulator along the active track to show guidance with XTE
-        Console.Write("[Tracks 3] Drive along track with guidance... ");
+        // Track 3: Drive simulator with guidance computing the steer angle
+        Console.Write("[Tracks 3] Drive with autosteer guidance... ");
         vm.SimulatorForwardCommand?.Execute(null);
         await Delay(100);
         var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
-        // Drive 80 ticks with slight steer offset to show cross-track error
+        // First steer slightly off-track, then let guidance correct
+        Console.WriteLine();
         for (int i = 0; i < 80; i++)
         {
-            simService.Tick(i < 20 ? 2.0 : 0.0); // Slight right steer then straight
+            double steer = i < 10 ? 3.0 : vm.SimulatorSteerAngle;
+            simService.Tick(steer);
             await Delay(33);
+            // Log XTE convergence every 10 ticks
+            if (i % 10 == 9)
+            {
+                double xte = vm.State.Guidance.CrossTrackError;
+                Console.WriteLine($"  tick {i + 1}: XTE={xte:F3}m, Steer={vm.SimulatorSteerAngle:F1}");
+            }
         }
-        Console.Write($"[XTE={vm.State.Guidance.CrossTrackError:F2}m] ");
+        double finalXte = Math.Abs(vm.State.Guidance.CrossTrackError);
+        Console.Write($"  Final XTE={finalXte:F3}m ");
+        if (finalXte > 0.5)
+            throw new Exception($"XTE too large: {finalXte:F3}m -- autosteer not following guidance line");
         CaptureScreenshot(window, "tracks_03_guidance_driving");
         Console.WriteLine("OK");
 
