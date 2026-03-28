@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using AgValoniaGPS.Models.Configuration;
 using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
@@ -150,6 +151,25 @@ public partial class MainViewModel
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    #endregion
+
+    #region ConfigurationStore Display Forwarding
+
+    /// <summary>
+    /// UTurn button visible when track available AND config allows it.
+    /// </summary>
+    public bool IsUTurnButtonVisible =>
+        IsAutoSteerAvailable && ConfigurationStore.Instance.Display.UTurnButtonVisible;
+
+    /// <summary>
+    /// Notify IsUTurnButtonVisible when IsAutoSteerAvailable changes.
+    /// Called from MainViewModel.Guidance.cs when track state changes.
+    /// </summary>
+    private void RaiseUTurnButtonVisibleChanged()
+    {
+        this.RaisePropertyChanged(nameof(IsUTurnButtonVisible));
+    }
 
     #endregion
 }

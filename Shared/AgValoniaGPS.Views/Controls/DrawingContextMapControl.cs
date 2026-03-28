@@ -536,7 +536,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             // Draw background image first (under everything else)
             // Skip if background is composited into coverage bitmap
-            if (_backgroundImage != null && !_backgroundComposited)
+            // Respect FieldTextureVisible config toggle
+            if (_backgroundImage != null && !_backgroundComposited
+                && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.FieldTextureVisible)
             {
                 DrawBackgroundImage(context);
             }

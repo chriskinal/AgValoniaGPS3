@@ -554,7 +554,11 @@ public partial class MainViewModel : ReactiveObject
     public bool IsAutoSteerAvailable
     {
         get => _isAutoSteerAvailable;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerAvailable, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isAutoSteerAvailable, value);
+            RaiseUTurnButtonVisibleChanged();
+        }
     }
 
     public bool IsAutoSteerEngaged
