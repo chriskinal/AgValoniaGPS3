@@ -54,30 +54,31 @@ the Free Software Foundation, either version 3 of the License, or
                     </StackPanel>
                 </Border>
 
-                <!-- Log entries list -->
+                <!-- Log entries list (non-virtualizing for headless rendering) -->
                 <Border Grid.Row="2" Margin="8" Background="#1A252F" CornerRadius="6" Padding="4">
-                    <ListBox ItemsSource="{Binding FilteredLogEntries}"
-                             Background="Transparent" BorderThickness="0">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="logging:LogEntry">
-                                <Grid ColumnDefinitions="140,70,*" Margin="2,1">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"
-                                               Foreground="#7F8C8D" FontSize="11" FontFamily="Consolas"
-                                               VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Level}"
-                                               FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
-                                               VerticalAlignment="Center"
-                                               Margin="4,0"/>
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding Message}"
-                                               Foreground="#ECF0F1" FontSize="11" FontFamily="Consolas"
-                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding FilteredLogEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="logging:LogEntry">
+                                    <Grid ColumnDefinitions="140,70,*" Margin="2,1">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"
+                                                   Foreground="#7F8C8D" FontSize="11" FontFamily="Consolas"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Level}"
+                                                   FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
+                                                   VerticalAlignment="Center"
+                                                   Margin="4,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding Message}"
+                                                   Foreground="#ECF0F1" FontSize="11" FontFamily="Consolas"
+                                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Border>
 
                 <!-- Close button -->
@@ -85,7 +86,7 @@ the Free Software Foundation, either version 3 of the License, or
                         Command="{Binding CloseLogViewerDialogCommand}"
                         Background="#3498DB" Foreground="White"
                         HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
-                        HorizontalContentAlignment="Center" CornerRadius="6"/>
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
             </Grid>
         </Border>
     </Grid>

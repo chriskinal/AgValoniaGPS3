@@ -28,7 +28,7 @@ the Free Software Foundation, either version 3 of the License, or
                 <TextBlock Text="AgValoniaGPS" FontSize="22" FontWeight="Bold"
                            Foreground="#3498DB" HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Version 26.2.0" FontSize="16" FontWeight="SemiBold"
+                <TextBlock x:Name="VersionText" FontSize="16" FontWeight="SemiBold"
                            Foreground="White" HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Cross-platform agricultural GPS guidance"

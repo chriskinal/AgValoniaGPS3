@@ -76,7 +76,7 @@ the Free Software Foundation, either version 3 of the License, or
                         Command="{Binding CloseViewSettingsDialogCommand}"
                         Background="#3498DB" Foreground="White"
                         HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
-                        HorizontalContentAlignment="Center" CornerRadius="6"/>
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
             </Grid>
         </Border>
     </Grid>

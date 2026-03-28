@@ -92,16 +92,17 @@ public class QuickWinScreenshotTests
     }
 
     // --- Theme (#17) ---
+    // Uses FlagByLatLon dialog because its TextBoxes respond visibly to FluentTheme variant
 
     [AvaloniaTest]
     public void Theme_LightMode_Screenshot()
     {
         var vm = new MainViewModelBuilder().Build();
-        var panel = new AboutDialogPanel { DataContext = vm };
+        var dialog = new FlagByLatLonDialogPanel { DataContext = vm };
 
         var window = new Window
         {
-            Content = panel,
+            Content = dialog,
             Width = 800,
             Height = 600
         };
@@ -110,13 +111,13 @@ public class QuickWinScreenshotTests
         if (Application.Current != null)
             Application.Current.RequestedThemeVariant = ThemeVariant.Light;
 
-        vm.State.UI.ShowDialog(DialogType.About);
+        vm.ShowFlagByLatLonDialogCommand!.Execute(null);
+        vm.FlagLatitudeInput = "43.653225";
+        vm.FlagLongitudeInput = "-79.383186";
 
         var captured = TryCaptureScreenshot(window, "theme_light.png", _screenshotDir);
 
-        // State assertions always pass regardless of rendering support
-        Assert.That(vm.State.UI.IsAboutDialogVisible, Is.True);
-        Assert.That(panel.IsVisible, Is.True);
+        Assert.That(vm.State.UI.IsFlagByLatLonDialogVisible, Is.True);
         if (captured)
             TestContext.WriteLine("[screenshot] theme_light.png saved");
     }
@@ -125,11 +126,11 @@ public class QuickWinScreenshotTests
     public void Theme_DarkMode_Screenshot()
     {
         var vm = new MainViewModelBuilder().Build();
-        var panel = new AboutDialogPanel { DataContext = vm };
+        var dialog = new FlagByLatLonDialogPanel { DataContext = vm };
 
         var window = new Window
         {
-            Content = panel,
+            Content = dialog,
             Width = 800,
             Height = 600
         };
@@ -138,12 +139,13 @@ public class QuickWinScreenshotTests
         if (Application.Current != null)
             Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
 
-        vm.State.UI.ShowDialog(DialogType.About);
+        vm.ShowFlagByLatLonDialogCommand!.Execute(null);
+        vm.FlagLatitudeInput = "43.653225";
+        vm.FlagLongitudeInput = "-79.383186";
 
         var captured = TryCaptureScreenshot(window, "theme_dark.png", _screenshotDir);
 
-        Assert.That(vm.State.UI.IsAboutDialogVisible, Is.True);
-        Assert.That(panel.IsVisible, Is.True);
+        Assert.That(vm.State.UI.IsFlagByLatLonDialogVisible, Is.True);
         if (captured)
             TestContext.WriteLine("[screenshot] theme_dark.png saved");
     }
