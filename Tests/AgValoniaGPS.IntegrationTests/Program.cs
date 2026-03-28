@@ -179,12 +179,59 @@ sealed class Program
             vm.ConfigurationViewModel.IsDialogVisible = false;
         Console.WriteLine("OK");
 
-        // Step 7: Night mode
-        Console.Write("[Step 7] Night mode... ");
-        // FluentTheme dark/light switching requires PR #81 which is not merged here.
-        // SetDayMode only affects map background, not the full theme.
-        Console.Write("[theme switching not available on this branch] ");
-        CaptureScreenshot(window, "07_current_theme");
+        // Step 7+: Theme switching and new dialogs (PR #81)
+        await RunThemeAndDialogsScenario(window, vm);
+    }
+
+    static async Task RunThemeAndDialogsScenario(Window window, MainViewModel vm)
+    {
+        // Step 7: Current theme (light/day mode) screenshot
+        Console.Write("[Step 7] Current theme (light)... ");
+        CaptureScreenshot(window, "theme_01_light");
+        Console.WriteLine("OK");
+
+        // Step 8: Toggle to dark/night theme
+        Console.Write("[Step 8] Toggle to dark theme... ");
+        vm.ToggleDayNightCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "theme_02_dark");
+        Console.WriteLine("OK");
+
+        // Step 9: Toggle back to light (verify round-trip)
+        Console.Write("[Step 9] Toggle back to light... ");
+        vm.ToggleDayNightCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "theme_03_light_roundtrip");
+        Console.WriteLine("OK");
+
+        // Step 10: Open Log Viewer dialog
+        Console.Write("[Step 10] Log Viewer dialog... ");
+        vm.ShowLogViewerDialogCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "theme_04_log_viewer");
+        vm.CloseLogViewerDialogCommand?.Execute(null);
+        await Delay(200);
+        Console.WriteLine("OK");
+
+        // Step 11: Open Flag By Lat/Lon dialog
+        Console.Write("[Step 11] Flag by Lat/Lon dialog... ");
+        vm.ShowFlagByLatLonDialogCommand?.Execute(null);
+        await Delay(500);
+        vm.FlagLatitudeInput = "43.653225";
+        vm.FlagLongitudeInput = "-79.383186";
+        await Delay(200);
+        CaptureScreenshot(window, "theme_05_flag_by_latlon");
+        vm.CloseFlagByLatLonDialogCommand?.Execute(null);
+        await Delay(200);
+        Console.WriteLine("OK");
+
+        // Step 12: Open View All Settings dialog
+        Console.Write("[Step 12] View All Settings dialog... ");
+        vm.ShowViewSettingsDialogCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "theme_06_view_all_settings");
+        vm.CloseViewSettingsDialogCommand?.Execute(null);
+        await Delay(200);
         Console.WriteLine("OK");
     }
 
