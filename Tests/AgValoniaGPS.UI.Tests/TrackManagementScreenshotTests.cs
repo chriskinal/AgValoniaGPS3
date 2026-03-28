@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
-using Ellipse = Avalonia.Controls.Shapes.Ellipse;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Threading;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Track;
@@ -364,101 +361,18 @@ public class TrackManagementScreenshotTests
         vm.SavedTracks.Add(CreateContourStrip("Contour Test", 20, 0));
         vm.SavedTracks.Add(CreateRecordedPath("Path Test", 30, 0));
 
-        // Build track list content directly (bypasses headless ListBox limitation)
-        var trackRows = new StackPanel { Spacing = 2 };
-        foreach (var track in vm.SavedTracks)
-        {
-            string typeLabel = track.IsContour ? "Contour" : track.IsRecordedPath ? "Path" :
-                track.IsCurve ? "Curve" : "Line";
-            var typeColor = track.IsContour ? "#27AE60" : track.IsRecordedPath ? "#8E44AD" : "#BDC3C7";
-            var activeColor = track.IsActive ? "#27AE60" : "#7F8C8D";
+        // Show dialog before creating panel so bindings are already true
+        vm.State.UI.ShowDialog(DialogType.Tracks);
 
-            trackRows.Children.Add(new Border
-            {
-                Background = new SolidColorBrush(Color.Parse("#1E2930")),
-                Padding = new Thickness(12, 10), Margin = new Thickness(0, 1), CornerRadius = new CornerRadius(4),
-                Child = new Grid
-                {
-                    ColumnDefinitions = ColumnDefinitions.Parse("*,80,60"),
-                    Children =
-                    {
-                        new TextBlock { Text = track.Name, Foreground = Brushes.White, FontSize = 14,
-                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                            [Grid.ColumnProperty] = 0 },
-                        new TextBlock { Text = typeLabel, Foreground = new SolidColorBrush(Color.Parse(typeColor)),
-                            FontSize = 14, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                            [Grid.ColumnProperty] = 1 },
-                        new Ellipse { Width = 16, Height = 16, Fill = new SolidColorBrush(Color.Parse(activeColor)),
-                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                            [Grid.ColumnProperty] = 2 }
-                    }
-                }
-            });
-        }
+        // Use the real AXAML TracksDialogPanel to show actual icons
+        var dialog = new TracksDialogPanel { DataContext = vm };
 
-        var content = new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#2C3E50")),
-            CornerRadius = new CornerRadius(12), Padding = new Thickness(16), MinWidth = 420,
-            Child = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock { Text = "AB Line Tracks", FontSize = 18, FontWeight = FontWeight.Bold,
-                        Foreground = new SolidColorBrush(Color.Parse("#3498DB")) },
-                    new Border { Background = new SolidColorBrush(Color.Parse("#34495E")),
-                        CornerRadius = new CornerRadius(6), Padding = new Thickness(4),
-                        Child = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12,
-                            Children = {
-                                new TextBlock { Text = "DEL", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeight.Bold,
-                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                new TextBlock { Text = "SWAP", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeight.Bold,
-                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                new TextBlock { Text = "ACT", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeight.Bold,
-                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                new TextBlock { Text = "IMP", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeight.Bold,
-                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                                new TextBlock { Text = "REC", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeight.Bold,
-                                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center },
-                            }
-                        }
-                    },
-                    new Border { Background = new SolidColorBrush(Color.Parse("#34495E")),
-                        CornerRadius = new CornerRadius(4, 4, 0, 0), Padding = new Thickness(12, 8),
-                        Child = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,80,60"),
-                            Children = {
-                                new TextBlock { Text = "Track Name", Foreground = new SolidColorBrush(Color.Parse("#BDC3C7")),
-                                    FontWeight = FontWeight.SemiBold, [Grid.ColumnProperty] = 0 },
-                                new TextBlock { Text = "Type", Foreground = new SolidColorBrush(Color.Parse("#BDC3C7")),
-                                    FontWeight = FontWeight.SemiBold, TextAlignment = TextAlignment.Center,
-                                    [Grid.ColumnProperty] = 1 },
-                                new TextBlock { Text = "Active", Foreground = new SolidColorBrush(Color.Parse("#BDC3C7")),
-                                    FontWeight = FontWeight.SemiBold, TextAlignment = TextAlignment.Center,
-                                    [Grid.ColumnProperty] = 2 }
-                            }
-                        }
-                    },
-                    trackRows,
-                    new Button { Content = "Close", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                        Background = new SolidColorBrush(Color.Parse("#5D6D7E")), Foreground = Brushes.White,
-                        Padding = new Thickness(16, 10), FontSize = 14, CornerRadius = new CornerRadius(6) }
-                }
-            }
-        };
+        // Force the dialog visible (clear the IsVisible binding so it doesn't
+        // depend on the UIState binding evaluation timing in headless mode)
+        dialog.IsVisible = true;
+        dialog.IsHitTestVisible = true;
 
-        var window = new Window
-        {
-            Content = new Grid
-            {
-                Background = new SolidColorBrush(Color.Parse("#80808080")),
-                Children = { new Border { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center, Child = content } }
-            },
-            Width = 550, Height = 500
-        };
+        var window = new Window { Content = dialog, Width = 550, Height = 500 };
         window.Show();
 
         SaveScreenshot(window, "tracks_dialog_all_types.png");
