@@ -29,10 +29,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="4"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
     </UserControl.Styles>
@@ -40,13 +40,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border Classes="FloatingPanel" Width="420" Height="240">
         <Grid RowDefinitions="24,*">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="24"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="16" FontWeight="Bold"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="6,0,6,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Cross Track Error" Foreground="White" FontSize="12" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="Cross Track Error" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="20" Height="20" Padding="0" BorderThickness="0"
-                        Background="Transparent" Foreground="#888" FontSize="12" Cursor="Hand"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Cursor="Hand"
                         Command="{Binding ToggleXTEChartPanelCommand}" Margin="4,0,4,0"/>
             </Grid>
             <controls:ChartControl x:Name="XTEChart" Grid.Row="1"/>

@@ -20,6 +20,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using AgValoniaGPS.Services.Interfaces;
 
@@ -29,6 +30,7 @@ namespace AgValoniaGPS.Views.Controls;
 /// Reusable real-time chart control using Avalonia DrawingContext rendering.
 /// Supports rolling time window, multiple data series, Y-axis labels, and grid lines.
 /// Renders at display refresh rate via DispatcherTimer.
+/// Uses theme-aware colors for light/dark mode compatibility.
 /// </summary>
 public class ChartControl : Control
 {
@@ -42,13 +44,27 @@ public class ChartControl : Control
     private const double TopMargin = 8;
     private const double BottomMargin = 20;
 
-    // Visual resources (reused each frame)
-    private static readonly IBrush BackgroundBrush = new SolidColorBrush(Color.FromArgb(0xDD, 0x10, 0x14, 0x1C));
-    private static readonly Pen GridPen = new(new SolidColorBrush(Color.FromArgb(0x40, 0x88, 0x88, 0x88)), 0.5);
-    private static readonly Pen ZeroLinePen = new(new SolidColorBrush(Color.FromArgb(0x80, 0xAA, 0xAA, 0xAA)), 1.0);
-    private static readonly Pen BorderPen = new(new SolidColorBrush(Color.FromArgb(0x60, 0x88, 0x88, 0x88)), 1.0);
-    private static readonly IBrush LabelBrush = new SolidColorBrush(Color.FromArgb(0xCC, 0xCC, 0xCC, 0xCC));
+    // Cached theme brushes (rebuilt when theme changes)
     private static readonly Typeface LabelTypeface = new("Segoe UI", FontStyle.Normal, FontWeight.Normal);
+
+    private static IBrush WithAlpha(IBrush brush, byte alpha)
+    {
+        if (brush is ISolidColorBrush scb)
+            return new SolidColorBrush(Color.FromArgb(alpha, scb.Color.R, scb.Color.G, scb.Color.B));
+        return brush;
+    }
+
+    private static IBrush ResolveBrush(string key, string fallback)
+    {
+        var app = Application.Current;
+        if (app != null)
+        {
+            var variant = app.ActualThemeVariant;
+            if (app.TryGetResource(key, variant, out var value) && value is ISolidColorBrush scb)
+                return new SolidColorBrush(scb.Color);
+        }
+        return new SolidColorBrush(Color.Parse(fallback));
+    }
 
     // Chart properties
     private double _minY = -40;
@@ -146,8 +162,16 @@ public class ChartControl : Control
         double w = bounds.Width;
         double h = bounds.Height;
 
+        // Resolve theme-aware colors each frame
+        var bgBrush = ResolveBrush("SystemControlBackgroundAltHighBrush", "#1a1a2e");
+        var borderBrush = ResolveBrush("SystemControlForegroundBaseLowBrush", "#555555");
+        var labelBrush = ResolveBrush("SystemControlForegroundBaseMediumHighBrush", "#CCCCCC");
+        var gridPen = new Pen(WithAlpha(borderBrush, 0x40), 0.5);
+        var borderPen = new Pen(WithAlpha(borderBrush, 0x60), 1.0);
+        var zeroLinePen = new Pen(WithAlpha(labelBrush, 0x80), 1.0);
+
         // Background
-        context.DrawRectangle(BackgroundBrush, BorderPen,
+        context.DrawRectangle(bgBrush, borderPen,
             new Rect(0, 0, w, h), 4, 4);
 
         // Chart area
@@ -181,13 +205,13 @@ public class ChartControl : Control
 
         // Draw grid lines (horizontal)
         DrawGridLines(context, chartLeft, chartRight, chartTop, chartBottom, chartHeight,
-            minY, maxY, yRange, gridStepY);
+            minY, maxY, yRange, gridStepY, gridPen, labelBrush);
 
         // Draw zero line if in range
         if (minY < 0 && maxY > 0)
         {
             double zeroY = chartBottom - (-minY / yRange * chartHeight);
-            context.DrawLine(ZeroLinePen, new Point(chartLeft, zeroY), new Point(chartRight, zeroY));
+            context.DrawLine(zeroLinePen, new Point(chartLeft, zeroY), new Point(chartRight, zeroY));
         }
 
         // Draw data series (clipped)
@@ -201,13 +225,13 @@ public class ChartControl : Control
         }
 
         // Draw border around chart area
-        context.DrawRectangle(null, BorderPen, chartRect);
+        context.DrawRectangle(null, borderPen, chartRect);
 
         // Draw title
         if (!string.IsNullOrEmpty(_title))
         {
             var titleText = new FormattedText(_title, CultureInfo.InvariantCulture,
-                FlowDirection.LeftToRight, LabelTypeface, 11, LabelBrush);
+                FlowDirection.LeftToRight, LabelTypeface, 11, labelBrush);
             context.DrawText(titleText, new Point(chartLeft + 4, chartTop + 1));
         }
 
@@ -215,7 +239,8 @@ public class ChartControl : Control
         DrawLegend(context, chartRight, chartTop);
 
         // Draw time labels
-        DrawTimeLabels(context, chartLeft, chartRight, chartBottom, timeStart);
+        DrawTimeLabels(context, chartLeft, chartRight, chartBottom, timeStart,
+            gridPen, labelBrush);
     }
 
     private void ComputeAutoScale(out double minY, out double maxY, out double gridStepY)
@@ -269,20 +294,21 @@ public class ChartControl : Control
 
     private void DrawGridLines(DrawingContext context,
         double chartLeft, double chartRight, double chartTop, double chartBottom,
-        double chartHeight, double minY, double maxY, double yRange, double gridStepY)
+        double chartHeight, double minY, double maxY, double yRange, double gridStepY,
+        Pen gridPen, IBrush labelBrush)
     {
         // Horizontal grid lines
         double firstGridY = Math.Ceiling(minY / gridStepY) * gridStepY;
         for (double val = firstGridY; val <= maxY; val += gridStepY)
         {
             double y = chartBottom - ((val - minY) / yRange * chartHeight);
-            context.DrawLine(GridPen, new Point(chartLeft, y), new Point(chartRight, y));
+            context.DrawLine(gridPen, new Point(chartLeft, y), new Point(chartRight, y));
 
             // Y-axis label -- use decimal places for small grid steps
             string fmt = gridStepY >= 1.0 ? "F0" : gridStepY >= 0.1 ? "F1" : "F2";
             string label = val.ToString(fmt);
             var labelText = new FormattedText(label, CultureInfo.InvariantCulture,
-                FlowDirection.LeftToRight, LabelTypeface, 10, LabelBrush);
+                FlowDirection.LeftToRight, LabelTypeface, 10, labelBrush);
             context.DrawText(labelText, new Point(chartLeft - labelText.Width - 4, y - labelText.Height / 2));
         }
     }
@@ -354,7 +380,8 @@ public class ChartControl : Control
     }
 
     private void DrawTimeLabels(DrawingContext context,
-        double chartLeft, double chartRight, double chartBottom, double timeStart)
+        double chartLeft, double chartRight, double chartBottom, double timeStart,
+        Pen gridPen, IBrush labelBrush)
     {
         double y = chartBottom + 4;
         int labelCount = 5;
@@ -369,11 +396,11 @@ public class ChartControl : Control
             // Show relative seconds
             string label = $"{t:F0}s";
             var labelText = new FormattedText(label, CultureInfo.InvariantCulture,
-                FlowDirection.LeftToRight, LabelTypeface, 9, LabelBrush);
+                FlowDirection.LeftToRight, LabelTypeface, 9, labelBrush);
             context.DrawText(labelText, new Point(x - labelText.Width / 2, y));
 
             // Vertical grid line
-            context.DrawLine(GridPen, new Point(x, chartBottom - (chartBottom - TopMargin)),
+            context.DrawLine(gridPen, new Point(x, chartBottom - (chartBottom - TopMargin)),
                 new Point(x, chartBottom));
         }
     }
