@@ -33,7 +33,7 @@ public partial class App : Application
 {
     private IHost? _host;
 
-    public static IServiceProvider? Services { get; private set; }
+    public static IServiceProvider? Services { get; set; }
 
     public override void Initialize()
     {

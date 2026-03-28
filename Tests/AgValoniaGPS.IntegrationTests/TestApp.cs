@@ -11,8 +11,12 @@ using Avalonia.Themes.Fluent;
 namespace AgValoniaGPS.IntegrationTests;
 
 /// <summary>
-/// Test application configured for real Skia rendering (not headless drawing).
-/// Loads Fluent theme and shared resources to match production appearance.
+/// Test application with real Skia rendering via UseHeadless(UseHeadlessDrawing=false).
+///
+/// Note: UsePlatformDetect() was considered but requires a real display server and
+/// cannot work with [AvaloniaTest] which depends on Avalonia.Headless.NUnit.
+/// The headless + Skia approach gives real pixel rendering without needing a window
+/// manager, which is necessary for automated test execution.
 /// </summary>
 public class IntegrationTestApp : Application
 {

@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,6 +10,7 @@ using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 
@@ -19,7 +18,7 @@ namespace AgValoniaGPS.IntegrationTests;
 
 /// <summary>
 /// Base fixture for integration tests that boot the full app with real DI,
-/// real rendering, and test-isolated data.
+/// real Skia rendering, and test-isolated data directory.
 /// </summary>
 public class IntegrationTestFixture
 {
@@ -42,28 +41,31 @@ public class IntegrationTestFixture
         ScreenshotDir = Path.Combine(TestContext.CurrentContext.WorkDirectory, "screenshots", "integration");
         Directory.CreateDirectory(ScreenshotDir);
 
-        // Build DI container with TestSettingsService
+        // Create TestSettingsService pointing at isolated temp data
         var testSettings = new TestSettingsService(_tempDataDir);
 
+        // Build DI container, replacing real SettingsService with test version
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
                 services.AddAgValoniaServices();
-                // Replace real SettingsService with test-isolated version
-                var descriptor = new ServiceDescriptor(
-                    typeof(ISettingsService), testSettings);
-                services.AddSingleton<ISettingsService>(testSettings);
+                // Replace SettingsService with test-isolated version
+                services.Replace(ServiceDescriptor.Singleton<ISettingsService>(testSettings));
             })
             .Build();
 
-        // Wire cross-references
+        // Set App.Services so MainWindow.OnOpened can resolve services
+        AgValoniaGPS.Desktop.App.Services = Services;
+
+        // Wire cross-references (AutoSteer -> UDP)
         Services.WireUpServices();
 
-        // Load settings from test data
+        // Load test settings and ensure no first-run dialogs
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.Load();
+        settingsService.Settings.IsFirstRun = false;
 
-        // Sync settings to ConfigurationStore
+        // Sync to ConfigurationStore
         var configService = Services.GetRequiredService<IConfigurationService>();
         configService.LoadAppSettings();
     }
@@ -73,6 +75,7 @@ public class IntegrationTestFixture
     {
         MainWindow?.Close();
         _host?.Dispose();
+        AgValoniaGPS.Desktop.App.Services = null;
 
         // Clean up temp directory
         try
@@ -87,22 +90,36 @@ public class IntegrationTestFixture
     }
 
     /// <summary>
-    /// Show the MainWindow at fixed size. Call from within Dispatcher.UIThread.
+    /// Show the MainWindow at fixed size and close any startup dialogs.
     /// </summary>
     protected void ShowMainWindow(int width = 1280, int height = 960)
     {
-        MainWindow = new MainWindow
+        try
         {
-            Width = width,
-            Height = height,
-            WindowStartupLocation = WindowStartupLocation.Manual,
-            Position = new PixelPoint(50, 50)
-        };
-        MainWindow.Show();
+            MainWindow = new MainWindow
+            {
+                Width = width,
+                Height = height,
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                Position = new PixelPoint(50, 50)
+            };
+            MainWindow.Show();
+            PumpUI(5);
+
+            // Close any dialogs that appeared on startup
+            ViewModel.State.UI.CloseDialog();
+            PumpUI(3);
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"ShowMainWindow failed: {ex.GetType().Name}: {ex.Message}");
+            TestContext.Out.WriteLine(ex.StackTrace);
+            throw;
+        }
     }
 
     /// <summary>
-    /// Execute a command and pump the UI thread to let rendering catch up.
+    /// Execute a command and pump the UI thread.
     /// </summary>
     protected void ExecuteCommand(ICommand? command, object? parameter = null)
     {
@@ -115,7 +132,7 @@ public class IntegrationTestFixture
     }
 
     /// <summary>
-    /// Pump the UI dispatcher to process pending jobs and allow rendering.
+    /// Pump the UI dispatcher to process pending jobs.
     /// </summary>
     protected void PumpUI(int iterations = 3)
     {
@@ -127,16 +144,15 @@ public class IntegrationTestFixture
 
     /// <summary>
     /// Simulate GPS ticks by calling the simulator service.
+    /// No Thread.Sleep -- [AvaloniaTest] runs on UI thread so sleep would deadlock.
     /// </summary>
-    protected void SimulateTicks(int count, double steerAngle = 0, int delayMs = 100)
+    protected void SimulateTicks(int count, double steerAngle = 0)
     {
         var simService = Services.GetRequiredService<IGpsSimulationService>();
         for (int i = 0; i < count; i++)
         {
             simService.Tick(steerAngle);
             PumpUI(1);
-            if (delayMs > 0)
-                Thread.Sleep(delayMs);
         }
     }
 
