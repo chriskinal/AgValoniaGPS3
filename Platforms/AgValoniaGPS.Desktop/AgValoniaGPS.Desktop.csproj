@@ -11,15 +11,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <!-- Embed git short hash into AssemblyInformationalVersion -->
-  <Target Name="SetGitHash" BeforeTargets="GetAssemblyVersion">
-    <Exec Command="git rev-parse --short HEAD" ConsoleToMsBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="GitHash" />
+  <!-- Embed git hash + dirty flag into AssemblyInformationalVersion (e.g. "26.2.0+9e92e46" or "26.2.0+9e92e46-dirty") -->
+  <Target Name="SetGitHash" BeforeTargets="InitializeSourceControlInformation">
+    <Exec Command="git describe --always --dirty" ConsoleToMsBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="SourceRevisionId" />
     </Exec>
-    <PropertyGroup>
-      <InformationalVersion>26.2.0+$(GitHash)</InformationalVersion>
-    </PropertyGroup>
   </Target>
+
+  <PropertyGroup>
+    <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
+    <Version>26.2.0</Version>
+  </PropertyGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />

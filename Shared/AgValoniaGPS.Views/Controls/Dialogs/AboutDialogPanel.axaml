@@ -31,6 +31,9 @@ the Free Software Foundation, either version 3 of the License, or
                 <TextBlock x:Name="VersionText" FontSize="16" FontWeight="SemiBold"
                            Foreground="White" HorizontalAlignment="Center"/>
 
+                <TextBlock x:Name="GitHashText" FontSize="11"
+                           Foreground="#7F8C8D" HorizontalAlignment="Center"/>
+
                 <TextBlock Text="Cross-platform agricultural GPS guidance"
                            FontSize="12" Foreground="#95A5A6" HorizontalAlignment="Center"/>
 

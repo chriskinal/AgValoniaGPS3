@@ -22,7 +22,11 @@ public partial class AboutDialogPanel : UserControl
         var infoVersion = Assembly.GetEntryAssembly()?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion ?? "26.2.0";
-        VersionText.Text = $"Version {infoVersion}";
+
+        // Split "26.2.0+9e92e46-dirty" into version and hash
+        var parts = infoVersion.Split('+', 2);
+        VersionText.Text = $"Version {parts[0]}";
+        GitHashText.Text = parts.Length > 1 ? parts[1] : "";
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
