@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using AgValoniaGPS.Models.Base;
@@ -75,18 +76,19 @@ public class TrackManagementScreenshotTests
         return Track.FromCurve(name, points);
     }
 
-    private void SaveScreenshot(Control control, string fileName, int width = 800, int height = 600)
+    private void SaveScreenshot(Window window, string fileName)
     {
-        var size = new Size(width, height);
-        control.Measure(size);
-        control.Arrange(new Rect(size));
+        // Use Avalonia headless capture API to get rendered frame
+        var bitmap = window.CaptureRenderedFrame();
+        Assert.That(bitmap, Is.Not.Null, "Headless renderer returned null frame");
 
-        var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
-        bitmap.Render(control);
+        var filePath = Path.Combine(_screenshotDir, fileName);
+        bitmap!.Save(filePath);
 
-        var path = Path.Combine(_screenshotDir, fileName);
-        bitmap.Save(path);
-        TestContext.Out.WriteLine($"Screenshot saved: {path}");
+        Assert.That(File.Exists(filePath), Is.True, $"Screenshot file was not created: {filePath}");
+        var info = new FileInfo(filePath);
+        Assert.That(info.Length, Is.GreaterThan(0), $"Screenshot file is empty: {filePath}");
+        TestContext.Out.WriteLine($"Screenshot saved: {filePath} ({info.Length} bytes)");
     }
 
     #endregion
@@ -116,7 +118,7 @@ public class TrackManagementScreenshotTests
         var window = new Window { Content = mapControl, Width = 800, Height = 600 };
         window.Show();
 
-        SaveScreenshot(mapControl, "recorded_paths_visible.png");
+        SaveScreenshot(window, "recorded_paths_visible.png");
 
         Assert.That(paths, Has.Count.EqualTo(3));
         Assert.That(paths.All(p => p.IsRecordedPath), Is.True);
@@ -139,7 +141,7 @@ public class TrackManagementScreenshotTests
         var window = new Window { Content = mapControl, Width = 800, Height = 600 };
         window.Show();
 
-        SaveScreenshot(mapControl, "recorded_paths_hidden.png");
+        SaveScreenshot(window, "recorded_paths_hidden.png");
 
         // Verify active track is still present
         Assert.That(activeTrack.Points, Has.Count.EqualTo(2));
@@ -168,7 +170,7 @@ public class TrackManagementScreenshotTests
         var window = new Window { Content = mapControl, Width = 800, Height = 600 };
         window.Show();
 
-        SaveScreenshot(mapControl, "contour_strips_visible.png");
+        SaveScreenshot(window, "contour_strips_visible.png");
 
         Assert.That(strips, Has.Count.EqualTo(3));
         Assert.That(strips.All(s => s.IsContour), Is.True);
@@ -201,7 +203,7 @@ public class TrackManagementScreenshotTests
         var window = new Window { Content = mapControl, Width = 800, Height = 600 };
         window.Show();
 
-        SaveScreenshot(mapControl, "mixed_tracks_all_types.png");
+        SaveScreenshot(window, "mixed_tracks_all_types.png");
 
         Assert.That(paths.Count + strips.Count, Is.EqualTo(4));
     }
@@ -225,7 +227,7 @@ public class TrackManagementScreenshotTests
         vm.ImportFieldsList.Add("Field_East_Wheat");
         vm.State.UI.ShowDialog(DialogType.ImportTracks);
 
-        SaveScreenshot(dialog, "import_tracks_dialog.png", 500, 400);
+        SaveScreenshot(window, "import_tracks_dialog.png");
 
         Assert.That(dialog.IsVisible, Is.True);
         Assert.That(vm.ImportFieldsList, Has.Count.EqualTo(3));
@@ -272,7 +274,7 @@ public class TrackManagementScreenshotTests
         // Execute the delete command (which shows confirmation dialog)
         vm.DeleteContourTrackCommand!.Execute(null);
 
-        SaveScreenshot(dialog, "delete_confirmation_dialog.png", 500, 300);
+        SaveScreenshot(window, "delete_confirmation_dialog.png");
 
         Assert.That(vm.State.UI.ActiveDialog, Is.EqualTo(DialogType.Confirmation));
         Assert.That(vm.State.UI.IsConfirmationDialogVisible, Is.True);
@@ -331,7 +333,7 @@ public class TrackManagementScreenshotTests
 
         vm.State.UI.ShowDialog(DialogType.Tracks);
 
-        SaveScreenshot(dialog, "tracks_dialog_all_types.png", 550, 500);
+        SaveScreenshot(window, "tracks_dialog_all_types.png");
 
         Assert.That(dialog.IsVisible, Is.True);
         Assert.That(vm.SavedTracks, Has.Count.EqualTo(4));
