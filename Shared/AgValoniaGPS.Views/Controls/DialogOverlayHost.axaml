@@ -50,6 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:HeadlandDialogPanel/>
         <dialogs:QuickABSelectorPanel/>
         <dialogs:TracksDialogPanel/>
+        <dialogs:ImportTracksDialogPanel/>
         <dialogs:DrawABDialogPanel/>
         <dialogs:NtripProfilesDialogPanel/>
         <dialogs:NtripProfileEditorPanel/>
