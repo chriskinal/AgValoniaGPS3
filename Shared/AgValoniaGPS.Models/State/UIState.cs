@@ -220,7 +220,6 @@ public enum DialogType
     AppDirectories,
     HotkeyConfig,
     About,
-<<<<<<< HEAD
     LogViewer,
     FlagByLatLon,
     ViewSettings,
