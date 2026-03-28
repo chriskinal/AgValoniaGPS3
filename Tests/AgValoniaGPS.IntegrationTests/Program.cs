@@ -106,7 +106,10 @@ sealed class Program
     {
         var window = lifetime.MainWindow as Window
             ?? throw new Exception("MainWindow not found");
-        var vm = App.Services!.GetRequiredService<MainViewModel>();
+        // Get the VM from the window's DataContext -- NOT from DI.
+        // MainViewModel is registered as Transient, so GetRequiredService creates
+        // a new instance each time. The MainWindow has the real one.
+        var vm = (MainViewModel)window.DataContext!;
         var settingsService = App.Services!.GetRequiredService<ISettingsService>();
 
         // Step 1: App startup
