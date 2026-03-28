@@ -327,42 +327,73 @@ sealed class Program
     static async Task RunChartsScenario(
         Window window, MainViewModel vm, IGpsSimulationService simService)
     {
-        // Drive simulator a bit more to ensure chart data service collects points
-        Console.Write("[Step 8] Charts: drive simulator for data... ");
+        // Step 8: Activate track and drive off-course to generate real chart data.
+        // ChartDataService now collects continuously in the background, so data
+        // accumulates even before charts are opened.
+        Console.Write("[Step 8] Charts: activate track and drive off-course... ");
+        var track = vm.SavedTracks.FirstOrDefault();
+        if (track != null)
+        {
+            vm.SelectedTrack = track;
+            Console.Write($"[track={track.Name}] ");
+        }
+        await Delay(200);
+
+        // Drive with steering to create deviation (steer angle, heading error, XTE)
         vm.SimulatorForwardCommand?.Execute(null);
-        for (int i = 0; i < 60; i++)
+        await Delay(100);
+        // Steer right to deviate from AB line
+        for (int i = 0; i < 40; i++)
+        {
+            simService.Tick(5.0);
+            await Delay(33);
+        }
+        // Correct back left
+        for (int i = 0; i < 40; i++)
+        {
+            simService.Tick(-3.0);
+            await Delay(33);
+        }
+        // Straight to stabilize
+        for (int i = 0; i < 20; i++)
         {
             simService.Tick(0);
             await Delay(33);
         }
         Console.WriteLine("OK");
 
-        // Step 9: Open Steer Chart
-        Console.Write("[Step 9] Charts: open Steer Chart... ");
+        // Step 9: Open Steer Chart only
+        Console.Write("[Step 9] Charts: Steer Chart... ");
         vm.ToggleSteerChartPanelCommand?.Execute(null);
         await Delay(500);
         CaptureScreenshot(window, "09_steer_chart");
         Console.Write($"[visible={vm.IsSteerChartPanelVisible}] ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 10: Open Heading Chart
-        Console.Write("[Step 10] Charts: open Heading Chart... ");
+        // Step 10: Open Heading Chart only
+        Console.Write("[Step 10] Charts: Heading Chart... ");
         vm.ToggleHeadingChartPanelCommand?.Execute(null);
         await Delay(500);
         CaptureScreenshot(window, "10_heading_chart");
         Console.Write($"[visible={vm.IsHeadingChartPanelVisible}] ");
+        vm.ToggleHeadingChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 11: Open XTE Chart
-        Console.Write("[Step 11] Charts: open XTE Chart... ");
+        // Step 11: Open XTE Chart only
+        Console.Write("[Step 11] Charts: XTE Chart... ");
         vm.ToggleXTEChartPanelCommand?.Execute(null);
         await Delay(500);
         CaptureScreenshot(window, "11_xte_chart");
         Console.Write($"[visible={vm.IsXTEChartPanelVisible}] ");
+        vm.ToggleXTEChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 12: All three charts visible at once
+        // Step 12: All three charts visible
         Console.Write("[Step 12] Charts: all three visible... ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null);
+        vm.ToggleHeadingChartPanelCommand?.Execute(null);
+        vm.ToggleXTEChartPanelCommand?.Execute(null);
         await Delay(500);
         CaptureScreenshot(window, "12_all_charts");
         bool allVisible = vm.IsSteerChartPanelVisible
