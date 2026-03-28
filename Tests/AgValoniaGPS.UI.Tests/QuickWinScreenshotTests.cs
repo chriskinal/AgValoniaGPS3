@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Services.Logging;
@@ -33,11 +34,30 @@ public class QuickWinScreenshotTests
     }
 
     /// <summary>
+    /// Pumps the dispatcher to process pending layout, binding, and render jobs.
+    /// Cycles through measure/arrange/render passes to force data-bound content
+    /// (ListBox items, ItemsControl, TextBox values) to materialize.
+    /// </summary>
+    private static void PumpFrames(Window window, int passes = 5)
+    {
+        for (int i = 0; i < passes; i++)
+        {
+            Dispatcher.UIThread.RunJobs(DispatcherPriority.Background);
+            window.InvalidateMeasure();
+            window.InvalidateArrange();
+            window.InvalidateVisual();
+            Dispatcher.UIThread.RunJobs(DispatcherPriority.Render);
+        }
+    }
+
+    /// <summary>
     /// Attempts to capture a screenshot. Returns true if file was saved.
     /// Does not throw if headless rendering does not support pixel capture.
     /// </summary>
     private static bool TryCaptureScreenshot(Window window, string fileName, string outputDir)
     {
+        PumpFrames(window);
+
         var path = Path.Combine(outputDir, fileName);
         try
         {
