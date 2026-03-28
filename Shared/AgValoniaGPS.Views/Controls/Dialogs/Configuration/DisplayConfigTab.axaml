@@ -152,7 +152,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_AutoDayNight.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Brightness" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Auto Day/Night" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center"
+                                        IsVisible="{Binding Display.AutoDayNight}">
+                                <TextBlock Text="Day" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="9" VerticalAlignment="Center"/>
+                                <NumericUpDown Value="{Binding Display.DayStartHour}" Minimum="0" Maximum="23"
+                                               Width="55" FontSize="10" Height="24" FormatString="0"/>
+                                <TextBlock Text="Night" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="9" VerticalAlignment="Center"/>
+                                <NumericUpDown Value="{Binding Display.NightStartHour}" Minimum="0" Maximum="23"
+                                               Width="55" FontSize="10" Height="24" FormatString="0"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">

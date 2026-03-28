@@ -172,15 +172,24 @@ public partial class MainViewModel
 
     /// <summary>
     /// Switch day/night mode automatically based on local time.
-    /// Day: 6:00 AM to 8:00 PM, Night: 8:00 PM to 6:00 AM.
+    /// Uses configurable DayStartHour and NightStartHour from DisplayConfig.
     /// Only applies when AutoDayNight is enabled in DisplayConfig.
     /// </summary>
     private void CheckAutoDayNight()
     {
-        if (!ConfigurationStore.Instance.Display.AutoDayNight) return;
+        var display = ConfigurationStore.Instance.Display;
+        if (!display.AutoDayNight) return;
 
         int hour = DateTime.Now.Hour;
-        bool shouldBeDay = hour >= 6 && hour < 20;
+        int dayStart = display.DayStartHour;
+        int nightStart = display.NightStartHour;
+
+        bool shouldBeDay;
+        if (dayStart < nightStart)
+            shouldBeDay = hour >= dayStart && hour < nightStart;
+        else
+            // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
+            shouldBeDay = hour >= dayStart || hour < nightStart;
 
         if (IsDayMode != shouldBeDay)
         {
