@@ -134,9 +134,8 @@ public class DisplaySettingsService : IDisplaySettingsService
     }
     public event EventHandler<int>? BrightnessChanged;
 
-    // Brightness support depends on platform
-    // For now, we'll stub this - can implement platform-specific later
-    public bool IsBrightnessSupported => false;
+    // Brightness is implemented as a dark overlay on the map control
+    public bool IsBrightnessSupported => true;
 
     public void IncreaseCameraPitch()
     {

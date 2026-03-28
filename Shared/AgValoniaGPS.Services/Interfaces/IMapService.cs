@@ -65,6 +65,7 @@ public interface IMapService
     // View settings
     void SetNorthUp(bool isNorthUp);
     void SetDayMode(bool isDayMode);
+    void SetBrightness(int percent);
 
     // Boundary recording visualization
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);

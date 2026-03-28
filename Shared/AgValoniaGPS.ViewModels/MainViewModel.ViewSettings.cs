@@ -145,14 +145,13 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Brightness = value;
+            _mapService.SetBrightness(value);
             this.RaisePropertyChanged();
             this.RaisePropertyChanged(nameof(BrightnessDisplay));
         }
     }
 
-    public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
-        ? $"{_displaySettings.Brightness}%"
-        : "??";
+    public string BrightnessDisplay => $"{_displaySettings.Brightness}%";
 
     #endregion
 
