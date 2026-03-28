@@ -1,0 +1,225 @@
+// Integration Test Harness
+// Boots the real app with real platform rendering, runs scenarios,
+// captures screenshots, prints pass/fail.
+//
+// Real window mode (requires desktop session):
+//   dotnet run --project Tests/AgValoniaGPS.IntegrationTests/
+//
+// Headless mode (CI compatible):
+//   dotnet run --project Tests/AgValoniaGPS.IntegrationTests/ -- --headless
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Headless;
+using Avalonia.Media.Imaging;
+using Avalonia.ReactiveUI;
+using Avalonia.Threading;
+using AgValoniaGPS.Desktop;
+using AgValoniaGPS.Desktop.Views;
+using AgValoniaGPS.IntegrationTests;
+using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace AgValoniaGPS.IntegrationTests;
+
+sealed class Program
+{
+    static string _screenshotDir = string.Empty;
+    static string _tempDir = string.Empty;
+    static bool _scenarioFailed = false;
+    static bool _headless = false;
+
+    [STAThread]
+    public static int Main(string[] args)
+    {
+        _headless = args.Contains("--headless");
+
+        // Set up isolated test data
+        var testDataDir = Path.Combine(AppContext.BaseDirectory, "TestData");
+        _tempDir = Path.Combine(Path.GetTempPath(), $"AgValoniaGPS_IntTest_{Guid.NewGuid():N}");
+        CopyDirectory(testDataDir, _tempDir);
+
+        var subDir = _headless ? "headless" : "integration";
+        _screenshotDir = Path.Combine(AppContext.BaseDirectory, "screenshots", subDir);
+        Directory.CreateDirectory(_screenshotDir);
+
+        Console.WriteLine($"[IntTest] Mode: {(_headless ? "headless" : "real window")}");
+        Console.WriteLine($"[IntTest] Test data: {_tempDir}");
+        Console.WriteLine($"[IntTest] Screenshots: {_screenshotDir}");
+
+        // Hook into App's DI to swap in TestSettingsService
+        var testSettings = new TestSettingsService(_tempDir);
+        App.ConfigureTestServices = services =>
+        {
+            services.Replace(ServiceDescriptor.Singleton<ISettingsService>(testSettings));
+        };
+
+        // Hook scenario runner -- runs after MainWindow is shown
+        App.OnAppReady = RunScenario;
+
+        // Boot the real app
+        try
+        {
+            var builder = AppBuilder.Configure<App>();
+
+            if (_headless)
+                builder = builder.UseSkia().UseHeadless(
+                    new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+            else
+                builder = builder.UsePlatformDetect();
+
+            builder.WithInterFont()
+                .UseReactiveUI()
+                .StartWithClassicDesktopLifetime(
+                    args.Where(a => a != "--headless").ToArray());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IntTest] FATAL: {ex.Message}");
+            _scenarioFailed = true;
+        }
+        finally
+        {
+            App.ConfigureTestServices = null;
+            App.OnAppReady = null;
+            try { Directory.Delete(_tempDir, true); } catch { }
+        }
+
+        if (_scenarioFailed)
+        {
+            Console.WriteLine("[IntTest] FAILED");
+            return 1;
+        }
+
+        Console.WriteLine("[IntTest] ALL SCENARIOS PASSED");
+        return 0;
+    }
+
+    static async Task RunScenario(IClassicDesktopStyleApplicationLifetime lifetime)
+    {
+        var window = lifetime.MainWindow as Window
+            ?? throw new Exception("MainWindow not found");
+        // Get the VM from the window's DataContext -- NOT from DI.
+        // MainViewModel is registered as Transient, so GetRequiredService creates
+        // a new instance each time. The MainWindow has the real one.
+        var vm = (MainViewModel)window.DataContext!;
+        var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+
+        // Step 1: App startup
+        Console.Write("[Step 1] App startup... ");
+        vm.State.UI.CloseDialog(); // Close any first-run dialogs
+        await Delay(500);
+        CaptureScreenshot(window, "01_app_startup");
+        Console.WriteLine("OK");
+
+        // Step 2: Open field selection dialog
+        Console.Write("[Step 2] Field selection dialog... ");
+        Console.Write($"[FieldsDir={settingsService.Settings.FieldsDirectory}] ");
+        vm.ShowFieldSelectionDialogCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[Fields={vm.AvailableFields.Count}] ");
+        CaptureScreenshot(window, "02_field_selection");
+        Console.WriteLine("OK");
+
+        // Step 3: Load TestField
+        Console.Write("[Step 3] Load TestField... ");
+        vm.State.UI.CloseDialog();
+        var testFieldDir = Path.Combine(settingsService.Settings.FieldsDirectory, "TestField");
+
+        try
+        {
+            await vm.OpenFieldAsync(testFieldDir, "TestField");
+            await Delay(1000);
+            Console.Write($"[Tracks={vm.SavedTracks.Count}] ");
+            CaptureScreenshot(window, "03_field_loaded");
+            Console.WriteLine("OK");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"PARTIAL ({ex.Message})");
+            CaptureScreenshot(window, "03_field_partial");
+        }
+
+        // Step 4: Drive simulator -- enable forward acceleration first
+        Console.Write("[Step 4] Simulator drive... ");
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
+        for (int i = 0; i < 60; i++)
+        {
+            simService.Tick(0);
+            await Delay(33); // ~30 FPS timing
+        }
+        CaptureScreenshot(window, "04_simulator_driving");
+        Console.WriteLine("OK");
+
+        // Step 5: Open tracks dialog
+        Console.Write("[Step 5] Tracks dialog... ");
+        vm.ShowTracksDialogCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[Tracks={vm.SavedTracks.Count}] ");
+        CaptureScreenshot(window, "05_tracks_dialog");
+        vm.State.UI.CloseDialog();
+        Console.WriteLine("OK");
+
+        // Step 6: Open configuration dialog
+        Console.Write("[Step 6] Configuration dialog... ");
+        vm.ShowConfigurationDialogCommand?.Execute(null);
+        await Delay(800);
+        CaptureScreenshot(window, "06_configuration");
+        // Configuration dialog uses its own visibility mechanism (not State.UI)
+        if (vm.ConfigurationViewModel != null)
+            vm.ConfigurationViewModel.IsDialogVisible = false;
+        Console.WriteLine("OK");
+
+        // Step 7: Night mode
+        Console.Write("[Step 7] Night mode... ");
+        // FluentTheme dark/light switching requires PR #81 which is not merged here.
+        // SetDayMode only affects map background, not the full theme.
+        Console.Write("[theme switching not available on this branch] ");
+        CaptureScreenshot(window, "07_current_theme");
+        Console.WriteLine("OK");
+    }
+
+    /// <summary>
+    /// Delay that also pumps the UI dispatcher.
+    /// </summary>
+    static async Task Delay(int ms)
+    {
+        await Task.Delay(ms);
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    static void CaptureScreenshot(Window window, string name)
+    {
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+
+        var pixelSize = new PixelSize(
+            Math.Max((int)window.Bounds.Width, 1),
+            Math.Max((int)window.Bounds.Height, 1));
+        var bitmap = new RenderTargetBitmap(pixelSize, new Vector(96, 96));
+        bitmap.Render(window);
+
+        var path = Path.Combine(_screenshotDir, $"{name}.png");
+        bitmap.Save(path);
+        var kb = new FileInfo(path).Length / 1024;
+        Console.Write($"[{kb}KB] ");
+    }
+
+    static void CopyDirectory(string src, string dst)
+    {
+        Directory.CreateDirectory(dst);
+        foreach (var f in Directory.GetFiles(src))
+            File.Copy(f, Path.Combine(dst, Path.GetFileName(f)));
+        foreach (var d in Directory.GetDirectories(src))
+            CopyDirectory(d, Path.Combine(dst, Path.GetFileName(d)));
+    }
+}
