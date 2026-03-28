@@ -164,13 +164,19 @@ public class ScreenshotCaptureTests
     // ---------------------------------------------------------------
 
     /// <summary>
-    /// Resolves a theme-aware brush by resource key. Falls back to the provided
-    /// default if the resource is not found (e.g., no FluentTheme loaded).
+    /// Resolves a theme-aware brush by resource key using the active theme variant.
+    /// Falls back to the provided default if the resource is not found.
     /// </summary>
     internal static IBrush ThemeBrush(string key, string fallback = "#1a1a1a")
     {
-        return Application.Current?.FindResource(key) as IBrush
-            ?? new SolidColorBrush(Color.Parse(fallback));
+        var app = Application.Current;
+        if (app != null)
+        {
+            var variant = app.ActualThemeVariant;
+            if (app.TryGetResource(key, variant, out var value) && value is IBrush brush)
+                return brush;
+        }
+        return new SolidColorBrush(Color.Parse(fallback));
     }
 
     private static Border CreateStatusBar()

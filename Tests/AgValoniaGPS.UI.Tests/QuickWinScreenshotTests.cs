@@ -374,45 +374,38 @@ public class QuickWinScreenshotTests
         if (captured) TestContext.WriteLine("[screenshot] view_all_settings_light.png saved");
     }
 
-    // --- Whole UI screenshots using shared Full UI layout with dialog overlay ---
+    // --- Whole UI screenshots using shared Full UI layout ---
 
-    [AvaloniaTest]
-    public void WholeUI_LightMode_Screenshot()
+    private static void CaptureWholeUI(string fileName, ThemeVariant theme, string screenshotDir)
     {
+        // Set theme BEFORE building layout so ThemeBrush() resolves correctly
         if (Application.Current != null)
-            Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+            Application.Current.RequestedThemeVariant = theme;
 
         var (window, vm) = ScreenshotCaptureTests.CreateUIOnly();
+        // Set on window so child AXAML DynamicResource bindings inherit the variant
+        window.RequestedThemeVariant = theme;
         window.Show();
+        window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs(DispatcherPriority.Render);
 
-        // Open About dialog to show a themed dialog on top of the Full UI
-        vm.State.UI.ShowDialog(DialogType.About);
-
-        var path = Path.Combine(_screenshotDir, "whole_ui_light.png");
+        var path = Path.Combine(screenshotDir, fileName);
         ScreenshotCaptureTests.CaptureScreenshot(window,
             ScreenshotCaptureTests.WindowWidth, ScreenshotCaptureTests.WindowHeight, path);
 
         Assert.That(File.Exists(path), Is.True);
-        TestContext.WriteLine("[screenshot] whole_ui_light.png saved");
+        TestContext.WriteLine($"[screenshot] {fileName} saved ({new FileInfo(path).Length} bytes)");
+    }
+
+    [AvaloniaTest]
+    public void WholeUI_LightMode_Screenshot()
+    {
+        CaptureWholeUI("whole_ui_light.png", ThemeVariant.Light, _screenshotDir);
     }
 
     [AvaloniaTest]
     public void WholeUI_DarkMode_Screenshot()
     {
-        if (Application.Current != null)
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
-
-        var (window, vm) = ScreenshotCaptureTests.CreateUIOnly();
-        window.Show();
-
-        // Open About dialog to show a themed dialog on top of the Full UI
-        vm.State.UI.ShowDialog(DialogType.About);
-
-        var path = Path.Combine(_screenshotDir, "whole_ui_dark.png");
-        ScreenshotCaptureTests.CaptureScreenshot(window,
-            ScreenshotCaptureTests.WindowWidth, ScreenshotCaptureTests.WindowHeight, path);
-
-        Assert.That(File.Exists(path), Is.True);
-        TestContext.WriteLine("[screenshot] whole_ui_dark.png saved");
+        CaptureWholeUI("whole_ui_dark.png", ThemeVariant.Dark, _screenshotDir);
     }
 }
