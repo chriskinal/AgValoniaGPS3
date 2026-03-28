@@ -33,46 +33,50 @@ public class ChartScreenshotTests
 
     private static void PopulateSteerData(ChartDataServiceFake chartData)
     {
-        // Simulate 2 seconds of steer data at ~10Hz
-        for (int i = 0; i < 20; i++)
+        // Simulate 25 seconds of steer data at 10Hz to fill the 20s rolling window
+        for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
-            double setAngle = 15.0 * Math.Sin(t * 0.5);
-            double actualAngle = setAngle * 0.85 + (i % 3) * 0.5;
-            double pwm = Math.Abs(setAngle) * 6.0;
+            // Realistic oscillating steer pattern: correction cycles
+            double setAngle = 18.0 * Math.Sin(t * 0.4) + 5.0 * Math.Sin(t * 1.2);
+            double actualAngle = setAngle * 0.85 + 2.0 * Math.Sin(t * 0.4 - 0.3);
+            double pwm = Math.Clamp(Math.Abs(setAngle) * 5.5, 0, 255);
 
             chartData.SetSteerAngle.AddPoint(t, setAngle);
             chartData.ActualSteerAngle.AddPoint(t, actualAngle);
             chartData.PwmOutput.AddPoint(t, pwm);
         }
-        chartData.SetCurrentTime(2.0);
+        chartData.SetCurrentTime(25.0);
     }
 
     private static void PopulateHeadingData(ChartDataServiceFake chartData)
     {
-        for (int i = 0; i < 20; i++)
+        // 25 seconds at 10Hz -- heading error centered near zero, GPS/IMU near 180
+        for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
-            double gpsHeading = 180.0 + 5.0 * Math.Sin(t * 0.3);
-            double imuHeading = gpsHeading + 0.5;
-            double headingError = 5.0 * Math.Sin(t * 0.3);
+            double headingError = 8.0 * Math.Sin(t * 0.3) + 3.0 * Math.Cos(t * 0.7);
+            double gpsHeading = 180.0 + 5.0 * Math.Sin(t * 0.15);
+            double imuHeading = gpsHeading + 0.8 * Math.Sin(t * 0.5);
 
+            chartData.HeadingError.AddPoint(t, headingError);
             chartData.GpsHeading.AddPoint(t, gpsHeading);
             chartData.ImuHeading.AddPoint(t, imuHeading);
-            chartData.HeadingError.AddPoint(t, headingError);
         }
-        chartData.SetCurrentTime(2.0);
+        chartData.SetCurrentTime(25.0);
     }
 
     private static void PopulateXTEData(ChartDataServiceFake chartData)
     {
-        for (int i = 0; i < 20; i++)
+        // 25 seconds at 10Hz -- XTE oscillating around zero
+        for (int i = 0; i < 250; i++)
         {
             double t = i * 0.1;
-            double xte = 0.5 * Math.Sin(t * 0.8) + 0.1 * Math.Cos(t * 2.0);
+            double xte = 0.8 * Math.Sin(t * 0.5) + 0.3 * Math.Cos(t * 1.3)
+                       + 0.15 * Math.Sin(t * 3.0);
             chartData.CrossTrackError.AddPoint(t, xte);
         }
-        chartData.SetCurrentTime(2.0);
+        chartData.SetCurrentTime(25.0);
     }
 
     private static void CaptureScreenshot(Window window, string filePath)
@@ -80,17 +84,9 @@ public class ChartScreenshotTests
         var dir = Path.GetDirectoryName(filePath);
         if (dir != null) Directory.CreateDirectory(dir);
 
-        // Use Avalonia Headless capture API for proper rendering
         var frame = window.CaptureRenderedFrame();
         if (frame != null)
-        {
             frame.Save(filePath);
-        }
-        else
-        {
-            // Fallback: write an empty marker file so the test can differentiate
-            File.WriteAllText(filePath, "");
-        }
     }
 
     // ---- Steer Chart Screenshots ----
@@ -105,7 +101,7 @@ public class ChartScreenshotTests
         var panel = new SteerChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "steer_chart_empty.png");
@@ -127,7 +123,7 @@ public class ChartScreenshotTests
         var panel = new SteerChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "steer_chart.png");
@@ -149,7 +145,7 @@ public class ChartScreenshotTests
         var panel = new HeadingChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "heading_chart_empty.png");
@@ -171,7 +167,7 @@ public class ChartScreenshotTests
         var panel = new HeadingChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "heading_chart.png");
@@ -193,7 +189,7 @@ public class ChartScreenshotTests
         var panel = new XTEChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "xte_chart_empty.png");
@@ -215,7 +211,7 @@ public class ChartScreenshotTests
         var panel = new XTEChartPanel { DataContext = vm };
         panel.ConfigureChart(chartData);
 
-        var window = new Window { Content = panel, Width = 800, Height = 400 };
+        var window = new Window { Content = panel, Width = 440, Height = 260, SizeToContent = SizeToContent.Manual };
         window.Show();
 
         var path = Path.Combine(_screenshotDir, "xte_chart.png");

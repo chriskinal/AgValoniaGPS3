@@ -278,8 +278,9 @@ public class ChartControl : Control
             double y = chartBottom - ((val - minY) / yRange * chartHeight);
             context.DrawLine(GridPen, new Point(chartLeft, y), new Point(chartRight, y));
 
-            // Y-axis label
-            string label = val.ToString("F0");
+            // Y-axis label -- use decimal places for small grid steps
+            string fmt = gridStepY >= 1.0 ? "F0" : gridStepY >= 0.1 ? "F1" : "F2";
+            string label = val.ToString(fmt);
             var labelText = new FormattedText(label, CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelTypeface, 10, LabelBrush);
             context.DrawText(labelText, new Point(chartLeft - labelText.Width - 4, y - labelText.Height / 2));

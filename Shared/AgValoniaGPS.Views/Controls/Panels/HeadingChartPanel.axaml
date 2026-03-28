@@ -37,7 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <Border Classes="FloatingPanel" Width="360" Height="220">
+    <Border Classes="FloatingPanel" Width="420" Height="240">
         <Grid RowDefinitions="24,*">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="24"
                   Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
