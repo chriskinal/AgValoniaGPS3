@@ -75,33 +75,26 @@ public class TrackManagementScreenshotTests
         return Track.FromCurve(name, points);
     }
 
-    private void SaveScreenshot(Window window, string fileName)
+    /// <summary>
+    /// Captures a screenshot using RenderTargetBitmap matching the shared
+    /// ScreenshotCaptureTests convention.
+    /// </summary>
+    private void SaveScreenshot(Window window, string fileName,
+        int width = 800, int height = 600)
     {
-        // Force multiple render/layout cycles so ListBox items materialize.
-        // Headless Skia needs several passes: bindings -> measure -> arrange -> render.
-        for (int i = 0; i < 5; i++)
-        {
-            Dispatcher.UIThread.RunJobs();
-            window.InvalidateMeasure();
-            window.InvalidateArrange();
-            window.InvalidateVisual();
-            Dispatcher.UIThread.RunJobs();
-            // CaptureRenderedFrame also triggers a render timer tick
-            window.CaptureRenderedFrame();
-        }
+        window.UpdateLayout();
 
-        // Final capture
-        Dispatcher.UIThread.RunJobs();
-        var bitmap = window.CaptureRenderedFrame();
-        Assert.That(bitmap, Is.Not.Null, "Headless renderer returned null frame");
+        var renderTarget = new RenderTargetBitmap(
+            new PixelSize(width, height), new Vector(96, 96));
+        renderTarget.Render(window);
 
         var filePath = Path.Combine(_screenshotDir, fileName);
-        bitmap!.Save(filePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        renderTarget.Save(filePath);
 
-        Assert.That(File.Exists(filePath), Is.True, $"Screenshot file was not created: {filePath}");
-        var info = new FileInfo(filePath);
-        Assert.That(info.Length, Is.GreaterThan(0), $"Screenshot file is empty: {filePath}");
-        TestContext.Out.WriteLine($"Screenshot saved: {filePath} ({info.Length} bytes)");
+        Assert.That(File.Exists(filePath), Is.True, $"Screenshot not created: {filePath}");
+        Assert.That(new FileInfo(filePath).Length, Is.GreaterThan(0), $"Screenshot is empty: {filePath}");
+        TestContext.Out.WriteLine($"Screenshot saved: {filePath} ({new FileInfo(filePath).Length} bytes)");
     }
 
     #endregion
