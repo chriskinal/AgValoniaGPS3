@@ -286,4 +286,91 @@ public class QuickWinScreenshotTests
         if (captured)
             TestContext.WriteLine("[screenshot] view_all_settings.png saved");
     }
+
+    // --- Light vs Dark comparison for multiple dialogs ---
+
+    [AvaloniaTest]
+    public void About_LightMode_Screenshot()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var dialog = new AboutDialogPanel { DataContext = vm };
+
+        var window = new Window { Content = dialog, Width = 800, Height = 600 };
+        if (Application.Current != null)
+            Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+        window.Show();
+
+        vm.State.UI.ShowDialog(DialogType.About);
+        var captured = TryCaptureScreenshot(window, "about_light.png", _screenshotDir);
+
+        Assert.That(vm.State.UI.IsAboutDialogVisible, Is.True);
+        if (captured) TestContext.WriteLine("[screenshot] about_light.png saved");
+    }
+
+    [AvaloniaTest]
+    public void About_DarkMode_Screenshot()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var dialog = new AboutDialogPanel { DataContext = vm };
+
+        var window = new Window { Content = dialog, Width = 800, Height = 600 };
+        if (Application.Current != null)
+            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+        window.Show();
+
+        vm.State.UI.ShowDialog(DialogType.About);
+        var captured = TryCaptureScreenshot(window, "about_dark.png", _screenshotDir);
+
+        Assert.That(vm.State.UI.IsAboutDialogVisible, Is.True);
+        if (captured) TestContext.WriteLine("[screenshot] about_dark.png saved");
+    }
+
+    [AvaloniaTest]
+    public void LogViewer_LightMode_Screenshot()
+    {
+        LogStore.Instance.Clear();
+        LogStore.Instance.Add(new LogEntry { Timestamp = DateTime.Now.AddSeconds(-6), Level = LogLevel.Debug, Category = "GpsService", Message = "GPS data received: 12 satellites" });
+        LogStore.Instance.Add(new LogEntry { Timestamp = DateTime.Now.AddSeconds(-4), Level = LogLevel.Information, Category = "FieldService", Message = "Field 'North40' loaded successfully" });
+        LogStore.Instance.Add(new LogEntry { Timestamp = DateTime.Now.AddSeconds(-2), Level = LogLevel.Warning, Category = "NtripService", Message = "NTRIP connection timeout, retrying..." });
+        LogStore.Instance.Add(new LogEntry { Timestamp = DateTime.Now, Level = LogLevel.Error, Category = "UdpService", Message = "Failed to bind UDP port 9999: Address already in use" });
+
+        var vm = new MainViewModelBuilder().Build();
+        var dialog = new LogViewerDialogPanel { DataContext = vm };
+
+        var window = new Window { Content = dialog, Width = 800, Height = 600 };
+        if (Application.Current != null)
+            Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+        window.Show();
+
+        vm.ShowLogViewerDialogCommand!.Execute(null);
+        var captured = TryCaptureScreenshot(window, "log_viewer_light.png", _screenshotDir);
+
+        Assert.That(vm.FilteredLogEntries, Has.Count.GreaterThanOrEqualTo(4));
+        if (captured) TestContext.WriteLine("[screenshot] log_viewer_light.png saved");
+        vm.CloseLogViewerDialogCommand!.Execute(null);
+    }
+
+    [AvaloniaTest]
+    public void ViewAllSettings_LightMode_Screenshot()
+    {
+        var store = ConfigurationStore.Instance;
+        store.Vehicle.AntennaHeight = 2.5;
+        store.Vehicle.Wheelbase = 3.2;
+        store.IsMetric = true;
+        store.NumSections = 5;
+
+        var vm = new MainViewModelBuilder().Build();
+        var dialog = new ViewSettingsDialogPanel { DataContext = vm };
+
+        var window = new Window { Content = dialog, Width = 800, Height = 600 };
+        if (Application.Current != null)
+            Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+        window.Show();
+
+        vm.ShowViewSettingsDialogCommand!.Execute(null);
+        var captured = TryCaptureScreenshot(window, "view_all_settings_light.png", _screenshotDir);
+
+        Assert.That(vm.SettingsTree, Has.Count.GreaterThan(0));
+        if (captured) TestContext.WriteLine("[screenshot] view_all_settings_light.png saved");
+    }
 }

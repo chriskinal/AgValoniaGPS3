@@ -16,6 +16,7 @@ public class TestApp : Application
     {
         Styles.Add(new FluentTheme());
 
+        // Load shared resources (includes dark theme overrides)
         Resources.MergedDictionaries.Add(
             (Avalonia.Controls.ResourceDictionary)AvaloniaXamlLoader.Load(
                 new Uri("avares://AgValoniaGPS.Views/Styles/SharedResources.axaml")));

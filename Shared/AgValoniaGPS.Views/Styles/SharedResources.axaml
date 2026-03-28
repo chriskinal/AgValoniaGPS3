@@ -34,4 +34,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
     <converters:EqualityConverter x:Key="EqualityConverter"/>
 
+    <!-- Dark theme overrides: use dark gray instead of pure black -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="#1E1E2E"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumBrush" Color="#282838"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="#2D2D3D"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundListLowBrush" Color="#323245"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="#3A3A4E"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumLowBrush" Color="#45455A"/>
+            <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumBrush" Color="#505068"/>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
 </ResourceDictionary>
