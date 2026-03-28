@@ -226,11 +226,12 @@ public partial class MainViewModel : ReactiveObject
             }
         };
 
+        // Subscribe to DisplayConfig changes so Configuration dialog toggles
+        // propagate to the rendering layer and UI bindings
+        ConfigStore.Display.PropertyChanged += OnDisplayConfigChanged;
+
         // Note: FPS subscription is set up in platform code (MainWindow.axaml.cs / MainView.axaml.cs)
         // since ViewModels cannot reference Views directly
-
-        // Note: NOT subscribing to DisplaySettings events - using direct property access instead
-        // to avoid threading issues with ReactiveUI
 
         // Note: Simulator coordinates are restored in RestoreSettings() from saved app settings
         // Default values only used if no settings exist (first run)

@@ -384,7 +384,10 @@ public partial class MainWindow : Window
                 return;
         }
 
-        // Configurable hotkeys
+        // Configurable hotkeys (only when keyboard shortcuts are enabled in Display Config)
+        if (!AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.KeyboardEnabled)
+            return;
+
         var keyStr = KeyToString(e.Key);
         if (keyStr != null && ViewModel?.HandleHotkey(keyStr) == true)
             e.Handled = true;
