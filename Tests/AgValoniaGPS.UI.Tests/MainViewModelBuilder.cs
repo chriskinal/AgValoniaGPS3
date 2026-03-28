@@ -60,6 +60,7 @@ public class MainViewModelBuilder
             coverageMapService: Substitute.For<ICoverageMapService>(),
             sectionControlService: Substitute.For<ISectionControlService>(),
             ntripProfileService: NtripProfileService,
+            chartDataService: Substitute.For<IChartDataService>(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }
