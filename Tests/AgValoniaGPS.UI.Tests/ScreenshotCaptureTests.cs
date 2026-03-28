@@ -40,8 +40,8 @@ namespace AgValoniaGPS.UI.Tests;
 [TestFixture]
 public class ScreenshotCaptureTests
 {
-    private const int WindowWidth = 1024;
-    private const int WindowHeight = 768;
+    internal const int WindowWidth = 1024;
+    internal const int WindowHeight = 768;
     private const int MapOnlyWidth = 800;
     private const int MapOnlyHeight = 600;
 
@@ -86,7 +86,7 @@ public class ScreenshotCaptureTests
         var rootGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,*"),
-            Background = new SolidColorBrush(Color.Parse("#1a1a1a"))
+            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", "#1a1a1a")
         };
         var statusBar = CreateStatusBar();
         Grid.SetRow(statusBar, 0);
@@ -120,7 +120,7 @@ public class ScreenshotCaptureTests
         return (window, mapControl);
     }
 
-    private static (Window window, MainViewModel vm) CreateUIOnly()
+    internal static (Window window, MainViewModel vm) CreateUIOnly()
     {
         var vm = new MainViewModelBuilder().Build();
 
@@ -129,7 +129,7 @@ public class ScreenshotCaptureTests
 
         var placeholder = new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#1a1a1a"))
+            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", "#1a1a1a")
         };
 
         var mapArea = new Grid();
@@ -140,7 +140,7 @@ public class ScreenshotCaptureTests
         var rootGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,*"),
-            Background = new SolidColorBrush(Color.Parse("#1a1a1a"))
+            Background = ThemeBrush("SystemControlBackgroundAltHighBrush", "#1a1a1a")
         };
         var statusBar = CreateStatusBar();
         Grid.SetRow(statusBar, 0);
@@ -163,11 +163,21 @@ public class ScreenshotCaptureTests
     // Shared UI component builders
     // ---------------------------------------------------------------
 
+    /// <summary>
+    /// Resolves a theme-aware brush by resource key. Falls back to the provided
+    /// default if the resource is not found (e.g., no FluentTheme loaded).
+    /// </summary>
+    internal static IBrush ThemeBrush(string key, string fallback = "#1a1a1a")
+    {
+        return Application.Current?.FindResource(key) as IBrush
+            ?? new SolidColorBrush(Color.Parse(fallback));
+    }
+
     private static Border CreateStatusBar()
     {
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#2d2d2d")),
+            Background = ThemeBrush("SystemControlBackgroundChromeMediumBrush", "#2d2d2d"),
             Padding = new Thickness(10),
             Child = new StackPanel
             {
@@ -176,11 +186,11 @@ public class ScreenshotCaptureTests
                 Children =
                 {
                     new TextBlock { Text = "Ready", Foreground = Brushes.LimeGreen, FontSize = 14 },
-                    new TextBlock { Text = "RTK Fix", Foreground = new SolidColorBrush(Color.Parse("#3498DB")), FontSize = 12 },
+                    new TextBlock { Text = "RTK Fix", Foreground = ThemeBrush("SystemControlHighlightAccentBrush", "#3498DB"), FontSize = 12 },
                     new TextBlock { Text = "FPS: 30", Foreground = new SolidColorBrush(Color.Parse("#F1C40F")), FontSize = 12 },
                     new TextBlock { Text = "Lat: 2.1ms", Foreground = new SolidColorBrush(Color.Parse("#F39C12")), FontSize = 12 },
                     new Border { Width = 200 },
-                    new TextBlock { Text = "12.4 ha", Foreground = Brushes.White, FontSize = 12 },
+                    new TextBlock { Text = "12.4 ha", Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"), FontSize = 12 },
                     new TextBlock { Text = "5.2 ha done", Foreground = Brushes.LimeGreen, FontSize = 12, FontWeight = FontWeight.Bold },
                     new TextBlock { Text = "58%", Foreground = new SolidColorBrush(Color.Parse("#F39C12")), FontSize = 12 },
                 }
@@ -230,8 +240,9 @@ public class ScreenshotCaptureTests
                     FontWeight = FontWeight.Bold,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center,
-                    Background = new SolidColorBrush(Color.Parse("#4A5568")),
-                    Foreground = Brushes.White, CornerRadius = new CornerRadius(8)
+                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", "#4A5568"),
+                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"),
+                    CornerRadius = new CornerRadius(8)
                 },
                 new Button
                 {
@@ -239,8 +250,9 @@ public class ScreenshotCaptureTests
                     FontWeight = FontWeight.Bold,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     VerticalContentAlignment = VerticalAlignment.Center,
-                    Background = new SolidColorBrush(Color.Parse("#4A5568")),
-                    Foreground = Brushes.White, CornerRadius = new CornerRadius(8)
+                    Background = ThemeBrush("SystemControlBackgroundBaseLowBrush", "#4A5568"),
+                    Foreground = ThemeBrush("SystemControlForegroundBaseHighBrush", "#FFFFFF"),
+                    CornerRadius = new CornerRadius(8)
                 },
             }
         };
@@ -333,7 +345,7 @@ public class ScreenshotCaptureTests
     // Screenshot capture helpers
     // ---------------------------------------------------------------
 
-    private static void CaptureScreenshot(Window window, int width, int height, string filePath)
+    internal static void CaptureScreenshot(Window window, int width, int height, string filePath)
     {
         window.UpdateLayout();
 
