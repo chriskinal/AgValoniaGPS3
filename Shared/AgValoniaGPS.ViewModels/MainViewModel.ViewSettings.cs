@@ -193,6 +193,14 @@ public partial class MainViewModel
 
     #region ConfigurationStore Display Forwarding
 
+    /// <summary>Whether speedometer display is visible (from DisplayConfig).</summary>
+    public bool IsSpeedometerVisible =>
+        ConfigurationStore.Instance.Display.SpeedometerVisible;
+
+    /// <summary>Whether headland distance overlay is visible (from DisplayConfig).</summary>
+    public bool IsHeadlandDistanceVisible =>
+        ConfigurationStore.Instance.Display.HeadlandDistanceVisible;
+
     /// <summary>
     /// UTurn button visible when track available AND config allows it.
     /// </summary>
