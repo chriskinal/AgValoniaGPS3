@@ -145,13 +145,14 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Brightness = value;
-            _mapService.SetBrightness(value);
             this.RaisePropertyChanged();
             this.RaisePropertyChanged(nameof(BrightnessDisplay));
         }
     }
 
-    public string BrightnessDisplay => $"{_displaySettings.Brightness}%";
+    public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
+        ? $"{_displaySettings.Brightness}%"
+        : "??";
 
     #endregion
 
@@ -191,14 +192,6 @@ public partial class MainViewModel
     #endregion
 
     #region ConfigurationStore Display Forwarding
-
-    /// <summary>Whether speedometer display is visible (from DisplayConfig).</summary>
-    public bool IsSpeedometerVisible =>
-        ConfigurationStore.Instance.Display.SpeedometerVisible;
-
-    /// <summary>Whether headland distance overlay is visible (from DisplayConfig).</summary>
-    public bool IsHeadlandDistanceVisible =>
-        ConfigurationStore.Instance.Display.HeadlandDistanceVisible;
 
     /// <summary>
     /// UTurn button visible when track available AND config allows it.

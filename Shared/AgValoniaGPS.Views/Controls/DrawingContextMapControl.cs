@@ -132,8 +132,6 @@ public interface ISharedMapControl
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
 
-    // Brightness control (0-100, renders as dark overlay)
-    void SetBrightness(int percent);
 }
 
 /// <summary>
@@ -369,9 +367,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Render timer
     private readonly DispatcherTimer _renderTimer;
 
-    // Brightness (0-100, applied as dark overlay)
-    private int _brightnessPercent = 100;
-
     // FPS tracking (instance-based to avoid double-counting when multiple controls exist)
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
     private int _frameCount;
@@ -526,12 +521,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var bounds = Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
 
-        // Apply line smooth setting (anti-aliasing toggle)
-        var edgeMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.LineSmoothEnabled
-            ? EdgeMode.Unspecified  // default: anti-aliased
-            : EdgeMode.Aliased;
-        RenderOptions.SetEdgeMode(this, edgeMode);
-
         // DEBUG: Log which control is rendering (reduced frequency)
         // Console.WriteLine($"[Render] Control={GetHashCode()}, bounds={bounds.Width:F0}x{bounds.Height:F0}, explicit={_bitmapExplicitlyInitialized}");
 
@@ -672,14 +661,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (++_renderCounter % 30 == 0)
         {
             Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Patches: {_lastDrawnPatchCount}");
-        }
-
-        // Brightness overlay: draw dark layer for brightness < 100%
-        if (_brightnessPercent < 100)
-        {
-            byte alpha = (byte)(255 * (100 - _brightnessPercent) / 100);
-            var dimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
-            context.DrawRectangle(dimBrush, null, new Rect(bounds.Size));
         }
 
         // Count actual completed renders for accurate FPS
@@ -2999,11 +2980,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         get => _autoPanEnabled;
         set => _autoPanEnabled = value;
-    }
-
-    public void SetBrightness(int percent)
-    {
-        _brightnessPercent = Math.Clamp(percent, 0, 100);
     }
 
     public void SetBoundary(Boundary? boundary)

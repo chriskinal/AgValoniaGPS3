@@ -151,8 +151,6 @@ public class MapService : IMapService
 
     public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);
 
-    public void SetBrightness(int percent) => _mapControl?.SetBrightness(percent);
-
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)
     {
         _mapControl?.SetRecordingPoints(points);
