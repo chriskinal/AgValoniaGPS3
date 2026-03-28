@@ -58,8 +58,15 @@ public partial class MainViewModel
     public double Speed
     {
         get => _speed;
-        set => this.RaiseAndSetIfChanged(ref _speed, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _speed, value);
+            this.RaisePropertyChanged(nameof(SpeedKmh));
+        }
     }
+
+    /// <summary>Speed in km/h for display binding.</summary>
+    public double SpeedKmh => _speed * 3.6;
 
     public int SatelliteCount
     {
