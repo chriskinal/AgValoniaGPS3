@@ -19,6 +19,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using AgValoniaGPS.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
@@ -32,6 +33,12 @@ public partial class SteerChartPanel : UserControl
     public event EventHandler<Vector>? DragMoved;
     public event EventHandler<PointerReleasedEventArgs>? DragEnded;
 
+    /// <summary>
+    /// Optional DI service provider for auto-configuration.
+    /// Set by the hosting platform (Desktop App.Services, etc).
+    /// </summary>
+    public static IServiceProvider? ServiceProvider { get; set; }
+
     public SteerChartPanel()
     {
         InitializeComponent();
@@ -42,6 +49,21 @@ public partial class SteerChartPanel : UserControl
             dragHandle.PointerMoved += DragHandle_PointerMoved;
             dragHandle.PointerReleased += DragHandle_PointerReleased;
         }
+
+        // Auto-configure when panel becomes visible
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property.Name == nameof(IsVisible) && e.NewValue is true)
+                TryAutoConfigure();
+        };
+    }
+
+    private void TryAutoConfigure()
+    {
+        if (_configured) return;
+        var chartData = ServiceProvider?.GetService<IChartDataService>();
+        if (chartData != null)
+            ConfigureChart(chartData);
     }
 
     public void ConfigureChart(IChartDataService chartData)

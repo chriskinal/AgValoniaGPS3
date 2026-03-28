@@ -19,6 +19,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using AgValoniaGPS.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
@@ -32,6 +33,8 @@ public partial class XTEChartPanel : UserControl
     public event EventHandler<Vector>? DragMoved;
     public event EventHandler<PointerReleasedEventArgs>? DragEnded;
 
+    public static IServiceProvider? ServiceProvider { get; set; }
+
     public XTEChartPanel()
     {
         InitializeComponent();
@@ -42,6 +45,15 @@ public partial class XTEChartPanel : UserControl
             dragHandle.PointerMoved += DragHandle_PointerMoved;
             dragHandle.PointerReleased += DragHandle_PointerReleased;
         }
+
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property.Name == nameof(IsVisible) && e.NewValue is true && !_configured)
+            {
+                var chartData = ServiceProvider?.GetService<IChartDataService>();
+                if (chartData != null) ConfigureChart(chartData);
+            }
+        };
     }
 
     public void ConfigureChart(IChartDataService chartData)

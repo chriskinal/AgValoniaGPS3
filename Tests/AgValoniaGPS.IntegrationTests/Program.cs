@@ -330,6 +330,10 @@ sealed class Program
         // Step 8: Activate track and drive off-course to generate real chart data.
         // ChartDataService now collects continuously in the background, so data
         // accumulates even before charts are opened.
+        // Check chart data service state
+        var chartDataService = App.Services!.GetRequiredService<IChartDataService>();
+        Console.Write($"[ChartService running={chartDataService.IsRunning}, time={chartDataService.CurrentTime:F1}s, steerPts={chartDataService.SetSteerAngle.Count}] ");
+
         Console.Write("[Step 8] Charts: activate track and drive off-course... ");
         var track = vm.SavedTracks.FirstOrDefault();
         if (track != null)
@@ -360,6 +364,7 @@ sealed class Program
             simService.Tick(0);
             await Delay(33);
         }
+        Console.Write($"[steerPts={chartDataService.SetSteerAngle.Count}, xtePts={chartDataService.CrossTrackError.Count}] ");
         Console.WriteLine("OK");
 
         // Step 9: Open Steer Chart only
