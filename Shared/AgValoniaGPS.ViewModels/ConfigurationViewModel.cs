@@ -934,6 +934,7 @@ public partial class ConfigurationViewModel : ReactiveObject
     public ICommand ToggleLineSmoothCommand { get; private set; } = null!;
     public ICommand ToggleDirectionMarkersCommand { get; private set; } = null!;
     public ICommand ToggleSectionLinesCommand { get; private set; } = null!;
+    public ICommand ToggleDayNightThemeCommand { get; private set; } = null!;
     public ICommand SetMetricUnitsCommand { get; private set; } = null!;
     public ICommand SetImperialUnitsCommand { get; private set; } = null!;
 
@@ -1602,6 +1603,13 @@ public partial class ConfigurationViewModel : ReactiveObject
         ToggleSectionLinesCommand = ReactiveCommand.Create(() =>
         {
             Display.SectionLinesVisible = !Display.SectionLinesVisible;
+            Config.MarkChanged();
+        });
+
+        ToggleDayNightThemeCommand = ReactiveCommand.Create(() =>
+        {
+            Display.IsDayMode = !Display.IsDayMode;
+            MainViewModel.ApplyThemeVariant(Display.IsDayMode);
             Config.MarkChanged();
         });
 

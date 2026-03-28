@@ -38,24 +38,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="MinHeight" Value="56"/>
         </Style>
         <Style Selector="TabControl.VehicleSubTabs > TabItem:selected">
-            <Setter Property="Background" Value="#DD4A9A7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TabControl.VehicleSubTabs > TabItem:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
 
         <!-- Value boxes -->
         <Style Selector="Border.ValueBox">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinWidth" Value="80"/>
         </Style>
         <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="#DD1E2A38"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -63,29 +63,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="TextBlock.LargeValue">
             <Setter Property="FontSize" Value="32"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
         <Style Selector="TextBlock.UnitLabel">
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style Selector="TextBlock.SectionLabel">
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
     </UserControl.Styles>
 
     <!-- Nested TabControl for vehicle sub-sections -->
-    <TabControl Classes="VehicleSubTabs" TabStripPlacement="Left" Background="#DD2C3E50">
+    <TabControl Classes="VehicleSubTabs" TabStripPlacement="Left" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
         <!-- Summary Tab -->
         <TabItem ToolTip.Tip="Vehicle Summary">
             <TabItem.Header>
@@ -95,55 +95,55 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <ScrollViewer>
                 <StackPanel Spacing="8" Margin="16">
                     <TextBlock Text="{Binding SelectedProfileName, StringFormat='Current: {0}'}"
-                               FontSize="24" FontWeight="Bold" Foreground="White"
+                               FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
                     <!-- Summary grid -->
                     <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                           HorizontalAlignment="Center" Width="400">
-                        <TextBlock Grid.Row="0" Text="Units:" Foreground="#AAA" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Text="Units:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                         <TextBlock Grid.Row="0" Grid.Column="1"
                                    Text="{Binding Config.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
 
-                        <TextBlock Grid.Row="1" Text="Width:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="1" Text="Width:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="2" Text="Sections:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="2" Text="Sections:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Config.NumSections}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="3" Text="Offset:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="3" Text="Offset:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Tool.Offset, StringFormat='{}{0:F2} m'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="4" Text="Overlap:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="4" Text="Overlap:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Tool.Overlap, StringFormat='{}{0:F2} m'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="5" Text="Look Ahead:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="5" Text="Look Ahead:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Tool.LookAheadOnSetting, StringFormat='{}{0:F1} s'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="6" Text="Nudge:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="6" Text="Nudge:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="6" Grid.Column="1" Text="7.9 in"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="7" Text="Tram Width:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="7" Text="Tram Width:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Vehicle.TrackWidth, StringFormat='{}{0:F2} m'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
 
-                        <TextBlock Grid.Row="8" Text="Wheelbase:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="8" Text="Wheelbase:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Vehicle.Wheelbase, StringFormat='{}{0:F2} m'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16" Margin="0,8,0,0"/>
                     </Grid>
 
                     <!-- Info banner -->
-                    <Border Background="#3498DB" CornerRadius="8" Padding="16,12" Margin="0,24,0,0"
+                    <Border Background="{DynamicResource SystemControlHighlightAccentBrush}" CornerRadius="8" Padding="16,12" Margin="0,24,0,0"
                             HorizontalAlignment="Center">
                         <TextBlock Text="Vehicle settings are now called &quot;profiles&quot; and can be&#x0a;created/loaded in the main menu (top left)."
-                                   Foreground="White" TextAlignment="Center" FontSize="14"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" TextAlignment="Center" FontSize="14"/>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
@@ -157,7 +157,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </TabItem.Header>
             <ScrollViewer>
                 <StackPanel Spacing="16" Margin="16">
-                    <TextBlock Text="Select Vehicle Type" FontSize="18" FontWeight="SemiBold" Foreground="White"
+                    <TextBlock Text="Select Vehicle Type" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center" Margin="0,0,0,8"/>
 
                     <!-- Vehicle type selector -->
@@ -169,17 +169,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Harvester}">
                             <Button.Styles>
                                 <Style Selector="Button">
-                                    <Setter Property="Background" Value="#DD34495E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                 </Style>
                                 <Style Selector="Button:pointerover">
-                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                 </Style>
                             </Button.Styles>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
                                        Width="80" Height="60" Stretch="Uniform"/>
                                 <TextBlock Text="Harvester" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
 
@@ -190,17 +190,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Tractor}">
                             <Button.Styles>
                                 <Style Selector="Button">
-                                    <Setter Property="Background" Value="#DD34495E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                 </Style>
                                 <Style Selector="Button:pointerover">
-                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                 </Style>
                             </Button.Styles>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
                                        Width="80" Height="60" Stretch="Uniform"/>
                                 <TextBlock Text="Tractor" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
 
@@ -211,17 +211,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=FourWD}">
                             <Button.Styles>
                                 <Style Selector="Button">
-                                    <Setter Property="Background" Value="#DD34495E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                 </Style>
                                 <Style Selector="Button:pointerover">
-                                    <Setter Property="Background" Value="#DD475A6E"/>
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                 </Style>
                             </Button.Styles>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
                                        Width="80" Height="60" Stretch="Uniform"/>
                                 <TextBlock Text="Articulated" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -230,11 +230,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Background="#4A9A7E" CornerRadius="8" Padding="16,12"
                             HorizontalAlignment="Center" Margin="0,24,0,0">
                         <TextBlock Text="{Binding Vehicle.VehicleTypeDisplayName, StringFormat='Selected: {0}'}"
-                                   Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                     </Border>
 
                     <TextBlock Text="Select your vehicle type to configure appropriate steering geometry and dimensions."
-                               Foreground="#AAA" FontSize="13" TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13" TextWrapping="Wrap"
                                HorizontalAlignment="Center" MaxWidth="500" TextAlignment="Center"
                                Margin="0,16,0,0"/>
                 </StackPanel>
@@ -337,7 +337,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- Offset selector buttons: Left = antenna left of center (negative), Right = antenna right of center (positive) -->
                     <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Left" Margin="0,8,0,0">
-                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Antenna Left of Center"
+                        <Button Width="50" Height="36" Padding="4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" ToolTip.Tip="Antenna Left of Center"
                                 Command="{Binding SetAntennaOffsetLeftCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png" Stretch="Uniform"/>
                         </Button>
@@ -345,7 +345,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Command="{Binding SetAntennaOffsetCenterCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png" Stretch="Uniform"/>
                         </Button>
-                        <Button Width="50" Height="36" Padding="4" Background="#DD34495E" ToolTip.Tip="Antenna Right of Center"
+                        <Button Width="50" Height="36" Padding="4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" ToolTip.Tip="Antenna Right of Center"
                                 Command="{Binding SetAntennaOffsetRightCommand}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png" Stretch="Uniform"/>
                         </Button>

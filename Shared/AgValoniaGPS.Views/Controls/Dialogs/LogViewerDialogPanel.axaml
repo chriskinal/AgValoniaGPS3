@@ -1,0 +1,93 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:logging="clr-namespace:AgValoniaGPS.Services.Logging;assembly=AgValoniaGPS.Services"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.LogViewerDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsLogViewerDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsLogViewerDialogVisible}">
+
+    <Grid>
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="0"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Width="750" Height="520">
+            <Grid RowDefinitions="Auto,Auto,*,Auto">
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12,12,0,0" Padding="16,12">
+                    <TextBlock Text="Application Log" FontSize="18" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
+                </Border>
+
+                <!-- Filter bar -->
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Padding="12,8">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                        <Button Content="Debug" Padding="10,4" CornerRadius="4"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
+                                Command="{Binding SetLogFilterCommand}" CommandParameter="Debug"/>
+                        <Button Content="Info" Padding="10,4" CornerRadius="4"
+                                Background="#2980B9" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
+                                Command="{Binding SetLogFilterCommand}" CommandParameter="Information"/>
+                        <Button Content="Warning" Padding="10,4" CornerRadius="4"
+                                Background="#F39C12" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
+                                Command="{Binding SetLogFilterCommand}" CommandParameter="Warning"/>
+                        <Button Content="Error" Padding="10,4" CornerRadius="4"
+                                Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
+                                Command="{Binding SetLogFilterCommand}" CommandParameter="Error"/>
+                        <Border Width="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,0"/>
+                        <Button Content="Clear" Padding="10,4" CornerRadius="4"
+                                Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
+                                Command="{Binding ClearLogEntriesCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Log entries list (non-virtualizing for headless rendering) -->
+                <Border Grid.Row="2" Margin="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding FilteredLogEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="logging:LogEntry">
+                                    <Grid ColumnDefinitions="140,70,*" Margin="2,1">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" FontFamily="Consolas"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Level}"
+                                                   FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
+                                                   VerticalAlignment="Center"
+                                                   Margin="4,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding Message}"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="11" FontFamily="Consolas"
+                                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Close button -->
+                <Button Grid.Row="3" Content="Close" Margin="16,4,16,12"
+                        Command="{Binding CloseLogViewerDialogCommand}"
+                        Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

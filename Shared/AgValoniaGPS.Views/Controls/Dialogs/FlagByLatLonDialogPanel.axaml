@@ -1,0 +1,83 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.FlagByLatLonDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsFlagByLatLonDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsFlagByLatLonDialogVisible}">
+
+    <Grid>
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                CornerRadius="12" Padding="24"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="400" MaxWidth="500">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Place Flag by Lat/Lon" FontSize="20" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Enter WGS84 coordinates in decimal degrees"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalAlignment="Center"/>
+
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                <!-- Latitude -->
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Latitude (-90 to 90)"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               FontSize="13"/>
+                    <TextBox Text="{Binding FlagLatitudeInput, Mode=TwoWay}"
+                             Watermark="e.g. 43.123456"
+                             FontSize="16" Padding="8,6"/>
+                </StackPanel>
+
+                <!-- Longitude -->
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Longitude (-180 to 180)"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               FontSize="13"/>
+                    <TextBox Text="{Binding FlagLongitudeInput, Mode=TwoWay}"
+                             Watermark="e.g. -80.654321"
+                             FontSize="16" Padding="8,6"/>
+                </StackPanel>
+
+                <!-- Error message -->
+                <TextBlock Text="{Binding FlagByLatLonError}"
+                           Foreground="#E74C3C" FontSize="12"
+                           IsVisible="{Binding FlagByLatLonError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           HorizontalAlignment="Center"/>
+
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                <!-- Buttons -->
+                <Grid ColumnDefinitions="*,12,*">
+                    <Button Grid.Column="0" Content="Cancel"
+                            Command="{Binding CloseFlagByLatLonDialogCommand}"
+                            Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
+                    <Button Grid.Column="2" Content="Place Flag"
+                            Command="{Binding PlaceFlagByLatLonCommand}"
+                            Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

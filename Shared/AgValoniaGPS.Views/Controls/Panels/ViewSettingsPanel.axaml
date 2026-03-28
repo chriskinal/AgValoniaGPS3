@@ -29,17 +29,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Floating Panel Style -->
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- Modern Button Style -->
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -47,10 +47,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.ModernButton:pressed">
-            <Setter Property="Background" Value="#DD3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -60,13 +60,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto"
                   Height="32"
                   Margin="0,0,0,8"
-                  Background="#DD2C3E50"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                   Cursor="Hand"
                   ToolTip.Tip="Drag to move">
                 <!-- Drag Handle Icon -->
                 <TextBlock Grid.Column="0"
                            Text="="
-                           Foreground="#AAA"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
                            FontSize="20"
                            FontWeight="Bold"
                            VerticalAlignment="Center"
@@ -75,7 +75,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Title -->
                 <TextBlock Grid.Column="1"
                            Text="View Settings"
-                           Foreground="White"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            FontSize="16"
                            FontWeight="Bold"
                            VerticalAlignment="Center"
@@ -87,7 +87,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Padding="0"
                         BorderThickness="0"
                         Background="Transparent"
-                        Foreground="#888"
+                        Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
                         FontSize="16"
                         Cursor="Hand"
                         Command="{Binding ToggleViewSettingsPanelCommand}"
@@ -95,7 +95,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Margin="8,0,8,0"/>
             </Grid>
 
-            <Separator Height="1" Background="#444" Margin="0,0,0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
             <!-- Camera Controls -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
@@ -113,7 +113,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ToolTip.Tip="Toggle 2D/3D view"/>
             </Grid>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Display Options -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
@@ -132,10 +132,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Row="1" Grid.Column="1"
                            Text="10 Hz" Margin="2" Padding="8"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Foreground="White" FontWeight="Bold" FontSize="12"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="12"/>
             </Grid>
 
-            <Separator Height="1" Background="#444" Margin="0,4"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Brightness -->
             <Grid ColumnDefinitions="*,*" Background="Transparent">

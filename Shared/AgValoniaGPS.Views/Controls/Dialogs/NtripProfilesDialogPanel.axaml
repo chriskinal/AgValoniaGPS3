@@ -29,14 +29,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Header">
-            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="FontSize" Value="14"/>
@@ -48,10 +48,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2980B9"/>
         </Style>
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#5D6D7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#4A5A6A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.DangerButton">
             <Setter Property="Background" Value="#E74C3C"/>
@@ -60,8 +60,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#C0392B"/>
         </Style>
         <Style Selector="Button.ToolbarButton">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Width" Value="48"/>
             <Setter Property="Height" Value="48"/>
@@ -70,11 +70,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="6"/>
         </Style>
         <Style Selector="Button.ToolbarButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="ListBox">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
@@ -84,10 +84,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -96,9 +96,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -111,7 +111,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Row="0" Classes="Header" Text="NTRIP Profiles"/>
 
                 <!-- Toolbar -->
-                <Border Grid.Row="1" Background="#34495E" CornerRadius="6" Padding="4" Margin="0,0,0,12">
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="6" Padding="4" Margin="0,0,0,12">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <!-- Add Profile -->
                         <Button Classes="ToolbarButton" ToolTip.Tip="Add New Profile"
@@ -134,7 +134,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Width="28" Height="28" Stretch="Uniform"/>
                         </Button>
 
-                        <Separator Background="#555" Width="2" Margin="4"/>
+                        <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Width="2" Margin="4"/>
 
                         <!-- Set as Default -->
                         <Button Classes="ToolbarButton" ToolTip.Tip="Set as Default Profile"
@@ -146,11 +146,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Column Headers -->
-                <Border Grid.Row="2" Background="#34495E" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
                     <Grid ColumnDefinitions="*,150,60">
-                        <TextBlock Grid.Column="0" Text="Profile Name" Foreground="#BDC3C7" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="Caster" Foreground="#BDC3C7" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Default" Foreground="#BDC3C7" FontWeight="SemiBold" TextAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="Profile Name" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="Caster" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="2" Text="Default" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -166,10 +166,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <DataTemplate x:DataType="ntrip:NtripProfile">
                             <Grid ColumnDefinitions="*,150,60" Background="Transparent">
                                 <StackPanel Grid.Column="0" Spacing="2">
-                                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding MountPoint}" Foreground="#7F8C8D" FontSize="12"/>
+                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding MountPoint}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" Text="{Binding CasterHost}" Foreground="#BDC3C7" FontSize="13"
+                                <TextBlock Grid.Column="1" Text="{Binding CasterHost}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"
                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                 <Panel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="*" FontSize="24" FontWeight="Bold" Foreground="#F1C40F"

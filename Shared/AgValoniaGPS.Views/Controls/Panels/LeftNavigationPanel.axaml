@@ -31,16 +31,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Floating Panel Style -->
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- Left Panel Button Style -->
         <Style Selector="Button.LeftPanelButton">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
@@ -49,15 +49,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.LeftPanelButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.LeftPanelButton:pressed">
-            <Setter Property="Background" Value="#DD3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
         </Style>
 
         <!-- Left Panel Separator -->
         <Style Selector="Separator.LeftPanelSeparator">
-            <Setter Property="Background" Value="#444"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="Height" Value="2"/>
             <Setter Property="Margin" Value="8,4"/>
         </Style>
@@ -71,12 +71,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
                 <!-- Touch Handle: Tap to rotate, Hold to drag -->
                 <Grid x:Name="DragHandle" Height="40" Margin="0"
-                      Background="#DD2C3E50"
+                      Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                       Cursor="Hand"
                       ToolTip.Tip="Tap to rotate | Hold and drag to move">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                        <TextBlock Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
-                        <TextBlock Text="R" Foreground="#AAA" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
+                        <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
                     </StackPanel>
                 </Grid>
 

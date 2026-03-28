@@ -32,7 +32,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Centered dialog -->
-        <Border Background="#2C3E50" CornerRadius="12" Padding="16"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="16"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="320" MaxWidth="400">
             <StackPanel Spacing="12">
@@ -50,25 +50,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="12" IsVisible="{Binding HasBoundary}">
 
                     <!-- Distance Setting -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Headland Distance (meters)" Foreground="#AAA" FontSize="12"/>
+                            <TextBlock Text="Headland Distance (meters)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto,Auto">
-                                <Border Grid.Column="0" Background="#333" CornerRadius="6" Padding="12,8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandDistance, StringFormat={}{0:F1}}"
-                                               FontSize="24" FontWeight="Bold" Foreground="White"
+                                               FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                HorizontalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="2">
                                     <Button Content="▲" Width="36" Height="28" FontSize="12"
-                                            Background="#34495E" Foreground="White" CornerRadius="4"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4"
                                             Command="{Binding IncrementHeadlandDistanceCommand}"/>
                                     <Button Content="▼" Width="36" Height="28" FontSize="12"
-                                            Background="#34495E" Foreground="White" CornerRadius="4"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4"
                                             Command="{Binding DecrementHeadlandDistanceCommand}"/>
                                 </StackPanel>
                                 <Button Grid.Column="2" Content="Tool Width" Width="80" Height="58"
-                                        FontSize="11" Background="#2980B9" Foreground="White"
+                                        FontSize="11" Background="#2980B9" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         CornerRadius="6" Margin="8,0,0,0"
                                         Command="{Binding SetHeadlandToToolWidthCommand}"
                                         ToolTip.Tip="Set distance to implement width"/>
@@ -77,21 +77,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Passes Setting -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Number of Passes" Foreground="#AAA" FontSize="12"/>
+                            <TextBlock Text="Number of Passes" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Border Grid.Column="0" Background="#333" CornerRadius="6" Padding="12,8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandPasses}"
-                                               FontSize="24" FontWeight="Bold" Foreground="White"
+                                               FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                HorizontalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="2">
                                     <Button Content="▲" Width="36" Height="28" FontSize="12"
-                                            Background="#34495E" Foreground="White" CornerRadius="4"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4"
                                             Command="{Binding IncrementHeadlandPassesCommand}"/>
                                     <Button Content="▼" Width="36" Height="28" FontSize="12"
-                                            Background="#34495E" Foreground="White" CornerRadius="4"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4"
                                             Command="{Binding DecrementHeadlandPassesCommand}"/>
                                 </StackPanel>
                             </Grid>
@@ -99,7 +99,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Preview indicator -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12"
                             IsVisible="{Binding HeadlandPreviewLine, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#F39C12"/>
@@ -108,7 +108,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Current headland status -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12"
                             IsVisible="{Binding HasHeadland}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#1ABC9C"/>
@@ -121,18 +121,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,*,*" Margin="0,8,0,0" IsVisible="{Binding HasBoundary}">
                     <Button Grid.Column="0" Content="Clear" Margin="0,0,4,0"
                             Command="{Binding ClearHeadlandCommand}"
-                            Background="#E74C3C" Foreground="White"
+                            Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"
                             IsEnabled="{Binding HasHeadland}"/>
                     <Button Grid.Column="1" Content="Build" Margin="4,0,4,0"
                             Command="{Binding BuildHeadlandCommand}"
-                            Background="#1ABC9C" Foreground="White"
+                            Background="#1ABC9C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                     <Button Grid.Column="2" Content="Close" Margin="4,0,0,0"
                             Command="{Binding CloseHeadlandBuilderCommand}"
-                            Background="#7F8C8D" Foreground="White"
+                            Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                 </Grid>
@@ -140,7 +140,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Close button for when no boundary -->
                 <Button Content="Close" Margin="0,8,0,0"
                         Command="{Binding CloseHeadlandBuilderCommand}"
-                        Background="#7F8C8D" Foreground="White"
+                        Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="44" FontSize="14"
                         HorizontalContentAlignment="Center" CornerRadius="6"
                         IsVisible="{Binding !HasBoundary}"/>

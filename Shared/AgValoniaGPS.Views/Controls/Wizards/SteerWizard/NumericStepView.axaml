@@ -29,14 +29,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Margin="0,0,0,12"/>
 
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -44,7 +44,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Value input area -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
             <!-- Current value display -->
-            <Border Background="#2C3E50"
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="12"
                     Padding="24,16"
                     HorizontalAlignment="Center">
@@ -60,13 +60,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Width="200"
                                    HorizontalContentAlignment="Center"
                                    Background="#1E2A35"
-                                   Foreground="White"
-                                   BorderBrush="#3498DB"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"
                                    CornerRadius="8"/>
                     <TextBlock Text="{Binding Unit, FallbackValue=m}"
                                FontSize="24"
-                               Foreground="#95A5A6"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                VerticalAlignment="Center"
                                Margin="8,0,0,0"/>
                 </StackPanel>
@@ -78,29 +78,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Spacing="8">
                 <Button Content="-0.5"
                         Width="60" Height="40"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="6"
                         Command="{Binding AdjustCommand}"
                         CommandParameter="-0.5"/>
                 <Button Content="-0.1"
                         Width="60" Height="40"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="6"
                         Command="{Binding AdjustCommand}"
                         CommandParameter="-0.1"/>
                 <Button Content="+0.1"
                         Width="60" Height="40"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="6"
                         Command="{Binding AdjustCommand}"
                         CommandParameter="0.1"/>
                 <Button Content="+0.5"
                         Width="60" Height="40"
-                        Background="#34495E"
-                        Foreground="White"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         CornerRadius="6"
                         Command="{Binding AdjustCommand}"
                         CommandParameter="0.5"/>
@@ -115,7 +115,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>

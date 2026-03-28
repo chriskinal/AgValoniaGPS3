@@ -33,15 +33,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -49,7 +49,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -57,7 +57,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Spacing="4" Background="Transparent">
             <!-- Header: Drag handle + Title + Close button -->
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,4"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
                            Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
                 <TextBlock Grid.Column="1" Text="Start or Delete A Boundary" FontSize="14" FontWeight="SemiBold"
@@ -103,13 +103,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Grid>
 
             <!-- Column Headers -->
-            <Grid ColumnDefinitions="*,*,*" Background="#3498DB" Margin="4,0,4,0">
+            <Grid ColumnDefinitions="*,*,*" Background="{DynamicResource SystemControlHighlightAccentBrush}" Margin="4,0,4,0">
                 <TextBlock Grid.Column="0" Text="Boundary" HorizontalAlignment="Center"
-                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+                           FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                 <TextBlock Grid.Column="1" Text="Area" HorizontalAlignment="Center"
-                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+                           FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                 <TextBlock Grid.Column="2" Text="Drive Thru" HorizontalAlignment="Center"
-                           FontWeight="Bold" Foreground="White" Padding="8,6"/>
+                           FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
             </Grid>
 
             <!-- Boundary List -->
@@ -122,9 +122,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <DataTemplate>
                             <Grid ColumnDefinitions="*,*,*">
                                 <TextBlock Grid.Column="0" Text="{Binding BoundaryType}"
-                                           HorizontalAlignment="Center" Foreground="White" Padding="8,6"/>
+                                           HorizontalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                                 <TextBlock Grid.Column="1" Text="{Binding AreaDisplay}"
-                                           HorizontalAlignment="Center" Foreground="White" Padding="8,6"/>
+                                           HorizontalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                                 <TextBlock Grid.Column="2" Text="{Binding DriveThruDisplay}"
                                            HorizontalAlignment="Center" Padding="8,6"
                                            Foreground="{Binding IsDriveThrough, Converter={StaticResource BoolToColorConverter}}"/>
@@ -138,7 +138,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Setter Property="Margin" Value="0,1,0,0"/>
                         </Style>
                         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-                            <Setter Property="Background" Value="#3498DB"/>
+                            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
                         </Style>
                     </ListBox.Styles>
                 </ListBox>

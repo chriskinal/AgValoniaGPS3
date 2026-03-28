@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="AgValoniaGPS"
-        Background="#1a1a1a">
+        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
 
     <!-- Styles are now in shared SharedStyles.axaml -->
 
@@ -52,13 +52,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 VerticalAlignment="Top"
                 IsHitTestVisible="True">
             <StackPanel Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="RTK Status" Foreground="#3498DB" FontSize="14" FontWeight="Bold"/>
+                <TextBlock Text="RTK Status" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="Bold"/>
                 <Ellipse Width="12" Height="12"
                          Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
-                <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="White" FontSize="14" FontWeight="Bold"/>
-                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"/>
+                <Rectangle Width="1" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="5,0"/>
                 <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#2ECC71" FontSize="14" FontWeight="Bold"/>
-                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <Rectangle Width="1" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="5,0"/>
                 <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
             </StackPanel>
         </Border>
@@ -73,23 +73,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 IsVisible="{Binding HasActiveField}">
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="Field:" Foreground="#888" FontSize="13"/>
-                    <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="White" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="Field:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
+                    <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="13" FontWeight="Bold"/>
                 </StackPanel>
-                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <Rectangle Width="1" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="Done:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="Done:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
                     <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
                 </StackPanel>
-                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <Rectangle Width="1" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="Left:" Foreground="#888" FontSize="13"/>
+                    <TextBlock Text="Left:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
                     <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F1}%'}" Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
                 </StackPanel>
-                <Rectangle Width="1" Height="16" Fill="#555"/>
+                <Rectangle Width="1" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="Rate:" Foreground="#888" FontSize="13"/>
-                    <TextBlock Text="{Binding WorkRateDisplay}" Foreground="#3498DB" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="Rate:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
+                    <TextBlock Text="{Binding WorkRateDisplay}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="13" FontWeight="Bold"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -100,11 +100,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Button Content="+" Command="{Binding ZoomInCommand}"
                     Width="50" Height="50" FontSize="28" FontWeight="Bold"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                    Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
             <Button Content="-" Command="{Binding ZoomOutCommand}"
                     Width="50" Height="50" FontSize="28" FontWeight="Bold"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                    Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
         </StackPanel>
 
         <!-- All Draggable Panels in single Canvas (must be in same Canvas for consistent drag bounds) -->
@@ -136,33 +136,33 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </Grid>
 
     <!-- AB Creation Instruction Banner -->
-    <Border Background="#CC000000" CornerRadius="8" Padding="16,8"
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="16,8"
             HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"
             IsVisible="{Binding IsCreatingABLine}">
         <StackPanel Orientation="Horizontal" Spacing="16">
             <TextBlock Text="{Binding ABCreationInstructions}"
-                       Foreground="White" FontSize="16" VerticalAlignment="Center"/>
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" VerticalAlignment="Center"/>
             <!-- Finish button for drive-recording Curve mode -->
             <Button Content="Finish"
                     Command="{Binding FinishCurveRecordingCommand}"
-                    Background="#27AE60" Foreground="White"
+                    Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     Padding="12,4"
                     IsVisible="{Binding IsRecordingCurve}"/>
             <!-- Finish button for DrawCurve mode -->
             <Button Content="Finish"
                     Command="{Binding FinishDrawCurveCommand}"
-                    Background="#27AE60" Foreground="White"
+                    Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     Padding="12,4"
                     IsVisible="{Binding IsDrawingCurve}"/>
             <!-- Undo button for DrawCurve mode -->
             <Button Content="Undo"
                     Command="{Binding UndoLastDrawnPointCommand}"
-                    Background="#E67E22" Foreground="White"
+                    Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     Padding="12,4"
                     IsVisible="{Binding IsDrawingCurve}"/>
             <Button Content="Cancel"
                     Command="{Binding CancelABCreationCommand}"
-                    Background="#DD3333" Foreground="White"
+                    Background="#DD3333" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     Padding="12,4"/>
         </StackPanel>
     </Border>

@@ -29,18 +29,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Label">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
         <Style Selector="TextBlock.Hint">
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Margin" Value="0,4,0,0"/>
         </Style>
         <Style Selector="Border.InputField">
-            <Setter Property="Background" Value="#2D2D2D"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -51,8 +51,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="24,12"/>
             <Setter Property="FontSize" Value="14"/>
@@ -61,17 +61,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="6"/>
         </Style>
         <Style Selector="Button.DialogButton:pointerover">
-            <Setter Property="Background" Value="#1084D8"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#666"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.TestButton">
-            <Setter Property="Background" Value="#3498DB"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,8"/>
             <Setter Property="FontSize" Value="12"/>
@@ -79,7 +79,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="Button.TestButton:pointerover">
-            <Setter Property="Background" Value="#5DADE2"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -90,9 +90,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel positioned near top for mobile -->
-        <Border Background="#1E1E1E"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
@@ -118,7 +118,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             PointerPressed="ServerUrl_PointerPressed">
                         <TextBlock x:Name="ServerUrlDisplay"
                                    FontSize="14"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"
                                    Text="https://agshare.agopengps.com"/>
@@ -132,7 +132,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             PointerPressed="ApiKey_PointerPressed">
                         <TextBlock x:Name="ApiKeyDisplay"
                                    FontSize="14"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
                                    Text="(not set)"/>
                     </Border>
@@ -145,12 +145,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Test Connection"/>
                     </Button>
                     <TextBlock x:Name="ConnectionStatusLabel" Grid.Column="1"
-                               Foreground="#BDC3C7" FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
                                VerticalAlignment="Center" HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                Text=""/>
                     <CheckBox x:Name="EnabledCheckBox" Grid.Column="2"
-                              Content="Enabled" Foreground="White"
+                              Content="Enabled" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                               VerticalAlignment="Center"/>
                 </Grid>
 

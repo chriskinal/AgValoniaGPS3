@@ -37,14 +37,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="15"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="24"
                    Margin="0,0,0,24"/>
 
         <!-- Success indicator -->
         <Border Grid.Row="2"
-                Background="#2C3E50"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 Padding="24"
                 HorizontalAlignment="Center"
@@ -58,7 +58,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <TextBlock Text="OK"
                                FontSize="24"
                                FontWeight="Bold"
-                               Foreground="White"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </Border>
@@ -66,12 +66,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="Configuration saved!"
                            FontSize="18"
                            FontWeight="SemiBold"
-                           Foreground="White"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Click Finish to close the wizard"
                            FontSize="14"
-                           Foreground="#95A5A6"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>

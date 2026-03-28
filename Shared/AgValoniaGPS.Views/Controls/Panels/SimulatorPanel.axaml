@@ -28,15 +28,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -44,24 +44,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
     <Border Classes="FloatingPanel" MinWidth="320" IsVisible="{Binding IsSimulatorPanelVisible}">
         <StackPanel Spacing="4">
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="GPS Simulator" Foreground="White" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="GPS Simulator" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
-                        Background="Transparent" Foreground="#888" FontSize="16" Cursor="Hand"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
                         Command="{Binding ToggleSimulatorPanelCommand}" Margin="8,0,8,0"/>
             </Grid>
 
-            <Separator Height="1" Background="#555"/>
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
             <!-- Simulator Controls -->
             <StackPanel Spacing="8" Margin="12">
@@ -80,7 +80,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <TextBlock Text="Enter Sim Coords" FontSize="12" IsHitTestVisible="False"/>
                 </Button>
 
-                <Separator Height="1" Background="#555" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Row 1: Reset Position and Reset Steering -->
                 <Grid ColumnDefinitions="*,*">
@@ -124,24 +124,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            FontSize="12"
                            Foreground="#DDD"/>
 
-                <Separator Background="#555" Height="1" Margin="0,4"/>
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="1" Margin="0,4"/>
 
                 <!-- Row 4: Speed Slider (-10 to +25 kph) -->
                 <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0" Text="Speed" Foreground="#AAA" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Grid.Column="0" Text="Speed" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     <CheckBox Grid.Column="1" Content="10x" IsChecked="{Binding IsSimulatorSpeed10x}"
-                              FontSize="10" Foreground="#AAA" Margin="0,0,0,0"
+                              FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,0"
                               ToolTip.Tip="10x speed multiplier for large fields"/>
                 </Grid>
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <TextBlock Grid.Column="0" Text="-10" Foreground="#888" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Grid.Column="0" Text="-10" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <Slider Grid.Column="1" Margin="0"
                             Minimum="-10" Maximum="25"
                             Value="{Binding SimulatorSpeedKph, Mode=TwoWay}"
                             TickFrequency="5"
                             IsSnapToTickEnabled="False"
                             ToolTip.Tip="Speed in kph (-10 reverse to +25 forward)"/>
-                    <TextBlock Grid.Column="2" Text="25" Foreground="#888" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                    <TextBlock Grid.Column="2" Text="25" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0"/>
                 </Grid>
 
                 <!-- Speed Display -->

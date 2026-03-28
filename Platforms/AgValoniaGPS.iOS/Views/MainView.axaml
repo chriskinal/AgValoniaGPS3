@@ -40,7 +40,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
                         <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="14"
                                    TextTrimming="CharacterEllipsis" Width="180"/>
-                        <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="#3498DB" FontSize="12"
+                        <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12"
                                    MinWidth="70"/>
                         <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="12"
                                    MinWidth="55"/>
@@ -51,13 +51,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Right: Field Statistics (when field is active) -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10"
                                 IsVisible="{Binding HasActiveField}">
-                        <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="White" FontSize="12" MinWidth="60"/>
-                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
+                        <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12" MinWidth="60"/>
+                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                         <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="12" FontWeight="Bold" MinWidth="60"/>
-                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
+                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                         <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F0}%'}" Foreground="#F39C12" FontSize="12" MinWidth="35"/>
-                        <TextBlock Text="|" Foreground="#555" FontSize="12"/>
-                        <TextBlock Text="{Binding WorkRateDisplay}" Foreground="#3498DB" FontSize="12" MinWidth="65"/>
+                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="{Binding WorkRateDisplay}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12" MinWidth="65"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -100,11 +100,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Button Content="+" Command="{Binding ZoomInCommand}"
                             Width="50" Height="50" FontSize="28" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
                     <Button Content="-" Command="{Binding ZoomOutCommand}"
                             Width="50" Height="50" FontSize="28" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="White" CornerRadius="8"/>
+                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
                 </StackPanel>
             </Grid>
         </Grid>
@@ -115,28 +115,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 IsVisible="{Binding IsCreatingABLine}">
             <StackPanel Orientation="Horizontal" Spacing="16">
                 <TextBlock Text="{Binding ABCreationInstructions}"
-                           Foreground="White" FontSize="16" VerticalAlignment="Center"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" VerticalAlignment="Center"/>
                 <!-- Finish button for drive-recording Curve mode -->
                 <Button Content="Finish"
                         Command="{Binding FinishCurveRecordingCommand}"
-                        Background="#27AE60" Foreground="White"
+                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         Padding="12,4"
                         IsVisible="{Binding IsRecordingCurve}"/>
                 <!-- Finish button for DrawCurve mode -->
                 <Button Content="Finish"
                         Command="{Binding FinishDrawCurveCommand}"
-                        Background="#27AE60" Foreground="White"
+                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         Padding="12,4"
                         IsVisible="{Binding IsDrawingCurve}"/>
                 <!-- Undo button for DrawCurve mode -->
                 <Button Content="Undo"
                         Command="{Binding UndoLastDrawnPointCommand}"
-                        Background="#E67E22" Foreground="White"
+                        Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         Padding="12,4"
                         IsVisible="{Binding IsDrawingCurve}"/>
                 <Button Content="Cancel"
                         Command="{Binding CancelABCreationCommand}"
-                        Background="#DD3333" Foreground="White"
+                        Background="#DD3333" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         Padding="12,4"/>
             </StackPanel>
         </Border>

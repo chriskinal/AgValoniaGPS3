@@ -30,8 +30,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="White"/>
-            <Border Background="#34495E"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
                     Padding="8,4"
                     Margin="12,0,0,0"
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     IsVisible="{Binding CanSkip}">
                 <TextBlock Text="Optional"
                            FontSize="11"
-                           Foreground="#95A5A6"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </Border>
         </StackPanel>
 
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -55,7 +55,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Danfoss toggle -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
             <!-- Info box -->
-            <Border Background="#2C3E50" CornerRadius="12" Padding="20">
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="20">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Danfoss Hydraulic Valves"
                                FontSize="18"
@@ -63,23 +63,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                Foreground="#E67E22"/>
                     <TextBlock Text="Danfoss OSPC/OSPB steering valves require specific PWM timing signals. Only enable this if you have confirmed Danfoss hardware installed."
                                FontSize="14"
-                               Foreground="#BDC3C7"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                TextWrapping="Wrap"
                                LineHeight="20"/>
                 </StackPanel>
             </Border>
 
             <!-- Toggle -->
-            <Border Background="#34495E" CornerRadius="12" Padding="20">
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="20">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Enable Danfoss Mode"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Use Danfoss-specific PWM timing"
                                    FontSize="14"
-                                   Foreground="#95A5A6"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1"
                                   IsChecked="{Binding DanfossEnabled}"
@@ -117,7 +117,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>

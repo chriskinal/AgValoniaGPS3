@@ -33,17 +33,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="Transparent"/>
         </Style>
         <Style Selector="TabControl.MainConfigTabs > TabItem">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Padding" Value="12"/>
             <Setter Property="Margin" Value="0,2"/>
             <Setter Property="MinWidth" Value="64"/>
             <Setter Property="MinHeight" Value="64"/>
         </Style>
         <Style Selector="TabControl.MainConfigTabs > TabItem:selected">
-            <Setter Property="Background" Value="#DD4A9A7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TabControl.MainConfigTabs > TabItem:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -54,24 +54,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <!-- Full screen modal overlay -->
     <Grid Background="#80000000">
         <!-- Main dialog container - fixed size to prevent resizing on tab switch -->
-        <Border Background="#DD1E2A38"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="8"
                 Margin="20"
                 Width="900"
                 Height="720"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 BoxShadow="0 8 32 #80000000">
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header with title -->
-                <Border Grid.Row="0" Background="#DD2C3E50" Padding="16,8">
-                    <TextBlock Text="Configuration" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
+                    <TextBlock Text="Configuration" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                 </Border>
 
                 <!-- Main content area with TabControl -->
-                <TabControl Grid.Row="1" Classes="MainConfigTabs" TabStripPlacement="Left" Background="#DD253545"
+                <TabControl Grid.Row="1" Classes="MainConfigTabs" TabStripPlacement="Left" Background="{DynamicResource SystemControlBackgroundListLowBrush}"
                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                     <!-- Vehicle Tab -->
                     <TabItem ToolTip.Tip="Vehicle">
@@ -147,28 +147,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </TabControl>
 
                 <!-- Numeric Input Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsNumericInputVisible}"
                         ZIndex="100">
-                    <Border Background="#DD1E2A38" CornerRadius="12" Padding="20"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
                             Width="360" Height="440"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
-                            BorderBrush="#555" BorderThickness="1">
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
                         <Grid RowDefinitions="Auto,Auto,*,Auto">
                             <!-- Title -->
                             <TextBlock Grid.Row="0" Text="{Binding NumericInputTitle}"
-                                       FontSize="20" FontWeight="Bold" Foreground="White"
+                                       FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
                             <!-- Value Display -->
-                            <Border Grid.Row="1" Background="#DD2C3E50" CornerRadius="6"
+                            <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6"
                                     Padding="20,16" Margin="0,0,0,16" MinWidth="280">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                                     <TextBlock Text="{Binding NumericInputDisplayText}"
-                                               FontSize="42" FontWeight="Bold" Foreground="White"
+                                               FontSize="42" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                MinWidth="120" TextAlignment="Right"/>
                                     <TextBlock Text="{Binding NumericInputUnit}"
-                                               FontSize="24" Foreground="#AAA" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                                               FontSize="24" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
                                 </StackPanel>
                             </Border>
 
@@ -176,8 +176,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*,*" Margin="0,0,0,16">
                                 <Grid.Styles>
                                     <Style Selector="Button.KeypadButton">
-                                        <Setter Property="Background" Value="#DD34495E"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                         <Setter Property="FontSize" Value="24"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="CornerRadius" Value="8"/>
@@ -185,13 +185,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         <Setter Property="Cursor" Value="Hand"/>
                                     </Style>
                                     <Style Selector="Button.KeypadButton:pointerover">
-                                        <Setter Property="Background" Value="#DD475A6E"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.ClearButton">
-                                        <Setter Property="Background" Value="#DD8E5526"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.ClearButton:pointerover">
-                                        <Setter Property="Background" Value="#DDA96B30"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
                                     </Style>
                                 </Grid.Styles>
 
@@ -236,13 +236,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                             <!-- Action Buttons -->
                             <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
-                                <Button Grid.Column="0" Background="#E74C3C" Foreground="White"
+                                <Button Grid.Column="0" Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
                                     <TextBlock Text="Cancel"/>
                                 </Button>
-                                <Button Grid.Column="1" Background="#4A9A7E" Foreground="White"
+                                <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
@@ -254,24 +254,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Text Input Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsTextInputVisible}"
                         ZIndex="100">
-                    <Border Background="#DD1E2A38" CornerRadius="12" Padding="20"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
                             Width="500" Height="520"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
-                            BorderBrush="#555" BorderThickness="1">
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
                         <Grid RowDefinitions="Auto,Auto,*,Auto">
                             <!-- Title -->
                             <TextBlock Grid.Row="0" Text="{Binding TextInputTitle}"
-                                       FontSize="20" FontWeight="Bold" Foreground="White"
+                                       FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
                             <!-- Value Display -->
-                            <Border Grid.Row="1" Background="#DD2C3E50" CornerRadius="6"
+                            <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6"
                                     Padding="16,12" Margin="0,0,0,16" MinWidth="400">
                                 <TextBlock Text="{Binding TextInputValue}"
-                                           FontSize="24" FontWeight="Bold" Foreground="White"
+                                           FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                            TextAlignment="Left" TextWrapping="NoWrap"
                                            MinHeight="32"/>
                             </Border>
@@ -280,8 +280,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Grid Grid.Row="2" RowDefinitions="*,*,*,*,Auto" Margin="0,0,0,16">
                                 <Grid.Styles>
                                     <Style Selector="Button.KeyButton">
-                                        <Setter Property="Background" Value="#DD34495E"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                         <Setter Property="FontSize" Value="18"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="CornerRadius" Value="6"/>
@@ -291,13 +291,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         <Setter Property="MinHeight" Value="44"/>
                                     </Style>
                                     <Style Selector="Button.KeyButton:pointerover">
-                                        <Setter Property="Background" Value="#DD475A6E"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.SpecialKey">
-                                        <Setter Property="Background" Value="#DD8E5526"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.SpecialKey:pointerover">
-                                        <Setter Property="Background" Value="#DDA96B30"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
                                     </Style>
                                 </Grid.Styles>
 
@@ -372,13 +372,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                             <!-- Action Buttons -->
                             <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
-                                <Button Grid.Column="0" Background="#E74C3C" Foreground="White"
+                                <Button Grid.Column="0" Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelTextInputCommand}"
                                         HorizontalContentAlignment="Center">
                                     <TextBlock Text="Cancel"/>
                                 </Button>
-                                <Button Grid.Column="1" Background="#4A9A7E" Foreground="White"
+                                <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmTextInputCommand}"
                                         HorizontalContentAlignment="Center">
@@ -390,17 +390,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Color Picker Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsColorPickerVisible}"
                         ZIndex="100">
-                    <Border Background="#DD1E2A38" CornerRadius="12" Padding="20"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
                             Width="340" Height="360"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
-                            BorderBrush="#555" BorderThickness="1">
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <!-- Title -->
                             <TextBlock Grid.Row="0" Text="{Binding ColorPickerTitle}"
-                                       FontSize="20" FontWeight="Bold" Foreground="White"
+                                       FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                        HorizontalAlignment="Center" Margin="0,0,0,16"/>
 
                             <!-- Color Grid (4x4) -->
@@ -456,7 +456,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             </UniformGrid>
 
                             <!-- Cancel Button -->
-                            <Button Grid.Row="2" Background="#E74C3C" Foreground="White"
+                            <Button Grid.Row="2" Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                     FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                     Command="{Binding CancelColorPickerCommand}"
                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
@@ -467,24 +467,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Footer with profile info and action buttons -->
-                <Border Grid.Row="2" Background="#DD2C3E50" Padding="16,12">
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
                         <!-- Current profile -->
                         <TextBlock Text="{Binding Config.ActiveProfileName, StringFormat='Profile: {0}'}"
-                                   Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
 
                         <!-- Units display -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Units:" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <TextBlock Text="Units:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Display.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
                                        Foreground="#4A9" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Width display -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Width:" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <TextBlock Text="Width:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
-                                       Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Apply button (checkmark) -->
@@ -492,7 +492,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Background="#4A9A7E" CornerRadius="24"
                                 Command="{Binding ApplyCommand}"
                                 ToolTip.Tip="Apply and Close">
-                            <TextBlock Text="✓" FontSize="24" Foreground="White" FontWeight="Bold"
+                            <TextBlock Text="✓" FontSize="24" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </Grid>

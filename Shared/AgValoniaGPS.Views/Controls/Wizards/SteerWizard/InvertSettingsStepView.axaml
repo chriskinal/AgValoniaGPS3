@@ -30,8 +30,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="White"/>
-            <Border Background="#34495E"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
                     Padding="8,4"
                     Margin="12,0,0,0"
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     IsVisible="{Binding CanSkip}">
                 <TextBlock Text="Optional"
                            FontSize="11"
-                           Foreground="#95A5A6"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </Border>
         </StackPanel>
 
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -55,16 +55,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Toggle options -->
         <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
             <!-- Invert WAS -->
-            <Border Background="#34495E" CornerRadius="12" Padding="16">
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="16">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Invert Wheel Angle Sensor"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable if WAS reads backwards (left shows as right)"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1"
@@ -76,16 +76,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Invert Motor -->
-            <Border Background="#34495E" CornerRadius="12" Padding="16">
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="16">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Invert Motor Direction"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable if motor turns the wrong direction"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1"
@@ -97,16 +97,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Invert Relays -->
-            <Border Background="#34495E" CornerRadius="12" Padding="16">
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="16">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Invert Relay Outputs"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable if relays are active-low"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1"
@@ -126,7 +126,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>

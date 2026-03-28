@@ -29,8 +29,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.ToolButton">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinWidth" Value="70"/>
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ToolButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.ToolButton:pressed">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.CancelButton">
             <Setter Property="Background" Value="#C0392B"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="MinWidth" Value="80"/>
             <Setter Property="MinHeight" Value="44"/>
@@ -63,7 +63,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.OkButton">
             <Setter Property="Background" Value="#27AE60"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="MinWidth" Value="80"/>
             <Setter Property="MinHeight" Value="44"/>
@@ -78,7 +78,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
 
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -87,13 +87,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel - full screen with margin for touch targets -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 Margin="20"
                 BoxShadow="0 8 32 #40000000">
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header with instructions -->
-                <Border Grid.Row="0" Background="#34495E" Padding="15" CornerRadius="12,12,0,0">
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="15" CornerRadius="12,12,0,0">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0">
                             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -101,14 +101,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Text="Draw Field Boundary" Foreground="#1ABC9C" FontWeight="Bold" FontSize="18"/>
                             </StackPanel>
                             <TextBlock Text="Tap on the map to add boundary points. Pan with drag, pinch to zoom."
-                                       Foreground="#BDC3C7" FontSize="13" Margin="0,5,0,0"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" Margin="0,5,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
                             <TextBlock x:Name="PointCountLabel" Text="{Binding BoundaryMapPointCount, StringFormat='Points: {0}'}"
                                        Foreground="#1ABC9C" FontSize="14"
                                        FontWeight="Bold" VerticalAlignment="Center"/>
                             <TextBlock x:Name="CoordinateLabel" Text="{Binding BoundaryMapCoordinateText}"
-                                       Foreground="#BDC3C7" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
                                        VerticalAlignment="Center" MinWidth="150"/>
                         </StackPanel>
                     </Grid>
@@ -126,7 +126,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Click="BtnDraw_Click" ToolTip.Tip="Toggle drawing mode">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="20" Height="20"/>
-                                <TextBlock x:Name="BtnDrawText" Text="Draw" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="BtnDrawText" Text="Draw" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -134,19 +134,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Click="BtnUndo_Click" ToolTip.Tip="Remove last point" IsEnabled="False">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BackSpace.png" Width="20" Height="20"/>
-                                <TextBlock Text="Undo" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="Undo" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
                         <Button x:Name="BtnClear" Classes="ToolButton"
                                 Click="BtnClear_Click" ToolTip.Tip="Clear all points" IsEnabled="False">
-                            <TextBlock Text="Clear" Foreground="White"/>
+                            <TextBlock Text="Clear" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         </Button>
                     </StackPanel>
                 </Border>
 
                 <!-- Bottom action bar -->
-                <Border Grid.Row="2" Background="#34495E" Padding="15" CornerRadius="0,0,12,12">
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="15" CornerRadius="0,0,12,12">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                         <CheckBox x:Name="ChkSaveBackground" Grid.Column="0" Content="Include Background Image"
                                   IsChecked="{Binding BoundaryMapIncludeBackground}"
@@ -156,13 +156,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <Button Grid.Column="2" Classes="CancelButton" Margin="0,0,10,0"
                                 Command="{Binding CancelBoundaryMapDialogCommand}" ToolTip.Tip="Cancel">
-                            <TextBlock Text="Cancel" Foreground="White"/>
+                            <TextBlock Text="Cancel" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         </Button>
 
                         <Button x:Name="BtnSave" Grid.Column="3" Classes="OkButton"
                                 Click="BtnSave_Click" ToolTip.Tip="Save boundary"
                                 IsEnabled="{Binding BoundaryMapCanSave}">
-                            <TextBlock Text="Save" Foreground="White" FontWeight="Bold"/>
+                            <TextBlock Text="Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                         </Button>
                     </Grid>
                 </Border>

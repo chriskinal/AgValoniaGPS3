@@ -34,8 +34,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="FontSize" Value="14"/>
@@ -59,8 +59,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2ECC71"/>
         </Style>
         <Style Selector="Button.ToolButton">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinWidth" Value="48"/>
@@ -68,11 +68,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
         <Style Selector="Button.ToolButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="ListBox">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
@@ -82,35 +82,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
 
         <Style Selector="TextBox.DialogInput">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#7F8C8D"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="CaretBrush" Value="White"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput:pointerover">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput /template/ TextBlock">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus /template/ Border#PART_BorderElement">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -119,7 +119,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 MaxWidth="500"
                 MaxHeight="480"
@@ -136,7 +136,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Info text -->
                 <TextBlock Grid.Row="1" Text="Place ISO-XML folders (containing TASKDATA.xml) in Documents/AgValoniaGPS/Import"
-                           Foreground="#95A5A6" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
                 <!-- ISO-XML Folders ListBox -->
                 <ListBox Grid.Row="2"
@@ -148,7 +148,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontSize="14"/>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"/>
                                 <TextBlock Grid.Column="1" Text="TASKDATA" Foreground="#E67E22" FontSize="11"
                                            IsVisible="{Binding IsTaskData}"/>
                             </Grid>
@@ -158,7 +158,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Field name input -->
                 <StackPanel Grid.Row="3" Margin="0,12,0,0" Spacing="6">
-                    <TextBlock Text="New Field Name:" Foreground="#BDC3C7" FontSize="13"/>
+                    <TextBlock Text="New Field Name:" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBox Grid.Column="0"
                                  Classes="DialogInput"
@@ -174,7 +174,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Append buttons -->
                 <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto,*" Margin="0,10,0,0">
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock Text="+" Foreground="White" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="+" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Classes="ToolButton" Width="48" Height="48"
                                 Command="{Binding IsoXmlAppendDateCommand}" ToolTip.Tip="Append date">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameCalendar.png" Width="32" Height="32"/>
@@ -182,7 +182,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
-                        <TextBlock Text="+" Foreground="White" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="+" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Classes="ToolButton" Width="48" Height="48"
                                 Command="{Binding IsoXmlAppendTimeCommand}" ToolTip.Tip="Append time">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobNameTime.png" Width="32" Height="32"/>

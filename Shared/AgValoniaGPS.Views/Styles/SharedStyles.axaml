@@ -25,7 +25,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <!-- Floating Panel Style -->
     <Style Selector="Border.FloatingPanel">
-        <Setter Property="Background" Value="#DD2C3E50"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
         <Setter Property="CornerRadius" Value="12"/>
         <Setter Property="Padding" Value="15"/>
         <Setter Property="BoxShadow" Value="0 4 16 2 #40000000"/>
@@ -33,7 +33,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <!-- Modern Button Style -->
     <Style Selector="Button.ModernButton">
-        <Setter Property="Background" Value="#3498DB"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="CornerRadius" Value="6"/>
         <Setter Property="Padding" Value="12,6"/>
@@ -60,7 +60,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <!-- Icon Button Style -->
     <Style Selector="Button.IconButton">
-        <Setter Property="Background" Value="#DD34495E"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Width" Value="48"/>
@@ -71,12 +71,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Setter Property="FontSize" Value="20"/>
     </Style>
     <Style Selector="Button.IconButton:pointerover">
-        <Setter Property="Background" Value="#DD475A6E"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
     </Style>
 
     <!-- Left Panel Button Style (for image-based icons) -->
     <Style Selector="Button.LeftPanelButton">
-        <Setter Property="Background" Value="#DD34495E"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Width" Value="64"/>
         <Setter Property="Height" Value="64"/>
@@ -85,15 +85,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.LeftPanelButton:pointerover">
-        <Setter Property="Background" Value="#DD475A6E"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
     </Style>
     <Style Selector="Button.LeftPanelButton:pressed">
-        <Setter Property="Background" Value="#DD3E5872"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
     </Style>
 
     <!-- Left Panel Separator -->
     <Style Selector="Separator.LeftPanelSeparator">
-        <Setter Property="Background" Value="#444"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         <Setter Property="Height" Value="2"/>
         <Setter Property="Margin" Value="8,4"/>
     </Style>

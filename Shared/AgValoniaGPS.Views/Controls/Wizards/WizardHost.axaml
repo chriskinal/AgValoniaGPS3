@@ -29,7 +29,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Ellipse.step-dot">
             <Setter Property="Width" Value="12"/>
             <Setter Property="Height" Value="12"/>
-            <Setter Property="Fill" Value="#3498DB"/>
+            <Setter Property="Fill" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Opacity" Value="0.4"/>
             <Setter Property="Margin" Value="4,0"/>
         </Style>
@@ -55,15 +55,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.wizard-nav.primary">
             <Setter Property="Background" Value="#1ABC9C"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav.secondary">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav.cancel">
             <Setter Property="Background" Value="#E74C3C"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav:disabled">
             <Setter Property="Opacity" Value="0.5"/>
@@ -72,7 +72,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
         <!-- Header with title and progress -->
-        <Border Grid.Row="0" Background="#2C3E50" Padding="16,12">
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="{Binding WizardTitle}"
                            FontSize="22" FontWeight="Bold"
@@ -81,7 +81,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Grid.Column="1"
                            Text="{Binding StepDisplay}"
                            FontSize="14"
-                           Foreground="#95A5A6"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            VerticalAlignment="Center"/>
             </Grid>
         </Border>
@@ -91,7 +91,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                      Minimum="0" Maximum="100"
                      Value="{Binding ProgressPercent}"
                      Height="6"
-                     Background="#1a1a1a"
+                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                      Foreground="#1ABC9C"/>
 
         <!-- Step content area -->
@@ -106,7 +106,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Border>
 
         <!-- Step indicator dots -->
-        <Border Grid.Row="3" Background="#2C3E50" Padding="12,8"
+        <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,8"
                 IsVisible="{Binding !!TotalSteps}">
             <ItemsControl ItemsSource="{Binding Steps}"
                           HorizontalAlignment="Center">
@@ -125,7 +125,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Border>
 
         <!-- Navigation buttons -->
-        <Border Grid.Row="4" Background="#2C3E50" Padding="16,12">
+        <Border Grid.Row="4" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                 <!-- Cancel button (left) -->
                 <Button Grid.Column="0"

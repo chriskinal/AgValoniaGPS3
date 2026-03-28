@@ -6,34 +6,23 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Input;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
 
-public partial class AboutDialogPanel : UserControl
+public partial class FlagByLatLonDialogPanel : UserControl
 {
-    public AboutDialogPanel()
+    public FlagByLatLonDialogPanel()
     {
         InitializeComponent();
-
-        // Read version + git hash from AssemblyInformationalVersion (set by MSBuild)
-        var infoVersion = Assembly.GetEntryAssembly()?
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion ?? "26.2.0";
-
-        // Split "26.2.0+9e92e46-dirty" into version and hash
-        var parts = infoVersion.Split('+', 2);
-        VersionText.Text = $"Version {parts[0]}";
-        GitHashText.Text = parts.Length > 1 ? parts[1] : "";
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
-            vm.CloseAboutDialogCommand?.Execute(null);
+            vm.CloseFlagByLatLonDialogCommand?.Execute(null);
         }
     }
 }

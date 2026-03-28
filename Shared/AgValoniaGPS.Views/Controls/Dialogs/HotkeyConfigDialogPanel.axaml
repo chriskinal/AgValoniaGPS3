@@ -29,8 +29,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.HotkeyButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="MinWidth" Value="60"/>
             <Setter Property="Height" Value="32"/>
@@ -42,7 +42,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.HotkeyButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -51,19 +51,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Centered dialog -->
-        <Border Background="#2C3E50" CornerRadius="12" Padding="20"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="20"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="420" MaxWidth="520" MaxHeight="650">
             <StackPanel Spacing="12">
                 <!-- Title -->
                 <TextBlock Text="Hotkey Configuration" FontSize="20" FontWeight="Bold"
-                           Foreground="White" HorizontalAlignment="Center"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Click a key button, then press a new key to reassign."
-                           FontSize="12" Foreground="#AAA" HorizontalAlignment="Center"
+                           FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center"/>
 
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Scrollable hotkey list -->
                 <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
@@ -72,18 +72,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </ScrollViewer>
 
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Bottom buttons -->
                 <Grid ColumnDefinitions="*,Auto,Auto">
                     <Button Grid.Column="1" Content="Reset Defaults" Margin="0,0,8,0"
                             Command="{Binding ResetHotkeysToDefaultCommand}"
-                            Background="#E67E22" Foreground="White"
+                            Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Width="130" Height="40" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                     <Button Grid.Column="2" Content="OK"
                             Command="{Binding CloseHotkeyConfigDialogCommand}"
-                            Background="#3498DB" Foreground="White"
+                            Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Width="80" Height="40" FontSize="16" FontWeight="Bold"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                 </Grid>

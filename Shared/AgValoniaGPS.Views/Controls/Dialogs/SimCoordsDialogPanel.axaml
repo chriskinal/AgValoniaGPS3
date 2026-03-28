@@ -29,18 +29,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Label">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
         <Style Selector="TextBlock.Hint">
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
         <Style Selector="Border.InputField">
-            <Setter Property="Background" Value="#2D2D2D"/>
-            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -51,8 +51,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="24,12"/>
             <Setter Property="FontSize" Value="14"/>
@@ -61,13 +61,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="6"/>
         </Style>
         <Style Selector="Button.DialogButton:pointerover">
-            <Setter Property="Background" Value="#1084D8"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#555"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#666"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -78,9 +78,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel positioned near top for mobile -->
-        <Border Background="#1E1E1E"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
@@ -94,7 +94,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Text="Enter GPS Coordinates"
                            FontSize="18"
                            FontWeight="Bold"
-                           Foreground="White"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,16"/>
 
@@ -106,7 +106,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock x:Name="LatitudeDisplay"
                                    FontSize="18"
                                    FontWeight="Bold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
                                    Text="0.00000000"/>
                     </Border>
@@ -120,7 +120,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock x:Name="LongitudeDisplay"
                                    FontSize="18"
                                    FontWeight="Bold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
                                    Text="0.00000000"/>
                     </Border>

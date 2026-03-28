@@ -33,7 +33,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Centered dialog -->
-        <Border Background="#2C3E50" CornerRadius="12" Padding="16"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="16"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="300" MaxWidth="350">
             <StackPanel Spacing="12">
@@ -42,9 +42,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Foreground="#1ABC9C" HorizontalAlignment="Center"/>
 
                 <!-- Current Value Display -->
-                <Border Background="#1a1a1a" CornerRadius="6" Padding="12,8">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12,8">
                     <TextBlock x:Name="ValueDisplay" FontSize="32" FontWeight="Bold"
-                               Foreground="White" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"
                                Text="{Binding NumericInputDialogDisplayText}"/>
                 </Border>
 
@@ -59,12 +59,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
                     <Button Grid.Column="0" Content="Cancel" Margin="0,0,4,0"
                             Command="{Binding CancelNumericInputDialogCommand}"
-                            Background="#E74C3C" Foreground="White"
+                            Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="16"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                     <Button Grid.Column="1" Content="OK" Margin="4,0,0,0"
                             Command="{Binding ConfirmNumericInputDialogCommand}"
-                            Background="#1ABC9C" Foreground="White"
+                            Background="#1ABC9C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="16"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
                 </Grid>

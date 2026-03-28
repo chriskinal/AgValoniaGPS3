@@ -16,11 +16,13 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.Desktop.DependencyInjection;
 using AgValoniaGPS.Services.Interfaces;
@@ -35,6 +37,10 @@ public partial class App : Application
 
     public static IServiceProvider? Services { get; set; }
 
+    // Hooks for integration test harness
+    public static Action<IServiceCollection>? ConfigureTestServices { get; set; }
+    public static Func<IClassicDesktopStyleApplicationLifetime, Task>? OnAppReady { get; set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -47,6 +53,7 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
             {
                 services.AddAgValoniaServices();
+                ConfigureTestServices?.Invoke(services);
             })
             .Build();
 
@@ -69,6 +76,18 @@ public partial class App : Application
 
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
+
+            // Fire integration test scenario after window is shown
+            if (OnAppReady != null)
+            {
+                var callback = OnAppReady;
+                Dispatcher.UIThread.Post(async () =>
+                {
+                    await Task.Delay(500);
+                    await callback(desktop);
+                    desktop.Shutdown();
+                });
+            }
 
             desktop.Exit += (sender, args) =>
             {

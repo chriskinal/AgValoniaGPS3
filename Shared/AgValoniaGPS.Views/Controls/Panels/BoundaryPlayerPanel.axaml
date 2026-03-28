@@ -28,15 +28,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="Button.ModernButton">
-            <Setter Property="Background" Value="#DD34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -44,7 +44,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ModernButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -52,7 +52,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Spacing="4" Background="Transparent">
             <!-- Header: Drag handle + Title -->
             <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*" Height="32" Margin="0,0,0,4"
-                  Background="#DD2C3E50" Cursor="Hand" ToolTip.Tip="Drag to move">
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
                            Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
                 <TextBlock Grid.Column="1" Text="Stop Record Pause Boundary" FontSize="12" FontWeight="SemiBold"
@@ -68,7 +68,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                Foreground="Black" HorizontalAlignment="Center" IsHitTestVisible="False"/>
                 </Button>
                 <TextBlock Grid.Column="1" Text="cm" FontSize="14" FontWeight="Bold"
-                           Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
             </Grid>
 
             <!-- Two Column Layout -->
@@ -86,7 +86,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                               ToolTip.Tip="Record boundary when section is on">
                     <ToggleButton.Styles>
                         <Style Selector="ToggleButton">
-                            <Setter Property="Background" Value="#3498DB"/>
+                            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
                             <Setter Property="CornerRadius" Value="6"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="BorderThickness" Value="0"/>
@@ -146,13 +146,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Row 3: Points display | Area display -->
                 <StackPanel Grid.Column="0" Grid.Row="3" Margin="4">
-                    <TextBlock Text="Points:" Foreground="#888" FontSize="12"/>
-                    <TextBlock Text="{Binding BoundaryPointCount}" Foreground="White"
+                    <TextBlock Text="Points:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                    <TextBlock Text="{Binding BoundaryPointCount}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                FontSize="16" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Grid.Row="3" Margin="4">
-                    <TextBlock Text="Area:" Foreground="#888" FontSize="12"/>
-                    <TextBlock Text="{Binding BoundaryAreaHectares, StringFormat={}{0:F2} Ha}" Foreground="White"
+                    <TextBlock Text="Area:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                    <TextBlock Text="{Binding BoundaryAreaHectares, StringFormat={}{0:F2} Ha}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                FontSize="16" FontWeight="Bold"/>
                 </StackPanel>
 

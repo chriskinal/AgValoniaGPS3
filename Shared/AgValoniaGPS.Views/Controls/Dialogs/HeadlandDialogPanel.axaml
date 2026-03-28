@@ -29,8 +29,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.ToolButton">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -38,7 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ToolButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.ToolButton:pressed">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -46,7 +46,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.ActionButton">
             <Setter Property="Background" Value="#27AE60"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -59,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.DangerButton">
             <Setter Property="Background" Value="#C0392B"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -71,8 +71,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
 
         <Style Selector="ToggleButton.ModeButton">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinHeight" Value="60"/>
@@ -80,7 +80,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="ToggleButton.ModeButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="ToggleButton.ModeButton:checked">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -92,7 +92,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50" CornerRadius="12" Margin="20" BoxShadow="0 8 32 #40000000">
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Margin="20" BoxShadow="0 8 32 #40000000">
             <Grid ColumnDefinitions="*,280">
                 <!-- Left: Boundary/Headland Canvas -->
                 <Grid Grid.Column="0">
@@ -102,19 +102,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
-                    <Border Grid.Row="0" Background="#34495E" Padding="15" CornerRadius="12,0,0,0">
+                    <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="15" CornerRadius="12,0,0,0">
                         <Grid ColumnDefinitions="Auto,*,Auto">
                             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Width="24" Height="24"/>
                                 <TextBlock Text="Headland Editor" Foreground="#1ABC9C" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
                             </StackPanel>
                             <TextBlock Grid.Column="2" Text="Click 2 points on the boundary to define headland line"
-                                       Foreground="#BDC3C7" FontSize="13" VerticalAlignment="Center"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
 
                     <!-- Canvas showing boundary and headland -->
-                    <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="0,0,0,12" ClipToBounds="True">
+                    <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="0,0,0,12" ClipToBounds="True">
                         <controls:DrawingContextMapControl x:Name="HeadlandMapControl"
                                                            ShowVehicle="False"
                                                            IsGridVisible="False"
@@ -123,12 +123,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Grid>
 
                 <!-- Right: Control Panel -->
-                <Border Grid.Column="1" Background="#34495E" Padding="12" CornerRadius="0,12,12,0">
+                <Border Grid.Column="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="12" CornerRadius="0,12,12,0">
                     <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto">
 
                         <!-- Track Type Selection -->
                         <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,12">
-                            <TextBlock Text="Track Type" Foreground="#BDC3C7" FontSize="12"/>
+                            <TextBlock Text="Track Type" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,*" Height="60">
                                 <RadioButton Grid.Column="0" GroupName="HeadlandTrackType" HorizontalAlignment="Stretch"
                                              IsChecked="{Binding IsHeadlandCurveMode}" Margin="0,0,4,0">
@@ -141,10 +141,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </RadioButton.Template>
                                     <RadioButton.Styles>
                                         <Style Selector="RadioButton">
-                                            <Setter Property="Background" Value="#34495E"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:pointerover">
-                                            <Setter Property="Background" Value="#4A6278"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:checked">
                                             <Setter Property="Background" Value="#1ABC9C"/>
@@ -152,7 +152,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </RadioButton.Styles>
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png" Width="32" Height="32"/>
-                                        <TextBlock Text="Curve" FontSize="10" HorizontalAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Curve" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     </StackPanel>
                                 </RadioButton>
                                 <RadioButton Grid.Column="1" GroupName="HeadlandTrackType" HorizontalAlignment="Stretch"
@@ -166,10 +166,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </RadioButton.Template>
                                     <RadioButton.Styles>
                                         <Style Selector="RadioButton">
-                                            <Setter Property="Background" Value="#34495E"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:pointerover">
-                                            <Setter Property="Background" Value="#4A6278"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:checked">
                                             <Setter Property="Background" Value="#1ABC9C"/>
@@ -177,7 +177,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </RadioButton.Styles>
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png" Width="32" Height="32"/>
-                                        <TextBlock Text="Line" FontSize="10" HorizontalAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Line" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     </StackPanel>
                                 </RadioButton>
                             </Grid>
@@ -185,20 +185,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Distance Setting -->
                         <StackPanel Grid.Row="1" Spacing="8" Margin="0,0,0,12">
-                            <TextBlock Text="Headland Distance" Foreground="#BDC3C7" FontSize="12"/>
+                            <TextBlock Text="Headland Distance" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Border Grid.Column="0" Background="#2C3E50" CornerRadius="6" Padding="12,8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandDistance, StringFormat={}{0:F1} m}"
-                                               FontSize="20" FontWeight="Bold" Foreground="White"
+                                               FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="4">
                                     <Button Content="+" Width="36" Height="24" FontSize="16" FontWeight="Bold"
-                                            Background="#2C3E50" Foreground="White" CornerRadius="4" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4" Padding="0"
                                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                             Command="{Binding IncrementHeadlandDistanceCommand}"/>
                                     <Button Content="-" Width="36" Height="24" FontSize="16" FontWeight="Bold"
-                                            Background="#2C3E50" Foreground="White" CornerRadius="4" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4" Padding="0"
                                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                             Command="{Binding DecrementHeadlandDistanceCommand}"/>
                                 </StackPanel>
@@ -207,15 +207,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Tool Width Multiplier -->
                         <StackPanel Grid.Row="2" Spacing="8" Margin="0,0,0,12">
-                            <TextBlock Text="Tool Widths" Foreground="#BDC3C7" FontSize="12"/>
+                            <TextBlock Text="Tool Widths" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Border Grid.Column="0" Background="#2C3E50" CornerRadius="6" Padding="8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6" Padding="8">
                                     <TextBlock Text="{Binding HeadlandCalculatedWidth, StringFormat={}{0:F2} m}"
                                                FontSize="14" Foreground="#1ABC9C"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ComboBox Grid.Column="1" Width="60" Margin="8,0,0,0" FontSize="16"
-                                          Background="#2C3E50" Foreground="White"
+                                          Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                           SelectedIndex="{Binding HeadlandToolWidthMultiplier}">
                                     <ComboBoxItem>0</ComboBoxItem>
                                     <ComboBoxItem>1</ComboBoxItem>
@@ -278,7 +278,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOff.png"
                                            Width="28" Height="28" IsVisible="{Binding !IsHeadlandSectionControlled}"/>
                                 </Panel>
-                                <TextBlock Text="Section Control" VerticalAlignment="Center" Foreground="White"/>
+                                <TextBlock Text="Section Control" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             </StackPanel>
                         </ToggleButton>
 

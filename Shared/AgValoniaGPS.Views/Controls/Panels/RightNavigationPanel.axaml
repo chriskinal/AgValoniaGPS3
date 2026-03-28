@@ -35,16 +35,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Floating Panel Style -->
         <Style Selector="Border.FloatingPanel">
-            <Setter Property="Background" Value="#DD1E2A38"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- Right Panel Button Style -->
         <Style Selector="Button.RightPanelButton">
-            <Setter Property="Background" Value="#DD34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
@@ -53,10 +53,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.RightPanelButton:pointerover">
-            <Setter Property="Background" Value="#DD475A6E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.RightPanelButton:pressed">
-            <Setter Property="Background" Value="#DD3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
         </Style>
 
         <!-- Active State for toggle buttons -->
@@ -69,7 +69,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Right Panel Separator -->
         <Style Selector="Separator.RightPanelSeparator">
-            <Setter Property="Background" Value="#444"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="Height" Value="2"/>
             <Setter Property="Margin" Value="8,4"/>
         </Style>
@@ -80,12 +80,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
             <!-- Touch Handle: Tap to rotate, Hold to drag -->
             <Grid x:Name="DragHandle" Height="40" Margin="0"
-                  Background="#DD2C3E50"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                   Cursor="Hand"
                   ToolTip.Tip="Tap to rotate | Hold and drag to move">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                    <TextBlock Text="=" Foreground="#AAA" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
-                    <TextBlock Text="R" Foreground="#AAA" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
+                    <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
+                    <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
                 </StackPanel>
             </Grid>
 
@@ -142,13 +142,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ToolTip.Tip="Manual U-Turn Left"
                         Command="{Binding ManualYouTurnLeftCommand}"
                         Margin="0,0,2,0">
-                    <TextBlock Text="↰" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="↰" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Button>
                 <Button Grid.Column="1" Classes="RightPanelButton" Width="30" Height="32"
                         ToolTip.Tip="Manual U-Turn Right"
                         Command="{Binding ManualYouTurnRightCommand}"
                         Margin="2,0,0,0">
-                    <TextBlock Text="↱" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="↱" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Button>
             </Grid>
 

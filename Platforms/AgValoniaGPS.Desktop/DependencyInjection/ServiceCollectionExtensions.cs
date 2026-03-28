@@ -26,6 +26,7 @@ using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.Services.Tool;
 using AgValoniaGPS.Services.Coverage;
+using AgValoniaGPS.Services.Logging;
 using AgValoniaGPS.Services.Section;
 using AgValoniaGPS.Services.Tram;
 using AgValoniaGPS.ViewModels;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         {
             builder.AddConsole();
             builder.AddDebug();
+            builder.AddProvider(new InMemoryLoggerProvider());
             builder.SetMinimumLevel(LogLevel.Debug);
         });
 

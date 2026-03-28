@@ -28,27 +28,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <!-- Sub-tab styling -->
         <Style Selector="TabControl.SubTabs">
-            <Setter Property="Background" Value="#DD253545"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,0,2,0"/>
-            <Setter Property="Background" Value="#DD2C3E50"/>
-            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:selected">
-            <Setter Property="Background" Value="#DD1E8449"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <TextBlock Text="GPS / Data Sources" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="16,12,16,8"/>
+        <TextBlock Text="GPS / Data Sources" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="16,12,16,8"/>
 
         <!-- Sub-Tab Control -->
         <TabControl Grid.Row="1" Classes="SubTabs" Margin="8,0,8,8">

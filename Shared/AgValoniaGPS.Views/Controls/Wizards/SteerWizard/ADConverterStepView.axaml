@@ -30,8 +30,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="White"/>
-            <Border Background="#34495E"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
                     Padding="8,4"
                     Margin="12,0,0,0"
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     IsVisible="{Binding CanSkip}">
                 <TextBlock Text="Optional"
                            FontSize="11"
-                           Foreground="#95A5A6"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </Border>
         </StackPanel>
 
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
                    FontSize="14"
-                   Foreground="#BDC3C7"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
                    Margin="0,0,0,24"/>
@@ -61,7 +61,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="80" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -81,10 +81,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Differential (ADS1115)"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="16-bit ADC with differential input - best noise rejection"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -97,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,*">
                     <Border Grid.Column="0"
                             Width="80" Height="60"
-                            Background="#2C3E50"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
                         <TextBlock Text="ADC"
@@ -111,10 +111,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Single-Ended"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Standard single-ended ADC input (built-in or external)"
                                    FontSize="13"
-                                   Foreground="#95A5A6"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
@@ -129,7 +129,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
             <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="White"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        FontSize="14"
                        TextWrapping="Wrap"/>
         </Border>
@@ -137,7 +137,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.option-button">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>

@@ -26,8 +26,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Styles>
         <Style Selector="Button.DialogButton">
-            <Setter Property="Background" Value="#3498DB"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -42,8 +42,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
 
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#7F8C8D"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -51,36 +51,36 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="MinWidth" Value="100"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#95A5A6"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pressed">
             <Setter Property="Background" Value="#6B7B7C"/>
         </Style>
 
         <Style Selector="TextBox.DialogInput">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#7F8C8D"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="CaretBrush" Value="White"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput:pointerover">
-            <Setter Property="Background" Value="#34495E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <!-- Override the inner TextBlock for selection -->
         <Style Selector="TextBox.DialogInput /template/ TextBlock">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="TextBox.DialogInput:focus /template/ Border#PART_BorderElement">
-            <Setter Property="Background" Value="#34495E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -89,7 +89,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 CornerRadius="12"
                 MaxWidth="450"
                 MaxHeight="380"
@@ -103,9 +103,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <TextBlock Text="Create New Field"
                                FontSize="24"
                                FontWeight="Bold"
-                               Foreground="White"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     <TextBlock Text="Enter field name - origin will be set to current GPS position"
-                               Foreground="#BDC3C7"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                FontSize="14"
                                TextWrapping="Wrap"/>
                 </StackPanel>
@@ -115,14 +115,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Field Name -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Field Name:"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    FontSize="16"/>
                         <TextBox Classes="DialogInput"
                                  Text="{Binding NewFieldName, Mode=TwoWay}"
                                  Watermark="Enter field name"
-                                 Background="#34495E"
-                                 Foreground="White"
-                                 BorderBrush="#7F8C8D"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                  CornerRadius="6"
                                  Padding="12,10"
                                  FontSize="18"
@@ -130,19 +130,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <!-- GPS Position Display -->
-                    <Border Background="#34495E" CornerRadius="8" Padding="16">
+                    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="8" Padding="16">
                         <StackPanel Spacing="8">
                             <TextBlock Text="Current GPS Position:"
-                                       Foreground="#95A5A6"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontSize="14"
                                        FontWeight="SemiBold"/>
                             <StackPanel Orientation="Horizontal" Spacing="20">
-                                <TextBlock Foreground="White" FontSize="14">
-                                    <Run Text="Lat: " Foreground="#95A5A6"/>
+                                <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14">
+                                    <Run Text="Lat: " Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <Run Text="{Binding NewFieldLatitude, StringFormat='{}{0:F8}'}"/>
                                 </TextBlock>
-                                <TextBlock Foreground="White" FontSize="14">
-                                    <Run Text="Lon: " Foreground="#95A5A6"/>
+                                <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14">
+                                    <Run Text="Lon: " Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <Run Text="{Binding NewFieldLongitude, StringFormat='{}{0:F8}'}"/>
                                 </TextBlock>
                             </StackPanel>
@@ -151,7 +151,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- Helper text -->
                     <TextBlock Text="The field origin will be set to your current GPS position when you create the field."
-                               Foreground="#95A5A6"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"/>
                 </StackPanel>

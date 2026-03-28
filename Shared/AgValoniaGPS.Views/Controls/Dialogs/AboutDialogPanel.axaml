@@ -21,40 +21,43 @@ the Free Software Foundation, either version 3 of the License, or
     <Grid>
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
-        <Border Background="#2C3E50" CornerRadius="12" Padding="24"
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="24"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="420" MaxWidth="550">
             <StackPanel Spacing="12">
                 <TextBlock Text="AgValoniaGPS" FontSize="22" FontWeight="Bold"
-                           Foreground="#3498DB" HorizontalAlignment="Center"/>
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Version 26.2.0" FontSize="16" FontWeight="SemiBold"
-                           Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="VersionText" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
+
+                <TextBlock x:Name="GitHashText" FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
 
                 <TextBlock Text="Cross-platform agricultural GPS guidance"
-                           FontSize="12" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                           FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
 
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <StackPanel Spacing="4">
                     <TextBlock Text="Based on AgOpenGPS by Brian Tee"
-                               Foreground="#BDC3C7" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     <TextBlock Text="Built with Avalonia UI 11.3.9 and .NET 10.0"
-                               Foreground="#BDC3C7" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                 </StackPanel>
 
-                <Separator Height="1" Background="#444" Margin="0,4"/>
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <StackPanel Spacing="4">
                     <TextBlock Text="License: GNU General Public License v3.0"
-                               Foreground="#BDC3C7" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     <TextBlock Text="github.com/chriskinal/AgValoniaGPS3"
-                               Foreground="#3498DB" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12"/>
                 </StackPanel>
 
                 <Button Content="Close" Margin="0,8,0,0"
                         Command="{Binding CloseAboutDialogCommand}"
-                        Background="#3498DB" Foreground="White"
+                        Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="44" FontSize="16" FontWeight="Bold"
                         HorizontalContentAlignment="Center" CornerRadius="6"/>
             </StackPanel>
