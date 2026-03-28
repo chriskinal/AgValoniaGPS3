@@ -25,35 +25,24 @@ public partial class MainViewModel
 {
     private void InitializeChartCommands()
     {
+        // Start chart data collection immediately so users see recent
+        // history when opening a chart mid-session. The overhead is
+        // minimal (a few hundred data points in rolling buffers).
+        _chartDataService.Start();
+
         ToggleSteerChartPanelCommand = ReactiveCommand.Create(() =>
         {
             IsSteerChartPanelVisible = !IsSteerChartPanelVisible;
-            EnsureChartDataServiceRunning();
         });
 
         ToggleHeadingChartPanelCommand = ReactiveCommand.Create(() =>
         {
             IsHeadingChartPanelVisible = !IsHeadingChartPanelVisible;
-            EnsureChartDataServiceRunning();
         });
 
         ToggleXTEChartPanelCommand = ReactiveCommand.Create(() =>
         {
             IsXTEChartPanelVisible = !IsXTEChartPanelVisible;
-            EnsureChartDataServiceRunning();
         });
-    }
-
-    /// <summary>
-    /// Start/stop chart data collection based on whether any chart panel is visible.
-    /// </summary>
-    private void EnsureChartDataServiceRunning()
-    {
-        bool anyVisible = IsSteerChartPanelVisible || IsHeadingChartPanelVisible || IsXTEChartPanelVisible;
-
-        if (anyVisible && !_chartDataService.IsRunning)
-            _chartDataService.Start();
-        else if (!anyVisible && _chartDataService.IsRunning)
-            _chartDataService.Stop();
     }
 }
