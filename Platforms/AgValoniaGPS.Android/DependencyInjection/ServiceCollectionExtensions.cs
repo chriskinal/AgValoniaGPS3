@@ -86,6 +86,9 @@ public static class ServiceCollectionExtensions
         // AutoSteer pipeline service (zero-copy GPS→PGN path)
         services.AddSingleton<IAutoSteerService, AutoSteerService>();
 
+        // Chart data service (collects rolling time-series for diagnostic charts)
+        services.AddSingleton<IChartDataService, ChartDataService>();
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 

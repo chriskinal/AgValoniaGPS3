@@ -70,6 +70,7 @@ public partial class MainViewModel : ReactiveObject
     private readonly ICoverageMapService _coverageMapService;
     private readonly ISectionControlService _sectionControlService;
     private readonly INtripProfileService _ntripProfileService;
+    private readonly IChartDataService _chartDataService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
@@ -158,6 +159,7 @@ public partial class MainViewModel : ReactiveObject
         ICoverageMapService coverageMapService,
         ISectionControlService sectionControlService,
         INtripProfileService ntripProfileService,
+        IChartDataService chartDataService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
@@ -187,6 +189,7 @@ public partial class MainViewModel : ReactiveObject
         _coverageMapService = coverageMapService;
         _sectionControlService = sectionControlService;
         _ntripProfileService = ntripProfileService;
+        _chartDataService = chartDataService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -254,6 +257,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeWizardCommands();
         InitializeSettingsCommands();
         InitializeHotkeyCommands();
+        InitializeChartCommands();
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings
@@ -2613,6 +2617,11 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ManualYouTurnLeftCommand { get; private set; }
     public ICommand? ManualYouTurnRightCommand { get; private set; }
     public ICommand? ToggleAutoSteerCommand { get; private set; }
+
+    // Chart Commands
+    public ICommand? ToggleSteerChartPanelCommand { get; private set; }
+    public ICommand? ToggleHeadingChartPanelCommand { get; private set; }
+    public ICommand? ToggleXTEChartPanelCommand { get; private set; }
 
 
     private void CenterMapOnBoundary(Boundary boundary)

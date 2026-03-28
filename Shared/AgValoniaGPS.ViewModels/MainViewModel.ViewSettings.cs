@@ -36,6 +36,9 @@ public partial class MainViewModel
     private bool _isJobMenuPanelVisible;
     private bool _isFieldToolsPanelVisible;
     private bool _isSimulatorPanelVisible;
+    private bool _isSteerChartPanelVisible;
+    private bool _isHeadingChartPanelVisible;
+    private bool _isXTEChartPanelVisible;
 
     #endregion
 
@@ -81,6 +84,24 @@ public partial class MainViewModel
     {
         get => _isSimulatorPanelVisible;
         set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+    }
+
+    public bool IsSteerChartPanelVisible
+    {
+        get => _isSteerChartPanelVisible;
+        set => this.RaiseAndSetIfChanged(ref _isSteerChartPanelVisible, value);
+    }
+
+    public bool IsHeadingChartPanelVisible
+    {
+        get => _isHeadingChartPanelVisible;
+        set => this.RaiseAndSetIfChanged(ref _isHeadingChartPanelVisible, value);
+    }
+
+    public bool IsXTEChartPanelVisible
+    {
+        get => _isXTEChartPanelVisible;
+        set => this.RaiseAndSetIfChanged(ref _isXTEChartPanelVisible, value);
     }
 
     #endregion

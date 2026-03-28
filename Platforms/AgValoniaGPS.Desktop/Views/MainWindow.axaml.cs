@@ -101,6 +101,14 @@ public partial class MainWindow : Window
         }
 
         // Note: BottomNavigationPanel is now a fixed-position panel without drag support
+
+        // Wire up chart panel drag events
+        if (SteerChartPanel != null)
+            SteerChartPanel.DragMoved += (_, delta) => MovePanel(SteerChartPanel, delta);
+        if (HeadingChartPanel != null)
+            HeadingChartPanel.DragMoved += (_, delta) => MovePanel(HeadingChartPanel, delta);
+        if (XTEChartPanel != null)
+            XTEChartPanel.DragMoved += (_, delta) => MovePanel(XTEChartPanel, delta);
     }
 
     private void MovePanel(Control panel, Vector delta)
