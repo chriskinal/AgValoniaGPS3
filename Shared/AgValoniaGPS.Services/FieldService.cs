@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Services.GeoJson;
 
 namespace AgValoniaGPS.Services;
 
@@ -61,18 +62,27 @@ public class FieldService : IFieldService
     }
 
     /// <summary>
-    /// Load a complete field (Field.txt, Boundary.txt, BackPic.Txt)
+    /// Load a complete field. Prefers field.geojson when present, falls back to legacy text files.
     /// </summary>
     public Field LoadField(string fieldDirectory)
     {
-        var field = _fieldPlaneService.LoadField(fieldDirectory);
-        field.Boundary = _boundaryService.LoadBoundary(fieldDirectory);
-        field.BackgroundImage = _backgroundImageService.LoadBackgroundImage(fieldDirectory);
-        return field;
+        if (GeoJsonFieldService.Exists(fieldDirectory))
+        {
+            var (field, _) = GeoJsonFieldService.Load(fieldDirectory);
+            // Background image file (BackPic.png) is still loaded from the legacy service
+            // because the image itself is not stored in GeoJSON.
+            field.BackgroundImage ??= _backgroundImageService.LoadBackgroundImage(fieldDirectory);
+            return field;
+        }
+
+        var legacyField = _fieldPlaneService.LoadField(fieldDirectory);
+        legacyField.Boundary = _boundaryService.LoadBoundary(fieldDirectory);
+        legacyField.BackgroundImage = _backgroundImageService.LoadBackgroundImage(fieldDirectory);
+        return legacyField;
     }
 
     /// <summary>
-    /// Save a complete field (Field.txt, Boundary.txt, BackPic.Txt)
+    /// Save a complete field. Writes both GeoJSON and legacy formats for backwards compatibility.
     /// </summary>
     public void SaveField(Field field)
     {
@@ -81,6 +91,7 @@ public class FieldService : IFieldService
             throw new ArgumentException("Field.DirectoryPath must be set", nameof(field));
         }
 
+        // Legacy files (keep for AgOpenGPS interop)
         _fieldPlaneService.SaveField(field, field.DirectoryPath);
 
         if (field.Boundary != null)
@@ -91,6 +102,16 @@ public class FieldService : IFieldService
         if (field.BackgroundImage != null)
         {
             _backgroundImageService.SaveBackgroundImage(field.BackgroundImage, field.DirectoryPath);
+        }
+
+        // GeoJSON (new canonical format -- tracks saved separately by caller)
+        try
+        {
+            GeoJsonFieldService.Save(field, tracks: null);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"GeoJSON save failed: {ex.Message}");
         }
     }
 
@@ -138,12 +159,13 @@ public class FieldService : IFieldService
     }
 
     /// <summary>
-    /// Check if a field exists
+    /// Check if a field exists (GeoJSON or legacy)
     /// </summary>
     public bool FieldExists(string fieldDirectory)
     {
         return Directory.Exists(fieldDirectory) &&
-               File.Exists(Path.Combine(fieldDirectory, "Field.txt"));
+               (GeoJsonFieldService.Exists(fieldDirectory) ||
+                File.Exists(Path.Combine(fieldDirectory, "Field.txt")));
     }
 
     /// <summary>
