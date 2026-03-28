@@ -283,20 +283,19 @@ sealed class Program
         CaptureScreenshot(window, "tracks_02_guidance_line_active");
         Console.WriteLine("OK");
 
-        // Track 3: Drive simulator with guidance computing the steer angle
-        Console.Write("[Tracks 3] Drive with autosteer guidance... ");
+        // Track 3: Drive with autosteer -- tractor starts 6m east of the AB line
+        // (AB line is at easting=6, tractor starts at easting=0)
+        // Autosteer must actively steer the tractor onto the line
+        Console.Write("[Tracks 3] Drive with autosteer (6m offset start)... ");
         vm.SimulatorForwardCommand?.Execute(null);
         await Delay(100);
         var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
-        // First steer slightly off-track, then let guidance correct
         Console.WriteLine();
-        for (int i = 0; i < 80; i++)
+        for (int i = 0; i < 120; i++)
         {
-            double steer = i < 10 ? 3.0 : vm.SimulatorSteerAngle;
-            simService.Tick(steer);
+            simService.Tick(vm.SimulatorSteerAngle);
             await Delay(33);
-            // Log XTE convergence every 10 ticks
-            if (i % 10 == 9)
+            if (i % 20 == 19)
             {
                 double xte = vm.State.Guidance.CrossTrackError;
                 Console.WriteLine($"  tick {i + 1}: XTE={xte:F3}m, Steer={vm.SimulatorSteerAngle:F1}");
