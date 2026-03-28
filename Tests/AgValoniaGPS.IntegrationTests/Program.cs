@@ -308,7 +308,7 @@ sealed class Program
         CaptureScreenshot(window, "tracks_03_guidance_driving");
         Console.WriteLine("OK");
 
-        // Track 4: Open import tracks dialog
+        // Track 4: Open import tracks dialog (OtherField has tracks to import)
         Console.Write("[Tracks 4] Import tracks dialog... ");
         vm.ImportTracksCommand?.Execute(null);
         await Delay(500);
