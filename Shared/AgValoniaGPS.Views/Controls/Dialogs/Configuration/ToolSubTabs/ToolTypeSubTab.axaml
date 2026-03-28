@@ -47,10 +47,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Setter>
         </Style>
         <Style Selector="RadioButton.TypeCard:pointerover /template/ Border#PART_Border">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="RadioButton.TypeCard:checked /template/ Border#PART_Border">
-            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
     </UserControl.Styles>

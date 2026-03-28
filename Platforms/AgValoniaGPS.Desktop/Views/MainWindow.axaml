@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="AgValoniaGPS"
-        Background="#1a1a1a">
+        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
 
     <!-- Styles are now in shared SharedStyles.axaml -->
 
@@ -136,7 +136,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </Grid>
 
     <!-- AB Creation Instruction Banner -->
-    <Border Background="#CC000000" CornerRadius="8" Padding="16,8"
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="16,8"
             HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"
             IsVisible="{Binding IsCreatingABLine}">
         <StackPanel Orientation="Horizontal" Spacing="16">

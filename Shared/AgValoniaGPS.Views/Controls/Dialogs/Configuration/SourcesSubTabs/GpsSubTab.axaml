@@ -36,11 +36,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
         <Style Selector="Border.AntennaCard:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Border.AntennaCard.Selected">
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
-            <Setter Property="Background" Value="#DD2A4A3A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
 
         <!-- Section Header Style -->
@@ -55,7 +55,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="TextBlock.SectionHeaderDisabled">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
@@ -77,13 +77,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.TappableValue:disabled">
-            <Setter Property="Background" Value="#DD1A1A1A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
         </Style>
 
         <!-- Toggle Button with custom template for instant feedback -->
@@ -117,10 +117,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.ActionButton:disabled">
-            <Setter Property="Background" Value="#DD1A1A1A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
 
@@ -171,7 +171,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Classes.SectionHeaderDisabled="{Binding !Connections.IsDualGps}"/>
 
                         <!-- Dual Antenna Graphic -->
-                        <Border Background="#1A1A2E" CornerRadius="4" Padding="4" Height="80" HorizontalAlignment="Center"
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="4" Padding="4" Height="80" HorizontalAlignment="Center"
                                 IsEnabled="{Binding Connections.IsDualGps}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesHead.png" Stretch="Uniform"
                                    Opacity="{Binding Connections.IsDualGps, Converter={x:Static conv:BoolToOpacityConverter.Instance}, ConverterParameter=1|0.3}"/>

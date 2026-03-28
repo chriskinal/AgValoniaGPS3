@@ -53,7 +53,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 

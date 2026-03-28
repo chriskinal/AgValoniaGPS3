@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <Style Selector="Button.ToolButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinWidth" Value="70"/>
@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ToolButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.ToolButton:pressed">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.CancelButton">
             <Setter Property="Background" Value="#C0392B"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="MinWidth" Value="80"/>
             <Setter Property="MinHeight" Value="44"/>
@@ -63,7 +63,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.OkButton">
             <Setter Property="Background" Value="#27AE60"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="MinWidth" Value="80"/>
             <Setter Property="MinHeight" Value="44"/>
@@ -78,7 +78,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
 
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
     </UserControl.Styles>
 

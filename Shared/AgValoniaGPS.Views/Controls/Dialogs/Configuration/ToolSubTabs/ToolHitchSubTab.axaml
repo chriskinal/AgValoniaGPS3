@@ -41,7 +41,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
     </UserControl.Styles>
@@ -49,7 +49,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <ScrollViewer>
         <StackPanel Spacing="12" Margin="16,8,16,16">
             <!-- Dynamic Hitch Diagram based on tool type -->
-            <Border Background="#1A1A2E" CornerRadius="8" Height="150" Margin="0,0,0,16" Padding="8">
+            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Height="150" Margin="0,0,0,16" Padding="8">
                 <Panel>
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ToolHitchPageFront.png"
                            Stretch="Uniform" IsVisible="{Binding Tool.IsToolFrontFixed}"/>

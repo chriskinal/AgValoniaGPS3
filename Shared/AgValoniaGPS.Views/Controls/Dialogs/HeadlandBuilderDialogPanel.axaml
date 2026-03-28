@@ -50,11 +50,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="12" IsVisible="{Binding HasBoundary}">
 
                     <!-- Distance Setting -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
                             <TextBlock Text="Headland Distance (meters)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto,Auto">
-                                <Border Grid.Column="0" Background="#333" CornerRadius="6" Padding="12,8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandDistance, StringFormat={}{0:F1}}"
                                                FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                HorizontalAlignment="Center"/>
@@ -77,11 +77,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Passes Setting -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
                             <TextBlock Text="Number of Passes" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Border Grid.Column="0" Background="#333" CornerRadius="6" Padding="12,8">
+                                <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandPasses}"
                                                FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                HorizontalAlignment="Center"/>
@@ -99,7 +99,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Preview indicator -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12"
                             IsVisible="{Binding HeadlandPreviewLine, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#F39C12"/>
@@ -108,7 +108,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Current headland status -->
-                    <Border Background="#1a1a1a" CornerRadius="8" Padding="12"
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12"
                             IsVisible="{Binding HasHeadland}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#1ABC9C"/>

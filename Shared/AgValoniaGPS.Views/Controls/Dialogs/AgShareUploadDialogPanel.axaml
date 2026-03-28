@@ -31,7 +31,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="6"/>
         </Style>
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
                 <!-- Field List -->
-                <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="6"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6"
                         Padding="5" MinHeight="200" MaxHeight="350">
                     <ScrollViewer>
                         <ItemsControl x:Name="FieldList">
@@ -94,7 +94,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Grid.Row="3" Margin="0,5">
                     <ProgressBar x:Name="ProgressBar" IsVisible="False"
                                  Height="8" Minimum="0" Maximum="100"
-                                 Foreground="{DynamicResource SystemControlHighlightAccentBrush}" Background="#1a1a1a"/>
+                                 Foreground="{DynamicResource SystemControlHighlightAccentBrush}" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
                     <TextBlock x:Name="StatusLabel" Text="Select fields to upload"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
                                HorizontalAlignment="Center" Margin="0,5"/>

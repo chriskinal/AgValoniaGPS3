@@ -35,7 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.DialogButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="FontSize" Value="14"/>
@@ -47,10 +47,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2980B9"/>
         </Style>
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#5D6D7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#4A5A6A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.DangerButton">
             <Setter Property="Background" Value="#E74C3C"/>
@@ -59,8 +59,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#C0392B"/>
         </Style>
         <Style Selector="ListBox">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>

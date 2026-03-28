@@ -55,15 +55,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.wizard-nav.primary">
             <Setter Property="Background" Value="#1ABC9C"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav.secondary">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav.cancel">
             <Setter Property="Background" Value="#E74C3C"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav:disabled">
             <Setter Property="Opacity" Value="0.5"/>
@@ -91,7 +91,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                      Minimum="0" Maximum="100"
                      Value="{Binding ProgressPercent}"
                      Height="6"
-                     Background="#1a1a1a"
+                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                      Foreground="#1ABC9C"/>
 
         <!-- Step content area -->

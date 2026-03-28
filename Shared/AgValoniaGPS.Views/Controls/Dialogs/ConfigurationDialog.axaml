@@ -147,7 +147,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </TabControl>
 
                 <!-- Numeric Input Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsNumericInputVisible}"
                         ZIndex="100">
                     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
@@ -177,7 +177,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Grid.Styles>
                                     <Style Selector="Button.KeypadButton">
                                         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                         <Setter Property="FontSize" Value="24"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="CornerRadius" Value="8"/>
@@ -188,10 +188,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.ClearButton">
-                                        <Setter Property="Background" Value="#DD8E5526"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.ClearButton:pointerover">
-                                        <Setter Property="Background" Value="#DDA96B30"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
                                     </Style>
                                 </Grid.Styles>
 
@@ -254,7 +254,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Text Input Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsTextInputVisible}"
                         ZIndex="100">
                     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
@@ -281,7 +281,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Grid.Styles>
                                     <Style Selector="Button.KeyButton">
                                         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                         <Setter Property="FontSize" Value="18"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="CornerRadius" Value="6"/>
@@ -294,10 +294,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.SpecialKey">
-                                        <Setter Property="Background" Value="#DD8E5526"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
                                     </Style>
                                     <Style Selector="Button.SpecialKey:pointerover">
-                                        <Setter Property="Background" Value="#DDA96B30"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
                                     </Style>
                                 </Grid.Styles>
 
@@ -390,7 +390,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
 
                 <!-- Color Picker Overlay -->
-                <Border Grid.Row="1" Background="#CC000000"
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         IsVisible="{Binding IsColorPickerVisible}"
                         ZIndex="100">
                     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"

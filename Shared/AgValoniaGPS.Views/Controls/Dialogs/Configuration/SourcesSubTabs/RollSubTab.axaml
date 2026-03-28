@@ -52,13 +52,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
         <!-- Action Button Style -->
         <Style Selector="Button.ActionButton">
-            <Setter Property="Background" Value="#DD1E8449"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
@@ -66,7 +66,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="#DD2A9A5A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
 
         <!-- Toggle Switch Style -->
@@ -84,7 +84,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- Roll Helper Graphic with explanation -->
             <Grid ColumnDefinitions="Auto,*">
-                <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Width="160" Height="120" Margin="0,0,12,0">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Width="160" Height="120" Margin="0,0,12,0">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_RollHelper.png" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
@@ -103,12 +103,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Roll Zero Offset -->
             <Border Classes="SettingRow" Margin="0,12,0,0">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Border Background="#1A1A2E" CornerRadius="4" Padding="4" Width="48" Height="48" Margin="0,0,12,0">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="4" Padding="4" Width="48" Height="48" Margin="0,0,12,0">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Stretch="Uniform"/>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Roll Zero Offset" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Manual offset adjustment" Foreground="#666" FontSize="10"/>
+                        <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                     </StackPanel>
                     <Button Grid.Column="2" Classes="TappableValue" Command="{Binding EditRollZeroCommand}">
                         <TextBlock Text="{Binding Ahrs.RollZero, StringFormat='{}{0:F1}°'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
@@ -123,7 +123,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Roll Filter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="#666" FontSize="10"/>
+                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                     </StackPanel>
                     <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditRollFilterCommand}">
                         <TextBlock Text="{Binding Ahrs.RollFilter, StringFormat='{}{0:F2}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
@@ -135,14 +135,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="ROLL DIRECTION" Classes="SectionHeader"/>
 
             <Grid ColumnDefinitions="Auto,*">
-                <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Width="100" Height="70" Margin="0,0,12,0">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Width="100" Height="70" Margin="0,0,12,0">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_InvertRoll.png" Stretch="Uniform"/>
                 </Border>
                 <Border Grid.Column="1" Classes="SettingRow" VerticalAlignment="Center">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
                             <TextBlock Text="Invert Roll" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="#666" FontSize="10"/>
+                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                         </StackPanel>
                         <ToggleSwitch Grid.Column="1" IsChecked="{Binding Ahrs.IsRollInvert}" VerticalAlignment="Center"/>
                     </Grid>

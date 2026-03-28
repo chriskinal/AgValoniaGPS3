@@ -38,11 +38,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:selected">
-            <Setter Property="Background" Value="#DD1E8449"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
     </UserControl.Styles>
 

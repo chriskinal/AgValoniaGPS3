@@ -37,7 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
@@ -72,7 +72,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="#DD3C4E60"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
 
         <!-- Settings Panel -->
@@ -121,7 +121,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <!-- Raise Time Graphic -->
-                    <Border Grid.Column="2" Background="#1A1A2E" CornerRadius="6" Padding="8" Height="100">
+                    <Border Grid.Column="2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="100">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftRaiseTime.png" Stretch="Uniform"/>
                     </Border>
                 </Grid>
@@ -146,7 +146,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <!-- Lower Time Graphic -->
-                    <Border Grid.Column="2" Background="#1A1A2E" CornerRadius="6" Padding="8" Height="100">
+                    <Border Grid.Column="2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="100">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftLowerTime.png" Stretch="Uniform"/>
                     </Border>
                 </Grid>

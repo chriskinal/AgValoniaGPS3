@@ -41,7 +41,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.DirectionBtn">
@@ -67,7 +67,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Dynamic Pivot Diagram -->
-            <Border Background="#1A1A2E" CornerRadius="8" Height="150" Margin="0,0,0,16" Padding="8">
+            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Height="150" Margin="0,0,0,16" Padding="8">
                 <Panel>
                     <!-- Show positive pivot (behind) when value >= 0 -->
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ToolHitchPivotOffsetPos.png"

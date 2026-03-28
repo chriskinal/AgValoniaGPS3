@@ -53,7 +53,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
@@ -101,7 +101,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="FontSize" Value="11"/>
         </Style>
         <Style Selector="TextBlock.StatusValue">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="14"/>
         </Style>
@@ -1166,7 +1166,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Border>
 
         <!-- Numeric Input Overlay -->
-        <Border Background="#CC000000"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 IsVisible="{Binding IsNumericInputVisible}"
                 ZIndex="100">
             <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="20"
@@ -1218,7 +1218,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Border>
 
         <!-- Reset Confirmation Dialog -->
-        <Border Background="#CC000000"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 IsVisible="{Binding IsResetConfirmVisible}"
                 ZIndex="100">
             <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12" Padding="24"

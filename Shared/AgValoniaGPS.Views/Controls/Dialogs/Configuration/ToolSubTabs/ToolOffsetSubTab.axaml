@@ -41,7 +41,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.DirectionBtn">
@@ -58,7 +58,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Spacing="8" Margin="16,8,16,16">
             <!-- Tool Offset Section -->
             <Grid ColumnDefinitions="Auto,*">
-                <Border Background="#1A1A2E" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ToolOffsetPositiveRight.png" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -77,7 +77,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- Overlap/Gap Section -->
             <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,0">
-                <Border Background="#1A1A2E" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ToolOverlap.png" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">

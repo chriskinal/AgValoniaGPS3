@@ -38,7 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Modern Button Style -->
         <Style Selector="Button.ModernButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -49,14 +49,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2980B9"/>
         </Style>
         <Style Selector="Button.ModernButton:pressed">
-            <Setter Property="Background" Value="#21618C"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
 
         <!-- Input Field Button Style (tappable fields that show keyboard) -->
         <Style Selector="Button.DataIOInput">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -65,10 +65,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.DataIOInput:pointerover">
-            <Setter Property="Background" Value="#2A3940"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.DataIOInput:pressed">
-            <Setter Property="Background" Value="#3A4950"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
         </Style>
 
         <!-- Label Style -->

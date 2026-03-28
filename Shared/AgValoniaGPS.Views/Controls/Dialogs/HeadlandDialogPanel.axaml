@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <UserControl.Styles>
         <Style Selector="Button.ToolButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -38,7 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ToolButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="Button.ToolButton:pressed">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -46,7 +46,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.ActionButton">
             <Setter Property="Background" Value="#27AE60"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -59,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="Button.DangerButton">
             <Setter Property="Background" Value="#C0392B"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinHeight" Value="50"/>
@@ -72,7 +72,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <Style Selector="ToggleButton.ModeButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinHeight" Value="60"/>
@@ -80,7 +80,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="ToggleButton.ModeButton:pointerover">
-            <Setter Property="Background" Value="#4A6278"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
         <Style Selector="ToggleButton.ModeButton:checked">
             <Setter Property="Background" Value="#1ABC9C"/>
@@ -114,7 +114,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Canvas showing boundary and headland -->
-                    <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="0,0,0,12" ClipToBounds="True">
+                    <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="0,0,0,12" ClipToBounds="True">
                         <controls:DrawingContextMapControl x:Name="HeadlandMapControl"
                                                            ShowVehicle="False"
                                                            IsGridVisible="False"
@@ -144,7 +144,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:pointerover">
-                                            <Setter Property="Background" Value="#4A6278"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:checked">
                                             <Setter Property="Background" Value="#1ABC9C"/>
@@ -169,7 +169,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:pointerover">
-                                            <Setter Property="Background" Value="#4A6278"/>
+                                            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
                                         </Style>
                                         <Style Selector="RadioButton:checked">
                                             <Setter Property="Background" Value="#1ABC9C"/>

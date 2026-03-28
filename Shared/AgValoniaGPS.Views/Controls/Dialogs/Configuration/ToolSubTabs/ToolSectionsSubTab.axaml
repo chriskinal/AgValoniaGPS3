@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.SectionWidthBtn">
@@ -62,7 +62,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
         <Style Selector="Button.SectionWidthBtn:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
     </UserControl.Styles>
@@ -241,7 +241,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </StackPanel>
                     </StackPanel>
 
-                    <TextBlock Text="All widths in cm" Foreground="#666" FontSize="10" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock Text="All widths in cm" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -338,7 +338,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </WrapPanel>
 
                     <TextBlock Text="Example: Zone 1 → 4 means Zone 1 controls sections 1-4"
-                               Foreground="#666" FontSize="10" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
 

@@ -37,7 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
@@ -82,7 +82,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Column="0" Classes="ParamCard" Margin="0,0,8,0">
                     <StackPanel Spacing="16" HorizontalAlignment="Center">
                         <!-- Graphic -->
-                        <Border Background="#1A1A2E" CornerRadius="6" Padding="12" Height="120">
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12" Height="120">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConT_TramOverride.png" Stretch="Uniform"/>
                         </Border>
 
@@ -113,7 +113,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Column="1" Classes="ParamCard" Margin="8,0,0,0">
                     <StackPanel Spacing="16" HorizontalAlignment="Center">
                         <!-- Graphic -->
-                        <Border Background="#1A1A2E" CornerRadius="6" Padding="12" Height="120">
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12" Height="120">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConT_TramSpacing.png" Stretch="Uniform"/>
                         </Border>
 

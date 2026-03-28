@@ -40,9 +40,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
         <Style Selector="TextBox">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="FontSize" Value="14"/>
@@ -52,7 +52,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.DialogButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="FontSize" Value="14"/>
@@ -64,10 +64,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#2980B9"/>
         </Style>
         <Style Selector="Button.CancelButton">
-            <Setter Property="Background" Value="#5D6D7E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.CancelButton:pointerover">
-            <Setter Property="Background" Value="#4A5A6A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.TestButton">
             <Setter Property="Background" Value="#27AE60"/>
@@ -76,7 +76,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#219A52"/>
         </Style>
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="FontSize" Value="14"/>
         </Style>
     </UserControl.Styles>
@@ -159,7 +159,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="Associated Fields" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
                 <TextBlock Text="Select fields that will use this NTRIP profile:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Margin="0,0,0,4"/>
 
-                <Border Background="#1E2930" BorderBrush="#4A5F73" BorderThickness="1" CornerRadius="4"
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4"
                         MaxHeight="120" Padding="4">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding AvailableFieldsForProfile}">

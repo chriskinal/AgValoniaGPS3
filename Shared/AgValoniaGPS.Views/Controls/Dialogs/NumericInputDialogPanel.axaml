@@ -42,7 +42,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Foreground="#1ABC9C" HorizontalAlignment="Center"/>
 
                 <!-- Current Value Display -->
-                <Border Background="#1a1a1a" CornerRadius="6" Padding="12,8">
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12,8">
                     <TextBlock x:Name="ValueDisplay" FontSize="32" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"
                                Text="{Binding NumericInputDialogDisplayText}"/>

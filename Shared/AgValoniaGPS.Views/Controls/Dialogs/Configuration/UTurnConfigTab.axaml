@@ -36,7 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="#DD2A3A4A"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
@@ -60,7 +60,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Column="0" Classes="ParamCard" Margin="4">
                     <StackPanel Spacing="8" HorizontalAlignment="Center">
                         <!-- Graphic -->
-                        <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Height="120">
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="120">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConU_UturnLength.png" Stretch="Uniform"/>
                         </Border>
 
@@ -81,7 +81,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Column="1" Classes="ParamCard" Margin="4">
                     <StackPanel Spacing="8" HorizontalAlignment="Center">
                         <!-- Graphic -->
-                        <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Height="120">
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="120">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConU_UturnSmooth.png" Stretch="Uniform"/>
                         </Border>
 
@@ -104,7 +104,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Classes="ParamCard" Margin="4">
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <!-- Graphic -->
-                            <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Height="80">
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="80">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConU_UturnRadius.png" Stretch="Uniform"/>
                             </Border>
 
@@ -123,7 +123,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Classes="ParamCard" Margin="4">
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <!-- Graphic -->
-                            <Border Background="#1A1A2E" CornerRadius="6" Padding="8" Height="80">
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Height="80">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConU_UturnDistance.png" Stretch="Uniform"/>
                             </Border>
 
