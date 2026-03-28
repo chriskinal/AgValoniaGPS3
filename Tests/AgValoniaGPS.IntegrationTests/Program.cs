@@ -317,14 +317,6 @@ sealed class Program
         vm.State.UI.CloseDialog();
         Console.WriteLine("OK");
 
-        // Track 5: Toggle recorded paths display
-        Console.Write("[Tracks 5] Toggle recorded paths... ");
-        vm.ToggleRecordedPathsCommand?.Execute(null);
-        await Delay(300);
-        Console.Write($"[ShowRecordedPaths={vm.ShowRecordedPaths}] ");
-        CaptureScreenshot(window, "tracks_05_recorded_paths_toggle");
-        Console.WriteLine("OK");
-
         Console.WriteLine("--- Track Management Scenarios Complete ---");
     }
 
