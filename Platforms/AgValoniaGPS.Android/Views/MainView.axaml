@@ -92,6 +92,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <panels:BottomNavigationPanel x:Name="BottomNavPanel"
                                                   Canvas.Left="200" Canvas.Top="420"
                                                   DataContext="{Binding}"/>
+
+                    <!-- Chart Panels (Draggable) -->
+                    <panels:SteerChartPanel x:Name="SteerChartPanel"
+                                            Canvas.Left="300" Canvas.Top="20"
+                                            DataContext="{Binding}"/>
+                    <panels:HeadingChartPanel x:Name="HeadingChartPanel"
+                                              Canvas.Left="300" Canvas.Top="250"
+                                              DataContext="{Binding}"/>
+                    <panels:XTEChartPanel x:Name="XTEChartPanel"
+                                          Canvas.Left="300" Canvas.Top="480"
+                                          DataContext="{Binding}"/>
                 </Canvas>
 
                 <!-- Zoom Controls - Bottom Right -->

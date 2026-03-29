@@ -1,0 +1,55 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:controls="using:AgValoniaGPS.Views.Controls"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.XTEChartPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsXTEChartPanelVisible}"
+             IsHitTestVisible="{Binding IsXTEChartPanelVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Border.FloatingPanel">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="FloatingPanel" Width="420" Height="240">
+        <Grid RowDefinitions="24,*">
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="24"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="6,0,6,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="Cross Track Error" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12" FontWeight="Bold"
+                           VerticalAlignment="Center" IsHitTestVisible="False"/>
+                <Button Grid.Column="2" Content="X" Width="20" Height="20" Padding="0" BorderThickness="0"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Cursor="Hand"
+                        Command="{Binding ToggleXTEChartPanelCommand}" Margin="4,0,4,0"/>
+            </Grid>
+            <controls:ChartControl x:Name="XTEChart" Grid.Row="1"/>
+        </Grid>
+    </Border>
+</UserControl>

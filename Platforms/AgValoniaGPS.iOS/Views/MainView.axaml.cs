@@ -66,6 +66,11 @@ public partial class MainView : UserControl
         // Restore panel positions from ConfigurationStore
         RestorePanelPositions();
 
+        // Wire up chart panel drag events
+        WireChartPanelDrag("SteerChartPanel");
+        WireChartPanelDrag("HeadingChartPanel");
+        WireChartPanelDrag("XTEChartPanel");
+
         // Handle window resize to keep panels in view
         this.PropertyChanged += MainView_PropertyChanged;
 
@@ -449,6 +454,27 @@ public partial class MainView : UserControl
                 // Update map with pending Point A marker
                 _mapControl.SetPendingPointA(_viewModel.PendingPointA);
             }
+        }
+    }
+
+    private void WireChartPanelDrag(string panelName)
+    {
+        var panel = this.FindControl<Control>(panelName);
+        if (panel == null) return;
+
+        // Chart panels expose DragMoved as an event via reflection-free duck typing
+        var dragMovedEvent = panel.GetType().GetEvent("DragMoved");
+        if (dragMovedEvent != null)
+        {
+            dragMovedEvent.AddEventHandler(panel, new EventHandler<Vector>((_, delta) =>
+            {
+                double newLeft = Canvas.GetLeft(panel) + delta.X;
+                double newTop = Canvas.GetTop(panel) + delta.Y;
+                double maxLeft = Math.Max(0, Bounds.Width - panel.Bounds.Width);
+                double maxTop = Math.Max(0, Bounds.Height - panel.Bounds.Height);
+                Canvas.SetLeft(panel, Math.Clamp(newLeft, 0, maxLeft));
+                Canvas.SetTop(panel, Math.Clamp(newTop, 0, maxTop));
+            }));
         }
     }
 

@@ -21,9 +21,7 @@ using Avalonia.ReactiveUI;
 using Avalonia.Threading;
 using AgValoniaGPS.Desktop;
 using AgValoniaGPS.Desktop.Views;
-using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.IntegrationTests;
-using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.ViewModels;
@@ -196,8 +194,8 @@ sealed class Program
         // --- Track Management Scenarios (PR #80) ---
         await RunTrackManagementScenario(window, vm);
 
-        // --- Display Wiring Scenarios (PR #82) ---
-        await RunDisplayWiringScenario(window, vm, simService);
+        // --- Charts Scenarios (PR #79) ---
+        await RunChartsScenario(window, vm, simService);
     }
 
     static async Task RunThemeAndDialogsScenario(Window window, MainViewModel vm)
@@ -326,26 +324,17 @@ sealed class Program
         Console.WriteLine("--- Track Management Scenarios Complete ---");
     }
 
-    static async Task RunDisplayWiringScenario(
+    static async Task RunChartsScenario(
         Window window, MainViewModel vm, IGpsSimulationService simService)
     {
-        var display = ConfigurationStore.Instance.Display;
+        // Step 8: Activate track and drive off-course to generate real chart data.
+        // ChartDataService now collects continuously in the background, so data
+        // accumulates even before charts are opened.
+        // Check chart data service state
+        var chartDataService = App.Services!.GetRequiredService<IChartDataService>();
+        Console.Write($"[ChartService running={chartDataService.IsRunning}, time={chartDataService.CurrentTime:F1}s, steerPts={chartDataService.SetSteerAngle.Count}] ");
 
-        // Step 8: Speed text visible while driving
-        Console.Write("[Step 8] Display: speed text in status bar... ");
-        vm.SimulatorForwardCommand?.Execute(null);
-        await Delay(100);
-        for (int i = 0; i < 30; i++)
-        {
-            simService.Tick(0);
-            await Delay(33);
-        }
-        Console.Write($"[speed={vm.SpeedKmh:F1}km/h] ");
-        CaptureScreenshot(window, "display_01_speed_text");
-        Console.WriteLine("OK");
-
-        // Step 9: Activate AB track and drive off-line for guidelines test
-        Console.Write("[Step 9] Display: activate track, drive off-line... ");
+        Console.Write("[Step 8] Charts: activate track and drive off-course... ");
         var track = vm.SavedTracks.FirstOrDefault();
         if (track != null)
         {
@@ -353,56 +342,82 @@ sealed class Program
             Console.Write($"[track={track.Name}] ");
         }
         await Delay(200);
-        for (int i = 0; i < 30; i++)
+
+        // Drive with steering to create deviation (steer angle, heading error, XTE)
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        // Steer right to deviate from AB line
+        for (int i = 0; i < 40; i++)
         {
-            simService.Tick(4.0); // steer right off the AB line
+            simService.Tick(5.0);
             await Delay(33);
         }
+        // Correct back left
+        for (int i = 0; i < 40; i++)
+        {
+            simService.Tick(-3.0);
+            await Delay(33);
+        }
+        // Straight to stabilize
+        for (int i = 0; i < 20; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        Console.Write($"[steerPts={chartDataService.SetSteerAngle.Count}, xtePts={chartDataService.CrossTrackError.Count}] ");
         Console.WriteLine("OK");
 
-        // Step 10: ExtraGuidelines ON
-        Console.Write("[Step 10] Display: ExtraGuidelines ON... ");
-        display.ExtraGuidelines = true;
-        display.ExtraGuidelinesCount = 5;
+        // Step 9: Open Steer Chart only
+        Console.Write("[Step 9] Charts: Steer Chart... ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null);
         await Delay(500);
-        CaptureScreenshot(window, "display_02_guidelines_ON");
+        CaptureScreenshot(window, "09_steer_chart");
+        Console.Write($"[visible={vm.IsSteerChartPanelVisible}] ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 11: ExtraGuidelines OFF
-        Console.Write("[Step 11] Display: ExtraGuidelines OFF... ");
-        display.ExtraGuidelines = false;
+        // Step 10: Open Heading Chart only
+        Console.Write("[Step 10] Charts: Heading Chart... ");
+        vm.ToggleHeadingChartPanelCommand?.Execute(null);
         await Delay(500);
-        CaptureScreenshot(window, "display_03_guidelines_OFF");
+        CaptureScreenshot(window, "10_heading_chart");
+        Console.Write($"[visible={vm.IsHeadingChartPanelVisible}] ");
+        vm.ToggleHeadingChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 12: UTurn button visible (track is active)
-        Console.Write("[Step 12] Display: UTurn button visible... ");
-        display.UTurnButtonVisible = true;
-        await Delay(300);
-        CaptureScreenshot(window, "display_04_uturn_ON");
-        Console.Write($"[isVisible={vm.IsUTurnButtonVisible}] ");
+        // Step 11: Open XTE Chart only
+        Console.Write("[Step 11] Charts: XTE Chart... ");
+        vm.ToggleXTEChartPanelCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "11_xte_chart");
+        Console.Write($"[visible={vm.IsXTEChartPanelVisible}] ");
+        vm.ToggleXTEChartPanelCommand?.Execute(null); // close
         Console.WriteLine("OK");
 
-        // Step 13: UTurn button hidden
-        Console.Write("[Step 13] Display: UTurn button hidden... ");
-        display.UTurnButtonVisible = false;
-        // Force re-evaluation by toggling track selection
-        var currentTrack = vm.SelectedTrack;
-        vm.SelectedTrack = null;
-        vm.SelectedTrack = currentTrack;
-        await Delay(300);
-        CaptureScreenshot(window, "display_05_uturn_OFF");
-        Console.Write($"[isVisible={vm.IsUTurnButtonVisible}] ");
+        // Step 12: All three charts visible
+        Console.Write("[Step 12] Charts: all three visible... ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null);
+        vm.ToggleHeadingChartPanelCommand?.Execute(null);
+        vm.ToggleXTEChartPanelCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "12_all_charts");
+        bool allVisible = vm.IsSteerChartPanelVisible
+            && vm.IsHeadingChartPanelVisible
+            && vm.IsXTEChartPanelVisible;
+        Console.Write($"[allVisible={allVisible}] ");
         Console.WriteLine("OK");
-        display.UTurnButtonVisible = true; // restore
 
-        // Step 14: AutoDayNight config in DisplayConfig tab
-        Console.Write("[Step 14] Display: AutoDayNight config tab... ");
-        vm.ShowConfigurationDialogCommand?.Execute(null);
-        await Delay(800);
-        CaptureScreenshot(window, "display_06_config_daynight");
-        if (vm.ConfigurationViewModel != null)
-            vm.ConfigurationViewModel.IsDialogVisible = false;
+        // Step 13: Close all charts
+        Console.Write("[Step 13] Charts: close all... ");
+        vm.ToggleSteerChartPanelCommand?.Execute(null);
+        vm.ToggleHeadingChartPanelCommand?.Execute(null);
+        vm.ToggleXTEChartPanelCommand?.Execute(null);
+        await Delay(500);
+        CaptureScreenshot(window, "13_charts_closed");
+        bool allClosed = !vm.IsSteerChartPanelVisible
+            && !vm.IsHeadingChartPanelVisible
+            && !vm.IsXTEChartPanelVisible;
+        Console.Write($"[allClosed={allClosed}] ");
         Console.WriteLine("OK");
     }
 

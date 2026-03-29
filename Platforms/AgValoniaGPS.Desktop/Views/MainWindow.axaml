@@ -134,6 +134,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <panels:BottomNavigationPanel x:Name="BottomNavPanel"
                                           Canvas.Left="200" Canvas.Top="600"
                                           DataContext="{Binding}"/>
+
+            <!-- Chart Panels (Draggable) -->
+            <panels:SteerChartPanel x:Name="SteerChartPanel"
+                                    Canvas.Left="400" Canvas.Top="20"
+                                    DataContext="{Binding}"/>
+            <panels:HeadingChartPanel x:Name="HeadingChartPanel"
+                                      Canvas.Left="400" Canvas.Top="250"
+                                      DataContext="{Binding}"/>
+            <panels:XTEChartPanel x:Name="XTEChartPanel"
+                                  Canvas.Left="400" Canvas.Top="480"
+                                  DataContext="{Binding}"/>
         </Canvas>
     </Grid>
 
