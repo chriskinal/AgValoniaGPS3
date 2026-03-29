@@ -237,6 +237,9 @@ sealed class Program
         await Delay(200);
         Console.WriteLine("OK");
 
+        // --- Compass Camera Modes (#97) ---
+        await RunCompassScenario(window, vm, simService);
+
         // Step 7+: Theme switching and new dialogs (PR #81)
         await RunThemeAndDialogsScenario(window, vm);
 
@@ -248,6 +251,57 @@ sealed class Program
 
         // --- Charts Scenarios (PR #79) ---
         await RunChartsScenario(window, vm, simService);
+    }
+
+    static async Task RunCompassScenario(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        // North-Up mode
+        Console.Write("[Compass 1] North-Up follow... ");
+        vm.CameraMode = AgValoniaGPS.Models.CameraMode.NorthUp;
+        vm.SimulatorForwardCommand?.Execute(null);
+        for (int i = 0; i < 30; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        Console.Write($"[mode={vm.CameraMode}] ");
+        CaptureScreenshot(window, "compass_01_northup");
+        Console.WriteLine("OK");
+
+        // Heading-Up mode
+        Console.Write("[Compass 2] Heading-Up follow... ");
+        vm.CameraMode = AgValoniaGPS.Models.CameraMode.HeadingUp;
+        for (int i = 0; i < 30; i++)
+        {
+            simService.Tick(5.0); // steer right to change heading
+            await Delay(33);
+        }
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        Console.Write($"[mode={vm.CameraMode}] ");
+        CaptureScreenshot(window, "compass_02_headingup");
+        Console.WriteLine("OK");
+
+        // Free mode (simulate pan)
+        Console.Write("[Compass 3] Free mode (panned)... ");
+        vm.CameraMode = AgValoniaGPS.Models.CameraMode.Free;
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        Console.Write($"[mode={vm.CameraMode}] ");
+        CaptureScreenshot(window, "compass_03_free");
+        Console.WriteLine("OK");
+
+        // Recenter
+        Console.Write("[Compass 4] Recenter from free... ");
+        vm.ToggleCameraModeCommand?.Execute(null);
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        Console.Write($"[mode={vm.CameraMode}] ");
+        CaptureScreenshot(window, "compass_04_recentered");
+        Console.WriteLine("OK");
     }
 
     static async Task RunFlagScenario(
