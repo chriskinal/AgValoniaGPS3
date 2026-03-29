@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using Avalonia.Threading;
 using ReactiveUI;
@@ -102,6 +103,76 @@ public partial class MainViewModel
     {
         get => _isXTEChartPanelVisible;
         set => this.RaiseAndSetIfChanged(ref _isXTEChartPanelVisible, value);
+    }
+
+    #endregion
+
+    #region Camera Mode
+
+    private CameraMode _cameraMode = CameraMode.NorthUp;
+    public CameraMode CameraMode
+    {
+        get => _cameraMode;
+        set
+        {
+            var old = _cameraMode;
+            this.RaiseAndSetIfChanged(ref _cameraMode, value);
+            if (old != value)
+            {
+                this.RaisePropertyChanged(nameof(CameraModeLabel));
+                ApplyCameraMode();
+            }
+        }
+    }
+
+    public string CameraModeLabel => _cameraMode switch
+    {
+        CameraMode.NorthUp => "N",
+        CameraMode.HeadingUp => "H",
+        CameraMode.Free => "F",
+        _ => "?"
+    };
+
+    private void ApplyCameraMode()
+    {
+        switch (_cameraMode)
+        {
+            case CameraMode.NorthUp:
+                _mapService.SetNorthUp(true);
+                IsNorthUp = true;
+                break;
+            case CameraMode.HeadingUp:
+                _mapService.SetNorthUp(false);
+                IsNorthUp = false;
+                break;
+            case CameraMode.Free:
+                // Don't change north-up setting, just stop following
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Called from GPS handler to center camera on vehicle when in follow mode.
+    /// </summary>
+    public void UpdateCameraFollow(double easting, double northing)
+    {
+        if (_cameraMode != CameraMode.Free)
+        {
+            _mapService.PanTo(easting, northing);
+        }
+    }
+
+    /// <summary>
+    /// Called when user manually pans the map -- enters Free mode.
+    /// </summary>
+    public void OnUserPan()
+    {
+        if (_cameraMode != CameraMode.Free)
+        {
+            _cameraMode = CameraMode.Free;
+            this.RaisePropertyChanged(nameof(CameraMode));
+            this.RaisePropertyChanged(nameof(CameraModeLabel));
+        }
     }
 
     #endregion

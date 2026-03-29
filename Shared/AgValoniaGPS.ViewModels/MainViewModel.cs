@@ -2505,6 +2505,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleDayNightCommand { get; private set; }
     public ICommand? Toggle2D3DCommand { get; private set; }
     public ICommand? ToggleNorthUpCommand { get; private set; }
+    public ICommand? ToggleCameraModeCommand { get; private set; }
     public ICommand? IncreaseCameraPitchCommand { get; private set; }
     public ICommand? DecreaseCameraPitchCommand { get; private set; }
     public ICommand? IncreaseBrightnessCommand { get; private set; }

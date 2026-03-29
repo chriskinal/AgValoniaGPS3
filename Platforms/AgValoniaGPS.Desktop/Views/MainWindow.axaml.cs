@@ -666,11 +666,13 @@ public partial class MainWindow : Window
                 }
 
                 MapControl.StartPan(point.Position);
+                ViewModel?.OnUserPan();
                 e.Handled = true;
             }
             else if (point.Properties.IsRightButtonPressed)
             {
                 MapControl.StartRotate(point.Position);
+                ViewModel?.OnUserPan();
                 e.Handled = true;
             }
         }

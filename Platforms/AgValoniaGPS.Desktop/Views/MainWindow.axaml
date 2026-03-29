@@ -107,6 +107,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     Width="50" Height="50" FontSize="28" FontWeight="Bold"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                     Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
+            <!-- Compass / Camera Mode Button -->
+            <Button Command="{Binding ToggleCameraModeCommand}"
+                    Width="50" Height="50"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    CornerRadius="25" Background="#4A90D9"
+                    ToolTip.Tip="Camera mode: North-Up / Heading-Up / Free">
+                <TextBlock Text="{Binding CameraModeLabel}" FontSize="20" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+            </Button>
         </StackPanel>
 
         <!-- All Draggable Panels in single Canvas (must be in same Canvas for consistent drag bounds) -->

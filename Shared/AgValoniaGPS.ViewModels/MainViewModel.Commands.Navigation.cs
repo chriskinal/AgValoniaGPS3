@@ -84,6 +84,17 @@ public partial class MainViewModel
             _mapService.SetNorthUp(IsNorthUp);
         });
 
+        ToggleCameraModeCommand = ReactiveCommand.Create(() =>
+        {
+            CameraMode = CameraMode switch
+            {
+                Models.CameraMode.Free => Models.CameraMode.NorthUp,
+                Models.CameraMode.NorthUp => Models.CameraMode.HeadingUp,
+                Models.CameraMode.HeadingUp => Models.CameraMode.NorthUp,
+                _ => Models.CameraMode.NorthUp
+            };
+        });
+
         // Camera controls
         IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
