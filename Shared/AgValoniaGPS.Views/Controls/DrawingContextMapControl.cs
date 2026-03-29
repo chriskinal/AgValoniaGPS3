@@ -145,7 +145,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 {
     // Avalonia styled property for grid visibility
     public static readonly StyledProperty<bool> IsGridVisibleProperty =
-        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(IsGridVisible), defaultValue: false);
+        AvaloniaProperty.Register<DrawingContextMapControl, bool>(nameof(IsGridVisible), defaultValue: true);
 
     public bool IsGridVisible
     {
