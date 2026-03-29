@@ -171,6 +171,8 @@ sealed class Program
 
         // Step 4b: Test zoom buttons (#98 fix)
         Console.Write("[Step 4b] Zoom test... ");
+        vm.State.UI.CloseDialog();
+        await Delay(200);
         CaptureScreenshot(window, "04b_zoom_before");
         vm.ZoomInCommand?.Execute(null);
         vm.ZoomInCommand?.Execute(null);
