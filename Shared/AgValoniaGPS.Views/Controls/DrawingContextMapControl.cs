@@ -282,6 +282,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Coverage bitmap cache - renders all coverage to a single bitmap for O(1) drawing
     private RenderTargetBitmap? _coverageBitmap;
     private bool _coverageBitmapDirty = true;
+    private bool _bitmapHasContent; // true when bitmap has background image or painted coverage
     private double _coverageBoundsMinX, _coverageBoundsMinY, _coverageBoundsMaxX, _coverageBoundsMaxY;
     private const double COVERAGE_PIXELS_PER_METER = 0.5; // 0.5 pixels per meter = 2m resolution
 
@@ -298,7 +299,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // WriteableBitmap for bitmap-based coverage rendering
     // O(1) render time - blit pre-rendered bitmap each frame
+    // Data bitmap (Rgb565) -- compact storage for save/load and pixel API
+    // Display bitmap (Bgra8888) -- for rendering with black=transparent
     private WriteableBitmap? _coverageWriteableBitmap;
+    private WriteableBitmap? _coverageDisplayBitmap;
     private const double MIN_BITMAP_CELL_SIZE = 0.1; // Preferred resolution (matches RTK precision)
     private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
     private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
@@ -550,8 +554,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 DrawGrid(context, viewWidth, viewHeight);
             }
 
-            // Draw coverage FIRST (bottom layer) - Rgb565 has no alpha, so it's opaque
-            // Everything else draws on top of coverage
+            // Draw coverage FIRST (bottom layer)
+            // Bitmap uses Rgb565 (no alpha) - only drawn when it has actual content
+            // (background image or painted coverage cells) to avoid black rectangle over grid
             var covSw = System.Diagnostics.Stopwatch.StartNew();
             if (_coveragePatches.Count > 0 || _coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
             {
@@ -954,20 +959,36 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             return;
         }
 
-        // Dispose old bitmap
+        // Dispose old bitmaps
         _coverageWriteableBitmap?.Dispose();
+        _coverageDisplayBitmap?.Dispose();
 
-        // Create new bitmap - always use Rgb565 for consistency
+        // Data bitmap: Rgb565 for compact storage and pixel API
         _coverageWriteableBitmap = new WriteableBitmap(
             new PixelSize(_bitmapWidth, _bitmapHeight),
             new Vector(96, 96),
             Avalonia.Platform.PixelFormat.Rgb565);
 
-        long memMB = (long)_bitmapWidth * _bitmapHeight * 2 / 1024 / 1024;
-        Console.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565 bitmap (~{memMB}MB)");
+        // Display bitmap: Bgra8888 for rendering with transparency (black = alpha 0)
+        _coverageDisplayBitmap = new WriteableBitmap(
+            new PixelSize(_bitmapWidth, _bitmapHeight),
+            new Vector(96, 96),
+            Avalonia.Platform.PixelFormat.Bgra8888);
 
-        // Clear bitmap to black first
+        long memMB = (long)_bitmapWidth * _bitmapHeight * 6 / 1024 / 1024; // 2 + 4 bytes per pixel
+        Console.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565+Bgra8888 bitmaps (~{memMB}MB)");
+
+        // Clear data bitmap to black (0x0000)
         using (var framebuffer = _coverageWriteableBitmap.Lock())
+        {
+            int stride = framebuffer.RowBytes;
+            byte* ptr = (byte*)framebuffer.Address;
+            int bufferSize = stride * _bitmapHeight;
+            new Span<byte>(ptr, bufferSize).Clear();
+        }
+
+        // Clear display bitmap to transparent (alpha=0)
+        using (var framebuffer = _coverageDisplayBitmap.Lock())
         {
             int stride = framebuffer.RowBytes;
             byte* ptr = (byte*)framebuffer.Address;
@@ -980,11 +1001,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             Console.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
             CompositeBackgroundIntoBitmap();
+            _bitmapHasContent = true;
         }
         else
         {
-            Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black");
+            Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black (transparent until coverage painted)");
             _backgroundComposited = false;
+            _bitmapHasContent = false;
         }
 
         // Set state flags
@@ -1394,6 +1417,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         Debug.WriteLine($"[Background] Composited {pixelsWritten} pixels into coverage bitmap in {sw.ElapsedMilliseconds}ms");
         _backgroundComposited = true;
 
+        // Sync display bitmap so background shows with proper transparency
+        SyncDisplayBitmap();
+
         // Rebuild thumbnail immediately so zoomed-out view shows correct background
         UpdateCoverageThumbnail();
         _thumbnailNeedsRebuild = false;
@@ -1497,9 +1523,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Use LowQuality when moderately zoomed out, HighQuality when zoomed in
         var renderOptions = _zoom < 0.5 ? _lowQualityRenderOptions : _highQualityRenderOptions;
 
+        // Draw the Bgra8888 display bitmap (black pixels are transparent)
+        var drawBitmap = _coverageDisplayBitmap ?? _coverageWriteableBitmap;
         using (context.PushRenderOptions(renderOptions))
         {
-            context.DrawImage(_coverageWriteableBitmap, fullSrcRect, destRect);
+            context.DrawImage(drawBitmap!, fullSrcRect, destRect);
         }
 
         return _bitmapWidth * _bitmapHeight;
@@ -1622,18 +1650,64 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     public void SetCoveragePixel(int localX, int localY, ushort rgb565)
     {
-        if (_coverageWriteableBitmap == null ||
+        if (_coverageWriteableBitmap == null || _coverageDisplayBitmap == null ||
             localX < 0 || localX >= _bitmapWidth ||
             localY < 0 || localY >= _bitmapHeight)
             return;
 
-        using var framebuffer = _coverageWriteableBitmap.Lock();
-        unsafe
+        if (rgb565 != 0) _bitmapHasContent = true;
+
+        // Write to Rgb565 data bitmap
+        using (var framebuffer = _coverageWriteableBitmap.Lock())
         {
-            // Bitmap is always Rgb565 format
-            ushort* ptr = (ushort*)framebuffer.Address;
-            ptr[localY * _bitmapWidth + localX] = rgb565;
+            unsafe
+            {
+                ushort* ptr = (ushort*)framebuffer.Address;
+                ptr[localY * _bitmapWidth + localX] = rgb565;
+            }
         }
+
+        // Write to Bgra8888 display bitmap (black = transparent)
+        using (var framebuffer = _coverageDisplayBitmap.Lock())
+        {
+            unsafe
+            {
+                uint* ptr = (uint*)framebuffer.Address;
+                ptr[localY * _bitmapWidth + localX] = Rgb565ToBgra8888(rgb565);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuild the Bgra8888 display bitmap from the Rgb565 data bitmap.
+    /// Called after bulk operations (background composite, pixel buffer load).
+    /// </summary>
+    private unsafe void SyncDisplayBitmap()
+    {
+        if (_coverageWriteableBitmap == null || _coverageDisplayBitmap == null) return;
+
+        using var dataFb = _coverageWriteableBitmap.Lock();
+        using var dispFb = _coverageDisplayBitmap.Lock();
+
+        ushort* src = (ushort*)dataFb.Address;
+        uint* dst = (uint*)dispFb.Address;
+        int count = _bitmapWidth * _bitmapHeight;
+        for (int i = 0; i < count; i++)
+            dst[i] = Rgb565ToBgra8888(src[i]);
+    }
+
+    /// <summary>
+    /// Convert Rgb565 to Bgra8888. Black (0x0000) maps to transparent (alpha=0),
+    /// all other colors get full opacity (alpha=255).
+    /// </summary>
+    private static uint Rgb565ToBgra8888(ushort rgb565)
+    {
+        if (rgb565 == 0) return 0; // transparent
+
+        byte r = (byte)((rgb565 >> 11) << 3);
+        byte g = (byte)(((rgb565 >> 5) & 0x3F) << 2);
+        byte b = (byte)((rgb565 & 0x1F) << 3);
+        return (uint)(b | (g << 8) | (r << 16) | (0xFF << 24));
     }
 
     /// <summary>
@@ -1716,18 +1790,37 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             CreateCoverageBitmap();
         }
 
-        using var framebuffer = _coverageWriteableBitmap.Lock();
-        unsafe
+        // Write to Rgb565 data bitmap
+        using (var framebuffer = _coverageWriteableBitmap!.Lock())
         {
-            // Bitmap is always Rgb565 - only copy non-black pixels to preserve background
-            ushort* dst = (ushort*)framebuffer.Address;
-            int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
-            for (int i = 0; i < count; i++)
+            unsafe
             {
-                if (pixels[i] != 0)  // Only copy coverage, not black (no-coverage)
-                    dst[i] = pixels[i];
+                ushort* dst = (ushort*)framebuffer.Address;
+                int count = Math.Min(pixels.Length, _bitmapWidth * _bitmapHeight);
+                for (int i = 0; i < count; i++)
+                {
+                    if (pixels[i] != 0)
+                        dst[i] = pixels[i];
+                }
             }
         }
+
+        // Sync to Bgra8888 display bitmap
+        if (_coverageDisplayBitmap != null)
+        {
+            using var dispFb = _coverageDisplayBitmap.Lock();
+            using var dataFb = _coverageWriteableBitmap.Lock();
+            unsafe
+            {
+                ushort* src = (ushort*)dataFb.Address;
+                uint* dst = (uint*)dispFb.Address;
+                int count = _bitmapWidth * _bitmapHeight;
+                for (int i = 0; i < count; i++)
+                    dst[i] = Rgb565ToBgra8888(src[i]);
+            }
+        }
+
+        _bitmapHasContent = true;
 
         // Rebuild thumbnail so zoomed-out view shows loaded coverage
         UpdateCoverageThumbnail();

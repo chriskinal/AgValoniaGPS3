@@ -121,6 +121,10 @@ sealed class Program
             config.Tool.SetSectionWidth(i, 200.0); // 200cm = 2m per section
         Console.WriteLine($"[Setup] Tool: {config.Tool.Width}m, {config.NumSections} sections, actual={config.ActualToolWidth}m");
 
+        // Enable grid to verify coverage bitmap transparency
+        vm.IsGridOn = true;
+        config.Display.GridVisible = true;
+
         // Step 1: App startup
         Console.Write("[Step 1] App startup... ");
         vm.State.UI.CloseDialog(); // Close any first-run dialogs
