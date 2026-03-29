@@ -1465,7 +1465,7 @@ public partial class MainViewModel : ReactiveObject
         StatusMessage = $"{color} flag '{flag.Name}' at E:{Easting:F1} N:{Northing:F1}";
     }
 
-    private void UpdateFlagsOnMap()
+    public void UpdateFlagsOnMap()
     {
         var flags = Flags.Select(f =>
             (f.Easting, f.Northing, f.FlagColor.ToString())).ToList();

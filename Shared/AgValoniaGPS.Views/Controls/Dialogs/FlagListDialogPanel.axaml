@@ -29,7 +29,7 @@ the Free Software Foundation, either version 3 of the License, or
         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1" CornerRadius="8" Padding="16"
-                MaxWidth="500" MaxHeight="500"
+                MaxWidth="520" MaxHeight="520"
                 HorizontalAlignment="Center" VerticalAlignment="Center">
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header -->
@@ -40,47 +40,84 @@ the Free Software Foundation, either version 3 of the License, or
                 </StackPanel>
 
                 <!-- Flag list -->
-                <ScrollViewer Grid.Row="1" MaxHeight="350">
-                    <ItemsControl ItemsSource="{Binding Flags}">
+                <ScrollViewer Grid.Row="1" MaxHeight="380">
+                    <ItemsControl x:Name="FlagItems" ItemsSource="{Binding Flags}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:Flag">
                                 <Border Margin="0,2" Padding="8,6" CornerRadius="4"
                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                                    <Grid ColumnDefinitions="24,*,Auto,Auto">
-                                        <!-- Color indicator -->
-                                        <Ellipse Grid.Column="0" Width="16" Height="16"
-                                                 VerticalAlignment="Center">
-                                            <Ellipse.Fill>
-                                                <SolidColorBrush Color="{Binding FlagColor, Converter={x:Static local:FlagColorToBrushConverter.Instance}}"/>
-                                            </Ellipse.Fill>
-                                        </Ellipse>
+                                    <StackPanel Spacing="4">
+                                        <!-- Main row -->
+                                        <Grid ColumnDefinitions="28,*,Auto,Auto,28">
+                                            <!-- Color indicator (tap to show color selector) -->
+                                            <Button Grid.Column="0" Width="22" Height="22" Padding="0"
+                                                    CornerRadius="11" BorderThickness="1"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                                    Click="ColorButton_Click" Tag="{Binding}"
+                                                    ToolTip.Tip="Change color">
+                                                <Button.Background>
+                                                    <SolidColorBrush Color="{Binding FlagColor, Converter={x:Static local:FlagColorToBrushConverter.Instance}}"/>
+                                                </Button.Background>
+                                            </Button>
 
-                                        <!-- Name (editable) -->
-                                        <TextBox Grid.Column="1" Text="{Binding Name, Mode=TwoWay}"
-                                                 Margin="8,0" FontSize="13" MinWidth="120"
-                                                 Background="Transparent" BorderThickness="0,0,0,1"
-                                                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            <!-- Name (tap to edit) -->
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                       Margin="8,0" FontSize="13" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                       PointerPressed="FlagName_PointerPressed"
+                                                       Tag="{Binding}" Cursor="Hand"
+                                                       TextDecorations="Underline"/>
 
-                                        <!-- Position -->
-                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                   Text="{Binding Easting, StringFormat='E:{0:F1}'}"/>
+                                            <!-- Distance + direction from vehicle -->
+                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Text="{Binding ., Converter={x:Static local:FlagDistanceConverter.Instance}}"/>
 
-                                        <!-- Delete button -->
-                                        <Button Grid.Column="3" Content="X" Width="24" Height="24"
-                                                Padding="0" FontSize="12" CornerRadius="4"
-                                                Background="Transparent"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                Click="DeleteFlag_Click"
-                                                Tag="{Binding}"/>
-                                    </Grid>
+                                            <!-- Position -->
+                                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Margin="4,0"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                                       Text="{Binding Easting, StringFormat='E:{0:F0}'}"/>
+
+                                            <!-- Delete button -->
+                                            <Button Grid.Column="4" Content="X" Width="22" Height="22"
+                                                    Padding="0" FontSize="11" CornerRadius="4"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                    Click="DeleteFlag_Click" Tag="{Binding}"/>
+                                        </Grid>
+
+                                        <!-- Color selector (hidden by default, shown on tap) -->
+                                        <WrapPanel x:Name="ColorSelector" IsVisible="False"
+                                                   Margin="28,4,0,0" Tag="{Binding}">
+                                            <!-- 10 color buttons generated in code-behind -->
+                                        </WrapPanel>
+                                    </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <!-- Name edit overlay (shown when editing a flag name) -->
+                <Border x:Name="NameEditOverlay" Grid.RowSpan="3" IsVisible="False"
+                        Background="#C0000000" CornerRadius="8">
+                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16"
+                            MaxWidth="300" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Rename Flag" FontSize="14" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBox x:Name="NameEditBox" FontSize="14" Watermark="Enter flag name"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                <Button Content="OK" Padding="16,6" Click="NameEditOK_Click"/>
+                                <Button Content="Cancel" Padding="16,6" Click="NameEditCancel_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Border>
 
                 <!-- Footer buttons -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8"

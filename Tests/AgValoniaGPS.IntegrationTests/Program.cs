@@ -299,8 +299,10 @@ sealed class Program
         CaptureScreenshot(window, "16b_flag_mapclick");
         Console.WriteLine("OK");
 
-        // Open flag list dialog
+        // Open flag list dialog (close any existing dialog first)
         Console.Write("[Step 16c] Flags: flag list dialog... ");
+        vm.State.UI.CloseDialog();
+        await Delay(100);
         vm.ShowFlagListCommand?.Execute(null);
         await Delay(500);
         Console.Write($"[flagCount={vm.Flags.Count}] ");
