@@ -169,6 +169,21 @@ sealed class Program
         CaptureScreenshot(window, "04_simulator_driving");
         Console.WriteLine("OK");
 
+        // Step 4b: Test zoom buttons (#98 fix)
+        Console.Write("[Step 4b] Zoom test... ");
+        CaptureScreenshot(window, "04b_zoom_before");
+        vm.ZoomInCommand?.Execute(null);
+        vm.ZoomInCommand?.Execute(null);
+        vm.ZoomInCommand?.Execute(null);
+        await Delay(300);
+        CaptureScreenshot(window, "04b_zoom_after");
+        // Zoom back out to restore
+        vm.ZoomOutCommand?.Execute(null);
+        vm.ZoomOutCommand?.Execute(null);
+        vm.ZoomOutCommand?.Execute(null);
+        await Delay(200);
+        Console.WriteLine("OK");
+
         // Step 5: Open tracks dialog
         Console.Write("[Step 5] Tracks dialog... ");
         vm.ShowTracksDialogCommand?.Execute(null);
