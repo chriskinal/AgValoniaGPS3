@@ -2149,8 +2149,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
-        // Draw hitch line from vehicle to tool center
-        context.DrawLine(_hitchPen, new Point(_vehicleX, _vehicleY), new Point(_toolX, _toolY));
+        // Draw V-shape hitch triangle from vehicle to implement ends
+        double hitchHalfW = _toolWidth / 2.0;
+        double cosH = Math.Cos(-_toolHeading);
+        double sinH = Math.Sin(-_toolHeading);
+        var leftEnd = new Point(
+            _toolX + (-hitchHalfW) * cosH,
+            _toolY + (-hitchHalfW) * sinH);
+        var rightEnd = new Point(
+            _toolX + hitchHalfW * cosH,
+            _toolY + hitchHalfW * sinH);
+        var hitchPoint = new Point(_hitchX, _hitchY);
+        context.DrawLine(_hitchPen, hitchPoint, leftEnd);
+        context.DrawLine(_hitchPen, hitchPoint, rightEnd);
 
         // Draw individual sections centered at tool position, rotated to tool heading
         using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
