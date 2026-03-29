@@ -2766,13 +2766,20 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 _ => Brushes.Red
             };
 
-            // Draw pole (line from ground to flag top)
-            var poleTop = new Point(center.X, center.Y + poleHeight);
-            context.DrawLine(polePen, center, poleTop);
+            // Counter-rotate to keep flag upright regardless of map rotation
+            using (context.PushTransform(
+                Matrix.CreateTranslation(-center.X, -center.Y) *
+                Matrix.CreateRotation(_rotation) *
+                Matrix.CreateTranslation(center.X, center.Y)))
+            {
+                // Draw pole (line from ground to flag top)
+                var poleTop = new Point(center.X, center.Y + poleHeight);
+                context.DrawLine(polePen, center, poleTop);
 
-            // Draw flag marker (filled circle at top of pole)
-            var outlinePen = new Pen(Brushes.White, worldPerPixel * 0.5);
-            context.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
+                // Draw flag marker (filled circle at top of pole)
+                var outlinePen = new Pen(Brushes.White, worldPerPixel * 0.5);
+                context.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
+            }
         }
     }
 
