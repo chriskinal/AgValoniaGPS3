@@ -69,6 +69,10 @@ public partial class MainWindow : Window
         {
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             ViewModel.SavedTracks.CollectionChanged += SavedTracks_CollectionChanged;
+
+            // Wire zoom commands to map control
+            ViewModel.ZoomInRequested += () => MapControl?.Zoom(1.2);
+            ViewModel.ZoomOutRequested += () => MapControl?.Zoom(1.0 / 1.2);
         }
 
         // Subscribe to FPS updates from map control (instance-based)
