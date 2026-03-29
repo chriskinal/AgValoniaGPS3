@@ -88,18 +88,6 @@ public partial class App : Application
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
 
-            // Fire integration test scenario after window is shown
-            if (OnAppReady != null)
-            {
-                var callback = OnAppReady;
-                Dispatcher.UIThread.Post(async () =>
-                {
-                    await Task.Delay(500);
-                    await callback(desktop);
-                    desktop.Shutdown();
-                });
-            }
-
             desktop.Exit += (sender, args) =>
             {
                 // Save settings on exit

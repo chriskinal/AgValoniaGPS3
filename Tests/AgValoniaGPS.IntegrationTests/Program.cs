@@ -127,14 +127,20 @@ sealed class Program
 
         // Step 1: App startup -- verify simulator enabled and panel visible by default
         Console.Write("[Step 1] App startup... ");
-        vm.State.UI.CloseDialog(); // Close any first-run dialogs
-        await Delay(500);
         Console.Write($"[simEnabled={vm.IsSimulatorEnabled}, panelVisible={vm.IsSimulatorPanelVisible}] ");
         if (!vm.IsSimulatorEnabled)
         {
             Console.WriteLine("FAIL: simulator not enabled by default");
             _scenarioFailed = true;
         }
+        // Close all dialogs and wait for clean state
+        vm.State.UI.CloseDialog();
+        if (vm.ConfigurationViewModel != null)
+            vm.ConfigurationViewModel.IsDialogVisible = false;
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
+        await Delay(300);
+        Dispatcher.UIThread.RunJobs();
         CaptureScreenshot(window, "01_app_startup");
         Console.WriteLine("OK");
 
