@@ -1,6 +1,0 @@
-# AgValoniaGPS3 parallel agent tasks
-# Format: branch-name<TAB>task prompt
-# Lines starting with # are ignored
-
-feature/hotkeys	Implement the Hotkey Configuration feature described in CONTRIBUTING.md. Wire the Hotkeys button in FileMenuPanel to open a dialog showing 19 configurable actions matching AgOpenGPS v6 defaults (A=AutoSteer, C=CycleLines, F=FieldMenu, G=Flag, M=ManualSection, N=AutoSection, P=SnapPivot, T=NudgeLeft, Y=NudgeRight, V=VehicleSettings, W=SteerWizard, 1-8=Sections). Persist bindings to appsettings.json. Follow existing dialog patterns exactly. Build must pass.
-feature/headland-builder	Implement the Headland Builder feature described in CONTRIBUTING.md. Create a dialog for building headland zones interactively from the field boundary. Follow existing dialog patterns. Build must pass.
