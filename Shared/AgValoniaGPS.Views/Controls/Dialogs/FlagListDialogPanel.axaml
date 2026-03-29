@@ -70,7 +70,7 @@ the Free Software Foundation, either version 3 of the License, or
 
                                             <!-- Distance + direction from vehicle -->
                                             <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0"
-                                                       FontSize="11"
+                                                       FontSize="11" HorizontalAlignment="Left"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        Text="{Binding ., Converter={x:Static local:FlagDistanceConverter.Instance}}"/>
 
