@@ -321,6 +321,14 @@ public partial class MainViewModel : ReactiveObject
         // Restore simulator enabled state and panel visibility
         IsSimulatorEnabled = settings.SimulatorEnabled;
         IsSimulatorPanelVisible = settings.SimulatorEnabled;
+
+        // Initialize tool width from config so implement renders before GPS data flows
+        var config = Models.Configuration.ConfigurationStore.Instance;
+        double initialToolWidth = 0;
+        for (int i = 0; i < config.NumSections && i < 16; i++)
+            initialToolWidth += config.Tool.GetSectionWidth(i) / 100.0;
+        if (initialToolWidth > 0.1)
+            ToolWidth = initialToolWidth;
     }
 
     private void LoadDefaultVehicleProfile()
