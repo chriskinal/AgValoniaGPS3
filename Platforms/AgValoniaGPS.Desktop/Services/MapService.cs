@@ -61,7 +61,7 @@ public class MapService : IMapService
 
     public void Pan(double deltaX, double deltaY) => GetMapControl().Pan(deltaX, deltaY);
 
-    public void PanTo(double x, double y) => GetMapControl().Pan(x, y);
+    public void PanTo(double x, double y) => GetMapControl().PanTo(x, y);
 
     public void Zoom(double factor) => GetMapControl().Zoom(factor);
 
