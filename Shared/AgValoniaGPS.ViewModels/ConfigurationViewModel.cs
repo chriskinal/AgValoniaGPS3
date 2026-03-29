@@ -252,8 +252,8 @@ public partial class ConfigurationViewModel : ReactiveObject
         {
             if (!NumericInputAllowNegative) return;
 
-            // Don't clear _isFirstDigitEntry -- negate should toggle the sign
-            // without affecting whether the next digit replaces or appends
+            // Do NOT change _isFirstDigitEntry -- negate toggles sign without
+            // affecting whether the next digit replaces or appends
 
             if (NumericInputDisplayText.StartsWith("-"))
             {

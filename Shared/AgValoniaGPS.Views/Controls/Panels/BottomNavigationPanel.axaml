@@ -299,32 +299,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Flags Flyout Menu (positioned above the flags menu button) -->
         <Border x:Name="FlagsFlyoutPanel" Classes="FlyoutPanel"
-                Canvas.Left="440" Canvas.Top="-180"
+                Canvas.Left="400" Canvas.Top="-160"
                 IsVisible="False">
-            <StackPanel Spacing="6" MinWidth="120">
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Place flag at current position"
+            <StackPanel Spacing="4" MinWidth="160">
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="Place flag at current position"
                         Command="{Binding PlaceFlagHereCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="24" Height="24" Stretch="Uniform"/>
-                        <TextBlock Text="Place Here" VerticalAlignment="Center" FontSize="12"
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Place Here" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
 
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Tap map to place flag"
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="Tap map to place flag"
                         Command="{Binding PlaceFlagOnClickCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Width="24" Height="24" Stretch="Uniform"/>
-                        <TextBlock Text="Place on Map" VerticalAlignment="Center" FontSize="12"
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Place on Map" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
 
-                <Button Classes="BottomPanelButton" ToolTip.Tip="View and manage all flags"
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="View and manage all flags"
                         Command="{Binding ShowFlagListCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Width="24" Height="24" Stretch="Uniform"/>
-                        <TextBlock Text="Flag List" VerticalAlignment="Center" FontSize="12"
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Flag List" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
