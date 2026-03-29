@@ -727,8 +727,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawGrid(DrawingContext context, double viewWidth, double viewHeight)
     {
-        double gridSize = 500.0; // 500m grid
-        double spacing = 10.0;   // 10m spacing
+        double gridSize = 2000.0;
+
+        // Zoom-dependent grid spacing: 1m minor / 10m major when zoomed in,
+        // 10m minor / 100m major when zoomed out (matches AgOpenGPS behavior)
+        double viewSpan = Math.Max(viewWidth, viewHeight);
+        double spacing, majorEvery;
+        if (viewSpan < 100)       { spacing = 1.0;  majorEvery = 10.0; }
+        else if (viewSpan < 500)  { spacing = 5.0;  majorEvery = 50.0; }
+        else if (viewSpan < 2000) { spacing = 10.0; majorEvery = 100.0; }
+        else                      { spacing = 50.0; majorEvery = 500.0; }
 
         // Calculate visible range (with some padding)
         double minX = _cameraX - viewWidth;
@@ -751,7 +759,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             if (x < -gridSize || x > gridSize) continue;
 
-            bool isMajor = Math.Abs(x % 50.0) < 0.1;
+            bool isMajor = Math.Abs(x % majorEvery) < 0.1;
             bool isAxis = Math.Abs(x) < 0.1;
 
             Pen pen = isAxis ? _gridPenAxisY : (isMajor ? _gridPenMajor : _gridPenMinor);
@@ -763,7 +771,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             if (y < -gridSize || y > gridSize) continue;
 
-            bool isMajor = Math.Abs(y % 50.0) < 0.1;
+            bool isMajor = Math.Abs(y % majorEvery) < 0.1;
             bool isAxis = Math.Abs(y) < 0.1;
 
             Pen pen = isAxis ? _gridPenAxisX : (isMajor ? _gridPenMajor : _gridPenMinor);
