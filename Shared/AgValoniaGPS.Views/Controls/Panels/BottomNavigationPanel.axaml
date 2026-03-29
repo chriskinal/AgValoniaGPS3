@@ -299,33 +299,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Flags Flyout Menu (positioned above the flags menu button) -->
         <Border x:Name="FlagsFlyoutPanel" Classes="FlyoutPanel"
-                Canvas.Left="440" Canvas.Top="-280"
+                Canvas.Left="440" Canvas.Top="-180"
                 IsVisible="False">
-            <StackPanel Spacing="6">
-                <!-- Red Flag -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Place Red Flag"
-                        Command="{Binding PlaceRedFlagCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Stretch="Uniform"/>
+            <StackPanel Spacing="6" MinWidth="120">
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Place flag at current position"
+                        Command="{Binding PlaceFlagHereCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="24" Height="24" Stretch="Uniform"/>
+                        <TextBlock Text="Place Here" VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
                 </Button>
 
-                <!-- Green Flag -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Place Green Flag"
-                        Command="{Binding PlaceGreenFlagCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Stretch="Uniform"/>
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Tap map to place flag"
+                        Command="{Binding PlaceFlagOnClickCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Width="24" Height="24" Stretch="Uniform"/>
+                        <TextBlock Text="Place on Map" VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
                 </Button>
 
-                <!-- Yellow Flag -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Place Yellow Flag"
-                        Command="{Binding PlaceYellowFlagCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Stretch="Uniform"/>
-                </Button>
-
-                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4"/>
-
-                <!-- Delete Flags -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Delete All Flags"
-                        Command="{Binding DeleteAllFlagsCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Cancel64.png" Stretch="Uniform"/>
+                <Button Classes="BottomPanelButton" ToolTip.Tip="View and manage all flags"
+                        Command="{Binding ShowFlagListCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Width="24" Height="24" Stretch="Uniform"/>
+                        <TextBlock Text="Flag List" VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
                 </Button>
             </StackPanel>
         </Border>
