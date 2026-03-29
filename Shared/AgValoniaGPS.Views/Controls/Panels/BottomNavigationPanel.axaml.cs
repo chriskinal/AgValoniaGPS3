@@ -188,8 +188,8 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
         {
             if (_isFlagsFlyoutOpen)
             {
-                // Position relative to the button
-                PositionFlyoutAboveButton(_flagsFlyoutPanel, _flagMenuButton, 320);
+                // Position relative to the button (3 buttons at 40px + spacing)
+                PositionFlyoutAboveButton(_flagsFlyoutPanel, _flagMenuButton, 145);
             }
             _flagsFlyoutPanel.IsVisible = _isFlagsFlyoutOpen;
         }
@@ -215,9 +215,9 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
             // The panel renders the same every time, so this is reliable
             var flyoutHeight = estimatedHeight;
 
-            // Calculate X position - align flyout's right edge roughly with button
-            var flyoutWidth = 80.0; // Single column of 64px buttons + padding
-            var flyoutLeft = panelLeft + buttonPosition.Value.X + buttonBounds.Width - flyoutWidth;
+            // Calculate X position - center flyout over button
+            var flyoutWidth = flyout.Bounds.Width > 10 ? flyout.Bounds.Width : 170;
+            var flyoutLeft = panelLeft + buttonPosition.Value.X + buttonBounds.Width / 2 - flyoutWidth / 2;
 
             // Position flyout above the main panel
             Canvas.SetLeft(flyout, flyoutLeft);

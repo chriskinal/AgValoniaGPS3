@@ -129,7 +129,7 @@ public partial class MainViewModel
     {
         CameraMode.NorthUp => "N",
         CameraMode.HeadingUp => "H",
-        CameraMode.Free => "F",
+        CameraMode.Free => "C",  // "Center" -- tap to recenter on vehicle
         _ => "?"
     };
 
@@ -151,13 +151,22 @@ public partial class MainViewModel
         }
     }
 
+    private double _lastFollowEasting;
+    private double _lastFollowNorthing;
+
     /// <summary>
     /// Called from GPS handler to center camera on vehicle when in follow mode.
+    /// Only pans when position has actually changed (avoids drift from floating-point noise).
     /// </summary>
     public void UpdateCameraFollow(double easting, double northing)
     {
         if (_cameraMode != CameraMode.Free)
         {
+            double de = easting - _lastFollowEasting;
+            double dn = northing - _lastFollowNorthing;
+            if (de * de + dn * dn < 0.000001) return; // < 0.001m, skip
+            _lastFollowEasting = easting;
+            _lastFollowNorthing = northing;
             _mapService.PanTo(easting, northing);
         }
     }
