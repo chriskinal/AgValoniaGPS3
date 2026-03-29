@@ -66,6 +66,9 @@ public interface IMapService
     void SetNorthUp(bool isNorthUp);
     void SetDayMode(bool isDayMode);
 
+    // Flag markers
+    void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags);
+
     // Boundary recording visualization
     void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points);
     void ClearRecordingPoints();

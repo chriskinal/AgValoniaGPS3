@@ -239,6 +239,7 @@ public partial class MainViewModel
 
         var point = new Models.Base.Vec3(local.Easting, local.Northing, 0);
         _flagPoints.Add((point, "Red"));
+        UpdateFlagsOnMap();
         StatusMessage = $"Flag #{_flagPoints.Count} placed at {lat:F6}, {lon:F6}";
         FlagByLatLonError = "";
 

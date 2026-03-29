@@ -129,6 +129,9 @@ public interface ISharedMapControl
     // Grid visibility property
     bool IsGridVisible { get; set; }
 
+    // Flag markers on the map
+    void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags);
+
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
 
@@ -370,6 +373,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Render timer
     private readonly DispatcherTimer _renderTimer;
+
+    // Flag markers
+    private IReadOnlyList<(double Easting, double Northing, string Color)> _flags = Array.Empty<(double, double, string)>();
 
     // FPS tracking (instance-based to avoid double-counting when multiple controls exist)
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
@@ -650,6 +656,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (ShowVehicle && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SvennArrowVisible)
             {
                 DrawSvennArrow(context);
+            }
+
+            // Draw flags
+            if (_flags.Count > 0)
+            {
+                DrawFlags(context);
             }
 
             // Draw boundary offset indicator
@@ -2722,6 +2734,41 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
+    private void DrawFlags(DrawingContext context)
+    {
+        double viewHeight = 200.0 / _zoom;
+        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
+        double worldPerPixel = viewHeight / screenHeight;
+        double flagRadius = 5 * worldPerPixel;
+        double poleHeight = 16 * worldPerPixel;
+        double poleWidth = 1 * worldPerPixel;
+
+        var polePen = new Pen(Brushes.White, poleWidth);
+
+        for (int i = 0; i < _flags.Count; i++)
+        {
+            var flag = _flags[i];
+            var center = new Point(flag.Easting, flag.Northing);
+
+            // Flag color
+            IBrush fillBrush = flag.Color switch
+            {
+                "Red" => Brushes.Red,
+                "Green" => Brushes.LimeGreen,
+                "Yellow" => Brushes.Yellow,
+                _ => Brushes.Red
+            };
+
+            // Draw pole (line from ground to flag top)
+            var poleTop = new Point(center.X, center.Y + poleHeight);
+            context.DrawLine(polePen, center, poleTop);
+
+            // Draw flag marker (filled circle at top of pole)
+            var outlinePen = new Pen(Brushes.White, worldPerPixel * 0.5);
+            context.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
+        }
+    }
+
     private void DrawLabel(DrawingContext context, string text, double x, double y, double worldPerPixel, IBrush brush)
     {
         // Scale font size based on zoom (target ~12 pixels on screen)
@@ -3073,6 +3120,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         get => _autoPanEnabled;
         set => _autoPanEnabled = value;
+    }
+
+    public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags)
+    {
+        _flags = flags;
+        InvalidateVisual();
     }
 
     public void SetBoundary(Boundary? boundary)

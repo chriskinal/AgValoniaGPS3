@@ -664,6 +664,7 @@ public partial class MainViewModel
         {
             int count = _flagPoints.Count;
             _flagPoints.Clear();
+            UpdateFlagsOnMap();
             StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
         });
 

@@ -1433,7 +1433,14 @@ public partial class MainViewModel : ReactiveObject
         var headingRadians = Heading * Math.PI / 180.0;
         var point = new Vec3(Easting, Northing, headingRadians);
         _flagPoints.Add((point, color));
+        UpdateFlagsOnMap();
         StatusMessage = $"{color} flag #{_flagPoints.Count} placed at E:{Easting:F1} N:{Northing:F1}";
+    }
+
+    private void UpdateFlagsOnMap()
+    {
+        var flags = _flagPoints.Select(f => (f.Position.Easting, f.Position.Northing, f.Color)).ToList();
+        _mapService.SetFlags(flags);
     }
 
     // Track management commands

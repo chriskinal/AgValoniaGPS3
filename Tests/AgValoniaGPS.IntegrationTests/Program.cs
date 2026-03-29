@@ -240,11 +240,64 @@ sealed class Program
         // Step 7+: Theme switching and new dialogs (PR #81)
         await RunThemeAndDialogsScenario(window, vm);
 
+        // --- Flag Placement Scenarios (#108) ---
+        await RunFlagScenario(window, vm, simService);
+
         // --- Track Management Scenarios (PR #80) ---
         await RunTrackManagementScenario(window, vm);
 
         // --- Charts Scenarios (PR #79) ---
         await RunChartsScenario(window, vm, simService);
+    }
+
+    static async Task RunFlagScenario(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        // Drive to get a position, then place flags
+        Console.Write("[Step 14] Flags: place red flag at vehicle position... ");
+        vm.SimulatorForwardCommand?.Execute(null);
+        for (int i = 0; i < 20; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        vm.PlaceRedFlagCommand?.Execute(null);
+        await Delay(300);
+        Console.Write($"[status={vm.StatusMessage}] ");
+        CaptureScreenshot(window, "14_flag_red");
+        Console.WriteLine("OK");
+
+        // Place green flag after driving a bit more
+        Console.Write("[Step 15] Flags: place green flag... ");
+        for (int i = 0; i < 20; i++)
+        {
+            simService.Tick(5.0); // steer right
+            await Delay(33);
+        }
+        vm.PlaceGreenFlagCommand?.Execute(null);
+        await Delay(300);
+        CaptureScreenshot(window, "15_flag_green");
+        Console.WriteLine("OK");
+
+        // Place yellow flag
+        Console.Write("[Step 16] Flags: place yellow flag... ");
+        for (int i = 0; i < 20; i++)
+        {
+            simService.Tick(-5.0); // steer left
+            await Delay(33);
+        }
+        vm.PlaceYellowFlagCommand?.Execute(null);
+        await Delay(300);
+        CaptureScreenshot(window, "16_flags_all");
+        Console.WriteLine("OK");
+
+        // Delete all flags
+        Console.Write("[Step 17] Flags: delete all... ");
+        vm.DeleteAllFlagsCommand?.Execute(null);
+        await Delay(300);
+        CaptureScreenshot(window, "17_flags_deleted");
+        Console.Write($"[status={vm.StatusMessage}] ");
+        Console.WriteLine("OK");
     }
 
     static async Task RunThemeAndDialogsScenario(Window window, MainViewModel vm)
