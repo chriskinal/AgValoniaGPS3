@@ -218,13 +218,13 @@ internal class ChartDataServiceFake : IChartDataService
     public bool IsRunning => true;
     public double CurrentTime => _currentTime;
 
-    public ChartSeries SetSteerAngle { get; } = new("Set Angle", 0xFFFFFF00);
-    public ChartSeries ActualSteerAngle { get; } = new("Actual Angle", 0xFF00FF00);
-    public ChartSeries PwmOutput { get; } = new("PWM", 0xFF00FFFF);
-    public ChartSeries HeadingError { get; } = new("Heading Error", 0xFFFF4444);
-    public ChartSeries ImuHeading { get; } = new("IMU Heading", 0xFFFF8800);
-    public ChartSeries GpsHeading { get; } = new("GPS Heading", 0xFFFFFFFF);
-    public ChartSeries CrossTrackError { get; } = new("XTE", 0xFFFF00FF);
+    public ChartSeries SetSteerAngle { get; } = new("Set Angle", 0xFFE05020);
+    public ChartSeries ActualSteerAngle { get; } = new("Actual Angle", 0xFF2080E0);
+    public ChartSeries PwmOutput { get; } = new("PWM", 0xFF00A080);
+    public ChartSeries HeadingError { get; } = new("Heading Error", 0xFFDD3333);
+    public ChartSeries ImuHeading { get; } = new("IMU Heading", 0xFFD07020);
+    public ChartSeries GpsHeading { get; } = new("GPS Heading", 0xFF0088AA);
+    public ChartSeries CrossTrackError { get; } = new("XTE", 0xFFC020C0);
 
     public void Start() { }
     public void Stop() { }

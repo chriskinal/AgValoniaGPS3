@@ -30,14 +30,14 @@ public class ChartDataService : IChartDataService
     private readonly Stopwatch _stopwatch = new();
     private bool _isRunning;
 
-    // Colors: ARGB uint values
-    private const uint ColorYellow = 0xFFFFFF00;
-    private const uint ColorGreen = 0xFF00FF00;
-    private const uint ColorCyan = 0xFF00FFFF;
-    private const uint ColorRed = 0xFFFF4444;
-    private const uint ColorOrange = 0xFFFF8800;
-    private const uint ColorWhite = 0xFFFFFFFF;
-    private const uint ColorMagenta = 0xFFFF00FF;
+    // Colors: ARGB uint values -- saturated for visibility on both light and dark bg
+    private const uint ColorOrangeRed = 0xFFE05020;   // Steer: set angle
+    private const uint ColorBlue = 0xFF2080E0;        // Steer: actual angle
+    private const uint ColorTeal = 0xFF00A080;        // Steer: PWM
+    private const uint ColorRed = 0xFFDD3333;         // Heading: error
+    private const uint ColorDarkOrange = 0xFFD07020;  // Heading: IMU
+    private const uint ColorDarkCyan = 0xFF0088AA;    // Heading: GPS
+    private const uint ColorMagenta = 0xFFC020C0;     // XTE
 
     public double TimeWindowSeconds { get; set; } = 20.0;
     public bool IsRunning => _isRunning;
@@ -60,13 +60,13 @@ public class ChartDataService : IChartDataService
     {
         _autoSteerService = autoSteerService;
 
-        SetSteerAngle = new ChartSeries("Set Angle", ColorYellow);
-        ActualSteerAngle = new ChartSeries("Actual Angle", ColorGreen);
-        PwmOutput = new ChartSeries("PWM", ColorCyan);
+        SetSteerAngle = new ChartSeries("Set Angle", ColorOrangeRed);
+        ActualSteerAngle = new ChartSeries("Actual Angle", ColorBlue);
+        PwmOutput = new ChartSeries("PWM", ColorTeal);
 
         HeadingError = new ChartSeries("Heading Error", ColorRed);
-        ImuHeading = new ChartSeries("IMU Heading", ColorOrange);
-        GpsHeading = new ChartSeries("GPS Heading", ColorWhite);
+        ImuHeading = new ChartSeries("IMU Heading", ColorDarkOrange);
+        GpsHeading = new ChartSeries("GPS Heading", ColorDarkCyan);
 
         CrossTrackError = new ChartSeries("XTE", ColorMagenta);
     }
