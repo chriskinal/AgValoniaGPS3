@@ -21,7 +21,9 @@ using Avalonia.ReactiveUI;
 using Avalonia.Threading;
 using AgValoniaGPS.Desktop;
 using AgValoniaGPS.Desktop.Views;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.IntegrationTests;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.ViewModels;
@@ -190,6 +192,12 @@ sealed class Program
 
         // Step 7+: Theme switching and new dialogs (PR #81)
         await RunThemeAndDialogsScenario(window, vm);
+
+        // --- Track Management Scenarios (PR #80) ---
+        await RunTrackManagementScenario(window, vm);
+
+        // --- Display Wiring Scenarios (PR #82) ---
+        await RunDisplayWiringScenario(window, vm, simService);
     }
 
     static async Task RunThemeAndDialogsScenario(Window window, MainViewModel vm)
@@ -243,8 +251,6 @@ sealed class Program
         await Delay(200);
         Console.WriteLine("OK");
 
-        // --- Track Management Scenarios (PR #80) ---
-        await RunTrackManagementScenario(window, vm);
     }
 
     static async Task RunTrackManagementScenario(Window window, MainViewModel vm)
@@ -318,6 +324,86 @@ sealed class Program
         Console.WriteLine("OK");
 
         Console.WriteLine("--- Track Management Scenarios Complete ---");
+    }
+
+    static async Task RunDisplayWiringScenario(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        var display = ConfigurationStore.Instance.Display;
+
+        // Step 8: Speed text visible while driving
+        Console.Write("[Step 8] Display: speed text in status bar... ");
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        for (int i = 0; i < 30; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        Console.Write($"[speed={vm.SpeedKmh:F1}km/h] ");
+        CaptureScreenshot(window, "display_01_speed_text");
+        Console.WriteLine("OK");
+
+        // Step 9: Activate AB track and drive off-line for guidelines test
+        Console.Write("[Step 9] Display: activate track, drive off-line... ");
+        var track = vm.SavedTracks.FirstOrDefault();
+        if (track != null)
+        {
+            vm.SelectedTrack = track;
+            Console.Write($"[track={track.Name}] ");
+        }
+        await Delay(200);
+        for (int i = 0; i < 30; i++)
+        {
+            simService.Tick(4.0); // steer right off the AB line
+            await Delay(33);
+        }
+        Console.WriteLine("OK");
+
+        // Step 10: ExtraGuidelines ON
+        Console.Write("[Step 10] Display: ExtraGuidelines ON... ");
+        display.ExtraGuidelines = true;
+        display.ExtraGuidelinesCount = 5;
+        await Delay(500);
+        CaptureScreenshot(window, "display_02_guidelines_ON");
+        Console.WriteLine("OK");
+
+        // Step 11: ExtraGuidelines OFF
+        Console.Write("[Step 11] Display: ExtraGuidelines OFF... ");
+        display.ExtraGuidelines = false;
+        await Delay(500);
+        CaptureScreenshot(window, "display_03_guidelines_OFF");
+        Console.WriteLine("OK");
+
+        // Step 12: UTurn button visible (track is active)
+        Console.Write("[Step 12] Display: UTurn button visible... ");
+        display.UTurnButtonVisible = true;
+        await Delay(300);
+        CaptureScreenshot(window, "display_04_uturn_ON");
+        Console.Write($"[isVisible={vm.IsUTurnButtonVisible}] ");
+        Console.WriteLine("OK");
+
+        // Step 13: UTurn button hidden
+        Console.Write("[Step 13] Display: UTurn button hidden... ");
+        display.UTurnButtonVisible = false;
+        // Force re-evaluation by toggling track selection
+        var currentTrack = vm.SelectedTrack;
+        vm.SelectedTrack = null;
+        vm.SelectedTrack = currentTrack;
+        await Delay(300);
+        CaptureScreenshot(window, "display_05_uturn_OFF");
+        Console.Write($"[isVisible={vm.IsUTurnButtonVisible}] ");
+        Console.WriteLine("OK");
+        display.UTurnButtonVisible = true; // restore
+
+        // Step 14: AutoDayNight config in DisplayConfig tab
+        Console.Write("[Step 14] Display: AutoDayNight config tab... ");
+        vm.ShowConfigurationDialogCommand?.Execute(null);
+        await Delay(800);
+        CaptureScreenshot(window, "display_06_config_daynight");
+        if (vm.ConfigurationViewModel != null)
+            vm.ConfigurationViewModel.IsDialogVisible = false;
+        Console.WriteLine("OK");
     }
 
     /// <summary>

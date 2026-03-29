@@ -124,10 +124,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
-            <!-- 4. YouTurn Toggle (only visible when track is active) -->
+            <!-- 4. YouTurn Toggle (visible when track active AND UTurn button enabled in config) -->
             <Button Classes="RightPanelButton" ToolTip.Tip="YouTurn Auto U-Turn"
                     Command="{Binding ToggleYouTurnCommand}"
-                    IsVisible="{Binding IsAutoSteerAvailable}">
+                    IsVisible="{Binding IsUTurnButtonVisible}">
                 <Panel>
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnYes.png" Stretch="Uniform"
                            IsVisible="{Binding IsYouTurnEnabled}"/>

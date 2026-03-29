@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
+using AgValoniaGPS.Models.Configuration;
+using Avalonia.Threading;
 using ReactiveUI;
 
 namespace AgValoniaGPS.ViewModels;
@@ -150,6 +153,69 @@ public partial class MainViewModel
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    #endregion
+
+    #region Auto Day/Night
+
+    private DispatcherTimer? _autoDayNightTimer;
+
+    private void InitializeAutoDayNight()
+    {
+        _autoDayNightTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(60)
+        };
+        _autoDayNightTimer.Tick += (_, _) => CheckAutoDayNight();
+        _autoDayNightTimer.Start();
+    }
+
+    /// <summary>
+    /// Switch day/night mode automatically based on local time.
+    /// Uses configurable DayStartHour and NightStartHour from DisplayConfig.
+    /// Only applies when AutoDayNight is enabled in DisplayConfig.
+    /// </summary>
+    private void CheckAutoDayNight()
+    {
+        var display = ConfigurationStore.Instance.Display;
+        if (!display.AutoDayNight) return;
+
+        int hour = DateTime.Now.Hour;
+        int dayStart = display.DayStartHour;
+        int nightStart = display.NightStartHour;
+
+        bool shouldBeDay;
+        if (dayStart < nightStart)
+            shouldBeDay = hour >= dayStart && hour < nightStart;
+        else
+            // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
+            shouldBeDay = hour >= dayStart || hour < nightStart;
+
+        if (IsDayMode != shouldBeDay)
+        {
+            IsDayMode = shouldBeDay;
+            _mapService.SetDayMode(shouldBeDay);
+        }
+    }
+
+    #endregion
+
+    #region ConfigurationStore Display Forwarding
+
+    /// <summary>
+    /// UTurn button visible when track available AND config allows it.
+    /// </summary>
+    public bool IsUTurnButtonVisible =>
+        IsAutoSteerAvailable && ConfigurationStore.Instance.Display.UTurnButtonVisible;
+
+    /// <summary>
+    /// Notify IsUTurnButtonVisible when IsAutoSteerAvailable changes.
+    /// Called from MainViewModel.Guidance.cs when track state changes.
+    /// </summary>
+    private void RaiseUTurnButtonVisibleChanged()
+    {
+        this.RaisePropertyChanged(nameof(IsUTurnButtonVisible));
+    }
 
     #endregion
 }

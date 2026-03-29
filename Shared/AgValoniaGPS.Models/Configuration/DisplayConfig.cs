@@ -237,6 +237,20 @@ public class DisplayConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _autoDayNight, value);
     }
 
+    private int _dayStartHour = 6;
+    public int DayStartHour
+    {
+        get => _dayStartHour;
+        set => this.RaiseAndSetIfChanged(ref _dayStartHour, Math.Clamp(value, 0, 23));
+    }
+
+    private int _nightStartHour = 20;
+    public int NightStartHour
+    {
+        get => _nightStartHour;
+        set => this.RaiseAndSetIfChanged(ref _nightStartHour, Math.Clamp(value, 0, 23));
+    }
+
     private bool _svennArrowVisible;
     public bool SvennArrowVisible
     {
