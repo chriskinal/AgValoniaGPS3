@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using ReactiveUI;
+
 namespace AgValoniaGPS.Models
 {
     public enum FlagColor
@@ -22,27 +24,30 @@ namespace AgValoniaGPS.Models
         Purple = 5, Cyan = 6, Pink = 7, White = 8, Black = 9
     }
 
-    public class Flag
+    public class Flag : ReactiveObject
     {
+        private FlagColor _flagColor;
+        private string _name = "";
+        private string _notes = "";
+
         public Flag(Wgs84 wgs84, GeoCoord geoCoord, GeoDir heading, FlagColor flagColor, int uniqueNumber, string notes)
         {
             Wgs84 = wgs84;
             GeoCoordDir = new GeoCoordDir(geoCoord, heading);
-            FlagColor = flagColor;
+            _flagColor = flagColor;
             UniqueNumber = uniqueNumber;
-            Notes = notes;
-            Name = $"Flag {uniqueNumber}";
+            _notes = notes;
+            _name = $"Flag {uniqueNumber}";
         }
 
-        // Simplified constructor for quick placement (no WGS84 / GeoCoord)
         public Flag(double easting, double northing, FlagColor color, int id, string name)
         {
             Wgs84 = new Wgs84(0, 0);
             GeoCoordDir = new GeoCoordDir(new GeoCoord(northing, easting), new GeoDir(0));
-            FlagColor = color;
+            _flagColor = color;
             UniqueNumber = id;
-            Notes = "";
-            Name = name;
+            _notes = "";
+            _name = name;
         }
 
         public Wgs84 Wgs84 { get; }
@@ -55,14 +60,26 @@ namespace AgValoniaGPS.Models
         public double Northing => GeoCoord.Northing;
         public double Easting => GeoCoord.Easting;
 
-        public FlagColor FlagColor { get; set; }
-        public int UniqueNumber { get; set; }
-        public string Name { get; set; }
-        public string Notes { get; set; }
+        public FlagColor FlagColor
+        {
+            get => _flagColor;
+            set => this.RaiseAndSetIfChanged(ref _flagColor, value);
+        }
 
-        /// <summary>
-        /// Convert FlagColor to a hex color string for rendering.
-        /// </summary>
+        public int UniqueNumber { get; set; }
+
+        public string Name
+        {
+            get => _name;
+            set => this.RaiseAndSetIfChanged(ref _name, value);
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set => this.RaiseAndSetIfChanged(ref _notes, value);
+        }
+
         public static string ColorToHex(FlagColor color) => color switch
         {
             FlagColor.Red => "#FF0000",

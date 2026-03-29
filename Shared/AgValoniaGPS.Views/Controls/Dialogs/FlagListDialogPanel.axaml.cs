@@ -169,7 +169,8 @@ public class FlagDistanceConverter : IValueConverter
     public static double VehicleEasting { get; set; }
     public static double VehicleNorthing { get; set; }
 
-    private static readonly string[] Arrows = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+    // Unicode arrows for 8 cardinal directions (N, NE, E, SE, S, SW, W, NW)
+    private static readonly string[] Arrows = { "\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196" };
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

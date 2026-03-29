@@ -684,8 +684,11 @@ public partial class MainViewModel
         {
             IsPlaceFlagOnClickMode = !IsPlaceFlagOnClickMode;
             StatusMessage = IsPlaceFlagOnClickMode
-                ? "Tap on map to place a flag"
+                ? "Tap on map to place a flag (tap again to cancel)"
                 : "Flag placement cancelled";
+            // Close any open dialog so the map is visible for tapping
+            if (IsPlaceFlagOnClickMode)
+                State.UI.CloseDialog();
         });
 
         // Section control commands
