@@ -291,6 +291,14 @@ sealed class Program
         CaptureScreenshot(window, "16_flags_all");
         Console.WriteLine("OK");
 
+        // Place flag by world position (simulating map click)
+        Console.Write("[Step 16b] Flags: place flag at world position (map click)... ");
+        vm.PlaceFlagAtWorldPosition(20.0, 30.0, "Green");
+        await Delay(300);
+        Console.Write($"[mode={vm.IsPlaceFlagOnClickMode}] ");
+        CaptureScreenshot(window, "16b_flag_mapclick");
+        Console.WriteLine("OK");
+
         // Delete all flags
         Console.Write("[Step 17] Flags: delete all... ");
         vm.DeleteAllFlagsCommand?.Execute(null);

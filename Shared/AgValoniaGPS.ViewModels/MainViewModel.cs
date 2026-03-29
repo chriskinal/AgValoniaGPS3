@@ -1318,7 +1318,33 @@ public partial class MainViewModel : ReactiveObject
     public bool EnableABClickSelection => CurrentABCreationMode == ABCreationMode.DrawAB ||
                                           CurrentABCreationMode == ABCreationMode.DriveAB ||
                                           CurrentABCreationMode == ABCreationMode.Curve ||
-                                          CurrentABCreationMode == ABCreationMode.DrawCurve;
+                                          CurrentABCreationMode == ABCreationMode.DrawCurve ||
+                                          _isPlaceFlagOnClickMode;
+
+    private bool _isPlaceFlagOnClickMode;
+    public bool IsPlaceFlagOnClickMode
+    {
+        get => _isPlaceFlagOnClickMode;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isPlaceFlagOnClickMode, value);
+            this.RaisePropertyChanged(nameof(EnableABClickSelection));
+        }
+    }
+
+    /// <summary>
+    /// Place a flag at the given world coordinates (from map click).
+    /// </summary>
+    public void PlaceFlagAtWorldPosition(double easting, double northing, string color = "Red")
+    {
+        var point = new Vec3(easting, northing, 0);
+        _flagPoints.Add((point, color));
+        UpdateFlagsOnMap();
+        StatusMessage = $"{color} flag #{_flagPoints.Count} at E:{easting:F1} N:{northing:F1}";
+
+        // Exit flag click mode after placing
+        IsPlaceFlagOnClickMode = false;
+    }
 
     public string ABCreationInstructions
     {
@@ -2608,6 +2634,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? PlaceGreenFlagCommand { get; private set; }
     public ICommand? PlaceYellowFlagCommand { get; private set; }
     public ICommand? DeleteAllFlagsCommand { get; private set; }
+    public ICommand? PlaceFlagOnClickCommand { get; private set; }
 
     // Right Navigation Panel Commands
     public ICommand? ToggleContourModeCommand { get; private set; }

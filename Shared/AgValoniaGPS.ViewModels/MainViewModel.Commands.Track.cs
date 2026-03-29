@@ -668,6 +668,14 @@ public partial class MainViewModel
             StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
         });
 
+        PlaceFlagOnClickCommand = ReactiveCommand.Create(() =>
+        {
+            IsPlaceFlagOnClickMode = !IsPlaceFlagOnClickMode;
+            StatusMessage = IsPlaceFlagOnClickMode
+                ? "Tap on map to place a flag"
+                : "Flag placement cancelled";
+        });
+
         // Section control commands
         ToggleManualModeCommand = ReactiveCommand.Create(() =>
         {

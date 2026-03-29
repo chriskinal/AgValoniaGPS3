@@ -283,6 +283,12 @@ public partial class MainView : UserControl
     {
         if (_viewModel == null) return;
 
+        if (_viewModel.IsPlaceFlagOnClickMode)
+        {
+            _viewModel.PlaceFlagAtWorldPosition(e.Easting, e.Northing);
+            return;
+        }
+
         // For DriveAB mode, we use current GPS position (not the clicked position)
         // For DrawAB mode, we use the clicked map position
         // For Curve mode, tap finishes recording

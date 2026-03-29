@@ -200,6 +200,13 @@ public partial class MainWindow : Window
     {
         if (ViewModel == null) return;
 
+        // Flag placement mode takes priority
+        if (ViewModel.IsPlaceFlagOnClickMode)
+        {
+            ViewModel.PlaceFlagAtWorldPosition(e.Easting, e.Northing);
+            return;
+        }
+
         System.Diagnostics.Debug.WriteLine($"[OnMapClicked] Mode={ViewModel.CurrentABCreationMode}, Step={ViewModel.CurrentABPointStep}, Easting={e.Easting:F2}, Northing={e.Northing:F2}");
 
         // For DriveAB mode, we use current GPS position (not the clicked position)
