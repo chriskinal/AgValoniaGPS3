@@ -94,6 +94,10 @@ public interface ISharedMapControl
     void SetIsInYouTurn(bool isInTurn);
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
 
+    // Recorded path / contour strip visualization
+    void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);
+    void SetContourStrips(IReadOnlyList<AgValoniaGPS.Models.Track.Track> strips);
+
     // Coverage visualization
     void SetCoveragePatches(IReadOnlyList<CoveragePatch> patches);
 
@@ -330,6 +334,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private AgValoniaGPS.Models.Track.Track? _nextTrack; // Next track to follow after U-turn
     private bool _isInYouTurn; // When true, current line is dotted, next line is solid
     private AgValoniaGPS.Models.Position? _pendingPointA; // Point A while waiting for Point B
+    private IReadOnlyList<AgValoniaGPS.Models.Track.Track> _recordedPaths = Array.Empty<AgValoniaGPS.Models.Track.Track>();
+    private IReadOnlyList<AgValoniaGPS.Models.Track.Track> _contourStrips = Array.Empty<AgValoniaGPS.Models.Track.Track>();
 
     // Pens and brushes (reused for performance)
     private IBrush _backgroundBrush;
@@ -601,8 +607,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 DrawClipLine(context);
             }
 
-            // Draw Track (active track and pending Point A)
-            if (_activeTrack != null || _pendingPointA != null)
+            // Draw Track (active track, pending Point A, recorded paths, contour strips)
+            if (_activeTrack != null || _pendingPointA != null || _recordedPaths.Count > 0 || _contourStrips.Count > 0)
             {
                 DrawTrack(context);
             }
@@ -2403,6 +2409,39 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var nextLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(0, 200, 255)), lineThickness);
         var nextLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 200, 255)), lineThickness * 0.5);
 
+        // Recorded path pen (semi-transparent magenta)
+        var recordedPathPen = new Pen(new SolidColorBrush(Color.FromArgb(100, 200, 100, 255)), lineThickness * 0.75);
+        // Contour strip pen (semi-transparent green)
+        var contourStripPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 50, 220, 50)), lineThickness * 0.75);
+
+        // Draw recorded paths (behind everything else)
+        foreach (var path in _recordedPaths)
+        {
+            if (path.IsVisible && path.Points.Count >= 2)
+            {
+                for (int i = 0; i < path.Points.Count - 1; i++)
+                {
+                    var p1 = new Point(path.Points[i].Easting, path.Points[i].Northing);
+                    var p2 = new Point(path.Points[i + 1].Easting, path.Points[i + 1].Northing);
+                    context.DrawLine(recordedPathPen, p1, p2);
+                }
+            }
+        }
+
+        // Draw contour strips (behind active track but above recorded paths)
+        foreach (var strip in _contourStrips)
+        {
+            if (strip.IsVisible && strip.Points.Count >= 2)
+            {
+                for (int i = 0; i < strip.Points.Count - 1; i++)
+                {
+                    var p1 = new Point(strip.Points[i].Easting, strip.Points[i].Northing);
+                    var p2 = new Point(strip.Points[i + 1].Easting, strip.Points[i + 1].Northing);
+                    context.DrawLine(contourStripPen, p1, p2);
+                }
+            }
+        }
+
         // Draw pending Point A (green marker while waiting for Point B)
         if (_pendingPointA != null)
         {
@@ -3035,6 +3074,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetPendingPointA(AgValoniaGPS.Models.Position? pointA)
     {
         _pendingPointA = pointA;
+    }
+
+    public void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths)
+    {
+        _recordedPaths = paths;
+    }
+
+    public void SetContourStrips(IReadOnlyList<AgValoniaGPS.Models.Track.Track> strips)
+    {
+        _contourStrips = strips;
     }
 
     // Coverage visualization

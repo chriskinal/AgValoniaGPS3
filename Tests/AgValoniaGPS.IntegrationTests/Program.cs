@@ -23,6 +23,7 @@ using AgValoniaGPS.Desktop;
 using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.IntegrationTests;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -111,6 +112,14 @@ sealed class Program
         // a new instance each time. The MainWindow has the real one.
         var vm = (MainViewModel)window.DataContext!;
         var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+
+        // Configure realistic implement: 12m sprayer with 6 sections (2m each)
+        var config = ConfigurationStore.Instance;
+        config.Tool.Width = 12.0;
+        config.NumSections = 6;
+        for (int i = 0; i < 6; i++)
+            config.Tool.SetSectionWidth(i, 200.0); // 200cm = 2m per section
+        Console.WriteLine($"[Setup] Tool: {config.Tool.Width}m, {config.NumSections} sections, actual={config.ActualToolWidth}m");
 
         // Step 1: App startup
         Console.Write("[Step 1] App startup... ");
@@ -233,6 +242,82 @@ sealed class Program
         vm.CloseViewSettingsDialogCommand?.Execute(null);
         await Delay(200);
         Console.WriteLine("OK");
+
+        // --- Track Management Scenarios (PR #80) ---
+        await RunTrackManagementScenario(window, vm);
+    }
+
+    static async Task RunTrackManagementScenario(Window window, MainViewModel vm)
+    {
+        Console.WriteLine("\n--- Track Management Scenarios ---");
+
+        // Track 1: Open tracks dialog showing the loaded AB line
+        Console.Write("[Tracks 1] Tracks dialog with AB line listed... ");
+        vm.ShowTracksDialogCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[SavedTracks={vm.SavedTracks.Count}] ");
+        CaptureScreenshot(window, "tracks_01_dialog_with_track");
+        Console.WriteLine("OK");
+
+        // Track 1.5: Build headland from boundary (enables autosteer validation)
+        Console.Write("[Tracks 1b] Build headland... ");
+        vm.State.UI.CloseDialog();
+        vm.HeadlandDistance = 12.0; // 12m headland for 200x160m field
+        vm.BuildHeadlandCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[HasHeadland={vm.HasHeadland}] ");
+        CaptureScreenshot(window, "tracks_01b_headland_built");
+        Console.WriteLine("OK");
+
+        // Track 2: Activate AB line + engage autosteer for real guidance
+        Console.Write("[Tracks 2] Activate AB line + autosteer... ");
+        vm.State.UI.CloseDialog();
+        if (vm.SavedTracks.Count > 0)
+        {
+            vm.SelectedTrack = vm.SavedTracks[0];
+            // Engage autosteer via command (headland was built in step 1b)
+            vm.ToggleAutoSteerCommand?.Execute(null);
+            Console.Write($"[Active={vm.SelectedTrack?.Name}, AutoSteer={vm.IsAutoSteerEngaged}] ");
+        }
+        await Delay(500);
+        CaptureScreenshot(window, "tracks_02_guidance_line_active");
+        Console.WriteLine("OK");
+
+        // Track 3: Drive with autosteer -- tractor starts 6m east of the AB line
+        // (AB line is at easting=6, tractor starts at easting=0)
+        // Autosteer must actively steer the tractor onto the line
+        Console.Write("[Tracks 3] Drive with autosteer (6m offset start)... ");
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
+        Console.WriteLine();
+        for (int i = 0; i < 120; i++)
+        {
+            simService.Tick(vm.SimulatorSteerAngle);
+            await Delay(33);
+            if (i % 20 == 19)
+            {
+                double xte = vm.State.Guidance.CrossTrackError;
+                Console.WriteLine($"  tick {i + 1}: XTE={xte:F3}m, Steer={vm.SimulatorSteerAngle:F1}");
+            }
+        }
+        double finalXte = Math.Abs(vm.State.Guidance.CrossTrackError);
+        Console.Write($"  Final XTE={finalXte:F3}m ");
+        if (finalXte > 0.5)
+            throw new Exception($"XTE too large: {finalXte:F3}m -- autosteer not following guidance line");
+        CaptureScreenshot(window, "tracks_03_guidance_driving");
+        Console.WriteLine("OK");
+
+        // Track 4: Open import tracks dialog (OtherField has tracks to import)
+        Console.Write("[Tracks 4] Import tracks dialog... ");
+        vm.ImportTracksCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[ImportFields={vm.ImportFieldsList.Count}] ");
+        CaptureScreenshot(window, "tracks_04_import_dialog");
+        vm.State.UI.CloseDialog();
+        Console.WriteLine("OK");
+
+        Console.WriteLine("--- Track Management Scenarios Complete ---");
     }
 
     /// <summary>

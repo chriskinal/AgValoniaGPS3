@@ -1,0 +1,9 @@
+2026-March-28 02:00:00 PM
+$FieldDir
+OtherField
+$Offsets
+0,0
+Convergence
+0
+StartFix
+42.03500000,-93.63000000

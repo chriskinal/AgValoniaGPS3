@@ -67,6 +67,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsLogViewerDialogVisible));
                 this.RaisePropertyChanged(nameof(IsFlagByLatLonDialogVisible));
                 this.RaisePropertyChanged(nameof(IsViewSettingsDialogVisible));
+                this.RaisePropertyChanged(nameof(IsImportTracksDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -104,6 +105,7 @@ public class UIState : ReactiveObject
     public bool IsLogViewerDialogVisible => ActiveDialog == DialogType.LogViewer;
     public bool IsFlagByLatLonDialogVisible => ActiveDialog == DialogType.FlagByLatLon;
     public bool IsViewSettingsDialogVisible => ActiveDialog == DialogType.ViewSettings;
+    public bool IsImportTracksDialogVisible => ActiveDialog == DialogType.ImportTracks;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -220,7 +222,8 @@ public enum DialogType
     About,
     LogViewer,
     FlagByLatLon,
-    ViewSettings
+    ViewSettings,
+    ImportTracks
 }
 
 /// <summary>

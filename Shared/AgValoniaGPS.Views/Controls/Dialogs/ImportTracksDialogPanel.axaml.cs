@@ -14,61 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using System;
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
-using AgValoniaGPS.Models.Track;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
 
-public partial class TracksDialogPanel : UserControl
+public partial class ImportTracksDialogPanel : UserControl
 {
-    public TracksDialogPanel()
+    public ImportTracksDialogPanel()
     {
         InitializeComponent();
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Close dialog when clicking the backdrop
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
             vm.State.UI.CloseDialog();
         }
     }
 
-    private void TrackItem_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void FieldItem_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (DataContext is not AgValoniaGPS.ViewModels.MainViewModel vm)
             return;
 
-        // Get the track from the clicked item's DataContext (Border wraps the Grid)
+        // Get field name from the Border's DataContext (string binding)
         var element = sender as Avalonia.Controls.Control;
-        var clickedTrack = element?.DataContext as Track;
+        var fieldName = element?.DataContext as string;
 
-        if (clickedTrack == null)
-            return;
-
-        // Mark event as handled to prevent ListBox from overriding our changes
-        e.Handled = true;
-
-        Debug.WriteLine($"[Track] PointerReleased on: {clickedTrack.Name}, IsActive={clickedTrack.IsActive}, SelectedTrack={vm.SelectedTrack?.Name ?? "null"}");
-
-        // Check if this track is the currently active one (compare by reference or name)
-        bool isCurrentlyActive = vm.SelectedTrack == clickedTrack;
-
-        if (isCurrentlyActive)
+        if (!string.IsNullOrEmpty(fieldName))
         {
-            // Deactivate
-            Debug.WriteLine($"[Track] Deactivating: {clickedTrack.Name}");
-            vm.SelectedTrack = null;
-        }
-        else
-        {
-            // Activate
-            Debug.WriteLine($"[Track] Activating: {clickedTrack.Name}");
-            vm.SelectedTrack = clickedTrack;
+            vm.ImportTracksFromFieldCommand?.Execute(fieldName);
         }
     }
 }
