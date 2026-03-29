@@ -2750,12 +2750,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var flag = _flags[i];
             var center = new Point(flag.Easting, flag.Northing);
 
-            // Flag color
+            // Flag color (matches FlagColor enum names)
             IBrush fillBrush = flag.Color switch
             {
                 "Red" => Brushes.Red,
-                "Green" => Brushes.LimeGreen,
-                "Yellow" => Brushes.Yellow,
+                "Green" => new SolidColorBrush(Color.FromRgb(0, 204, 0)),
+                "Yellow" => new SolidColorBrush(Color.FromRgb(255, 204, 0)),
+                "Blue" => new SolidColorBrush(Color.FromRgb(32, 128, 224)),
+                "Orange" => new SolidColorBrush(Color.FromRgb(255, 136, 0)),
+                "Purple" => new SolidColorBrush(Color.FromRgb(153, 51, 204)),
+                "Cyan" => new SolidColorBrush(Color.FromRgb(0, 187, 204)),
+                "Pink" => new SolidColorBrush(Color.FromRgb(255, 102, 170)),
+                "White" => Brushes.White,
+                "Black" => new SolidColorBrush(Color.FromRgb(51, 51, 51)),
                 _ => Brushes.Red
             };
 

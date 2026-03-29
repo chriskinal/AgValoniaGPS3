@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Input;
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Logging;
 using Avalonia.Threading;
@@ -237,10 +238,11 @@ public partial class MainViewModel
         var converter = new Models.Base.GeoConversion(originLat, originLon);
         var local = converter.ToLocal(lat, lon);
 
-        var point = new Models.Base.Vec3(local.Easting, local.Northing, 0);
-        _flagPoints.Add((point, "Red"));
+        var id = _nextFlagId++;
+        var flag = new Flag(local.Easting, local.Northing, FlagColor.Red, id, $"Flag {id}");
+        Flags.Add(flag);
         UpdateFlagsOnMap();
-        StatusMessage = $"Flag #{_flagPoints.Count} placed at {lat:F6}, {lon:F6}";
+        StatusMessage = $"Flag '{flag.Name}' placed at {lat:F6}, {lon:F6}";
         FlagByLatLonError = "";
 
         State.UI.CloseDialog();

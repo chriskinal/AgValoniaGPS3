@@ -14,9 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-﻿namespace AgValoniaGPS.Models
+namespace AgValoniaGPS.Models
 {
-    public enum FlagColor { Red = 0, Green = 1, Yellow = 2 }
+    public enum FlagColor
+    {
+        Red = 0, Green = 1, Yellow = 2, Blue = 3, Orange = 4,
+        Purple = 5, Cyan = 6, Pink = 7, White = 8, Black = 9
+    }
 
     public class Flag
     {
@@ -27,6 +31,18 @@
             FlagColor = flagColor;
             UniqueNumber = uniqueNumber;
             Notes = notes;
+            Name = $"Flag {uniqueNumber}";
+        }
+
+        // Simplified constructor for quick placement (no WGS84 / GeoCoord)
+        public Flag(double easting, double northing, FlagColor color, int id, string name)
+        {
+            Wgs84 = new Wgs84(0, 0);
+            GeoCoordDir = new GeoCoordDir(new GeoCoord(northing, easting), new GeoDir(0));
+            FlagColor = color;
+            UniqueNumber = id;
+            Notes = "";
+            Name = name;
         }
 
         public Wgs84 Wgs84 { get; }
@@ -39,10 +55,27 @@
         public double Northing => GeoCoord.Northing;
         public double Easting => GeoCoord.Easting;
 
-        public FlagColor FlagColor { get; }
+        public FlagColor FlagColor { get; set; }
         public int UniqueNumber { get; set; }
-
+        public string Name { get; set; }
         public string Notes { get; set; }
 
+        /// <summary>
+        /// Convert FlagColor to a hex color string for rendering.
+        /// </summary>
+        public static string ColorToHex(FlagColor color) => color switch
+        {
+            FlagColor.Red => "#FF0000",
+            FlagColor.Green => "#00CC00",
+            FlagColor.Yellow => "#FFCC00",
+            FlagColor.Blue => "#2080E0",
+            FlagColor.Orange => "#FF8800",
+            FlagColor.Purple => "#9933CC",
+            FlagColor.Cyan => "#00BBCC",
+            FlagColor.Pink => "#FF66AA",
+            FlagColor.White => "#FFFFFF",
+            FlagColor.Black => "#333333",
+            _ => "#FF0000"
+        };
     }
 }

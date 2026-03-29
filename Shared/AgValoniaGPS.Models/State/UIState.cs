@@ -66,6 +66,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsAboutDialogVisible));
                 this.RaisePropertyChanged(nameof(IsLogViewerDialogVisible));
                 this.RaisePropertyChanged(nameof(IsFlagByLatLonDialogVisible));
+                this.RaisePropertyChanged(nameof(IsFlagListDialogVisible));
                 this.RaisePropertyChanged(nameof(IsViewSettingsDialogVisible));
                 this.RaisePropertyChanged(nameof(IsImportTracksDialogVisible));
 
@@ -104,6 +105,7 @@ public class UIState : ReactiveObject
     public bool IsAboutDialogVisible => ActiveDialog == DialogType.About;
     public bool IsLogViewerDialogVisible => ActiveDialog == DialogType.LogViewer;
     public bool IsFlagByLatLonDialogVisible => ActiveDialog == DialogType.FlagByLatLon;
+    public bool IsFlagListDialogVisible => ActiveDialog == DialogType.FlagList;
     public bool IsViewSettingsDialogVisible => ActiveDialog == DialogType.ViewSettings;
     public bool IsImportTracksDialogVisible => ActiveDialog == DialogType.ImportTracks;
 
@@ -222,6 +224,7 @@ public enum DialogType
     About,
     LogViewer,
     FlagByLatLon,
+    FlagList,
     ViewSettings,
     ImportTracks
 }

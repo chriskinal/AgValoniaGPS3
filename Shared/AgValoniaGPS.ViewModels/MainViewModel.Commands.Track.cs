@@ -645,27 +645,39 @@ public partial class MainViewModel
         });
 
         // Flags Commands
-        PlaceRedFlagCommand = ReactiveCommand.Create(() =>
-        {
-            PlaceFlag("Red");
-        });
+        PlaceRedFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Red));
+        PlaceGreenFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Green));
+        PlaceYellowFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Yellow));
 
-        PlaceGreenFlagCommand = ReactiveCommand.Create(() =>
-        {
-            PlaceFlag("Green");
-        });
-
-        PlaceYellowFlagCommand = ReactiveCommand.Create(() =>
-        {
-            PlaceFlag("Yellow");
-        });
+        PlaceFlagHereCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Red));
 
         DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
-            int count = _flagPoints.Count;
-            _flagPoints.Clear();
+            int count = Flags.Count;
+            Flags.Clear();
+            _nextFlagId = 1;
             UpdateFlagsOnMap();
             StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
+        });
+
+        DeleteFlagCommand = ReactiveCommand.Create<object>(param =>
+        {
+            if (param is Flag flag)
+            {
+                Flags.Remove(flag);
+                UpdateFlagsOnMap();
+                StatusMessage = $"Deleted flag '{flag.Name}'";
+            }
+        });
+
+        ShowFlagListCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.FlagList);
+        });
+
+        CloseFlagListCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
         });
 
         PlaceFlagOnClickCommand = ReactiveCommand.Create(() =>

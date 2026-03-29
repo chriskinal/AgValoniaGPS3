@@ -293,10 +293,19 @@ sealed class Program
 
         // Place flag by world position (simulating map click)
         Console.Write("[Step 16b] Flags: place flag at world position (map click)... ");
-        vm.PlaceFlagAtWorldPosition(20.0, 30.0, "Green");
+        vm.PlaceFlagAtWorldPosition(20.0, 30.0, AgValoniaGPS.Models.FlagColor.Green);
         await Delay(300);
         Console.Write($"[mode={vm.IsPlaceFlagOnClickMode}] ");
         CaptureScreenshot(window, "16b_flag_mapclick");
+        Console.WriteLine("OK");
+
+        // Open flag list dialog
+        Console.Write("[Step 16c] Flags: flag list dialog... ");
+        vm.ShowFlagListCommand?.Execute(null);
+        await Delay(500);
+        Console.Write($"[flagCount={vm.Flags.Count}] ");
+        CaptureScreenshot(window, "16c_flag_list_dialog");
+        vm.CloseFlagListCommand?.Execute(null);
         Console.WriteLine("OK");
 
         // Delete all flags

@@ -1335,12 +1335,13 @@ public partial class MainViewModel : ReactiveObject
     /// <summary>
     /// Place a flag at the given world coordinates (from map click).
     /// </summary>
-    public void PlaceFlagAtWorldPosition(double easting, double northing, string color = "Red")
+    public void PlaceFlagAtWorldPosition(double easting, double northing, FlagColor color = FlagColor.Red)
     {
-        var point = new Vec3(easting, northing, 0);
-        _flagPoints.Add((point, color));
+        var id = _nextFlagId++;
+        var flag = new Flag(easting, northing, color, id, $"Flag {id}");
+        Flags.Add(flag);
         UpdateFlagsOnMap();
-        StatusMessage = $"{color} flag #{_flagPoints.Count} at E:{easting:F1} N:{northing:F1}";
+        StatusMessage = $"{color} flag '{flag.Name}' at E:{easting:F1} N:{northing:F1}";
 
         // Exit flag click mode after placing
         IsPlaceFlagOnClickMode = false;
@@ -1445,10 +1446,11 @@ public partial class MainViewModel : ReactiveObject
         }
     }
 
-    // Flag points (simple Vec3 list for basic flag placement)
-    private readonly List<(Vec3 Position, string Color)> _flagPoints = new();
+    // Flag markers
+    private int _nextFlagId = 1;
+    public ObservableCollection<Flag> Flags { get; } = new();
 
-    private void PlaceFlag(string color)
+    private void PlaceFlag(FlagColor color)
     {
         if (Easting == 0 && Northing == 0)
         {
@@ -1456,16 +1458,17 @@ public partial class MainViewModel : ReactiveObject
             return;
         }
 
-        var headingRadians = Heading * Math.PI / 180.0;
-        var point = new Vec3(Easting, Northing, headingRadians);
-        _flagPoints.Add((point, color));
+        var id = _nextFlagId++;
+        var flag = new Flag(Easting, Northing, color, id, $"Flag {id}");
+        Flags.Add(flag);
         UpdateFlagsOnMap();
-        StatusMessage = $"{color} flag #{_flagPoints.Count} placed at E:{Easting:F1} N:{Northing:F1}";
+        StatusMessage = $"{color} flag '{flag.Name}' at E:{Easting:F1} N:{Northing:F1}";
     }
 
     private void UpdateFlagsOnMap()
     {
-        var flags = _flagPoints.Select(f => (f.Position.Easting, f.Position.Northing, f.Color)).ToList();
+        var flags = Flags.Select(f =>
+            (f.Easting, f.Northing, f.FlagColor.ToString())).ToList();
         _mapService.SetFlags(flags);
     }
 
@@ -2634,7 +2637,11 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? PlaceGreenFlagCommand { get; private set; }
     public ICommand? PlaceYellowFlagCommand { get; private set; }
     public ICommand? DeleteAllFlagsCommand { get; private set; }
+    public ICommand? DeleteFlagCommand { get; private set; }
     public ICommand? PlaceFlagOnClickCommand { get; private set; }
+    public ICommand? PlaceFlagHereCommand { get; private set; }
+    public ICommand? ShowFlagListCommand { get; private set; }
+    public ICommand? CloseFlagListCommand { get; private set; }
 
     // Right Navigation Panel Commands
     public ICommand? ToggleContourModeCommand { get; private set; }
