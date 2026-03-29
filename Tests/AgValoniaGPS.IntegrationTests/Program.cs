@@ -125,11 +125,31 @@ sealed class Program
         vm.IsGridOn = true;
         config.Display.GridVisible = true;
 
-        // Step 1: App startup
+        // Step 1: App startup -- verify simulator enabled and panel visible by default
         Console.Write("[Step 1] App startup... ");
         vm.State.UI.CloseDialog(); // Close any first-run dialogs
         await Delay(500);
+        Console.Write($"[simEnabled={vm.IsSimulatorEnabled}, panelVisible={vm.IsSimulatorPanelVisible}] ");
+        if (!vm.IsSimulatorEnabled)
+        {
+            Console.WriteLine("FAIL: simulator not enabled by default");
+            _scenarioFailed = true;
+        }
         CaptureScreenshot(window, "01_app_startup");
+        Console.WriteLine("OK");
+
+        // Step 1b: Verify disabling simulator stops GPS updates
+        Console.Write("[Step 1b] Simulator disable/enable... ");
+        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
+        double posBefore = vm.Latitude;
+        vm.IsSimulatorEnabled = false;
+        simService.Tick(0); // should be ignored when disabled
+        await Delay(100);
+        double posAfterDisable = vm.Latitude;
+        bool posUnchanged = Math.Abs(posAfterDisable - posBefore) < 0.0001;
+        Console.Write($"[posUnchanged={posUnchanged}] ");
+        vm.IsSimulatorEnabled = true; // re-enable for rest of test
+        await Delay(200);
         Console.WriteLine("OK");
 
         // Step 2: Open field selection dialog
@@ -164,7 +184,6 @@ sealed class Program
         Console.Write("[Step 4] Simulator drive... ");
         vm.SimulatorForwardCommand?.Execute(null);
         await Delay(100);
-        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
         for (int i = 0; i < 60; i++)
         {
             simService.Tick(0);

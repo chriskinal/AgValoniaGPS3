@@ -51,6 +51,9 @@ public partial class MainViewModel
 
     private void OnSimulatorGpsDataUpdated(object? sender, GpsSimulationEventArgs e)
     {
+        // Ignore GPS data when simulator is disabled
+        if (!_isSimulatorEnabled) return;
+
         var simulatedData = e.Data;
 
         // Create LocalPlane if not yet created

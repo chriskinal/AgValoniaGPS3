@@ -317,6 +317,10 @@ public partial class MainViewModel : ReactiveObject
         Longitude = settings.SimulatorLongitude;
 
         _logger.LogDebug("Restored simulator: {Lat},{Lon}", settings.SimulatorLatitude, settings.SimulatorLongitude);
+
+        // Restore simulator enabled state and panel visibility
+        IsSimulatorEnabled = settings.SimulatorEnabled;
+        IsSimulatorPanelVisible = settings.SimulatorEnabled;
     }
 
     private void LoadDefaultVehicleProfile()
