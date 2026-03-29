@@ -173,23 +173,6 @@ sealed class Program
         CaptureScreenshot(window, "04_simulator_driving");
         Console.WriteLine("OK");
 
-        // Step 4b: Test zoom buttons (#98 fix)
-        Console.Write("[Step 4b] Zoom test... ");
-        vm.State.UI.CloseDialog();
-        await Delay(200);
-        CaptureScreenshot(window, "04b_zoom_before");
-        vm.ZoomInCommand?.Execute(null);
-        vm.ZoomInCommand?.Execute(null);
-        vm.ZoomInCommand?.Execute(null);
-        await Delay(300);
-        CaptureScreenshot(window, "04b_zoom_after");
-        // Zoom back out to restore
-        vm.ZoomOutCommand?.Execute(null);
-        vm.ZoomOutCommand?.Execute(null);
-        vm.ZoomOutCommand?.Execute(null);
-        await Delay(200);
-        Console.WriteLine("OK");
-
         // Step 5: Open tracks dialog
         Console.Write("[Step 5] Tracks dialog... ");
         vm.ShowTracksDialogCommand?.Execute(null);
@@ -207,6 +190,26 @@ sealed class Program
         // Configuration dialog uses its own visibility mechanism (not State.UI)
         if (vm.ConfigurationViewModel != null)
             vm.ConfigurationViewModel.IsDialogVisible = false;
+        Console.WriteLine("OK");
+
+        // Step 6b: Test zoom buttons (#98 fix) -- after all dialogs closed
+        Console.Write("[Step 6b] Zoom test... ");
+        vm.State.UI.CloseDialog();
+        if (vm.ConfigurationViewModel != null)
+            vm.ConfigurationViewModel.IsDialogVisible = false;
+        await Delay(500);
+        Dispatcher.UIThread.RunJobs();
+        CaptureScreenshot(window, "06b_zoom_before");
+        vm.ZoomInCommand?.Execute(null);
+        vm.ZoomInCommand?.Execute(null);
+        vm.ZoomInCommand?.Execute(null);
+        await Delay(500);
+        Dispatcher.UIThread.RunJobs();
+        CaptureScreenshot(window, "06b_zoom_after");
+        vm.ZoomOutCommand?.Execute(null);
+        vm.ZoomOutCommand?.Execute(null);
+        vm.ZoomOutCommand?.Execute(null);
+        await Delay(200);
         Console.WriteLine("OK");
 
         // Step 7+: Theme switching and new dialogs (PR #81)
