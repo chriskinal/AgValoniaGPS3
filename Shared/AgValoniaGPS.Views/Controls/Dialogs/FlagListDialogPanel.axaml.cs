@@ -14,6 +14,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using AgValoniaGPS.Models;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
@@ -21,21 +22,39 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FlagListDialogPanel : UserControl
 {
     private Flag? _editingFlag;
+    private DispatcherTimer? _refreshTimer;
 
     public FlagListDialogPanel()
     {
         InitializeComponent();
 
-        // Update vehicle position for distance display when dialog becomes visible
+        // Refresh distance/direction every 500ms while visible
+        _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        _refreshTimer.Tick += (_, _) => RefreshDistances();
+
         PropertyChanged += (_, e) =>
         {
-            if (e.Property.Name == nameof(IsVisible) && e.NewValue is true
-                && DataContext is ViewModels.MainViewModel vm)
+            if (e.Property.Name != nameof(IsVisible)) return;
+            if (e.NewValue is true)
             {
-                FlagDistanceConverter.VehicleEasting = vm.Easting;
-                FlagDistanceConverter.VehicleNorthing = vm.Northing;
+                RefreshDistances();
+                _refreshTimer?.Start();
+            }
+            else
+            {
+                _refreshTimer?.Stop();
             }
         };
+    }
+
+    private void RefreshDistances()
+    {
+        if (DataContext is not ViewModels.MainViewModel vm) return;
+        FlagDistanceConverter.VehicleEasting = vm.Easting;
+        FlagDistanceConverter.VehicleNorthing = vm.Northing;
+        FlagDistanceConverter.VehicleHeadingDeg = vm.Heading;
+        // Force rebind of distance column by nudging items
+        FlagItems?.InvalidateArrange();
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -165,11 +184,11 @@ public class FlagDistanceConverter : IValueConverter
 {
     public static readonly FlagDistanceConverter Instance = new();
 
-    // Set these before the dialog opens
     public static double VehicleEasting { get; set; }
     public static double VehicleNorthing { get; set; }
+    public static double VehicleHeadingDeg { get; set; }
 
-    // Unicode arrows for 8 cardinal directions (N, NE, E, SE, S, SW, W, NW)
+    // Unicode arrows: ahead, ahead-right, right, behind-right, behind, behind-left, left, ahead-left
     private static readonly string[] Arrows = { "\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196" };
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -182,10 +201,16 @@ public class FlagDistanceConverter : IValueConverter
 
         if (dist < 0.5) return "here";
 
-        // Bearing: 0=N, 90=E, etc.
+        // Absolute bearing to flag (0=N, 90=E)
         double bearing = Math.Atan2(dx, dy) * 180.0 / Math.PI;
         if (bearing < 0) bearing += 360;
-        int idx = ((int)Math.Round(bearing / 45)) % 8;
+
+        // Relative to tractor heading: 0=ahead, 90=right, 180=behind
+        double relative = bearing - VehicleHeadingDeg;
+        if (relative < 0) relative += 360;
+        if (relative >= 360) relative -= 360;
+
+        int idx = ((int)Math.Round(relative / 45)) % 8;
         string arrow = Arrows[idx];
 
         return dist < 1000

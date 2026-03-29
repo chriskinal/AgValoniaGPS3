@@ -130,7 +130,7 @@ public interface ISharedMapControl
     bool IsGridVisible { get; set; }
 
     // Flag markers on the map
-    void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags);
+    void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags);
 
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
@@ -375,7 +375,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private readonly DispatcherTimer _renderTimer;
 
     // Flag markers
-    private IReadOnlyList<(double Easting, double Northing, string Color)> _flags = Array.Empty<(double, double, string)>();
+    private IReadOnlyList<(double Easting, double Northing, string Color, string Name)> _flags = Array.Empty<(double, double, string, string)>();
 
     // FPS tracking (instance-based to avoid double-counting when multiple controls exist)
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
@@ -2779,6 +2779,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // Draw flag marker (filled circle at top of pole)
                 var outlinePen = new Pen(Brushes.White, worldPerPixel * 0.5);
                 context.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
+
+                // Draw flag name
+                if (!string.IsNullOrEmpty(flag.Name))
+                {
+                    DrawLabel(context, flag.Name, poleTop.X + flagRadius + worldPerPixel * 2,
+                        poleTop.Y, worldPerPixel, Brushes.White);
+                }
             }
         }
     }
@@ -3136,7 +3143,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         set => _autoPanEnabled = value;
     }
 
-    public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags)
+    public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags)
     {
         _flags = flags;
         InvalidateVisual();

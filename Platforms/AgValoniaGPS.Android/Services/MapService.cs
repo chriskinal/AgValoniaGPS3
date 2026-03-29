@@ -151,7 +151,7 @@ public class MapService : IMapService
 
     public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);
 
-    public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color)> flags) =>
+    public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags) =>
         _mapControl?.SetFlags(flags);
 
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)

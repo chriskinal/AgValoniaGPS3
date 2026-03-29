@@ -1335,13 +1335,14 @@ public partial class MainViewModel : ReactiveObject
     /// <summary>
     /// Place a flag at the given world coordinates (from map click).
     /// </summary>
-    public void PlaceFlagAtWorldPosition(double easting, double northing, FlagColor color = FlagColor.Red)
+    public void PlaceFlagAtWorldPosition(double easting, double northing, FlagColor? color = null)
     {
+        var actualColor = color ?? NextAutoColor();
         var id = _nextFlagId++;
-        var flag = new Flag(easting, northing, color, id, $"Flag {id}");
+        var flag = new Flag(easting, northing, actualColor, id, $"Flag {id}");
         Flags.Add(flag);
         UpdateFlagsOnMap();
-        StatusMessage = $"{color} flag '{flag.Name}' at E:{easting:F1} N:{northing:F1}";
+        StatusMessage = $"{actualColor} flag '{flag.Name}' at E:{easting:F1} N:{northing:F1}";
 
         // Exit flag click mode after placing
         IsPlaceFlagOnClickMode = false;
@@ -1450,6 +1451,15 @@ public partial class MainViewModel : ReactiveObject
     private int _nextFlagId = 1;
     public ObservableCollection<Flag> Flags { get; } = new();
 
+    private FlagColor NextAutoColor()
+    {
+        var allColors = Enum.GetValues<FlagColor>();
+        var usedColors = Flags.Select(f => f.FlagColor).ToHashSet();
+        foreach (var c in allColors)
+            if (!usedColors.Contains(c)) return c;
+        return allColors[Flags.Count % allColors.Length];
+    }
+
     private void PlaceFlag(FlagColor color)
     {
         if (Easting == 0 && Northing == 0)
@@ -1468,7 +1478,7 @@ public partial class MainViewModel : ReactiveObject
     public void UpdateFlagsOnMap()
     {
         var flags = Flags.Select(f =>
-            (f.Easting, f.Northing, f.FlagColor.ToString())).ToList();
+            (f.Easting, f.Northing, f.FlagColor.ToString(), f.Name)).ToList();
         _mapService.SetFlags(flags);
     }
 

@@ -649,7 +649,7 @@ public partial class MainViewModel
         PlaceGreenFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Green));
         PlaceYellowFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Yellow));
 
-        PlaceFlagHereCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Red));
+        PlaceFlagHereCommand = ReactiveCommand.Create(() => PlaceFlag(NextAutoColor()));
 
         DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
