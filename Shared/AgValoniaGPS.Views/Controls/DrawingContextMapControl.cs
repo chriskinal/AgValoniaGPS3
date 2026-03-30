@@ -1657,26 +1657,39 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_coverageWriteableBitmap == null || _coverageNewCellsProvider == null)
             return 0;
 
-        using var framebuffer = _coverageWriteableBitmap.Lock();
-        int stride = framebuffer.RowBytes;
-        byte* ptr = (byte*)framebuffer.Address;
+        using var dataFb = _coverageWriteableBitmap.Lock();
+        byte* dataPtr = (byte*)dataFb.Address;
+        int dataStride = dataFb.RowBytes;
+
+        // Also update display bitmap (Bgra8888) for transparent rendering
+        var dispFb = _coverageDisplayBitmap?.Lock();
+        uint* dispPtr = dispFb != null ? (uint*)dispFb.Address : null;
 
         int cellCount = 0;
         foreach (var (cellX, cellY, color) in _coverageNewCellsProvider(_actualBitmapCellSize))
         {
             if (cellX >= 0 && cellX < _bitmapWidth && cellY >= 0 && cellY < _bitmapHeight)
             {
-                // Bitmap is always Rgb565 format: 2 bytes per pixel
-                ushort* pixel = (ushort*)(ptr + cellY * stride + cellX * 2);
+                // Write to Rgb565 data bitmap
+                ushort* pixel = (ushort*)(dataPtr + cellY * dataStride + cellX * 2);
                 ushort rgb565 = (ushort)(
-                    ((color.R >> 3) << 11) |  // 5 bits red
-                    ((color.G >> 2) << 5) |   // 6 bits green
-                    (color.B >> 3));          // 5 bits blue
+                    ((color.R >> 3) << 11) |
+                    ((color.G >> 2) << 5) |
+                    (color.B >> 3));
                 *pixel = rgb565;
+
+                // Write to Bgra8888 display bitmap (with alpha=255 for opaque)
+                if (dispPtr != null)
+                {
+                    dispPtr[cellY * _bitmapWidth + cellX] = Rgb565ToBgra8888(rgb565);
+                }
+
+                _bitmapHasContent = true;
                 cellCount++;
             }
         }
 
+        dispFb?.Dispose();
         return cellCount;
     }
 
@@ -3043,6 +3056,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void Pan(double deltaX, double deltaY)
     {
+        _cameraFollowMode = 2; // Enter Free mode on user drag
         _cameraX += deltaX;
         _cameraY += deltaY;
     }
