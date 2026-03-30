@@ -423,8 +423,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
         _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
         _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(128, 77, 77, 77)), 0.5);
-        _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(204, 204, 51, 51)), 1);
-        _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(204, 51, 204, 51)), 1);
+        _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
+        _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
         _boundaryPenOuter = new Pen(Brushes.Yellow, 1);
         _boundaryPenInner = new Pen(Brushes.Red, 1);
         _recordingPen = new Pen(Brushes.Cyan, 0.5); // Thinner line than dot markers

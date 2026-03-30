@@ -107,6 +107,25 @@ public partial class MainViewModel
 
     #endregion
 
+    #region Clock
+
+    private string _currentTime = "";
+    public string CurrentTime
+    {
+        get => _currentTime;
+        private set => this.RaiseAndSetIfChanged(ref _currentTime, value);
+    }
+
+    private void InitializeClock()
+    {
+        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        var clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        clockTimer.Tick += (_, _) => CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        clockTimer.Start();
+    }
+
+    #endregion
+
     #region Camera Mode
 
     private CameraMode _cameraMode = CameraMode.NorthUp;
