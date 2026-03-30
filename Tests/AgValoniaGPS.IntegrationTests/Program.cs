@@ -227,6 +227,29 @@ sealed class Program
         }
         Console.WriteLine("OK");
 
+        // Step 5c: Test compass button camera modes
+        Console.Write("[Step 5c] Compass modes... ");
+        Console.Write($"[mode={vm.CameraMode}] ");
+        vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
+        await Delay(200);
+        Console.Write($"[after1={vm.CameraMode}] ");
+        vm.ToggleCameraModeCommand?.Execute(null); // HeadingUp -> NorthUp
+        await Delay(200);
+        Console.Write($"[after2={vm.CameraMode}] ");
+        // Simulate user pan -> Free mode
+        vm.OnUserPan();
+        await Delay(200);
+        Console.Write($"[afterPan={vm.CameraMode},{vm.CameraModeLabel}] ");
+        // Drive and verify camera doesn't follow in Free mode
+        double eastBefore = vm.Easting;
+        for (int i = 0; i < 10; i++) { simService.Tick(0); await Delay(33); }
+        Console.Write($"[eastDelta={Math.Abs(vm.Easting - eastBefore):F2}] ");
+        CaptureScreenshot(window, "05c_compass_free");
+        // Return to NorthUp
+        vm.ToggleCameraModeCommand?.Execute(null); // Free -> NorthUp
+        Console.Write($"[restored={vm.CameraMode}] ");
+        Console.WriteLine("OK");
+
         // Step 6: Open configuration dialog
         Console.Write("[Step 6] Configuration dialog... ");
         vm.ShowConfigurationDialogCommand?.Execute(null);

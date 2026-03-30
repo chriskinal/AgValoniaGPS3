@@ -86,6 +86,7 @@ public partial class MainViewModel
 
         ToggleCameraModeCommand = ReactiveCommand.Create(() =>
         {
+            var oldMode = CameraMode;
             CameraMode = CameraMode switch
             {
                 Models.CameraMode.Free => Models.CameraMode.NorthUp,
@@ -93,6 +94,7 @@ public partial class MainViewModel
                 Models.CameraMode.HeadingUp => Models.CameraMode.NorthUp,
                 _ => Models.CameraMode.NorthUp
             };
+            Console.WriteLine($"[Compass] {oldMode} -> {CameraMode}");
         });
 
         // Camera controls

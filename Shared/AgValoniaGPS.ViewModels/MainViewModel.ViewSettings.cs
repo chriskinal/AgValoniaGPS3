@@ -182,15 +182,14 @@ public partial class MainViewModel
     /// </summary>
     public void UpdateCameraFollow(double easting, double northing)
     {
-        if (_cameraMode != CameraMode.Free)
-        {
-            double de = easting - _lastFollowEasting;
-            double dn = northing - _lastFollowNorthing;
-            if (de * de + dn * dn < 0.000001) return; // < 0.001m, skip
-            _lastFollowEasting = easting;
-            _lastFollowNorthing = northing;
-            _mapService.PanTo(easting, northing);
-        }
+        if (_cameraMode == CameraMode.Free) return;
+
+        double de = easting - _lastFollowEasting;
+        double dn = northing - _lastFollowNorthing;
+        if (de * de + dn * dn < 0.000001) return; // < 0.001m, skip
+        _lastFollowEasting = easting;
+        _lastFollowNorthing = northing;
+        _mapService.PanTo(easting, northing);
     }
 
     /// <summary>
