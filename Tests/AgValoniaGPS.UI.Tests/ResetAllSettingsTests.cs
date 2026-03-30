@@ -26,6 +26,9 @@ public class ResetAllSettingsTests
         var builder = new MainViewModelBuilder();
         var vm = builder.Build();
 
+        // Clear any calls from constructor/initialization
+        builder.SettingsService.ClearReceivedCalls();
+
         // Open and confirm
         vm.ResetAllSettingsCommand!.Execute(null);
         vm.ConfirmConfirmationDialogCommand!.Execute(null);
@@ -52,6 +55,9 @@ public class ResetAllSettingsTests
     {
         var builder = new MainViewModelBuilder();
         var vm = builder.Build();
+
+        // Clear any calls from constructor/initialization
+        builder.SettingsService.ClearReceivedCalls();
 
         vm.ResetAllSettingsCommand!.Execute(null);
         vm.CancelConfirmationDialogCommand!.Execute(null);
