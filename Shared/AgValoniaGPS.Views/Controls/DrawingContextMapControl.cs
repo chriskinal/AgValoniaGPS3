@@ -2248,6 +2248,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 }
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
             }
+
+            // Draw antenna position as small blue dot
+            var vehicleConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle;
+            double antPivot = vehicleConfig.AntennaPivot;
+            double antOffset = vehicleConfig.AntennaOffset;
+            if (Math.Abs(antPivot) > 0.01 || Math.Abs(antOffset) > 0.01)
+            {
+                // Antenna is offset from vehicle center (pivot) in local coordinates
+                // antPivot: forward (+) or backward (-), antOffset: right (+) or left (-)
+                var antennaBrush = new SolidColorBrush(Color.FromRgb(40, 120, 255));
+                var antennaPos = new Point(antOffset, antPivot);
+                context.DrawEllipse(antennaBrush, null, antennaPos, 0.4, 0.4);
+            }
         }
     }
 
@@ -3730,6 +3743,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Convert to world offset from camera center
         double worldOffsetX = normalizedX * viewWidth;
         double worldOffsetY = normalizedY * viewHeight;
+
+        // Reverse pitch compression (pitch compresses Y in the render transform)
+        if (_is3DMode && _cameraPitch > 0.01)
+        {
+            double pitchFactor = Math.Max(0.3, Math.Cos(_cameraPitch));
+            worldOffsetY /= pitchFactor;
+        }
 
         // Apply rotation
         double cos = Math.Cos(_rotation);
