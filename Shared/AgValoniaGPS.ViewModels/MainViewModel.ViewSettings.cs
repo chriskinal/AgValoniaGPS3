@@ -154,42 +154,16 @@ public partial class MainViewModel
 
     private void ApplyCameraMode()
     {
-        switch (_cameraMode)
+        // Set camera follow mode directly on map control: 0=NorthUp, 1=HeadingUp, 2=Free
+        int mapMode = _cameraMode switch
         {
-            case CameraMode.NorthUp:
-                _mapService.SetNorthUp(true);
-                _mapService.SetAutoPan(true);
-                IsNorthUp = true;
-                break;
-            case CameraMode.HeadingUp:
-                _mapService.SetNorthUp(false);
-                _mapService.SetAutoPan(true);
-                IsNorthUp = false;
-                break;
-            case CameraMode.Free:
-                // Stop camera follow and auto-pan
-                _mapService.SetAutoPan(false);
-                break;
-        }
-    }
-
-    private double _lastFollowEasting;
-    private double _lastFollowNorthing;
-
-    /// <summary>
-    /// Called from GPS handler to center camera on vehicle when in follow mode.
-    /// Only pans when position has actually changed (avoids drift from floating-point noise).
-    /// </summary>
-    public void UpdateCameraFollow(double easting, double northing)
-    {
-        if (_cameraMode == CameraMode.Free) return;
-
-        double de = easting - _lastFollowEasting;
-        double dn = northing - _lastFollowNorthing;
-        if (de * de + dn * dn < 0.000001) return; // < 0.001m, skip
-        _lastFollowEasting = easting;
-        _lastFollowNorthing = northing;
-        _mapService.PanTo(easting, northing);
+            CameraMode.NorthUp => 0,
+            CameraMode.HeadingUp => 1,
+            CameraMode.Free => 2,
+            _ => 0
+        };
+        _mapService.SetCameraFollowMode(mapMode);
+        IsNorthUp = _cameraMode == CameraMode.NorthUp;
     }
 
     /// <summary>

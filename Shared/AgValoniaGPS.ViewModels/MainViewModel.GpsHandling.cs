@@ -144,9 +144,6 @@ public partial class MainViewModel
         Northing = data.CurrentPosition.Northing;
         Heading = data.CurrentPosition.Heading;
 
-        // Center camera on vehicle when in follow mode
-        UpdateCameraFollow(data.CurrentPosition.Easting, data.CurrentPosition.Northing);
-
         // Update reverse indicator on map
         _mapService.SetReversing(IsReversing);
 

@@ -132,6 +132,9 @@ public interface ISharedMapControl
     // Flag markers on the map
     void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags);
 
+    // Camera follow mode (0=NorthUp, 1=HeadingUp, 2=Free)
+    int CameraFollowMode { get; set; }
+
     // Reverse indicator
     bool IsReversing { get; set; }
 
@@ -207,6 +210,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _is3DMode = false;
     private bool _isNorthUp = false;
     private bool _isDayMode = true;
+
+    // Camera follow mode: 0=NorthUp, 1=HeadingUp, 2=Free
+    private int _cameraFollowMode = 0;
 
     // Reverse indicator
     private bool _isReversing;
@@ -2197,15 +2203,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _toolX + hitchHalfW * cosH,
             _toolY + hitchHalfW * sinH);
 
-        // Apex: fixed at drawbar/hitch connection, hitchLength behind tool center
-        double hitchLen = Math.Abs(AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.HitchLength);
-        if (hitchLen < 0.1) hitchLen = 2.0; // fallback
-        double fwdX = Math.Sin(-_toolHeading);
-        double fwdY = Math.Cos(-_toolHeading);
-        var apexPoint = new Point(
-            _toolX + fwdX * hitchLen,
-            _toolY + fwdY * hitchLen);
-
+        // Apex at the hitch point (computed by ToolPositionService)
+        var apexPoint = new Point(_hitchX, _hitchY);
         context.DrawLine(_hitchPen, apexPoint, leftEnd);
         context.DrawLine(_hitchPen, apexPoint, rightEnd);
 
@@ -3164,16 +3163,21 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _vehicleY = y;
         _vehicleHeading = heading;
 
-        // Track-up rotation: rotate map so vehicle heading is always "up"
-        if (!_isNorthUp)
+        // Camera follow based on mode
+        switch (_cameraFollowMode)
         {
-            _rotation = -heading;
-        }
-
-        // Auto-pan to keep vehicle visible
-        if (_autoPanEnabled && Bounds.Width > 0 && Bounds.Height > 0)
-        {
-            ApplyAutoPan();
+            case 0: // NorthUp: center on vehicle, no rotation
+                _cameraX = x;
+                _cameraY = y;
+                _rotation = 0;
+                break;
+            case 1: // HeadingUp: center on vehicle, rotate with heading
+                _cameraX = x;
+                _cameraY = y;
+                _rotation = -heading;
+                break;
+            case 2: // Free: don't move camera at all
+                break;
         }
     }
 
@@ -3273,6 +3277,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// <summary>
     /// Enable or disable auto-pan feature
     /// </summary>
+    public int CameraFollowMode
+    {
+        get => _cameraFollowMode;
+        set => _cameraFollowMode = value;
+    }
+
     public bool IsReversing
     {
         get => _isReversing;
