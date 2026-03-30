@@ -2180,29 +2180,34 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
-        // Draw tractor-side hitch bar (from rear of tractor body to hitch point)
+        // Draw tractor-side hitch bar (from rear of tractor to hitch point)
         var rearPen = new Pen(Brushes.Black, 0.3);
-        double rearOffset = 2.5; // approx rear axle distance behind vehicle center
-        double cosV = Math.Cos(-_vehicleHeading);
-        double sinV = Math.Sin(-_vehicleHeading);
-        var rearAxle = new Point(
-            _vehicleX + sinV * rearOffset,
-            _vehicleY - cosV * rearOffset);
-        context.DrawLine(rearPen, rearAxle, new Point(_hitchX, _hitchY));
+        context.DrawLine(rearPen, new Point(_vehicleX, _vehicleY), new Point(_hitchX, _hitchY));
 
-        // Draw V-shape hitch triangle from vehicle to implement ends
+        // Draw V-shape hitch triangle: apex at fixed drawbar position relative to tool
         double hitchHalfW = _toolWidth / 2.0;
         double cosH = Math.Cos(-_toolHeading);
         double sinH = Math.Sin(-_toolHeading);
+
+        // Implement left and right ends (perpendicular to tool heading)
         var leftEnd = new Point(
             _toolX + (-hitchHalfW) * cosH,
             _toolY + (-hitchHalfW) * sinH);
         var rightEnd = new Point(
             _toolX + hitchHalfW * cosH,
             _toolY + hitchHalfW * sinH);
-        var hitchPoint = new Point(_hitchX, _hitchY);
-        context.DrawLine(_hitchPen, hitchPoint, leftEnd);
-        context.DrawLine(_hitchPen, hitchPoint, rightEnd);
+
+        // Apex: fixed at drawbar/hitch connection, hitchLength behind tool center
+        double hitchLen = Math.Abs(AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.HitchLength);
+        if (hitchLen < 0.1) hitchLen = 2.0; // fallback
+        double fwdX = Math.Sin(-_toolHeading);
+        double fwdY = Math.Cos(-_toolHeading);
+        var apexPoint = new Point(
+            _toolX + fwdX * hitchLen,
+            _toolY + fwdY * hitchLen);
+
+        context.DrawLine(_hitchPen, apexPoint, leftEnd);
+        context.DrawLine(_hitchPen, apexPoint, rightEnd);
 
         // Draw individual sections centered at tool position, rotated to tool heading
         using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
