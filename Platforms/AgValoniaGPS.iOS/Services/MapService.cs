@@ -148,6 +148,7 @@ public class MapService : IMapService
     }
 
     public void SetReversing(bool isReversing) { if (_mapControl != null) _mapControl.IsReversing = isReversing; }
+    public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive) { _mapControl?.SetGuidancePoints(goalEasting, goalNorthing, isActive); }
 
     public void SetNorthUp(bool isNorthUp) => _mapControl?.SetNorthUp(isNorthUp);
 

@@ -64,6 +64,7 @@ public interface IMapService
 
     // Vehicle state
     void SetReversing(bool isReversing);
+    void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive);
 
     // View settings
     void SetNorthUp(bool isNorthUp);

@@ -135,6 +135,8 @@ public interface ISharedMapControl
     // Reverse indicator
     bool IsReversing { get; set; }
 
+    // Guidance look-ahead points
+    void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive);
 
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
@@ -208,6 +210,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Reverse indicator
     private bool _isReversing;
+
+    // Guidance look-ahead
+    private double _goalEasting, _goalNorthing;
+    private bool _guidanceActive;
 
     // Auto-pan settings
     private bool _autoPanEnabled = true;
@@ -669,6 +675,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_flags.Count > 0)
             {
                 DrawFlags(context);
+            }
+
+            // Draw look-ahead guidance line
+            if (_guidanceActive && ShowVehicle)
+            {
+                DrawGuidanceLookAhead(context);
             }
 
             // Draw boundary offset indicator
@@ -2366,6 +2378,25 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
+    private void DrawGuidanceLookAhead(DrawingContext context)
+    {
+        double viewHeight = 200.0 / _zoom;
+        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
+        double worldPerPixel = viewHeight / screenHeight;
+
+        var vehiclePos = new Point(_vehicleX, _vehicleY);
+        var goalPos = new Point(_goalEasting, _goalNorthing);
+
+        // Line from vehicle to goal point
+        var linePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 0, 200, 255)), 1.0 * worldPerPixel);
+        context.DrawLine(linePen, vehiclePos, goalPos);
+
+        // Small circle at goal point
+        var goalBrush = new SolidColorBrush(Color.FromArgb(200, 0, 200, 255));
+        double dotRadius = 3 * worldPerPixel;
+        context.DrawEllipse(goalBrush, null, goalPos, dotRadius, dotRadius);
+    }
+
     private void DrawBoundaryOffsetIndicator(DrawingContext context)
     {
         // Reference point at vehicle
@@ -3197,6 +3228,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         get => _isReversing;
         set => _isReversing = value;
+    }
+
+    public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive)
+    {
+        _goalEasting = goalEasting;
+        _goalNorthing = goalNorthing;
+        _guidanceActive = isActive;
     }
 
     public bool AutoPanEnabled

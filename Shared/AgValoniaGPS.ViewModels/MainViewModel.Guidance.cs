@@ -207,6 +207,11 @@ public partial class MainViewModel
         // Apply calculated steering to simulator
         SimulatorSteerAngle = output.SteerAngle;
 
+        // Send look-ahead point to map for rendering
+        _mapService.SetGuidancePoints(
+            output.GoalPoint.Easting, output.GoalPoint.Northing,
+            isActive: true);
+
         // Update cross-track error for display (convert from meters to cm) - legacy property
         CrossTrackError = output.CrossTrackError * 100;
     }
