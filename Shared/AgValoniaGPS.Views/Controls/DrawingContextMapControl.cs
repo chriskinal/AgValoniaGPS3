@@ -2180,6 +2180,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
+        // Draw tractor-side hitch bar (from rear of tractor body to hitch point)
+        var rearPen = new Pen(Brushes.Black, 0.3);
+        double rearOffset = 2.5; // approx rear axle distance behind vehicle center
+        double cosV = Math.Cos(-_vehicleHeading);
+        double sinV = Math.Sin(-_vehicleHeading);
+        var rearAxle = new Point(
+            _vehicleX + sinV * rearOffset,
+            _vehicleY - cosV * rearOffset);
+        context.DrawLine(rearPen, rearAxle, new Point(_hitchX, _hitchY));
+
         // Draw V-shape hitch triangle from vehicle to implement ends
         double hitchHalfW = _toolWidth / 2.0;
         double cosH = Math.Cos(-_toolHeading);

@@ -113,6 +113,7 @@ public class MapService : IMapService
     public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive) => GetMapControl().SetGuidancePoints(goalEasting, goalNorthing, isActive);
 
     public void SetNorthUp(bool isNorthUp) => GetMapControl().SetNorthUp(isNorthUp);
+    public void SetAutoPan(bool enabled) => GetMapControl().AutoPanEnabled = enabled;
 
     public void SetDayMode(bool isDayMode) => GetMapControl().SetDayMode(isDayMode);
 

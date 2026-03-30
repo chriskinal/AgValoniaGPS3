@@ -151,6 +151,7 @@ public class MapService : IMapService
     public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive) { _mapControl?.SetGuidancePoints(goalEasting, goalNorthing, isActive); }
 
     public void SetNorthUp(bool isNorthUp) => _mapControl?.SetNorthUp(isNorthUp);
+    public void SetAutoPan(bool enabled) { if (_mapControl != null) _mapControl.AutoPanEnabled = enabled; }
 
     public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);
 

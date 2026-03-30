@@ -158,14 +158,17 @@ public partial class MainViewModel
         {
             case CameraMode.NorthUp:
                 _mapService.SetNorthUp(true);
+                _mapService.SetAutoPan(true);
                 IsNorthUp = true;
                 break;
             case CameraMode.HeadingUp:
                 _mapService.SetNorthUp(false);
+                _mapService.SetAutoPan(true);
                 IsNorthUp = false;
                 break;
             case CameraMode.Free:
-                // Don't change north-up setting, just stop following
+                // Stop camera follow and auto-pan
+                _mapService.SetAutoPan(false);
                 break;
         }
     }
