@@ -528,7 +528,8 @@ public partial class MainWindow : Window
             }
         }
         else if (e.PropertyName == nameof(MainViewModel.ToolEasting) ||
-                 e.PropertyName == nameof(MainViewModel.ToolNorthing))
+                 e.PropertyName == nameof(MainViewModel.ToolNorthing) ||
+                 e.PropertyName == nameof(MainViewModel.ToolWidth))
         {
             // Tool position updated - update map control
             if (ViewModel != null && MapControl != null)
@@ -666,13 +667,11 @@ public partial class MainWindow : Window
                 }
 
                 MapControl.StartPan(point.Position);
-                ViewModel?.OnUserPan();
                 e.Handled = true;
             }
             else if (point.Properties.IsRightButtonPressed)
             {
                 MapControl.StartRotate(point.Position);
-                ViewModel?.OnUserPan();
                 e.Handled = true;
             }
         }
@@ -689,6 +688,9 @@ public partial class MainWindow : Window
         if (MapControl != null)
         {
             var point = e.GetCurrentPoint(this);
+            // Enter Free camera mode when user actually drags the map
+            if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
+                ViewModel?.OnUserPan();
             MapControl.UpdateMouse(point.Position);
             e.Handled = true;
         }
