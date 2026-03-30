@@ -207,6 +207,27 @@ sealed class Program
         vm.State.UI.CloseDialog();
         Console.WriteLine("OK");
 
+        // Step 5a: Coverage painting test
+        Console.Write("[Step 5a] Coverage: sections ON + drive... ");
+        // Turn sections master ON (Auto mode)
+        vm.ToggleSectionMasterCommand?.Execute(null);
+        await Delay(100);
+        Console.Write($"[master={vm.IsSectionMasterOn}] ");
+        // Drive forward to paint coverage
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        for (int i = 0; i < 80; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        // Check coverage stats
+        Console.Write($"[workedArea={vm.WorkedAreaDisplay}] ");
+        CaptureScreenshot(window, "05a_coverage_painting");
+        // Turn sections off
+        vm.ToggleSectionMasterCommand?.Execute(null);
+        Console.WriteLine("OK");
+
         // Step 5b: Drive in reverse to show reverse indicator
         Console.Write("[Step 5b] Reverse indicator... ");
         vm.SimulatorReverseCommand?.Execute(null);
