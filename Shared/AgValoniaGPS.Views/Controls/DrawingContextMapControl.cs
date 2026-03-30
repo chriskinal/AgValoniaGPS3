@@ -437,8 +437,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // Initialize pens and brushes
         _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-        _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
-        _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(128, 77, 77, 77)), 0.5);
+        _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
+        _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
         _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
         _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
         _boundaryPenOuter = new Pen(Brushes.Yellow, 1);
@@ -3137,8 +3137,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_isDayMode)
         {
             _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(77, 77, 77, 77)), 0.5);
-            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(128, 77, 77, 77)), 0.5);
+            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
+            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
         }
         else
         {
