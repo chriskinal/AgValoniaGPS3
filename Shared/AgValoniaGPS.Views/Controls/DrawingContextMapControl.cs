@@ -211,6 +211,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Reverse indicator
     private bool _isReversing;
 
+    // Heading validity (set after first GPS position update with movement)
+    private bool _hasValidHeading;
+
     // Guidance look-ahead
     private double _goalEasting, _goalNorthing;
     private bool _guidanceActive;
@@ -2268,6 +2271,22 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
             }
 
+            // Draw heading unknown indicator (red "?")
+            if (!_hasValidHeading)
+            {
+                double worldPerPx = (200.0 / _zoom) / (Bounds.Height > 0 ? Bounds.Height : 600);
+                // Counter-rotate so text stays upright
+                using (context.PushTransform(Matrix.CreateRotation(_vehicleHeading + _rotation)))
+                {
+                    var redBrush = Brushes.Red;
+                    var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
+                    double fontSize = 16 * worldPerPx;
+                    var text = new FormattedText("?", System.Globalization.CultureInfo.InvariantCulture,
+                        FlowDirection.LeftToRight, typeface, fontSize, redBrush);
+                    context.DrawText(text, new Point(-text.Width / 2, size / 2 + worldPerPx * 2));
+                }
+            }
+
             // Draw reverse indicator (yellow downward arrow behind vehicle)
             if (_isReversing)
             {
@@ -3111,6 +3130,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void SetVehiclePosition(double x, double y, double heading)
     {
+        // Mark heading as valid once vehicle has moved from origin
+        if (!_hasValidHeading && (Math.Abs(x) > 0.1 || Math.Abs(y) > 0.1))
+            _hasValidHeading = true;
+
         _vehicleX = x;
         _vehicleY = y;
         _vehicleHeading = heading;

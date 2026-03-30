@@ -67,6 +67,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{Binding CurrentFieldName}" Foreground="#3498DB" FontSize="14" FontWeight="Bold"
                            IsVisible="{Binding CurrentFieldName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <TextBlock Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
+                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
                 <TextBlock Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
             </StackPanel>
         </Border>
