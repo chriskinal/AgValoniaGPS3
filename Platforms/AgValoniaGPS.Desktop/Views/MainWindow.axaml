@@ -165,20 +165,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Canvas>
     </Grid>
 
-    <!-- Flag Placement Banner -->
-    <Border Background="#CC2980B9" CornerRadius="8" Padding="16,8"
-            HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"
-            IsVisible="{Binding IsPlaceFlagOnClickMode}" ZIndex="20">
-        <StackPanel Orientation="Horizontal" Spacing="16">
-            <TextBlock Text="Tap on map to place a flag"
-                       Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Content="Cancel"
-                    Command="{Binding PlaceFlagOnClickCommand}"
-                    Background="#DD3333" Foreground="White"
-                    Padding="12,4"/>
-        </StackPanel>
-    </Border>
-
     <!-- AB Creation Instruction Banner -->
     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="16,8"
             HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"

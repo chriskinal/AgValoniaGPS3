@@ -1220,7 +1220,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _coverageThumbnail = new WriteableBitmap(
                 new PixelSize(_thumbnailWidth, _thumbnailHeight),
                 new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Rgb565);
+                Avalonia.Platform.PixelFormat.Bgra8888);
         }
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -1231,9 +1231,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using var dstBuffer = _coverageThumbnail.Lock();
 
         ushort* src = (ushort*)srcBuffer.Address;
-        ushort* dst = (ushort*)dstBuffer.Address;
+        uint* dst = (uint*)dstBuffer.Address; // Bgra8888
         int srcStride = srcBuffer.RowBytes / 2; // ushort stride
-        int dstStride = dstBuffer.RowBytes / 2;
+        int dstStride = dstBuffer.RowBytes / 4; // uint stride
 
         for (int ty = 0; ty < _thumbnailHeight; ty++)
         {
@@ -1268,7 +1268,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     }
                 }
 
-                dst[ty * dstStride + tx] = result;
+                dst[ty * dstStride + tx] = Rgb565ToBgra8888(result);
             }
         }
 
