@@ -751,14 +751,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         double gridSize = 2000.0;
 
-        // Zoom-dependent grid spacing: 1m minor / 10m major when zoomed in,
-        // 10m minor / 100m major when zoomed out (matches AgOpenGPS behavior)
+        // Grid spacing based on implement width so lines show pass boundaries
+        double toolW = _toolWidth > 0.5 ? _toolWidth : 6.0; // fallback 6m
         double viewSpan = Math.Max(viewWidth, viewHeight);
+
+        // At normal zoom use tool width, at far zoom use multiples
         double spacing, majorEvery;
-        if (viewSpan < 100)       { spacing = 1.0;  majorEvery = 10.0; }
-        else if (viewSpan < 500)  { spacing = 5.0;  majorEvery = 50.0; }
-        else if (viewSpan < 2000) { spacing = 10.0; majorEvery = 100.0; }
-        else                      { spacing = 50.0; majorEvery = 500.0; }
+        if (viewSpan < toolW * 30)      { spacing = toolW;      majorEvery = toolW * 10; }
+        else if (viewSpan < toolW * 100) { spacing = toolW * 5;  majorEvery = toolW * 50; }
+        else                             { spacing = toolW * 10; majorEvery = toolW * 100; }
 
         // Calculate visible range (with some padding)
         double minX = _cameraX - viewWidth;
@@ -2280,7 +2281,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     var redBrush = Brushes.Red;
                     var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
-                    double fontSize = 16 * worldPerPx;
+                    double fontSize = 40 * worldPerPx;
                     var text = new FormattedText("?", System.Globalization.CultureInfo.InvariantCulture,
                         FlowDirection.LeftToRight, typeface, fontSize, redBrush);
                     context.DrawText(text, new Point(-text.Width / 2, size / 2 + worldPerPx * 2));
@@ -2308,13 +2309,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var vehicleConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle;
             double antPivot = vehicleConfig.AntennaPivot;
             double antOffset = vehicleConfig.AntennaOffset;
-            if (Math.Abs(antPivot) > 0.01 || Math.Abs(antOffset) > 0.01)
             {
-                // Antenna is offset from vehicle center (pivot) in local coordinates
-                // antPivot: forward (+) or backward (-), antOffset: right (+) or left (-)
+                // Antenna GPS position (blue dot at center when no offset configured)
                 var antennaBrush = new SolidColorBrush(Color.FromRgb(40, 120, 255));
                 var antennaPos = new Point(antOffset, antPivot);
-                context.DrawEllipse(antennaBrush, null, antennaPos, 0.4, 0.4);
+                context.DrawEllipse(antennaBrush, null, antennaPos, 0.5, 0.5);
             }
         }
     }
