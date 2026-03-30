@@ -2844,9 +2844,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double viewHeight = 200.0 / _zoom;
         double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
         double worldPerPixel = viewHeight / screenHeight;
-        double flagRadius = 5 * worldPerPixel;
-        double poleHeight = 16 * worldPerPixel;
-        double poleWidth = 1 * worldPerPixel;
+        double flagRadius = 10 * worldPerPixel;
+        double poleHeight = 28 * worldPerPixel;
+        double poleWidth = 2 * worldPerPixel;
 
         var polePen = new Pen(Brushes.White, poleWidth);
 
@@ -2897,8 +2897,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     private void DrawLabel(DrawingContext context, string text, double x, double y, double worldPerPixel, IBrush brush)
     {
-        // Scale font size based on zoom (target ~12 pixels on screen)
-        double fontSize = 12 * worldPerPixel;
+        // Scale font size based on zoom (target ~16 pixels on screen)
+        double fontSize = 16 * worldPerPixel;
 
         var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
         var formattedText = new FormattedText(
