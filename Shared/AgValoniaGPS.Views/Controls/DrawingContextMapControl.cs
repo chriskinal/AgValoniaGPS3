@@ -761,6 +761,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         else if (viewSpan < toolW * 100) { spacing = toolW * 5;  majorEvery = toolW * 50; }
         else                             { spacing = toolW * 10; majorEvery = toolW * 100; }
 
+        // Scale grid line thickness with zoom
+        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
+        double worldPerPixel = viewHeight / screenHeight;
+        double minorThickness = Math.Max(0.3 * worldPerPixel, 0.05);
+        double majorThickness = Math.Max(0.6 * worldPerPixel, 0.1);
+        _gridPenMinor = new Pen(_gridPenMinor.Brush, minorThickness);
+        _gridPenMajor = new Pen(_gridPenMajor.Brush, majorThickness);
+
         // Calculate visible range (with some padding)
         double minX = _cameraX - viewWidth;
         double maxX = _cameraX + viewWidth;
@@ -2276,8 +2284,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (!_hasValidHeading)
             {
                 double worldPerPx = (200.0 / _zoom) / (Bounds.Height > 0 ? Bounds.Height : 600);
-                // Counter-rotate so text stays upright
-                using (context.PushTransform(Matrix.CreateRotation(_vehicleHeading + _rotation)))
+                // Counter-rotate so text stays upright (undo vehicle heading + map rotation)
+                using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading - _rotation)))
                 {
                     var redBrush = Brushes.Red;
                     var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
@@ -2313,7 +2321,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // Antenna GPS position (blue dot at center when no offset configured)
                 var antennaBrush = new SolidColorBrush(Color.FromRgb(40, 120, 255));
                 var antennaPos = new Point(antOffset, antPivot);
-                context.DrawEllipse(antennaBrush, null, antennaPos, 0.5, 0.5);
+                context.DrawEllipse(antennaBrush, null, antennaPos, 0.25, 0.25);
             }
         }
     }
