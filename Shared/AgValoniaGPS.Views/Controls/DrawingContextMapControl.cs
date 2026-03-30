@@ -2294,15 +2294,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (!_hasValidHeading)
             {
                 double worldPerPx = (200.0 / _zoom) / (Bounds.Height > 0 ? Bounds.Height : 600);
-                // Counter-rotate so text stays upright (undo vehicle heading + map rotation)
-                using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading - _rotation)))
+                // Counter-rotate and flip Y so text stays upright
+                // Parent transforms: map Rotate(-_rotation), then Translate, then Rotate(-_vehicleHeading)
+                // To undo: Rotate(+vehicleHeading + rotation) then ScaleY(-1) for text Y-axis
+                using (context.PushTransform(
+                    Matrix.CreateRotation(_vehicleHeading + _rotation) *
+                    Matrix.CreateScale(1, -1)))
                 {
                     var redBrush = Brushes.Red;
                     var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
                     double fontSize = 40 * worldPerPx;
                     var text = new FormattedText("?", System.Globalization.CultureInfo.InvariantCulture,
                         FlowDirection.LeftToRight, typeface, fontSize, redBrush);
-                    context.DrawText(text, new Point(-text.Width / 2, size / 2 + worldPerPx * 2));
+                    context.DrawText(text, new Point(size / 2 + worldPerPx * 2, -fontSize / 2));
                 }
             }
 
