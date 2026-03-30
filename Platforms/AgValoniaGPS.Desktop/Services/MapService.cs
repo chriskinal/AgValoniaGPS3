@@ -109,6 +109,8 @@ public class MapService : IMapService
         }
     }
 
+    public void SetReversing(bool isReversing) => GetMapControl().IsReversing = isReversing;
+
     public void SetNorthUp(bool isNorthUp) => GetMapControl().SetNorthUp(isNorthUp);
 
     public void SetDayMode(bool isDayMode) => GetMapControl().SetDayMode(isDayMode);

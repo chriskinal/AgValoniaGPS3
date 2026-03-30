@@ -132,6 +132,10 @@ public interface ISharedMapControl
     // Flag markers on the map
     void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags);
 
+    // Reverse indicator
+    bool IsReversing { get; set; }
+
+
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
 
@@ -201,6 +205,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _is3DMode = false;
     private bool _isNorthUp = false;
     private bool _isDayMode = true;
+
+    // Reverse indicator
+    private bool _isReversing;
 
     // Auto-pan settings
     private bool _autoPanEnabled = true;
@@ -2249,6 +2256,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
             }
 
+            // Draw reverse indicator (yellow downward arrow behind vehicle)
+            if (_isReversing)
+            {
+                double arrowSize = 2.0;
+                var arrowBrush = new SolidColorBrush(Color.FromArgb(200, 255, 220, 0));
+                var arrowGeometry = new StreamGeometry();
+                using (var ctx = arrowGeometry.Open())
+                {
+                    // Downward-pointing triangle behind vehicle (negative Y = behind)
+                    ctx.BeginFigure(new Point(0, -arrowSize * 2.5), true);
+                    ctx.LineTo(new Point(-arrowSize * 0.7, -arrowSize * 1.2));
+                    ctx.LineTo(new Point(arrowSize * 0.7, -arrowSize * 1.2));
+                    ctx.EndFigure(true);
+                }
+                context.DrawGeometry(arrowBrush, null, arrowGeometry);
+            }
+
             // Draw antenna position as small blue dot
             var vehicleConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle;
             double antPivot = vehicleConfig.AntennaPivot;
@@ -3169,6 +3193,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// <summary>
     /// Enable or disable auto-pan feature
     /// </summary>
+    public bool IsReversing
+    {
+        get => _isReversing;
+        set => _isReversing = value;
+    }
+
     public bool AutoPanEnabled
     {
         get => _autoPanEnabled;

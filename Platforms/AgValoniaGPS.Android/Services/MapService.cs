@@ -147,6 +147,8 @@ public class MapService : IMapService
         _mapControl?.SetVehiclePosition(easting, northing, headingRadians);
     }
 
+    public void SetReversing(bool isReversing) { if (_mapControl != null) _mapControl.IsReversing = isReversing; }
+
     public void SetNorthUp(bool isNorthUp) => _mapControl?.SetNorthUp(isNorthUp);
 
     public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);

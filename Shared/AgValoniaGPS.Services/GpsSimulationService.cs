@@ -118,7 +118,7 @@ namespace AgValoniaGPS.Services
 
             // Calculate speed (km/h) from step distance
             // Original: Math.Abs(Math.Round(4 * stepDistance * 10, 2))
-            double speedKmh = Math.Abs(Math.Round(4.0 * _stepDistance * 10.0, 2));
+            double speedKmh = Math.Round(4.0 * _stepDistance * 10.0, 2);
 
             // Calculate next position using WGS84 bearing/distance
             _currentPosition = _currentPosition.CalculateNewPostionFromBearingDistance(_headingRadians, _stepDistance);

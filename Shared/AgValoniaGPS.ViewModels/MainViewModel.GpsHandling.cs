@@ -62,11 +62,15 @@ public partial class MainViewModel
         {
             this.RaiseAndSetIfChanged(ref _speed, value);
             this.RaisePropertyChanged(nameof(SpeedKmh));
+            this.RaisePropertyChanged(nameof(IsReversing));
         }
     }
 
-    /// <summary>Speed in km/h for display binding.</summary>
-    public double SpeedKmh => _speed * 3.6;
+    /// <summary>True when the vehicle is moving backward (negative speed).</summary>
+    public bool IsReversing => _speed < -0.1;
+
+    /// <summary>Speed in km/h for display (absolute value).</summary>
+    public double SpeedKmh => Math.Abs(_speed) * 3.6;
 
     public int SatelliteCount
     {
@@ -142,6 +146,9 @@ public partial class MainViewModel
 
         // Center camera on vehicle when in follow mode
         UpdateCameraFollow(data.CurrentPosition.Easting, data.CurrentPosition.Northing);
+
+        // Update reverse indicator on map
+        _mapService.SetReversing(IsReversing);
 
         // Add boundary point if recording is active
         if (_boundaryRecordingService.IsRecording)

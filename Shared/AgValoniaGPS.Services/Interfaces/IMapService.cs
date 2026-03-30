@@ -62,6 +62,9 @@ public interface IMapService
     // Grid
     bool IsGridVisible { get; set; }
 
+    // Vehicle state
+    void SetReversing(bool isReversing);
+
     // View settings
     void SetNorthUp(bool isNorthUp);
     void SetDayMode(bool isDayMode);

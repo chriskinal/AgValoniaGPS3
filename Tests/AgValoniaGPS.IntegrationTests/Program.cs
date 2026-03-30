@@ -207,6 +207,26 @@ sealed class Program
         vm.State.UI.CloseDialog();
         Console.WriteLine("OK");
 
+        // Step 5b: Drive in reverse to show reverse indicator
+        Console.Write("[Step 5b] Reverse indicator... ");
+        vm.SimulatorReverseCommand?.Execute(null);
+        await Delay(100);
+        for (int i = 0; i < 30; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        Console.Write($"[isReversing={vm.IsReversing}] ");
+        CaptureScreenshot(window, "05b_reverse_indicator");
+        // Return to forward
+        vm.SimulatorForwardCommand?.Execute(null);
+        for (int i = 0; i < 20; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        Console.WriteLine("OK");
+
         // Step 6: Open configuration dialog
         Console.Write("[Step 6] Configuration dialog... ");
         vm.ShowConfigurationDialogCommand?.Execute(null);
