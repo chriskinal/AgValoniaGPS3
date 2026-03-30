@@ -137,8 +137,8 @@ public partial class ConfigurationViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(NumericInputValue));
 
         NumericInputDisplayText = integerOnly
-            ? ((int)currentValue).ToString()
-            : currentValue.ToString("F2");
+            ? ((int)currentValue).ToString(CultureInfo.InvariantCulture)
+            : currentValue.ToString("F2", CultureInfo.InvariantCulture);
 
         IsNumericInputVisible = true;
     }
