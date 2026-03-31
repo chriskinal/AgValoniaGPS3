@@ -70,6 +70,7 @@ public interface IMapService
     void SetNorthUp(bool isNorthUp);
     void SetAutoPan(bool enabled);
     void SetCameraFollowMode(int mode);
+    (double X, double Y) GetCameraCenter();
     void SetDayMode(bool isDayMode);
 
     // Flag markers

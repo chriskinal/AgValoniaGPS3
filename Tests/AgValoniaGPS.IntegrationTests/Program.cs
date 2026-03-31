@@ -276,11 +276,21 @@ sealed class Program
             throw new Exception($"Expected label 'C' in Free mode, got '{vm.CameraModeLabel}'");
         Console.Write($"[afterPan={vm.CameraMode},{vm.CameraModeLabel}] ");
 
-        // Drive tractor and verify it moved but we're in Free mode
+        // Record camera position before driving
+        var mapService = App.Services!.GetRequiredService<IMapService>();
+        var camBefore = mapService.GetCameraCenter();
+
+        // Drive tractor and verify camera stays still in Free mode
         for (int i = 0; i < 10; i++) { simService.Tick(0); await Delay(33); }
         // Camera mode should still be Free after driving
         if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.Free)
             throw new Exception($"Camera mode changed from Free during drive: {vm.CameraMode}");
+        // Camera position should not have moved
+        var camAfter = mapService.GetCameraCenter();
+        double camDelta = Math.Sqrt(Math.Pow(camAfter.X - camBefore.X, 2) + Math.Pow(camAfter.Y - camBefore.Y, 2));
+        Console.Write($"[camDelta={camDelta:F3}m] ");
+        if (camDelta > 0.01)
+            throw new Exception($"Camera moved {camDelta:F3}m in Free mode -- should stay still");
 
         CaptureScreenshot(window, "05c_compass_free");
 

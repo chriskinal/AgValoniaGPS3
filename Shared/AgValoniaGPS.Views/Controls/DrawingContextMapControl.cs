@@ -53,6 +53,7 @@ public interface ISharedMapControl
     void Pan(double deltaX, double deltaY);
     void Zoom(double factor);
     double GetZoom();
+    (double X, double Y) GetCameraCenter();
     void SetCamera(double x, double y, double zoom, double rotation);
     void Rotate(double deltaRadians);
 
@@ -3089,6 +3090,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     }
 
     public double GetZoom() => _zoom;
+
+    public (double X, double Y) GetCameraCenter() => (_cameraX, _cameraY);
 
     public void Rotate(double deltaRadians)
     {

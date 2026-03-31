@@ -153,6 +153,7 @@ public class MapService : IMapService
     public void SetNorthUp(bool isNorthUp) => _mapControl?.SetNorthUp(isNorthUp);
     public void SetAutoPan(bool enabled) { if (_mapControl != null) _mapControl.AutoPanEnabled = enabled; }
     public void SetCameraFollowMode(int mode) { if (_mapControl != null) _mapControl.CameraFollowMode = mode; }
+    public (double X, double Y) GetCameraCenter() => _mapControl?.GetCameraCenter() ?? (0, 0);
 
     public void SetDayMode(bool isDayMode) => _mapControl?.SetDayMode(isDayMode);
 
