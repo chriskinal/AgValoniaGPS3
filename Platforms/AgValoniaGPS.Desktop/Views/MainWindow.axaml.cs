@@ -194,6 +194,9 @@ public partial class MainWindow : Window
 
         // Wire up MapClicked event for AB line creation
         mapControl.MapClicked += OnMapClicked;
+
+        // Wire UserPanned event for camera Free mode
+        mapControl.UserPanned += () => ViewModel?.OnUserPan();
     }
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)
@@ -688,9 +691,6 @@ public partial class MainWindow : Window
         if (MapControl != null)
         {
             var point = e.GetCurrentPoint(this);
-            // Enter Free camera mode when user actually drags the map
-            if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
-                ViewModel?.OnUserPan();
             MapControl.UpdateMouse(point.Position);
             e.Handled = true;
         }

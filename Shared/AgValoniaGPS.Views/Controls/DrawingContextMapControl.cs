@@ -135,6 +135,9 @@ public interface ISharedMapControl
     // Camera follow mode (0=NorthUp, 1=HeadingUp, 2=Free)
     int CameraFollowMode { get; set; }
 
+    // Fired when user manually pans/drags the map
+    event Action? UserPanned;
+
     // Reverse indicator
     bool IsReversing { get; set; }
 
@@ -213,6 +216,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Camera follow mode: 0=NorthUp, 1=HeadingUp, 2=Free
     private int _cameraFollowMode = 0;
+    public event Action? UserPanned;
 
     // Reverse indicator
     private bool _isReversing;
@@ -3056,9 +3060,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void Pan(double deltaX, double deltaY)
     {
-        _cameraFollowMode = 2; // Enter Free mode on user drag
         _cameraX += deltaX;
         _cameraY += deltaY;
+        // Notify ViewModel to enter Free mode (single source of truth)
+        UserPanned?.Invoke();
     }
 
     public void PanTo(double x, double y)
@@ -3086,6 +3091,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void Rotate(double deltaRadians)
     {
         _rotation += deltaRadians;
+        UserPanned?.Invoke();
     }
 
     public void SetGridVisible(bool visible)

@@ -208,6 +208,7 @@ public partial class MainView : UserControl
 
             // Wire up MapClicked event for AB line creation
             _mapControl.MapClicked += OnMapClicked;
+            _mapControl.UserPanned += () => _viewModel?.OnUserPan();
 
 
             // Wire up coverage updates
