@@ -927,6 +927,7 @@ public partial class ConfigurationViewModel : ReactiveObject
     public ICommand ToggleAutoDayNightCommand { get; private set; } = null!;
     public ICommand ToggleSvennArrowCommand { get; private set; } = null!;
     public ICommand ToggleStartFullscreenCommand { get; private set; } = null!;
+    public event Action<bool>? FullscreenChanged;
     public ICommand ToggleElevationLogCommand { get; private set; } = null!;
     public ICommand ToggleFieldTextureCommand { get; private set; } = null!;
     public ICommand ToggleGridCommand { get; private set; } = null!;
@@ -1558,6 +1559,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         {
             Display.StartFullscreen = !Display.StartFullscreen;
             Config.MarkChanged();
+            FullscreenChanged?.Invoke(Display.StartFullscreen);
         });
 
         ToggleElevationLogCommand = ReactiveCommand.Create(() =>
