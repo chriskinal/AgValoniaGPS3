@@ -259,6 +259,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private bool _isPanning = false;
     private bool _isRotating = false;
     private Point _lastMousePosition;
+    private Point _panStartPosition;
+    private bool _hasDraggedPastThreshold = false;
+    private const double DragThreshold = 5.0; // pixels before triggering Free mode
 
     // Boundary data
     private Boundary? _boundary;
@@ -2979,6 +2982,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
 
             _isPanning = true;
+            _panStartPosition = point.Position;
+            _hasDraggedPastThreshold = false;
             _lastMousePosition = point.Position;
             e.Pointer.Capture(this);
             e.Handled = true;
@@ -3019,14 +3024,27 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _cameraX += rotatedDeltaX;
             _cameraY += rotatedDeltaY;
 
+            // Check if drag exceeds threshold before entering Free mode
+            if (!_hasDraggedPastThreshold)
+            {
+                double dist = Math.Sqrt(Math.Pow(currentPos.X - _panStartPosition.X, 2) +
+                                        Math.Pow(currentPos.Y - _panStartPosition.Y, 2));
+                if (dist > DragThreshold)
+                    _hasDraggedPastThreshold = true;
+            }
+            if (_hasDraggedPastThreshold)
+            {
+                _cameraFollowMode = 2;
+                UserPanned?.Invoke();
+            }
             _lastMousePosition = currentPos;
-            UserPanned?.Invoke();
             e.Handled = true;
         }
         else if (_isRotating)
         {
             double deltaX = currentPos.X - _lastMousePosition.X;
             _rotation += deltaX * 0.01;
+            _cameraFollowMode = 2;
             _lastMousePosition = currentPos;
             UserPanned?.Invoke();
             e.Handled = true;
