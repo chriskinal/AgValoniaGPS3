@@ -163,7 +163,17 @@ public partial class MainViewModel
             CameraMode.Free => 2,
             _ => 0
         };
+        var camPos = _mapService.GetCameraCenter();
+        Console.WriteLine($"[Camera] ApplyCameraMode: {_cameraMode} (mapMode={mapMode}) cam=({camPos.X:F1},{camPos.Y:F1}) vehicle=({Easting:F1},{Northing:F1})");
         _mapService.SetCameraFollowMode(mapMode);
+
+        // When switching FROM Free to a follow mode, immediately center on vehicle
+        if (_cameraMode != CameraMode.Free)
+        {
+            _mapService.PanTo(Easting, Northing);
+            Console.WriteLine($"[Camera] Recentered to ({Easting:F1},{Northing:F1})");
+        }
+
         IsNorthUp = _cameraMode == CameraMode.NorthUp;
     }
 
@@ -175,6 +185,7 @@ public partial class MainViewModel
         if (_cameraMode != CameraMode.Free)
         {
             _previousCameraMode = _cameraMode;
+            Console.WriteLine($"[Camera] OnUserPan: {_cameraMode} -> Free (prev={_previousCameraMode})");
             CameraMode = CameraMode.Free; // Use property setter to trigger ApplyCameraMode
         }
     }
