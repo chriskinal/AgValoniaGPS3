@@ -3019,6 +3019,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _cameraY += rotatedDeltaY;
 
             _lastMousePosition = currentPos;
+            UserPanned?.Invoke();
             e.Handled = true;
         }
         else if (_isRotating)
@@ -3026,6 +3027,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             double deltaX = currentPos.X - _lastMousePosition.X;
             _rotation += deltaX * 0.01;
             _lastMousePosition = currentPos;
+            UserPanned?.Invoke();
             e.Handled = true;
         }
     }
