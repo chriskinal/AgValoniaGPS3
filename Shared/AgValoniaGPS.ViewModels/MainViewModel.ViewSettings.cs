@@ -129,6 +129,7 @@ public partial class MainViewModel
     #region Camera Mode
 
     private CameraMode _cameraMode = CameraMode.NorthUp;
+    private CameraMode _previousCameraMode = CameraMode.NorthUp;
     public CameraMode CameraMode
     {
         get => _cameraMode;
@@ -173,9 +174,8 @@ public partial class MainViewModel
     {
         if (_cameraMode != CameraMode.Free)
         {
-            _cameraMode = CameraMode.Free;
-            this.RaisePropertyChanged(nameof(CameraMode));
-            this.RaisePropertyChanged(nameof(CameraModeLabel));
+            _previousCameraMode = _cameraMode;
+            CameraMode = CameraMode.Free; // Use property setter to trigger ApplyCameraMode
         }
     }
 

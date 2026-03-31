@@ -89,7 +89,7 @@ public partial class MainViewModel
             var oldMode = CameraMode;
             CameraMode = CameraMode switch
             {
-                Models.CameraMode.Free => Models.CameraMode.NorthUp,
+                Models.CameraMode.Free => _previousCameraMode, // Return to previous mode
                 Models.CameraMode.NorthUp => Models.CameraMode.HeadingUp,
                 Models.CameraMode.HeadingUp => Models.CameraMode.NorthUp,
                 _ => Models.CameraMode.NorthUp
