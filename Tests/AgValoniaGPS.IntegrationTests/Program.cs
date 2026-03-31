@@ -253,21 +253,41 @@ sealed class Program
         Console.Write($"[mode={vm.CameraMode}] ");
         vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
         await Delay(200);
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.HeadingUp)
+            throw new Exception($"Expected HeadingUp after toggle, got {vm.CameraMode}");
         Console.Write($"[after1={vm.CameraMode}] ");
+
         vm.ToggleCameraModeCommand?.Execute(null); // HeadingUp -> NorthUp
         await Delay(200);
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.NorthUp)
+            throw new Exception($"Expected NorthUp after toggle, got {vm.CameraMode}");
         Console.Write($"[after2={vm.CameraMode}] ");
-        // Simulate user pan -> Free mode
+
+        // Switch to HeadingUp then pan -> Free should remember HeadingUp
+        vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
+        await Delay(100);
+
+        // Simulate user pan -> Free mode (via OnUserPan, simulating real drag)
         vm.OnUserPan();
         await Delay(200);
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.Free)
+            throw new Exception($"Expected Free after pan, got {vm.CameraMode}");
+        if (vm.CameraModeLabel != "C")
+            throw new Exception($"Expected label 'C' in Free mode, got '{vm.CameraModeLabel}'");
         Console.Write($"[afterPan={vm.CameraMode},{vm.CameraModeLabel}] ");
-        // Drive and verify camera doesn't follow in Free mode
-        double eastBefore = vm.Easting;
+
+        // Drive tractor and verify it moved but we're in Free mode
         for (int i = 0; i < 10; i++) { simService.Tick(0); await Delay(33); }
-        Console.Write($"[eastDelta={Math.Abs(vm.Easting - eastBefore):F2}] ");
+        // Camera mode should still be Free after driving
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.Free)
+            throw new Exception($"Camera mode changed from Free during drive: {vm.CameraMode}");
+
         CaptureScreenshot(window, "05c_compass_free");
-        // Return to NorthUp
-        vm.ToggleCameraModeCommand?.Execute(null); // Free -> NorthUp
+
+        // Press compass button -> should restore HeadingUp (previous mode)
+        vm.ToggleCameraModeCommand?.Execute(null); // Free -> HeadingUp (previous)
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.HeadingUp)
+            throw new Exception($"Expected HeadingUp (previous mode) after recenter, got {vm.CameraMode}");
         Console.Write($"[restored={vm.CameraMode}] ");
         Console.WriteLine("OK");
 
