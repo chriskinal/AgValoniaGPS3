@@ -261,6 +261,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private Point _lastMousePosition;
     private Point _panStartPosition;
     private bool _hasDraggedPastThreshold = false;
+    private double _rotationOnPanStart = 0;
     private const double DragThreshold = 5.0; // pixels before triggering Free mode
 
     // Boundary data
@@ -2984,6 +2985,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _isPanning = true;
             _panStartPosition = point.Position;
             _hasDraggedPastThreshold = false;
+            _rotationOnPanStart = _rotation; // Save rotation to prevent GPS tick from changing it during drag
             _lastMousePosition = point.Position;
             e.Pointer.Capture(this);
             e.Handled = true;
@@ -3004,6 +3006,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         if (_isPanning)
         {
+            // Preserve rotation from pan start -- prevent GPS tick from
+            // changing rotation between PointerMoved events
+            _rotation = _rotationOnPanStart;
+
             double deltaX = currentPos.X - _lastMousePosition.X;
             double deltaY = currentPos.Y - _lastMousePosition.Y;
 
