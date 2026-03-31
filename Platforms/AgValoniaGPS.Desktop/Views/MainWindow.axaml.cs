@@ -74,19 +74,24 @@ public partial class MainWindow : Window
             ViewModel.ZoomInRequested += () => MapControl?.Zoom(1.2);
             ViewModel.ZoomOutRequested += () => MapControl?.Zoom(1.0 / 1.2);
 
-            // Wire fullscreen toggle for immediate effect
-            if (ViewModel.ConfigurationViewModel != null)
+            // Wire fullscreen toggle for immediate effect (ConfigurationViewModel
+            // is created lazily, so subscribe when it appears)
+            ViewModel.PropertyChanged += (s, e) =>
             {
-                ViewModel.ConfigurationViewModel.FullscreenChanged += (isFullscreen) =>
+                if (e.PropertyName == nameof(MainViewModel.ConfigurationViewModel)
+                    && ViewModel?.ConfigurationViewModel != null)
                 {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    ViewModel.ConfigurationViewModel.FullscreenChanged += (isFullscreen) =>
                     {
-                        WindowState = isFullscreen
-                            ? WindowState.FullScreen
-                            : WindowState.Normal;
-                    });
-                };
-            }
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            WindowState = isFullscreen
+                                ? WindowState.FullScreen
+                                : WindowState.Normal;
+                        });
+                    };
+                }
+            };
         }
 
         // Subscribe to FPS updates from map control (instance-based)
