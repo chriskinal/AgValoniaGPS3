@@ -301,6 +301,9 @@ public class ConfigurationService(
         store.Display.SvennArrowVisible = settings.SvennArrowVisible;
         store.Display.KeyboardEnabled = settings.KeyboardEnabled;
         store.Display.HeadlandDistanceVisible = settings.HeadlandDistanceVisible;
+        store.Display.ExtraGuidelines = settings.ExtraGuidelines;
+        store.Display.ExtraGuidelinesCount = settings.ExtraGuidelinesCount;
+        store.Display.FieldTextureVisible = settings.FieldTextureVisible;
         store.Display.SimulatorPanelX = settings.SimulatorPanelX;
         store.Display.SimulatorPanelY = settings.SimulatorPanelY;
         store.Display.SimulatorPanelVisible = settings.SimulatorPanelVisible;
@@ -362,6 +365,9 @@ public class ConfigurationService(
         settings.SvennArrowVisible = store.Display.SvennArrowVisible;
         settings.KeyboardEnabled = store.Display.KeyboardEnabled;
         settings.HeadlandDistanceVisible = store.Display.HeadlandDistanceVisible;
+        settings.ExtraGuidelines = store.Display.ExtraGuidelines;
+        settings.ExtraGuidelinesCount = store.Display.ExtraGuidelinesCount;
+        settings.FieldTextureVisible = store.Display.FieldTextureVisible;
         settings.SimulatorPanelX = store.Display.SimulatorPanelX;
         settings.SimulatorPanelY = store.Display.SimulatorPanelY;
         settings.SimulatorPanelVisible = store.Display.SimulatorPanelVisible;

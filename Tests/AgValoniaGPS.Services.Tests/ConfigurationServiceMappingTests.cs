@@ -611,6 +611,9 @@ public class ConfigurationServiceMappingTests
         _settings.SvennArrowVisible = true;
         _settings.KeyboardEnabled = true;
         _settings.HeadlandDistanceVisible = false;
+        _settings.ExtraGuidelines = true;
+        _settings.ExtraGuidelinesCount = 5;
+        _settings.FieldTextureVisible = true;
         _settings.SimulatorPanelX = 9999;
         _settings.SimulatorPanelY = 9999;
         _settings.SimulatorPanelVisible = true;

@@ -34,6 +34,9 @@ namespace AgValoniaGPS.Models
         public bool SvennArrowVisible { get; set; } = false;
         public bool KeyboardEnabled { get; set; } = false;
         public bool HeadlandDistanceVisible { get; set; } = true;
+        public bool ExtraGuidelines { get; set; } = false;
+        public int ExtraGuidelinesCount { get; set; } = 10;
+        public bool FieldTextureVisible { get; set; } = false;
 
         // Panel positions
         public double SimulatorPanelX { get; set; } = double.NaN; // NaN means not set
