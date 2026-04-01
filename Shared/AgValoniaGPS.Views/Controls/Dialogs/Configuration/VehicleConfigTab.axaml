@@ -54,19 +54,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="MinWidth" Value="80"/>
         </Style>
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="120"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
-        </Style>
         <Style Selector="TextBlock.LargeValue">
             <Setter Property="FontSize" Value="32"/>
             <Setter Property="FontWeight" Value="Bold"/>
