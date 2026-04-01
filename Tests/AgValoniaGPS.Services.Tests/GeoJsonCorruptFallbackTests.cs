@@ -108,14 +108,14 @@ public class GeoJsonCorruptFallbackTests
 
         _service.LoadField(_fieldDir);
 
-        // Original should be renamed
-        Assert.That(File.Exists(Path.Combine(_fieldDir, "field.geojson")), Is.False,
-            "Corrupt file should be renamed");
-
         // Backup should exist with .corrupt. prefix
         var backups = Directory.GetFiles(_fieldDir, "field.geojson.corrupt.*");
         Assert.That(backups, Has.Length.EqualTo(1),
             "Should create exactly one backup of corrupt file");
+
+        // A fresh field.geojson should be created from auto-conversion of legacy
+        Assert.That(File.Exists(Path.Combine(_fieldDir, "field.geojson")), Is.True,
+            "Fresh GeoJSON should be auto-created from legacy after corrupt rename");
     }
 
     [Test]

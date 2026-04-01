@@ -100,6 +100,20 @@ public class FieldService : IFieldService
         var legacyField = _fieldPlaneService.LoadField(fieldDirectory);
         legacyField.Boundary = _boundaryService.LoadBoundary(fieldDirectory);
         legacyField.BackgroundImage = _backgroundImageService.LoadBackgroundImage(fieldDirectory);
+
+        // Auto-convert: save as GeoJSON so future loads use the modern format
+        try
+        {
+            GeoJsonFieldService.Save(legacyField, tracks: null);
+            System.Diagnostics.Debug.WriteLine(
+                $"[FieldService] Auto-converted legacy field to GeoJSON: '{fieldDirectory}'");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[FieldService] Auto-conversion to GeoJSON failed: {ex.Message}");
+        }
+
         return legacyField;
     }
 
