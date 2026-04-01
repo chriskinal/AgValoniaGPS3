@@ -378,6 +378,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Pens and brushes (reused for performance)
     private IBrush _backgroundBrush;
+    private Bitmap? _groundTexture;
     private Pen _gridPenMinor;
     private Pen _gridPenMajor;
     private readonly Pen _gridPenAxisX;
@@ -449,6 +450,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         Focusable = true;
         IsHitTestVisible = true;
         ClipToBounds = true;
+
+        // Load ground texture
+        try
+        {
+            var uri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTexture.png");
+            using var stream = AssetLoader.Open(uri);
+            _groundTexture = new Bitmap(stream);
+            Debug.WriteLine("[DrawingContextMapControl] Loaded ground texture");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[DrawingContextMapControl] Ground texture not found: {ex.Message}");
+        }
 
         // Initialize pens and brushes
         _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
@@ -576,6 +590,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Save context state and apply camera transform
         using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
         {
+            // Draw ground texture tiles (under everything)
+            if (_groundTexture != null)
+            {
+                DrawGroundTexture(context, viewWidth, viewHeight);
+            }
+
             // Draw background image first (under everything else)
             // Skip if background is composited into coverage bitmap
             // Respect FieldTextureVisible config toggle
@@ -2464,6 +2484,46 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var goalBrush = new SolidColorBrush(Color.FromArgb(200, 0, 200, 255));
         double dotRadius = 3 * worldPerPixel;
         context.DrawEllipse(goalBrush, null, goalPos, dotRadius, dotRadius);
+    }
+
+    /// <summary>
+    /// Draw tiled ground texture across the visible world area.
+    /// Each tile covers 100m x 100m of world space.
+    /// </summary>
+    private void DrawGroundTexture(DrawingContext context, double viewWidth, double viewHeight)
+    {
+        const double TILE_SIZE = 100.0; // meters per tile
+
+        // Calculate visible world bounds
+        double centerX = _cameraX;
+        double centerY = _cameraY;
+        double halfW = viewWidth / 2 + TILE_SIZE;
+        double halfH = viewHeight / 2 + TILE_SIZE;
+
+        // Find tile range
+        int startTileX = (int)Math.Floor((centerX - halfW) / TILE_SIZE);
+        int endTileX = (int)Math.Ceiling((centerX + halfW) / TILE_SIZE);
+        int startTileY = (int)Math.Floor((centerY - halfH) / TILE_SIZE);
+        int endTileY = (int)Math.Ceiling((centerY + halfH) / TILE_SIZE);
+
+        // Limit tiles to avoid excessive drawing when zoomed very far out
+        int maxTiles = 20;
+        if (endTileX - startTileX > maxTiles || endTileY - startTileY > maxTiles)
+        {
+            // Too zoomed out - skip texture, solid background is fine
+            return;
+        }
+
+        for (int tx = startTileX; tx < endTileX; tx++)
+        {
+            for (int ty = startTileY; ty < endTileY; ty++)
+            {
+                double worldX = tx * TILE_SIZE;
+                double worldY = ty * TILE_SIZE;
+                var destRect = new Rect(worldX, -(worldY + TILE_SIZE), TILE_SIZE, TILE_SIZE);
+                context.DrawImage(_groundTexture!, destRect);
+            }
+        }
     }
 
     /// <summary>
