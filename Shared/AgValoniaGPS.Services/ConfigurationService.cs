@@ -298,6 +298,7 @@ public class ConfigurationService(
         store.Display.WindowY = settings.WindowY;
         store.Display.WindowMaximized = settings.WindowMaximized;
         store.Display.StartFullscreen = settings.StartFullscreen;
+        store.Display.SvennArrowVisible = settings.SvennArrowVisible;
         store.Display.SimulatorPanelX = settings.SimulatorPanelX;
         store.Display.SimulatorPanelY = settings.SimulatorPanelY;
         store.Display.SimulatorPanelVisible = settings.SimulatorPanelVisible;
@@ -356,6 +357,7 @@ public class ConfigurationService(
         settings.WindowY = store.Display.WindowY;
         settings.WindowMaximized = store.Display.WindowMaximized;
         settings.StartFullscreen = store.Display.StartFullscreen;
+        settings.SvennArrowVisible = store.Display.SvennArrowVisible;
         settings.SimulatorPanelX = store.Display.SimulatorPanelX;
         settings.SimulatorPanelY = store.Display.SimulatorPanelY;
         settings.SimulatorPanelVisible = store.Display.SimulatorPanelVisible;
