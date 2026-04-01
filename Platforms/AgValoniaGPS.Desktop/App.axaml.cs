@@ -73,6 +73,9 @@ public partial class App : Application
         // Wire up cross-referencing services (AutoSteer → UDP)
         Services.WireUpServices();
 
+        // Extract sound files from Avalonia resources for cross-platform audio
+        ExtractSoundFiles(Services);
+
         // Load settings and sync to ConfigurationStore
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.Load();
@@ -120,6 +123,46 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ExtractSoundFiles(IServiceProvider services)
+    {
+        try
+        {
+            var audioService = services.GetService<IAudioService>() as AgValoniaGPS.Services.Audio.AudioService;
+            if (audioService == null) return;
+
+            var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "AgValoniaGPS", "Sounds");
+            System.IO.Directory.CreateDirectory(tempDir);
+
+            string[] soundFiles = { "Alarm10.wav", "SteerOn.wav", "SteerOff.wav", "HydUp.wav",
+                "HydDown.wav", "rtk_lost.wav", "rtk_back.wav", "SectionOn.wav",
+                "SectionOff.wav", "Headland.wav" };
+
+            foreach (var fileName in soundFiles)
+            {
+                var destPath = System.IO.Path.Combine(tempDir, fileName);
+                if (System.IO.File.Exists(destPath)) continue;
+
+                try
+                {
+                    var uri = new Uri($"avares://AgValoniaGPS.Views/Assets/Sounds/{fileName}");
+                    using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+                    using var fileStream = System.IO.File.Create(destPath);
+                    stream.CopyTo(fileStream);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Audio] Failed to extract {fileName}: {ex.Message}");
+                }
+            }
+
+            audioService.SetSoundDirectory(tempDir);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Audio] Sound extraction failed: {ex.Message}");
+        }
     }
 
     private void DisableAvaloniaDataAnnotationValidation()
