@@ -71,6 +71,7 @@ public partial class MainViewModel : ReactiveObject
     private readonly ISectionControlService _sectionControlService;
     private readonly INtripProfileService _ntripProfileService;
     private readonly IChartDataService _chartDataService;
+    private readonly IAudioService _audioService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
@@ -161,6 +162,7 @@ public partial class MainViewModel : ReactiveObject
         ISectionControlService sectionControlService,
         INtripProfileService ntripProfileService,
         IChartDataService chartDataService,
+        IAudioService audioService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
@@ -191,6 +193,7 @@ public partial class MainViewModel : ReactiveObject
         _sectionControlService = sectionControlService;
         _ntripProfileService = ntripProfileService;
         _chartDataService = chartDataService;
+        _audioService = audioService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();

@@ -209,8 +209,15 @@ public partial class MainViewModel
 
         var output = _headlandDetector.DetectHeadland(input);
 
+        bool wasWarning = State.Field.HeadlandProximityWarning;
         State.Field.HeadlandProximityDistance = output.HeadlandDistance;
         State.Field.HeadlandProximityWarning = output.ShouldTriggerWarning;
+
+        // Play headland alarm on warning transition (not every frame)
+        if (output.ShouldTriggerWarning && !wasWarning)
+        {
+            _audioService.Play(AgValoniaGPS.Services.Interfaces.SoundEffect.Headland);
+        }
     }
 
     /// <summary>

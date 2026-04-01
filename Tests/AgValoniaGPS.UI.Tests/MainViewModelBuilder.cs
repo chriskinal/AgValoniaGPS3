@@ -61,6 +61,7 @@ public class MainViewModelBuilder
             sectionControlService: Substitute.For<ISectionControlService>(),
             ntripProfileService: NtripProfileService,
             chartDataService: Substitute.For<IChartDataService>(),
+            audioService: Substitute.For<IAudioService>(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }

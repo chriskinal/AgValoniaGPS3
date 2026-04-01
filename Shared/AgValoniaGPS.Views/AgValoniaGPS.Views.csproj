@@ -40,6 +40,7 @@
     <AvaloniaResource Include="Assets\Icons\**\*.png" />
     <AvaloniaResource Include="Assets\Icons\**\*.gif" />
     <AvaloniaResource Include="Assets\Images\**\*.png" />
+    <AvaloniaResource Include="Assets\Sounds\**\*.wav" />
   </ItemGroup>
 
 </Project>

@@ -89,6 +89,9 @@ public static class ServiceCollectionExtensions
         // Chart data service (collects rolling time-series for diagnostic charts)
         services.AddSingleton<IChartDataService, ChartDataService>();
 
+        // Audio service (cross-platform sound effects)
+        services.AddSingleton<IAudioService, AgValoniaGPS.Services.Audio.AudioService>();
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 
