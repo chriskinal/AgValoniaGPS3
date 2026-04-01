@@ -615,10 +615,35 @@ public partial class MainViewModel
             NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, right
         });
 
-        // Bottom Strip Commands
+        // Bottom Strip Commands - cycle through preset coverage colors
         ChangeMappingColorCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Section Mapping Color - not yet implemented";
+            uint[] presets = new uint[]
+            {
+                0x98FB98, // Pale green (default)
+                0x00CED1, // Dark turquoise
+                0xFFD700, // Gold
+                0xFF8C00, // Dark orange
+                0xFF69B4, // Hot pink
+                0x87CEEB, // Sky blue
+                0xDDA0DD, // Plum
+                0xF0E68C, // Khaki
+            };
+
+            var tool = ConfigStore.Tool;
+            uint current = tool.SingleCoverageColor;
+
+            // Find current index and cycle to next
+            int idx = Array.IndexOf(presets, current);
+            int next = (idx + 1) % presets.Length;
+            tool.SingleCoverageColor = presets[next];
+
+            // Extract RGB for status message
+            byte r = (byte)((presets[next] >> 16) & 0xFF);
+            byte g = (byte)((presets[next] >> 8) & 0xFF);
+            byte b = (byte)(presets[next] & 0xFF);
+            string[] names = { "Green", "Turquoise", "Gold", "Orange", "Pink", "Blue", "Plum", "Khaki" };
+            StatusMessage = $"Coverage color: {names[next]}";
         });
 
         SnapToPivotCommand = ReactiveCommand.Create(() =>
