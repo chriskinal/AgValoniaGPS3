@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="600"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs.GpsSubTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -64,26 +65,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="12"/>
-        </Style>
-
-        <!-- Tappable Value Button Style -->
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="MinWidth" Value="80"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
-        </Style>
-        <Style Selector="Button.TappableValue:disabled">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
         </Style>
 
         <!-- Toggle Button with custom template for instant feedback -->
@@ -180,17 +161,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Heading Offset -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Heading Offset (Degree)" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualHeadingOffsetCommand}" IsEnabled="{Binding Connections.IsDualGps}">
-                                <TextBlock Text="{Binding Connections.DualHeadingOffset, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Connections.DualHeadingOffset, Mode=TwoWay}"
+                                Unit="deg" FormatString="F1"
+                                EditCommand="{Binding EditDualHeadingOffsetCommand}"
+                                IsEnabled="{Binding Connections.IsDualGps}"/>
                         </Grid>
 
                         <!-- Reverse Distance -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Reverse Distance" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualReverseDistanceCommand}" IsEnabled="{Binding Connections.IsDualGps}">
-                                <TextBlock Text="{Binding Connections.DualReverseDistance, StringFormat='{}{0:F2}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Connections.DualReverseDistance, Mode=TwoWay}"
+                                Unit="m" FormatString="F2"
+                                EditCommand="{Binding EditDualReverseDistanceCommand}"
+                                IsEnabled="{Binding Connections.IsDualGps}"/>
                         </Grid>
 
                         <!-- Auto Dual <> Fix -->
@@ -205,9 +190,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Switch Speed -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Switch Speed" Foreground="{Binding Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDualSwitchSpeedCommand}" IsEnabled="{Binding Connections.IsDualGps}">
-                                <TextBlock Text="{Binding Connections.DualSwitchSpeed, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Connections.DualSwitchSpeed, Mode=TwoWay}"
+                                Unit="" FormatString="F1"
+                                EditCommand="{Binding EditDualSwitchSpeedCommand}"
+                                IsEnabled="{Binding Connections.IsDualGps}"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -222,17 +209,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Minimum GPS Step -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Minimum GPS Step" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditMinGpsStepCommand}" IsEnabled="{Binding !Connections.IsDualGps}">
-                                <TextBlock Text="{Binding Connections.MinGpsStep, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Connections.MinGpsStep, Mode=TwoWay}"
+                                Unit="m" FormatString="F2"
+                                EditCommand="{Binding EditMinGpsStepCommand}"
+                                IsEnabled="{Binding !Connections.IsDualGps}"/>
                         </Grid>
 
                         <!-- Fix to Fix Distance -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Fix to Fix Distance" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditFixToFixDistanceCommand}" IsEnabled="{Binding !Connections.IsDualGps}">
-                                <TextBlock Text="{Binding Connections.FixToFixDistance, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Connections.FixToFixDistance, Mode=TwoWay}"
+                                Unit="m" FormatString="F2"
+                                EditCommand="{Binding EditFixToFixDistanceCommand}"
+                                IsEnabled="{Binding !Connections.IsDualGps}"/>
                         </Grid>
 
                         <!-- Fusion Slider -->

@@ -20,6 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs.RollSubTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -39,21 +40,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,4"/>
-        </Style>
-
-        <!-- Tappable Value Button Style -->
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="100"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
 
         <!-- Action Button Style -->
@@ -110,9 +96,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Roll Zero Offset" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                     </StackPanel>
-                    <Button Grid.Column="2" Classes="TappableValue" Command="{Binding EditRollZeroCommand}">
-                        <TextBlock Text="{Binding Ahrs.RollZero, StringFormat='{}{0:F1}°'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="2"
+                        Value="{Binding Ahrs.RollZero, Mode=TwoWay}"
+                        Unit="deg" FormatString="F1"
+                        EditCommand="{Binding EditRollZeroCommand}"/>
                 </Grid>
             </Border>
 
@@ -125,9 +112,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Roll Filter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditRollFilterCommand}">
-                        <TextBlock Text="{Binding Ahrs.RollFilter, StringFormat='{}{0:F2}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Ahrs.RollFilter, Mode=TwoWay}"
+                        Unit="" FormatString="F2"
+                        EditCommand="{Binding EditRollFilterCommand}"/>
                 </Grid>
             </Border>
 

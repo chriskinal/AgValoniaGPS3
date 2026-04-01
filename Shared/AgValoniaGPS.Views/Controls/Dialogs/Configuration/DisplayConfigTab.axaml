@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="500"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.DisplayConfigTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -70,21 +71,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Setter>
         </Style>
 
-        <!-- Tappable Value Button -->
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Width" Value="90"/>
-            <Setter Property="Height" Value="90"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="8"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
-        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
@@ -232,11 +218,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="3" Spacing="4" HorizontalAlignment="Center">
-                            <Button Classes="TappableValue" Command="{Binding EditExtraGuidelinesCountCommand}">
-                                <TextBlock Text="{Binding Display.ExtraGuidelinesCount}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="32"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Button>
+                            <controls:EditableNumericField
+                                Value="{Binding Display.ExtraGuidelinesCount, Mode=TwoWay}"
+                                Unit="" FormatString="F0"
+                                EditCommand="{Binding EditExtraGuidelinesCountCommand}"/>
                             <TextBlock Text="Guide Count" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 

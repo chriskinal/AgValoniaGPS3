@@ -21,26 +21,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="550"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.MachineSubTabs.MachineModuleSubTab"
              x:DataType="vm:ConfigurationViewModel">
 
     <UserControl.Styles>
-        <!-- Tappable Value Button -->
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="80"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
-        </Style>
-
         <!-- Toggle Button with custom template for instant feedback -->
         <Style Selector="Button.ToggleButton">
             <Setter Property="BorderThickness" Value="1"/>
@@ -114,9 +100,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Raise Time -->
                     <StackPanel Grid.Column="1" Spacing="4">
                         <TextBlock Text="Raise Time" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditRaiseTimeCommand}" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Machine.RaiseTime}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="24"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Center"
+                            Value="{Binding Machine.RaiseTime, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditRaiseTimeCommand}"/>
                         <TextBlock Text="Plant Pop" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                     </StackPanel>
 
@@ -131,18 +118,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Look Ahead -->
                     <StackPanel Grid.Column="0" Spacing="4">
                         <TextBlock Text="Look Ahead" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditLookAheadCommand}" HorizontalAlignment="Center"
-                                Width="70" Height="70">
-                            <TextBlock Text="{Binding Machine.LookAhead, StringFormat='{}{0:F1}'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="20"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Center"
+                            Value="{Binding Machine.LookAhead, Mode=TwoWay}"
+                            Unit="" FormatString="F1"
+                            EditCommand="{Binding EditLookAheadCommand}"/>
                     </StackPanel>
 
                     <!-- Lower Time -->
                     <StackPanel Grid.Column="1" Spacing="4">
                         <TextBlock Text="Lower Time" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditLowerTimeCommand}" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Machine.LowerTime}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="24"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Center"
+                            Value="{Binding Machine.LowerTime, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditLowerTimeCommand}"/>
                     </StackPanel>
 
                     <!-- Lower Time Graphic -->
@@ -181,33 +169,37 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- User 1 -->
                     <StackPanel Spacing="2">
                         <TextBlock Text="User 1" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditUser1Command}" HorizontalAlignment="Stretch">
-                            <TextBlock Text="{Binding Machine.User1Value}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Stretch"
+                            Value="{Binding Machine.User1Value, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditUser1Command}"/>
                     </StackPanel>
 
                     <!-- User 2 -->
                     <StackPanel Spacing="2">
                         <TextBlock Text="User 2" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditUser2Command}" HorizontalAlignment="Stretch">
-                            <TextBlock Text="{Binding Machine.User2Value}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Stretch"
+                            Value="{Binding Machine.User2Value, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditUser2Command}"/>
                     </StackPanel>
 
                     <!-- User 3 -->
                     <StackPanel Spacing="2">
                         <TextBlock Text="User 3" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditUser3Command}" HorizontalAlignment="Stretch">
-                            <TextBlock Text="{Binding Machine.User3Value}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Stretch"
+                            Value="{Binding Machine.User3Value, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditUser3Command}"/>
                     </StackPanel>
 
                     <!-- User 4 -->
                     <StackPanel Spacing="2">
                         <TextBlock Text="User 4" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        <Button Classes="TappableValue" Command="{Binding EditUser4Command}" HorizontalAlignment="Stretch">
-                            <TextBlock Text="{Binding Machine.User4Value}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
-                        </Button>
+                        <controls:EditableNumericField HorizontalAlignment="Stretch"
+                            Value="{Binding Machine.User4Value, Mode=TwoWay}"
+                            Unit="" FormatString="F0"
+                            EditCommand="{Binding EditUser4Command}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

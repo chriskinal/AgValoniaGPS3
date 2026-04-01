@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="800"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolSectionsSubTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -36,19 +37,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,4"/>
-        </Style>
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="80"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
         <Style Selector="Button.SectionWidthBtn">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
@@ -92,9 +80,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Number of Sections" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
                         <TextBlock Text="Total implement sections (1-16)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditNumSectionsCommand}">
-                        <TextBlock Text="{Binding Config.NumSections}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Config.NumSections, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditNumSectionsCommand}"/>
                 </Grid>
             </Border>
 
@@ -105,9 +94,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Default Section Width" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
                         <TextBlock Text="Width applied to new sections (or all sections in zone mode)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditDefaultSectionWidthCommand}">
-                        <TextBlock Text="{Binding Tool.DefaultSectionWidth, StringFormat='{}{0:F0} cm'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.DefaultSectionWidth, Mode=TwoWay}"
+                        Unit="cm" FormatString="F0"
+                        EditCommand="{Binding EditDefaultSectionWidthCommand}"/>
                 </Grid>
             </Border>
 
@@ -260,9 +250,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Text="Number of Zones" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
                                 <TextBlock Text="How many control zones (2-8)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             </StackPanel>
-                            <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditNumZonesCommand}">
-                                <TextBlock Text="{Binding Tool.Zones}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                            </Button>
+                            <controls:EditableNumericField Grid.Column="1"
+                                Value="{Binding Tool.Zones, Mode=TwoWay}"
+                                Unit="" FormatString="F0"
+                                EditCommand="{Binding EditNumZonesCommand}"/>
                         </Grid>
                     </Border>
 
@@ -532,9 +523,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Minimum % of section in uncovered area to turn on"
                                    Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditMinCoverageCommand}">
-                        <TextBlock Text="{Binding Tool.MinCoverage, StringFormat='{}{0} %'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.MinCoverage, Mode=TwoWay}"
+                        Unit="%" FormatString="F0"
+                        EditCommand="{Binding EditMinCoverageCommand}"/>
                 </Grid>
             </Border>
 
@@ -545,9 +537,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Speed below which sections turn off"
                                    Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditCutoffSpeedCommand}">
-                        <TextBlock Text="{Binding Tool.SlowSpeedCutoff, StringFormat='{}{0:F1} km/h'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.SlowSpeedCutoff, Mode=TwoWay}"
+                        Unit="km/h" FormatString="F1"
+                        EditCommand="{Binding EditCutoffSpeedCommand}"/>
                 </Grid>
             </Border>
 
@@ -558,9 +551,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Text="Expand recorded coverage to prevent gaps between passes"
                                    Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditCoverageMarginCommand}">
-                        <TextBlock Text="{Binding Tool.CoverageMargin, StringFormat='{}{0:F0} cm'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.CoverageMargin, Mode=TwoWay}"
+                        Unit="cm" FormatString="F0"
+                        EditCommand="{Binding EditCoverageMarginCommand}"/>
                 </Grid>
             </Border>
         </StackPanel>
