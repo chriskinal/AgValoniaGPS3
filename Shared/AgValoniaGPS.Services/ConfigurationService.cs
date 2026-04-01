@@ -304,6 +304,10 @@ public class ConfigurationService(
         store.Display.ExtraGuidelines = settings.ExtraGuidelines;
         store.Display.ExtraGuidelinesCount = settings.ExtraGuidelinesCount;
         store.Display.FieldTextureVisible = settings.FieldTextureVisible;
+        store.Display.AutoSteerSound = settings.AutoSteerSound;
+        store.Display.UTurnSound = settings.UTurnSound;
+        store.Display.HydraulicSound = settings.HydraulicSound;
+        store.Display.SectionsSound = settings.SectionsSound;
         store.Display.SimulatorPanelX = settings.SimulatorPanelX;
         store.Display.SimulatorPanelY = settings.SimulatorPanelY;
         store.Display.SimulatorPanelVisible = settings.SimulatorPanelVisible;
@@ -368,6 +372,10 @@ public class ConfigurationService(
         settings.ExtraGuidelines = store.Display.ExtraGuidelines;
         settings.ExtraGuidelinesCount = store.Display.ExtraGuidelinesCount;
         settings.FieldTextureVisible = store.Display.FieldTextureVisible;
+        settings.AutoSteerSound = store.Display.AutoSteerSound;
+        settings.UTurnSound = store.Display.UTurnSound;
+        settings.HydraulicSound = store.Display.HydraulicSound;
+        settings.SectionsSound = store.Display.SectionsSound;
         settings.SimulatorPanelX = store.Display.SimulatorPanelX;
         settings.SimulatorPanelY = store.Display.SimulatorPanelY;
         settings.SimulatorPanelVisible = store.Display.SimulatorPanelVisible;

@@ -614,6 +614,10 @@ public class ConfigurationServiceMappingTests
         _settings.ExtraGuidelines = true;
         _settings.ExtraGuidelinesCount = 5;
         _settings.FieldTextureVisible = true;
+        _settings.AutoSteerSound = false;
+        _settings.UTurnSound = false;
+        _settings.HydraulicSound = false;
+        _settings.SectionsSound = false;
         _settings.SimulatorPanelX = 9999;
         _settings.SimulatorPanelY = 9999;
         _settings.SimulatorPanelVisible = true;

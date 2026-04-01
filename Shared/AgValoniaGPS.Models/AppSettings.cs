@@ -37,6 +37,10 @@ namespace AgValoniaGPS.Models
         public bool ExtraGuidelines { get; set; } = false;
         public int ExtraGuidelinesCount { get; set; } = 10;
         public bool FieldTextureVisible { get; set; } = false;
+        public bool AutoSteerSound { get; set; } = true;
+        public bool UTurnSound { get; set; } = true;
+        public bool HydraulicSound { get; set; } = true;
+        public bool SectionsSound { get; set; } = true;
 
         // Panel positions
         public double SimulatorPanelX { get; set; } = double.NaN; // NaN means not set
