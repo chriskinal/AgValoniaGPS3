@@ -175,8 +175,8 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Calculate distance from vehicle to nearest headland boundary line.
-    /// Uses nearest-segment approach for reliable distance regardless of heading.
+    /// Calculate distance from tool pivot to nearest headland boundary line.
+    /// Uses tool pivot position (not antenna) to match legacy AgOpenGPS behavior.
     /// </summary>
     private void UpdateHeadlandProximity(AgValoniaGPS.Models.Position position)
     {
@@ -187,9 +187,12 @@ public partial class MainViewModel
             return;
         }
 
+        // Use tool pivot position (implement hitch point), matching legacy mf.toolPivotPos
+        var toolPivot = _toolPositionService.ToolPivotPosition;
+
         double minDistSq = double.MaxValue;
-        double px = position.Easting;
-        double py = position.Northing;
+        double px = toolPivot.Easting;
+        double py = toolPivot.Northing;
         int n = headlandLine.Count;
 
         for (int i = 0; i < n; i++)

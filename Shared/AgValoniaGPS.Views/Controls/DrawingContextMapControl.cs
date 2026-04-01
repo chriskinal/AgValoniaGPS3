@@ -2483,11 +2483,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double distance = fieldState.HeadlandProximityDistance.Value;
         if (distance > 999) return; // Don't show when very far
 
-        // Format text
+        // Format text (legacy uses inches for imperial, matching AgOpenGPS)
         bool isMetric = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.IsMetric;
         string text = isMetric
             ? $"{distance:F1} m"
-            : $"{(distance * 3.28084):F0} ft";
+            : $"{(distance * 39.3700787):F0} in";
 
         // Color: red when close (< 20m), yellow when far
         var color = distance < 20.0
