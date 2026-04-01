@@ -32,6 +32,7 @@ namespace AgValoniaGPS.Models
         public bool WindowMaximized { get; set; } = false;
         public bool StartFullscreen { get; set; } = false;
         public bool SvennArrowVisible { get; set; } = false;
+        public bool KeyboardEnabled { get; set; } = false;
 
         // Panel positions
         public double SimulatorPanelX { get; set; } = double.NaN; // NaN means not set
