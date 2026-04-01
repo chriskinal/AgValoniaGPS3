@@ -211,6 +211,7 @@ public partial class MainViewModel : ReactiveObject
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
         _toolPositionService.PositionUpdated += OnToolPositionUpdated;
         _sectionControlService.SectionStateChanged += OnSectionStateChanged;
+        _coverageMapService.BoundsExpanded += OnCoverageBoundsExpanded;
 
         // Subscribe to ConfigurationStore changes to update NumSections
         _numSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
@@ -802,6 +803,16 @@ public partial class MainViewModel : ReactiveObject
     // YouTurn methods (ProcessYouTurn, CreateYouTurnPath, CalculateYouTurnGuidance, etc.)
     // are now in MainViewModel.YouTurn.cs
 
+
+    private void OnCoverageBoundsExpanded(object? sender, BoundsExpandedEventArgs e)
+    {
+        // Reinitialize display bitmap with new expanded bounds
+        Dispatcher.UIThread.Post(() =>
+        {
+            _mapService.InitializeCoverageBitmapWithBounds(e.MinE, e.MaxE, e.MinN, e.MaxN);
+            _logger.LogDebug($"[Coverage] Display bitmap reinitialized for expanded bounds: E[{e.MinE:F0},{e.MaxE:F0}] N[{e.MinN:F0},{e.MaxN:F0}]");
+        });
+    }
 
     private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
     {

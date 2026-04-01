@@ -222,6 +222,12 @@ public interface ICoverageMapService
     event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
 
     /// <summary>
+    /// Event fired when bounds are dynamically expanded.
+    /// Listeners (e.g., map control) should reinitialize their bitmap.
+    /// </summary>
+    event EventHandler<BoundsExpandedEventArgs>? BoundsExpanded;
+
+    /// <summary>
     /// Set pixel access callbacks for unified WriteableBitmap storage.
     /// The map control provides these callbacks to allow the service to read/write
     /// directly to the bitmap without maintaining a separate copy.
@@ -286,4 +292,15 @@ public class CoverageUpdatedEventArgs : EventArgs
     /// True if bitmap pixels were loaded directly from file - skip repainting
     /// </summary>
     public bool PixelsAlreadyLoaded { get; init; }
+}
+
+/// <summary>
+/// Event arguments when coverage bounds are dynamically expanded.
+/// </summary>
+public class BoundsExpandedEventArgs : EventArgs
+{
+    public double MinE { get; init; }
+    public double MaxE { get; init; }
+    public double MinN { get; init; }
+    public double MaxN { get; init; }
 }

@@ -152,10 +152,18 @@ public class CoverageMapService : ICoverageMapService
         _lastEdgesPerSection.Remove(zoneIndex);
     }
 
+    public event EventHandler<BoundsExpandedEventArgs>? BoundsExpanded;
+
     public void AddCoveragePoint(int zoneIndex, Vec2 leftEdge, Vec2 rightEdge)
     {
         if (!_activeSections.Contains(zoneIndex))
             return;
+
+        // Check if we need to expand bounds (auto-initialized, vehicle near edge)
+        if (_fieldBoundsSet)
+        {
+            CheckAndExpandBounds(leftEdge, rightEdge);
+        }
 
         // Get last edges for this section (used for bitmap rasterization and area calc)
         if (!_lastEdgesPerSection.TryGetValue(zoneIndex, out var lastEdges))
@@ -741,6 +749,75 @@ public class CoverageMapService : ICoverageMapService
         double detectionMB = totalBytes / (1024.0 * 1024.0);
         Console.WriteLine($"[Coverage] Field bounds set: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}]");
         Console.WriteLine($"[Coverage] {_bitmapWidth}x{_bitmapHeight} = {totalPixels:N0} cells, detection={detectionMB:F1}MB, bitmap=~{bitmapMB:F0}MB for {areaHa:F0}ha");
+    }
+
+    private const double EXPAND_MARGIN = 50.0; // Expand when within 50m of edge
+    private const double EXPAND_AMOUNT = 250.0; // Add 250m in the needed direction
+
+    /// <summary>
+    /// Check if coverage points are near the bounds edge and expand if needed.
+    /// Copies existing detection bits to the new larger array.
+    /// </summary>
+    private void CheckAndExpandBounds(Vec2 leftEdge, Vec2 rightEdge)
+    {
+        double minE = Math.Min(leftEdge.Easting, rightEdge.Easting);
+        double maxE = Math.Max(leftEdge.Easting, rightEdge.Easting);
+        double minN = Math.Min(leftEdge.Northing, rightEdge.Northing);
+        double maxN = Math.Max(leftEdge.Northing, rightEdge.Northing);
+
+        bool needsExpand = false;
+        double newMinE = _fieldMinE, newMaxE = _fieldMaxE;
+        double newMinN = _fieldMinN, newMaxN = _fieldMaxN;
+
+        if (minE < _fieldMinE + EXPAND_MARGIN) { newMinE = _fieldMinE - EXPAND_AMOUNT; needsExpand = true; }
+        if (maxE > _fieldMaxE - EXPAND_MARGIN) { newMaxE = _fieldMaxE + EXPAND_AMOUNT; needsExpand = true; }
+        if (minN < _fieldMinN + EXPAND_MARGIN) { newMinN = _fieldMinN - EXPAND_AMOUNT; needsExpand = true; }
+        if (maxN > _fieldMaxN - EXPAND_MARGIN) { newMaxN = _fieldMaxN + EXPAND_AMOUNT; needsExpand = true; }
+
+        if (!needsExpand) return;
+
+        // Save old state
+        var oldBits = _detectionBits;
+        int oldWidth = _bitmapWidth;
+        int oldHeight = _bitmapHeight;
+        int oldOriginE = _bitmapOriginE;
+        int oldOriginN = _bitmapOriginN;
+
+        // Reallocate with new bounds
+        SetFieldBounds(newMinE, newMaxE, newMinN, newMaxN);
+
+        // Copy old bits to new array
+        if (oldBits != null && _detectionBits != null)
+        {
+            int offsetE = oldOriginE - _bitmapOriginE;
+            int offsetN = oldOriginN - _bitmapOriginN;
+
+            for (int y = 0; y < oldHeight; y++)
+            {
+                for (int x = 0; x < oldWidth; x++)
+                {
+                    long oldIdx = (long)y * oldWidth + x;
+                    if ((oldBits[oldIdx / 8] & (1 << (int)(oldIdx % 8))) != 0)
+                    {
+                        int newX = x + offsetE;
+                        int newY = y + offsetN;
+                        if (newX >= 0 && newX < _bitmapWidth && newY >= 0 && newY < _bitmapHeight)
+                        {
+                            long newIdx = (long)newY * _bitmapWidth + newX;
+                            _detectionBits[newIdx / 8] |= (byte)(1 << (int)(newIdx % 8));
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine($"[Coverage] Bounds expanded: {oldWidth}x{oldHeight} -> {_bitmapWidth}x{_bitmapHeight}, copied existing coverage");
+        }
+
+        // Notify listeners to resize their bitmaps
+        BoundsExpanded?.Invoke(this, new BoundsExpandedEventArgs
+        {
+            MinE = newMinE, MaxE = newMaxE, MinN = newMinN, MaxN = newMaxN
+        });
     }
 
     /// <summary>

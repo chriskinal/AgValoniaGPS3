@@ -98,6 +98,57 @@ public class CoverageNoBoundaryTests
     }
 
     [Test]
+    public void Expansion_NearEdge_ExpandsBounds()
+    {
+        _service.SetFieldBoundsFromPosition(0, 0, halfSize: 100.0);
+        Assert.That(_service.IsFieldBoundsSet, Is.True);
+
+        bool expandedFired = false;
+        _service.BoundsExpanded += (s, e) => expandedFired = true;
+
+        // Drive near the edge (within 50m margin of 100m half-size = at 55m)
+        var left1 = new Vec2(54.0, 0);
+        var right1 = new Vec2(56.0, 0);
+        var left2 = new Vec2(54.0, 5.0);
+        var right2 = new Vec2(56.0, 5.0);
+        _service.StartMapping(0, left1, right1);
+        _service.AddCoveragePoint(0, left2, right2);
+        _service.StopMapping(0);
+
+        Assert.That(expandedFired, Is.True, "BoundsExpanded should fire when near edge");
+    }
+
+    [Test]
+    public void Expansion_PreservesExistingCoverage()
+    {
+        _service.SetFieldBoundsFromPosition(0, 0, halfSize: 100.0);
+
+        // Paint some coverage in the center
+        var left1 = new Vec2(-1, 0);
+        var right1 = new Vec2(1, 0);
+        var left2 = new Vec2(-1, 5.0);
+        var right2 = new Vec2(1, 5.0);
+        _service.StartMapping(0, left1, right1);
+        _service.AddCoveragePoint(0, left2, right2);
+        double areaBeforeExpand = _service.TotalWorkedArea;
+        _service.StopMapping(0);
+
+        Assert.That(areaBeforeExpand, Is.GreaterThan(0));
+
+        // Now drive near edge to trigger expansion
+        var left3 = new Vec2(54.0, 0);
+        var right3 = new Vec2(56.0, 0);
+        var left4 = new Vec2(54.0, 5.0);
+        var right4 = new Vec2(56.0, 5.0);
+        _service.StartMapping(0, left3, right3);
+        _service.AddCoveragePoint(0, left4, right4);
+        _service.StopMapping(0);
+
+        Assert.That(_service.TotalWorkedArea, Is.GreaterThan(areaBeforeExpand),
+            "Total area should include both pre and post-expansion coverage");
+    }
+
+    [Test]
     public void SetFieldBoundsFromPosition_DefaultHalfSize_Is250m()
     {
         _service.SetFieldBoundsFromPosition(0, 0);
