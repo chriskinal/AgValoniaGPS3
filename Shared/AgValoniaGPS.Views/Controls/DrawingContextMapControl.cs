@@ -708,6 +708,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
+        // Draw headland proximity HUD (screen space, after camera transform)
+        DrawHeadlandProximityHud(context, bounds);
+
         _renderSw.Stop();
         _lastFullRenderMs = _renderSw.Elapsed.TotalMilliseconds;
 
@@ -2461,6 +2464,57 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var goalBrush = new SolidColorBrush(Color.FromArgb(200, 0, 200, 255));
         double dotRadius = 3 * worldPerPixel;
         context.DrawEllipse(goalBrush, null, goalPos, dotRadius, dotRadius);
+    }
+
+    /// <summary>
+    /// Draw headland proximity distance as a HUD overlay at top-center of screen.
+    /// Yellow when far, red when close. Matches legacy AgOpenGPS behavior.
+    /// </summary>
+    private void DrawHeadlandProximityHud(DrawingContext context, Rect bounds)
+    {
+        var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        if (!display.HeadlandDistanceVisible)
+            return;
+
+        var fieldState = AgValoniaGPS.Models.State.ApplicationState.Instance.Field;
+        if (!fieldState.HasHeadland || fieldState.HeadlandProximityDistance == null)
+            return;
+
+        double distance = fieldState.HeadlandProximityDistance.Value;
+        if (distance > 999) return; // Don't show when very far
+
+        // Format text
+        bool isMetric = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.IsMetric;
+        string text = isMetric
+            ? $"{distance:F1} m"
+            : $"{(distance * 3.28084):F0} ft";
+
+        // Color: red when close (< 20m), yellow when far
+        var color = distance < 20.0
+            ? Avalonia.Media.Color.FromRgb(255, 60, 60)
+            : Avalonia.Media.Color.FromRgb(255, 242, 64);
+        var brush = new Avalonia.Media.SolidColorBrush(color);
+
+        double fontSize = Math.Clamp(bounds.Height / 20.0, 14, 36);
+        var typeface = new Avalonia.Media.Typeface("Arial", Avalonia.Media.FontStyle.Normal, Avalonia.Media.FontWeight.Bold);
+        var formattedText = new Avalonia.Media.FormattedText(text,
+            System.Globalization.CultureInfo.InvariantCulture,
+            Avalonia.Media.FlowDirection.LeftToRight,
+            typeface, fontSize, brush);
+
+        // Position: top-center with padding
+        double x = (bounds.Width - formattedText.Width) / 2;
+        double y = 8;
+
+        // Background box
+        var boxRect = new Rect(x - 12, y - 4, formattedText.Width + 24, formattedText.Height + 8);
+        var bgColor = distance < 20.0
+            ? Avalonia.Media.Color.FromArgb(180, 80, 0, 0)
+            : Avalonia.Media.Color.FromArgb(180, 40, 40, 0);
+        context.DrawRectangle(new Avalonia.Media.SolidColorBrush(bgColor), null,
+            new RoundedRect(boxRect, 6));
+
+        context.DrawText(formattedText, new Point(x, y));
     }
 
     private void DrawBoundaryOffsetIndicator(DrawingContext context)

@@ -169,6 +169,54 @@ public partial class MainViewModel
         {
             AddContourPoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
         }
+
+        // Update headland proximity distance for HUD readout
+        UpdateHeadlandProximity(data.CurrentPosition);
+    }
+
+    /// <summary>
+    /// Calculate distance from vehicle to nearest headland boundary line.
+    /// Uses nearest-segment approach for reliable distance regardless of heading.
+    /// </summary>
+    private void UpdateHeadlandProximity(AgValoniaGPS.Models.Position position)
+    {
+        var headlandLine = State.Field.HeadlandLine;
+        if (headlandLine == null || headlandLine.Count < 3)
+        {
+            State.Field.HeadlandProximityDistance = null;
+            return;
+        }
+
+        double minDistSq = double.MaxValue;
+        double px = position.Easting;
+        double py = position.Northing;
+        int n = headlandLine.Count;
+
+        for (int i = 0; i < n; i++)
+        {
+            var a = headlandLine[i];
+            var b = headlandLine[(i + 1) % n];
+
+            // Project point onto segment and get squared distance
+            double dx = b.Easting - a.Easting;
+            double dy = b.Northing - a.Northing;
+            double lenSq = dx * dx + dy * dy;
+
+            double t;
+            if (lenSq < 1e-10)
+                t = 0;
+            else
+                t = Math.Clamp(((px - a.Easting) * dx + (py - a.Northing) * dy) / lenSq, 0, 1);
+
+            double closestX = a.Easting + t * dx;
+            double closestY = a.Northing + t * dy;
+            double distSq = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
+
+            if (distSq < minDistSq)
+                minDistSq = distSq;
+        }
+
+        State.Field.HeadlandProximityDistance = Math.Sqrt(minDistSq);
     }
 
     /// <summary>

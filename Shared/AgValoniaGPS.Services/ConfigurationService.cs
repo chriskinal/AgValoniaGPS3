@@ -300,6 +300,7 @@ public class ConfigurationService(
         store.Display.StartFullscreen = settings.StartFullscreen;
         store.Display.SvennArrowVisible = settings.SvennArrowVisible;
         store.Display.KeyboardEnabled = settings.KeyboardEnabled;
+        store.Display.HeadlandDistanceVisible = settings.HeadlandDistanceVisible;
         store.Display.SimulatorPanelX = settings.SimulatorPanelX;
         store.Display.SimulatorPanelY = settings.SimulatorPanelY;
         store.Display.SimulatorPanelVisible = settings.SimulatorPanelVisible;
@@ -360,6 +361,7 @@ public class ConfigurationService(
         settings.StartFullscreen = store.Display.StartFullscreen;
         settings.SvennArrowVisible = store.Display.SvennArrowVisible;
         settings.KeyboardEnabled = store.Display.KeyboardEnabled;
+        settings.HeadlandDistanceVisible = store.Display.HeadlandDistanceVisible;
         settings.SimulatorPanelX = store.Display.SimulatorPanelX;
         settings.SimulatorPanelY = store.Display.SimulatorPanelY;
         settings.SimulatorPanelVisible = store.Display.SimulatorPanelVisible;

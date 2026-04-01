@@ -151,6 +151,14 @@ public class ConfigurationServiceMappingTests
         Assert.That(_service.Store.Display.SpeedVisible, Is.False);
     }
 
+    [Test]
+    public void Load_HeadlandDistanceVisible()
+    {
+        _settings.HeadlandDistanceVisible = false;
+        _service.LoadAppSettings();
+        Assert.That(_service.Store.Display.HeadlandDistanceVisible, Is.False);
+    }
+
     [TestCase(75.5)]
     public void Load_CameraZoom(double value)
     {
@@ -350,6 +358,7 @@ public class ConfigurationServiceMappingTests
         store.Display.StartFullscreen = true;
         store.Display.SvennArrowVisible = true;
         store.Display.KeyboardEnabled = true;
+        store.Display.HeadlandDistanceVisible = false;
         store.Display.SimulatorPanelX = 500;
         store.Display.SimulatorPanelY = 300;
         store.Display.SimulatorPanelVisible = true;
@@ -371,6 +380,7 @@ public class ConfigurationServiceMappingTests
             Assert.That(_settings.StartFullscreen, Is.True);
             Assert.That(_settings.SvennArrowVisible, Is.True);
             Assert.That(_settings.KeyboardEnabled, Is.True);
+            Assert.That(_settings.HeadlandDistanceVisible, Is.False);
             Assert.That(_settings.SimulatorPanelX, Is.EqualTo(500));
             Assert.That(_settings.SimulatorPanelY, Is.EqualTo(300));
             Assert.That(_settings.SimulatorPanelVisible, Is.True);
@@ -499,6 +509,7 @@ public class ConfigurationServiceMappingTests
         _settings.StartFullscreen = true;
         _settings.SvennArrowVisible = true;
         _settings.KeyboardEnabled = true;
+        _settings.HeadlandDistanceVisible = false;
         _settings.GridVisible = false;
         _settings.CompassVisible = false;
         _settings.SpeedVisible = false;
@@ -540,6 +551,7 @@ public class ConfigurationServiceMappingTests
             Assert.That(saved.StartFullscreen, Is.True);
             Assert.That(saved.SvennArrowVisible, Is.True);
             Assert.That(saved.KeyboardEnabled, Is.True);
+            Assert.That(saved.HeadlandDistanceVisible, Is.False);
             Assert.That(saved.GridVisible, Is.False);
             Assert.That(saved.CompassVisible, Is.False);
             Assert.That(saved.SpeedVisible, Is.False);
@@ -598,6 +610,7 @@ public class ConfigurationServiceMappingTests
         _settings.StartFullscreen = true;
         _settings.SvennArrowVisible = true;
         _settings.KeyboardEnabled = true;
+        _settings.HeadlandDistanceVisible = false;
         _settings.SimulatorPanelX = 9999;
         _settings.SimulatorPanelY = 9999;
         _settings.SimulatorPanelVisible = true;
