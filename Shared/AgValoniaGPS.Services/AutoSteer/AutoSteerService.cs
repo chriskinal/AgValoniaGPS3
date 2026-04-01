@@ -375,6 +375,15 @@ public class AutoSteerService : IAutoSteerService
         // This keeps the module informed of current position/speed even when not engaged
         var pgn = PgnBuilder.BuildAutoSteerPgn(ref _state);
         _udpService.SendToModules(pgn);
+
+        // Send PGN 239 (Machine Data) - section control, speed, tramline state
+        // Sent every GPS cycle so machine module has current section/speed info
+        var machinePgn = PgnBuilder.BuildMachinePgn(ref _state,
+            uturn: _state.IsInUTurn ? (byte)1 : (byte)0,
+            hydLift: _state.HydLiftState,
+            tram: _state.TramState,
+            geoStop: _state.GeoStopState);
+        _udpService.SendToModules(machinePgn);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
