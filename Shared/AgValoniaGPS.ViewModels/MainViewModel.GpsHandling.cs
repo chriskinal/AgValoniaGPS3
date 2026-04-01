@@ -188,6 +188,50 @@ public partial class MainViewModel
 
         // Update headland proximity distance for HUD readout
         UpdateHeadlandProximity(data.CurrentPosition);
+
+        // Auto-select closest track when autosteer is not engaged (#143)
+        UpdateAutoTrackSelection(data.CurrentPosition);
+    }
+
+    private bool _isAutoTrackEnabled = true;
+    public bool IsAutoTrackEnabled
+    {
+        get => _isAutoTrackEnabled;
+        set => this.RaiseAndSetIfChanged(ref _isAutoTrackEnabled, value);
+    }
+
+    private DateTime _lastAutoTrackTime = DateTime.MinValue;
+    private const double AUTO_TRACK_INTERVAL_SECONDS = 3.0;
+
+    /// <summary>
+    /// Auto-select closest track when autosteer is not engaged.
+    /// Matches legacy: 3-second debounce, heading alignment, visibility filter.
+    /// </summary>
+    private void UpdateAutoTrackSelection(AgValoniaGPS.Models.Position position)
+    {
+        if (!_isAutoTrackEnabled || IsAutoSteerEngaged)
+            return;
+
+        var tracks = State.Field.Tracks;
+        if (tracks.Count == 0)
+            return;
+
+        // 3-second debounce
+        var now = DateTime.UtcNow;
+        if ((now - _lastAutoTrackTime).TotalSeconds < AUTO_TRACK_INTERVAL_SECONDS)
+            return;
+        _lastAutoTrackTime = now;
+
+        double headingRadians = position.Heading * Math.PI / 180.0;
+        var vehiclePos = new Models.Base.Vec2(position.Easting, position.Northing);
+
+        var closest = Services.Track.AutoTrackSelectionService.FindClosestTrack(
+            tracks, vehiclePos, headingRadians);
+
+        if (closest != null && closest != SelectedTrack)
+        {
+            SelectedTrack = closest;
+        }
     }
 
     private bool _autoCoverageBoundsInitialized;
