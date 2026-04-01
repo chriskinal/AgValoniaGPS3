@@ -148,7 +148,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Row 5: Offset Fix -->
                 <Button Grid.Column="0" Grid.Row="5" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press">
+                        ClickMode="Press" Command="{Binding ShowOffsetFixDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="28" Height="28"/>
                         <TextBlock Text="Offset Fix" VerticalAlignment="Center" FontSize="12"/>

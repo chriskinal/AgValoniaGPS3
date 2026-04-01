@@ -146,6 +146,45 @@ public partial class MainViewModel
                 _logger.LogError(ex, "Debug dump failed");
             }
         });
+
+        // Offset Fix (#36) - GPS drift compensation
+        const double OFFSET_STEP = 0.01; // 1cm per click
+
+        ShowOffsetFixDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.OffsetFix);
+        });
+
+        CloseOffsetFixDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        OffsetFixNorthCommand = ReactiveCommand.Create(() =>
+        {
+            State.Field.DriftNorthing += OFFSET_STEP;
+        });
+
+        OffsetFixSouthCommand = ReactiveCommand.Create(() =>
+        {
+            State.Field.DriftNorthing -= OFFSET_STEP;
+        });
+
+        OffsetFixEastCommand = ReactiveCommand.Create(() =>
+        {
+            State.Field.DriftEasting += OFFSET_STEP;
+        });
+
+        OffsetFixWestCommand = ReactiveCommand.Create(() =>
+        {
+            State.Field.DriftEasting -= OFFSET_STEP;
+        });
+
+        OffsetFixZeroCommand = ReactiveCommand.Create(() =>
+        {
+            State.Field.DriftNorthing = 0;
+            State.Field.DriftEasting = 0;
+        });
     }
 
     public ICommand? CreateDebugDumpCommand { get; private set; }
@@ -198,6 +237,15 @@ public partial class MainViewModel
     public ICommand? CloseLogViewerDialogCommand { get; private set; }
     public ICommand? ClearLogEntriesCommand { get; private set; }
     public ICommand? SetLogFilterCommand { get; private set; }
+
+    // Offset Fix (#36)
+    public ICommand? ShowOffsetFixDialogCommand { get; private set; }
+    public ICommand? CloseOffsetFixDialogCommand { get; private set; }
+    public ICommand? OffsetFixNorthCommand { get; private set; }
+    public ICommand? OffsetFixSouthCommand { get; private set; }
+    public ICommand? OffsetFixEastCommand { get; private set; }
+    public ICommand? OffsetFixWestCommand { get; private set; }
+    public ICommand? OffsetFixZeroCommand { get; private set; }
 }
 
 // --- Flag By Lat/Lon (#23) ---

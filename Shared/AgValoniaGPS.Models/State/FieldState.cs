@@ -138,6 +138,21 @@ public class FieldState : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _originLongitude, value);
     }
 
+    // GPS drift compensation (offset fix)
+    private double _driftNorthing;
+    public double DriftNorthing
+    {
+        get => _driftNorthing;
+        set => this.RaiseAndSetIfChanged(ref _driftNorthing, value);
+    }
+
+    private double _driftEasting;
+    public double DriftEasting
+    {
+        get => _driftEasting;
+        set => this.RaiseAndSetIfChanged(ref _driftEasting, value);
+    }
+
     // Local plane for coordinate conversion
     private LocalPlane? _localPlane;
     public LocalPlane? LocalPlane
@@ -158,6 +173,7 @@ public class FieldState : ReactiveObject
         HeadlandDistance = 0;
         HeadlandProximityDistance = null;
         HeadlandProximityWarning = false;
+        DriftNorthing = DriftEasting = 0;
         OriginLatitude = OriginLongitude = 0;
         LocalPlane = null;
     }

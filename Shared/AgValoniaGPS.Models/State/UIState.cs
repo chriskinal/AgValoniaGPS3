@@ -69,6 +69,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsFlagListDialogVisible));
                 this.RaisePropertyChanged(nameof(IsViewSettingsDialogVisible));
                 this.RaisePropertyChanged(nameof(IsImportTracksDialogVisible));
+                this.RaisePropertyChanged(nameof(IsOffsetFixDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -108,6 +109,7 @@ public class UIState : ReactiveObject
     public bool IsFlagListDialogVisible => ActiveDialog == DialogType.FlagList;
     public bool IsViewSettingsDialogVisible => ActiveDialog == DialogType.ViewSettings;
     public bool IsImportTracksDialogVisible => ActiveDialog == DialogType.ImportTracks;
+    public bool IsOffsetFixDialogVisible => ActiveDialog == DialogType.OffsetFix;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -226,7 +228,8 @@ public enum DialogType
     FlagByLatLon,
     FlagList,
     ViewSettings,
-    ImportTracks
+    ImportTracks,
+    OffsetFix
 }
 
 /// <summary>
