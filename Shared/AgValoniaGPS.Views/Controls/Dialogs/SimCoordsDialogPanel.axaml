@@ -126,8 +126,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
                 </StackPanel>
 
-                <!-- Numeric Keyboard -->
+                <!-- Numeric Keyboard (visible when KeyboardEnabled) -->
                 <controls:NumericKeyboardPanel x:Name="KeyboardPanel"
+                                               IsVisible="{Binding Display.KeyboardEnabled}"
                                                Grid.Row="3"
                                                MaxDecimalPlaces="8"
                                                AllowNegative="True"

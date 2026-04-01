@@ -48,8 +48,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                Text="{Binding NumericInputDialogDisplayText}"/>
                 </Border>
 
-                <!-- Numeric Keyboard -->
+                <!-- Numeric Keyboard (visible when KeyboardEnabled) -->
                 <controls:NumericKeyboardPanel x:Name="Keyboard"
+                    IsVisible="{Binding Display.KeyboardEnabled}"
                     Value="{Binding NumericInputDialogValue, Mode=TwoWay}"
                     DisplayText="{Binding NumericInputDialogDisplayText, Mode=OneWayToSource}"
                     IntegerOnly="{Binding NumericInputDialogIntegerOnly}"

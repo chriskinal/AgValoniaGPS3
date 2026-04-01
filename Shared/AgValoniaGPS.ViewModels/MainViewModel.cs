@@ -80,6 +80,7 @@ public partial class MainViewModel : ReactiveObject
     /// Use this for new code. Existing properties will gradually migrate to use State.
     /// </summary>
     public ApplicationState State => _appState;
+    public DisplayConfig Display => ConfigurationStore.Instance.Display;
 
     // Convenience accessors for ConfigurationStore (replaces _vehicleConfig usage)
     private static ConfigurationStore ConfigStore => ConfigurationStore.Instance;

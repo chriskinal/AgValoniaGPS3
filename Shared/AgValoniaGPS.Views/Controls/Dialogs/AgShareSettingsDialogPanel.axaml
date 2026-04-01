@@ -154,8 +154,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                               VerticalAlignment="Center"/>
                 </Grid>
 
-                <!-- Alphanumeric Keyboard -->
+                <!-- Alphanumeric Keyboard (visible when KeyboardEnabled) -->
                 <controls:AlphanumericKeyboardPanel x:Name="KeyboardPanel"
+                                                    IsVisible="{Binding Display.KeyboardEnabled}"
                                                     Grid.Row="4"
                                                     MaxLength="200"
                                                     Margin="0,0,0,12"/>
