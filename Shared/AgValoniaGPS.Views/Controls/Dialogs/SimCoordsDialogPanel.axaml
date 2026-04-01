@@ -21,11 +21,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              xmlns:controls="using:AgValoniaGPS.Views.Controls"
+             xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.SimCoordsDialogPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding State.UI.IsSimCoordsDialogVisible}"
              IsHitTestVisible="{Binding State.UI.IsSimCoordsDialogVisible}">
+
+    <UserControl.Resources>
+        <conv:InverseBoolConverter x:Key="InverseBool"/>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Label">
@@ -98,8 +103,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            HorizontalAlignment="Center"
                            Margin="0,0,0,16"/>
 
-                <!-- Latitude Field -->
-                <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                <!-- Latitude Field (on-screen keyboard mode) -->
+                <StackPanel Grid.Row="1" Margin="0,0,0,8"
+                            IsVisible="{Binding Display.KeyboardEnabled}">
                     <TextBlock Classes="Label" Text="Latitude (-90 to +90)"/>
                     <Border x:Name="LatitudeBorder" Classes="InputField"
                             PointerPressed="Latitude_PointerPressed">
@@ -112,8 +118,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
                 </StackPanel>
 
-                <!-- Longitude Field -->
-                <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                <!-- Longitude Field (on-screen keyboard mode) -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,12"
+                            IsVisible="{Binding Display.KeyboardEnabled}">
                     <TextBlock Classes="Label" Text="Longitude (-180 to +180)"/>
                     <Border x:Name="LongitudeBorder" Classes="InputField"
                             PointerPressed="Longitude_PointerPressed">
@@ -134,6 +141,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                AllowNegative="True"
                                                Height="220"
                                                Margin="0,0,0,12"/>
+
+                <!-- Direct text input fallback (when on-screen keyboard disabled) -->
+                <StackPanel Grid.Row="1" Margin="0,0,0,8"
+                            IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}">
+                    <TextBlock Classes="Label" Text="Latitude (-90 to +90)"/>
+                    <TextBox x:Name="LatitudeInput" FontSize="18" FontWeight="Bold"
+                             Watermark="0.00000000" Margin="0,4"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Margin="0,0,0,12"
+                            IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}">
+                    <TextBlock Classes="Label" Text="Longitude (-180 to +180)"/>
+                    <TextBox x:Name="LongitudeInput" FontSize="18" FontWeight="Bold"
+                             Watermark="0.00000000" Margin="0,4"/>
+                </StackPanel>
 
                 <!-- Buttons -->
                 <Grid Grid.Row="4" ColumnDefinitions="*,*" Margin="0,4,0,0">
