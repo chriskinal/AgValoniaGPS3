@@ -834,6 +834,9 @@ public partial class MainViewModel
             }
 
             IsAutoSteerEngaged = !IsAutoSteerEngaged;
+            _audioService.Play(IsAutoSteerEngaged
+                ? Services.Interfaces.SoundEffect.AutoSteerOn
+                : Services.Interfaces.SoundEffect.AutoSteerOff);
             if (IsAutoSteerEngaged)
             {
                 double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;

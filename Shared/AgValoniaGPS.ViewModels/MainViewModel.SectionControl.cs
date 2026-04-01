@@ -329,6 +329,14 @@ public partial class MainViewModel
 
     private void OnSectionStateChanged(object? sender, SectionStateChangedEventArgs e)
     {
+        // Play section sound on state change
+        if (e.SectionIndex >= 0)
+        {
+            _audioService.Play(e.IsOn
+                ? Services.Interfaces.SoundEffect.SectionOn
+                : Services.Interfaces.SoundEffect.SectionOff);
+        }
+
         // Marshal to UI thread
         if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
