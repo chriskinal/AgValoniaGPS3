@@ -179,6 +179,17 @@ public interface ICoverageMapService
     void SetFieldBounds(double minE, double maxE, double minN, double maxN);
 
     /// <summary>
+    /// Whether field bounds have been set (coverage can be tracked).
+    /// </summary>
+    bool IsFieldBoundsSet { get; }
+
+    /// <summary>
+    /// Initialize coverage bounds centered on a position.
+    /// Used when no boundary exists to enable coverage tracking.
+    /// </summary>
+    void SetFieldBoundsFromPosition(double easting, double northing, double halfSize = 250.0);
+
+    /// <summary>
     /// Clear field bounds (when field is closed)
     /// </summary>
     void ClearFieldBounds();

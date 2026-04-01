@@ -147,6 +147,9 @@ public partial class MainViewModel
         // Update reverse indicator on map
         _mapService.SetReversing(IsReversing);
 
+        // Auto-initialize coverage bounds from GPS if no boundary exists (#138)
+        EnsureCoverageBoundsInitialized(data.CurrentPosition.Easting, data.CurrentPosition.Northing);
+
         // Add boundary point if recording is active
         if (_boundaryRecordingService.IsRecording)
         {
@@ -172,6 +175,32 @@ public partial class MainViewModel
 
         // Update headland proximity distance for HUD readout
         UpdateHeadlandProximity(data.CurrentPosition);
+    }
+
+    private bool _autoCoverageBoundsInitialized;
+
+    /// <summary>
+    /// Auto-initialize coverage bounds from GPS position when no boundary exists.
+    /// Creates a 500m x 500m area centered on current position. Only runs once per field session.
+    /// </summary>
+    private void EnsureCoverageBoundsInitialized(double easting, double northing)
+    {
+        if (_coverageMapService.IsFieldBoundsSet || _autoCoverageBoundsInitialized)
+            return;
+
+        // Only auto-init if we have a valid position (not at origin)
+        if (Math.Abs(easting) < 0.1 && Math.Abs(northing) < 0.1)
+            return;
+
+        _autoCoverageBoundsInitialized = true;
+
+        const double halfSize = 250.0; // 500m x 500m default area
+        _coverageMapService.SetFieldBoundsFromPosition(easting, northing, halfSize);
+
+        // Also initialize the display bitmap
+        _mapService.InitializeCoverageBitmapWithBounds(
+            easting - halfSize, easting + halfSize,
+            northing - halfSize, northing + halfSize);
     }
 
     private static readonly AgValoniaGPS.Services.Headland.HeadlandDetectionService _headlandDetector = new();

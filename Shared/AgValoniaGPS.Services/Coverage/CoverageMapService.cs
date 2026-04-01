@@ -694,6 +694,14 @@ public class CoverageMapService : ICoverageMapService
     /// Set fixed field bounds for stable bitmap coordinate calculations.
     /// Allocates the bit array for memory-efficient coverage detection.
     /// </summary>
+    public bool IsFieldBoundsSet => _fieldBoundsSet;
+
+    public void SetFieldBoundsFromPosition(double easting, double northing, double halfSize = 250.0)
+    {
+        SetFieldBounds(easting - halfSize, easting + halfSize, northing - halfSize, northing + halfSize);
+        Console.WriteLine($"[Coverage] Auto-initialized bounds from position ({easting:F1}, {northing:F1}), {halfSize * 2}m x {halfSize * 2}m");
+    }
+
     public void SetFieldBounds(double minE, double maxE, double minN, double maxN)
     {
         // Skip if bounds unchanged
