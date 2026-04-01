@@ -27,10 +27,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              x:DataType="vm:ConfigurationViewModel"
              IsVisible="{Binding IsDialogVisible, FallbackValue=False}">
 
-    <UserControl.Resources>
-        <conv:InverseBoolConverter x:Key="InverseBool"/>
-    </UserControl.Resources>
-
     <UserControl.Styles>
         <!-- Main TabControl styling for left icon strip -->
         <Style Selector="TabControl.MainConfigTabs">
@@ -176,18 +172,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 </StackPanel>
                             </Border>
 
-                            <!-- Direct text input (when on-screen keyboard disabled) -->
-                            <TextBox Grid.Row="2" x:Name="ConfigNumericDirectInput"
-                                     IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}"
-                                     Text="{Binding NumericInputDisplayText, Mode=TwoWay}"
-                                     FontSize="32" FontWeight="Bold"
-                                     HorizontalContentAlignment="Center"
-                                     Watermark="Enter value..."
-                                     Margin="0,0,0,16"/>
-
-                            <!-- Keypad Grid (when on-screen keyboard enabled) -->
-                            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*,*" Margin="0,0,0,16"
-                                  IsVisible="{Binding Display.KeyboardEnabled}">
+                            <!-- Keypad Grid -->
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*,*" Margin="0,0,0,16">
                                 <Grid.Styles>
                                     <Style Selector="Button.KeypadButton">
                                         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>

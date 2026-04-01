@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.VehicleConfigTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -256,34 +257,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,16,0,0">
                     <!-- Hitch Length -->
                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                        <Button Classes="TappableValue" Command="{Binding EditHitchLengthCommand}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                                <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                            </StackPanel>
-                        </Button>
+                        <controls:EditableNumericField
+                            Value="{Binding Tool.HitchLength, Mode=TwoWay}"
+                            Unit="m" FormatString="F2"
+                            EditCommand="{Binding EditHitchLengthCommand}"/>
                         <TextBlock Text="Hitch Length" Classes="SectionLabel" Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <!-- Wheelbase -->
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                        <Button Classes="TappableValue" Command="{Binding EditWheelbaseCommand}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Vehicle.Wheelbase, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                                <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                            </StackPanel>
-                        </Button>
+                        <controls:EditableNumericField
+                            Value="{Binding Vehicle.Wheelbase, Mode=TwoWay}"
+                            Unit="m" FormatString="F2"
+                            EditCommand="{Binding EditWheelbaseCommand}"/>
                         <TextBlock Text="Wheelbase" Classes="SectionLabel" Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <!-- Track -->
                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                        <Button Classes="TappableValue" Command="{Binding EditTrackWidthCommand}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Vehicle.TrackWidth, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                                <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                            </StackPanel>
-                        </Button>
+                        <controls:EditableNumericField
+                            Value="{Binding Vehicle.TrackWidth, Mode=TwoWay}"
+                            Unit="m" FormatString="F2"
+                            EditCommand="{Binding EditTrackWidthCommand}"/>
                         <TextBlock Text="Track" Classes="SectionLabel" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -299,12 +294,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto" Margin="16">
                 <!-- Pivot Distance -->
                 <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Margin="0,0,0,8">
-                    <Button Classes="TappableValue" Command="{Binding EditAntennaPivotCommand}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Vehicle.AntennaPivot, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                            <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                        </StackPanel>
-                    </Button>
+                    <controls:EditableNumericField
+                        Value="{Binding Vehicle.AntennaPivot, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditAntennaPivotCommand}"/>
                     <TextBlock Text="Pivot Distance" Classes="SectionLabel" Margin="0,4,0,0"/>
                 </StackPanel>
 
@@ -316,23 +309,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Antenna Height -->
                 <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" Margin="16,20,0,0">
-                    <Button Classes="TappableValue" Command="{Binding EditAntennaHeightCommand}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Vehicle.AntennaHeight, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                            <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                        </StackPanel>
-                    </Button>
+                    <controls:EditableNumericField
+                        Value="{Binding Vehicle.AntennaHeight, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditAntennaHeightCommand}"/>
                     <TextBlock Text="Antenna Height" Classes="SectionLabel" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <!-- Antenna Offset -->
                 <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="10,8,0,0">
-                    <Button Classes="TappableValue" HorizontalAlignment="Left" Command="{Binding EditAntennaOffsetCommand}">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Vehicle.AntennaOffset, StringFormat='{}{0:F2}'}" Classes="LargeValue"/>
-                            <TextBlock Text="m" Classes="UnitLabel" Margin="4,0,0,8"/>
-                        </StackPanel>
-                    </Button>
+                    <controls:EditableNumericField
+                        Value="{Binding Vehicle.AntennaOffset, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditAntennaOffsetCommand}"/>
                     <TextBlock Text="Antenna Offset" Classes="SectionLabel" HorizontalAlignment="Left" Margin="0,4,0,0"/>
 
                     <!-- Offset selector buttons: Left = antenna left of center (negative), Right = antenna right of center (positive) -->
