@@ -2489,8 +2489,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             ? $"{distance:F1} m"
             : $"{(distance * 39.3700787):F0} in";
 
-        // Color: red when close (< 20m), yellow when far
-        var color = distance < 20.0
+        // Color: red when warning active (heading toward boundary within threshold), yellow otherwise
+        bool warning = fieldState.HeadlandProximityWarning;
+        var color = warning
             ? Avalonia.Media.Color.FromRgb(255, 60, 60)
             : Avalonia.Media.Color.FromRgb(255, 242, 64);
         var brush = new Avalonia.Media.SolidColorBrush(color);
@@ -2508,7 +2509,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // Background box
         var boxRect = new Rect(x - 12, y - 4, formattedText.Width + 24, formattedText.Height + 8);
-        var bgColor = distance < 20.0
+        var bgColor = warning
             ? Avalonia.Media.Color.FromArgb(180, 80, 0, 0)
             : Avalonia.Media.Color.FromArgb(180, 40, 40, 0);
         context.DrawRectangle(new Avalonia.Media.SolidColorBrush(bgColor), null,

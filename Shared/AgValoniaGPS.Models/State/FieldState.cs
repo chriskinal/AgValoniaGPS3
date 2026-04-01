@@ -101,7 +101,7 @@ public class FieldState : ReactiveObject
     }
 
     /// <summary>
-    /// Distance from vehicle to nearest headland boundary (meters).
+    /// Distance from tool pivot to nearest headland boundary (meters).
     /// null when no headland exists or distance not computed.
     /// </summary>
     private double? _headlandProximityDistance;
@@ -109,6 +109,16 @@ public class FieldState : ReactiveObject
     {
         get => _headlandProximityDistance;
         set => this.RaiseAndSetIfChanged(ref _headlandProximityDistance, value);
+    }
+
+    /// <summary>
+    /// Whether headland proximity warning is active (heading toward boundary within threshold).
+    /// </summary>
+    private bool _headlandProximityWarning;
+    public bool HeadlandProximityWarning
+    {
+        get => _headlandProximityWarning;
+        set => this.RaiseAndSetIfChanged(ref _headlandProximityWarning, value);
     }
 
     public bool HasHeadland => HeadlandLine != null && HeadlandLine.Count > 0;
@@ -147,6 +157,7 @@ public class FieldState : ReactiveObject
         HeadlandLine = null;
         HeadlandDistance = 0;
         HeadlandProximityDistance = null;
+        HeadlandProximityWarning = false;
         OriginLatitude = OriginLongitude = 0;
         LocalPlane = null;
     }

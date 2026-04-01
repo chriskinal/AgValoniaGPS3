@@ -174,9 +174,11 @@ public partial class MainViewModel
         UpdateHeadlandProximity(data.CurrentPosition);
     }
 
+    private static readonly AgValoniaGPS.Services.Headland.HeadlandDetectionService _headlandDetector = new();
+
     /// <summary>
     /// Calculate distance from tool pivot to nearest headland boundary line.
-    /// Uses tool pivot position (not antenna) to match legacy AgOpenGPS behavior.
+    /// Uses HeadlandDetectionService with direction-aware warnings, matching legacy AgOpenGPS.
     /// </summary>
     private void UpdateHeadlandProximity(AgValoniaGPS.Models.Position position)
     {
@@ -184,42 +186,31 @@ public partial class MainViewModel
         if (headlandLine == null || headlandLine.Count < 3)
         {
             State.Field.HeadlandProximityDistance = null;
+            State.Field.HeadlandProximityWarning = false;
             return;
         }
 
         // Use tool pivot position (implement hitch point), matching legacy mf.toolPivotPos
         var toolPivot = _toolPositionService.ToolPivotPosition;
 
-        double minDistSq = double.MaxValue;
-        double px = toolPivot.Easting;
-        double py = toolPivot.Northing;
-        int n = headlandLine.Count;
-
-        for (int i = 0; i < n; i++)
+        // Build minimal input for proximity calculation
+        var input = new AgValoniaGPS.Models.Headland.HeadlandDetectionInput
         {
-            var a = headlandLine[i];
-            var b = headlandLine[(i + 1) % n];
+            IsHeadlandOn = true,
+            VehiclePosition = toolPivot,
+            Boundaries = new System.Collections.Generic.List<AgValoniaGPS.Models.Headland.BoundaryData>
+            {
+                new AgValoniaGPS.Models.Headland.BoundaryData
+                {
+                    HeadlandLine = new System.Collections.Generic.List<Models.Base.Vec3>(headlandLine)
+                }
+            }
+        };
 
-            // Project point onto segment and get squared distance
-            double dx = b.Easting - a.Easting;
-            double dy = b.Northing - a.Northing;
-            double lenSq = dx * dx + dy * dy;
+        var output = _headlandDetector.DetectHeadland(input);
 
-            double t;
-            if (lenSq < 1e-10)
-                t = 0;
-            else
-                t = Math.Clamp(((px - a.Easting) * dx + (py - a.Northing) * dy) / lenSq, 0, 1);
-
-            double closestX = a.Easting + t * dx;
-            double closestY = a.Northing + t * dy;
-            double distSq = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
-
-            if (distSq < minDistSq)
-                minDistSq = distSq;
-        }
-
-        State.Field.HeadlandProximityDistance = Math.Sqrt(minDistSq);
+        State.Field.HeadlandProximityDistance = output.HeadlandDistance;
+        State.Field.HeadlandProximityWarning = output.ShouldTriggerWarning;
     }
 
     /// <summary>
