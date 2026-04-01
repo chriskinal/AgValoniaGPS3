@@ -252,7 +252,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Line Smooth" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
+                        <!-- Hidden: bitmap coverage system does not populate geometry cache (#117) -->
+                        <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" HorizontalAlignment="Center"
+                                    IsVisible="False">
                             <Button Classes="DisplayToggle"
                                     Background="{Binding Display.DirectionMarkersVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Display.DirectionMarkersVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
@@ -263,7 +265,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Direction" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
+                        <!-- Hidden: bitmap coverage system does not populate geometry cache (#118) -->
+                        <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4" HorizontalAlignment="Center"
+                                    IsVisible="False">
                             <Button Classes="DisplayToggle"
                                     Background="{Binding Display.SectionLinesVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Display.SectionLinesVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
