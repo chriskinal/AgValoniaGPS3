@@ -155,9 +155,18 @@ public partial class MainViewModel
         // Update UTM coordinates and heading for map rendering
         // Apply GPS drift compensation for display (same drift as AutoSteerService applies
         // for guidance/tool calculations - both paths must be consistent)
-        Easting = data.CurrentPosition.Easting + State.Field.DriftEasting;
-        Northing = data.CurrentPosition.Northing + State.Field.DriftNorthing;
+        double driftedEasting = data.CurrentPosition.Easting + State.Field.DriftEasting;
+        double driftedNorthing = data.CurrentPosition.Northing + State.Field.DriftNorthing;
+        Easting = driftedEasting;
+        Northing = driftedNorthing;
         Heading = data.CurrentPosition.Heading;
+
+        // Update tool/implement position from drifted vehicle position
+        // Tool is always computed relative to the tractor, so drift propagates naturally
+        double headingRad = data.CurrentPosition.Heading * Math.PI / 180.0;
+        _toolPositionService.Update(
+            new Models.Base.Vec3(driftedEasting, driftedNorthing, headingRad),
+            headingRad);
 
         // Update reverse indicator on map
         _mapService.SetReversing(IsReversing);
