@@ -115,4 +115,33 @@ public class OffsetFixTests
         // without a LocalPlane, but we can verify the method doesn't throw)
         Assert.DoesNotThrow(() => autoSteer.SetDriftCompensation(0, 0));
     }
+
+    [Test]
+    public void ToolPositionService_FollowsVehicle()
+    {
+        // Verify that tool position is relative to vehicle
+        var toolService = new AgValoniaGPS.Services.Tool.ToolPositionService();
+
+        // Configure a rear-fixed hitch at 2m behind
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        config.Tool.HitchLength = 2.0;
+        config.Tool.IsToolRearFixed = true;
+
+        // Vehicle at (100, 200) heading north (0 radians)
+        var vehiclePos = new AgValoniaGPS.Models.Base.Vec3(100, 200, 0);
+        toolService.Update(vehiclePos, 0);
+
+        // Hitch should be 2m south of vehicle
+        Assert.That(toolService.HitchPosition.Easting, Is.EqualTo(100.0).Within(0.1));
+        Assert.That(toolService.HitchPosition.Northing, Is.EqualTo(198.0).Within(0.1));
+
+        // Now "drift" by feeding shifted position
+        var driftedPos = new AgValoniaGPS.Models.Base.Vec3(100, 190, 0); // 10m south
+        toolService.Update(driftedPos, 0);
+
+        // Hitch should follow: 190 - 2 = 188
+        Assert.That(toolService.HitchPosition.Easting, Is.EqualTo(100.0).Within(0.1));
+        Assert.That(toolService.HitchPosition.Northing, Is.EqualTo(188.0).Within(0.1),
+            "Hitch must follow drifted vehicle position");
+    }
 }

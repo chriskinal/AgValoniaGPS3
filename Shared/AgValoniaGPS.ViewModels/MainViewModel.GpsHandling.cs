@@ -152,11 +152,28 @@ public partial class MainViewModel
             _previousFixQuality = data.FixQuality;
         }
 
-        // Update UTM coordinates and heading for map rendering
-        // Apply GPS drift compensation for display (same drift as AutoSteerService applies
-        // for guidance/tool calculations - both paths must be consistent)
-        double driftedEasting = data.CurrentPosition.Easting + State.Field.DriftEasting;
-        double driftedNorthing = data.CurrentPosition.Northing + State.Field.DriftNorthing;
+        // Convert WGS84 to local coordinates for display
+        // In simulator mode, this is already done. In real GPS mode, GpsData only has lat/lon.
+        double posEasting = data.CurrentPosition.Easting;
+        double posNorthing = data.CurrentPosition.Northing;
+
+        // If easting/northing are zero (real GPS path), convert from lat/lon
+        if (Math.Abs(posEasting) < 0.001 && Math.Abs(posNorthing) < 0.001
+            && Math.Abs(data.CurrentPosition.Latitude) > 0.001)
+        {
+            var localPlane = State.Field.LocalPlane;
+            if (localPlane != null)
+            {
+                var geoCoord = localPlane.ConvertWgs84ToGeoCoord(
+                    new Models.Wgs84(data.CurrentPosition.Latitude, data.CurrentPosition.Longitude));
+                posEasting = geoCoord.Easting;
+                posNorthing = geoCoord.Northing;
+            }
+        }
+
+        // Apply GPS drift compensation
+        double driftedEasting = posEasting + State.Field.DriftEasting;
+        double driftedNorthing = posNorthing + State.Field.DriftNorthing;
         Easting = driftedEasting;
         Northing = driftedNorthing;
         Heading = data.CurrentPosition.Heading;
