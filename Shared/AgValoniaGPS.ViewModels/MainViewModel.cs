@@ -681,6 +681,8 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _hitchNorthing, value);
     }
 
+    public bool IsToolPositionReady => _toolPositionService.IsToolPositionReady;
+
     // OnAutoSteerStateUpdated is now in MainViewModel.Guidance.cs
 
     private void OnToolPositionUpdated(object? sender, Services.Interfaces.ToolPositionUpdatedEventArgs e)

@@ -51,6 +51,11 @@ public interface IToolPositionService
     Vec3 HitchPosition { get; }
 
     /// <summary>
+    /// True when tool heading is based on actual GPS movement, not startup default.
+    /// </summary>
+    bool IsToolPositionReady { get; }
+
+    /// <summary>
     /// Update tool position based on vehicle position.
     /// Should be called every GPS update for smooth trailing behavior.
     /// </summary>

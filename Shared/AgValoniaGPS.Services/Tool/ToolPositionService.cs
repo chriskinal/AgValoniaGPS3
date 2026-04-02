@@ -55,6 +55,12 @@ public class ToolPositionService : IToolPositionService
     public Vec3 TankPosition => _tankPosition;
     public Vec3 HitchPosition => _hitchPosition;
 
+    /// <summary>
+    /// True when tool position is based on actual movement, not startup snap.
+    /// During startup, the tool heading may be unreliable (GPS heading = 0 when stationary).
+    /// </summary>
+    public bool IsToolPositionReady => _startCounter >= STARTUP_FRAMES;
+
     public event EventHandler<ToolPositionUpdatedEventArgs>? PositionUpdated;
 
     public void Update(Vec3 vehiclePivot, double vehicleHeading)
@@ -132,7 +138,9 @@ public class ToolPositionService : IToolPositionService
     {
         _startCounter++;
 
-        // During startup, snap tool behind vehicle to prevent jackknife
+        // Always snap until we have enough movement for a reliable heading.
+        // This prevents the tool from drifting during startup when heading
+        // defaults to 0 (north) because GPS hasn't computed heading from movement yet.
         if (_startCounter < STARTUP_FRAMES)
         {
             SnapToolBehindVehicle(vehicleHeading, tool);

@@ -66,7 +66,7 @@ public interface ISharedMapControl
     // Content
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double x, double y, double heading);
-    void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY);
+    void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true);
     void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null);
     void SetGridVisible(bool visible);
     void SetNorthUp(bool isNorthUp);
@@ -246,6 +246,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _toolWidth = 0.0;
     private double _hitchX = 0.0;
     private double _hitchY = 0.0;
+    private bool _toolPositionReady;
 
     // Section state for individual section rendering
     private bool[] _sectionOn = new bool[16];
@@ -692,7 +693,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
 
             // Draw tool BEFORE vehicle (so vehicle appears on top)
-            if (ShowVehicle && _toolWidth > 0.1)
+            // Skip during startup when heading is unreliable (GPS heading = 0 when stationary)
+            if (ShowVehicle && _toolWidth > 0.1 && _toolPositionReady)
             {
                 DrawTool(context);
             }
@@ -3345,7 +3347,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
-    public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY)
+    public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true)
     {
         _toolX = x;
         _toolY = y;
@@ -3353,6 +3355,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _toolWidth = width;
         _hitchX = hitchX;
         _hitchY = hitchY;
+        _toolPositionReady = isReady;
     }
 
     public void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null)

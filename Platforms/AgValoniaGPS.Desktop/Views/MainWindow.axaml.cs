@@ -562,7 +562,8 @@ public partial class MainWindow : Window
                     ViewModel.ToolHeadingRadians,
                     ViewModel.ToolWidth,
                     ViewModel.HitchEasting,
-                    ViewModel.HitchNorthing);
+                    ViewModel.HitchNorthing,
+                    ViewModel.IsToolPositionReady);
                 // Also update section states for rendering
                 MapControl.SetSectionStates(
                     ViewModel.GetSectionStates(),
