@@ -96,23 +96,22 @@ public class FieldPlaneFileService
             var startFixHeader = reader.ReadLine();
             if (startFixHeader != null && startFixHeader.StartsWith("StartFix", StringComparison.OrdinalIgnoreCase))
             {
-                // Line 9: Latitude,Longitude
+                // Line 9: Latitude,Longitude (always InvariantCulture with period decimal)
                 var startFixLine = reader.ReadLine();
                 if (!string.IsNullOrWhiteSpace(startFixLine))
                 {
                     var parts = startFixLine.Split(',');
-                    if (parts.Length >= 2)
+                    if (parts.Length >= 2 &&
+                        double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double lat) &&
+                        double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double lon) &&
+                        lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
                     {
-                        if (double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double lat) &&
-                            double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double lon))
+                        field.Origin = new Position
                         {
-                            field.Origin = new Position
-                            {
-                                Latitude = lat,
-                                Longitude = lon,
-                                Altitude = 0
-                            };
-                        }
+                            Latitude = lat,
+                            Longitude = lon,
+                            Altitude = 0
+                        };
                     }
                 }
             }

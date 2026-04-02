@@ -217,4 +217,41 @@ public class LegacyAutoImportTests
     {
         Assert.That(_service.FieldExists(_fieldDir), Is.False);
     }
+
+    [Test]
+    public void LoadField_LocaleCorruptedCoordinates_RejectsInvalidValues()
+    {
+        // Locale-corrupted file: commas as decimal separators produce invalid values
+        // Parser rejects them (out of range), origin stays at default (0,0)
+        File.WriteAllLines(Path.Combine(_fieldDir, "Field.txt"), new[]
+        {
+            "2026-03-27 10:12:22",
+            "$FieldDir",
+            "test2",
+            "$Offsets",
+            "0,0",
+            "Convergence",
+            "0",
+            "StartFix",
+            "40,71280000,-74,00600000"
+        });
+
+        var field = _service.LoadField(_fieldDir);
+
+        // Corrupted values (71280000) are out of range and rejected
+        // Origin stays at default (0,0) rather than accepting garbage
+        Assert.That(field.Origin.Latitude, Is.EqualTo(0).Within(0.001),
+            "Corrupted coordinates should be rejected, origin stays at default");
+    }
+
+    [Test]
+    public void LoadField_StandardCoordinates_ParsesCorrectly()
+    {
+        WriteLegacyFieldTxt(lat: 51.5074, lon: -0.1278);
+
+        var field = _service.LoadField(_fieldDir);
+
+        Assert.That(field.Origin.Latitude, Is.EqualTo(51.5074).Within(0.0001));
+        Assert.That(field.Origin.Longitude, Is.EqualTo(-0.1278).Within(0.0001));
+    }
 }
