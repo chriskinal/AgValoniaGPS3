@@ -130,7 +130,25 @@ public partial class MainViewModel
         {
             State.UI.CloseDialog();
         });
+
+        // Debug Dump (#127)
+        CreateDebugDumpCommand = ReactiveCommand.Create(() =>
+        {
+            try
+            {
+                var zipPath = Services.DebugDumpService.CreateDump(_settingsService, _appState);
+                StatusMessage = $"Debug dump saved: {zipPath}";
+                _logger.LogInformation($"Debug dump created: {zipPath}");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Debug dump failed: {ex.Message}";
+                _logger.LogError(ex, "Debug dump failed");
+            }
+        });
     }
+
+    public ICommand? CreateDebugDumpCommand { get; private set; }
 
     private void RefreshAppDirectories()
     {
