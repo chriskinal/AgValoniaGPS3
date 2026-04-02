@@ -104,5 +104,62 @@ namespace AgValoniaGPS.Models
 
         // Hotkey bindings (empty = use defaults)
         public Dictionary<string, string> HotkeyBindings { get; set; } = new();
+
+        /// <summary>
+        /// Validate and clamp all settings to valid ranges.
+        /// Returns list of fields that were corrected.
+        /// </summary>
+        public List<string> ValidateAndFix()
+        {
+            var defaults = new AppSettings();
+            var fixes = new List<string>();
+
+            // Simulator coordinates
+            if (SimulatorLatitude < -90 || SimulatorLatitude > 90)
+            {
+                fixes.Add($"SimulatorLatitude was {SimulatorLatitude}, reset to {defaults.SimulatorLatitude}");
+                SimulatorLatitude = defaults.SimulatorLatitude;
+            }
+            if (SimulatorLongitude < -180 || SimulatorLongitude > 180)
+            {
+                fixes.Add($"SimulatorLongitude was {SimulatorLongitude}, reset to {defaults.SimulatorLongitude}");
+                SimulatorLongitude = defaults.SimulatorLongitude;
+            }
+
+            // Window dimensions
+            if (WindowWidth < 100 || WindowWidth > 10000)
+            {
+                fixes.Add($"WindowWidth was {WindowWidth}, reset to {defaults.WindowWidth}");
+                WindowWidth = defaults.WindowWidth;
+            }
+            if (WindowHeight < 100 || WindowHeight > 10000)
+            {
+                fixes.Add($"WindowHeight was {WindowHeight}, reset to {defaults.WindowHeight}");
+                WindowHeight = defaults.WindowHeight;
+            }
+
+            // Camera
+            if (CameraZoom < 1 || CameraZoom > 10000)
+            {
+                fixes.Add($"CameraZoom was {CameraZoom}, reset to {defaults.CameraZoom}");
+                CameraZoom = defaults.CameraZoom;
+            }
+
+            // GPS update rate
+            if (GpsUpdateRate < 1 || GpsUpdateRate > 100)
+            {
+                fixes.Add($"GpsUpdateRate was {GpsUpdateRate}, reset to {defaults.GpsUpdateRate}");
+                GpsUpdateRate = defaults.GpsUpdateRate;
+            }
+
+            // NTRIP port
+            if (NtripCasterPort < 1 || NtripCasterPort > 65535)
+            {
+                fixes.Add($"NtripCasterPort was {NtripCasterPort}, reset to {defaults.NtripCasterPort}");
+                NtripCasterPort = defaults.NtripCasterPort;
+            }
+
+            return fixes;
+        }
     }
 }

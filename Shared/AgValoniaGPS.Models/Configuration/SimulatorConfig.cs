@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using ReactiveUI;
 
 namespace AgValoniaGPS.Models.Configuration;
@@ -35,14 +36,14 @@ public class SimulatorConfig : ReactiveObject
     public double Latitude
     {
         get => _latitude;
-        set => this.RaiseAndSetIfChanged(ref _latitude, value);
+        set => this.RaiseAndSetIfChanged(ref _latitude, Math.Clamp(value, -90, 90));
     }
 
     private double _longitude = -74.0060;
     public double Longitude
     {
         get => _longitude;
-        set => this.RaiseAndSetIfChanged(ref _longitude, value);
+        set => this.RaiseAndSetIfChanged(ref _longitude, Math.Clamp(value, -180, 180));
     }
 
     private double _heading;

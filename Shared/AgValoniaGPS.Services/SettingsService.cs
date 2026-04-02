@@ -89,6 +89,14 @@ namespace AgValoniaGPS.Services
                 if (loadedSettings != null)
                 {
                     Settings = loadedSettings;
+
+                    // Validate loaded settings and fix out-of-range values
+                    var fixes = Settings.ValidateAndFix();
+                    foreach (var fix in fixes)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Settings] Validation fix: {fix}");
+                    }
+
                     Settings.IsFirstRun = false;
                     Settings.LastRunDate = DateTime.Now;
 
