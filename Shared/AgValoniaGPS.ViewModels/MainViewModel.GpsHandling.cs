@@ -153,10 +153,10 @@ public partial class MainViewModel
         }
 
         // Update UTM coordinates and heading for map rendering
-        // Note: GPS drift (offset fix) is applied in AutoSteerService.ProcessGpsBuffer()
-        // before guidance/tool calculations, so position here already includes drift
-        Easting = data.CurrentPosition.Easting;
-        Northing = data.CurrentPosition.Northing;
+        // Apply GPS drift compensation for display (same drift as AutoSteerService applies
+        // for guidance/tool calculations - both paths must be consistent)
+        Easting = data.CurrentPosition.Easting + State.Field.DriftEasting;
+        Northing = data.CurrentPosition.Northing + State.Field.DriftNorthing;
         Heading = data.CurrentPosition.Heading;
 
         // Update reverse indicator on map
