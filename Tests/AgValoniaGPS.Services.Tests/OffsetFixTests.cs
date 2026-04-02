@@ -144,4 +144,48 @@ public class OffsetFixTests
         Assert.That(toolService.HitchPosition.Northing, Is.EqualTo(188.0).Within(0.1),
             "Hitch must follow drifted vehicle position");
     }
+
+    [Test]
+    public void ToolPositionService_ResetAfterLargeJump_SnapsImmediately()
+    {
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        config.Tool.HitchLength = 2.0;
+        config.Tool.TrailingHitchLength = 3.0;
+        config.Tool.IsToolTrailing = true;
+        config.Tool.IsToolRearFixed = false;
+        config.Tool.IsToolFrontFixed = false;
+        config.Tool.IsToolTBT = false;
+
+        var toolService = new AgValoniaGPS.Services.Tool.ToolPositionService();
+
+        // Drive normally for 60 frames to establish trailing
+        for (int i = 0; i < 60; i++)
+        {
+            var pos = new AgValoniaGPS.Models.Base.Vec3(100, 200 + i * 0.5, 0);
+            toolService.Update(pos, 0);
+        }
+
+        // Vehicle at (100, 230) after driving
+        double preJumpHitch = toolService.HitchPosition.Northing;
+        Assert.That(Math.Abs(preJumpHitch - 230), Is.LessThan(5),
+            "Hitch should be near vehicle before jump");
+
+        // Simulate large drift: vehicle jumps 100m north
+        var jumpedPos = new AgValoniaGPS.Models.Base.Vec3(100, 330, 0);
+
+        // WITHOUT reset - hitch would be 100m behind
+        toolService.Update(jumpedPos, 0);
+        double hitchAfterJump = toolService.HitchPosition.Northing;
+
+        // With trailing, the tool is still near old position (huge gap)
+        // This is the bug - hitch bar stretched to ~100m
+
+        // Now reset and update again
+        toolService.ResetTrailingState(jumpedPos, 0);
+        toolService.Update(jumpedPos, 0);
+        double hitchAfterReset = toolService.HitchPosition.Northing;
+
+        Assert.That(Math.Abs(hitchAfterReset - 330), Is.LessThan(5),
+            $"After reset, hitch should snap near vehicle. Got {hitchAfterReset:F1}, expected ~328");
+    }
 }
