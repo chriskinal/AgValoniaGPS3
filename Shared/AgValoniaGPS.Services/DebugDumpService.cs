@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using AgValoniaGPS.Models;
@@ -141,6 +142,18 @@ public class DebugDumpService
     private static string BuildSystemInfo()
     {
         var sb = new StringBuilder();
+
+        // App version + git hash from AssemblyInformationalVersion
+        var assembly = typeof(DebugDumpService).Assembly;
+        var infoVersion = assembly
+            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown";
+        var fileVersion = assembly
+            .GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()
+            ?.Version ?? "unknown";
+
+        sb.AppendLine($"App Version: {fileVersion}");
+        sb.AppendLine($"Build Info: {infoVersion}");
         sb.AppendLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine($"OS: {Environment.OSVersion}");
         sb.AppendLine($"Runtime: {Environment.Version}");
