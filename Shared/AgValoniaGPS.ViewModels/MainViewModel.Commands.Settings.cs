@@ -152,12 +152,12 @@ public partial class MainViewModel
 
         ShowOffsetFixDialogCommand = ReactiveCommand.Create(() =>
         {
-            State.UI.ShowDialog(Models.State.DialogType.OffsetFix);
+            State.UI.IsOffsetFixPanelVisible = !State.UI.IsOffsetFixPanelVisible;
         });
 
         CloseOffsetFixDialogCommand = ReactiveCommand.Create(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.IsOffsetFixPanelVisible = false;
         });
 
         OffsetFixNorthCommand = ReactiveCommand.Create(() =>
