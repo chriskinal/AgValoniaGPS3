@@ -53,11 +53,11 @@ public class ToolConfig : ReactiveObject
     }
 
     // Hitch configuration
-    private double _hitchLength = -1.8;
+    private double _hitchLength = 1.8;
     public double HitchLength
     {
         get => _hitchLength;
-        set => this.RaiseAndSetIfChanged(ref _hitchLength, value);
+        set => this.RaiseAndSetIfChanged(ref _hitchLength, Math.Max(0, value));
     }
 
     private double _trailingHitchLength = -2.5;
