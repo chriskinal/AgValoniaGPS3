@@ -45,6 +45,8 @@ public class AutoSteerService : IAutoSteerService
     // Local coordinate system reference
     private LocalPlane? _localPlane;
     private SharedFieldProperties _sharedFieldProperties;
+    private double _driftEasting;
+    private double _driftNorthing;
 
     // Current track for guidance (set by MainViewModel)
     private TrackModel? _currentTrack;
@@ -230,6 +232,17 @@ public class AutoSteerService : IAutoSteerService
     }
 
     /// <summary>
+    /// Set GPS drift compensation (offset fix). Applied to local coordinates
+    /// before guidance and tool position calculations, so tractor + implement
+    /// move together. Values in meters.
+    /// </summary>
+    public void SetDriftCompensation(double driftEasting, double driftNorthing)
+    {
+        _driftEasting = driftEasting;
+        _driftNorthing = driftNorthing;
+    }
+
+    /// <summary>
     /// Set the current track for guidance.
     /// Called by MainViewModel when active track changes.
     /// </summary>
@@ -263,8 +276,10 @@ public class AutoSteerService : IAutoSteerService
         {
             var geoCoord = _localPlane.ConvertWgs84ToGeoCoord(
                 new Wgs84(_state.Latitude, _state.Longitude));
-            _state.Easting = geoCoord.Easting;
-            _state.Northing = geoCoord.Northing;
+            // Apply GPS drift compensation (offset fix) before any calculations
+            // This shifts tractor + implement together, matching legacy behavior
+            _state.Easting = geoCoord.Easting + _driftEasting;
+            _state.Northing = geoCoord.Northing + _driftNorthing;
         }
 
         // Calculate guidance if we have an active track

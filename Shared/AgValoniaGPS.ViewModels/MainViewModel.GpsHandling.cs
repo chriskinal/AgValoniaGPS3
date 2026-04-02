@@ -152,13 +152,11 @@ public partial class MainViewModel
             _previousFixQuality = data.FixQuality;
         }
 
-        // Apply GPS drift compensation (offset fix #36)
-        double driftE = State.Field.DriftEasting;
-        double driftN = State.Field.DriftNorthing;
-
         // Update UTM coordinates and heading for map rendering
-        Easting = data.CurrentPosition.Easting + driftE;
-        Northing = data.CurrentPosition.Northing + driftN;
+        // Note: GPS drift (offset fix) is applied in AutoSteerService.ProcessGpsBuffer()
+        // before guidance/tool calculations, so position here already includes drift
+        Easting = data.CurrentPosition.Easting;
+        Northing = data.CurrentPosition.Northing;
         Heading = data.CurrentPosition.Heading;
 
         // Update reverse indicator on map

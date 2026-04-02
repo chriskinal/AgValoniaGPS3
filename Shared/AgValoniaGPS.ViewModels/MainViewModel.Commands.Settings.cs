@@ -160,34 +160,26 @@ public partial class MainViewModel
             State.UI.IsOffsetFixPanelVisible = false;
         });
 
-        OffsetFixNorthCommand = ReactiveCommand.Create(() =>
-        {
-            State.Field.DriftNorthing += OFFSET_STEP;
-        });
-
-        OffsetFixSouthCommand = ReactiveCommand.Create(() =>
-        {
-            State.Field.DriftNorthing -= OFFSET_STEP;
-        });
-
-        OffsetFixEastCommand = ReactiveCommand.Create(() =>
-        {
-            State.Field.DriftEasting += OFFSET_STEP;
-        });
-
-        OffsetFixWestCommand = ReactiveCommand.Create(() =>
-        {
-            State.Field.DriftEasting -= OFFSET_STEP;
-        });
-
+        OffsetFixNorthCommand = ReactiveCommand.Create(() => ApplyDrift(0, OFFSET_STEP));
+        OffsetFixSouthCommand = ReactiveCommand.Create(() => ApplyDrift(0, -OFFSET_STEP));
+        OffsetFixEastCommand = ReactiveCommand.Create(() => ApplyDrift(OFFSET_STEP, 0));
+        OffsetFixWestCommand = ReactiveCommand.Create(() => ApplyDrift(-OFFSET_STEP, 0));
         OffsetFixZeroCommand = ReactiveCommand.Create(() =>
         {
-            State.Field.DriftNorthing = 0;
             State.Field.DriftEasting = 0;
+            State.Field.DriftNorthing = 0;
+            _autoSteerService.SetDriftCompensation(0, 0);
         });
     }
 
     public ICommand? CreateDebugDumpCommand { get; private set; }
+
+    private void ApplyDrift(double deltaEasting, double deltaNorthing)
+    {
+        State.Field.DriftEasting += deltaEasting;
+        State.Field.DriftNorthing += deltaNorthing;
+        _autoSteerService.SetDriftCompensation(State.Field.DriftEasting, State.Field.DriftNorthing);
+    }
 
     private void RefreshAppDirectories()
     {

@@ -117,6 +117,12 @@ public interface IAutoSteerService
     /// <param name="angleDegrees">Target steer angle (-40 to +40 degrees)</param>
     void SetFreeDriveAngle(double angleDegrees);
 
+    /// <summary>
+    /// Set GPS drift compensation (offset fix). Applied to local coordinates
+    /// before guidance/tool calculations so tractor + implement move together.
+    /// </summary>
+    void SetDriftCompensation(double driftEasting, double driftNorthing);
+
     // ═══════════════════════════════════════════════════════════════════════
     // Module Feedback (PGN 253, 250)
     // ═══════════════════════════════════════════════════════════════════════
