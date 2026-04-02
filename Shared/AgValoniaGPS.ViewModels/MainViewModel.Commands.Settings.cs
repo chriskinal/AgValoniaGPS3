@@ -169,6 +169,9 @@ public partial class MainViewModel
             State.Field.DriftEasting = 0;
             State.Field.DriftNorthing = 0;
             _autoSteerService.SetDriftCompensation(0, 0);
+            double headingRad = Heading * Math.PI / 180.0;
+            _toolPositionService.ResetTrailingState(
+                new Models.Base.Vec3(Easting, Northing, headingRad), headingRad);
         });
     }
 
@@ -179,6 +182,11 @@ public partial class MainViewModel
         State.Field.DriftEasting += deltaEasting;
         State.Field.DriftNorthing += deltaNorthing;
         _autoSteerService.SetDriftCompensation(State.Field.DriftEasting, State.Field.DriftNorthing);
+
+        // Reset trailing tool so it snaps to new position instead of trailing from old one
+        double headingRad = Heading * Math.PI / 180.0;
+        var driftedPos = new Models.Base.Vec3(Easting, Northing, headingRad);
+        _toolPositionService.ResetTrailingState(driftedPos, headingRad);
     }
 
     private void RefreshAppDirectories()
