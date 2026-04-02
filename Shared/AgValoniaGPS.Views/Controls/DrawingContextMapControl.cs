@@ -693,8 +693,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
 
             // Draw tool BEFORE vehicle (so vehicle appears on top)
-            // Skip during startup when heading is unreliable (GPS heading = 0 when stationary)
-            if (ShowVehicle && _toolWidth > 0.1 && _toolPositionReady)
+            if (ShowVehicle && _toolWidth > 0.1)
             {
                 DrawTool(context);
             }
