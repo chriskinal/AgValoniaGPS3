@@ -188,4 +188,46 @@ public class OffsetFixTests
         Assert.That(Math.Abs(hitchAfterReset - 330), Is.LessThan(5),
             $"After reset, hitch should snap near vehicle. Got {hitchAfterReset:F1}, expected ~328");
     }
+
+    [Test]
+    public void ToolPositionService_TrailingStillWorksAtNormalSpeed()
+    {
+        // Bug: jump detection was comparing hitch to toolPivot (always ~15m apart)
+        // causing the tool to snap rigid every frame instead of trailing
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        config.Tool.HitchLength = 2.0;
+        config.Tool.TrailingHitchLength = 15.0; // Large trailing distance
+        config.Tool.IsToolTrailing = true;
+        config.Tool.IsToolRearFixed = false;
+        config.Tool.IsToolFrontFixed = false;
+        config.Tool.IsToolTBT = false;
+
+        var toolService = new AgValoniaGPS.Services.Tool.ToolPositionService();
+
+        // Drive straight north for 60 frames at 1m/frame (36 km/h at 10Hz)
+        for (int i = 0; i < 60; i++)
+        {
+            var pos = new AgValoniaGPS.Models.Base.Vec3(0, i * 1.0, 0);
+            toolService.Update(pos, 0);
+        }
+
+        // Now turn east - trailing implement should lag behind (not snap rigid)
+        double lastToolHeading = toolService.ToolHeading;
+
+        for (int i = 0; i < 20; i++)
+        {
+            var pos = new AgValoniaGPS.Models.Base.Vec3(i * 1.0, 60, Math.PI / 2); // Heading east
+            toolService.Update(pos, Math.PI / 2);
+        }
+
+        double toolHeadingAfterTurn = toolService.ToolHeading;
+
+        // Tool heading should have moved from north (0) toward east (PI/2)
+        // but NOT match vehicle heading exactly - trailing means it lags
+        Assert.That(toolHeadingAfterTurn, Is.GreaterThan(0.1),
+            "Tool heading should have moved away from north");
+        Assert.That(toolHeadingAfterTurn, Is.LessThan(Math.PI / 2 - 0.05),
+            $"Tool should lag behind vehicle (trailing, not rigid). " +
+            $"Vehicle={Math.PI / 2:F2}, Tool={toolHeadingAfterTurn:F2}");
+    }
 }

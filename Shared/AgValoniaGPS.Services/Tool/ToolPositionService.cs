@@ -43,8 +43,10 @@ public class ToolPositionService : IToolPositionService
     // State for trailing calculations (Torriem algorithm)
     private Vec3 _lastToolPivotPos;
     private Vec3 _lastTankPos;
+    private Vec3 _lastHitchPos;
     private int _startCounter;
     private const int STARTUP_FRAMES = 50;
+    private const double JUMP_THRESHOLD_SQ = 400.0; // 20m squared - snap on GPS jumps
 
     // Jackknife protection threshold (~115 degrees)
     private const double JACKKNIFE_THRESHOLD = 2.0;
@@ -148,14 +150,16 @@ public class ToolPositionService : IToolPositionService
         }
 
         // Detect large position jumps (GPS glitch, RTK reacquire, drift change)
-        // If hitch moved more than 10m in one frame, snap instead of trailing
-        double jumpDx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
-        double jumpDy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
-        if (jumpDx * jumpDx + jumpDy * jumpDy > 100.0) // > 10m
+        // Compare hitch-to-hitch (not hitch-to-toolPivot which includes trailing length)
+        double jumpDx = _hitchPosition.Easting - _lastHitchPos.Easting;
+        double jumpDy = _hitchPosition.Northing - _lastHitchPos.Northing;
+        if (jumpDx * jumpDx + jumpDy * jumpDy > JUMP_THRESHOLD_SQ) // > 20m
         {
             SnapToolBehindVehicle(vehicleHeading, tool);
+            _lastHitchPos = _hitchPosition;
             return;
         }
+        _lastHitchPos = _hitchPosition;
 
         // Torriem's algorithm: calculate heading from movement
         // Tool heading = direction from current position toward hitch
@@ -194,6 +198,7 @@ public class ToolPositionService : IToolPositionService
 
         // Save for next frame
         _lastToolPivotPos = _toolPivotPosition;
+        _lastHitchPos = _hitchPosition;
     }
 
     /// <summary>
@@ -212,13 +217,15 @@ public class ToolPositionService : IToolPositionService
         }
 
         // Detect large position jumps - snap instead of trailing
-        double jumpDx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
-        double jumpDy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
-        if (jumpDx * jumpDx + jumpDy * jumpDy > 100.0) // > 10m
+        double jumpDx = _hitchPosition.Easting - _lastHitchPos.Easting;
+        double jumpDy = _hitchPosition.Northing - _lastHitchPos.Northing;
+        if (jumpDx * jumpDx + jumpDy * jumpDy > JUMP_THRESHOLD_SQ) // > 20m
         {
             SnapTBTBehindVehicle(vehicleHeading, tool);
+            _lastHitchPos = _hitchPosition;
             return;
         }
+        _lastHitchPos = _hitchPosition;
 
         // Stage 1: Tank follows hitch (Torriem's algorithm)
         double tankDx = _hitchPosition.Easting - _lastTankPos.Easting;
@@ -271,6 +278,7 @@ public class ToolPositionService : IToolPositionService
         // Save for next frame
         _lastTankPos = _tankPosition;
         _lastToolPivotPos = _toolPivotPosition;
+        _lastHitchPos = _hitchPosition;
     }
 
     /// <summary>
@@ -304,6 +312,7 @@ public class ToolPositionService : IToolPositionService
 
         _tankPosition = new Vec3(0, 0, 0);
         _lastToolPivotPos = _toolPivotPosition;
+        _lastHitchPos = _hitchPosition;
     }
 
     /// <summary>
@@ -336,6 +345,7 @@ public class ToolPositionService : IToolPositionService
 
         _lastTankPos = _tankPosition;
         _lastToolPivotPos = _toolPivotPosition;
+        _lastHitchPos = _hitchPosition;
     }
 
     /// <summary>
