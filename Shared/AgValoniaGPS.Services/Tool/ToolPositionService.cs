@@ -147,6 +147,16 @@ public class ToolPositionService : IToolPositionService
             return;
         }
 
+        // Detect large position jumps (GPS glitch, RTK reacquire, drift change)
+        // If hitch moved more than 10m in one frame, snap instead of trailing
+        double jumpDx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
+        double jumpDy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
+        if (jumpDx * jumpDx + jumpDy * jumpDy > 100.0) // > 10m
+        {
+            SnapToolBehindVehicle(vehicleHeading, tool);
+            return;
+        }
+
         // Torriem's algorithm: calculate heading from movement
         // Tool heading = direction from current position toward hitch
         double dx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
@@ -196,6 +206,15 @@ public class ToolPositionService : IToolPositionService
 
         // During startup, snap everything behind vehicle
         if (_startCounter < STARTUP_FRAMES)
+        {
+            SnapTBTBehindVehicle(vehicleHeading, tool);
+            return;
+        }
+
+        // Detect large position jumps - snap instead of trailing
+        double jumpDx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
+        double jumpDy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
+        if (jumpDx * jumpDx + jumpDy * jumpDy > 100.0) // > 10m
         {
             SnapTBTBehindVehicle(vehicleHeading, tool);
             return;
