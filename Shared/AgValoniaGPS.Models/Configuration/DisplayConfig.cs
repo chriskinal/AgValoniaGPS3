@@ -230,7 +230,7 @@ public class DisplayConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _headlandDistanceVisible, value);
     }
 
-    private bool _autoDayNight;
+    private bool _autoDayNight = true;
     public bool AutoDayNight
     {
         get => _autoDayNight;

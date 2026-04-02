@@ -140,7 +140,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             </Button>
                             <TextBlock Text="Auto Day/Night" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center"
-                                        IsVisible="{Binding Display.AutoDayNight}">
+                                        IsVisible="{Binding !Display.AutoDayNight}">
                                 <TextBlock Text="Day" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="9" VerticalAlignment="Center"/>
                                 <NumericUpDown Value="{Binding Display.DayStartHour}" Minimum="0" Maximum="23"
                                                Width="55" FontSize="10" Height="24" FormatString="0"/>

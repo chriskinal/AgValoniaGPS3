@@ -17,6 +17,7 @@
 using System;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Services;
 using Avalonia.Threading;
 using ReactiveUI;
 
@@ -212,6 +213,8 @@ public partial class MainViewModel
         {
             _displaySettings.IsDayMode = value;
             this.RaisePropertyChanged();
+            _mapService.SetDayMode(value);
+            ApplyThemeVariant(value);
         }
     }
 
@@ -278,26 +281,33 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Switch day/night mode automatically based on local time.
-    /// Uses configurable DayStartHour and NightStartHour from DisplayConfig.
-    /// Only applies when AutoDayNight is enabled in DisplayConfig.
+    /// Switch day/night mode automatically based on solar position.
+    /// Uses GPS-based sunrise/sunset when available, falls back to configured hours.
+    /// GPS-based only when AutoDayNight is enabled.
     /// </summary>
     private void CheckAutoDayNight()
     {
         var display = ConfigurationStore.Instance.Display;
-        if (!display.AutoDayNight) return;
 
-        int hour = DateTime.Now.Hour;
-        int dayStart = display.DayStartHour;
-        int nightStart = display.NightStartHour;
-
-        bool shouldBeDay;
-        if (dayStart < nightStart)
-            shouldBeDay = hour >= dayStart && hour < nightStart;
+        bool shouldBeDay = false;
+        // Try GPS-based solar calculation when we have a valid position
+        if (Math.Abs(Latitude) > 0.001 && Math.Abs(Longitude) > 0.001 && display.AutoDayNight)
+        {
+            shouldBeDay = SolarCalculator.IsDay(Latitude, Longitude, DateTime.UtcNow);
+        }
         else
-            // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
-            shouldBeDay = hour >= dayStart || hour < nightStart;
+        {
+            // Fallback to configurable hours
+            int hour = DateTime.Now.Hour;
+            int dayStart = display.DayStartHour;
+            int nightStart = display.NightStartHour;
 
+            if (dayStart < nightStart)
+                shouldBeDay = hour >= dayStart && hour < nightStart;
+            else
+                // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
+                shouldBeDay = hour >= dayStart || hour < nightStart;
+        }
         if (IsDayMode != shouldBeDay)
         {
             IsDayMode = shouldBeDay;
