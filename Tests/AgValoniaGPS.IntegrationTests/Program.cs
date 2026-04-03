@@ -36,11 +36,13 @@ sealed class Program
     static string _tempDir = string.Empty;
     static bool _scenarioFailed = false;
     static bool _headless = false;
+    static bool _catalogMode = false;
 
     [STAThread]
     public static int Main(string[] args)
     {
         _headless = args.Contains("--headless");
+        _catalogMode = args.Contains("--catalog");
 
         // Set up isolated test data
         var testDataDir = Path.Combine(AppContext.BaseDirectory, "TestData");
@@ -63,7 +65,7 @@ sealed class Program
         };
 
         // Hook scenario runner -- runs after MainWindow is shown
-        App.OnAppReady = RunScenario;
+        App.OnAppReady = _catalogMode ? RunCatalog : RunScenario;
 
         // Boot the real app
         try
@@ -101,6 +103,25 @@ sealed class Program
 
         Console.WriteLine("[IntTest] ALL SCENARIOS PASSED");
         return 0;
+    }
+
+    static async Task RunCatalog(IClassicDesktopStyleApplicationLifetime lifetime)
+    {
+        var window = lifetime.MainWindow as Window
+            ?? throw new Exception("MainWindow not found");
+        var vm = (MainViewModel)window.DataContext!;
+
+        try
+        {
+            await UIScreenshotCatalog.Run(window, vm);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Catalog] ERROR: {ex.Message}");
+            _scenarioFailed = true;
+        }
+
+        lifetime.Shutdown();
     }
 
     static async Task RunScenario(IClassicDesktopStyleApplicationLifetime lifetime)
