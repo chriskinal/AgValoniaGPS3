@@ -52,6 +52,7 @@ public static class FieldWorkflowTest
 
         // Disable built-in simulator and close its panel
         vm.IsSimulatorEnabled = false;
+        vm.IsSimulatorPanelVisible = false;
         vm.State.UI.IsSimulatorPanelVisible = false;
         vm.State.UI.CloseDialog();
         await Pump(300);
