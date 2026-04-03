@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -48,13 +49,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Action Buttons -->
                 <Grid ColumnDefinitions="*,*" Margin="0,12,0,0">
-                    <Button Grid.Column="0" Content="No" Margin="0,0,8,0"
+                    <Button Grid.Column="0" Content="{loc:Localize No}" Margin="0,0,8,0"
                             Command="{Binding CancelConfirmationDialogCommand}"
                             Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                             Padding="0" CornerRadius="6"/>
-                    <Button Grid.Column="1" Content="Yes" Margin="8,0,0,0"
+                    <Button Grid.Column="1" Content="{loc:Localize Yes}" Margin="8,0,0,0"
                             Command="{Binding ConfirmConfirmationDialogCommand}"
                             Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="50" FontSize="18" FontWeight="Bold"

@@ -9,6 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -25,7 +26,7 @@ the Free Software Foundation, either version 3 of the License, or
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="420" MaxWidth="550">
             <StackPanel Spacing="12">
-                <TextBlock Text="AgValoniaGPS" FontSize="22" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize Agvaloniagps}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
 
                 <TextBlock x:Name="VersionText" FontSize="16" FontWeight="SemiBold"
@@ -34,28 +35,28 @@ the Free Software Foundation, either version 3 of the License, or
                 <TextBlock x:Name="GitHashText" FontSize="11"
                            Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Cross-platform agricultural GPS guidance"
+                <TextBlock Text="{loc:Localize CrossPlatformAgriculturalGpsGuidance}"
                            FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
 
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Based on AgOpenGPS by Brian Tee"
+                    <TextBlock Text="{loc:Localize BasedOnAgopengpsByBrianTee}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
-                    <TextBlock Text="Built with Avalonia UI 11.3.9 and .NET 10.0"
+                    <TextBlock Text="{loc:Localize BuiltWithAvaloniaUi1139Andnet100}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                 </StackPanel>
 
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <StackPanel Spacing="4">
-                    <TextBlock Text="License: GNU General Public License v3.0"
+                    <TextBlock Text="{loc:Localize LicenseGnuGeneralPublicLicenseV30}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
-                    <TextBlock Text="github.com/chriskinal/AgValoniaGPS3"
+                    <TextBlock Text="{loc:Localize GithubcomChriskinalAgvaloniagps3}"
                                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12"/>
                 </StackPanel>
 
-                <Button Content="Close" Margin="0,8,0,0"
+                <Button Content="{loc:Localize Close}" Margin="0,8,0,0"
                         Command="{Binding CloseAboutDialogCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="44" FontSize="16" FontWeight="Bold"

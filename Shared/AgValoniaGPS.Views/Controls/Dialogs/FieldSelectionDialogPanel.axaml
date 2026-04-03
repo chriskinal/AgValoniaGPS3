@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -96,15 +97,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="16">
             <Grid RowDefinitions="Auto,Auto,*,Auto">
                 <!-- Header -->
-                <TextBlock Grid.Row="0" Classes="Header" Text="Select Field to Open"/>
+                <TextBlock Grid.Row="0" Classes="Header" Text="{loc:Localize SelectFieldToOpen}"/>
 
                 <!-- Column Headers -->
                 <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
                     <Grid ColumnDefinitions="*,120,80,80">
-                        <TextBlock Grid.Column="0" Text="Field Name" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="NTRIP Profile" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Distance" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
-                        <TextBlock Grid.Column="3" Text="Area (ha)" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="0" Text="{loc:Localize FieldName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="{loc:Localize NtripProfile}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="2" Text="{loc:Localize Distance}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="3" Text="{loc:Localize AreaHa}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Right"/>
                     </Grid>
                 </Border>
 
@@ -132,22 +133,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Action Buttons -->
                 <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,12,0,0">
                     <!-- Delete Field Button -->
-                    <Button Grid.Column="0" Classes="DialogButton DangerButton" Content="Delete"
+                    <Button Grid.Column="0" Classes="DialogButton DangerButton" Content="{loc:Localize Delete}"
                             Command="{Binding DeleteSelectedFieldCommand}"/>
 
                     <!-- Sort Button -->
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Sort A-Z"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize SortAZ}"
                             Command="{Binding SortFieldsCommand}" Margin="8,0,0,0"/>
 
                     <!-- Spacer -->
                     <Border Grid.Column="2"/>
 
                     <!-- Cancel Button -->
-                    <Button Grid.Column="3" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="3" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             Command="{Binding CancelFieldSelectionDialogCommand}"/>
 
                     <!-- Open Button -->
-                    <Button Grid.Column="4" Classes="DialogButton" Content="Open"
+                    <Button Grid.Column="4" Classes="DialogButton" Content="{loc:Localize Open}"
                             Command="{Binding ConfirmFieldSelectionDialogCommand}" Margin="8,0,0,0"/>
                 </Grid>
             </Grid>

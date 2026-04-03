@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -37,11 +38,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 MinWidth="320" MaxWidth="400">
             <StackPanel Spacing="12">
                 <!-- Title -->
-                <TextBlock Text="Headland Builder" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize HeadlandBuilder}" FontSize="20" FontWeight="Bold"
                            Foreground="#1ABC9C" HorizontalAlignment="Center"/>
 
                 <!-- Status message if no boundary -->
-                <TextBlock Text="No boundary loaded - please create or load a field first"
+                <TextBlock Text="{loc:Localize NoBoundaryLoadedPleaseCreateOrLoadAFieldFirst}"
                            FontSize="14" Foreground="#E74C3C" HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center"
                            IsVisible="{Binding !HasBoundary}"/>
@@ -52,7 +53,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Distance Setting -->
                     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Headland Distance (meters)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                            <TextBlock Text="{loc:Localize HeadlandDistanceMeters}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto,Auto">
                                 <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandDistance, StringFormat={}{0:F1}}"
@@ -67,7 +68,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="4"
                                             Command="{Binding DecrementHeadlandDistanceCommand}"/>
                                 </StackPanel>
-                                <Button Grid.Column="2" Content="Tool Width" Width="80" Height="58"
+                                <Button Grid.Column="2" Content="{loc:Localize ToolWidth}" Width="80" Height="58"
                                         FontSize="11" Background="#2980B9" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         CornerRadius="6" Margin="8,0,0,0"
                                         Command="{Binding SetHeadlandToToolWidthCommand}"
@@ -79,7 +80,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Passes Setting -->
                     <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="12">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Number of Passes" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                            <TextBlock Text="{loc:Localize NumberOfPasses}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
                             <Grid ColumnDefinitions="*,Auto">
                                 <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8">
                                     <TextBlock Text="{Binding HeadlandPasses}"
@@ -103,7 +104,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             IsVisible="{Binding HeadlandPreviewLine, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#F39C12"/>
-                            <TextBlock Text="Preview shown on map" Foreground="#F39C12" FontSize="12"/>
+                            <TextBlock Text="{loc:Localize PreviewShownOnMap}" Foreground="#F39C12" FontSize="12"/>
                         </StackPanel>
                     </Border>
 
@@ -112,25 +113,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             IsVisible="{Binding HasHeadland}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                             <Ellipse Width="12" Height="12" Fill="#1ABC9C"/>
-                            <TextBlock Text="Headland line active" Foreground="#1ABC9C" FontSize="12"/>
+                            <TextBlock Text="{loc:Localize HeadlandLineActive}" Foreground="#1ABC9C" FontSize="12"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
                 <!-- Action Buttons -->
                 <Grid ColumnDefinitions="*,*,*" Margin="0,8,0,0" IsVisible="{Binding HasBoundary}">
-                    <Button Grid.Column="0" Content="Clear" Margin="0,0,4,0"
+                    <Button Grid.Column="0" Content="{loc:Localize Clear}" Margin="0,0,4,0"
                             Command="{Binding ClearHeadlandCommand}"
                             Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"
                             IsEnabled="{Binding HasHeadland}"/>
-                    <Button Grid.Column="1" Content="Build" Margin="4,0,4,0"
+                    <Button Grid.Column="1" Content="{loc:Localize Build}" Margin="4,0,4,0"
                             Command="{Binding BuildHeadlandCommand}"
                             Background="#1ABC9C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
-                    <Button Grid.Column="2" Content="Close" Margin="4,0,0,0"
+                    <Button Grid.Column="2" Content="{loc:Localize Close}" Margin="4,0,0,0"
                             Command="{Binding CloseHeadlandBuilderCommand}"
                             Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="14"
@@ -138,7 +139,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Grid>
 
                 <!-- Close button for when no boundary -->
-                <Button Content="Close" Margin="0,8,0,0"
+                <Button Content="{loc:Localize Close}" Margin="0,8,0,0"
                         Command="{Binding CloseHeadlandBuilderCommand}"
                         Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="44" FontSize="14"

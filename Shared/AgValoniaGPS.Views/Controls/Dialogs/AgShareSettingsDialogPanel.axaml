@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -104,7 +105,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Title -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="24" Height="24" Margin="0,0,8,0"/>
-                    <TextBlock Text="AgShare Settings"
+                    <TextBlock Text="{loc:Localize AgshareSettings}"
                                FontSize="18"
                                FontWeight="Bold"
                                Foreground="#1ABC9C"
@@ -113,7 +114,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Server URL Field -->
                 <StackPanel Grid.Row="1" Margin="0,0,0,8">
-                    <TextBlock Classes="Label" Text="Server URL"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize ServerUrl}"/>
                     <Border x:Name="ServerUrlBorder" Classes="InputField"
                             PointerPressed="ServerUrl_PointerPressed">
                         <TextBlock x:Name="ServerUrlDisplay"
@@ -121,28 +122,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"
-                                   Text="https://agshare.agopengps.com"/>
+                                   Text="{loc:Localize HttpsAgshareagopengpscom}"/>
                     </Border>
                 </StackPanel>
 
                 <!-- API Key Field -->
                 <StackPanel Grid.Row="2" Margin="0,0,0,8">
-                    <TextBlock Classes="Label" Text="API Key"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize ApiKey}"/>
                     <Border x:Name="ApiKeyBorder" Classes="InputField"
                             PointerPressed="ApiKey_PointerPressed">
                         <TextBlock x:Name="ApiKeyDisplay"
                                    FontSize="14"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"
-                                   Text="(not set)"/>
+                                   Text="{loc:Localize NotSet}"/>
                     </Border>
-                    <TextBlock Classes="Hint" Text="Get your API key from agshare.agopengps.com"/>
+                    <TextBlock Classes="Hint" Text="{loc:Localize GetYourApiKeyFromAgshareagopengpscom}"/>
                 </StackPanel>
 
                 <!-- Test Connection & Enable -->
                 <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
                     <Button Grid.Column="0" Classes="TestButton" Click="TestConnection_Click">
-                        <TextBlock Text="Test Connection"/>
+                        <TextBlock Text="{loc:Localize TestConnection}"/>
                     </Button>
                     <TextBlock x:Name="ConnectionStatusLabel" Grid.Column="1"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
@@ -150,7 +151,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                TextWrapping="Wrap"
                                Text=""/>
                     <CheckBox x:Name="EnabledCheckBox" Grid.Column="2"
-                              Content="Enabled" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                              Content="{loc:Localize Enabled}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                               VerticalAlignment="Center"/>
                 </Grid>
 
@@ -165,13 +166,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid Grid.Row="5" ColumnDefinitions="*,*" Margin="0,4,0,0">
                     <Button Grid.Column="0"
                             Classes="DialogButton CancelButton"
-                            Content="Cancel"
+                            Content="{loc:Localize Cancel}"
                             HorizontalAlignment="Stretch"
                             Click="Cancel_Click"
                             Margin="0,0,6,0"/>
                     <Button Grid.Column="1"
                             Classes="DialogButton"
-                            Content="Save"
+                            Content="{loc:Localize Save}"
                             HorizontalAlignment="Stretch"
                             Click="Save_Click"
                             Margin="6,0,0,0"/>

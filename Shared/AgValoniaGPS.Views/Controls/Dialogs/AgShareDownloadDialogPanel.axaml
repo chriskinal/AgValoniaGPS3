@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.AgShareDownloadDialogPanel"
              x:DataType="vm:MainViewModel"
@@ -45,7 +46,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 MinWidth="400" MaxWidth="500" MaxHeight="600">
             <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
                 <!-- Header -->
-                <TextBlock Grid.Row="0" Text="Download from AgShare"
+                <TextBlock Grid.Row="0" Text="{loc:Localize DownloadFromAgshare}"
                            FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            HorizontalAlignment="Center" Margin="0,0,0,15"/>
 
@@ -79,12 +80,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Options -->
                 <StackPanel Grid.Row="2" Margin="0,10" Spacing="10">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Button Content="Refresh" Click="Refresh_Click"
+                        <Button Content="{loc:Localize Refresh}" Click="Refresh_Click"
                                 Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="10,5" CornerRadius="4"/>
-                        <Button x:Name="BtnDownloadAll" Content="Download All" Click="DownloadAll_Click"
+                        <Button x:Name="BtnDownloadAll" Content="{loc:Localize DownloadAll}" Click="DownloadAll_Click"
                                 Background="#9B59B6" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="10,5" CornerRadius="4"/>
                     </StackPanel>
-                    <CheckBox x:Name="ForceOverwriteCheckBox" Content="Force overwrite existing fields"/>
+                    <CheckBox x:Name="ForceOverwriteCheckBox" Content="{loc:Localize ForceOverwriteExistingFields}"/>
                 </StackPanel>
 
                 <!-- Progress -->
@@ -92,18 +93,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <ProgressBar x:Name="ProgressBar" IsVisible="False"
                                  Height="8" Minimum="0" Maximum="100"
                                  Foreground="{DynamicResource SystemControlHighlightAccentBrush}" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-                    <TextBlock x:Name="StatusLabel" Text="Loading fields..."
+                    <TextBlock x:Name="StatusLabel" Text="{loc:Localize LoadingFields}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"
                                HorizontalAlignment="Center" Margin="0,5"/>
                 </StackPanel>
 
                 <!-- Action Buttons -->
                 <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0">
-                    <Button Grid.Column="1" x:Name="BtnDownload" Content="Download Selected"
+                    <Button Grid.Column="1" x:Name="BtnDownload" Content="{loc:Localize DownloadSelected}"
                             Classes="DialogButton" IsEnabled="False"
                             Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Click="Download_Click" Margin="0,0,10,0"/>
-                    <Button Grid.Column="2" Content="Cancel" Classes="DialogButton"
+                    <Button Grid.Column="2" Content="{loc:Localize Cancel}" Classes="DialogButton"
                             Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Click="Cancel_Click"/>
                 </Grid>

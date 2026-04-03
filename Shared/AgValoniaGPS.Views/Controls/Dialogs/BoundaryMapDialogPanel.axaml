@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -98,9 +99,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Grid.Column="0">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="24" Height="24"/>
-                                <TextBlock Text="Draw Field Boundary" Foreground="#1ABC9C" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="{loc:Localize DrawFieldBoundary}" Foreground="#1ABC9C" FontWeight="Bold" FontSize="18"/>
                             </StackPanel>
-                            <TextBlock Text="Tap on the map to add boundary points. Pan with drag, pinch to zoom."
+                            <TextBlock Text="{loc:Localize TapOnTheMapToAddBoundaryPointsPanWithDragPinchToZoom}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" Margin="0,5,0,0"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
@@ -126,7 +127,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Click="BtnDraw_Click" ToolTip.Tip="Toggle drawing mode">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="20" Height="20"/>
-                                <TextBlock x:Name="BtnDrawText" Text="Draw" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="BtnDrawText" Text="{loc:Localize Draw}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -134,13 +135,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Click="BtnUndo_Click" ToolTip.Tip="Remove last point" IsEnabled="False">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BackSpace.png" Width="20" Height="20"/>
-                                <TextBlock Text="Undo" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Localize Undo}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
                         <Button x:Name="BtnClear" Classes="ToolButton"
                                 Click="BtnClear_Click" ToolTip.Tip="Clear all points" IsEnabled="False">
-                            <TextBlock Text="Clear" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="{loc:Localize Clear}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         </Button>
                     </StackPanel>
                 </Border>
@@ -148,7 +149,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Bottom action bar -->
                 <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="15" CornerRadius="0,0,12,12">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                        <CheckBox x:Name="ChkSaveBackground" Grid.Column="0" Content="Include Background Image"
+                        <CheckBox x:Name="ChkSaveBackground" Grid.Column="0" Content="{loc:Localize IncludeBackgroundImage}"
                                   IsChecked="{Binding BoundaryMapIncludeBackground}"
                                   VerticalAlignment="Center"/>
 
@@ -156,13 +157,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <Button Grid.Column="2" Classes="CancelButton" Margin="0,0,10,0"
                                 Command="{Binding CancelBoundaryMapDialogCommand}" ToolTip.Tip="Cancel">
-                            <TextBlock Text="Cancel" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="{loc:Localize Cancel}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         </Button>
 
                         <Button x:Name="BtnSave" Grid.Column="3" Classes="OkButton"
                                 Click="BtnSave_Click" ToolTip.Tip="Save boundary"
                                 IsEnabled="{Binding BoundaryMapCanSave}">
-                            <TextBlock Text="Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
+                            <TextBlock Text="{loc:Localize Save}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                         </Button>
                     </Grid>
                 </Border>

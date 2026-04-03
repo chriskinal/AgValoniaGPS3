@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -122,7 +123,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Header -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,8">
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="Auto Steer Configuration" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="{loc:Localize AutoSteerConfiguration}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <Button Grid.Column="1" Command="{Binding ClosePanelCommand}"
                                 Background="Transparent" BorderThickness="0" Padding="8,4" Cursor="Hand">
                             <TextBlock Text="X" FontSize="16" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
@@ -165,17 +166,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Pure Pursuit Controls -->
                                             <StackPanel Spacing="12" IsVisible="{Binding !AutoSteer.IsStanleyMode}">
                                                 <!-- Algorithm Label -->
-                                                <TextBlock Text="Pure Pursuit" FontSize="18" FontWeight="Bold" Foreground="#4A9A7E"
+                                                <TextBlock Text="{loc:Localize PurePursuit}" FontSize="18" FontWeight="Bold" Foreground="#4A9A7E"
                                                            HorizontalAlignment="Center"/>
 
                                                 <!-- Steer Response -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
                                                         <Grid ColumnDefinitions="Auto,*,Auto">
-                                                            <TextBlock Text="Fast" Foreground="#4A9A7E" FontSize="12"/>
-                                                            <TextBlock Grid.Column="1" Text="Steer Response" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                            <TextBlock Text="{loc:Localize Fast}" Foreground="#4A9A7E" FontSize="12"/>
+                                                            <TextBlock Grid.Column="1" Text="{loc:Localize SteerResponse}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                        HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                                            <TextBlock Grid.Column="2" Text="Slow" Foreground="#E74C3C" FontSize="12"/>
+                                                            <TextBlock Grid.Column="2" Text="{loc:Localize Slow}" Foreground="#E74C3C" FontSize="12"/>
                                                         </Grid>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditSteerResponseCommand}"
@@ -193,7 +194,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Integral (Pure Pursuit) -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Integral" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                        <TextBlock Text="{loc:Localize Integral}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditIntegralGainCommand}"
@@ -205,7 +206,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                     Value="{Binding AutoSteer.IntegralGain}"
                                                                     VerticalAlignment="Center"/>
                                                         </Grid>
-                                                        <TextBlock Text="Slowly increases steer angle to reduce cross track error"
+                                                        <TextBlock Text="{loc:Localize SlowlyIncreasesSteerAngleToReduceCrossTrackError}"
                                                                    Foreground="#777" FontSize="10" TextWrapping="Wrap"
                                                                    HorizontalAlignment="Center" TextAlignment="Center"/>
                                                     </StackPanel>
@@ -215,13 +216,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Stanley Controls -->
                                             <StackPanel Spacing="12" IsVisible="{Binding AutoSteer.IsStanleyMode}">
                                                 <!-- Algorithm Label -->
-                                                <TextBlock Text="Stanley Gains" FontSize="18" FontWeight="Bold" Foreground="#E67E22"
+                                                <TextBlock Text="{loc:Localize StanleyGains}" FontSize="18" FontWeight="Bold" Foreground="#E67E22"
                                                            HorizontalAlignment="Center"/>
 
                                                 <!-- Aggressiveness -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Aggressiveness" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                        <TextBlock Text="{loc:Localize Aggressiveness}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyAggressivenessCommand}"
@@ -239,7 +240,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Overshoot Reduction -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Overshoot Reduction" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                        <TextBlock Text="{loc:Localize OvershootReduction}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyOvershootCommand}"
@@ -257,7 +258,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <!-- Integral (Stanley) -->
                                                 <Border Classes="ParamCard">
                                                     <StackPanel Spacing="8">
-                                                        <TextBlock Text="Integral" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                        <TextBlock Text="{loc:Localize Integral}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Center"/>
                                                         <Grid ColumnDefinitions="Auto,*">
                                                             <Button Classes="TappableValue" Command="{Binding EditStanleyIntegralCommand}"
@@ -289,13 +290,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8" HorizontalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                                                        <TextBlock Text="-->" Foreground="#4A9A7E"/>
+                                                        <TextBlock Text="{loc:Localize }" Foreground="#4A9A7E"/>
                                                         <TextBlock Text="{Binding AutoSteer.WasOffset}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                    FontWeight="Bold" FontSize="18"/>
-                                                        <TextBlock Text="&lt;--" Foreground="#4A9A7E"/>
+                                                        <TextBlock Text="{loc:Localize lt}" Foreground="#4A9A7E"/>
                                                     </StackPanel>
-                                                    <TextBlock Text="Was Zero" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
-                                                    <Button Content="Zero WAS" Command="{Binding ZeroWasCommand}"
+                                                    <TextBlock Text="{loc:Localize WasZero}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
+                                                    <Button Content="{loc:Localize ZeroWas}" Command="{Binding ZeroWasCommand}"
                                                             HorizontalAlignment="Center" Padding="16,6"/>
                                                 </StackPanel>
                                             </Border>
@@ -312,7 +313,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                 Value="{Binding AutoSteer.CountsPerDegree}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Counts Per Degree" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                                                    <TextBlock Text="{loc:Localize CountsPerDegree}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -328,7 +329,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                 Value="{Binding AutoSteer.Ackermann}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Ackermann" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                                                    <TextBlock Text="{loc:Localize Ackermann}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
 
@@ -344,7 +345,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                 Value="{Binding AutoSteer.MaxSteerAngle}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Max Steer Angle" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                                                    <TextBlock Text="{loc:Localize MaxSteerAngle}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
@@ -361,7 +362,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
                                             <!-- Deadzone Header -->
-                                            <TextBlock Text="---Deadzone---" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            <TextBlock Text="{loc:Localize Deadzone}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Deadzone values in a row -->
@@ -373,7 +374,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                             <TextBlock Text="{Binding AutoSteer.DeadzoneHeading, StringFormat='{}{0:F1}'}"
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
-                                                        <TextBlock Text="Heading" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize Heading}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
@@ -384,7 +385,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                             <TextBlock Text="{Binding AutoSteer.DeadzoneDelay}"
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>
-                                                        <TextBlock Text="On-Delay" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize OnDelay}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
@@ -393,7 +394,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Speed Factor -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Speed Factor" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize SpeedFactor}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditSpeedFactorCommand}">
@@ -410,7 +411,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Acquire Factor -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Acquire Factor" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize AcquireFactor}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditAcquireFactorCommand}">
@@ -421,7 +422,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                 Value="{Binding AutoSteer.AcquireFactor}"
                                                                 VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                     </Grid>
-                                                    <TextBlock Text="Acquire = Factor * Hold" Foreground="#777" FontSize="10"
+                                                    <TextBlock Text="{loc:Localize AcquireFactorHold}" Foreground="#777" FontSize="10"
                                                                HorizontalAlignment="Center"/>
                                                 </StackPanel>
                                             </Border>
@@ -438,13 +439,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <!-- Tab 4 Content: Gain -->
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
-                                            <TextBlock Text="Gain" FontSize="18" FontWeight="Bold" Foreground="#4A9A7E"
+                                            <TextBlock Text="{loc:Localize Gain}" FontSize="18" FontWeight="Bold" Foreground="#4A9A7E"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Proportional Gain -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Proportional Gain" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize ProportionalGain}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditProportionalGainCommand}">
@@ -461,7 +462,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Max PWM -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Max Limit" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize MaxLimit}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditMaxPwmCommand}">
@@ -478,7 +479,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Min PWM -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Minimum to Move" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize MinimumToMove}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditMinPwmCommand}">
@@ -500,7 +501,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Margin="0,8,0,0"
                                     IsVisible="{Binding IsFullMode}">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="Test Mode" FontSize="14" FontWeight="Bold" Foreground="#F39C12"
+                                    <TextBlock Text="{loc:Localize TestMode}" FontSize="14" FontWeight="Bold" Foreground="#F39C12"
                                                HorizontalAlignment="Center"/>
 
                                     <!-- Free Drive Toggle -->
@@ -515,20 +516,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                        Width="32" Height="32" Stretch="Uniform"
                                                        IsVisible="{Binding !IsFreeDriveMode}"/>
                                             </Grid>
-                                            <TextBlock Grid.Column="1" Text="Free Drive" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{loc:Localize FreeDrive}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Button>
 
                                     <!-- Steer Left/Right/Zero Buttons -->
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4"
                                                 IsEnabled="{Binding IsFreeDriveMode}">
-                                        <Button Content="◀ LEFT" Padding="16,8"
+                                        <Button Content="{loc:Localize Left}" Padding="16,8"
                                                 Background="#DD3498DB"
                                                 Command="{Binding SteerLeftCommand}"/>
                                         <Button Content="0" Padding="20,8"
                                                 Background="#DD27AE60" FontWeight="Bold" FontSize="16"
                                                 Command="{Binding SteerCenterCommand}"/>
-                                        <Button Content="RIGHT ▶" Padding="16,8"
+                                        <Button Content="{loc:Localize Right}" Padding="16,8"
                                                 Background="#DD3498DB"
                                                 Command="{Binding SteerRightCommand}"/>
                                     </StackPanel>
@@ -538,13 +539,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             HorizontalAlignment="Center" IsVisible="{Binding IsFreeDriveMode}">
                                         <StackPanel Orientation="Horizontal" Spacing="16">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <TextBlock Text="Set:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Localize Set}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{Binding FreeDriveSteerAngle, StringFormat='{}{0:F0}°'}"
                                                            Foreground="#F39C12" FontWeight="Bold"
                                                            FontSize="16" VerticalAlignment="Center" Width="40" TextAlignment="Right"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <TextBlock Text="PWM:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Localize Pwm}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{Binding PwmDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                                            FontSize="16" VerticalAlignment="Center" Width="30" TextAlignment="Right"/>
                                             </StackPanel>
@@ -557,7 +558,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="18"
                                                        HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Actual Steer Angle" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"
+                                            <TextBlock Text="{loc:Localize ActualSteerAngle}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"
                                                        HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
@@ -586,7 +587,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Turn Sensor -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8">
-                                                    <TextBlock Text="Turn Sensor" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
+                                                    <TextBlock Text="{loc:Localize TurnSensor}" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
@@ -600,7 +601,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Counts field - visible when Turn Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.TurnSensorEnabled}"
                                                                     Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                                            <TextBlock Text="Counts" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Localize Counts}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                                                             <Button Classes="TappableValue" Command="{Binding EditTurnSensorCountsCommand}"
                                                                     Padding="16,8">
                                                                 <TextBlock Text="{Binding AutoSteer.TurnSensorCounts}"
@@ -614,7 +615,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Pressure Turn -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8">
-                                                    <TextBlock Text="Pressure Turn" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
+                                                    <TextBlock Text="{loc:Localize PressureTurn}" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
@@ -628,7 +629,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Pressure fields - visible when Pressure Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.PressureSensorEnabled}"
                                                                     Spacing="4">
-                                                            <TextBlock Text="Off at %" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
+                                                            <TextBlock Text="{loc:Localize OffAt}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
                                                             <!-- Actual pressure reading from PGN -->
                                                             <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActualPressurePercent}"
                                                                          Height="16" Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
@@ -649,7 +650,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Current Turn -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8">
-                                                    <TextBlock Text="Current Turn" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
+                                                    <TextBlock Text="{loc:Localize CurrentTurn}" FontSize="14" FontWeight="Bold" Foreground="#4A9A7E"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Border Grid.Column="0" CornerRadius="4" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                                                                 Margin="0,0,8,0"
@@ -663,7 +664,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                         <!-- Current fields - visible when Current Sensor enabled -->
                                                         <StackPanel Grid.Column="1" IsVisible="{Binding AutoSteer.CurrentSensorEnabled}"
                                                                     Spacing="4">
-                                                            <TextBlock Text="Off at %" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
+                                                            <TextBlock Text="{loc:Localize OffAt}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center" FontSize="12"/>
                                                             <!-- Actual current reading from PGN -->
                                                             <ProgressBar Minimum="0" Maximum="100" Value="{Binding ActualCurrentPercent}"
                                                                          Height="16" Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
@@ -692,7 +693,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </TabItem.Header>
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="8">
-                                            <TextBlock Text="Hardware Config" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
+                                            <TextBlock Text="{loc:Localize HardwareConfig}" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Toggle buttons for hardware settings -->
@@ -708,7 +709,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Danfoss" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize Danfoss}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert WAS -->
@@ -721,7 +722,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert WAS" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize InvertWas}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert Motor -->
@@ -734,7 +735,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert Motor" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize InvertMotor}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <!-- Invert Relays -->
@@ -747,7 +748,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Invert Relays" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize InvertRelays}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </WrapPanel>
                                             </Border>
@@ -756,35 +757,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="8">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Motor Driver" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize MotorDriver}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.MotorDriver}"
                                                                   Width="120">
-                                                            <ComboBoxItem Content="IBT2"/>
-                                                            <ComboBoxItem Content="Cytron"/>
+                                                            <ComboBoxItem Content="{loc:Localize Ibt2}"/>
+                                                            <ComboBoxItem Content="{loc:Localize Cytron}"/>
                                                         </ComboBox>
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="AD Converter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize AdConverter}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.AdConverter}"
                                                                   Width="120">
-                                                            <ComboBoxItem Content="Differential"/>
-                                                            <ComboBoxItem Content="Single"/>
+                                                            <ComboBoxItem Content="{loc:Localize Differential}"/>
+                                                            <ComboBoxItem Content="{loc:Localize Single}"/>
                                                         </ComboBox>
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="External Enable" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize ExternalEnable}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.ExternalEnable}"
                                                                   Width="120">
-                                                            <ComboBoxItem Content="None"/>
-                                                            <ComboBoxItem Content="Switch"/>
-                                                            <ComboBoxItem Content="Button"/>
+                                                            <ComboBoxItem Content="{loc:Localize None}"/>
+                                                            <ComboBoxItem Content="{loc:Localize Switch}"/>
+                                                            <ComboBoxItem Content="{loc:Localize Button}"/>
                                                         </ComboBox>
                                                     </Grid>
 
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="IMU Axis Swap" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize ImuAxisSwap}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                                         <ComboBox Grid.Column="1" SelectedIndex="{Binding AutoSteer.ImuAxisSwap}"
                                                                   Width="120">
                                                             <ComboBoxItem Content="X"/>
@@ -805,7 +806,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </TabItem.Header>
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
-                                            <TextBlock Text="Steering Algorithm" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
+                                            <TextBlock Text="{loc:Localize SteeringAlgorithm}" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Stanley/Pure toggle -->
@@ -813,11 +814,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <Button Classes="ToggleButton" Command="{Binding ToggleStanleyModeCommand}"
                                                         HorizontalAlignment="Stretch">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Algorithm" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                                        <TextBlock Text="{loc:Localize Algorithm}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                                         <Grid Grid.Column="1">
-                                                            <TextBlock Text="Stanley" Foreground="#4A9A7E" FontWeight="Bold"
+                                                            <TextBlock Text="{loc:Localize Stanley}" Foreground="#4A9A7E" FontWeight="Bold"
                                                                        IsVisible="{Binding AutoSteer.IsStanleyMode}"/>
-                                                            <TextBlock Text="Pure Pursuit" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontWeight="Bold"
+                                                            <TextBlock Text="{loc:Localize PurePursuit}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontWeight="Bold"
                                                                        IsVisible="{Binding !AutoSteer.IsStanleyMode}"/>
                                                         </Grid>
                                                     </Grid>
@@ -828,10 +829,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
                                                     <Grid ColumnDefinitions="Auto,*,Auto">
-                                                        <TextBlock Text="Out" Foreground="#E74C3C" FontSize="11"/>
-                                                        <TextBlock Grid.Column="1" Text="U-Turn Compensation" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                        <TextBlock Text="{loc:Localize Out}" Foreground="#E74C3C" FontSize="11"/>
+                                                        <TextBlock Grid.Column="1" Text="{loc:Localize UTurnCompensation}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                    HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                                        <TextBlock Grid.Column="2" Text="In" Foreground="#4A9A7E" FontSize="11"/>
+                                                        <TextBlock Grid.Column="2" Text="{loc:Localize In}" Foreground="#4A9A7E" FontSize="11"/>
                                                     </Grid>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditUTurnCompensationCommand}">
@@ -848,7 +849,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             <!-- Sidehill Compensation -->
                                             <Border Classes="ParamCard">
                                                 <StackPanel Spacing="4">
-                                                    <TextBlock Text="Sidehill / Degree" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
+                                                    <TextBlock Text="{loc:Localize SidehillDegree}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
                                                         <Button Classes="TappableValue" Command="{Binding EditSidehillCompensationCommand}">
@@ -867,11 +868,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                 <Button Classes="ToggleButton" Command="{Binding ToggleSteerInReverseCommand}"
                                                         HorizontalAlignment="Stretch">
                                                     <Grid ColumnDefinitions="*,Auto">
-                                                        <TextBlock Text="Steer in Reverse" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                                        <TextBlock Text="{loc:Localize SteerInReverse}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                                         <Grid Grid.Column="1">
-                                                            <TextBlock Text="ON" Foreground="#4A9A7E" FontWeight="Bold"
+                                                            <TextBlock Text="{loc:Localize On2}" Foreground="#4A9A7E" FontWeight="Bold"
                                                                        IsVisible="{Binding AutoSteer.SteerInReverse}"/>
-                                                            <TextBlock Text="OFF" Foreground="#E74C3C" FontWeight="Bold"
+                                                            <TextBlock Text="{loc:Localize Off2}" Foreground="#E74C3C" FontWeight="Bold"
                                                                        IsVisible="{Binding !AutoSteer.SteerInReverse}"/>
                                                         </Grid>
                                                     </Grid>
@@ -889,7 +890,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </TabItem.Header>
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
-                                            <TextBlock Text="Speed Limits" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
+                                            <TextBlock Text="{loc:Localize SpeedLimits}" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Speed Settings -->
@@ -899,7 +900,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/con_VehicleFunctionSpeedLimit.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Manual Turns" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize ManualTurns}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditManualTurnsSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -907,14 +908,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="km/h" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize KilometersPerHour}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Min Speed -->
                                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_MinAutoSteer.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Min Speed" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize MinSpeed}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditMinSteerSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -922,14 +923,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="km/h" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize KilometersPerHour}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Max Speed -->
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_MaxAutoSteer.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Max Speed" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize MaxSpeed}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditMaxSteerSpeedCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -937,7 +938,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="km/h" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize KilometersPerHour}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
@@ -954,7 +955,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </TabItem.Header>
                                     <ScrollViewer Padding="8">
                                         <StackPanel Spacing="12">
-                                            <TextBlock Text="Display Settings" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
+                                            <TextBlock Text="{loc:Localize DisplaySettings}" FontSize="16" FontWeight="Bold" Foreground="#4A9A7E"
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Numeric inputs row 1: Line Width & Nudge Distance -->
@@ -964,7 +965,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" Margin="0,0,4,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_LineWith.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Line Width" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize LineWidth}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditLineWidthCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -972,14 +973,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="pixels" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize Pixels}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Nudge Distance -->
                                                     <StackPanel Grid.Column="1" Margin="4,0,0,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_SnapDistance.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Nudge Distance" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize NudgeDistance}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditNudgeDistanceCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -987,7 +988,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="cm" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize Cm}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
@@ -1000,7 +1001,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <StackPanel Grid.Column="0" Margin="0,0,4,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_GuidanceLookAhead.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Next Guidance" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize NextGuidance}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditNextGuidanceTimeCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -1008,14 +1009,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="sec" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize Sec}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Cm -> Pixel -->
                                                     <StackPanel Grid.Column="1" Margin="4,0,0,0" HorizontalAlignment="Center">
                                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConV_CmPixel.png"
                                                                Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                                        <TextBlock Text="Cm -> Pixel" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
+                                                        <TextBlock Text="{loc:Localize CmPixel}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"
                                                                    HorizontalAlignment="Center"/>
                                                         <Button Classes="TappableValue" Command="{Binding EditCmPerPixelCommand}"
                                                                 HorizontalAlignment="Stretch">
@@ -1023,7 +1024,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"
                                                                        HorizontalAlignment="Center"/>
                                                         </Button>
-                                                        <TextBlock Text="cm/px" Foreground="#777" FontSize="10"
+                                                        <TextBlock Text="{loc:Localize CmPx}" Foreground="#777" FontSize="10"
                                                                    HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
@@ -1042,7 +1043,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Lightbar" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize Lightbar}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- Steering Bar -->
                                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
@@ -1054,7 +1055,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        Width="48" Height="48" Stretch="Uniform"/>
                                                             </Button>
                                                         </Border>
-                                                        <TextBlock Text="Steer Bar" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize SteerBar}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                     <!-- On/Off (Guidance Bar) -->
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
@@ -1069,7 +1070,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                                        IsVisible="{Binding !AutoSteer.GuidanceBarOn}"/>
                                                             </Grid>
                                                         </Button>
-                                                        <TextBlock Text="On/Off" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Localize OnOff}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -1086,7 +1087,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/WizardWand.png"
                                                Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Wizard" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Localize Wizard}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Reset -->
@@ -1095,7 +1096,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <StackPanel HorizontalAlignment="Center">
                                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
                                                Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Defaults" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Localize Defaults}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Send+Save with unsaved changes warning -->
@@ -1110,7 +1111,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                    Width="24" Height="24" Stretch="Uniform" VerticalAlignment="Center"
                                                    IsVisible="{Binding HasUnsavedRightSideChanges}"/>
                                         </StackPanel>
-                                        <TextBlock Text="Send+Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Localize Sendsave}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <!-- Close -->
@@ -1130,17 +1131,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Status Values - Fixed width columns to prevent layout shift -->
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Orientation="Horizontal" Width="80">
-                                <TextBlock Text="Set:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
+                                <TextBlock Text="{loc:Localize Set}" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
                                 <TextBlock Text="{Binding SetSteerAngle, StringFormat='{}{0:F1}°'}"
                                            Classes="StatusValue" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Width="80">
-                                <TextBlock Text="Act:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
+                                <TextBlock Text="{loc:Localize Act}" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
                                 <TextBlock Text="{Binding ActualSteerAngle, StringFormat='{}{0:F1}°'}"
                                            Classes="StatusValue" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Width="80">
-                                <TextBlock Text="Err:" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
+                                <TextBlock Text="{loc:Localize Err}" Classes="StatusLabel" VerticalAlignment="Center" Width="30"/>
                                 <TextBlock Text="{Binding SteerError, StringFormat='{}{0:F1}°'}"
                                            Foreground="#E74C3C" FontWeight="Bold" FontSize="14"
                                            VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
@@ -1151,7 +1152,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <Button Grid.Column="1" Command="{Binding ToggleFullModeCommand}"
                                 Background="{DynamicResource SystemControlHighlightAccentBrush}" Padding="12,6" CornerRadius="4">
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <TextBlock Text="|||" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
+                                <TextBlock Text="{loc:Localize 2}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
                                 <Grid>
                                     <TextBlock Text="◀" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"
                                                IsVisible="{Binding IsFullMode}"/>
@@ -1208,9 +1209,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- Confirm/Cancel -->
                     <Grid Grid.Row="3" ColumnDefinitions="*,*" Margin="0,12,0,0">
-                        <Button Grid.Column="0" Content="Cancel" Command="{Binding CancelNumericInputCommand}"
+                        <Button Grid.Column="0" Content="{loc:Localize Cancel}" Command="{Binding CancelNumericInputCommand}"
                                 Margin="0,0,4,0" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                        <Button Grid.Column="1" Content="OK" Command="{Binding ConfirmNumericInputCommand}"
+                        <Button Grid.Column="1" Content="{loc:Localize OK}" Command="{Binding ConfirmNumericInputCommand}"
                                 Margin="4,0,0,0" Background="{DynamicResource SystemControlHighlightAccentBrush}"/>
                     </Grid>
                 </Grid>
@@ -1230,19 +1231,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Reset_Default.png"
                                Width="40" Height="40" Stretch="Uniform"/>
-                        <TextBlock Text="Reset to Defaults?" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        <TextBlock Text="{loc:Localize ResetToDefaults}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Warning Message -->
-                    <TextBlock Text="This will reset ALL AutoSteer settings to factory defaults and send them to the module."
+                    <TextBlock Text="{loc:Localize ThisWillResetAllAutosteerSettingsToFactoryDefaultsAndSendThemToTheModule}"
                                TextWrapping="Wrap" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" TextAlignment="Center"/>
 
                     <!-- Buttons -->
                     <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
-                        <Button Grid.Column="0" Content="Cancel" Command="{Binding CancelResetCommand}"
+                        <Button Grid.Column="0" Content="{loc:Localize Cancel}" Command="{Binding CancelResetCommand}"
                                 Margin="0,0,4,0" Padding="16,10" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                        <Button Grid.Column="1" Content="Reset" Command="{Binding ConfirmResetCommand}"
+                        <Button Grid.Column="1" Content="{loc:Localize Reset}" Command="{Binding ConfirmResetCommand}"
                                 Margin="4,0,0,0" Padding="16,10" Background="#DDE74C3C"/>
                     </Grid>
                 </StackPanel>

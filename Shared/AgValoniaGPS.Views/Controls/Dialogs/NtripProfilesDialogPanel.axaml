@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -108,7 +109,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="16">
             <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
                 <!-- Header -->
-                <TextBlock Grid.Row="0" Classes="Header" Text="NTRIP Profiles"/>
+                <TextBlock Grid.Row="0" Classes="Header" Text="{loc:Localize NtripProfiles}"/>
 
                 <!-- Toolbar -->
                 <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="6" Padding="4" Margin="0,0,0,12">
@@ -148,9 +149,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Column Headers -->
                 <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8" Margin="0,0,0,0">
                     <Grid ColumnDefinitions="*,150,60">
-                        <TextBlock Grid.Column="0" Text="Profile Name" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="Caster" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Default" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="{loc:Localize ProfileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="{loc:Localize Caster}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="2" Text="{loc:Localize Default}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold" TextAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -186,7 +187,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Grid.Column="0"/>
 
                     <!-- Close Button -->
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Close"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Close}"
                             Command="{Binding CloseNtripProfilesDialogCommand}"/>
                 </Grid>
             </Grid>

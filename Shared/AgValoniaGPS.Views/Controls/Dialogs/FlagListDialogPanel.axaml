@@ -9,6 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -34,7 +35,7 @@ the Free Software Foundation, either version 3 of the License, or
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header -->
                 <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,12">
-                    <TextBlock Text="Flags" FontSize="18" FontWeight="Bold"
+                    <TextBlock Text="{loc:Localize Flags}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
                 </StackPanel>
@@ -108,12 +109,12 @@ the Free Software Foundation, either version 3 of the License, or
                             BorderThickness="1" CornerRadius="8" Padding="16"
                             MaxWidth="300" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Rename Flag" FontSize="14" FontWeight="Bold"
+                            <TextBlock Text="{loc:Localize RenameFlag}" FontSize="14" FontWeight="Bold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             <TextBox x:Name="NameEditBox" FontSize="14" Watermark="Enter flag name"/>
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                <Button Content="OK" Padding="16,6" Click="NameEditOK_Click"/>
-                                <Button Content="Cancel" Padding="16,6" Click="NameEditCancel_Click"/>
+                                <Button Content="{loc:Localize OK}" Padding="16,6" Click="NameEditOK_Click"/>
+                                <Button Content="{loc:Localize Cancel}" Padding="16,6" Click="NameEditCancel_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -122,13 +123,13 @@ the Free Software Foundation, either version 3 of the License, or
                 <!-- Footer buttons -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8"
                             HorizontalAlignment="Right" Margin="0,12,0,0">
-                    <Button Content="Place Flag Here" Padding="12,6"
+                    <Button Content="{loc:Localize PlaceFlagHere}" Padding="12,6"
                             Command="{Binding PlaceFlagHereCommand}"/>
-                    <Button Content="Place on Map" Padding="12,6"
+                    <Button Content="{loc:Localize PlaceOnMap}" Padding="12,6"
                             Command="{Binding PlaceFlagOnClickCommand}"/>
-                    <Button Content="Delete All" Padding="12,6"
+                    <Button Content="{loc:Localize DeleteAll}" Padding="12,6"
                             Command="{Binding DeleteAllFlagsCommand}"/>
-                    <Button Content="Close" Padding="12,6"
+                    <Button Content="{loc:Localize Close}" Padding="12,6"
                             Command="{Binding CloseFlagListCommand}"/>
                 </StackPanel>
             </Grid>

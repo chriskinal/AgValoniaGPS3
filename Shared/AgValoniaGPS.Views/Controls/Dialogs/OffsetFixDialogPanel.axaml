@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.OffsetFixDialogPanel"
              x:DataType="vm:MainViewModel"
@@ -16,7 +17,7 @@
         <StackPanel Spacing="8">
             <!-- Header with close button -->
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="GPS Offset Fix" FontSize="16" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize GpsOffsetFix}" FontSize="16" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                 <Button Grid.Column="1" Content="X" Width="28" Height="28"
                         Command="{Binding CloseOffsetFixDialogCommand}"
@@ -62,9 +63,9 @@
 
             <!-- Manual offset input -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="N/S (m)" FontSize="11"
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Localize NSM}" FontSize="11"
                            Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="E/W (m)" FontSize="11"
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{loc:Localize EWM}" FontSize="11"
                            Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
                 <TextBox Grid.Row="1" Grid.Column="0" x:Name="NorthingInput"
                          Text="{Binding State.Field.DriftNorthing, StringFormat='{}{0:F3}', Mode=TwoWay}"
@@ -74,7 +75,7 @@
                          FontSize="16" FontWeight="Bold" HorizontalContentAlignment="Center"/>
             </Grid>
 
-            <TextBlock Text="1 cm per click" FontSize="10"
+            <TextBlock Text="{loc:Localize 1CmPerClick}" FontSize="10"
                        Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>

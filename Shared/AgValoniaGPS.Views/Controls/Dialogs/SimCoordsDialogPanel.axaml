@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -96,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                 <!-- Title -->
                 <TextBlock Grid.Row="0"
-                           Text="Enter GPS Coordinates"
+                           Text="{loc:Localize EnterGpsCoordinates}"
                            FontSize="18"
                            FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
@@ -106,7 +107,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Latitude Field (on-screen keyboard mode) -->
                 <StackPanel Grid.Row="1" Margin="0,0,0,8"
                             IsVisible="{Binding Display.KeyboardEnabled}">
-                    <TextBlock Classes="Label" Text="Latitude (-90 to +90)"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize Latitude90To90}"/>
                     <Border x:Name="LatitudeBorder" Classes="InputField"
                             PointerPressed="Latitude_PointerPressed">
                         <TextBlock x:Name="LatitudeDisplay"
@@ -121,7 +122,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Longitude Field (on-screen keyboard mode) -->
                 <StackPanel Grid.Row="2" Margin="0,0,0,12"
                             IsVisible="{Binding Display.KeyboardEnabled}">
-                    <TextBlock Classes="Label" Text="Longitude (-180 to +180)"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize Longitude180To180}"/>
                     <Border x:Name="LongitudeBorder" Classes="InputField"
                             PointerPressed="Longitude_PointerPressed">
                         <TextBlock x:Name="LongitudeDisplay"
@@ -145,13 +146,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Direct text input fallback (when on-screen keyboard disabled) -->
                 <StackPanel Grid.Row="1" Margin="0,0,0,8"
                             IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}">
-                    <TextBlock Classes="Label" Text="Latitude (-90 to +90)"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize Latitude90To90}"/>
                     <TextBox x:Name="LatitudeInput" FontSize="18" FontWeight="Bold"
                              Watermark="0.00000000" Margin="0,4"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Margin="0,0,0,12"
                             IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}">
-                    <TextBlock Classes="Label" Text="Longitude (-180 to +180)"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize Longitude180To180}"/>
                     <TextBox x:Name="LongitudeInput" FontSize="18" FontWeight="Bold"
                              Watermark="0.00000000" Margin="0,4"/>
                 </StackPanel>
@@ -160,13 +161,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid Grid.Row="4" ColumnDefinitions="*,*" Margin="0,4,0,0">
                     <Button Grid.Column="0"
                             Classes="DialogButton CancelButton"
-                            Content="Cancel"
+                            Content="{loc:Localize Cancel}"
                             HorizontalAlignment="Stretch"
                             Click="Cancel_Click"
                             Margin="0,0,6,0"/>
                     <Button Grid.Column="1"
                             Classes="DialogButton"
-                            Content="OK"
+                            Content="{loc:Localize OK}"
                             HorizontalAlignment="Stretch"
                             Click="OK_Click"
                             Margin="6,0,0,0"/>

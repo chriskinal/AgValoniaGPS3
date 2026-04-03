@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -47,7 +48,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            Margin="0,8"/>
 
                 <!-- OK Button -->
-                <Button Content="OK" Margin="0,12,0,0"
+                <Button Content="{loc:Localize OK}" Margin="0,12,0,0"
                         Command="{Binding DismissErrorDialogCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Center" Width="120" Height="50"

@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -105,8 +106,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12,12,0,0" Padding="20,15">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
-                            <TextBlock Text="Data I/O Configuration" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="20" FontWeight="Bold"/>
-                            <TextBlock Text="Network and GPS settings" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" Margin="0,5,0,0"/>
+                            <TextBlock Text="{loc:Localize DataIOConfiguration}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="20" FontWeight="Bold"/>
+                            <TextBlock Text="{loc:Localize NetworkAndGpsSettings}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
                                 Command="{Binding CloseDataIODialogCommand}" Cursor="Hand" VerticalAlignment="Top">
@@ -122,10 +123,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- UDP Communication Section -->
                         <Border Classes="Panel">
                             <StackPanel Spacing="10">
-                                <TextBlock Classes="Header" Text="UDP Communication"/>
+                                <TextBlock Classes="Header" Text="{loc:Localize UdpCommunication}"/>
 
                                 <Grid ColumnDefinitions="140,*">
-                                    <TextBlock Classes="Label" Text="Network Status:" VerticalAlignment="Center"/>
+                                    <TextBlock Classes="Label" Text="{loc:Localize NetworkStatus}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" Text="{Binding NetworkStatus}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
                                 </Grid>
                             </StackPanel>
@@ -134,11 +135,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- Module Connections Section -->
                         <Border Classes="Panel">
                             <StackPanel Spacing="10">
-                                <TextBlock Classes="Header" Text="Module Connections"/>
+                                <TextBlock Classes="Header" Text="{loc:Localize ModuleConnections}"/>
 
                                 <Grid ColumnDefinitions="140,Auto,*" RowDefinitions="Auto,Auto,Auto">
                                     <!-- AutoSteer -->
-                                    <TextBlock Classes="Label" Text="AutoSteer:" VerticalAlignment="Center"/>
+                                    <TextBlock Classes="Label" Text="{loc:Localize Autosteer}" VerticalAlignment="Center"/>
                                     <Ellipse Grid.Column="1" Width="12" Height="12" Margin="0,0,10,0"
                                              Fill="{Binding State.Connections.IsAutoSteerDataOk, Converter={StaticResource BoolToColorConverter}}"/>
                                     <TextBlock Grid.Column="2"
@@ -146,7 +147,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
 
                                     <!-- Machine -->
-                                    <TextBlock Grid.Row="1" Classes="Label" Text="Machine:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Grid.Row="1" Classes="Label" Text="{loc:Localize Machine}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                                     <Ellipse Grid.Row="1" Grid.Column="1" Width="12" Height="12" Margin="0,8,10,0"
                                              Fill="{Binding State.Connections.IsMachineDataOk, Converter={StaticResource BoolToColorConverter}}"/>
                                     <TextBlock Grid.Row="1" Grid.Column="2" Margin="0,8,0,0"
@@ -154,7 +155,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
 
                                     <!-- IMU -->
-                                    <TextBlock Grid.Row="2" Classes="Label" Text="IMU:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Grid.Row="2" Classes="Label" Text="{loc:Localize Imu}" VerticalAlignment="Center" Margin="0,8,0,0"/>
                                     <Ellipse Grid.Row="2" Grid.Column="1" Width="12" Height="12" Margin="0,8,10,0"
                                              Fill="{Binding State.Connections.IsImuDataOk, Converter={StaticResource BoolToColorConverter}}"/>
                                     <TextBlock Grid.Row="2" Grid.Column="2" Margin="0,8,0,0"
@@ -167,25 +168,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <!-- GPS Data Section -->
                         <Border Classes="Panel">
                             <StackPanel Spacing="8">
-                                <TextBlock Classes="Header" Text="GPS Data"/>
+                                <TextBlock Classes="Header" Text="{loc:Localize GpsData}"/>
 
                                 <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-                                    <TextBlock Classes="Label" Text="Status:"/>
+                                    <TextBlock Classes="Label" Text="{loc:Localize Status}"/>
                                     <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
 
-                                    <TextBlock Grid.Row="1" Classes="Label" Text="Fix Quality:" Margin="0,6,0,0"/>
+                                    <TextBlock Grid.Row="1" Classes="Label" Text="{loc:Localize FixQuality}" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,6,0,0"/>
 
-                                    <TextBlock Grid.Row="2" Classes="Label" Text="Satellites:" Margin="0,6,0,0"/>
+                                    <TextBlock Grid.Row="2" Classes="Label" Text="{loc:Localize Satellites}" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding State.Vehicle.SatelliteCount}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,6,0,0"/>
 
-                                    <TextBlock Grid.Row="3" Classes="Label" Text="Latitude:" Margin="0,6,0,0"/>
+                                    <TextBlock Grid.Row="3" Classes="Label" Text="{loc:Localize Latitude2}" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding State.Vehicle.Latitude, StringFormat='{}{0:F6}°'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,6,0,0"/>
 
-                                    <TextBlock Grid.Row="4" Classes="Label" Text="Longitude:" Margin="0,6,0,0"/>
+                                    <TextBlock Grid.Row="4" Classes="Label" Text="{loc:Localize Longitude2}" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding State.Vehicle.Longitude, StringFormat='{}{0:F6}°'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,6,0,0"/>
 
-                                    <TextBlock Grid.Row="5" Classes="Label" Text="Speed:" Margin="0,6,0,0"/>
+                                    <TextBlock Grid.Row="5" Classes="Label" Text="{loc:Localize Speed2}" Margin="0,6,0,0"/>
                                     <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding State.Vehicle.Speed, StringFormat='{}{0:F2} m/s'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,6,0,0"/>
                                 </Grid>
                             </StackPanel>
@@ -195,7 +196,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Footer -->
                 <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="0,0,12,12" Padding="15">
-                    <Button Classes="ModernButton" Content="Close"
+                    <Button Classes="ModernButton" Content="{loc:Localize Close}"
                             Command="{Binding CloseDataIODialogCommand}"
                             HorizontalAlignment="Stretch" Background="#27AE60"/>
                 </Border>

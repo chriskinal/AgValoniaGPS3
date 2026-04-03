@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -67,7 +68,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header with title -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
-                    <TextBlock Text="Configuration" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <TextBlock Text="{loc:Localize Configuration}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                 </Border>
 
                 <!-- Main content area with TabControl -->
@@ -240,13 +241,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Cancel"/>
+                                    <TextBlock Text="{loc:Localize Cancel}"/>
                                 </Button>
                                 <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="OK"/>
+                                    <TextBlock Text="{loc:Localize OK}"/>
                                 </Button>
                             </Grid>
                         </Grid>
@@ -350,7 +351,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Button Classes="KeyButton" Content="v" Command="{Binding TextInputKeyCommand}" CommandParameter="v"/>
                                     <Button Classes="KeyButton" Content="b" Command="{Binding TextInputKeyCommand}" CommandParameter="b"/>
                                     <Button Classes="KeyButton" Content="n" Command="{Binding TextInputKeyCommand}" CommandParameter="n"/>
-                                    <Button Classes="KeyButton" Content="m" Command="{Binding TextInputKeyCommand}" CommandParameter="m"/>
+                                    <Button Classes="KeyButton" Content="{loc:Localize Meters}" Command="{Binding TextInputKeyCommand}" CommandParameter="m"/>
                                     <Button Classes="KeyButton" Content="." Command="{Binding TextInputKeyCommand}" CommandParameter="."/>
                                     <Button Classes="KeyButton" Content="-" Command="{Binding TextInputKeyCommand}" CommandParameter="-"/>
                                     <Button Classes="KeyButton" Content="_" Command="{Binding TextInputKeyCommand}" CommandParameter="_"/>
@@ -360,9 +361,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
                                     <Button Classes="KeyButton SpecialKey" Content="⌫" MinWidth="60"
                                             Command="{Binding TextInputBackspaceCommand}"/>
-                                    <Button Classes="KeyButton" Content="Space" MinWidth="140"
+                                    <Button Classes="KeyButton" Content="{loc:Localize Space}" MinWidth="140"
                                             Command="{Binding TextInputSpaceCommand}"/>
-                                    <Button Classes="KeyButton SpecialKey" Content="Clear" MinWidth="60"
+                                    <Button Classes="KeyButton SpecialKey" Content="{loc:Localize Clear}" MinWidth="60"
                                             Command="{Binding TextInputClearCommand}"/>
                                     <Button Classes="KeyButton" Content="@" Command="{Binding TextInputKeyCommand}" CommandParameter="@"/>
                                     <Button Classes="KeyButton" Content=":" Command="{Binding TextInputKeyCommand}" CommandParameter=":"/>
@@ -376,13 +377,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelTextInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Cancel"/>
+                                    <TextBlock Text="{loc:Localize Cancel}"/>
                                 </Button>
                                 <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmTextInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="OK"/>
+                                    <TextBlock Text="{loc:Localize OK}"/>
                                 </Button>
                             </Grid>
                         </Grid>
@@ -460,7 +461,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                     Command="{Binding CancelColorPickerCommand}"
                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                <TextBlock Text="Cancel"/>
+                                <TextBlock Text="{loc:Localize Cancel}"/>
                             </Button>
                         </Grid>
                     </Border>
@@ -475,14 +476,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Units display -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Units:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Units}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Display.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
                                        Foreground="#4A9" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Width display -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Width:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Width}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>

@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -138,14 +139,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 BoxShadow="0 8 32 #40000000">
             <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="20">
                 <!-- Header -->
-                <TextBlock Grid.Row="0" Classes="Header" Text="Create Field From Existing"/>
+                <TextBlock Grid.Row="0" Classes="Header" Text="{loc:Localize CreateFieldFromExisting}"/>
 
                 <!-- Column Headers -->
                 <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4,4,0,0" Padding="12,8">
                     <Grid ColumnDefinitions="*,80,80">
-                        <TextBlock Grid.Column="0" Text="Field Name" Foreground="#E74C3C" FontWeight="Bold" FontSize="14"/>
-                        <TextBlock Grid.Column="1" Text="Distance" Foreground="#E74C3C" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
-                        <TextBlock Grid.Column="2" Text="Area (ha)" Foreground="#E74C3C" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="0" Text="{loc:Localize FieldName}" Foreground="#E74C3C" FontWeight="Bold" FontSize="14"/>
+                        <TextBlock Grid.Column="1" Text="{loc:Localize Distance}" Foreground="#E74C3C" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="2" Text="{loc:Localize AreaHa}" Foreground="#E74C3C" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
                     </Grid>
                 </Border>
 
@@ -169,7 +170,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Name input row -->
                 <StackPanel Grid.Row="3" Margin="0,12,0,0" Spacing="6">
-                    <TextBlock Text="New Field Name:" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
+                    <TextBlock Text="{loc:Localize NewFieldName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBox Grid.Column="0"
                                  Classes="DialogInput"
@@ -218,7 +219,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyFlagsCommand}" ToolTip.Tip="Include Flags">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="24" Height="24"/>
-                            <TextBlock Text="Flags" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Flags}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -227,7 +228,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyMappingCommand}" ToolTip.Tip="Include Mapping">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/MappingOn.png" Width="24" Height="24"/>
-                            <TextBlock Text="Map" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Map}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -236,7 +237,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyHeadlandCommand}" ToolTip.Tip="Include Headland">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Width="24" Height="24"/>
-                            <TextBlock Text="Head" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Head}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -245,7 +246,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Command="{Binding ToggleCopyLinesCommand}" ToolTip.Tip="Include AB Lines">
                         <StackPanel HorizontalAlignment="Center" Spacing="2">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png" Width="24" Height="24"/>
-                            <TextBlock Text="Lines" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Lines}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -253,10 +254,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Action Buttons -->
                 <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
                     <Border Grid.Column="0"/>
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             MinWidth="80" MinHeight="44"
                             Command="{Binding CancelFromExistingFieldDialogCommand}"/>
-                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="Create"
+                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="{loc:Localize Create}"
                             MinWidth="80" MinHeight="44" Margin="12,0,0,0"
                             Command="{Binding ConfirmFromExistingFieldDialogCommand}"/>
                 </Grid>

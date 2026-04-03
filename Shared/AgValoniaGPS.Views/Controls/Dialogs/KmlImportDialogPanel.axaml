@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -131,11 +132,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Header -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="24" Height="24"/>
-                    <TextBlock Classes="Header" Text="Import Field from KML"/>
+                    <TextBlock Classes="Header" Text="{loc:Localize ImportFieldFromKml}"/>
                 </StackPanel>
 
                 <!-- Info text -->
-                <TextBlock Grid.Row="1" Text="Place KML files in Documents/AgValoniaGPS/Import"
+                <TextBlock Grid.Row="1" Text="{loc:Localize PlaceKmlFilesInDocumentsAgvaloniagpsImport}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12" Margin="0,0,0,8"/>
 
                 <!-- KML Files ListBox -->
@@ -177,7 +178,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Field name input -->
                 <StackPanel Grid.Row="4" Margin="0,12,0,0" Spacing="6">
-                    <TextBlock Text="New Field Name:" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
+                    <TextBlock Text="{loc:Localize NewFieldName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBox Grid.Column="0"
                                  Classes="DialogInput"
@@ -212,10 +213,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Action Buttons -->
                 <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
                     <Border Grid.Column="0"/>
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             MinWidth="80" MinHeight="44"
                             Command="{Binding CancelKmlImportDialogCommand}"/>
-                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="Import"
+                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="{loc:Localize Import}"
                             MinWidth="80" MinHeight="44" Margin="12,0,0,0"
                             Command="{Binding ConfirmKmlImportDialogCommand}"/>
                 </Grid>

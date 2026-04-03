@@ -486,4 +486,679 @@
   <data xml:space="preserve" name="XteChart">
     <value>XTE Chart</value>
   </data>
+  <data xml:space="preserve" name="">
+    <value>--&gt;</value>
+  </data>
+  <data xml:space="preserve" name="1CmPerClick">
+    <value>1 cm per click</value>
+  </data>
+  <data xml:space="preserve" name="2">
+    <value>|||</value>
+  </data>
+  <data xml:space="preserve" name="2Pts">
+    <value>(2 pts)</value>
+  </data>
+  <data xml:space="preserve" name="3Pts">
+    <value>(3+ pts)</value>
+  </data>
+  <data xml:space="preserve" name="ALine">
+    <value>A+ Line</value>
+  </data>
+  <data xml:space="preserve" name="AbLineTracks">
+    <value>AB Line Tracks</value>
+  </data>
+  <data xml:space="preserve" name="Ackermann">
+    <value>Ackermann</value>
+  </data>
+  <data xml:space="preserve" name="AcquireFactor">
+    <value>Acquire Factor</value>
+  </data>
+  <data xml:space="preserve" name="AcquireFactorHold">
+    <value>Acquire = Factor * Hold</value>
+  </data>
+  <data xml:space="preserve" name="Act">
+    <value>Act:</value>
+  </data>
+  <data xml:space="preserve" name="ActualSteerAngle">
+    <value>Actual Steer Angle</value>
+  </data>
+  <data xml:space="preserve" name="AdConverter">
+    <value>AD Converter</value>
+  </data>
+  <data xml:space="preserve" name="Aggressiveness">
+    <value>Aggressiveness</value>
+  </data>
+  <data xml:space="preserve" name="AgshareSettings">
+    <value>AgShare Settings</value>
+  </data>
+  <data xml:space="preserve" name="Agvaloniagps">
+    <value>AgValoniaGPS</value>
+  </data>
+  <data xml:space="preserve" name="Algorithm">
+    <value>Algorithm</value>
+  </data>
+  <data xml:space="preserve" name="AllSettings">
+    <value>All Settings</value>
+  </data>
+  <data xml:space="preserve" name="ApiKey">
+    <value>API Key</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationLog">
+    <value>Application Log</value>
+  </data>
+  <data xml:space="preserve" name="AreaHa">
+    <value>Area (ha)</value>
+  </data>
+  <data xml:space="preserve" name="AssociatedFields">
+    <value>Associated Fields</value>
+  </data>
+  <data xml:space="preserve" name="AutoConnectWhenAssociatedFieldIsLoaded">
+    <value>Auto-connect when associated field is loaded</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteerConfiguration">
+    <value>Auto Steer Configuration</value>
+  </data>
+  <data xml:space="preserve" name="Autosteer">
+    <value>AutoSteer:</value>
+  </data>
+  <data xml:space="preserve" name="BasedOnAgopengpsByBrianTee">
+    <value>Based on AgOpenGPS by Brian Tee</value>
+  </data>
+  <data xml:space="preserve" name="BuiltWithAvaloniaUi1139Andnet100">
+    <value>Built with Avalonia UI 11.3.9 and .NET 10.0</value>
+  </data>
+  <data xml:space="preserve" name="Button">
+    <value>Button</value>
+  </data>
+  <data xml:space="preserve" name="Caster">
+    <value>Caster</value>
+  </data>
+  <data xml:space="preserve" name="CasterHost">
+    <value>Caster Host</value>
+  </data>
+  <data xml:space="preserve" name="CasterSettings">
+    <value>Caster Settings</value>
+  </data>
+  <data xml:space="preserve" name="Click2PointsOnTheBoundaryToDefineHeadlandLine">
+    <value>Click 2 points on the boundary to define headland line</value>
+  </data>
+  <data xml:space="preserve" name="ClickAKeyButtonThenPressANewKeyToReassign">
+    <value>Click a key button, then press a new key to reassign.</value>
+  </data>
+  <data xml:space="preserve" name="Clip">
+    <value>Clip</value>
+  </data>
+  <data xml:space="preserve" name="Cm">
+    <value>cm</value>
+  </data>
+  <data xml:space="preserve" name="CmPixel">
+    <value>Cm -&gt; Pixel</value>
+  </data>
+  <data xml:space="preserve" name="CmPx">
+    <value>cm/px</value>
+  </data>
+  <data xml:space="preserve" name="Counts">
+    <value>Counts</value>
+  </data>
+  <data xml:space="preserve" name="CountsPerDegree">
+    <value>Counts Per Degree</value>
+  </data>
+  <data xml:space="preserve" name="CreateFieldFromExisting">
+    <value>Create Field From Existing</value>
+  </data>
+  <data xml:space="preserve" name="CrossPlatformAgriculturalGpsGuidance">
+    <value>Cross-platform agricultural GPS guidance</value>
+  </data>
+  <data xml:space="preserve" name="CurrentGpsPosition">
+    <value>Current GPS Position:</value>
+  </data>
+  <data xml:space="preserve" name="CurrentTurn">
+    <value>Current Turn</value>
+  </data>
+  <data xml:space="preserve" name="Curve2">
+    <value>Curve:</value>
+  </data>
+  <data xml:space="preserve" name="Cytron">
+    <value>Cytron</value>
+  </data>
+  <data xml:space="preserve" name="Danfoss">
+    <value>Danfoss</value>
+  </data>
+  <data xml:space="preserve" name="DataIOConfiguration">
+    <value>Data I/O Configuration</value>
+  </data>
+  <data xml:space="preserve" name="Deadzone">
+    <value>---Deadzone---</value>
+  </data>
+  <data xml:space="preserve" name="Debug">
+    <value>Debug</value>
+  </data>
+  <data xml:space="preserve" name="Default">
+    <value>Default</value>
+  </data>
+  <data xml:space="preserve" name="Defaults">
+    <value>Defaults</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAll">
+    <value>Delete All</value>
+  </data>
+  <data xml:space="preserve" name="DeselectAll">
+    <value>Deselect All</value>
+  </data>
+  <data xml:space="preserve" name="Differential">
+    <value>Differential</value>
+  </data>
+  <data xml:space="preserve" name="DisplaySettings">
+    <value>Display Settings</value>
+  </data>
+  <data xml:space="preserve" name="DownloadAll">
+    <value>Download All</value>
+  </data>
+  <data xml:space="preserve" name="DownloadFromAgshare">
+    <value>Download from AgShare</value>
+  </data>
+  <data xml:space="preserve" name="DownloadSelected">
+    <value>Download Selected</value>
+  </data>
+  <data xml:space="preserve" name="DrawFieldBoundary">
+    <value>Draw Field Boundary</value>
+  </data>
+  <data xml:space="preserve" name="DrawTrackOnMap">
+    <value>Draw Track on Map</value>
+  </data>
+  <data xml:space="preserve" name="DriveAB2">
+    <value>Drive A-B</value>
+  </data>
+  <data xml:space="preserve" name="EWM">
+    <value>E/W (m)</value>
+  </data>
+  <data xml:space="preserve" name="EditNtripProfile">
+    <value>Edit NTRIP Profile</value>
+  </data>
+  <data xml:space="preserve" name="Enabled">
+    <value>Enabled</value>
+  </data>
+  <data xml:space="preserve" name="EnterFieldNameOriginWillBeSetToCurrentGpsPosition">
+    <value>Enter field name - origin will be set to current GPS position</value>
+  </data>
+  <data xml:space="preserve" name="EnterGpsCoordinates">
+    <value>Enter GPS Coordinates</value>
+  </data>
+  <data xml:space="preserve" name="EnterWgs84CoordinatesInDecimalDegrees">
+    <value>Enter WGS84 coordinates in decimal degrees</value>
+  </data>
+  <data xml:space="preserve" name="Err">
+    <value>Err:</value>
+  </data>
+  <data xml:space="preserve" name="Error">
+    <value>Error</value>
+  </data>
+  <data xml:space="preserve" name="ExternalEnable">
+    <value>External Enable</value>
+  </data>
+  <data xml:space="preserve" name="Fast">
+    <value>Fast</value>
+  </data>
+  <data xml:space="preserve" name="FieldName2">
+    <value>Field Name:</value>
+  </data>
+  <data xml:space="preserve" name="FieldsNotSelectedWillUseTheDefaultProfileIfSet">
+    <value>Fields not selected will use the default profile (if set).</value>
+  </data>
+  <data xml:space="preserve" name="FixQuality">
+    <value>Fix Quality:</value>
+  </data>
+  <data xml:space="preserve" name="Flags">
+    <value>Flags</value>
+  </data>
+  <data xml:space="preserve" name="ForceOverwriteExistingFields">
+    <value>Force overwrite existing fields</value>
+  </data>
+  <data xml:space="preserve" name="FreeDrive">
+    <value>Free Drive</value>
+  </data>
+  <data xml:space="preserve" name="Gain">
+    <value>Gain</value>
+  </data>
+  <data xml:space="preserve" name="GetYourApiKeyFromAgshareagopengpscom">
+    <value>Get your API key from agshare.agopengps.com</value>
+  </data>
+  <data xml:space="preserve" name="GithubcomChriskinalAgvaloniagps3">
+    <value>github.com/chriskinal/AgValoniaGPS3</value>
+  </data>
+  <data xml:space="preserve" name="GpsData">
+    <value>GPS Data</value>
+  </data>
+  <data xml:space="preserve" name="GpsOffsetFix">
+    <value>GPS Offset Fix</value>
+  </data>
+  <data xml:space="preserve" name="HardwareConfig">
+    <value>Hardware Config</value>
+  </data>
+  <data xml:space="preserve" name="Head">
+    <value>Head</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandBuilder">
+    <value>Headland Builder</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandDistance">
+    <value>Headland Distance</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandDistanceMeters">
+    <value>Headland Distance (meters)</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandEditor">
+    <value>Headland Editor</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandLineActive">
+    <value>Headland line active</value>
+  </data>
+  <data xml:space="preserve" name="HotkeyConfiguration">
+    <value>Hotkey Configuration</value>
+  </data>
+  <data xml:space="preserve" name="HttpsAgshareagopengpscom">
+    <value>https://agshare.agopengps.com</value>
+  </data>
+  <data xml:space="preserve" name="Ibt2">
+    <value>IBT2</value>
+  </data>
+  <data xml:space="preserve" name="ImportFieldFromIsoXml">
+    <value>Import Field from ISO-XML</value>
+  </data>
+  <data xml:space="preserve" name="ImportFieldFromKml">
+    <value>Import Field from KML</value>
+  </data>
+  <data xml:space="preserve" name="ImportTracksFromField">
+    <value>Import Tracks From Field</value>
+  </data>
+  <data xml:space="preserve" name="Imu">
+    <value>IMU:</value>
+  </data>
+  <data xml:space="preserve" name="ImuAxisSwap">
+    <value>IMU Axis Swap</value>
+  </data>
+  <data xml:space="preserve" name="In">
+    <value>In</value>
+  </data>
+  <data xml:space="preserve" name="IncludeBackgroundImage">
+    <value>Include Background Image</value>
+  </data>
+  <data xml:space="preserve" name="Info">
+    <value>Info</value>
+  </data>
+  <data xml:space="preserve" name="Integral">
+    <value>Integral</value>
+  </data>
+  <data xml:space="preserve" name="InvertMotor">
+    <value>Invert Motor</value>
+  </data>
+  <data xml:space="preserve" name="InvertRelays">
+    <value>Invert Relays</value>
+  </data>
+  <data xml:space="preserve" name="InvertWas">
+    <value>Invert WAS</value>
+  </data>
+  <data xml:space="preserve" name="Lat">
+    <value>Lat:</value>
+  </data>
+  <data xml:space="preserve" name="Latitude2">
+    <value>Latitude:</value>
+  </data>
+  <data xml:space="preserve" name="Latitude90To90">
+    <value>Latitude (-90 to +90)</value>
+  </data>
+  <data xml:space="preserve" name="Latitude90To902">
+    <value>Latitude (-90 to 90)</value>
+  </data>
+  <data xml:space="preserve" name="Left">
+    <value>◀ LEFT</value>
+  </data>
+  <data xml:space="preserve" name="LicenseGnuGeneralPublicLicenseV30">
+    <value>License: GNU General Public License v3.0</value>
+  </data>
+  <data xml:space="preserve" name="Lightbar">
+    <value>Lightbar</value>
+  </data>
+  <data xml:space="preserve" name="LineWidth">
+    <value>Line Width</value>
+  </data>
+  <data xml:space="preserve" name="Lines">
+    <value>Lines</value>
+  </data>
+  <data xml:space="preserve" name="LoadingFields">
+    <value>Loading fields...</value>
+  </data>
+  <data xml:space="preserve" name="Lon">
+    <value>Lon:</value>
+  </data>
+  <data xml:space="preserve" name="Longitude180To180">
+    <value>Longitude (-180 to +180)</value>
+  </data>
+  <data xml:space="preserve" name="Longitude180To1802">
+    <value>Longitude (-180 to 180)</value>
+  </data>
+  <data xml:space="preserve" name="Longitude2">
+    <value>Longitude:</value>
+  </data>
+  <data xml:space="preserve" name="Machine">
+    <value>Machine:</value>
+  </data>
+  <data xml:space="preserve" name="MakeFieldsPublic">
+    <value>Make fields public</value>
+  </data>
+  <data xml:space="preserve" name="ManualTurns">
+    <value>Manual Turns</value>
+  </data>
+  <data xml:space="preserve" name="Map">
+    <value>Map</value>
+  </data>
+  <data xml:space="preserve" name="MaxLimit">
+    <value>Max Limit</value>
+  </data>
+  <data xml:space="preserve" name="MaxSpeed">
+    <value>Max Speed</value>
+  </data>
+  <data xml:space="preserve" name="MaxSteerAngle">
+    <value>Max Steer Angle</value>
+  </data>
+  <data xml:space="preserve" name="MinSpeed">
+    <value>Min Speed</value>
+  </data>
+  <data xml:space="preserve" name="MinimumToMove">
+    <value>Minimum to Move</value>
+  </data>
+  <data xml:space="preserve" name="ModuleConnections">
+    <value>Module Connections</value>
+  </data>
+  <data xml:space="preserve" name="MotorDriver">
+    <value>Motor Driver</value>
+  </data>
+  <data xml:space="preserve" name="MountPoint">
+    <value>Mount Point</value>
+  </data>
+  <data xml:space="preserve" name="NSM">
+    <value>N/S (m)</value>
+  </data>
+  <data xml:space="preserve" name="NetworkAndGpsSettings">
+    <value>Network and GPS settings</value>
+  </data>
+  <data xml:space="preserve" name="NetworkStatus">
+    <value>Network Status:</value>
+  </data>
+  <data xml:space="preserve" name="NewFieldName">
+    <value>New Field Name:</value>
+  </data>
+  <data xml:space="preserve" name="NextGuidance">
+    <value>Next Guidance</value>
+  </data>
+  <data xml:space="preserve" name="NoBoundaryLoadedPleaseCreateOrLoadAFieldFirst">
+    <value>No boundary loaded - please create or load a field first</value>
+  </data>
+  <data xml:space="preserve" name="None">
+    <value>None</value>
+  </data>
+  <data xml:space="preserve" name="NotSet">
+    <value>(not set)</value>
+  </data>
+  <data xml:space="preserve" name="NtripProfile">
+    <value>NTRIP Profile</value>
+  </data>
+  <data xml:space="preserve" name="NudgeDistance">
+    <value>Nudge Distance</value>
+  </data>
+  <data xml:space="preserve" name="NumberOfPasses">
+    <value>Number of Passes</value>
+  </data>
+  <data xml:space="preserve" name="Off2">
+    <value>OFF</value>
+  </data>
+  <data xml:space="preserve" name="OffAt">
+    <value>Off at %</value>
+  </data>
+  <data xml:space="preserve" name="On2">
+    <value>ON</value>
+  </data>
+  <data xml:space="preserve" name="OnDelay">
+    <value>On-Delay</value>
+  </data>
+  <data xml:space="preserve" name="OnOff">
+    <value>On/Off</value>
+  </data>
+  <data xml:space="preserve" name="Out">
+    <value>Out</value>
+  </data>
+  <data xml:space="preserve" name="OvershootReduction">
+    <value>Overshoot Reduction</value>
+  </data>
+  <data xml:space="preserve" name="Password">
+    <value>Password</value>
+  </data>
+  <data xml:space="preserve" name="Pixels">
+    <value>pixels</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlagByLatLon">
+    <value>Place Flag by Lat/Lon</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlagHere">
+    <value>Place Flag Here</value>
+  </data>
+  <data xml:space="preserve" name="PlaceIsoXmlFoldersContainingTaskdataxmlInDocumentsAgvaloniagpsImport">
+    <value>Place ISO-XML folders (containing TASKDATA.xml) in Documents/AgValoniaGPS/Import</value>
+  </data>
+  <data xml:space="preserve" name="PlaceKmlFilesInDocumentsAgvaloniagpsImport">
+    <value>Place KML files in Documents/AgValoniaGPS/Import</value>
+  </data>
+  <data xml:space="preserve" name="Points">
+    <value>Points:</value>
+  </data>
+  <data xml:space="preserve" name="Port">
+    <value>Port</value>
+  </data>
+  <data xml:space="preserve" name="PressureTurn">
+    <value>Pressure Turn</value>
+  </data>
+  <data xml:space="preserve" name="PreviewShownOnMap">
+    <value>Preview shown on map</value>
+  </data>
+  <data xml:space="preserve" name="ProfileName">
+    <value>Profile Name</value>
+  </data>
+  <data xml:space="preserve" name="ProportionalGain">
+    <value>Proportional Gain</value>
+  </data>
+  <data xml:space="preserve" name="PurePursuit">
+    <value>Pure Pursuit</value>
+  </data>
+  <data xml:space="preserve" name="Pwm">
+    <value>PWM:</value>
+  </data>
+  <data xml:space="preserve" name="QuickAbLineCreator">
+    <value>Quick AB Line Creator</value>
+  </data>
+  <data xml:space="preserve" name="ReadOnlyViewOfCurrentConfigurationValues">
+    <value>Read-only view of current configuration values</value>
+  </data>
+  <data xml:space="preserve" name="RenameFlag">
+    <value>Rename Flag</value>
+  </data>
+  <data xml:space="preserve" name="ResetDefaults">
+    <value>Reset Defaults</value>
+  </data>
+  <data xml:space="preserve" name="ResetToDefaults">
+    <value>Reset to Defaults?</value>
+  </data>
+  <data xml:space="preserve" name="Right">
+    <value>RIGHT ▶</value>
+  </data>
+  <data xml:space="preserve" name="Satellites">
+    <value>Satellites:</value>
+  </data>
+  <data xml:space="preserve" name="SaveProfile">
+    <value>Save Profile</value>
+  </data>
+  <data xml:space="preserve" name="Sec">
+    <value>sec</value>
+  </data>
+  <data xml:space="preserve" name="SelectAFieldToImportItsTracksIntoTheCurrentField">
+    <value>Select a field to import its tracks into the current field:</value>
+  </data>
+  <data xml:space="preserve" name="SelectAll">
+    <value>Select All</value>
+  </data>
+  <data xml:space="preserve" name="SelectCreationMode">
+    <value>Select creation mode:</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldToOpen">
+    <value>Select Field to Open</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldsThatWillUseThisNtripProfile">
+    <value>Select fields that will use this NTRIP profile:</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldsToUpload">
+    <value>Select fields to upload</value>
+  </data>
+  <data xml:space="preserve" name="Sendsave">
+    <value>Send+Save</value>
+  </data>
+  <data xml:space="preserve" name="ServerUrl">
+    <value>Server URL</value>
+  </data>
+  <data xml:space="preserve" name="Set">
+    <value>Set:</value>
+  </data>
+  <data xml:space="preserve" name="SetAsDefaultProfileForFieldsWithoutSpecificAssociation">
+    <value>Set as default profile (for fields without specific association)</value>
+  </data>
+  <data xml:space="preserve" name="SidehillDegree">
+    <value>Sidehill / Degree</value>
+  </data>
+  <data xml:space="preserve" name="Single">
+    <value>Single</value>
+  </data>
+  <data xml:space="preserve" name="Slow">
+    <value>Slow</value>
+  </data>
+  <data xml:space="preserve" name="SlowlyIncreasesSteerAngleToReduceCrossTrackError">
+    <value>Slowly increases steer angle to reduce cross track error</value>
+  </data>
+  <data xml:space="preserve" name="SortAZ">
+    <value>Sort A-Z</value>
+  </data>
+  <data xml:space="preserve" name="Space">
+    <value>Space</value>
+  </data>
+  <data xml:space="preserve" name="Speed2">
+    <value>Speed:</value>
+  </data>
+  <data xml:space="preserve" name="SpeedFactor">
+    <value>Speed Factor</value>
+  </data>
+  <data xml:space="preserve" name="SpeedLimits">
+    <value>Speed Limits</value>
+  </data>
+  <data xml:space="preserve" name="Stanley">
+    <value>Stanley</value>
+  </data>
+  <data xml:space="preserve" name="StanleyGains">
+    <value>Stanley Gains</value>
+  </data>
+  <data xml:space="preserve" name="Status">
+    <value>Status:</value>
+  </data>
+  <data xml:space="preserve" name="SteerBar">
+    <value>Steer Bar</value>
+  </data>
+  <data xml:space="preserve" name="SteerInReverse">
+    <value>Steer in Reverse</value>
+  </data>
+  <data xml:space="preserve" name="SteerResponse">
+    <value>Steer Response</value>
+  </data>
+  <data xml:space="preserve" name="SteeringAlgorithm">
+    <value>Steering Algorithm</value>
+  </data>
+  <data xml:space="preserve" name="Straight">
+    <value>Straight</value>
+  </data>
+  <data xml:space="preserve" name="StraightLine">
+    <value>Straight Line:</value>
+  </data>
+  <data xml:space="preserve" name="Switch">
+    <value>Switch</value>
+  </data>
+  <data xml:space="preserve" name="Tap2PointsToCreateAStraightAbLine">
+    <value>Tap 2 points to create a straight AB line</value>
+  </data>
+  <data xml:space="preserve" name="Tap3PointsThenTapFinishInTheStatusBar">
+    <value>Tap 3+ points, then tap Finish in the status bar</value>
+  </data>
+  <data xml:space="preserve" name="TapOnTheMapToAddBoundaryPointsPanWithDragPinchToZoom">
+    <value>Tap on the map to add boundary points. Pan with drag, pinch to zoom.</value>
+  </data>
+  <data xml:space="preserve" name="TapOnTheMapToPlacePoints">
+    <value>Tap on the map to place points</value>
+  </data>
+  <data xml:space="preserve" name="Taskdata">
+    <value>TASKDATA</value>
+  </data>
+  <data xml:space="preserve" name="TestConnection">
+    <value>Test Connection</value>
+  </data>
+  <data xml:space="preserve" name="TestMode">
+    <value>Test Mode</value>
+  </data>
+  <data xml:space="preserve" name="TheFieldOriginWillBeSetToYourCurrentGpsPositionWhenYouCreateTheField">
+    <value>The field origin will be set to your current GPS position when you create the field.</value>
+  </data>
+  <data xml:space="preserve" name="ThisWillResetAllAutosteerSettingsToFactoryDefaultsAndSendThemToTheModule">
+    <value>This will reset ALL AutoSteer settings to factory defaults and send them to the module.</value>
+  </data>
+  <data xml:space="preserve" name="ToolWidths">
+    <value>Tool Widths</value>
+  </data>
+  <data xml:space="preserve" name="TrackName">
+    <value>Track Name</value>
+  </data>
+  <data xml:space="preserve" name="TrackType">
+    <value>Track Type</value>
+  </data>
+  <data xml:space="preserve" name="TurnSensor">
+    <value>Turn Sensor</value>
+  </data>
+  <data xml:space="preserve" name="Type">
+    <value>Type</value>
+  </data>
+  <data xml:space="preserve" name="UTurnCompensation">
+    <value>U-Turn Compensation</value>
+  </data>
+  <data xml:space="preserve" name="UdpCommunication">
+    <value>UDP Communication</value>
+  </data>
+  <data xml:space="preserve" name="Units">
+    <value>Units:</value>
+  </data>
+  <data xml:space="preserve" name="UploadToAgshare">
+    <value>Upload to AgShare</value>
+  </data>
+  <data xml:space="preserve" name="Username">
+    <value>Username</value>
+  </data>
+  <data xml:space="preserve" name="Warning">
+    <value>Warning</value>
+  </data>
+  <data xml:space="preserve" name="WasZero">
+    <value>Was Zero</value>
+  </data>
+  <data xml:space="preserve" name="Width">
+    <value>Width:</value>
+  </data>
+  <data xml:space="preserve" name="Wizard">
+    <value>Wizard</value>
+  </data>
+  <data xml:space="preserve" name="ZeroWas">
+    <value>Zero WAS</value>
+  </data>
+  <data xml:space="preserve" name="lt">
+    <value>&amp;lt;--</value>
+  </data>
 </root>

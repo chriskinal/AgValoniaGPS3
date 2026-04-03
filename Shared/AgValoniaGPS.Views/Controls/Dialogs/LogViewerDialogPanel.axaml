@@ -9,6 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -28,27 +29,27 @@ the Free Software Foundation, either version 3 of the License, or
             <Grid RowDefinitions="Auto,Auto,*,Auto">
                 <!-- Header -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12,12,0,0" Padding="16,12">
-                    <TextBlock Text="Application Log" FontSize="18" FontWeight="Bold"
+                    <TextBlock Text="{loc:Localize ApplicationLog}" FontSize="18" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
                 </Border>
 
                 <!-- Filter bar -->
                 <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Padding="12,8">
                     <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                        <Button Content="Debug" Padding="10,4" CornerRadius="4"
+                        <Button Content="{loc:Localize Debug}" Padding="10,4" CornerRadius="4"
                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                 Command="{Binding SetLogFilterCommand}" CommandParameter="Debug"/>
-                        <Button Content="Info" Padding="10,4" CornerRadius="4"
+                        <Button Content="{loc:Localize Info}" Padding="10,4" CornerRadius="4"
                                 Background="#2980B9" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                 Command="{Binding SetLogFilterCommand}" CommandParameter="Information"/>
-                        <Button Content="Warning" Padding="10,4" CornerRadius="4"
+                        <Button Content="{loc:Localize Warning}" Padding="10,4" CornerRadius="4"
                                 Background="#F39C12" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                 Command="{Binding SetLogFilterCommand}" CommandParameter="Warning"/>
-                        <Button Content="Error" Padding="10,4" CornerRadius="4"
+                        <Button Content="{loc:Localize Error}" Padding="10,4" CornerRadius="4"
                                 Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                 Command="{Binding SetLogFilterCommand}" CommandParameter="Error"/>
                         <Border Width="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="4,0"/>
-                        <Button Content="Clear" Padding="10,4" CornerRadius="4"
+                        <Button Content="{loc:Localize Clear}" Padding="10,4" CornerRadius="4"
                                 Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12"
                                 Command="{Binding ClearLogEntriesCommand}"/>
                     </StackPanel>
@@ -82,7 +83,7 @@ the Free Software Foundation, either version 3 of the License, or
                 </Border>
 
                 <!-- Close button -->
-                <Button Grid.Row="3" Content="Close" Margin="16,4,16,12"
+                <Button Grid.Row="3" Content="{loc:Localize Close}" Margin="16,4,16,12"
                         Command="{Binding CloseLogViewerDialogCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"

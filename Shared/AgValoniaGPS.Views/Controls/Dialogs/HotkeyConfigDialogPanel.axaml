@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -56,10 +57,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 MinWidth="420" MaxWidth="520" MaxHeight="650">
             <StackPanel Spacing="12">
                 <!-- Title -->
-                <TextBlock Text="Hotkey Configuration" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize HotkeyConfiguration}" FontSize="20" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Click a key button, then press a new key to reassign."
+                <TextBlock Text="{loc:Localize ClickAKeyButtonThenPressANewKeyToReassign}"
                            FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center"/>
 
@@ -76,12 +77,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Bottom buttons -->
                 <Grid ColumnDefinitions="*,Auto,Auto">
-                    <Button Grid.Column="1" Content="Reset Defaults" Margin="0,0,8,0"
+                    <Button Grid.Column="1" Content="{loc:Localize ResetDefaults}" Margin="0,0,8,0"
                             Command="{Binding ResetHotkeysToDefaultCommand}"
                             Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Width="130" Height="40" FontSize="14"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
-                    <Button Grid.Column="2" Content="OK"
+                    <Button Grid.Column="2" Content="{loc:Localize OK}"
                             Command="{Binding CloseHotkeyConfigDialogCommand}"
                             Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             Width="80" Height="40" FontSize="16" FontWeight="Bold"

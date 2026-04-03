@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
@@ -100,11 +101,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid RowDefinitions="Auto,*,Auto" Margin="24">
                 <!-- Header -->
                 <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,20">
-                    <TextBlock Text="Create New Field"
+                    <TextBlock Text="{loc:Localize CreateNewField}"
                                FontSize="24"
                                FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                    <TextBlock Text="Enter field name - origin will be set to current GPS position"
+                    <TextBlock Text="{loc:Localize EnterFieldNameOriginWillBeSetToCurrentGpsPosition}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                FontSize="14"
                                TextWrapping="Wrap"/>
@@ -114,7 +115,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Grid.Row="1" Spacing="16">
                     <!-- Field Name -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Field Name:"
+                        <TextBlock Text="{loc:Localize FieldName2}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    FontSize="16"/>
                         <TextBox Classes="DialogInput"
@@ -132,7 +133,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- GPS Position Display -->
                     <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="8" Padding="16">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Current GPS Position:"
+                            <TextBlock Text="{loc:Localize CurrentGpsPosition}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontSize="14"
                                        FontWeight="SemiBold"/>
@@ -150,7 +151,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Helper text -->
-                    <TextBlock Text="The field origin will be set to your current GPS position when you create the field."
+                    <TextBlock Text="{loc:Localize TheFieldOriginWillBeSetToYourCurrentGpsPositionWhenYouCreateTheField}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                FontSize="13"
                                TextWrapping="Wrap"/>
@@ -163,10 +164,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Spacing="12"
                             Margin="0,24,0,0">
                     <Button Classes="CancelButton"
-                            Content="Cancel"
+                            Content="{loc:Localize Cancel}"
                             Command="{Binding CancelNewFieldDialogCommand}"/>
                     <Button Classes="DialogButton"
-                            Content="Create"
+                            Content="{loc:Localize Create}"
                             Command="{Binding ConfirmNewFieldDialogCommand}"/>
                 </StackPanel>
             </Grid>

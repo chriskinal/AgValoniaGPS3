@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -69,11 +70,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="20" BoxShadow="0 8 32 #40000000">
             <StackPanel Spacing="16">
                 <!-- Title -->
-                <TextBlock Text="Quick AB Line Creator"
+                <TextBlock Text="{loc:Localize QuickAbLineCreator}"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="18" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Select creation mode:"
+                <TextBlock Text="{loc:Localize SelectCreationMode}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14"
                            HorizontalAlignment="Center"/>
 
@@ -85,7 +86,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
-                            <TextBlock Text="A+ Line" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize ALine}" FontSize="12" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -95,7 +96,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
-                            <TextBlock Text="Drive A-B" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize DriveAB2}" FontSize="12" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -105,7 +106,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Cancel64.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
-                            <TextBlock Text="Cancel" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Cancel}" FontSize="12" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -115,7 +116,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
                                    Width="40" Height="40" Stretch="Uniform"/>
-                            <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Localize Curve}" FontSize="12" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
