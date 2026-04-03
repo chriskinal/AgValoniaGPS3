@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
     <ProjectReference Include="..\..\Shared\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
+    <ProjectReference Include="..\AgValoniaGPS.IntegrationTests\AgValoniaGPS.IntegrationTests.csproj" />
   </ItemGroup>
 
 </Project>
