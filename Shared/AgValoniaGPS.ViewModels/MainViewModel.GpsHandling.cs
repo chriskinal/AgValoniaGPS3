@@ -249,8 +249,13 @@ public partial class MainViewModel
                 Northing = driftedNorthing
             };
 
+            // Check for YouTurn creation/trigger (mirrors simulator path)
+            if (IsYouTurnEnabled && _currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+            {
+                ProcessYouTurn(guidancePos);
+            }
+
             // If in a U-turn, use U-turn path guidance; otherwise use AB line guidance.
-            // Mirrors the same logic in MainViewModel.Simulator.cs.
             if (_isYouTurnTriggered && _youTurnPath != null && _youTurnPath.Count > 0)
             {
                 CalculateYouTurnGuidance(guidancePos);

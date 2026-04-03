@@ -3312,6 +3312,15 @@ public partial class MainViewModel : ReactiveObject
         IsHeadlandOn = true;
         State.UI.CloseDialog();
 
+        // Update _currentHeadlandLine for YouTurn zone detection (same as SetCurrentBoundary does on field load)
+        if (result.OuterHeadlandLine != null && result.OuterHeadlandLine.Count >= 3)
+        {
+            _currentHeadlandLine = result.OuterHeadlandLine;
+            State.Field.HeadlandLine = result.OuterHeadlandLine;
+            _mapService.SetHeadlandLine(result.OuterHeadlandLine);
+            _mapService.SetHeadlandVisible(true);
+        }
+
         StatusMessage = $"Headland built at {HeadlandDistance:F1}m ({result.OuterHeadlandLine?.Count ?? 0} pts from {boundary.OuterBoundary.Points.Count} boundary pts)";
     }
 

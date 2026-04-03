@@ -39,9 +39,9 @@ public static class AutoSteerUTurnTest
     private static readonly double MetersPerDegLat = 111320.0;
     private static readonly double MetersPerDegLon = 111320.0 * Math.Cos(ORIGIN_LAT * Math.PI / 180.0);
 
-    // Field: 200m x 80m (small enough to complete)
+    // Field: 200m x 78m -> working area = 78 - 2*15 = 48m = 4 passes x 12m
     private const double FIELD_W = 200.0;
-    private const double FIELD_H = 80.0;
+    private const double FIELD_H = 78.0;
     private const double HEADLAND = 15.0;
     private const double TOOL_WIDTH = 12.0;
 
@@ -206,10 +206,12 @@ public static class AutoSteerUTurnTest
                 CaptureGifFrame(window);
         }
 
-        // Working distance: from headland edge to headland edge = 200 - 2*15 = 170m
-        // At 25 km/h = 6.94 m/s, 0.694m/frame -> ~245 frames
-        // Start a bit inside so we don't overshoot
-        int framesPerPass = 240;
+        // Working distance: headland to headland = 200 - 2*15 = 170m
+        // At 25 km/h = 6.94 m/s, 0.694m/frame -> 245 frames
+        // First pass starts outside (-10m), so needs 195m = 281 frames
+        // Subsequent passes start from opposite headland inner edge
+        int framesFirstPass = 280;  // -10m to ~185m (east headland)
+        int framesPerPass = 245;    // 15m to 185m (headland to headland)
         int framesPerUturn = 80;
 
         for (int pass = 0; pass < totalPasses; pass++)
@@ -217,8 +219,9 @@ public static class AutoSteerUTurnTest
             bool goingEast = (pass % 2 == 0);
             string dir = goingEast ? "E" : "W";
 
+            int frames = (pass == 0) ? framesFirstPass : framesPerPass;
             Console.Write($"[P{pass + 1}{dir} ");
-            await _hub!.DriveWithAutoSteerAsync(speedKmh: 25, frames: framesPerPass,
+            await _hub!.DriveWithAutoSteerAsync(speedKmh: 25, frames: frames,
                 steerAngleProvider: steerAngle, onFrame: OnFrame);
 
             double h = _hub.Gps.HeadingDegrees;
