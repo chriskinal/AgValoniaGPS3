@@ -291,7 +291,7 @@ public partial class MainViewModel
 
         bool shouldBeDay = false;
         // Try GPS-based solar calculation when we have a valid position
-        if (Math.Abs(Latitude) > 0.001 && Math.Abs(Longitude) > 0.001 && display.AutoDayNight)
+        if (_gpsService.IsGpsDataOk() && display.AutoDayNight)
         {
             shouldBeDay = SolarCalculator.IsDay(Latitude, Longitude, DateTime.UtcNow);
         }

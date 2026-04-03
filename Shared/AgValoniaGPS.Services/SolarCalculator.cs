@@ -43,20 +43,13 @@ public static class SolarCalculator
     public static (DateTime sunriseUtc, DateTime sunsetUtc) GetSunTimes(double latitude, double longitude, DateTime dateUtc)
     {
         double lngHour = longitude / 15.0;
-        int day = dateUtc.Day;
-        int month = dateUtc.Month;
-        int year = dateUtc.Year;
-
-        int N1 = (int)Math.Floor(275 * month / 9.0);
-        int N2 = (int)Math.Floor((month + 9) / 12.0);
-        int N3 = 1 + (int)Math.Floor((year - 4 * Math.Floor(year / 4.0) + 2) / 3.0);
-        int N = N1 - (N2 * N3) + day - 30;
+        int N = dateUtc.DayOfYear;
 
         double tRise = N + ((6 - lngHour) / 24.0);
-        double tSet  = N + ((18 - lngHour) / 24.0);
+        double tSet  = tRise + 0.5;
 
         double MRise = (0.9856 * tRise) - 3.289;
-        double MSet  = (0.9856 * tSet)  - 3.289;
+        double MSet  = MRise + 0.4928;
 
         double LRise = MRise + 1.916 * Math.Sin(DegToRad(MRise)) + 0.020 * Math.Sin(DegToRad(2 * MRise)) + 282.634;
         double LSet  = MSet  + 1.916 * Math.Sin(DegToRad(MSet))  + 0.020 * Math.Sin(DegToRad(2 * MSet))  + 282.634;
@@ -75,12 +68,15 @@ public static class SolarCalculator
         RASet  /= 15.0;
 
         double sinDecRise = 0.39782 * Math.Sin(DegToRad(LRise));
-        double cosDecRise = Math.Cos(Math.Asin(sinDecRise));
+        double cosDecRise = Math.Sqrt(1.0 - sinDecRise * sinDecRise);
         double sinDecSet  = 0.39782 * Math.Sin(DegToRad(LSet));
-        double cosDecSet  = Math.Cos(Math.Asin(sinDecSet));
+        double cosDecSet  = Math.Sqrt(1.0 - sinDecSet * sinDecSet);
+        
+        double sinLat = Math.Sin(DegToRad(latitude));
+        double cosLat = Math.Cos(DegToRad(latitude));
 
-        double cosHRise = (Math.Cos(DegToRad(90.833)) - (sinDecRise * Math.Sin(DegToRad(latitude)))) / (cosDecRise * Math.Cos(DegToRad(latitude)));
-        double cosHSet  = (Math.Cos(DegToRad(90.833)) - (sinDecSet  * Math.Sin(DegToRad(latitude)))) / (cosDecSet  * Math.Cos(DegToRad(latitude)));
+        double cosHRise = (-0.01453808 - (sinDecRise * sinLat)) / (cosDecRise * cosLat);
+        double cosHSet  = (-0.01453808 - (sinDecSet  * sinLat)) / (cosDecSet  * cosLat);
         
         if (cosHRise > 1) return (DateTime.MaxValue, DateTime.MinValue); // sun never rises
         if (cosHSet < -1) return (DateTime.MinValue, DateTime.MaxValue);  // sun never sets
