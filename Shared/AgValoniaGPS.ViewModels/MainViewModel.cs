@@ -737,8 +737,11 @@ public partial class MainViewModel : ReactiveObject
         _sectionControlService.Update(e.ToolPosition, e.ToolHeading, e.VehicleHeading, Speed);
         _lastSectionControlMs = _updateSw.Elapsed.TotalMilliseconds;
 
-        // Push section bits + u-turn state to AutoSteerService for PGN 239
-        _autoSteerService.SetMachineState(_sectionControlService.GetSectionBits(), _isInYouTurn);
+        // Calculate hydraulic lift state based on tool position vs headland
+        byte hydLiftState = CalculateHydLiftState(e.ToolPosition, Speed);
+
+        // Push section bits + u-turn state + hydraulic lift to AutoSteerService for PGN 239
+        _autoSteerService.SetMachineState(_sectionControlService.GetSectionBits(), _isInYouTurn, hydLiftState);
 
         // Update coverage painting - paint when sections are active and moving
         _updateSw.Restart();
@@ -755,6 +758,37 @@ public partial class MainViewModel : ReactiveObject
         {
             Debug.WriteLine($"[Timing] SectionCtrl: {_lastSectionControlMs:F2}ms (Bnd:{Services.Section.SectionControlService.LastBoundaryMs:F2} Hdl:{Services.Section.SectionControlService.LastHeadlandMs:F2} Cov:{Services.Section.SectionControlService.LastCoverageCheckMs:F2}) | Paint: {_lastCoveragePaintingMs:F2}ms | Props: {_lastPropertyUpdateMs:F2}ms");
         }
+    }
+
+    /// <summary>
+    /// Calculate hydraulic lift state: raise in headland, lower in cultivated area.
+    /// Matches legacy AgOpenGPS CHead.SetHydPosition() logic.
+    /// PGN 239 values: 0=off, 1=lower(down), 2=raise(up)
+    /// </summary>
+    private byte CalculateHydLiftState(Models.Base.Vec3 toolPosition, double speed)
+    {
+        var machine = Models.Configuration.ConfigurationStore.Instance.Machine;
+        if (!machine.HydraulicLiftEnabled) return 0;
+
+        // Don't operate at very low speed or in reverse
+        if (speed < 0.2 || IsReversing) return 0;
+
+        // Check if tool is in headland zone (between outer boundary and headland line)
+        var headlandLine = State.Field.HeadlandLine;
+        if (headlandLine == null || headlandLine.Count < 3) return 0;
+
+        var boundary = State.Field.CurrentBoundary;
+        if (boundary == null || !boundary.IsValid) return 0;
+
+        bool inBoundary = boundary.IsPointInside(toolPosition.Easting, toolPosition.Northing);
+        if (!inBoundary) return 0; // Outside field entirely
+
+        bool inCultivatedArea = Models.Base.GeometryMath.IsPointInPolygon(
+            headlandLine, new Models.Base.Vec2(toolPosition.Easting, toolPosition.Northing));
+
+        // In headland (between boundary and headland line) = RAISE
+        // In cultivated area (inside headland line) = LOWER
+        return inCultivatedArea ? (byte)1 : (byte)2;
     }
 
     /// <summary>

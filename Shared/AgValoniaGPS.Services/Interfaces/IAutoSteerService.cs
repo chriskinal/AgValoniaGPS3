@@ -139,7 +139,7 @@ public interface IAutoSteerService
     /// Update machine control state sent via PGN 239.
     /// Called by ViewModel after section control updates.
     /// </summary>
-    void SetMachineState(ushort sectionBits, bool isInUTurn);
+    void SetMachineState(ushort sectionBits, bool isInUTurn, byte hydLiftState = 0);
 
     // ═══════════════════════════════════════════════════════════════════════
     // Module Feedback (PGN 253, 250)

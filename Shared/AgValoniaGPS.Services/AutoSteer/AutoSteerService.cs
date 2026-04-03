@@ -256,10 +256,11 @@ public class AutoSteerService : IAutoSteerService
         _udpService.SendToModules(pgn);
     }
 
-    public void SetMachineState(ushort sectionBits, bool isInUTurn)
+    public void SetMachineState(ushort sectionBits, bool isInUTurn, byte hydLiftState = 0)
     {
         _state.SectionStates = sectionBits;
         _state.IsInUTurn = isInUTurn;
+        _state.HydLiftState = hydLiftState;
     }
 
     /// <summary>
