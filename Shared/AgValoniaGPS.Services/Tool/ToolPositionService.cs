@@ -409,14 +409,21 @@ public class ToolPositionService : IToolPositionService
 
     public void ResetTrailingState(Vec3 vehiclePivot, double vehicleHeading)
     {
-        _startCounter = 0;
+        _startCounter = STARTUP_FRAMES - 5; // Brief snap period (5 frames) then resume trailing
 
         var tool = ConfigurationStore.Instance.Tool;
 
-        // Calculate hitch position
+        // Calculate hitch position - must match Update() sign convention:
+        // negative distance for rear/trailing tools (behind vehicle)
+        double hitchDistance = Math.Abs(tool.HitchLength);
+        if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+        {
+            hitchDistance = -hitchDistance;
+        }
+
         _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(vehicleHeading) * tool.HitchLength,
-            vehiclePivot.Northing + Math.Cos(vehicleHeading) * tool.HitchLength,
+            vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
+            vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
             vehicleHeading
         );
 

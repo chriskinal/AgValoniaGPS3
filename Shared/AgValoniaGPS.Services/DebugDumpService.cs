@@ -231,7 +231,9 @@ public class DebugDumpService
                 TrackCount = state.Field.Tracks.Count,
                 ActiveTrack = state.Field.ActiveTrack?.Name,
                 OriginLat = state.Field.OriginLatitude,
-                OriginLon = state.Field.OriginLongitude
+                OriginLon = state.Field.OriginLongitude,
+                DriftEasting = state.Field.DriftEasting,
+                DriftNorthing = state.Field.DriftNorthing
             },
             Guidance = new
             {

@@ -190,6 +190,73 @@ public class OffsetFixTests
     }
 
     [Test]
+    public void ToolPositionService_ResetPlacesHitchBehindVehicle()
+    {
+        // Bug: ResetTrailingState used +HitchLength (ahead) instead of -HitchLength (behind)
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        config.Tool.HitchLength = 5.0;
+        config.Tool.TrailingHitchLength = 15.0;
+        config.Tool.IsToolTrailing = true;
+        config.Tool.IsToolRearFixed = false;
+        config.Tool.IsToolFrontFixed = false;
+        config.Tool.IsToolTBT = false;
+
+        var toolService = new AgValoniaGPS.Services.Tool.ToolPositionService();
+
+        // Vehicle at origin heading north (0 rad)
+        var pos = new AgValoniaGPS.Models.Base.Vec3(100, 200, 0);
+        toolService.ResetTrailingState(pos, 0);
+
+        // Hitch should be 5m BEHIND (south of) vehicle, not 5m ahead
+        Assert.That(toolService.HitchPosition.Northing, Is.LessThan(200.0),
+            $"Hitch should be south of vehicle (behind when heading north). Got N={toolService.HitchPosition.Northing:F1}");
+        Assert.That(toolService.HitchPosition.Northing, Is.EqualTo(195.0).Within(0.1),
+            "Hitch should be exactly 5m behind vehicle");
+        Assert.That(toolService.HitchPosition.Easting, Is.EqualTo(100.0).Within(0.1),
+            "Hitch easting should match vehicle");
+
+        // Tool should be further behind (5m hitch + 15m trailing = 20m total)
+        Assert.That(toolService.ToolPosition.Northing, Is.LessThan(195.0),
+            "Tool should be behind hitch point");
+    }
+
+    [Test]
+    public void ToolPositionService_ResetThenUpdateProducesConsistentPositions()
+    {
+        // After reset + one Update frame, tool should be near vehicle
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        config.Tool.HitchLength = 5.0;
+        config.Tool.TrailingHitchLength = 15.0;
+        config.Tool.IsToolTrailing = true;
+        config.Tool.IsToolRearFixed = false;
+        config.Tool.IsToolFrontFixed = false;
+        config.Tool.IsToolTBT = false;
+
+        var toolService = new AgValoniaGPS.Services.Tool.ToolPositionService();
+
+        // Drive north to establish trailing
+        for (int i = 0; i < 60; i++)
+            toolService.Update(new AgValoniaGPS.Models.Base.Vec3(0, i * 0.5, 0), 0);
+
+        // Apply offset by resetting to a shifted position (simulate 10m north drift)
+        var newPos = new AgValoniaGPS.Models.Base.Vec3(0, 40, 0);
+        toolService.ResetTrailingState(newPos, 0);
+
+        // Immediately update at the new position
+        toolService.Update(newPos, 0);
+
+        // Hitch should be near vehicle (5m behind at most)
+        double hitchDist = Math.Abs(toolService.HitchPosition.Northing - 40);
+        Assert.That(hitchDist, Is.LessThan(6.0),
+            $"Hitch should be within 6m of vehicle after reset+update. Got {toolService.HitchPosition.Northing:F1}");
+
+        // Tool should be within total hitch+trailing distance
+        double toolDist = Math.Abs(toolService.ToolPosition.Northing - 40);
+        Assert.That(toolDist, Is.LessThan(21.0),
+            $"Tool should be within 21m of vehicle. Got {toolService.ToolPosition.Northing:F1}");
+    }
+
+    [Test]
     public void ToolPositionService_TrailingStillWorksAtNormalSpeed()
     {
         // Bug: jump detection was comparing hitch to toolPivot (always ~15m apart)

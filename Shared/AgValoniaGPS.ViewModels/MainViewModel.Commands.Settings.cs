@@ -183,9 +183,13 @@ public partial class MainViewModel
         State.Field.DriftNorthing += deltaNorthing;
         _autoSteerService.SetDriftCompensation(State.Field.DriftEasting, State.Field.DriftNorthing);
 
-        // Reset trailing tool so it snaps to new position instead of trailing from old one
+        // Reset trailing tool at the NEW drifted position.
+        // Easting/Northing still reflect the OLD drift (pre-delta), so add the delta.
         double headingRad = Heading * Math.PI / 180.0;
-        var driftedPos = new Models.Base.Vec3(Easting, Northing, headingRad);
+        var driftedPos = new Models.Base.Vec3(
+            Easting + deltaEasting,
+            Northing + deltaNorthing,
+            headingRad);
         _toolPositionService.ResetTrailingState(driftedPos, headingRad);
     }
 
