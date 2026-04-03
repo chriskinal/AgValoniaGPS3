@@ -132,19 +132,21 @@ public static class FieldWorkflowTest
         await Pump(300);
         Assert(vm.IsBoundaryRecording, "Should be recording boundary");
 
+        _gifFrames.Clear();
+
         // Drive a 500m x 300m rectangle at 36 km/h (10 m/s)
-        // At 10Hz GPS, each frame = 1m. Need 500+300+500+300 = 1600 frames total.
+        // Capture frames every ~2 seconds during boundary drive
         // East side (500m)
-        await DriveSegment(heading: 90, speedKmh: 36, frames: 500);
+        await DriveSegmentWithCapture(window, heading: 90, speedKmh: 36, frames: 500);
         Console.Write($"[E:{vm.BoundaryPointCount}pts] ");
         // North side (300m)
-        await DriveSegment(heading: 0, speedKmh: 36, frames: 300);
+        await DriveSegmentWithCapture(window, heading: 0, speedKmh: 36, frames: 300);
         Console.Write($"[N:{vm.BoundaryPointCount}pts] ");
         // West side (500m)
-        await DriveSegment(heading: 270, speedKmh: 36, frames: 500);
+        await DriveSegmentWithCapture(window, heading: 270, speedKmh: 36, frames: 500);
         Console.Write($"[W:{vm.BoundaryPointCount}pts] ");
         // South side (300m back to start)
-        await DriveSegment(heading: 180, speedKmh: 36, frames: 300);
+        await DriveSegmentWithCapture(window, heading: 180, speedKmh: 36, frames: 300);
         Console.Write($"[S:{vm.BoundaryPointCount}pts] ");
 
         Capture(window, "02_boundary_driven");
@@ -155,6 +157,7 @@ public static class FieldWorkflowTest
         Console.Write($"[points={vm.BoundaryPointCount}] ");
         Assert(vm.HasBoundary, $"Should have boundary (points: {vm.BoundaryPointCount})");
         Capture(window, "02b_boundary_closed");
+        CaptureGifFrame(window);
         Console.WriteLine($"OK ({vm.BoundaryAreaHectares:F2} ha)");
     }
 
@@ -168,6 +171,7 @@ public static class FieldWorkflowTest
 
         Assert(vm.HasHeadland, "Should have headland");
         Capture(window, "03_headland_built");
+        CaptureGifFrame(window); CaptureGifFrame(window); // Hold 2 frames
         Console.WriteLine("OK");
     }
 
@@ -196,6 +200,7 @@ public static class FieldWorkflowTest
 
         Assert(vm.HasActiveTrack, "Should have active track");
         Capture(window, "04b_ab_line");
+        CaptureGifFrame(window); CaptureGifFrame(window); // Hold 2 frames
         Console.WriteLine($"OK ({vm.SelectedTrack?.Name})");
     }
 
@@ -211,6 +216,7 @@ public static class FieldWorkflowTest
 
         Assert(vm.IsAutoSteerEngaged, "Autosteer should be engaged");
         Capture(window, "05_autosteer_engaged");
+        CaptureGifFrame(window); CaptureGifFrame(window); // Hold 2 frames
         Console.WriteLine($"OK (XTE: {vm.CrossTrackError:F2}m)");
     }
 
@@ -224,14 +230,13 @@ public static class FieldWorkflowTest
         vm.ToggleSectionMasterCommand?.Execute(null);
         await Pump(200);
 
-        _gifFrames.Clear();
-        int frameCounter = 0;
+        int _frameCounter = 0;
 
         // Helper: capture a GIF frame every ~1 second (10 GPS frames at 100ms each)
         async Task OnFrame()
         {
             await Pump(100);
-            if (++frameCounter % 10 == 0)
+            if (++_frameCounter % 10 == 0)
                 CaptureGifFrame(window);
         }
 
@@ -279,6 +284,25 @@ public static class FieldWorkflowTest
         {
             _hub.Gps.SendOnce();
             await Pump(50);
+        }
+    }
+
+    private static async Task DriveSegmentWithCapture(Window window, double heading, double speedKmh, int frames)
+    {
+        if (_hub == null) return;
+
+        _hub.Gps.HeadingDegrees = heading;
+        _hub.Gps.SpeedKnots = speedKmh / 1.852;
+        double stepTime = 1.0 / _hub.Gps.UpdateRateHz;
+
+        for (int i = 0; i < frames; i++)
+        {
+            _hub.Gps.Step(stepTime);
+            _hub.Gps.SendOnce();
+            await Pump(100);
+            // Capture every 20 frames (~2 seconds)
+            if (i % 20 == 0)
+                CaptureGifFrame(window);
         }
     }
 
