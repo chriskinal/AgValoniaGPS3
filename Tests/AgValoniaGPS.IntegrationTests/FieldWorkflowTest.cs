@@ -36,6 +36,7 @@ public static class FieldWorkflowTest
 {
     private static string _screenshotDir = "";
     private static VirtualModuleHub? _hub;
+    private static readonly System.Collections.Generic.List<string> _gifFrames = new();
 
     // Field geometry
     private const double ORIGIN_LAT = 43.712800;
@@ -223,20 +224,24 @@ public static class FieldWorkflowTest
         vm.ToggleSectionMasterCommand?.Execute(null);
         await Pump(200);
 
-        // Drive east with autosteer controlling heading via PGN 254
-        // The hub reads steer commands and applies bicycle model to GPS heading
-        await _hub!.DriveWithAutoSteerAsync(
-            speedKmh: 18, frames: 80,
-            onFrame: () => Pump(50));
+        _gifFrames.Clear();
+        int frameCounter = 0;
 
+        // Helper: capture a GIF frame every ~1 second (10 GPS frames at 100ms each)
+        async Task OnFrame()
+        {
+            await Pump(100);
+            if (++frameCounter % 10 == 0)
+                CaptureGifFrame(window);
+        }
+
+        // Drive east with autosteer controlling heading via PGN 254
+        await _hub!.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80, onFrame: OnFrame);
         Capture(window, "06a_driving_autosteer");
         Console.Write($"[XTE={vm.CrossTrackError:F2}m] ");
 
         // Continue toward headland
-        await _hub.DriveWithAutoSteerAsync(
-            speedKmh: 18, frames: 60,
-            onFrame: () => Pump(50));
-
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 60, onFrame: OnFrame);
         Capture(window, "06b_near_headland");
 
         // Trigger manual U-turn
@@ -245,18 +250,16 @@ public static class FieldWorkflowTest
         Capture(window, "06c_uturn_triggered");
 
         // Drive the U-turn with autosteer
-        await _hub.DriveWithAutoSteerAsync(
-            speedKmh: 12, frames: 80,
-            onFrame: () => Pump(50));
-
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 12, frames: 80, onFrame: OnFrame);
         Capture(window, "06d_uturn_complete");
 
         // Continue on next pass
-        await _hub.DriveWithAutoSteerAsync(
-            speedKmh: 18, frames: 40,
-            onFrame: () => Pump(50));
-
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 60, onFrame: OnFrame);
         Capture(window, "06e_next_pass");
+
+        // Save GIF
+        SaveGif(Path.Combine(_screenshotDir, "autosteer_drive.gif"));
+
         Console.WriteLine("OK");
     }
 
@@ -314,6 +317,68 @@ public static class FieldWorkflowTest
         bitmap.Save(path);
         var kb = new FileInfo(path).Length / 1024;
         Console.Write($"[{kb}KB] ");
+    }
+
+    private static void CaptureGifFrame(Window window)
+    {
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+
+        var pixelSize = new PixelSize(
+            Math.Max((int)window.Bounds.Width, 1),
+            Math.Max((int)window.Bounds.Height, 1));
+        var bitmap = new RenderTargetBitmap(pixelSize, new Vector(96, 96));
+        bitmap.Render(window);
+
+        var framePath = Path.Combine(_screenshotDir, $"gif_frame_{_gifFrames.Count:D4}.png");
+        bitmap.Save(framePath);
+        _gifFrames.Add(framePath);
+    }
+
+    private static void SaveGif(string outputPath)
+    {
+        if (_gifFrames.Count == 0) return;
+
+        try
+        {
+            using var writer = new System.IO.FileStream(outputPath, System.IO.FileMode.Create);
+            var images = new System.Collections.Generic.List<byte[]>();
+
+            // Use PIL via process to assemble GIF (avoid adding imageio dependency)
+            var script = $@"
+from PIL import Image
+import sys
+frames = []
+for path in sys.argv[1:]:
+    img = Image.open(path).convert('RGB').resize((640, 480), Image.LANCZOS)
+    frames.append(img)
+if frames:
+    frames[0].save('{outputPath.Replace("'", "\\'")}', save_all=True, append_images=frames[1:], duration=1000, loop=0)
+    print(f'GIF: {{len(frames)}} frames')
+";
+            var scriptPath = Path.Combine(_screenshotDir, "_gif.py");
+            File.WriteAllText(scriptPath, script);
+
+            var psi = new System.Diagnostics.ProcessStartInfo("python3", scriptPath + " " + string.Join(" ", _gifFrames))
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            proc?.WaitForExit(30000);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            Console.Write($"[{output.Trim()}] ");
+
+            // Clean up frame files
+            foreach (var f in _gifFrames)
+                try { File.Delete(f); } catch { }
+            try { File.Delete(scriptPath); } catch { }
+        }
+        catch (Exception ex)
+        {
+            Console.Write($"[GIF error: {ex.Message}] ");
+        }
     }
 
     private static async Task Pump(int ms)
