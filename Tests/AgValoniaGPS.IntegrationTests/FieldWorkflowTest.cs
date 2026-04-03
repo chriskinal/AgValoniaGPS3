@@ -219,6 +219,10 @@ public static class FieldWorkflowTest
 
         vm.IsYouTurnEnabled = true;
 
+        // Turn on sections (auto mode)
+        vm.ToggleSectionMasterCommand?.Execute(null);
+        await Pump(200);
+
         // Drive east with autosteer controlling heading via PGN 254
         // The hub reads steer commands and applies bicycle model to GPS heading
         await _hub!.DriveWithAutoSteerAsync(
