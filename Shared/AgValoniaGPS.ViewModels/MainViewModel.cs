@@ -2991,6 +2991,14 @@ public partial class MainViewModel : ReactiveObject
         // Sync to FieldState for section control boundary/headland detection
         State.Field.CurrentBoundary = boundary;
 
+        // Update area display
+        this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
+        if (boundary != null && boundary.IsValid)
+        {
+            var boundaryAreas = new System.Collections.Generic.List<double> { boundary.AreaHectares * 10000 };
+            _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
+        }
+
         // Populate HeadlandLine from HeadlandPolygon for section control IsPointInHeadland check
         _logger.LogDebug($"[Headland] SetCurrentBoundary: HeadlandPolygon={boundary?.HeadlandPolygon != null}, IsValid={boundary?.HeadlandPolygon?.IsValid}, PointCount={boundary?.HeadlandPolygon?.Points?.Count ?? 0}");
         if (boundary?.HeadlandPolygon != null && boundary.HeadlandPolygon.IsValid)
