@@ -237,6 +237,19 @@ public partial class MainViewModel
 
         // Auto-select closest track when autosteer is not engaged (#143)
         UpdateAutoTrackSelection(data.CurrentPosition);
+
+        // Run guidance when using real GPS (simulator path has its own guidance call).
+        // Without this, autosteer has no steering output when the simulator is disabled.
+        // Must use drifted local coordinates, not raw NMEA (which has easting=0).
+        if (!IsSimulatorEnabled && IsAutoSteerEngaged && HasActiveTrack)
+        {
+            var guidancePos = data.CurrentPosition with
+            {
+                Easting = driftedEasting,
+                Northing = driftedNorthing
+            };
+            CalculateAutoSteerGuidance(guidancePos);
+        }
     }
 
     private bool _isAutoTrackEnabled = true;
