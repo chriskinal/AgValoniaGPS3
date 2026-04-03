@@ -39,6 +39,12 @@ public class VirtualMachineModule : IDisposable
     public bool IsHydraulicUp { get; set; }
     public bool[] RelayStates { get; } = new bool[16];
 
+    // Config state (received from host)
+    public MachineConfigPacket? LastConfig { get; private set; }
+    public MachinePinConfigPacket? LastPinConfig { get; private set; }
+    public long ReceivedConfigCount { get; private set; }
+    public long ReceivedPinConfigCount { get; private set; }
+
     // Counters
     public long ReceivedCommandCount { get; private set; }
     public long SentHelloCount { get; private set; }
@@ -111,7 +117,13 @@ public class VirtualMachineModule : IDisposable
                 break;
 
             case PgnProtocol.PGN_MACHINE_CONFIG:
-                // Acknowledge config (no response needed)
+                LastConfig = PgnProtocol.ParseMachineConfig(data);
+                ReceivedConfigCount++;
+                break;
+
+            case PgnProtocol.PGN_MACHINE_PINS:
+                LastPinConfig = PgnProtocol.ParseMachinePinConfig(data);
+                ReceivedPinConfigCount++;
                 break;
         }
     }

@@ -242,6 +242,20 @@ public class AutoSteerService : IAutoSteerService
         _driftNorthing = driftNorthing;
     }
 
+    public void SendMachineConfig()
+    {
+        var config = ConfigurationStore.Instance.Machine;
+        var pgn = PgnBuilder.BuildMachineConfigPgn(config);
+        _udpService.SendToModules(pgn);
+    }
+
+    public void SendMachinePinConfig()
+    {
+        var config = ConfigurationStore.Instance.Machine;
+        var pgn = PgnBuilder.BuildMachinePinsPgn(config);
+        _udpService.SendToModules(pgn);
+    }
+
     public void SetMachineState(ushort sectionBits, bool isInUTurn)
     {
         _state.SectionStates = sectionBits;

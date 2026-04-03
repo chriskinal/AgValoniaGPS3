@@ -40,6 +40,8 @@ public static class PgnBuilder
     public const byte PGN_MACHINE = 0xEF;        // 239 - Machine Data
     public const byte PGN_STEER_SETTINGS = 0xFC; // 252 - Steer Settings
     public const byte PGN_STEER_CONFIG = 0xFB;   // 251 - Steer Config
+    public const byte PGN_MACHINE_CONFIG = 0xEE;  // 238 - Machine Config
+    public const byte PGN_MACHINE_PINS = 0xEC;   // 236 - Machine Pin Config
     public const byte PGN_STEER_DATA = 0xFD;     // 253 - Steer Data FROM Module
     public const byte PGN_SENSOR_DATA = 0xFA;    // 250 - Sensor Data FROM Module
 
@@ -48,6 +50,8 @@ public static class PgnBuilder
     public const int MACHINE_PGN_SIZE = 14;         // 5 header + 8 data + 1 crc
     public const int STEER_SETTINGS_PGN_SIZE = 14;  // 5 header + 8 data + 1 crc
     public const int STEER_CONFIG_PGN_SIZE = 11;    // 5 header + 5 data + 1 crc
+    public const int MACHINE_CONFIG_PGN_SIZE = 14;  // 5 header + 8 data + 1 crc
+    public const int MACHINE_PINS_PGN_SIZE = 30;    // 5 header + 24 data + 1 crc
 
     // Thread-local buffers to avoid allocation
     [ThreadStatic]
@@ -212,6 +216,74 @@ public static class PgnBuilder
         // CRC
         buf[13] = CalculateCrc(buf, 2, 11);
 
+        return buf;
+    }
+
+    /// <summary>
+    /// Build PGN 238 (0xEE) Machine Config - hydraulic settings and user values.
+    /// Sent to machine module when config changes (not periodic).
+    ///
+    /// Byte 5:  Raise time (seconds)
+    /// Byte 6:  Lower time (seconds)
+    /// Byte 7:  Enable hydraulic (0/1)
+    /// Byte 8:  set0 bitfield (bit0=InvertRelay, bit1=HydEnabled)
+    /// Byte 9:  User1 value (0-255)
+    /// Byte 10: User2 value (0-255)
+    /// Byte 11: User3 value (0-255)
+    /// Byte 12: User4 value (0-255)
+    /// </summary>
+    public static byte[] BuildMachineConfigPgn(MachineConfig config)
+    {
+        var buf = new byte[MACHINE_CONFIG_PGN_SIZE];
+
+        buf[0] = HEADER1;
+        buf[1] = HEADER2;
+        buf[2] = SOURCE;
+        buf[3] = PGN_MACHINE_CONFIG;
+        buf[4] = 8;
+
+        buf[5] = (byte)Math.Clamp(config.RaiseTime, 0, 255);
+        buf[6] = (byte)Math.Clamp(config.LowerTime, 0, 255);
+        buf[7] = config.HydraulicLiftEnabled ? (byte)1 : (byte)0;
+
+        // set0 bitfield
+        byte set0 = 0;
+        if (config.InvertRelay) set0 |= 0x01;
+        if (config.HydraulicLiftEnabled) set0 |= 0x02;
+        buf[8] = set0;
+
+        buf[9] = (byte)Math.Clamp(config.User1Value, 0, 255);
+        buf[10] = (byte)Math.Clamp(config.User2Value, 0, 255);
+        buf[11] = (byte)Math.Clamp(config.User3Value, 0, 255);
+        buf[12] = (byte)Math.Clamp(config.User4Value, 0, 255);
+
+        buf[13] = CalculateCrc(buf, 2, 11);
+        return buf;
+    }
+
+    /// <summary>
+    /// Build PGN 236 (0xEC) Machine Pin Config - 24 relay pin assignments.
+    /// Sent to machine module when pin config changes (not periodic).
+    ///
+    /// Bytes 5-28: Pin 0-23 function assignments (PinFunction enum value per byte)
+    /// </summary>
+    public static byte[] BuildMachinePinsPgn(MachineConfig config)
+    {
+        var buf = new byte[MACHINE_PINS_PGN_SIZE];
+
+        buf[0] = HEADER1;
+        buf[1] = HEADER2;
+        buf[2] = SOURCE;
+        buf[3] = PGN_MACHINE_PINS;
+        buf[4] = 24;
+
+        var pins = config.PinAssignments;
+        for (int i = 0; i < 24; i++)
+        {
+            buf[5 + i] = (byte)(i < pins.Length ? pins[i] : 0);
+        }
+
+        buf[29] = CalculateCrc(buf, 2, 27);
         return buf;
     }
 

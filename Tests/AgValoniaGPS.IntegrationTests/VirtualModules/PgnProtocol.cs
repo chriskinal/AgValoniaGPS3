@@ -26,7 +26,8 @@ public static class PgnProtocol
     public const byte PGN_MACHINE_TO_MODULE = 0xEF;     // 239
     public const byte PGN_STEER_SETTINGS = 0xFC;        // 252
     public const byte PGN_STEER_CONFIG = 0xFB;          // 251
-    public const byte PGN_MACHINE_CONFIG = 0xEE;        // 238
+    public const byte PGN_MACHINE_CONFIG = 0xEE;         // 238
+    public const byte PGN_MACHINE_PINS = 0xEC;           // 236
     public const byte PGN_HELLO_FROM_HOST = 0xC8;       // 200
     public const byte PGN_SCAN = 0xCA;                  // 202
     public const byte PGN_IP_CONFIG = 0xC9;             // 201
@@ -117,6 +118,34 @@ public static class PgnProtocol
     }
 
     /// <summary>
+    /// Parse PGN 238 (Machine config from host).
+    /// </summary>
+    public static MachineConfigPacket ParseMachineConfig(byte[] data)
+    {
+        return new MachineConfigPacket
+        {
+            RaiseTime = data[5],
+            LowerTime = data[6],
+            EnableHyd = data[7],
+            Set0 = data[8],
+            User1 = data[9],
+            User2 = data[10],
+            User3 = data[11],
+            User4 = data[12]
+        };
+    }
+
+    /// <summary>
+    /// Parse PGN 236 (Machine pin config from host).
+    /// </summary>
+    public static MachinePinConfigPacket ParseMachinePinConfig(byte[] data)
+    {
+        var pins = new byte[24];
+        Array.Copy(data, 5, pins, 0, Math.Min(24, data.Length - 6));
+        return new MachinePinConfigPacket { PinAssignments = pins };
+    }
+
+    /// <summary>
     /// Parse PGN 239 (Machine data from host).
     /// </summary>
     public static MachineCommand ParseMachineCommand(byte[] data)
@@ -156,4 +185,23 @@ public struct MachineCommand
     public byte SectionBits1to8;
     public byte SectionBits9to16;
     public ushort SectionBits => (ushort)(SectionBits1to8 | (SectionBits9to16 << 8));
+}
+
+public struct MachineConfigPacket
+{
+    public byte RaiseTime;
+    public byte LowerTime;
+    public byte EnableHyd;
+    public byte Set0;
+    public byte User1;
+    public byte User2;
+    public byte User3;
+    public byte User4;
+    public bool InvertRelay => (Set0 & 0x01) != 0;
+    public bool HydEnabled => (Set0 & 0x02) != 0;
+}
+
+public struct MachinePinConfigPacket
+{
+    public byte[] PinAssignments; // 24 bytes
 }

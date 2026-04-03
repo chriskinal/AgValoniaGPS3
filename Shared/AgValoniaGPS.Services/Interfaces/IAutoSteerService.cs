@@ -124,6 +124,18 @@ public interface IAutoSteerService
     void SetDriftCompensation(double driftEasting, double driftNorthing);
 
     /// <summary>
+    /// Send PGN 238 (Machine Config) to machine module.
+    /// Contains hydraulic lift timing, relay invert, and user values.
+    /// </summary>
+    void SendMachineConfig();
+
+    /// <summary>
+    /// Send PGN 236 (Machine Pin Config) to machine module.
+    /// Contains 24 relay pin function assignments.
+    /// </summary>
+    void SendMachinePinConfig();
+
+    /// <summary>
     /// Update machine control state sent via PGN 239.
     /// Called by ViewModel after section control updates.
     /// </summary>
