@@ -174,16 +174,27 @@ public partial class MainViewModel
         // Apply GPS drift compensation
         double driftedEasting = posEasting + State.Field.DriftEasting;
         double driftedNorthing = posNorthing + State.Field.DriftNorthing;
-        Easting = driftedEasting;
-        Northing = driftedNorthing;
-        Heading = data.CurrentPosition.Heading;
+        double headingRad = data.CurrentPosition.Heading * Math.PI / 180.0;
 
         // Update tool/implement position from drifted vehicle position
-        // Tool is always computed relative to the tractor, so drift propagates naturally
-        double headingRad = data.CurrentPosition.Heading * Math.PI / 180.0;
         _toolPositionService.Update(
             new Models.Base.Vec3(driftedEasting, driftedNorthing, headingRad),
             headingRad);
+
+        // Atomic map update: vehicle + tool + hitch in one call
+        // Prevents rendering mismatches between vehicle and tool positions
+        var hitchPos = _toolPositionService.HitchPosition;
+        var toolPos = _toolPositionService.ToolPosition;
+        _mapService.SetAllPositions(
+            driftedEasting, driftedNorthing, headingRad,
+            toolPos.Easting, toolPos.Northing, _toolPositionService.ToolHeading,
+            ToolWidth, hitchPos.Easting, hitchPos.Northing,
+            _toolPositionService.IsToolPositionReady);
+
+        // Update properties for bindings (but map already updated atomically above)
+        Easting = driftedEasting;
+        Northing = driftedNorthing;
+        Heading = data.CurrentPosition.Heading;
 
         // Update reverse indicator on map
         _mapService.SetReversing(IsReversing);

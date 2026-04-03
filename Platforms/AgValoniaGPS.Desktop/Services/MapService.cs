@@ -99,6 +99,12 @@ public class MapService : IMapService
     public void SetVehiclePosition(double easting, double northing, double headingRadians) =>
         GetMapControl().SetVehiclePosition(easting, northing, headingRadians);
 
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady) =>
+        GetMapControl().SetAllPositions(vehicleX, vehicleY, vehicleHeading,
+            toolX, toolY, toolHeading, toolWidth, hitchX, hitchY, toolReady);
+
     public bool IsGridVisible
     {
         get => _mapControl?.IsGridVisible ?? false;

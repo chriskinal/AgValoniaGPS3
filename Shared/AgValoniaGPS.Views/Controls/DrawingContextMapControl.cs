@@ -67,6 +67,14 @@ public interface ISharedMapControl
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double x, double y, double heading);
     void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true);
+
+    /// <summary>
+    /// Atomic update of vehicle + tool positions in a single call.
+    /// Prevents rendering mismatches between vehicle and tool.
+    /// </summary>
+    void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady);
     void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null);
     void SetGridVisible(bool visible);
     void SetNorthUp(bool isNorthUp);
@@ -3348,6 +3356,22 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             case 2: // Free: don't move camera at all
                 break;
         }
+    }
+
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady)
+    {
+        _vehicleX = vehicleX;
+        _vehicleY = vehicleY;
+        _vehicleHeading = vehicleHeading;
+        _toolX = toolX;
+        _toolY = toolY;
+        _toolHeading = toolHeading;
+        _toolWidth = toolWidth;
+        _hitchX = hitchX;
+        _hitchY = hitchY;
+        _toolPositionReady = toolReady;
     }
 
     public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true)

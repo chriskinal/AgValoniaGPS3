@@ -59,6 +59,13 @@ public interface IMapService
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double easting, double northing, double headingRadians);
 
+    /// <summary>
+    /// Atomic update of vehicle + tool + hitch positions in a single call.
+    /// </summary>
+    void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady);
+
     // Grid
     bool IsGridVisible { get; set; }
 

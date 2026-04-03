@@ -147,6 +147,14 @@ public class MapService : IMapService
         _mapControl?.SetVehiclePosition(easting, northing, headingRadians);
     }
 
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady)
+    {
+        _mapControl?.SetAllPositions(vehicleX, vehicleY, vehicleHeading,
+            toolX, toolY, toolHeading, toolWidth, hitchX, hitchY, toolReady);
+    }
+
     public void SetReversing(bool isReversing) { if (_mapControl != null) _mapControl.IsReversing = isReversing; }
     public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive) { _mapControl?.SetGuidancePoints(goalEasting, goalNorthing, isActive); }
 
