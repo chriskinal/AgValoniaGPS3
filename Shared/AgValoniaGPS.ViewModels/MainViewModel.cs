@@ -935,14 +935,48 @@ public partial class MainViewModel : ReactiveObject
     // Field statistics properties for UI binding
     public string WorkedAreaDisplay => FormatArea(_coverageMapService.TotalWorkedArea);
 
-    public string BoundaryAreaDisplay
+    /// <summary>
+    /// Workable area in m²: boundary area minus headland area.
+    /// </summary>
+    private double WorkableAreaSqM
     {
         get
         {
             var boundary = State.Field.CurrentBoundary;
-            if (boundary != null && boundary.IsValid)
+            double totalSqM = (boundary?.AreaHectares ?? 0) * 10000;
+            if (totalSqM <= 0) return 0;
+
+            // Subtract headland area if headland exists
+            var headland = State.Field.HeadlandLine;
+            if (headland != null && headland.Count >= 3)
             {
-                return FormatArea(boundary.AreaHectares * 10000); // Convert ha back to m²
+                double headlandArea = Math.Abs(PolygonArea(headland));
+                return headlandArea; // Headland polygon IS the cultivated area
+            }
+            return totalSqM;
+        }
+    }
+
+    private static double PolygonArea(System.Collections.Generic.List<Models.Base.Vec3> polygon)
+    {
+        double area = 0;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            int j = (i + 1) % polygon.Count;
+            area += polygon[i].Easting * polygon[j].Northing;
+            area -= polygon[j].Easting * polygon[i].Northing;
+        }
+        return area / 2.0;
+    }
+
+    public string BoundaryAreaDisplay
+    {
+        get
+        {
+            double areaSqM = WorkableAreaSqM;
+            if (areaSqM > 0)
+            {
+                return FormatArea(areaSqM);
             }
             return ConfigStore.IsMetric ? "0.00 ha" : "0.00 ac";
         }
@@ -952,13 +986,11 @@ public partial class MainViewModel : ReactiveObject
     {
         get
         {
-            var boundary = State.Field.CurrentBoundary;
-            double boundaryArea = boundary?.AreaHectares ?? 0;
-            double boundaryAreaSqM = boundaryArea * 10000; // Convert back to sq meters for comparison
-            if (boundaryAreaSqM > 0)
+            double workableArea = WorkableAreaSqM;
+            if (workableArea > 0)
             {
                 double workedArea = _coverageMapService.TotalWorkedArea;
-                return ((boundaryAreaSqM - workedArea) * 100 / boundaryAreaSqM);
+                return ((workableArea - workedArea) * 100 / workableArea);
             }
             return 100;
         }
