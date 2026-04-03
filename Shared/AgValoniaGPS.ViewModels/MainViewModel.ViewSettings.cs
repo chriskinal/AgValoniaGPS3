@@ -289,7 +289,8 @@ public partial class MainViewModel
     private void CheckAutoDayNight()
     {
         var display = ConfigurationStore.Instance.Display;
-
+        if (!display.AutoDayNight) return;
+        
         bool shouldBeDay = false;
         // Try GPS-based solar calculation when we have a valid position
         if (_gpsService.IsGpsDataOk() && display.AutoDayNight)
