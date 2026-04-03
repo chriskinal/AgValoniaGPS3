@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.HelpDialogPanel"
+             IsVisible="{Binding State.UI.IsHelpDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsHelpDialogVisible}">
+
+    <!-- Semi-transparent backdrop -->
+    <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed">
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="12" Padding="24"
+                MaxWidth="420"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                BoxShadow="0 4 16 #40000000">
+
+            <StackPanel Spacing="16">
+                <TextBlock Text="Help" FontSize="22" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+
+                <TextBlock Text="AgValoniaGPS - Agricultural GPS Guidance"
+                           FontSize="14" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+
+                <!-- Link buttons -->
+                <StackPanel Spacing="8">
+                    <Button Classes="ModernButton" HorizontalAlignment="Stretch" MinHeight="44"
+                            x:Name="BtnGitHub" Click="OnGitHubClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <TextBlock Text="GitHub Repository" FontSize="15" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="ModernButton" HorizontalAlignment="Stretch" MinHeight="44"
+                            x:Name="BtnDiscussions" Click="OnDiscussionsClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <TextBlock Text="Discussions / Forum" FontSize="15" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="ModernButton" HorizontalAlignment="Stretch" MinHeight="44"
+                            x:Name="BtnReleases" Click="OnReleasesClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <TextBlock Text="Check for Updates" FontSize="15" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="ModernButton" HorizontalAlignment="Stretch" MinHeight="44"
+                            x:Name="BtnYouTube" Click="OnYouTubeClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <TextBlock Text="YouTube Tutorials" FontSize="15" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Button Content="Close" Classes="ModernButton"
+                        HorizontalAlignment="Center" MinWidth="120"
+                        Command="{Binding CloseHelpDialogCommand}"/>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

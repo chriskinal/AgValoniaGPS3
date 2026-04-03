@@ -131,6 +131,17 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        // Help (#16)
+        ShowHelpDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.Help);
+        });
+
+        CloseHelpDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
         // Debug Dump (#127)
         CreateDebugDumpCommand = ReactiveCommand.Create(() =>
         {
@@ -380,6 +391,8 @@ public partial class MainViewModel
 
     public ICommand? ShowViewSettingsDialogCommand { get; private set; }
     public ICommand? CloseViewSettingsDialogCommand { get; private set; }
+    public ICommand? ShowHelpDialogCommand { get; private set; }
+    public ICommand? CloseHelpDialogCommand { get; private set; }
 }
 
 public class SettingsGroupItem
