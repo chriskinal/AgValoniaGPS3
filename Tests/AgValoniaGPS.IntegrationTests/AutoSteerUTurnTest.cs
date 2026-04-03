@@ -76,11 +76,6 @@ public static class AutoSteerUTurnTest
             config.Tool.SetSectionWidth(i, 200.0);
         config.Guidance.UTurnRadius = TOOL_WIDTH / 2.0; // Half implement width to complete the turn
 
-        // Force section position recalculation after setting widths
-        var sectionService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
-            .GetRequiredService<AgValoniaGPS.Services.Interfaces.ISectionControlService>(App.Services!);
-        sectionService.RecalculateSectionPositions();
-
         try
         {
             await Step1_CreateFieldWithBoundary(vm);

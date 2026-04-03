@@ -149,6 +149,17 @@ public class SectionControlService : ISectionControlService
                 RecalculateSectionPositions();
             }
         };
+
+        // Also listen for ToolConfig changes (section width changes don't trigger store-level event)
+        ConfigurationStore.Instance.Tool.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ToolConfig.SectionWidths) ||
+                e.PropertyName == nameof(ToolConfig.TotalSectionWidth) ||
+                e.PropertyName == nameof(ToolConfig.Offset))
+            {
+                RecalculateSectionPositions();
+            }
+        };
     }
 
     public void Update(Vec3 toolPosition, double toolHeading, double vehicleHeading, double speed)
