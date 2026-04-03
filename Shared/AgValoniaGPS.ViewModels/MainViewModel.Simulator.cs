@@ -112,14 +112,10 @@ public partial class MainViewModel
         // Use the TRANSFORMED position (pivot/tractor center) for all guidance calculations
         var transformedPosition = gpsData.CurrentPosition;
 
-        // Update tool position based on vehicle pivot position
-        // Tool position service handles fixed, trailing, and TBT configurations
-        var vehiclePivot = new Vec3(
-            transformedPosition.Easting,
-            transformedPosition.Northing,
-            transformedPosition.Heading * Math.PI / 180.0  // Convert to radians
-        );
-        _toolPositionService.Update(vehiclePivot, transformedPosition.Heading * Math.PI / 180.0);
+        // NOTE: _toolPositionService.Update() is NOT called here.
+        // GpsHandling.UpdateGpsProperties (triggered by _gpsService.UpdateGpsData above)
+        // already calls it with drift-compensated coordinates. Calling it again here
+        // with undrifted coords would overwrite the correct drifted tool position.
 
         // Process through AutoSteer pipeline for latency measurement
         _autoSteerService.ProcessSimulatedPosition(
