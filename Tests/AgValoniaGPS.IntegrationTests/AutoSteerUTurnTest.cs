@@ -206,9 +206,10 @@ public static class AutoSteerUTurnTest
                 CaptureGifFrame(window);
         }
 
-        // Frames to cross the field: 200m - 2*15m headland = 170m working + entry/exit
-        // At 25 km/h = 6.94 m/s, 0.694m/frame -> ~280 frames per pass
-        int framesPerPass = 280;
+        // Working distance: from headland edge to headland edge = 200 - 2*15 = 170m
+        // At 25 km/h = 6.94 m/s, 0.694m/frame -> ~245 frames
+        // Start a bit inside so we don't overshoot
+        int framesPerPass = 240;
         int framesPerUturn = 80;
 
         for (int pass = 0; pass < totalPasses; pass++)
@@ -234,18 +235,15 @@ public static class AutoSteerUTurnTest
             {
                 Console.Write($"[UT{pass + 1} ");
 
-                // Drive extra frames toward headland to trigger automatic U-turn
-                await _hub.DriveWithAutoSteerAsync(speedKmh: 20, frames: 60,
-                    steerAngleProvider: steerAngle, onFrame: OnFrame);
-
-                // If auto didn't trigger, force manual as fallback
+                // Check if auto U-turn triggered, otherwise use manual
                 if (!vm.State.YouTurn.IsTriggered)
                 {
                     Console.Write("(manual) ");
+                    // Passes go south to north: east->turn LEFT (north), west->turn RIGHT (north)
                     if (goingEast)
-                        vm.ManualYouTurnRightCommand?.Execute(null);
-                    else
                         vm.ManualYouTurnLeftCommand?.Execute(null);
+                    else
+                        vm.ManualYouTurnRightCommand?.Execute(null);
                     await Pump(10);
                 }
                 else
