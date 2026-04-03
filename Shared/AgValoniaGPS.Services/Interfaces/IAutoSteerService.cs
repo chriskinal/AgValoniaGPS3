@@ -123,6 +123,12 @@ public interface IAutoSteerService
     /// </summary>
     void SetDriftCompensation(double driftEasting, double driftNorthing);
 
+    /// <summary>
+    /// Update machine control state sent via PGN 239.
+    /// Called by ViewModel after section control updates.
+    /// </summary>
+    void SetMachineState(ushort sectionBits, bool isInUTurn);
+
     // ═══════════════════════════════════════════════════════════════════════
     // Module Feedback (PGN 253, 250)
     // ═══════════════════════════════════════════════════════════════════════

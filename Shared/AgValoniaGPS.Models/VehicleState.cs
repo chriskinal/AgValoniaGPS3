@@ -123,6 +123,22 @@ public struct VehicleState
     public bool MasterSectionOn;
 
     // ═══════════════════════════════════════════════════════════════════════
+    // Machine Control (PGN 239 output)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>U-turn active state (sent to machine module)</summary>
+    public bool IsInUTurn;
+
+    /// <summary>Hydraulic lift state: 0=down, 1=up, 2=transitioning</summary>
+    public byte HydLiftState;
+
+    /// <summary>Tramline control byte</summary>
+    public byte TramState;
+
+    /// <summary>Geo-fence stop: 0=ok, 1=out of bounds</summary>
+    public byte GeoStopState;
+
+    // ═══════════════════════════════════════════════════════════════════════
     // Switch States (received from hardware via PGN)
     // ═══════════════════════════════════════════════════════════════════════
 
