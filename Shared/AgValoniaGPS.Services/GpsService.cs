@@ -92,10 +92,6 @@ public class GpsService : IGpsService
     {
         var vehicle = ConfigurationStore.Instance.Vehicle;
 
-        // Skip transformation if no offsets configured
-        if (Math.Abs(vehicle.AntennaPivot) < 0.001 && Math.Abs(vehicle.AntennaOffset) < 0.001)
-            return;
-
         // Convert heading to radians
         double headingRadians = gpsData.CurrentPosition.Heading * Math.PI / 180.0;
 
@@ -120,6 +116,19 @@ public class GpsService : IGpsService
             double perpHeading = headingRadians + Math.PI / 2.0; // Points right
             pivotEasting -= Math.Sin(perpHeading) * vehicle.AntennaOffset;
             pivotNorthing -= Math.Cos(perpHeading) * vehicle.AntennaOffset;
+        }
+
+        // Apply roll correction: when the vehicle tilts, the high-mounted antenna
+        // shifts laterally. Correct by projecting the antenna height through the
+        // roll angle perpendicular to heading. Matches legacy AgOpenGPS formula.
+        double imuRoll = SensorState.Instance.ImuRoll;
+        if (Math.Abs(imuRoll) > 0.01 && Math.Abs(vehicle.AntennaHeight) > 0.01)
+        {
+            double rollRadians = imuRoll * Math.PI / 180.0;
+            double rollCorrectionDistance = Math.Sin(rollRadians) * -vehicle.AntennaHeight;
+
+            pivotEasting += Math.Cos(-headingRadians) * rollCorrectionDistance;
+            pivotNorthing += Math.Sin(-headingRadians) * rollCorrectionDistance;
         }
 
         // Create new Position with transformed coordinates (Position is a record with init-only props)

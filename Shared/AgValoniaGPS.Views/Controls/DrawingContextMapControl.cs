@@ -740,6 +740,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Draw headland proximity HUD (screen space, after camera transform)
         DrawHeadlandProximityHud(context, bounds);
 
+        // Draw roll angle indicator (top-left, screen space)
+        DrawRollIndicator(context, bounds);
+
         _renderSw.Stop();
         _lastFullRenderMs = _renderSw.Elapsed.TotalMilliseconds;
 
@@ -2587,6 +2590,36 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             : Avalonia.Media.Color.FromArgb(180, 40, 40, 0);
         context.DrawRectangle(new Avalonia.Media.SolidColorBrush(bgColor), null,
             new RoundedRect(boxRect, 6));
+
+        context.DrawText(formattedText, new Point(x, y));
+    }
+
+    private void DrawRollIndicator(DrawingContext context, Rect bounds)
+    {
+        double roll = AgValoniaGPS.Models.Configuration.SensorState.Instance.ImuRoll;
+        if (Math.Abs(roll) < 0.01) return; // No roll data
+
+        string text = $"{roll:F1}";
+        var color = Math.Abs(roll) > 8.0
+            ? Avalonia.Media.Color.FromRgb(255, 80, 80)   // Red when excessive
+            : Avalonia.Media.Color.FromRgb(200, 200, 200); // Gray normally
+        var brush = new Avalonia.Media.SolidColorBrush(color);
+
+        double fontSize = Math.Clamp(bounds.Height / 28.0, 12, 24);
+        var typeface = new Avalonia.Media.Typeface("Arial", Avalonia.Media.FontStyle.Normal, Avalonia.Media.FontWeight.Bold);
+        var formattedText = new Avalonia.Media.FormattedText(text,
+            System.Globalization.CultureInfo.InvariantCulture,
+            Avalonia.Media.FlowDirection.LeftToRight,
+            typeface, fontSize, brush);
+
+        // Position: top-left
+        double x = 10;
+        double y = 8;
+
+        var boxRect = new Rect(x - 6, y - 3, formattedText.Width + 12, formattedText.Height + 6);
+        context.DrawRectangle(
+            new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(160, 30, 30, 30)),
+            null, new RoundedRect(boxRect, 4));
 
         context.DrawText(formattedText, new Point(x, y));
     }
