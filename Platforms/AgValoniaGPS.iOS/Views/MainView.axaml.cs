@@ -443,7 +443,7 @@ public partial class MainView : UserControl
             }
             else if (e.PropertyName == nameof(MainViewModel.CrossTrackError))
             {
-                LightBarPanel?.UpdateCrossTrackError(_viewModel.CrossTrackError);
+                LightBarPanel?.Update(_viewModel.CrossTrackError, _viewModel.SimulatorSteerAngle);
             }
             else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
             {

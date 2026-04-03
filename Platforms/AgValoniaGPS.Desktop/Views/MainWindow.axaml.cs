@@ -663,7 +663,7 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(MainViewModel.CrossTrackError))
         {
             if (ViewModel != null)
-                LightBarPanel?.UpdateCrossTrackError(ViewModel.CrossTrackError);
+                LightBarPanel?.Update(ViewModel.CrossTrackError, ViewModel.SimulatorSteerAngle);
         }
         else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
         {
