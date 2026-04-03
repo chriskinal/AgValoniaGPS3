@@ -569,6 +569,13 @@ public partial class MainViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isRecordingContour, value);
     }
 
+    private bool _isRecordingPath;
+    public bool IsRecordingPath
+    {
+        get => _isRecordingPath;
+        set => this.RaiseAndSetIfChanged(ref _isRecordingPath, value);
+    }
+
     public ObservableCollection<Track> ContourStrips { get; } = new();
     public ObservableCollection<Track> RecordedPathTracks { get; } = new();
 
@@ -1157,6 +1164,9 @@ public partial class MainViewModel : ReactiveObject
 
             // Load tracks
             LoadTracksFromField(field);
+
+            // Load recorded path from RecPath.txt
+            LoadRecPathFromField(fieldPath);
 
             // Load coverage
             State.UI.BusyMessage = "Loading coverage...";
@@ -2784,6 +2794,8 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
+    public ICommand? StartRecordedPathCommand { get; private set; }
+    public ICommand? StopRecordedPathCommand { get; private set; }
     public ICommand? StartContourRecordingCommand { get; private set; }
     public ICommand? StopContourRecordingCommand { get; private set; }
     public ICommand? DeleteContourTrackCommand { get; private set; }
@@ -4482,6 +4494,25 @@ public partial class MainViewModel : ReactiveObject
         catch (System.Exception ex)
         {
             _logger.LogDebug($"[TrackFiles] Failed to load tracks: {ex.Message}");
+        }
+    }
+
+    private void LoadRecPathFromField(string fieldPath)
+    {
+        try
+        {
+            var recPath = Services.RecPathFileService.LoadRecPath(fieldPath);
+            if (recPath != null)
+            {
+                SavedTracks.Add(recPath);
+                RecordedPathTracks.Add(recPath);
+                UpdateRecordedPathsOnMap();
+                _logger.LogDebug($"[RecPath] Loaded recorded path with {recPath.Points.Count} points");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug($"[RecPath] Failed to load RecPath.txt: {ex.Message}");
         }
     }
 }

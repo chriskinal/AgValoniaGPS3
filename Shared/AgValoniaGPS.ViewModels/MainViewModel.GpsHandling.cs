@@ -245,6 +245,12 @@ public partial class MainViewModel
                 RollDegrees);
         }
 
+        // Add recorded path point if path recording is active
+        if (IsRecordingPath)
+        {
+            AddRecordedPathPoint(posEasting, posNorthing, data.CurrentPosition.Heading);
+        }
+
         // Update headland proximity distance for HUD readout
         UpdateHeadlandProximity(data.CurrentPosition);
 

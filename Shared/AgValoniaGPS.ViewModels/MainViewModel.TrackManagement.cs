@@ -41,6 +41,14 @@ public partial class MainViewModel
 
     #endregion
 
+    #region Recorded Path Recording State
+
+    private readonly List<Vec3> _recPathRecordingPoints = new();
+    private Vec3? _lastRecPathPoint;
+    private const double RecPathMinPointSpacing = 2.0; // Minimum 2m between recorded path points
+
+    #endregion
+
     #region Track Management Command Initialization
 
     private void InitializeTrackManagementCommands()
@@ -49,6 +57,54 @@ public partial class MainViewModel
         {
             ShowRecordedPaths = !ShowRecordedPaths;
             StatusMessage = ShowRecordedPaths ? "Recorded paths visible" : "Recorded paths hidden";
+            UpdateRecordedPathsOnMap();
+        });
+
+        StartRecordedPathCommand = ReactiveCommand.Create(() =>
+        {
+            if (!IsFieldOpen)
+            {
+                StatusMessage = "Open a field first";
+                return;
+            }
+            _recPathRecordingPoints.Clear();
+            _lastRecPathPoint = null;
+            IsRecordingPath = true;
+            StatusMessage = "Recording path...";
+        });
+
+        StopRecordedPathCommand = ReactiveCommand.Create(() =>
+        {
+            if (!IsRecordingPath) return;
+            IsRecordingPath = false;
+
+            if (_recPathRecordingPoints.Count < 5)
+            {
+                StatusMessage = $"Path too short ({_recPathRecordingPoints.Count} points)";
+                _recPathRecordingPoints.Clear();
+                _lastRecPathPoint = null;
+                return;
+            }
+
+            var track = Track.FromRecordedPath(
+                $"RecPath {DateTime.Now:HH:mm:ss}",
+                new List<Vec3>(_recPathRecordingPoints));
+
+            RecordedPathTracks.Add(track);
+            SavedTracks.Add(track);
+            UpdateRecordedPathsOnMap();
+
+            // Save to file
+            var activeField = _fieldService.ActiveField;
+            if (activeField != null && !string.IsNullOrEmpty(activeField.DirectoryPath))
+            {
+                try { Services.RecPathFileService.SaveRecPath(activeField.DirectoryPath, track); }
+                catch (Exception ex) { _logger.LogDebug($"[RecPath] Save failed: {ex.Message}"); }
+            }
+
+            StatusMessage = $"Recorded path saved ({_recPathRecordingPoints.Count} points)";
+            _recPathRecordingPoints.Clear();
+            _lastRecPathPoint = null;
         });
 
         ImportTracksCommand = ReactiveCommand.Create(() =>
@@ -302,6 +358,36 @@ public partial class MainViewModel
         {
             StatusMessage = $"Recording contour: {_contourRecordingPoints.Count} points";
         }
+    }
+
+    #endregion
+
+    #region Recorded Path Recording (GPS point capture)
+
+    /// <summary>
+    /// Add a point to the recorded path, with minimum spacing filtering.
+    /// Called from GPS update handler when IsRecordingPath is true.
+    /// </summary>
+    private void AddRecordedPathPoint(double easting, double northing, double headingDegrees)
+    {
+        double headingRadians = headingDegrees * Math.PI / 180.0;
+
+        if (_lastRecPathPoint.HasValue)
+        {
+            double dx = easting - _lastRecPathPoint.Value.Easting;
+            double dy = northing - _lastRecPathPoint.Value.Northing;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+
+            if (distance < RecPathMinPointSpacing)
+                return;
+        }
+
+        var point = new Vec3(easting, northing, headingRadians);
+        _recPathRecordingPoints.Add(point);
+        _lastRecPathPoint = point;
+
+        if (_recPathRecordingPoints.Count % 20 == 0)
+            StatusMessage = $"Recording path: {_recPathRecordingPoints.Count} points";
     }
 
     #endregion
