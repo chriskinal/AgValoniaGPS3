@@ -39,6 +39,7 @@ public partial class MainViewModel
     private double _easting;
     private double _northing;
     private double _heading;
+    private double _rollDegrees;
 
     #endregion
 
@@ -101,6 +102,12 @@ public partial class MainViewModel
     {
         get => _heading;
         set => this.RaiseAndSetIfChanged(ref _heading, value);
+    }
+
+    public double RollDegrees
+    {
+        get => _rollDegrees;
+        set => this.RaiseAndSetIfChanged(ref _rollDegrees, value);
     }
 
     #endregion
@@ -195,6 +202,7 @@ public partial class MainViewModel
         Easting = driftedEasting;
         Northing = driftedNorthing;
         Heading = data.CurrentPosition.Heading;
+        RollDegrees = Models.Configuration.SensorState.Instance.ImuRoll;
 
         // Update reverse indicator on map
         _mapService.SetReversing(IsReversing);

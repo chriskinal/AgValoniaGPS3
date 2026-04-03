@@ -65,6 +65,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
                 <TextBlock Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
                 <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
+                <TextBlock Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
+                <Rectangle Width="1" Height="16" Fill="#555" Margin="5,0"/>
                 <TextBlock Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
             </StackPanel>
         </Border>
