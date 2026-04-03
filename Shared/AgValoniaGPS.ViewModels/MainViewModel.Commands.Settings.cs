@@ -142,6 +142,37 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        // Language Selection (#40)
+        ShowLanguageDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.Language);
+        });
+
+        CloseLanguageDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        SetLanguageCommand = ReactiveCommand.Create<string>(code =>
+        {
+            if (string.IsNullOrEmpty(code)) return;
+            _settingsService.Settings.Language = code;
+            _settingsService.Save();
+
+            // Notify that language changed - Views layer applies via LanguageChanged event
+            LanguageChanged?.Invoke(code);
+
+            try
+            {
+                var culture = new System.Globalization.CultureInfo(code);
+                StatusMessage = $"Language: {culture.NativeName}";
+            }
+            catch
+            {
+                StatusMessage = $"Language: {code}";
+            }
+            State.UI.CloseDialog();
+        });
         // Debug Dump (#127)
         CreateDebugDumpCommand = ReactiveCommand.Create(() =>
         {
@@ -399,6 +430,9 @@ public partial class MainViewModel
     public ICommand? CloseViewSettingsDialogCommand { get; private set; }
     public ICommand? ShowHelpDialogCommand { get; private set; }
     public ICommand? CloseHelpDialogCommand { get; private set; }
+    public ICommand? ShowLanguageDialogCommand { get; private set; }
+    public ICommand? CloseLanguageDialogCommand { get; private set; }
+    public ICommand? SetLanguageCommand { get; private set; }
 }
 
 public class SettingsGroupItem

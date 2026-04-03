@@ -51,6 +51,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:QuickABSelectorPanel/>
         <dialogs:TracksDialogPanel/>
         <dialogs:ImportTracksDialogPanel/>
+        <dialogs:LanguageDialogPanel/>
         <dialogs:DrawABDialogPanel/>
         <dialogs:NtripProfilesDialogPanel/>
         <dialogs:NtripProfileEditorPanel/>

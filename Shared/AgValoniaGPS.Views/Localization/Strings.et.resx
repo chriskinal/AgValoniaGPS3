@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB-joon</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Tarkvara kohta...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Pindala</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Automaatne roolimine</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Põllupiir</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Tühista</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Sulge</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Konfiguratsioon</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Kustuta</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Näita</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Distants</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Lülita sisse</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Suund</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Põllu ots</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Abi</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Keel</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Laiuskraad</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Nihe:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Väljas</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Nihe</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>Sees</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Ülekatte:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Paus</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Lähtesta</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Jätka</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sektsioone:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Alusta</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Rajad</value>
+  </data>
+</root>

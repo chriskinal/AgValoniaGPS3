@@ -82,6 +82,18 @@ public partial class App : Application
         var configService = Services.GetRequiredService<IConfigurationService>();
         configService.LoadAppSettings();
 
+        // Apply saved language (#40)
+        var savedLang = settingsService.Settings.Language;
+        if (!string.IsNullOrEmpty(savedLang) && savedLang != "en")
+        {
+            try
+            {
+                AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                    new System.Globalization.CultureInfo(savedLang);
+            }
+            catch { /* fall back to English */ }
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
@@ -90,6 +102,18 @@ public partial class App : Application
 
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
+
+            // Wire language change to TranslationSource (#40)
+            var vm = Services.GetRequiredService<AgValoniaGPS.ViewModels.MainViewModel>();
+            vm.LanguageChanged += code =>
+            {
+                try
+                {
+                    AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                        new System.Globalization.CultureInfo(code);
+                }
+                catch { }
+            };
 
             desktop.Exit += (sender, args) =>
             {

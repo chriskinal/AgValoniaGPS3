@@ -2673,6 +2673,7 @@ public partial class MainViewModel : ReactiveObject
     // Events for views to wire up to map controls
     public event Action? ZoomInRequested;
     public event Action? ZoomOutRequested;
+    public event Action<string>? LanguageChanged;
 
     /// <summary>
     /// Platform-provided callback that captures the current window as a PNG byte array.

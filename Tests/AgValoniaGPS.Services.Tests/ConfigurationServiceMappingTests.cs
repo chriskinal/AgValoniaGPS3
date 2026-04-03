@@ -594,6 +594,7 @@ public class ConfigurationServiceMappingTests
             "LastRunDate",          // Checked directly at startup
             "LastUsedVehicleProfile", // Mapped via ActiveProfileName (different name)
             "HotkeyBindings",       // Mapped via Hotkeys.LoadFromDictionary (special handling)
+            "Language",              // Used directly from AppSettings for localization
             // Panel positions with NaN defaults - mapped but tested separately
             "LeftNavPanelX", "LeftNavPanelY",
             "RightNavPanelX", "RightNavPanelY",

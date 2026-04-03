@@ -1,0 +1,330 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABCurve">
+    <value>AB Curve</value>
+  </data>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB Line</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>About</value>
+  </data>
+  <data xml:space="preserve" name="Acres">
+    <value>ac</value>
+  </data>
+  <data xml:space="preserve" name="AgShareApi">
+    <value>AgShare API</value>
+  </data>
+  <data xml:space="preserve" name="Altitude">
+    <value>Altitude</value>
+  </data>
+  <data xml:space="preserve" name="Antenna">
+    <value>Antenna</value>
+  </data>
+  <data xml:space="preserve" name="AppDirectories">
+    <value>App Directories</value>
+  </data>
+  <data xml:space="preserve" name="Apply">
+    <value>Apply</value>
+  </data>
+  <data xml:space="preserve" name="AreYouSure">
+    <value>Are you sure?</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Area</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Auto Steer</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Boundary</value>
+  </data>
+  <data xml:space="preserve" name="BugReportDump">
+    <value>Bug Report Dump</value>
+  </data>
+  <data xml:space="preserve" name="BuildHeadland">
+    <value>Build Headland</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Cancel</value>
+  </data>
+  <data xml:space="preserve" name="CentimetersPerSecond">
+    <value>cm/s</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Close</value>
+  </data>
+  <data xml:space="preserve" name="CloseField">
+    <value>Close Field</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Configuration</value>
+  </data>
+  <data xml:space="preserve" name="ConfirmDelete">
+    <value>Confirm Delete</value>
+  </data>
+  <data xml:space="preserve" name="Contour">
+    <value>Contour</value>
+  </data>
+  <data xml:space="preserve" name="CreateNewField">
+    <value>Create New Field</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Delete</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAllFlags">
+    <value>Delete All Flags</value>
+  </data>
+  <data xml:space="preserve" name="DeleteContours">
+    <value>Delete Contours</value>
+  </data>
+  <data xml:space="preserve" name="DeleteHeadland">
+    <value>Delete Headland</value>
+  </data>
+  <data xml:space="preserve" name="DgpsFix">
+    <value>DGPS Fix</value>
+  </data>
+  <data xml:space="preserve" name="Disable">
+    <value>Disable</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Display</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Distance</value>
+  </data>
+  <data xml:space="preserve" name="DrawAB">
+    <value>Draw AB</value>
+  </data>
+  <data xml:space="preserve" name="DriveAB">
+    <value>Drive AB</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Enable</value>
+  </data>
+  <data xml:space="preserve" name="FieldName">
+    <value>Field Name</value>
+  </data>
+  <data xml:space="preserve" name="FieldTools">
+    <value>Field Tools</value>
+  </data>
+  <data xml:space="preserve" name="Fields">
+    <value>Fields</value>
+  </data>
+  <data xml:space="preserve" name="FileMenu">
+    <value>File Menu</value>
+  </data>
+  <data xml:space="preserve" name="FlagByLatLon">
+    <value>Flag By Lat Lon</value>
+  </data>
+  <data xml:space="preserve" name="FromExisting">
+    <value>From Existing</value>
+  </data>
+  <data xml:space="preserve" name="GpsActive">
+    <value>GPS Active</value>
+  </data>
+  <data xml:space="preserve" name="GpsFix">
+    <value>GPS Fix</value>
+  </data>
+  <data xml:space="preserve" name="Guidance">
+    <value>Guidance</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Heading</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Headland</value>
+  </data>
+  <data xml:space="preserve" name="Hectares">
+    <value>ha</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Help</value>
+  </data>
+  <data xml:space="preserve" name="HitchLength">
+    <value>Hitch Length</value>
+  </data>
+  <data xml:space="preserve" name="Hotkeys">
+    <value>Hotkeys</value>
+  </data>
+  <data xml:space="preserve" name="Implement">
+    <value>Implement</value>
+  </data>
+  <data xml:space="preserve" name="ImportTracks">
+    <value>Import Tracks</value>
+  </data>
+  <data xml:space="preserve" name="JobMenu">
+    <value>Job Menu</value>
+  </data>
+  <data xml:space="preserve" name="Kilometers">
+    <value>km</value>
+  </data>
+  <data xml:space="preserve" name="KilometersPerHour">
+    <value>km/h</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Language</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Latitude</value>
+  </data>
+  <data xml:space="preserve" name="LogViewer">
+    <value>Log Viewer</value>
+  </data>
+  <data xml:space="preserve" name="Longitude">
+    <value>Longitude</value>
+  </data>
+  <data xml:space="preserve" name="ManualLeft">
+    <value>Manual Left</value>
+  </data>
+  <data xml:space="preserve" name="ManualRight">
+    <value>Manual Right</value>
+  </data>
+  <data xml:space="preserve" name="Meters">
+    <value>m</value>
+  </data>
+  <data xml:space="preserve" name="MilesPerHour">
+    <value>mph</value>
+  </data>
+  <data xml:space="preserve" name="NewField">
+    <value>New Field</value>
+  </data>
+  <data xml:space="preserve" name="No">
+    <value>No</value>
+  </data>
+  <data xml:space="preserve" name="NoFix">
+    <value>No Fix</value>
+  </data>
+  <data xml:space="preserve" name="NtripProfiles">
+    <value>NTRIP Profiles</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Nudge</value>
+  </data>
+  <data xml:space="preserve" name="OK">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Off</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Offset</value>
+  </data>
+  <data xml:space="preserve" name="OffsetFix">
+    <value>Offset Fix</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>On</value>
+  </data>
+  <data xml:space="preserve" name="OpenField">
+    <value>Open Field</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Overlap</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pause</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlag">
+    <value>Place Flag</value>
+  </data>
+  <data xml:space="preserve" name="RecordedPath">
+    <value>Recorded Path</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Reset</value>
+  </data>
+  <data xml:space="preserve" name="ResetAllSettings">
+    <value>Reset All Settings</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Resume</value>
+  </data>
+  <data xml:space="preserve" name="RtkFix">
+    <value>RTK Fix</value>
+  </data>
+  <data xml:space="preserve" name="RtkFloat">
+    <value>RTK Float</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Save</value>
+  </data>
+  <data xml:space="preserve" name="SectionControl">
+    <value>Section Control</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sections</value>
+  </data>
+  <data xml:space="preserve" name="SelectField">
+    <value>Select Field</value>
+  </data>
+  <data xml:space="preserve" name="SetA">
+    <value>Set A</value>
+  </data>
+  <data xml:space="preserve" name="SetB">
+    <value>Set B</value>
+  </data>
+  <data xml:space="preserve" name="Simulator">
+    <value>Simulator</value>
+  </data>
+  <data xml:space="preserve" name="SkipRows">
+    <value>Skip Rows</value>
+  </data>
+  <data xml:space="preserve" name="SnapToPivot">
+    <value>Snap to Pivot</value>
+  </data>
+  <data xml:space="preserve" name="Sources">
+    <value>Sources</value>
+  </data>
+  <data xml:space="preserve" name="Speed">
+    <value>Speed</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Start</value>
+  </data>
+  <data xml:space="preserve" name="Stop">
+    <value>Stop</value>
+  </data>
+  <data xml:space="preserve" name="ToolWidth">
+    <value>Tool Width</value>
+  </data>
+  <data xml:space="preserve" name="Tools">
+    <value>Tools</value>
+  </data>
+  <data xml:space="preserve" name="TrackWidth">
+    <value>Track Width</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Tracks</value>
+  </data>
+  <data xml:space="preserve" name="Vehicle">
+    <value>Vehicle</value>
+  </data>
+  <data xml:space="preserve" name="ViewAllSettings">
+    <value>View All Settings</value>
+  </data>
+  <data xml:space="preserve" name="WaitingForGps">
+    <value>Waiting for GPS</value>
+  </data>
+  <data xml:space="preserve" name="Wheelbase">
+    <value>Wheelbase</value>
+  </data>
+  <data xml:space="preserve" name="Yes">
+    <value>Yes</value>
+  </data>
+  <data xml:space="preserve" name="YouTurn">
+    <value>U-Turn</value>
+  </data>
+</root>

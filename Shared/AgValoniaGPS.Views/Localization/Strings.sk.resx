@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB línia</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>O programe...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Plocha</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autopilota</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Hranica</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Zavrieť</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Nastavenie</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Vzdialenosť</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Úvrať</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Pomoc</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Jazyk</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Vzdialenosť</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauza</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Obnoviť posledné</value>
+  </data>
+</root>

@@ -57,6 +57,9 @@ namespace AgValoniaGPS.Models
         public double SectionPanelX { get; set; } = double.NaN;
         public double SectionPanelY { get; set; } = double.NaN;
 
+        // Localization
+        public string Language { get; set; } = "en";
+
         // UI state
         public bool GridVisible { get; set; } = true;
         public bool CompassVisible { get; set; } = true;

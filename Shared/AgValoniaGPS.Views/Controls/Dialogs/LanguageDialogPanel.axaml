@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.LanguageDialogPanel"
+             IsVisible="{Binding State.UI.IsLanguageDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsLanguageDialogVisible}">
+
+    <!-- Semi-transparent backdrop -->
+    <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed">
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="12" Padding="20"
+                MaxWidth="400" MaxHeight="600"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                BoxShadow="0 4 16 #40000000">
+
+            <StackPanel Spacing="12">
+                <TextBlock Text="Select Language" FontSize="20" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+
+                <ScrollViewer MaxHeight="450">
+                    <ItemsControl x:Name="LanguageList"/>
+                </ScrollViewer>
+
+                <Button Content="Cancel" Classes="ModernButton"
+                        HorizontalAlignment="Center" MinWidth="120"
+                        Command="{Binding CloseLanguageDialogCommand}"/>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

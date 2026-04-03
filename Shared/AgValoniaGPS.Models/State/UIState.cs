@@ -70,6 +70,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsViewSettingsDialogVisible));
                 this.RaisePropertyChanged(nameof(IsImportTracksDialogVisible));
                 this.RaisePropertyChanged(nameof(IsHelpDialogVisible));
+                this.RaisePropertyChanged(nameof(IsLanguageDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -110,6 +111,7 @@ public class UIState : ReactiveObject
     public bool IsViewSettingsDialogVisible => ActiveDialog == DialogType.ViewSettings;
     public bool IsImportTracksDialogVisible => ActiveDialog == DialogType.ImportTracks;
     public bool IsHelpDialogVisible => ActiveDialog == DialogType.Help;
+    public bool IsLanguageDialogVisible => ActiveDialog == DialogType.Language;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -236,7 +238,8 @@ public enum DialogType
     FlagList,
     ViewSettings,
     ImportTracks,
-    Help
+    Help,
+    Language
 }
 
 /// <summary>

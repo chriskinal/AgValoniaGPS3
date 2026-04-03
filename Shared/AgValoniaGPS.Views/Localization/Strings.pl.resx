@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>Prosta AB</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>O programie…</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Powierzchnia</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autoprowadzenie</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Granica</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Zamknij</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Zamknij</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Konfiguracja</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Usuń</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Display</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Odległość</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Włącz</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Nagłówek</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Uwrocie</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Pomoc</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Język</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Szerokość geograficzna</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Off</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Przesunięcie</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>On</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Nakładka:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauza</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Reset</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Wznawianie</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sekcje:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Start</value>
+  </data>
+</root>

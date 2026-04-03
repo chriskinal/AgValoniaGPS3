@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>Ligne AB</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>À propos de...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Zone</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autoguidage</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Bordures</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Annuler</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Fermer</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Configuration</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Supprimer</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Afficher</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Distance</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Activer</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Cap</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Tournières</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Aide</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Langue</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Latitude</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Décalage:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Off</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Décalage</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>On</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Doublure:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pause</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Reset</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Reprendre</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sections:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Start</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Voies</value>
+  </data>
+</root>

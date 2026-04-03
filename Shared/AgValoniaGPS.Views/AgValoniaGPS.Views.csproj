@@ -35,6 +35,14 @@
     <ProjectReference Include="..\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
   </ItemGroup>
 
+  <!-- Localization: configure code generator for base .resx (#40) -->
+  <ItemGroup>
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- Shared Assets: Icons and Images accessible by both Desktop and iOS -->
   <ItemGroup>
     <AvaloniaResource Include="Assets\Icons\**\*.png" />

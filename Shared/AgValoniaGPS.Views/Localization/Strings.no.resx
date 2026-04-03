@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB Linje</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Om...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Areal</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autostyring</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Grense</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Avbryt</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Lukk</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Konfigurasjon</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Slett</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Vis</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Avstand</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Aktiver</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Retning</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Vendeteig</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Hjelp</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Språk</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Breddegrad</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Flytt:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Av</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Forskyvning</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>På</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Overlapp:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pause</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Tilbakestill</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Fortsett</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Skesjoner:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Start</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Spor</value>
+  </data>
+</root>
