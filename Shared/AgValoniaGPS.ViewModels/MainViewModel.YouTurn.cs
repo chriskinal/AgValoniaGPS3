@@ -1826,8 +1826,8 @@ public partial class MainViewModel
         }
         else
         {
-            // Apply steering from YouTurn guidance with compensation
-            SimulatorSteerAngle = output.SteerAngle * Guidance.UTurnCompensation;
+            // Apply steering from YouTurn guidance (service already applies UTurnCompensation)
+            SimulatorSteerAngle = output.SteerAngle;
 
             // Update centralized guidance state
             State.Guidance.CrossTrackError = output.DistanceFromCurrentLine;
