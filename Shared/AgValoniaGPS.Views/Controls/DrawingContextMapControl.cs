@@ -2232,9 +2232,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         double toolDepth = 2.0; // Tool depth in meters (front to back)
 
-        // Draw tractor-side hitch bar (from rear of tractor to hitch point)
+        // Draw tractor-side hitch bar from hitch point toward vehicle
+        // Use tool-relative positions to avoid frame sync issues between vehicle and tool updates
+        var hitchLength = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.HitchLength;
+        double barEndX = _hitchX + Math.Sin(_vehicleHeading) * hitchLength;
+        double barEndY = _hitchY + Math.Cos(_vehicleHeading) * hitchLength;
         var rearPen = new Pen(Brushes.Black, 0.3);
-        context.DrawLine(rearPen, new Point(_vehicleX, _vehicleY), new Point(_hitchX, _hitchY));
+        context.DrawLine(rearPen, new Point(barEndX, barEndY), new Point(_hitchX, _hitchY));
 
         // Draw V-shape hitch triangle: apex at fixed drawbar position relative to tool
         double hitchHalfW = _toolWidth / 2.0;
