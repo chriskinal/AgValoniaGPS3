@@ -308,6 +308,119 @@ public class VirtualModuleTests
         Assert.That(machine.SpeedByte, Is.EqualTo(200));
     }
 
+    [Test]
+    public async Task VirtualMachine_ReceivesPgnBuilderOutput()
+    {
+        // End-to-end: PgnBuilder.BuildMachinePgn → UDP → VirtualMachineModule parses it
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        // Build PGN 239 using the REAL PgnBuilder (same code AutoSteerService uses)
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.Speed = 18.5 / 3.6; // 18.5 km/h in m/s
+        state.SectionStates = 0x001F; // Sections 1-5 active
+
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(
+            ref state, uturn: 1, hydLift: 0, tram: 0, geoStop: 0);
+
+        // Send over UDP to virtual machine module
+        using var host = new UdpClient(hostPort);
+        var moduleEndpoint = new IPEndPoint(IPAddress.Loopback, modulePort);
+        host.Send(pgnBytes, pgnBytes.Length, moduleEndpoint);
+
+        await Task.Delay(500);
+
+        Assert.That(machine.ReceivedCommandCount, Is.EqualTo(1), "Should receive 1 command");
+        Assert.That(machine.ActiveSections, Is.EqualTo(0x001F), "Sections 1-5 active");
+        Assert.That(machine.RelayStates[0], Is.True, "Section 1 on");
+        Assert.That(machine.RelayStates[4], Is.True, "Section 5 on");
+        Assert.That(machine.RelayStates[5], Is.False, "Section 6 off");
+        Assert.That(machine.UTurnState, Is.EqualTo(1), "U-turn active");
+        Assert.That(machine.SpeedByte, Is.EqualTo(185), "Speed = 18.5 * 10");
+    }
+
+    [Test]
+    public async Task VirtualMachine_ReceivesAllSixteenSections()
+    {
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        // All 16 sections active
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.SectionStates = 0xFFFF;
+        state.Speed = 10.0 / 3.6; // 10 km/h in m/s
+
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(ref state);
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.ActiveSections, Is.EqualTo(0xFFFF), "All 16 sections active");
+        for (int i = 0; i < 16; i++)
+            Assert.That(machine.RelayStates[i], Is.True, $"Section {i + 1} relay on");
+    }
+
+    [Test]
+    public async Task VirtualMachine_SpeedClampedAt255()
+    {
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        // Speed 30 km/h → 300 raw → clamped to 255
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.Speed = 30.0 / 3.6; // 30 km/h in m/s
+
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(ref state);
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.SpeedByte, Is.EqualTo(255), "Speed byte clamped at 255");
+    }
+
+    [Test]
+    public async Task VirtualMachine_PgnBuilderCrcMatchesProtocol()
+    {
+        // Verify PgnBuilder's CRC is valid per PgnProtocol.IsValidPacket
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.SectionStates = 0x00AA;
+        state.Speed = 12.0 / 3.6; // 12 km/h in m/s
+
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(
+            ref state, uturn: 1, hydLift: 2, tram: 3, geoStop: 0);
+
+        Assert.That(PgnProtocol.IsValidPacket(pgnBytes, pgnBytes.Length), Is.True,
+            "PgnBuilder CRC must match PgnProtocol validation");
+
+        // Also verify the virtual module can parse it
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.HydLiftState, Is.EqualTo(2));
+        Assert.That(machine.TramState, Is.EqualTo(3));
+    }
+
     #endregion
 
     #region Hub Integration Tests
