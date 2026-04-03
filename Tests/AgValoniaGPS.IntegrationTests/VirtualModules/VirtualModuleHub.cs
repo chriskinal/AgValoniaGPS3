@@ -7,6 +7,8 @@
 // (at your option) any later version.
 
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,6 +114,40 @@ public class VirtualModuleHub : IDisposable
         {
             Gps.Step(stepTime);
             Gps.SendOnce();
+        }
+    }
+
+    /// <summary>
+    /// Drive with autosteer: reads steer commands from the virtual steer module
+    /// and applies them to the GPS heading, simulating a real autosteer vehicle.
+    /// The vehicle turns based on the commanded steer angle and wheelbase.
+    /// </summary>
+    public async Task DriveWithAutoSteerAsync(double speedKmh, int frames,
+        double wheelbase = 2.5, Func<Task>? onFrame = null)
+    {
+        Gps.SpeedKnots = speedKmh / 1.852;
+        double stepTime = 1.0 / Gps.UpdateRateHz;
+        double speedMs = speedKmh / 3.6;
+
+        for (int i = 0; i < frames; i++)
+        {
+            // Read commanded steer angle from steer module (set by PGN 254)
+            double steerAngleDeg = Steer.CommandedSteerAngleDeg;
+
+            // Bicycle model: heading rate = speed * tan(steerAngle) / wheelbase
+            if (Math.Abs(steerAngleDeg) > 0.1 && speedMs > 0.1)
+            {
+                double steerAngleRad = steerAngleDeg * Math.PI / 180.0;
+                double turnRate = speedMs * Math.Tan(steerAngleRad) / wheelbase; // rad/s
+                double headingChange = turnRate * stepTime * 180.0 / Math.PI; // degrees
+                Gps.HeadingDegrees = (Gps.HeadingDegrees + headingChange + 360) % 360;
+            }
+
+            Gps.Step(stepTime);
+            Gps.SendOnce();
+
+            if (onFrame != null) await onFrame();
+            else await Task.Delay((int)(stepTime * 1000));
         }
     }
 

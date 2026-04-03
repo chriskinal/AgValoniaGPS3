@@ -208,29 +208,28 @@ public partial class MainViewModel
         _mapService.SetReversing(IsReversing);
 
         // Auto-initialize coverage bounds from GPS if no boundary exists (#138)
-        EnsureCoverageBoundsInitialized(data.CurrentPosition.Easting, data.CurrentPosition.Northing);
+        // Use posEasting/posNorthing (un-drifted local coords, works for both simulator and real GPS)
+        EnsureCoverageBoundsInitialized(posEasting, posNorthing);
 
         // Add boundary point if recording is active
+        // Use un-drifted local coords so boundary is in field-fixed coordinates
         if (_boundaryRecordingService.IsRecording)
         {
-            double headingRadians = data.CurrentPosition.Heading * Math.PI / 180.0;
             var (offsetEasting, offsetNorthing) = CalculateOffsetPosition(
-                data.CurrentPosition.Easting,
-                data.CurrentPosition.Northing,
-                headingRadians);
-            _boundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRadians);
+                posEasting, posNorthing, headingRad);
+            _boundaryRecordingService.AddPoint(offsetEasting, offsetNorthing, headingRad);
         }
 
         // Add curve point if curve recording is active
         if (CurrentABCreationMode == ABCreationMode.Curve)
         {
-            AddCurvePoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
+            AddCurvePoint(posEasting, posNorthing, data.CurrentPosition.Heading);
         }
 
         // Add contour point if contour recording is active
         if (IsRecordingContour)
         {
-            AddContourPoint(data.CurrentPosition.Easting, data.CurrentPosition.Northing, data.CurrentPosition.Heading);
+            AddContourPoint(posEasting, posNorthing, data.CurrentPosition.Heading);
         }
 
         // Update headland proximity distance for HUD readout
