@@ -36,7 +36,8 @@ public class DebugDumpService
     public static string CreateDump(
         ISettingsService settingsService,
         ApplicationState appState,
-        string? additionalNotes = null)
+        string? additionalNotes = null,
+        byte[]? screenshotPng = null)
     {
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var dumpDir = Path.Combine(Path.GetTempPath(), "AgValoniaGPS", "dumps");
@@ -130,7 +131,22 @@ public class DebugDumpService
         }
         catch { }
 
-        // 8. User notes
+        // 8. Screenshot
+        if (screenshotPng != null && screenshotPng.Length > 0)
+        {
+            try
+            {
+                var entry = archive.CreateEntry("screenshot.png");
+                using var entryStream = entry.Open();
+                entryStream.Write(screenshotPng, 0, screenshotPng.Length);
+            }
+            catch (Exception ex)
+            {
+                AddTextEntry(archive, "screenshot_error.txt", ex.ToString());
+            }
+        }
+
+        // 9. User notes
         if (!string.IsNullOrEmpty(additionalNotes))
         {
             AddTextEntry(archive, "user_notes.txt", additionalNotes);

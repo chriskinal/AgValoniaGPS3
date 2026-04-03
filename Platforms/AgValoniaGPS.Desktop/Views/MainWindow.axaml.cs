@@ -74,6 +74,9 @@ public partial class MainWindow : Window
             ViewModel.ZoomInRequested += () => MapControl?.Zoom(1.2);
             ViewModel.ZoomOutRequested += () => MapControl?.Zoom(1.0 / 1.2);
 
+            // Wire screenshot provider for debug dump (#127)
+            ViewModel.ScreenshotProvider = CaptureScreenshotPng;
+
             // Wire fullscreen toggle for immediate effect (ConfigurationViewModel
             // is created lazily, so subscribe when it appears)
             ViewModel.PropertyChanged += (s, e) =>
@@ -267,6 +270,26 @@ public partial class MainWindow : Window
             };
             System.Diagnostics.Debug.WriteLine($"[OnMapClicked] DrawCurve - Adding point: E={e.Easting:F2}, N={e.Northing:F2}");
             ViewModel.SetABPointCommand?.Execute(mapPosition);
+        }
+    }
+
+    private byte[]? CaptureScreenshotPng()
+    {
+        try
+        {
+            var w = Math.Max((int)Bounds.Width, 1);
+            var h = Math.Max((int)Bounds.Height, 1);
+            var bmp = new Avalonia.Media.Imaging.RenderTargetBitmap(
+                new PixelSize(w, h), new Vector(96, 96));
+            bmp.Render(this);
+
+            using var ms = new System.IO.MemoryStream();
+            bmp.Save(ms);
+            return ms.ToArray();
+        }
+        catch
+        {
+            return null;
         }
     }
 

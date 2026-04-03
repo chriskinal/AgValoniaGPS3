@@ -2664,6 +2664,13 @@ public partial class MainViewModel : ReactiveObject
     public event Action? ZoomInRequested;
     public event Action? ZoomOutRequested;
 
+    /// <summary>
+    /// Platform-provided callback that captures the current window as a PNG byte array.
+    /// Set by platform code (MainWindow/MainView) after ViewModel is created.
+    /// Used by debug dump to include a screenshot.
+    /// </summary>
+    public Func<byte[]?>? ScreenshotProvider { get; set; }
+
     // Boundary Recording Commands
     public ICommand? ToggleBoundaryPanelCommand { get; private set; }
     public ICommand? StartBoundaryRecordingCommand { get; private set; }

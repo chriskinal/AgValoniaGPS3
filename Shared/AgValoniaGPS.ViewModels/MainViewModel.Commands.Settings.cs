@@ -136,7 +136,13 @@ public partial class MainViewModel
         {
             try
             {
-                var zipPath = Services.DebugDumpService.CreateDump(_settingsService, _appState);
+                // Capture screenshot before creating dump (runs on UI thread)
+                byte[]? screenshot = null;
+                try { screenshot = ScreenshotProvider?.Invoke(); }
+                catch { /* screenshot is optional */ }
+
+                var zipPath = Services.DebugDumpService.CreateDump(
+                    _settingsService, _appState, screenshotPng: screenshot);
                 StatusMessage = $"Debug dump saved: {zipPath}";
                 _logger.LogInformation($"Debug dump created: {zipPath}");
             }
