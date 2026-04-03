@@ -615,6 +615,29 @@ public partial class MainViewModel
             NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, right
         });
 
+        // Half-tool-width nudge (legacy FormNudge half-tool buttons)
+        HalfToolNudgeLeftCommand = ReactiveCommand.Create(() =>
+        {
+            double halfWidth = (ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap) * 0.5;
+            NudgeTrack(-halfWidth);
+        });
+
+        HalfToolNudgeRightCommand = ReactiveCommand.Create(() =>
+        {
+            double halfWidth = (ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap) * 0.5;
+            NudgeTrack(halfWidth);
+        });
+
+        // Reset nudge to zero (legacy FormNudge zero button)
+        ResetNudgeCommand = ReactiveCommand.Create(() =>
+        {
+            if (SelectedTrack == null) return;
+            _nudgeOffset = 0;
+            SelectedTrack.NudgeDistance = 0;
+            _trackGuidanceState = null; // Force recalculation
+            StatusMessage = "Nudge reset to zero";
+        });
+
         // Bottom Strip Commands - cycle through preset coverage colors
         ChangeMappingColorCommand = ReactiveCommand.Create(() =>
         {

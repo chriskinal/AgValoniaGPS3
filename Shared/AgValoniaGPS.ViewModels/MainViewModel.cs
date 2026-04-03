@@ -2668,6 +2668,9 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? NudgeRightCommand { get; private set; }
     public ICommand? FineNudgeLeftCommand { get; private set; }
     public ICommand? FineNudgeRightCommand { get; private set; }
+    public ICommand? HalfToolNudgeLeftCommand { get; private set; }
+    public ICommand? HalfToolNudgeRightCommand { get; private set; }
+    public ICommand? ResetNudgeCommand { get; private set; }
     public ICommand? StartDrawABModeCommand { get; private set; }
     public ICommand? StartDrawCurveModeCommand { get; private set; }
     public ICommand? FinishDrawCurveCommand { get; private set; }

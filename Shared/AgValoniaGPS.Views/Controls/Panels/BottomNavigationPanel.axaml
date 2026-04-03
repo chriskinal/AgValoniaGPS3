@@ -294,6 +294,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusMinusB.png" Stretch="Uniform"/>
                     </Button>
                 </StackPanel>
+
+                <!-- Half-Tool-Width Nudge + Reset -->
+                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Nudge Left Half Tool Width"
+                            Command="{Binding HalfToolNudgeLeftCommand}">
+                        <TextBlock Text="&lt;&lt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Reset Nudge"
+                            Command="{Binding ResetNudgeCommand}">
+                        <TextBlock Text="0" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Nudge Right Half Tool Width"
+                            Command="{Binding HalfToolNudgeRightCommand}">
+                        <TextBlock Text="&gt;&gt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </Border>
 
