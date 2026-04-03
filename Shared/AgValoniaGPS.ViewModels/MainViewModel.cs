@@ -737,6 +737,9 @@ public partial class MainViewModel : ReactiveObject
         _sectionControlService.Update(e.ToolPosition, e.ToolHeading, e.VehicleHeading, Speed);
         _lastSectionControlMs = _updateSw.Elapsed.TotalMilliseconds;
 
+        // Push section bits + u-turn state to AutoSteerService for PGN 239
+        _autoSteerService.SetMachineState(_sectionControlService.GetSectionBits(), _isInYouTurn);
+
         // Update coverage painting - paint when sections are active and moving
         _updateSw.Restart();
         UpdateCoveragePainting(e.ToolPosition, e.ToolHeading);

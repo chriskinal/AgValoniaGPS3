@@ -242,6 +242,12 @@ public class AutoSteerService : IAutoSteerService
         _driftNorthing = driftNorthing;
     }
 
+    public void SetMachineState(ushort sectionBits, bool isInUTurn)
+    {
+        _state.SectionStates = sectionBits;
+        _state.IsInUTurn = isInUTurn;
+    }
+
     /// <summary>
     /// Set the current track for guidance.
     /// Called by MainViewModel when active track changes.
