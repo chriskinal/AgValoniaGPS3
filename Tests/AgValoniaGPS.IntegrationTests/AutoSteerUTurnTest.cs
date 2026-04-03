@@ -74,7 +74,7 @@ public static class AutoSteerUTurnTest
         config.NumSections = 6;
         for (int i = 0; i < 6; i++)
             config.Tool.SetSectionWidth(i, 200.0);
-        config.Guidance.UTurnRadius = 8.0;
+        config.Guidance.UTurnRadius = TOOL_WIDTH; // Same as implement width
 
         try
         {
@@ -207,29 +207,24 @@ public static class AutoSteerUTurnTest
         Console.Write("[pass1 ");
         await _hub!.DriveWithAutoSteerAsync(speedKmh: 25, frames: 490,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
-        double xte1 = vm.CrossTrackError;
         double heading1 = _hub.Gps.HeadingDegrees;
         double easting1 = (_hub.Gps.Longitude - ORIGIN_LON) * MetersPerDegLon;
-        Console.Write($"h={heading1:F0} E={easting1:F0}m xte={xte1:F0}cm] ");
+        Console.Write($"h={heading1:F0} E={easting1:F0}m] ");
         Capture(window, "02_pass1_end");
 
-        // Trigger U-turn at the headland
+        // U-turn 1: manual trigger at east headland
+        Console.Write("[uturn1 ");
         vm.ManualYouTurnRightCommand?.Execute(null);
         await Pump(10);
-        Capture(window, "03_uturn_start");
-
-        // Drive the U-turn
-        Console.Write("[uturn ");
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 15, frames: 80,
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 15, frames: 100,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
-        double headingAfterUturn = _hub.Gps.HeadingDegrees;
-        Console.Write($"h={headingAfterUturn:F0}] ");
-        Capture(window, "04_uturn_done");
+        double h_after_ut1 = _hub.Gps.HeadingDegrees;
+        Console.Write($"h={h_after_ut1:F0}] ");
+        Capture(window, "03_uturn1_done");
 
-        // Verify heading changed significantly (should be ~270 = west)
-        double headingChange = Math.Abs(headingAfterUturn - heading1);
-        if (headingChange > 180) headingChange = 360 - headingChange;
-        Assert(headingChange > 90, $"Heading should change >90 deg, got {headingChange:F0}");
+        double hChange1 = Math.Abs(h_after_ut1 - heading1);
+        if (hChange1 > 180) hChange1 = 360 - hChange1;
+        Assert(hChange1 > 90, $"U-turn 1: heading should change >90 deg, got {hChange1:F0}");
 
         // Pass 2: Drive west back across the field
         Console.Write("[pass2 ");
@@ -238,7 +233,30 @@ public static class AutoSteerUTurnTest
         double heading2 = _hub.Gps.HeadingDegrees;
         double easting2 = (_hub.Gps.Longitude - ORIGIN_LON) * MetersPerDegLon;
         Console.Write($"h={heading2:F0} E={easting2:F0}m] ");
-        Capture(window, "05_pass2_end");
+        Capture(window, "04_pass2_end");
+
+        // U-turn 2: manual trigger at west headland
+        Console.Write("[uturn2 ");
+        vm.ManualYouTurnLeftCommand?.Execute(null);
+        await Pump(10);
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 15, frames: 100,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
+        double h_after_ut2 = _hub.Gps.HeadingDegrees;
+        Console.Write($"h={h_after_ut2:F0}] ");
+        Capture(window, "05_uturn2_done");
+
+        double hChange2 = Math.Abs(h_after_ut2 - heading2);
+        if (hChange2 > 180) hChange2 = 360 - hChange2;
+        Assert(hChange2 > 90, $"U-turn 2: heading should change >90 deg, got {hChange2:F0}");
+
+        // Pass 3: Drive east again
+        Console.Write("[pass3 ");
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 25, frames: 490,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
+        double heading3 = _hub.Gps.HeadingDegrees;
+        double easting3 = (_hub.Gps.Longitude - ORIGIN_LON) * MetersPerDegLon;
+        Console.Write($"h={heading3:F0} E={easting3:F0}m] ");
+        Capture(window, "06_pass3_end");
 
         // Save video
         SaveVideo(Path.Combine(_screenshotDir, "uturn_test.gif"));
