@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -60,7 +61,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                   Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
                            Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Start or Delete A Boundary" FontSize="14" FontWeight="SemiBold"
+                <TextBlock Grid.Column="1" Text="{loc:Localize StartOrDeleteBoundary}" FontSize="14" FontWeight="SemiBold"
                            Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="28" Height="28" Margin="0,0,4,0"
                         Background="Transparent" BorderThickness="0" Foreground="#FFFFFF"
@@ -104,11 +105,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- Column Headers -->
             <Grid ColumnDefinitions="*,*,*" Background="{DynamicResource SystemControlHighlightAccentBrush}" Margin="4,0,4,0">
-                <TextBlock Grid.Column="0" Text="Boundary" HorizontalAlignment="Center"
+                <TextBlock Grid.Column="0" Text="{loc:Localize Boundary}" HorizontalAlignment="Center"
                            FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
-                <TextBlock Grid.Column="1" Text="Area" HorizontalAlignment="Center"
+                <TextBlock Grid.Column="1" Text="{loc:Localize Area}" HorizontalAlignment="Center"
                            FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
-                <TextBlock Grid.Column="2" Text="Drive Thru" HorizontalAlignment="Center"
+                <TextBlock Grid.Column="2" Text="{loc:Localize DriveThru}" HorizontalAlignment="Center"
                            FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
             </Grid>
 

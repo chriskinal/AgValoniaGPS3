@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -54,7 +55,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                   Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Application Settings" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="{loc:Localize ApplicationSettings}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
                         Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
@@ -64,45 +65,45 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
             <!-- General Settings -->
-            <Button Classes="ModernButton" Content="Language" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize Language}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowLanguageDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Reset All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize ResetAllSettings}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ResetAllSettingsCommand}"/>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- App Configuration -->
-            <Button Classes="ModernButton" Content="View All Settings" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize ViewAllSettings}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowViewSettingsDialogCommand}"/>
-            <Button Classes="ModernButton" Content="App Directories" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize AppDirectories}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowAppDirectoriesDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Log Viewer" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize LogViewer}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowLogViewerDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Hotkeys" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize Hotkeys}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowHotkeyConfigDialogCommand}"/>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- NTRIP Profiles -->
-            <Button Classes="ModernButton" Content="NTRIP Profiles" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize NtripProfiles}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowNtripProfilesDialogCommand}"/>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Simulator -->
-            <Button Classes="ModernButton" Content="Simulator" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize Simulator}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ToggleSimulatorPanelCommand}"/>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
             <!-- Help & Info -->
-            <Button Classes="ModernButton" Content="AgShare API" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize AgShareApi}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowAgShareSettingsDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Help" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize Help}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowHelpDialogCommand}"/>
-            <Button Classes="ModernButton" Content="About" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize About}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowAboutDialogCommand}"/>
-            <Button Classes="ModernButton" Content="Bug Report Dump" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+            <Button Classes="ModernButton" Content="{loc:Localize BugReportDump}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding CreateDebugDumpCommand}"/>
         </StackPanel>
     </Border>

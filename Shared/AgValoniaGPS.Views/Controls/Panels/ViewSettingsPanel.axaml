@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -74,7 +75,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            IsHitTestVisible="False"/>
                 <!-- Title -->
                 <TextBlock Grid.Column="1"
-                           Text="View Settings"
+                           Text="{loc:Localize ViewSettings}"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            FontSize="16"
                            FontWeight="Bold"
@@ -100,11 +101,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Camera Controls -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
-                        Content="Tilt Down" Margin="2" ClickMode="Press"
+                        Content="{loc:Localize TiltDown}" Margin="2" ClickMode="Press"
                         Command="{Binding DecreaseCameraPitchCommand}"
                         ToolTip.Tip="Tilt camera down"/>
                 <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
-                        Content="Tilt Up" Margin="2" ClickMode="Press"
+                        Content="{loc:Localize TiltUp}" Margin="2" ClickMode="Press"
                         Command="{Binding IncreaseCameraPitchCommand}"
                         ToolTip.Tip="Tilt camera up"/>
                 <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Classes="ModernButton"
@@ -118,15 +119,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Display Options -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
-                        Content="North" Margin="2" ClickMode="Press"
+                        Content="{loc:Localize North}" Margin="2" ClickMode="Press"
                         Command="{Binding ToggleNorthUpCommand}"
                         ToolTip.Tip="North-up/Track-up"/>
                 <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
-                        Content="Grid" Margin="2" ClickMode="Press"
+                        Content="{loc:Localize Grid}" Margin="2" ClickMode="Press"
                         Command="{Binding ToggleGridCommand}"
                         ToolTip.Tip="Toggle grid"/>
                 <Button Grid.Row="1" Grid.Column="0" Classes="ModernButton"
-                        Content="Day/Night" Margin="2" ClickMode="Press"
+                        Content="{loc:Localize DayNight}" Margin="2" ClickMode="Press"
                         Command="{Binding ToggleDayNightCommand}"
                         ToolTip.Tip="Day/Night mode"/>
                 <TextBlock Grid.Row="1" Grid.Column="1"

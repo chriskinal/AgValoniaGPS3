@@ -327,4 +327,163 @@
   <data xml:space="preserve" name="YouTurn">
     <value>U-Turn</value>
   </data>
+  <data xml:space="preserve" name="Active">
+    <value>Active</value>
+  </data>
+  <data xml:space="preserve" name="AgShareDownload">
+    <value>AgShare Download</value>
+  </data>
+  <data xml:space="preserve" name="AgShareUpload">
+    <value>AgShare Upload</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationSettings">
+    <value>Application Settings</value>
+  </data>
+  <data xml:space="preserve" name="Build">
+    <value>Build</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Clear</value>
+  </data>
+  <data xml:space="preserve" name="Create">
+    <value>Create</value>
+  </data>
+  <data xml:space="preserve" name="CrossTrackError">
+    <value>Cross Track Error</value>
+  </data>
+  <data xml:space="preserve" name="Curve">
+    <value>Curve</value>
+  </data>
+  <data xml:space="preserve" name="DayNight">
+    <value>Day/Night</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAppliedArea">
+    <value>Delete Applied Area</value>
+  </data>
+  <data xml:space="preserve" name="Done">
+    <value>Done</value>
+  </data>
+  <data xml:space="preserve" name="Draw">
+    <value>Draw</value>
+  </data>
+  <data xml:space="preserve" name="DriveIn">
+    <value>Drive In</value>
+  </data>
+  <data xml:space="preserve" name="DriveThru">
+    <value>Drive Thru</value>
+  </data>
+  <data xml:space="preserve" name="EnterSimCoords">
+    <value>Enter Sim Coords</value>
+  </data>
+  <data xml:space="preserve" name="FlagList">
+    <value>Flag List</value>
+  </data>
+  <data xml:space="preserve" name="FromKml">
+    <value>From KML</value>
+  </data>
+  <data xml:space="preserve" name="GpsSimulator">
+    <value>GPS Simulator</value>
+  </data>
+  <data xml:space="preserve" name="Grid">
+    <value>Grid</value>
+  </data>
+  <data xml:space="preserve" name="HeadingChart">
+    <value>Heading Chart</value>
+  </data>
+  <data xml:space="preserve" name="Import">
+    <value>Import</value>
+  </data>
+  <data xml:space="preserve" name="IsoXml">
+    <value>ISO-XML</value>
+  </data>
+  <data xml:space="preserve" name="Line">
+    <value>Line</value>
+  </data>
+  <data xml:space="preserve" name="Load">
+    <value>Load</value>
+  </data>
+  <data xml:space="preserve" name="LoadProfile">
+    <value>Load Profile</value>
+  </data>
+  <data xml:space="preserve" name="NewFromDefault">
+    <value>New From Default</value>
+  </data>
+  <data xml:space="preserve" name="NewProfile">
+    <value>New Profile</value>
+  </data>
+  <data xml:space="preserve" name="North">
+    <value>North</value>
+  </data>
+  <data xml:space="preserve" name="Open">
+    <value>Open</value>
+  </data>
+  <data xml:space="preserve" name="Path">
+    <value>Path</value>
+  </data>
+  <data xml:space="preserve" name="PlaceHere">
+    <value>Place Here</value>
+  </data>
+  <data xml:space="preserve" name="PlaceOnMap">
+    <value>Place on Map</value>
+  </data>
+  <data xml:space="preserve" name="Refresh">
+    <value>Refresh</value>
+  </data>
+  <data xml:space="preserve" name="ReverseDirection">
+    <value>Reverse Direction</value>
+  </data>
+  <data xml:space="preserve" name="RollCorrection">
+    <value>Roll Correction</value>
+  </data>
+  <data xml:space="preserve" name="SelectLanguage">
+    <value>Select Language</value>
+  </data>
+  <data xml:space="preserve" name="SelectProfile">
+    <value>Select Profile</value>
+  </data>
+  <data xml:space="preserve" name="SimulatorEnabled">
+    <value>Simulator Enabled</value>
+  </data>
+  <data xml:space="preserve" name="StartNewField">
+    <value>Start New Field</value>
+  </data>
+  <data xml:space="preserve" name="StartOrDeleteBoundary">
+    <value>Start or Delete A Boundary</value>
+  </data>
+  <data xml:space="preserve" name="SteerChart">
+    <value>Steer Chart</value>
+  </data>
+  <data xml:space="preserve" name="SteerWizard">
+    <value>Steer Wizard</value>
+  </data>
+  <data xml:space="preserve" name="TiltDown">
+    <value>Tilt Down</value>
+  </data>
+  <data xml:space="preserve" name="TiltUp">
+    <value>Tilt Up</value>
+  </data>
+  <data xml:space="preserve" name="TramLines">
+    <value>Tram Lines</value>
+  </data>
+  <data xml:space="preserve" name="TramLinesBuilder">
+    <value>Tram Lines Builder</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Undo</value>
+  </data>
+  <data xml:space="preserve" name="Upload">
+    <value>Upload</value>
+  </data>
+  <data xml:space="preserve" name="VehicleConfiguration">
+    <value>Vehicle Configuration</value>
+  </data>
+  <data xml:space="preserve" name="VehicleSettings">
+    <value>Vehicle Settings</value>
+  </data>
+  <data xml:space="preserve" name="ViewSettings">
+    <value>View Settings</value>
+  </data>
+  <data xml:space="preserve" name="XteChart">
+    <value>XTE Chart</value>
+  </data>
 </root>

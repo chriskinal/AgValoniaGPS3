@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -54,7 +55,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                   Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Start New Field" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="{loc:Localize StartNewField}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
                         Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
@@ -70,7 +71,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowIsoXmlImportDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ISOXML.png" Width="28" Height="28"/>
-                        <TextBlock Text="ISO-XML" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize IsoXml}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
@@ -78,7 +79,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         IsEnabled="{Binding IsFieldOpen}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="28" Height="28"/>
-                        <TextBlock Text="Close" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize Close}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -87,14 +88,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowKmlImportDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="28" Height="28"/>
-                        <TextBlock Text="From KML" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize FromKml}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding DriveInCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerDriveOn.png" Width="28" Height="28"/>
-                        <TextBlock Text="Drive In" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize DriveIn}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -103,14 +104,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowFromExistingFieldDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="28" Height="28"/>
-                        <TextBlock Text="From Existing" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize FromExisting}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ShowFieldSelectionDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
-                        <TextBlock Text="Open" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize Open}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -119,14 +120,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowNewFieldDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
-                        <TextBlock Text="New From Default" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize NewFromDefault}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ResumeFieldCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FilePrevious.png" Width="28" Height="28"/>
-                        <TextBlock Text="Resume" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize Resume}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -135,14 +136,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowAgShareDownloadDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="28" Height="28"/>
-                        <TextBlock Text="AgShare Download" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize AgShareDownload}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ShowAgShareUploadDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="28" Height="28"/>
-                        <TextBlock Text="AgShare Upload" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize AgShareUpload}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -151,7 +152,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         ClickMode="Press" Command="{Binding ShowOffsetFixDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="28" Height="28"/>
-                        <TextBlock Text="Offset Fix" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize OffsetFix}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
             </Grid>
