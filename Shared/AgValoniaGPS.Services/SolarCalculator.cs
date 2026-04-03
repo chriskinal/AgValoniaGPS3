@@ -26,6 +26,7 @@ public static class SolarCalculator
 {
     /// <summary>
     /// Returns true if the sun is up at the given lat/lon/time.
+    /// dateTime should be in UTC not local time
     /// </summary>
     public static bool IsDay(double latitude, double longitude, DateTime dateTime)
     {

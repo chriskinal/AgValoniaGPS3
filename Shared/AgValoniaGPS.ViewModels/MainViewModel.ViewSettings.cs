@@ -272,6 +272,7 @@ public partial class MainViewModel
 
     private void InitializeAutoDayNight()
     {
+        CheckAutoDayNight();
         _autoDayNightTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(60)
