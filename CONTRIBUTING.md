@@ -26,8 +26,14 @@ Thank you for your interest in contributing to AgValoniaGPS! This document lists
 2. Clone your fork locally
 3. Build the project following instructions in `CLAUDE.md`
 4. Pick a feature from the list below
-5. Create a feature branch and implement
-6. Submit a pull request
+5. Create a feature branch off `develop` and implement
+6. Submit a pull request targeting the `develop` branch
+
+## Branch Strategy
+
+- **`master`** - Stable releases only
+- **`develop`** - Active development branch, PR target for all new work
+- **Feature branches** - Create `feature/your-feature` off `develop` for each issue
 
 ## Architecture Overview
 
