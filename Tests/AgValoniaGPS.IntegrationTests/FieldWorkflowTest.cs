@@ -55,7 +55,7 @@ public static class FieldWorkflowTest
         vm.IsSimulatorPanelVisible = false;
         vm.State.UI.IsSimulatorPanelVisible = false;
         vm.State.UI.CloseDialog();
-        await Pump(300);
+        await Pump(30);
 
         // Set up virtual module hub (GPS + steer + machine on real UDP ports)
         _hub = new VirtualModuleHub(hostReceivePort: 9999, moduleListenPort: 8888);
@@ -108,7 +108,7 @@ public static class FieldWorkflowTest
         vm.NewFieldLatitude = ORIGIN_LAT;
         vm.NewFieldLongitude = ORIGIN_LON;
         vm.ConfirmNewFieldDialogCommand?.Execute(null);
-        await Pump(500);
+        await Pump(50);
 
         Assert(vm.IsFieldOpen, "Field should be open");
 
@@ -130,30 +130,29 @@ public static class FieldWorkflowTest
         Console.Write("[Step 2] Drive boundary... ");
 
         vm.StartBoundaryRecordingCommand?.Execute(null);
-        await Pump(300);
+        await Pump(30);
         Assert(vm.IsBoundaryRecording, "Should be recording boundary");
 
         _gifFrames.Clear();
 
-        // Drive a 500m x 300m rectangle at 36 km/h (10 m/s)
-        // Capture frames every ~2 seconds during boundary drive
-        // East side (500m)
-        await DriveSegmentWithCapture(window, heading: 90, speedKmh: 36, frames: 500);
+        // Drive a 500m x 300m rectangle at 90 km/h (25 m/s, 2.5m per frame)
+        // East side (500m = 200 frames)
+        await DriveSegmentWithCapture(window, heading: 90, speedKmh: 90, frames: 200);
         Console.Write($"[E:{vm.BoundaryPointCount}pts] ");
-        // North side (300m)
-        await DriveSegmentWithCapture(window, heading: 0, speedKmh: 36, frames: 300);
+        // North side (300m = 120 frames)
+        await DriveSegmentWithCapture(window, heading: 0, speedKmh: 90, frames: 120);
         Console.Write($"[N:{vm.BoundaryPointCount}pts] ");
-        // West side (500m)
-        await DriveSegmentWithCapture(window, heading: 270, speedKmh: 36, frames: 500);
+        // West side (500m = 200 frames)
+        await DriveSegmentWithCapture(window, heading: 270, speedKmh: 90, frames: 200);
         Console.Write($"[W:{vm.BoundaryPointCount}pts] ");
-        // South side (300m back to start)
-        await DriveSegmentWithCapture(window, heading: 180, speedKmh: 36, frames: 300);
+        // South side (300m = 120 frames)
+        await DriveSegmentWithCapture(window, heading: 180, speedKmh: 90, frames: 120);
         Console.Write($"[S:{vm.BoundaryPointCount}pts] ");
 
         Capture(window, "02_boundary_driven");
 
         vm.StopBoundaryRecordingCommand?.Execute(null);
-        await Pump(500);
+        await Pump(50);
 
         Console.Write($"[points={vm.BoundaryPointCount}] ");
         Assert(vm.HasBoundary, $"Should have boundary (points: {vm.BoundaryPointCount})");
@@ -168,7 +167,7 @@ public static class FieldWorkflowTest
 
         vm.HeadlandDistance = 15.0;
         vm.BuildHeadlandCommand?.Execute(null);
-        await Pump(500);
+        await Pump(50);
 
         Assert(vm.HasHeadland, "Should have headland");
         Capture(window, "03_headland_built");
@@ -185,19 +184,19 @@ public static class FieldWorkflowTest
 
         // Start AB line creation
         vm.StartNewABLineCommand?.Execute(null);
-        await Pump(300);
+        await Pump(30);
 
         // Set Point A
         vm.SetABPointCommand?.Execute(null);
-        await Pump(300);
+        await Pump(30);
         Capture(window, "04a_point_a");
 
-        // Drive east to Point B (~440m)
-        await DriveSegment(heading: 90, speedKmh: 36, frames: 440);
+        // Drive east to Point B (~440m at 90 km/h = 176 frames)
+        await DriveSegment(heading: 90, speedKmh: 90, frames: 176);
 
         // Set Point B
         vm.SetABPointCommand?.Execute(null);
-        await Pump(500);
+        await Pump(50);
 
         Assert(vm.HasActiveTrack, "Should have active track");
         Capture(window, "04b_ab_line");
@@ -214,7 +213,7 @@ public static class FieldWorkflowTest
         await SendGpsFrames(30, 35, heading: 90, count: 20);
 
         vm.ToggleAutoSteerCommand?.Execute(null);
-        await Pump(500);
+        await Pump(50);
 
         Assert(vm.IsAutoSteerEngaged, "Autosteer should be engaged");
         double initialXTE = vm.CrossTrackError;
@@ -232,12 +231,12 @@ public static class FieldWorkflowTest
 
         // Turn on sections (auto mode)
         vm.ToggleSectionMasterCommand?.Execute(null);
-        await Pump(200);
+        await Pump(20);
 
         int frameCounter = 0;
         async Task OnFrame()
         {
-            await Pump(100);
+            await Pump(10);
             if (++frameCounter % 10 == 0)
                 CaptureGifFrame(window);
         }
@@ -246,34 +245,35 @@ public static class FieldWorkflowTest
         Func<double> steerAngle = () => vm.SimulatorSteerAngle;
 
         // Drive east - autosteer should correct toward the AB line
-        await _hub!.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80,
+        await _hub!.DriveWithAutoSteerAsync(speedKmh: 25, frames: 40,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
         double xteAfterCorrection = vm.CrossTrackError;
-        Console.Write($"[XTE after correction={xteAfterCorrection:F2}m] ");
+        Console.Write($"[XTE={xteAfterCorrection:F2}cm] ");
         Capture(window, "06a_driving_autosteer");
 
-        // Drive toward the east headland boundary (~400m from start)
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 300,
+        // Drive toward the east headland (~450m)
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 25, frames: 150,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
-        Capture(window, "06b_approaching_headland");
 
-        // Check if we're near the east headland (easting > 450m)
-        double currentEasting = _hub.Gps.Longitude - ORIGIN_LON;
-        currentEasting *= MetersPerDegLon;
-        Console.Write($"[E={currentEasting:F0}m] ");
+        double headingBefore = _hub.Gps.HeadingDegrees;
+        Console.Write($"[heading={headingBefore:F0}] ");
+        Capture(window, "06b_approaching_headland");
 
         // Trigger manual U-turn at headland
         vm.ManualYouTurnRightCommand?.Execute(null);
-        await Pump(500);
+        await Pump(10);
         Capture(window, "06c_uturn_triggered");
 
         // Drive the U-turn arc with autosteer
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 12, frames: 100,
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 15, frames: 60,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
+
+        double headingAfter = _hub.Gps.HeadingDegrees;
+        Console.Write($"[heading after uturn={headingAfter:F0}] ");
         Capture(window, "06d_uturn_arc");
 
         // Drive west on the next pass
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80,
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 25, frames: 50,
             steerAngleProvider: steerAngle, onFrame: OnFrame);
         Capture(window, "06e_next_pass");
 
@@ -314,7 +314,7 @@ public static class FieldWorkflowTest
         {
             _hub.Gps.Step(stepTime);
             _hub.Gps.SendOnce();
-            await Pump(100);
+            await Pump(10);
             // Capture every 20 frames (~2 seconds)
             if (i % 20 == 0)
                 CaptureGifFrame(window);
@@ -333,7 +333,7 @@ public static class FieldWorkflowTest
         {
             _hub.Gps.Step(stepTime);
             _hub.Gps.SendOnce();
-            await Pump(100); // Allow UI thread to process GPS event
+            await Pump(10); // Minimal delay - just pump UI thread
         }
     }
 
