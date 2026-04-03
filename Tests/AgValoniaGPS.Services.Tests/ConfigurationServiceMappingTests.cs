@@ -624,6 +624,7 @@ public class ConfigurationServiceMappingTests
         _settings.GridVisible = false;
         _settings.CompassVisible = false;
         _settings.SpeedVisible = false;
+        _settings.ElevationLogEnabled = true;
         _settings.CameraZoom = 9999;
         _settings.CameraPitch = -50;
         _settings.NtripCasterIp = "MAPPED";

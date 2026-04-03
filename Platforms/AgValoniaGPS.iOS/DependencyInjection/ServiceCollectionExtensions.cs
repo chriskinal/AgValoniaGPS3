@@ -124,6 +124,9 @@ public static class ServiceCollectionExtensions
         // Configuration service (single source of truth)
         services.AddSingleton<IConfigurationService, ConfigurationService>();
 
+        // Elevation log service (#120)
+        services.AddSingleton<IElevationLogService, ElevationLogService>();
+
         // iOS-specific services
         services.AddSingleton<IMapService, MapService>();
 

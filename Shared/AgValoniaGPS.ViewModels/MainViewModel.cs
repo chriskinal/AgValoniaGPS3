@@ -72,6 +72,7 @@ public partial class MainViewModel : ReactiveObject
     private readonly INtripProfileService _ntripProfileService;
     private readonly IChartDataService _chartDataService;
     private readonly IAudioService _audioService;
+    private readonly IElevationLogService _elevationLogService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
@@ -163,6 +164,7 @@ public partial class MainViewModel : ReactiveObject
         INtripProfileService ntripProfileService,
         IChartDataService chartDataService,
         IAudioService audioService,
+        IElevationLogService elevationLogService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
@@ -194,6 +196,7 @@ public partial class MainViewModel : ReactiveObject
         _ntripProfileService = ntripProfileService;
         _chartDataService = chartDataService;
         _audioService = audioService;
+        _elevationLogService = elevationLogService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -1166,6 +1169,9 @@ public partial class MainViewModel : ReactiveObject
             // Handle NTRIP profile
             _ = HandleNtripProfileForFieldAsync(fieldName);
 
+            // Sync elevation log enabled state from config
+            _elevationLogService.IsEnabled = Models.Configuration.ConfigurationStore.Instance.Display.ElevationLogEnabled;
+
             // Save as last opened field
             _settingsService.Settings.LastOpenedField = fieldName;
             _settingsService.Save();
@@ -1213,6 +1219,10 @@ public partial class MainViewModel : ReactiveObject
             // Save coverage
             _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
             _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
+
+            // Flush elevation log
+            _elevationLogService.Flush(ActiveField.DirectoryPath);
+            _elevationLogService.Clear();
 
             // Save tracks
             SaveTracksToFile();

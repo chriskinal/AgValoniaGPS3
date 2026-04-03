@@ -232,6 +232,19 @@ public partial class MainViewModel
             AddContourPoint(posEasting, posNorthing, data.CurrentPosition.Heading);
         }
 
+        // Log elevation data if enabled (#120)
+        if (Models.Configuration.ConfigurationStore.Instance.Display.ElevationLogEnabled && IsFieldOpen)
+        {
+            _elevationLogService.IsEnabled = true;
+            var config = Models.Configuration.ConfigurationStore.Instance;
+            _elevationLogService.LogPoint(
+                data.CurrentPosition.Latitude, data.CurrentPosition.Longitude,
+                data.CurrentPosition.Altitude, config.Vehicle.AntennaHeight,
+                data.FixQuality,
+                posEasting, posNorthing, data.CurrentPosition.Heading,
+                RollDegrees);
+        }
+
         // Update headland proximity distance for HUD readout
         UpdateHeadlandProximity(data.CurrentPosition);
 

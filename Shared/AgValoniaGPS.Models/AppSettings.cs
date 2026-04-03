@@ -61,6 +61,7 @@ namespace AgValoniaGPS.Models
         public bool GridVisible { get; set; } = true;
         public bool CompassVisible { get; set; } = true;
         public bool SpeedVisible { get; set; } = true;
+        public bool ElevationLogEnabled { get; set; } = false;
 
         // Camera settings
         public double CameraZoom { get; set; } = 100.0;

@@ -322,6 +322,7 @@ public class ConfigurationService(
         store.Display.GridVisible = settings.GridVisible;
         store.Display.CompassVisible = settings.CompassVisible;
         store.Display.SpeedVisible = settings.SpeedVisible;
+        store.Display.ElevationLogEnabled = settings.ElevationLogEnabled;
         store.Display.CameraZoom = settings.CameraZoom;
         store.Display.CameraPitch = settings.CameraPitch;
 
@@ -390,6 +391,7 @@ public class ConfigurationService(
         settings.GridVisible = store.Display.GridVisible;
         settings.CompassVisible = store.Display.CompassVisible;
         settings.SpeedVisible = store.Display.SpeedVisible;
+        settings.ElevationLogEnabled = store.Display.ElevationLogEnabled;
         settings.CameraZoom = store.Display.CameraZoom;
         settings.CameraPitch = store.Display.CameraPitch;
 
