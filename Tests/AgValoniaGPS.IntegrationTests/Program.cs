@@ -411,6 +411,53 @@ sealed class Program
 
         // --- Charts Scenarios (PR #79) ---
         await RunChartsScenario(window, vm, simService);
+
+        // --- Debug Dump Screenshot (#127) ---
+        await RunDebugDumpTest(window, vm);
+    }
+
+    static async Task RunDebugDumpTest(Window window, MainViewModel vm)
+    {
+        Console.Write("[DebugDump] Test screenshot in dump... ");
+
+        // Trigger debug dump command
+        vm.CreateDebugDumpCommand?.Execute(null);
+        await Delay(500);
+
+        // Find the dump zip
+        var dumpDir = Path.Combine(Path.GetTempPath(), "AgValoniaGPS", "dumps");
+        if (!Directory.Exists(dumpDir))
+            throw new Exception("Dump directory not created");
+
+        var zips = Directory.GetFiles(dumpDir, "debug_dump_*.zip")
+            .OrderByDescending(File.GetLastWriteTime)
+            .ToArray();
+        if (zips.Length == 0)
+            throw new Exception("No dump zip found");
+
+        var zipPath = zips[0];
+        Console.Write($"[zip={Path.GetFileName(zipPath)}] ");
+
+        // Verify screenshot.png exists in the zip
+        using var zipStream = File.OpenRead(zipPath);
+        using var archive = new System.IO.Compression.ZipArchive(zipStream, System.IO.Compression.ZipArchiveMode.Read);
+        var screenshotEntry = archive.GetEntry("screenshot.png");
+        if (screenshotEntry == null)
+            throw new Exception("screenshot.png not found in dump zip");
+
+        Console.Write($"[screenshot={screenshotEntry.Length / 1024}KB] ");
+
+        if (screenshotEntry.Length < 1000)
+            throw new Exception($"Screenshot too small ({screenshotEntry.Length} bytes) - likely empty");
+
+        // Extract screenshot for visual verification
+        var extractPath = Path.Combine(_screenshotDir, "debug_dump_screenshot.png");
+        using (var entryStream = screenshotEntry.Open())
+        using (var fileStream = File.Create(extractPath))
+            entryStream.CopyTo(fileStream);
+
+        Console.Write($"[extracted={new FileInfo(extractPath).Length / 1024}KB] ");
+        Console.WriteLine("OK");
     }
 
     static async Task RunCompassScenario(
