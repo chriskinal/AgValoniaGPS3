@@ -76,6 +76,11 @@ public static class AutoSteerUTurnTest
             config.Tool.SetSectionWidth(i, 200.0);
         config.Guidance.UTurnRadius = TOOL_WIDTH / 2.0; // Half implement width to complete the turn
 
+        // Force section position recalculation after setting widths
+        var sectionService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<AgValoniaGPS.Services.Interfaces.ISectionControlService>(App.Services!);
+        sectionService.RecalculateSectionPositions();
+
         try
         {
             await Step1_CreateFieldWithBoundary(vm);
@@ -266,10 +271,19 @@ public static class AutoSteerUTurnTest
 
         Console.Write("\n");
 
+        // Report coverage stats
+        double workedArea = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<AgValoniaGPS.Services.Interfaces.ICoverageMapService>(App.Services!)
+            .TotalWorkedArea;
+        double workableArea = (FIELD_H - 2 * HEADLAND) * (FIELD_W - 2 * HEADLAND); // 48 x 170 = 8160 m²
+        double pctCovered = workedArea > 0 ? workedArea / workableArea * 100 : 0;
+        Console.Write($"\n[Coverage] worked={workedArea:F0}m2, workable={workableArea:F0}m2, covered={pctCovered:F1}%");
+        Console.Write($"\n[Tool] width={ConfigurationStore.Instance.ActualToolWidth:F1}m, sections={ConfigurationStore.Instance.NumSections}");
+
         // Save video
         SaveVideo(Path.Combine(_screenshotDir, "uturn_test.gif"));
 
-        Console.WriteLine("OK");
+        Console.WriteLine(" OK");
     }
 
     #region Helpers
