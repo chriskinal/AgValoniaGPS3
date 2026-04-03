@@ -62,6 +62,7 @@ public class MainViewModelBuilder
             ntripProfileService: NtripProfileService,
             chartDataService: Substitute.For<IChartDataService>(),
             audioService: Substitute.For<IAudioService>(),
+            elevationLogService: Substitute.For<IElevationLogService>(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }
