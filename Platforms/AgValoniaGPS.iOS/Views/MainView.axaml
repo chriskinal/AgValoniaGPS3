@@ -105,6 +105,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                           DataContext="{Binding}"/>
                 </Canvas>
 
+                <!-- Light Bar Panel (#144) -->
+                <panels:LightBarPanel x:Name="LightBarPanel"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,0,8"/>
+
                 <!-- Zoom Controls - Bottom Right -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             ZIndex="15" Margin="0,0,20,20" Spacing="10">

@@ -166,6 +166,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                   Canvas.Left="400" Canvas.Top="480"
                                   DataContext="{Binding}"/>
         </Canvas>
+
+        <!-- Light Bar Panel (#144) - bottom center overlay -->
+        <panels:LightBarPanel x:Name="LightBarPanel"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Bottom"
+                              Margin="0,0,0,8"/>
     </Grid>
 
     <!-- Flag Placement Banner -->

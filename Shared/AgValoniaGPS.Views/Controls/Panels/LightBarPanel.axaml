@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.LightBarPanel"
+             IsHitTestVisible="False">
+
+    <!-- Light Bar: row of LED dots showing cross-track error.
+         Green dots (right) = steer right to correct.
+         Red dots (left) = steer left to correct.
+         Positioned at bottom-center of screen via platform layout. -->
+
+    <Border Background="#60000000" CornerRadius="6" Padding="8,4"
+            HorizontalAlignment="Center" VerticalAlignment="Bottom">
+        <StackPanel Orientation="Vertical" Spacing="2"
+                    HorizontalAlignment="Center">
+
+            <!-- Numeric XTE display -->
+            <TextBlock x:Name="XteText"
+                       HorizontalAlignment="Center"
+                       Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+
+            <!-- LED dot canvas -->
+            <Canvas x:Name="DotCanvas" Width="520" Height="20"
+                    HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</UserControl>

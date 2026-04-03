@@ -660,6 +660,11 @@ public partial class MainWindow : Window
             // Brightness control depends on platform-specific implementation
             // Currently marked as not supported in DisplaySettingsService
         }
+        else if (e.PropertyName == nameof(MainViewModel.CrossTrackError))
+        {
+            if (ViewModel != null)
+                LightBarPanel?.UpdateCrossTrackError(ViewModel.CrossTrackError);
+        }
         else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
         {
             if (MapControl is DrawingContextMapControl dcMapControl)

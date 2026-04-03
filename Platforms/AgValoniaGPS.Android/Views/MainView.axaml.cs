@@ -436,6 +436,10 @@ public partial class MainView : UserControl
                     _viewModel.NumSections,
                     _viewModel.GetSectionButtonStates());
             }
+            else if (e.PropertyName == nameof(MainViewModel.CrossTrackError))
+            {
+                LightBarPanel?.UpdateCrossTrackError(_viewModel.CrossTrackError);
+            }
             else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
             {
                 // Update map control click selection mode
