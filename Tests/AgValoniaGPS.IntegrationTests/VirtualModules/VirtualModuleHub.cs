@@ -118,11 +118,12 @@ public class VirtualModuleHub : IDisposable
     }
 
     /// <summary>
-    /// Drive with autosteer: reads steer commands from the virtual steer module
-    /// and applies them to the GPS heading, simulating a real autosteer vehicle.
-    /// The vehicle turns based on the commanded steer angle and wheelbase.
+    /// Drive with autosteer: applies a steer angle to the GPS heading using a bicycle model.
+    /// Use steerAngleProvider to read the steer angle from the app's ViewModel (e.g. vm.SteerAngle)
+    /// since PGN 254 broadcasts to 192.168.5.x which doesn't reach localhost.
     /// </summary>
     public async Task DriveWithAutoSteerAsync(double speedKmh, int frames,
+        Func<double>? steerAngleProvider = null,
         double wheelbase = 2.5, Func<Task>? onFrame = null)
     {
         Gps.SpeedKnots = speedKmh / 1.852;
@@ -131,8 +132,8 @@ public class VirtualModuleHub : IDisposable
 
         for (int i = 0; i < frames; i++)
         {
-            // Read commanded steer angle from steer module (set by PGN 254)
-            double steerAngleDeg = Steer.CommandedSteerAngleDeg;
+            // Read steer angle from provider (ViewModel) or steer module
+            double steerAngleDeg = steerAngleProvider?.Invoke() ?? Steer.CommandedSteerAngleDeg;
 
             // Bicycle model: heading rate = speed * tan(steerAngle) / wheelbase
             if (Math.Abs(steerAngleDeg) > 0.1 && speedMs > 0.1)

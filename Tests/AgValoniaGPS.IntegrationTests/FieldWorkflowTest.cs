@@ -208,16 +208,19 @@ public static class FieldWorkflowTest
     {
         Console.Write("[Step 5] Engage autosteer... ");
 
-        // Position near the AB line
-        await SendGpsFrames(30, 42, heading: 90, count: 20);
+        // Position near the AB line but slightly offset to test correction
+        // AB line is at northing ~30, position at ~35 (5m off)
+        await SendGpsFrames(30, 35, heading: 90, count: 20);
 
         vm.ToggleAutoSteerCommand?.Execute(null);
         await Pump(500);
 
         Assert(vm.IsAutoSteerEngaged, "Autosteer should be engaged");
+        double initialXTE = vm.CrossTrackError;
+        Console.Write($"[initialXTE={initialXTE:F2}m] ");
         Capture(window, "05_autosteer_engaged");
-        CaptureGifFrame(window); CaptureGifFrame(window); // Hold 2 frames
-        Console.WriteLine($"OK (XTE: {vm.CrossTrackError:F2}m)");
+        CaptureGifFrame(window); CaptureGifFrame(window);
+        Console.WriteLine("OK");
     }
 
     private static async Task Step6_DriveWithAutoSteerAndUTurn(MainViewModel vm, Window window)
@@ -230,39 +233,50 @@ public static class FieldWorkflowTest
         vm.ToggleSectionMasterCommand?.Execute(null);
         await Pump(200);
 
-        int _frameCounter = 0;
-
-        // Helper: capture a GIF frame every ~1 second (10 GPS frames at 100ms each)
+        int frameCounter = 0;
         async Task OnFrame()
         {
             await Pump(100);
-            if (++_frameCounter % 10 == 0)
+            if (++frameCounter % 10 == 0)
                 CaptureGifFrame(window);
         }
 
-        // Drive east with autosteer controlling heading via PGN 254
-        await _hub!.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80, onFrame: OnFrame);
+        // Steer angle provider: read from ViewModel (since PGN 254 goes to 192.168.5.x, not localhost)
+        Func<double> steerAngle = () => vm.SimulatorSteerAngle;
+
+        // Drive east - autosteer should correct toward the AB line
+        await _hub!.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
+        double xteAfterCorrection = vm.CrossTrackError;
+        Console.Write($"[XTE after correction={xteAfterCorrection:F2}m] ");
         Capture(window, "06a_driving_autosteer");
-        Console.Write($"[XTE={vm.CrossTrackError:F2}m] ");
 
-        // Continue toward headland
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 60, onFrame: OnFrame);
-        Capture(window, "06b_near_headland");
+        // Drive toward the east headland boundary (~400m from start)
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 300,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
+        Capture(window, "06b_approaching_headland");
 
-        // Trigger manual U-turn
+        // Check if we're near the east headland (easting > 450m)
+        double currentEasting = _hub.Gps.Longitude - ORIGIN_LON;
+        currentEasting *= MetersPerDegLon;
+        Console.Write($"[E={currentEasting:F0}m] ");
+
+        // Trigger manual U-turn at headland
         vm.ManualYouTurnRightCommand?.Execute(null);
         await Pump(500);
         Capture(window, "06c_uturn_triggered");
 
-        // Drive the U-turn with autosteer
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 12, frames: 80, onFrame: OnFrame);
-        Capture(window, "06d_uturn_complete");
+        // Drive the U-turn arc with autosteer
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 12, frames: 100,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
+        Capture(window, "06d_uturn_arc");
 
-        // Continue on next pass
-        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 60, onFrame: OnFrame);
+        // Drive west on the next pass
+        await _hub.DriveWithAutoSteerAsync(speedKmh: 18, frames: 80,
+            steerAngleProvider: steerAngle, onFrame: OnFrame);
         Capture(window, "06e_next_pass");
 
-        // Save GIF
+        // Save video
         SaveGif(Path.Combine(_screenshotDir, "autosteer_drive.gif"));
 
         Console.WriteLine("OK");
