@@ -688,6 +688,40 @@ sealed class Program
             && !vm.IsXTEChartPanelVisible;
         Console.Write($"[allClosed={allClosed}] ");
         Console.WriteLine("OK");
+
+        // UDP Virtual GPS scenario: disable simulator, feed GPS via virtual receiver
+        Console.Write("[UDP GPS] Virtual GPS with roll... ");
+        vm.IsSimulatorEnabled = false;
+        await Delay(500);
+
+        using (var gps = new VirtualModules.VirtualGpsReceiver(targetPort: 9999))
+        {
+            gps.Latitude = 43.712800;
+            gps.Longitude = -74.006000;
+            gps.HeadingDegrees = 45.0;
+            gps.SpeedKnots = 10.0;
+            gps.FixQuality = 4;
+            gps.Satellites = 14;
+            gps.Hdop = 0.8;
+            gps.RollDegrees = 5.7;
+            gps.PitchDegrees = 1.2;
+
+            // Send several frames so the app picks it up
+            for (int i = 0; i < 30; i++)
+            {
+                gps.Step(0.1);
+                gps.SendOnce();
+                await Delay(100);
+            }
+
+            CaptureScreenshot(window, "udp_gps_roll_5_7");
+            Console.Write($"[roll={vm.RollDegrees:F1}] ");
+        }
+
+        // Re-enable simulator for any subsequent steps
+        vm.IsSimulatorEnabled = true;
+        await Delay(200);
+        Console.WriteLine("OK");
     }
 
     /// <summary>
