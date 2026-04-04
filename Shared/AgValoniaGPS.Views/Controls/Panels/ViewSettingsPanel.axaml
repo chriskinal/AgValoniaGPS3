@@ -99,16 +99,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
             <!-- Camera Controls -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Background="Transparent">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" Background="Transparent">
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
                         Content="{loc:Localize TiltDown}" Margin="2" ClickMode="Press"
                         Command="{Binding DecreaseCameraPitchCommand}"
+                        IsEnabled="{Binding !Is2DMode}"
                         ToolTip.Tip="Tilt camera down"/>
                 <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
                         Content="{loc:Localize TiltUp}" Margin="2" ClickMode="Press"
                         Command="{Binding IncreaseCameraPitchCommand}"
+                        IsEnabled="{Binding !Is2DMode}"
                         ToolTip.Tip="Tilt camera up"/>
-                <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Classes="ModernButton"
+                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                           Text="{Binding CameraPitchDisplay}"
+                           HorizontalAlignment="Center" FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           Margin="0,2"/>
+                <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Classes="ModernButton"
                         Content="2D/3D" Margin="2" ClickMode="Press"
                         Command="{Binding Toggle2D3DCommand}"
                         ToolTip.Tip="Toggle 2D/3D view"/>

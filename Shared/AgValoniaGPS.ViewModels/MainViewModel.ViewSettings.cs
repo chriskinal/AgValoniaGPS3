@@ -218,6 +218,8 @@ public partial class MainViewModel
         }
     }
 
+    private double _last3DPitch = -62.0;
+
     public double CameraPitch
     {
         get => _displaySettings.CameraPitch;
@@ -226,6 +228,23 @@ public partial class MainViewModel
             _displaySettings.CameraPitch = value;
             this.RaisePropertyChanged();
             this.RaisePropertyChanged(nameof(Is2DMode));
+            this.RaisePropertyChanged(nameof(CameraPitchDisplay));
+            // Remember last 3D pitch for restoring when toggling back from 2D
+            if (value > -89.0)
+                _last3DPitch = value;
+        }
+    }
+
+    public string CameraPitchDisplay
+    {
+        get
+        {
+            double pitch = _displaySettings.CameraPitch;
+            if (pitch <= -89.0) return "2D (overhead)";
+            // Convert: -90 = overhead, -10 = nearly horizontal
+            // Show as tilt angle: 0 = overhead, 80 = horizontal
+            double tilt = 90.0 + pitch;
+            return $"Tilt: {tilt:F0} deg";
         }
     }
 

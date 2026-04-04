@@ -74,8 +74,20 @@ public partial class MainViewModel
 
         Toggle2D3DCommand = ReactiveCommand.Create(() =>
         {
-            Is2DMode = !Is2DMode;
-            _mapService.Set3DMode(!Is2DMode);
+            if (Is2DMode)
+            {
+                // Switching to 3D: restore last 3D pitch
+                Is2DMode = false;
+                CameraPitch = _last3DPitch;
+                _mapService.Set3DMode(true);
+            }
+            else
+            {
+                // Switching to 2D: overhead view
+                Is2DMode = true;
+                CameraPitch = -90.0;
+                _mapService.Set3DMode(false);
+            }
         });
 
         ToggleNorthUpCommand = ReactiveCommand.Create(() =>
