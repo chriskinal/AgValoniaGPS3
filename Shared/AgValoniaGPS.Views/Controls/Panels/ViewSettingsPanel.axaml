@@ -103,13 +103,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
                         Content="{loc:Localize TiltDown}" Margin="2" ClickMode="Press"
                         Command="{Binding DecreaseCameraPitchCommand}"
-                        IsEnabled="{Binding !Is2DMode}"
-                        ToolTip.Tip="Tilt camera down"/>
+                        ToolTip.Tip="Tilt camera down (enters 2D at limit)"/>
                 <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
                         Content="{loc:Localize TiltUp}" Margin="2" ClickMode="Press"
                         Command="{Binding IncreaseCameraPitchCommand}"
-                        IsEnabled="{Binding !Is2DMode}"
-                        ToolTip.Tip="Tilt camera up"/>
+                        ToolTip.Tip="Tilt camera up (enters 3D from 2D)"/>
                 <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                            Text="{Binding CameraPitchDisplay}"
                            HorizontalAlignment="Center" FontSize="12"

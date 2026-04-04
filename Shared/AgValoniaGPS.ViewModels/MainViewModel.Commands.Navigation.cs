@@ -109,15 +109,36 @@ public partial class MainViewModel
             Console.WriteLine($"[Compass] {oldMode} -> {CameraMode}");
         });
 
-        // Camera controls
+        // Camera controls - tilt transitions between 2D and 3D automatically
         IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
-            CameraPitch += 5.0; // PropertyChanged handler updates map
+            if (Is2DMode)
+            {
+                // Tilting up from 2D enters 3D mode
+                Is2DMode = false;
+                CameraPitch = -85.0;
+                _mapService.Set3DMode(true);
+            }
+            else
+            {
+                CameraPitch += 5.0;
+            }
         });
 
         DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
-            CameraPitch -= 5.0; // PropertyChanged handler updates map
+            double newPitch = CameraPitch - 5.0;
+            if (newPitch <= -90.0)
+            {
+                // Tilting down to overhead enters 2D mode
+                Is2DMode = true;
+                CameraPitch = -90.0;
+                _mapService.Set3DMode(false);
+            }
+            else
+            {
+                CameraPitch = newPitch;
+            }
         });
 
         // Brightness controls
