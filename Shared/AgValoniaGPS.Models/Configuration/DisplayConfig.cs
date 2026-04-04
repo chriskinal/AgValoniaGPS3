@@ -69,7 +69,7 @@ public class DisplayConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _is2DMode, value);
     }
 
-    private bool _isNorthUp = true;
+    private bool _isNorthUp = false;
     public bool IsNorthUp
     {
         get => _isNorthUp;

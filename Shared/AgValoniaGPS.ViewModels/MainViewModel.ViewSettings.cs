@@ -129,8 +129,8 @@ public partial class MainViewModel
 
     #region Camera Mode
 
-    private CameraMode _cameraMode = CameraMode.NorthUp;
-    private CameraMode _previousCameraMode = CameraMode.NorthUp;
+    private CameraMode _cameraMode = CameraMode.HeadingUp;
+    private CameraMode _previousCameraMode = CameraMode.HeadingUp;
     public CameraMode CameraMode
     {
         get => _cameraMode;
