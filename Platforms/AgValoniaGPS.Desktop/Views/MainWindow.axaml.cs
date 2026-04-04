@@ -299,6 +299,11 @@ public partial class MainWindow : Window
         if (ViewModel != null && MapControl != null)
         {
             MapControl.IsGridVisible = ViewModel.IsGridOn;
+
+            // Sync Is2DMode with saved pitch to avoid state mismatch
+            if (ViewModel.CameraPitch <= -89.0)
+                ViewModel.Is2DMode = true;
+
             MapControl.Set3DMode(!ViewModel.Is2DMode);
             double pitchRadians = (90.0 + ViewModel.CameraPitch) * Math.PI / 180.0;
             MapControl.SetPitchAbsolute(pitchRadians);
