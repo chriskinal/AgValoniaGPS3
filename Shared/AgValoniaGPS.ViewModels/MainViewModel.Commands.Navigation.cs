@@ -110,27 +110,13 @@ public partial class MainViewModel
         });
 
         // Camera controls - tilt transitions between 2D and 3D automatically
+        // "Tilt Down" = look more toward horizon = more 3D (pitch increases toward -10)
+        // "Tilt Up" = look more overhead = more 2D (pitch decreases toward -90)
         IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
-        {
-            if (Is2DMode)
-            {
-                // Tilting up from 2D enters 3D mode
-                Is2DMode = false;
-                CameraPitch = -85.0;
-                _mapService.Set3DMode(true);
-            }
-            else
-            {
-                CameraPitch += 5.0;
-            }
-        });
-
-        DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
             double newPitch = CameraPitch - 5.0;
             if (newPitch <= -90.0)
             {
-                // Tilting down to overhead enters 2D mode
                 Is2DMode = true;
                 CameraPitch = -90.0;
                 _mapService.Set3DMode(false);
@@ -138,6 +124,20 @@ public partial class MainViewModel
             else
             {
                 CameraPitch = newPitch;
+            }
+        });
+
+        DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
+        {
+            if (Is2DMode)
+            {
+                Is2DMode = false;
+                CameraPitch = -85.0;
+                _mapService.Set3DMode(true);
+            }
+            else
+            {
+                CameraPitch += 5.0;
             }
         });
 
