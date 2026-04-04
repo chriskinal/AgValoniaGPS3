@@ -59,6 +59,12 @@ public partial class MainViewModel
             IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
         });
 
+        ToggleAutoTrackCommand = ReactiveCommand.Create(() =>
+        {
+            IsAutoTrackEnabled = !IsAutoTrackEnabled;
+            StatusMessage = IsAutoTrackEnabled ? "Auto track select ON" : "Auto track select OFF";
+        });
+
         // View mode commands
         ToggleGridCommand = ReactiveCommand.Create(() =>
         {

@@ -235,6 +235,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Stretch="Uniform"/>
                 </Button>
 
+                <!-- Auto Track toggle (green=on, dim=off) -->
+                <Button Classes="BottomPanelButton"
+                        ToolTip.Tip="Auto Track Select (closest track)"
+                        Command="{Binding ToggleAutoTrackCommand}"
+                        Classes.Active="{Binding IsAutoTrackEnabled}">
+                    <TextBlock Text="AT" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+
                 <!-- Quick AB (mode selector for drive-in creation) -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Quick AB Line Creator"
                         Command="{Binding ShowQuickABSelectorCommand}">

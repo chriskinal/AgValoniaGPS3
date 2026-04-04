@@ -148,16 +148,13 @@ public partial class MainViewModel
             }
 
             var trackName = SelectedTrack.Name;
-            ShowConfirmationDialog(
-                "Delete Track",
-                $"Delete track '{trackName}'? This cannot be undone.",
-                () =>
-                {
-                    SavedTracks.Remove(SelectedTrack);
-                    SelectedTrack = null;
-                    SaveTracksToFile();
-                    StatusMessage = $"Deleted track '{trackName}'";
-                });
+            var trackToRemove = SelectedTrack;
+            SelectedTrack = null;
+            SavedTracks.Remove(trackToRemove);
+            State.Field.Tracks.Remove(trackToRemove);
+            RebuildRecordedPathsAndContours();
+            SaveTracksToFile();
+            StatusMessage = $"Deleted track '{trackName}'";
         });
 
         StartContourRecordingCommand = ReactiveCommand.Create(() =>

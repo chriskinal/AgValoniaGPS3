@@ -2616,6 +2616,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleConfigurationPanelCommand { get; private set; }
     public ICommand? ToggleJobMenuPanelCommand { get; private set; }
     public ICommand? ToggleFieldToolsPanelCommand { get; private set; }
+    public ICommand? ToggleAutoTrackCommand { get; private set; }
     public ICommand? ToggleGridCommand { get; private set; }
     public ICommand? ToggleDayNightCommand { get; private set; }
     public ICommand? Toggle2D3DCommand { get; private set; }
