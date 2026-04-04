@@ -172,6 +172,9 @@ public class MapService : IMapService
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track) =>
         GetMapControl().SetActiveTrack(track);
 
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track) =>
+        GetMapControl().SetBaseTrack(track);
+
     // Recorded path / contour strip visualization
     public void SetRecordedPaths(System.Collections.Generic.IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths) =>
         GetMapControl().SetRecordedPaths(paths);

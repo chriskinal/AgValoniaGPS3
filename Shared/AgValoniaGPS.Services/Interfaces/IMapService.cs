@@ -109,6 +109,7 @@ public interface IMapService
 
     // Active Track for guidance
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+    void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track);
 
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);

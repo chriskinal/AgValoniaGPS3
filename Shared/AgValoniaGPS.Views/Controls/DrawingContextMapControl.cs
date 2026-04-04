@@ -102,6 +102,7 @@ public interface ISharedMapControl
     void SetNextTrack(AgValoniaGPS.Models.Track.Track? track);
     void SetIsInYouTurn(bool isInTurn);
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+    void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track);
 
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);
@@ -379,6 +380,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
+    private AgValoniaGPS.Models.Track.Track? _baseTrack; // Original track (shown as dashed reference)
     private AgValoniaGPS.Models.Track.Track? _nextTrack; // Next track to follow after U-turn
     private bool _isInYouTurn; // When true, current line is dotted, next line is solid
     private AgValoniaGPS.Models.Position? _pendingPointA; // Point A while waiting for Point B
@@ -2855,7 +2857,22 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 pointRadius, labelOffset, worldPerPixel, "Next");
         }
 
-        // Draw active track
+        // Draw base track (original AB line/curve shown as dashed red reference)
+        if (_baseTrack != null && _activeTrack != null && _baseTrack != _activeTrack)
+        {
+            var basePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 220, 50, 50)), lineThickness * 0.75)
+            {
+                DashStyle = new DashStyle(new double[] { 6, 4 }, 0)
+            };
+            var baseExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(80, 220, 50, 50)), lineThickness * 0.5)
+            {
+                DashStyle = new DashStyle(new double[] { 6, 4 }, 0)
+            };
+            DrawSingleTrack(context, _baseTrack, basePen, baseExtendPen, pointOutlinePen,
+                pointRadius, labelOffset, worldPerPixel, "Base");
+        }
+
+        // Draw active track (current guidance pass)
         if (_activeTrack != null)
         {
             // When in U-turn, draw current line as dotted; otherwise solid
@@ -3677,6 +3694,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track)
     {
         _activeTrack = track;
+    }
+
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track)
+    {
+        _baseTrack = track;
     }
 
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track)

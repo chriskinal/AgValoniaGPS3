@@ -240,6 +240,11 @@ public class MapService : IMapService
         _mapControl?.SetActiveTrack(track);
     }
 
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track)
+    {
+        _mapControl?.SetBaseTrack(track);
+    }
+
     // Recorded path / contour strip visualization
     public void SetRecordedPaths(System.Collections.Generic.IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths)
     {

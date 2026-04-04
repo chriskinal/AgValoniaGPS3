@@ -1547,6 +1547,7 @@ public partial class MainViewModel : ReactiveObject
                     State.Field.ActiveTrack = null;
                     // Clear the track and guidance from the map when deactivated
                     _mapService.SetActiveTrack(null);
+                    _mapService.SetBaseTrack(null);
                     _mapService.SetGuidancePoints(0, 0, false);
                     _isSelectedTrackOnBoundary = false;
                     // Clear any U-turn state associated with the deactivated track

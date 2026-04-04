@@ -143,7 +143,8 @@ public partial class MainViewModel
             };
         }
 
-        // Update the map visualization
+        // Update the map visualization - show both base track (dashed) and current pass (solid)
+        _mapService.SetBaseTrack(Math.Abs(distAway) > 0.01 ? track : null);
         _mapService.SetActiveTrack(currentTrack);
 
         // IMPORTANT: Calculate isHeadingSameWay using the OFFSET track we're actually following,
