@@ -68,7 +68,7 @@ namespace AgValoniaGPS.Models
 
         // Camera settings
         public double CameraZoom { get; set; } = 100.0;
-        public double CameraPitch { get; set; } = 0.0;
+        public double CameraPitch { get; set; } = -62.0;
 
         // NTRIP settings
         public string NtripCasterIp { get; set; } = string.Empty;
