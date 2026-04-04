@@ -68,8 +68,8 @@ public class DisplaySettingsService : IDisplaySettingsService
         get => Display.CameraPitch;
         set
         {
-            // Clamp pitch between -90 (overhead) and -18 (max tilt, matches map renderer)
-            var clampedValue = Math.Max(-90, Math.Min(-18, value));
+            // Clamp pitch between -90 (overhead/0 deg) and -20 (max tilt/70 deg)
+            var clampedValue = Math.Max(-90, Math.Min(-20, value));
             if (Math.Abs(Display.CameraPitch - clampedValue) > 0.01)
             {
                 Display.CameraPitch = clampedValue;

@@ -59,7 +59,7 @@ public class DisplayConfig : ReactiveObject
     public double CameraPitch
     {
         get => _cameraPitch;
-        set => this.RaiseAndSetIfChanged(ref _cameraPitch, Math.Clamp(value, -90, -18));
+        set => this.RaiseAndSetIfChanged(ref _cameraPitch, Math.Clamp(value, -90, -20));
     }
 
     private bool _is2DMode;
