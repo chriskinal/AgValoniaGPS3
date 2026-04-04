@@ -159,14 +159,8 @@ public partial class MainWindow : Window
         // Set the map control as the content of the container
         MapControlContainer.Content = mapControl;
 
-        // Apply initial view state from ViewModel
-        if (ViewModel != null)
-        {
-            MapControl.IsGridVisible = ViewModel.IsGridOn;
-            MapControl.Set3DMode(!ViewModel.Is2DMode);
-            double pitchRadians = (90.0 + ViewModel.CameraPitch) * Math.PI / 180.0;
-            MapControl.SetPitchAbsolute(pitchRadians);
-        }
+        // Note: ViewModel is null here (DataContext set after CreateMapControl).
+        // Initial view state applied in MainWindow_Opened after settings load.
 
         // Wire up the MapService with the MapControl
         if (App.Services != null && MapControl != null)
@@ -300,6 +294,15 @@ public partial class MainWindow : Window
     {
         // Load settings after window is opened
         LoadWindowSettings();
+
+        // Apply initial camera state to map (ViewModel is available now)
+        if (ViewModel != null && MapControl != null)
+        {
+            MapControl.IsGridVisible = ViewModel.IsGridOn;
+            MapControl.Set3DMode(!ViewModel.Is2DMode);
+            double pitchRadians = (90.0 + ViewModel.CameraPitch) * Math.PI / 180.0;
+            MapControl.SetPitchAbsolute(pitchRadians);
+        }
     }
 
     private void LoadWindowSettings()
