@@ -216,6 +216,15 @@ public partial class MainViewModel
 
     #endregion
 
+    /// <summary>
+    /// Called by TracksDialogPanel when a track visibility checkbox is toggled.
+    /// </summary>
+    public void OnTrackVisibilityChanged()
+    {
+        SaveTracksToFile();
+        RebuildRecordedPathsAndContours();
+    }
+
     #region Recorded Path Display
 
     private void UpdateRecordedPathsOnMap()

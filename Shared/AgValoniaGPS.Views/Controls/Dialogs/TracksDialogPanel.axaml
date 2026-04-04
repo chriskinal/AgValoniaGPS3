@@ -173,16 +173,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <DataTemplate x:DataType="track:Track">
                                 <Border Background="Transparent" Padding="12,10" Margin="2" CornerRadius="4"
                                         PointerReleased="TrackItem_PointerReleased">
-                                    <Grid ColumnDefinitions="*,80,60">
-                                        <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"
+                                    <Grid ColumnDefinitions="32,*,80,60">
+                                        <!-- Visibility toggle -->
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsVisible}"
+                                                  VerticalAlignment="Center" Margin="4,0"
+                                                  ToolTip.Tip="Show/hide on map"
+                                                  Click="TrackVisibility_Click"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"
                                                    VerticalAlignment="Center"/>
-                                        <Panel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Panel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="{loc:Localize Contour}" Foreground="#27AE60" FontSize="14" IsVisible="{Binding IsContour}"/>
                                             <TextBlock Text="{loc:Localize Path}" Foreground="#8E44AD" FontSize="14" IsVisible="{Binding IsRecordedPath}"/>
                                             <TextBlock Text="{loc:Localize Curve}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding IsCurve}"/>
                                             <TextBlock Text="{loc:Localize Line}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="14" IsVisible="{Binding IsABLine}"/>
                                         </Panel>
-                                        <Panel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Panel Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Ellipse Width="16" Height="16" Fill="#27AE60" IsVisible="{Binding IsActive}"/>
                                             <Ellipse Width="16" Height="16" Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" IsVisible="{Binding !IsActive}"/>
                                         </Panel>
