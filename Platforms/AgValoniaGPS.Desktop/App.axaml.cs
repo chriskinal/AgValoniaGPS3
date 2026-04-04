@@ -104,16 +104,19 @@ public partial class App : Application
             desktop.MainWindow = mainWindow;
 
             // Wire language change to TranslationSource (#40)
-            var vm = Services.GetRequiredService<AgValoniaGPS.ViewModels.MainViewModel>();
-            vm.LanguageChanged += code =>
+            // Must use MainWindow's ViewModel (not DI - MainViewModel is Transient)
+            if (mainWindow.DataContext is AgValoniaGPS.ViewModels.MainViewModel windowVm)
             {
-                try
+                windowVm.LanguageChanged += code =>
                 {
-                    AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
-                        new System.Globalization.CultureInfo(code);
-                }
-                catch { }
-            };
+                    try
+                    {
+                        AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                            new System.Globalization.CultureInfo(code);
+                    }
+                    catch { }
+                };
+            }
 
             desktop.Exit += (sender, args) =>
             {
