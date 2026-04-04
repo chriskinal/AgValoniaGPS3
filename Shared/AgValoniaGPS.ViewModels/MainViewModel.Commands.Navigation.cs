@@ -100,14 +100,12 @@ public partial class MainViewModel
         // Camera controls
         IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
-            CameraPitch += 5.0;
-            _mapService.SetPitchAbsolute(CameraPitch * Math.PI / 180.0);
+            CameraPitch += 5.0; // PropertyChanged handler updates map
         });
 
         DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
         {
-            CameraPitch -= 5.0;
-            _mapService.SetPitchAbsolute(CameraPitch * Math.PI / 180.0);
+            CameraPitch -= 5.0; // PropertyChanged handler updates map
         });
 
         // Brightness controls
