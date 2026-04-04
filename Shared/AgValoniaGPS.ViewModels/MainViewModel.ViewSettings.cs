@@ -218,7 +218,7 @@ public partial class MainViewModel
         }
     }
 
-    private double _last3DPitch = -62.0;
+    private double _last3DPitch = -60.0;
 
     public double CameraPitch
     {

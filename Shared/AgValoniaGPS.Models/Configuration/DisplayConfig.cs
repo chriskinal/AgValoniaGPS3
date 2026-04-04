@@ -55,7 +55,7 @@ public class DisplayConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _cameraZoom, value);
     }
 
-    private double _cameraPitch = -62.0;
+    private double _cameraPitch = -60.0;
     public double CameraPitch
     {
         get => _cameraPitch;

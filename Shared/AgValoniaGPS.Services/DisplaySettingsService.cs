@@ -95,7 +95,7 @@ public class DisplaySettingsService : IDisplaySettingsService
                 }
                 else
                 {
-                    CameraPitch = -62.0; // Default 3D pitch
+                    CameraPitch = -60.0; // Default 3D pitch (30 deg)
                 }
                 ViewModeChanged?.Invoke(this, value);
             }
