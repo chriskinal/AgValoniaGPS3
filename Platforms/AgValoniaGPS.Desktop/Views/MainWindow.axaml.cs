@@ -620,9 +620,9 @@ public partial class MainWindow : Window
             if (ViewModel != null && MapControl != null)
             {
                 // Camera pitch from service is negative degrees (-90 to -10)
-                // OpenGL expects positive radians (0 = overhead, PI/2 = horizontal)
-                // So we negate the degrees and convert: -90° -> 0 rad, -10° -> ~1.4 rad
-                double pitchRadians = -ViewModel.CameraPitch * Math.PI / 180.0;
+                // Map expects positive radians (0 = overhead, PI/2.5 = horizontal)
+                // Convert: -90 -> 0 rad (overhead), -10 -> 1.4 rad (horizontal)
+                double pitchRadians = (90.0 + ViewModel.CameraPitch) * Math.PI / 180.0;
                 MapControl.SetPitchAbsolute(pitchRadians);
             }
         }

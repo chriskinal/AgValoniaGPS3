@@ -451,9 +451,9 @@ public partial class MainView : UserControl
             }
             else if (e.PropertyName == nameof(MainViewModel.CameraPitch))
             {
-                // CameraPitch is in degrees from -90 (looking straight down) to -10 (nearly horizontal)
-                // Map control expects radians
-                double pitchRadians = -_viewModel.CameraPitch * Math.PI / 180.0;
+                // CameraPitch: -90 = overhead, -10 = horizontal
+                // Map: 0 rad = overhead, PI/2.5 = horizontal
+                double pitchRadians = (90.0 + _viewModel.CameraPitch) * Math.PI / 180.0;
                 _mapControl.SetPitchAbsolute(pitchRadians);
             }
             else if (e.PropertyName == nameof(MainViewModel.IsSimulatorEnabled))
