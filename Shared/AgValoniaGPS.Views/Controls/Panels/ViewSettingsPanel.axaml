@@ -102,12 +102,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" Background="Transparent">
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"
                         Content="{loc:Localize TiltDown}" Margin="2" ClickMode="Press"
-                        Command="{Binding DecreaseCameraPitchCommand}"
-                        ToolTip.Tip="Tilt camera down (enters 2D at limit)"/>
+                        Command="{Binding IncreaseCameraPitchCommand}"
+                        ToolTip.Tip="Tilt view toward overhead (2D)"/>
                 <Button Grid.Row="0" Grid.Column="1" Classes="ModernButton"
                         Content="{loc:Localize TiltUp}" Margin="2" ClickMode="Press"
-                        Command="{Binding IncreaseCameraPitchCommand}"
-                        ToolTip.Tip="Tilt camera up (enters 3D from 2D)"/>
+                        Command="{Binding DecreaseCameraPitchCommand}"
+                        ToolTip.Tip="Tilt view toward horizon (3D)"/>
                 <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                            Text="{Binding CameraPitchDisplay}"
                            HorizontalAlignment="Center" FontSize="12"
