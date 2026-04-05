@@ -390,6 +390,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Pens and brushes (reused for performance)
     private IBrush _backgroundBrush;
     private Bitmap? _groundTexture;
+    private Bitmap? _groundTextureDay;
+    private Bitmap? _groundTextureNight;
     private Pen _gridPenMinor;
     private Pen _gridPenMajor;
     private readonly Pen _gridPenAxisX;
@@ -462,13 +464,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         IsHitTestVisible = true;
         ClipToBounds = true;
 
-        // Load ground texture
+        // Load ground textures (day and night variants)
         try
         {
-            var uri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTexture.png");
-            using var stream = AssetLoader.Open(uri);
-            _groundTexture = new Bitmap(stream);
-            Debug.WriteLine("[DrawingContextMapControl] Loaded ground texture");
+            var dayUri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTexture.png");
+            using var dayStream = AssetLoader.Open(dayUri);
+            _groundTextureDay = new Bitmap(dayStream);
+
+            var nightUri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTextureDark.png");
+            using var nightStream = AssetLoader.Open(nightUri);
+            _groundTextureNight = new Bitmap(nightStream);
+
+            _groundTexture = _groundTextureDay;
+            Debug.WriteLine("[DrawingContextMapControl] Loaded ground textures (day + night)");
         }
         catch (Exception ex)
         {
@@ -476,9 +484,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         // Initialize pens and brushes
-        _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-        _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
-        _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
+        _backgroundBrush = new SolidColorBrush(Color.FromRgb(40, 40, 40));
+        _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 40, 40, 40)), 0.5);
+        _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 30, 30, 30)), 0.5);
         _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
         _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
         _boundaryPenOuter = new Pen(Brushes.Yellow, 1);
@@ -2510,10 +2518,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         const double TILE_SIZE = 100.0; // meters per tile
 
         // Calculate visible world bounds
+        // Use diagonal to cover screen corners when camera is rotated (heading-up mode)
         double centerX = _cameraX;
         double centerY = _cameraY;
-        double halfW = viewWidth / 2 + TILE_SIZE;
-        double halfH = viewHeight / 2 + TILE_SIZE;
+        double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + TILE_SIZE;
+        double halfW = diagonal;
+        double halfH = diagonal;
 
         // Find tile range
         int startTileX = (int)Math.Floor((centerX - halfW) / TILE_SIZE);
@@ -2522,7 +2532,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int endTileY = (int)Math.Ceiling((centerY + halfH) / TILE_SIZE);
 
         // Limit tiles to avoid excessive drawing when zoomed very far out
-        int maxTiles = 20;
+        int maxTiles = 50;
         if (endTileX - startTileX > maxTiles || endTileY - startTileY > maxTiles)
         {
             // Too zoomed out - skip texture, solid background is fine
@@ -3373,16 +3383,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         if (_isDayMode)
         {
-            _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
-            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
+            // Day mode: lighter background, dark grid lines for contrast
+            _backgroundBrush = new SolidColorBrush(Color.FromRgb(40, 40, 40));
+            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 40, 40, 40)), 0.5);
+            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 30, 30, 30)), 0.5);
+            _groundTexture = _groundTextureDay;
         }
         else
         {
-            // Night mode: darker background, dimmer grid
+            // Night mode: darker background, light grid lines for contrast, dark ground texture
             _backgroundBrush = new SolidColorBrush(Color.FromRgb(10, 10, 10));
-            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(40, 60, 60, 60)), 0.5);
-            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(70, 60, 60, 60)), 0.5);
+            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(80, 180, 180, 180)), 0.5);
+            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(120, 200, 200, 200)), 0.5);
+            _groundTexture = _groundTextureNight;
         }
     }
 
