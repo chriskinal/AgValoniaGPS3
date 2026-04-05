@@ -2872,10 +2872,39 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 pointRadius, labelOffset, worldPerPixel, "Base", lineOnly: true);
         }
 
-        // Draw active track (current guidance pass)
+        // Draw active track (current guidance pass) with tool width highlight
         if (_activeTrack != null)
         {
-            // When in U-turn, draw current line as dotted; otherwise solid
+            // Draw semi-transparent pass area (tool width band)
+            double toolWidth = _toolWidth > 0 ? _toolWidth : 6.0;
+            var passBrush = new SolidColorBrush(Color.FromArgb(30, 200, 200, 50));
+            var passPen = new Pen(passBrush, toolWidth);
+            if (_activeTrack.Points.Count == 2)
+            {
+                var a = _activeTrack.Points[0];
+                var b = _activeTrack.Points[_activeTrack.Points.Count - 1];
+                double dx = b.Easting - a.Easting;
+                double dy = b.Northing - a.Northing;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len > 0.01)
+                {
+                    double nx = dx / len, ny = dy / len;
+                    context.DrawLine(passPen,
+                        new Point(a.Easting - nx * 2000, a.Northing - ny * 2000),
+                        new Point(b.Easting + nx * 2000, b.Northing + ny * 2000));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < _activeTrack.Points.Count - 1; i++)
+                {
+                    context.DrawLine(passPen,
+                        new Point(_activeTrack.Points[i].Easting, _activeTrack.Points[i].Northing),
+                        new Point(_activeTrack.Points[i + 1].Easting, _activeTrack.Points[i + 1].Northing));
+                }
+            }
+
+            // Draw the guidance line
             var mainPen = _isInYouTurn ? trackPenDotted : trackPenSolid;
             var extendPen = _isInYouTurn ? trackExtendPenDotted : trackExtendPenScaled;
 
@@ -2898,10 +2927,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var pointA = new Point(trackPointA.Easting, trackPointA.Northing);
         var pointB = new Point(trackPointB.Easting, trackPointB.Northing);
 
-        // For AB lines (2 points), draw extended line in both directions
+        // For AB lines (2 points), draw as a single infinite line
         if (track.Points.Count == 2)
         {
-            Console.WriteLine($"[DrawTrack] AB Line: '{track.Name}' with 2 points");
             double dx = pointB.X - pointA.X;
             double dy = pointB.Y - pointA.Y;
             double length = Math.Sqrt(dx * dx + dy * dy);
@@ -2910,19 +2938,26 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             {
                 double nx = dx / length;
                 double ny = dy / length;
-                double extendDistance = 500.0;
+                double extendDistance = 2000.0;
                 var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
                 var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
-                context.DrawLine(extendPen, extendA, extendB);
-            }
 
-            // Draw main AB line
-            context.DrawLine(mainPen, pointA, pointB);
+                if (lineOnly)
+                {
+                    // Single line, no layering
+                    context.DrawLine(mainPen, extendA, extendB);
+                }
+                else
+                {
+                    // Extension + main AB segment layered
+                    context.DrawLine(extendPen, extendA, extendB);
+                    context.DrawLine(mainPen, pointA, pointB);
+                }
+            }
         }
         else
         {
             // For curves (>2 points), draw all segments
-            Console.WriteLine($"[DrawTrack] Curve: '{track.Name}' drawing {track.Points.Count - 1} segments");
             for (int i = 0; i < track.Points.Count - 1; i++)
             {
                 var p1 = new Point(track.Points[i].Easting, track.Points[i].Northing);
