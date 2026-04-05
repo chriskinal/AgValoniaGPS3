@@ -292,11 +292,16 @@ public partial class MainViewModel
 
     /// <summary>
     /// Auto-select closest track when autosteer is not engaged.
+    /// Only runs when no track is manually selected (SelectedTrack == null).
     /// Matches legacy: 3-second debounce, heading alignment, visibility filter.
     /// </summary>
     private void UpdateAutoTrackSelection(AgValoniaGPS.Models.Position position)
     {
         if (!_isAutoTrackEnabled || IsAutoSteerEngaged)
+            return;
+
+        // Don't override a manually selected track
+        if (SelectedTrack != null)
             return;
 
         var tracks = State.Field.Tracks;
@@ -315,7 +320,7 @@ public partial class MainViewModel
         var closest = Services.Track.AutoTrackSelectionService.FindClosestTrack(
             tracks, vehiclePos, headingRadians);
 
-        if (closest != null && closest != SelectedTrack)
+        if (closest != null)
         {
             SelectedTrack = closest;
         }
