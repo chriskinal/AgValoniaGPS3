@@ -484,28 +484,28 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         // Initialize pens and brushes
-        _backgroundBrush = new SolidColorBrush(Color.FromRgb(40, 40, 40));
+        _backgroundBrush = new SolidColorBrush(Color.FromRgb(69, 102, 179)); // Legacy blue day background
         _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 40, 40, 40)), 0.5);
         _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 30, 30, 30)), 0.5);
         _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
         _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
-        _boundaryPenOuter = new Pen(Brushes.Yellow, 1);
-        _boundaryPenInner = new Pen(Brushes.Red, 1);
+        _boundaryPenOuter = new Pen(new SolidColorBrush(Color.FromArgb(204, 242, 112, 89)), 1); // Legacy orange/salmon
+        _boundaryPenInner = new Pen(new SolidColorBrush(Color.FromRgb(245, 245, 77)), 1); // Legacy bright yellow
         _recordingPen = new Pen(Brushes.Cyan, 0.5); // Thinner line than dot markers
         _vehicleBrush = new SolidColorBrush(Color.FromRgb(0, 200, 0));
         _vehiclePen = new Pen(Brushes.DarkGreen, 2);
         _recordingPointBrush = new SolidColorBrush(Color.FromRgb(255, 128, 0));
-        _headlandPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 140, 0)), 1.0); // Orange headland line (1m width)
-        _headlandPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)), 1.5); // Semi-transparent orange preview
+        _headlandPen = new Pen(new SolidColorBrush(Color.FromRgb(251, 235, 107)), 1.0); // Legacy warm yellow headland
+        _headlandPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 77, 250, 0)), 1.5); // Legacy green preview
         _selectionMarkerBrush = new SolidColorBrush(Color.FromRgb(255, 0, 255)); // Magenta selection markers
         _selectionMarkerPen = new Pen(Brushes.White, 2); // White outline
         _clipLinePen = new Pen(Brushes.Red, 3); // Red clip line
-        _abLinePen = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), 3); // Orange AB line
-        _abLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), 1.5); // Semi-transparent extended line
+        _abLinePen = new Pen(new SolidColorBrush(Color.FromRgb(242, 179, 128)), 3); // Legacy light orange AB line
+        _abLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 242, 179, 128)), 1.5); // Semi-transparent extended line
         _pointABrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)); // Green Point A
         _pointBBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0)); // Red Point B
-        _toolBrush = new SolidColorBrush(Color.FromArgb(180, 200, 80, 40)); // Semi-transparent brownish-red tool body
-        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 150, 0)), 0.1); // Thin orange outline
+        _toolBrush = new SolidColorBrush(Color.FromArgb(191, 0, 242, 0)); // Legacy green tool (on state)
+        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(247, 247, 0)), 0.1); // Legacy yellow outline
         _hitchPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 0)), 0.15); // Yellow hitch line
 
         // Load vehicle (tractor) image from embedded resources
@@ -2694,8 +2694,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         if (_youTurnPath == null || _youTurnPath.Count < 2) return;
 
-        // Create a pen for the YouTurn path - orange color for path line
-        var youTurnPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), 1.0);
+        // Legacy green for approved U-turn path
+        var youTurnPen = new Pen(new SolidColorBrush(Color.FromRgb(77, 242, 77)), 1.0);
 
         // Draw the path as connected line segments
         var geometry = new StreamGeometry();
@@ -2711,7 +2711,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         context.DrawGeometry(null, youTurnPen, geometry);
 
         // Draw path points as small squares (less distortion than circles when scaled)
-        var pathPointBrush = new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)); // Semi-transparent orange
+        var pathPointBrush = new SolidColorBrush(Color.FromArgb(180, 77, 242, 77)); // Legacy green U-turn points
         double squareSize = 0.8; // meters (in world coordinates)
         double halfSize = squareSize / 2.0;
 
@@ -2800,27 +2800,28 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double lineThickness = 2 * worldPerPixel; // ~2 pixels for lines
         double labelOffset = 8 * worldPerPixel;   // Offset for A/B labels
 
-        // Create scaled pens - solid and dotted versions
-        var trackPenSolid = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness);
-        var trackPenDotted = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness)
+        // Create scaled pens - legacy colors
+        // AB line: light orange (242,179,128), Curve: pink/magenta (242,107,191)
+        var trackPenSolid = new Pen(new SolidColorBrush(Color.FromRgb(242, 179, 128)), lineThickness);
+        var trackPenDotted = new Pen(new SolidColorBrush(Color.FromRgb(242, 179, 128)), lineThickness)
         {
             DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
         };
-        var trackExtendPenScaled = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5);
-        var trackExtendPenDotted = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5)
+        var trackExtendPenScaled = new Pen(new SolidColorBrush(Color.FromArgb(128, 242, 179, 128)), lineThickness * 0.5);
+        var trackExtendPenDotted = new Pen(new SolidColorBrush(Color.FromArgb(128, 242, 179, 128)), lineThickness * 0.5)
         {
             DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
         };
         var pointOutlinePen = new Pen(Brushes.White, lineThickness * 0.5);
 
-        // Next line pen (cyan/blue for visibility)
-        var nextLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(0, 200, 255)), lineThickness);
-        var nextLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 200, 255)), lineThickness * 0.5);
+        // Next line pen (legacy orange preview)
+        var nextLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(255, 191, 89)), lineThickness);
+        var nextLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 191, 89)), lineThickness * 0.5);
 
-        // Recorded path pen (semi-transparent magenta)
-        var recordedPathPen = new Pen(new SolidColorBrush(Color.FromArgb(100, 200, 100, 255)), lineThickness * 0.75);
-        // Contour strip pen (semi-transparent green)
-        var contourStripPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 50, 220, 50)), lineThickness * 0.75);
+        // Recorded path pen (legacy warm yellow)
+        var recordedPathPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 250, 235, 117)), lineThickness * 0.75);
+        // Contour strip pen (legacy magenta)
+        var contourStripPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 250, 51, 250)), lineThickness * 0.75);
 
         // Draw recorded paths (behind everything else)
         foreach (var path in _recordedPaths)
@@ -2870,11 +2871,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Draw base track (original AB line/curve shown as dashed red reference)
         if (_baseTrack != null && _activeTrack != null && _baseTrack != _activeTrack)
         {
-            var basePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 220, 50, 50)), lineThickness * 0.75)
+            var basePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 252, 252, 0)), lineThickness * 0.75)
             {
                 DashStyle = new DashStyle(new double[] { 6, 4 }, 0)
             };
-            var baseExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(80, 220, 50, 50)), lineThickness * 0.5)
+            var baseExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(80, 252, 252, 0)), lineThickness * 0.5)
             {
                 DashStyle = new DashStyle(new double[] { 6, 4 }, 0)
             };
@@ -3384,7 +3385,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_isDayMode)
         {
             // Day mode: lighter background, dark grid lines for contrast
-            _backgroundBrush = new SolidColorBrush(Color.FromRgb(40, 40, 40));
+            // Day mode: legacy blue-tinted background
+            _backgroundBrush = new SolidColorBrush(Color.FromRgb(69, 102, 179));
             _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 40, 40, 40)), 0.5);
             _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 30, 30, 30)), 0.5);
             _groundTexture = _groundTextureDay;
