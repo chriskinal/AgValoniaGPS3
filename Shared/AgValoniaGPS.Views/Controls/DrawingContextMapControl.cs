@@ -2869,7 +2869,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 DashStyle = new DashStyle(new double[] { 6, 4 }, 0)
             };
             DrawSingleTrack(context, _baseTrack, basePen, baseExtendPen, pointOutlinePen,
-                pointRadius, labelOffset, worldPerPixel, "Base");
+                pointRadius, labelOffset, worldPerPixel, "Base", lineOnly: true);
         }
 
         // Draw active track (current guidance pass)
@@ -2880,13 +2880,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var extendPen = _isInYouTurn ? trackExtendPenDotted : trackExtendPenScaled;
 
             DrawSingleTrack(context, _activeTrack, mainPen, extendPen, pointOutlinePen,
-                pointRadius, labelOffset, worldPerPixel, "Current");
+                pointRadius, labelOffset, worldPerPixel, "Current", lineOnly: true);
         }
     }
 
     private void DrawSingleTrack(DrawingContext context, AgValoniaGPS.Models.Track.Track track,
         Pen mainPen, Pen extendPen, Pen pointOutlinePen,
-        double pointRadius, double labelOffset, double worldPerPixel, string lineType)
+        double pointRadius, double labelOffset, double worldPerPixel, string lineType,
+        bool lineOnly = false)
     {
         if (track.Points.Count < 2)
             return;
@@ -2930,17 +2931,20 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
-        // Draw Point A marker (green)
-        context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
-
-        // Draw Point B marker (red)
-        context.DrawEllipse(_pointBBrush, pointOutlinePen, pointB, pointRadius, pointRadius);
-
-        // Draw labels - only for current line to avoid clutter
-        if (lineType == "Current")
+        if (!lineOnly)
         {
-            DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
-            DrawLabel(context, "B", pointB.X + labelOffset, pointB.Y, worldPerPixel, Brushes.Red);
+            // Draw Point A marker (green)
+            context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
+
+            // Draw Point B marker (red)
+            context.DrawEllipse(_pointBBrush, pointOutlinePen, pointB, pointRadius, pointRadius);
+
+            // Draw labels - only for current line to avoid clutter
+            if (lineType == "Current")
+            {
+                DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
+                DrawLabel(context, "B", pointB.X + labelOffset, pointB.Y, worldPerPixel, Brushes.Red);
+            }
         }
     }
 
