@@ -347,4 +347,66 @@ public class TrackManagementScreenshotTests
     }
 
     #endregion
+
+    #region Lateral Offset Tests (#121)
+
+    [AvaloniaTest]
+    public void HalfToolNudgeLeft_ShowsStatus()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var track = CreateABLine("Nudge Test", 0, 0, 0, 100);
+        vm.SavedTracks.Add(track);
+        vm.SelectedTrack = track;
+
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.Width = 6.0;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.Overlap = 0.0;
+
+        vm.HalfToolNudgeLeftCommand!.Execute(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("Nudged left"));
+    }
+
+    [AvaloniaTest]
+    public void HalfToolNudgeRight_ShowsStatus()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var track = CreateABLine("Nudge Test", 0, 0, 0, 100);
+        vm.SavedTracks.Add(track);
+        vm.SelectedTrack = track;
+
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.Width = 6.0;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool.Overlap = 0.0;
+
+        vm.HalfToolNudgeRightCommand!.Execute(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("Nudged right"));
+    }
+
+    [AvaloniaTest]
+    public void ResetNudge_ClearsOffset()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var track = CreateABLine("Nudge Test", 0, 0, 0, 100);
+        vm.SavedTracks.Add(track);
+        vm.SelectedTrack = track;
+
+        vm.HalfToolNudgeRightCommand!.Execute(null);
+        vm.ResetNudgeCommand!.Execute(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("reset"));
+        Assert.That(track.NudgeDistance, Is.EqualTo(0).Within(0.01));
+    }
+
+    [AvaloniaTest]
+    public void HalfToolNudge_NoTrack_ShowsError()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.SelectedTrack = null;
+
+        vm.HalfToolNudgeLeftCommand!.Execute(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("No track"));
+    }
+
+    #endregion
 }
