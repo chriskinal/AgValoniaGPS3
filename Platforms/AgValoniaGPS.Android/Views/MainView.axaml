@@ -108,14 +108,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Zoom Controls - Bottom Right -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             ZIndex="15" Margin="0,0,20,20" Spacing="10">
-                    <Button Content="+" Command="{Binding ZoomInCommand}" ClickMode="Press"
-                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
-                    <Button Content="-" Command="{Binding ZoomOutCommand}" ClickMode="Press"
-                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
+                    <Button Classes="ZoomButton" Content="+" Command="{Binding ZoomInCommand}" ClickMode="Press"/>
+                    <Button Classes="ZoomButton" Content="-" Command="{Binding ZoomOutCommand}" ClickMode="Press"/>
                 </StackPanel>
             </Grid>
         </Grid>
