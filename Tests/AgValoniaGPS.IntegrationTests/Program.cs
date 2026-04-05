@@ -314,23 +314,22 @@ sealed class Program
         }
         Console.WriteLine("OK");
 
-        // Step 5c: Test compass button camera modes
+        // Step 5c: Test compass button camera modes (default is HeadingUp)
         Console.Write("[Step 5c] Compass modes... ");
         Console.Write($"[mode={vm.CameraMode}] ");
-        vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
-        await Delay(200);
-        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.HeadingUp)
-            throw new Exception($"Expected HeadingUp after toggle, got {vm.CameraMode}");
-        Console.Write($"[after1={vm.CameraMode}] ");
-
         vm.ToggleCameraModeCommand?.Execute(null); // HeadingUp -> NorthUp
         await Delay(200);
         if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.NorthUp)
             throw new Exception($"Expected NorthUp after toggle, got {vm.CameraMode}");
+        Console.Write($"[after1={vm.CameraMode}] ");
+
+        vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
+        await Delay(200);
+        if (vm.CameraMode != AgValoniaGPS.Models.CameraMode.HeadingUp)
+            throw new Exception($"Expected HeadingUp after toggle, got {vm.CameraMode}");
         Console.Write($"[after2={vm.CameraMode}] ");
 
-        // Switch to HeadingUp then pan -> Free should remember HeadingUp
-        vm.ToggleCameraModeCommand?.Execute(null); // NorthUp -> HeadingUp
+        // Already in HeadingUp, pan -> Free should remember HeadingUp
         await Delay(100);
 
         // Simulate user pan -> Free mode (via OnUserPan, simulating real drag)
@@ -412,8 +411,8 @@ sealed class Program
         // --- Charts Scenarios (PR #79) ---
         await RunChartsScenario(window, vm, simService);
 
-        // --- Debug Dump Screenshot (#127) ---
-        await RunDebugDumpTest(window, vm);
+        // --- Pass Rendering Test (#175) ---
+        await RunPassRenderingTest(window, vm, simService);
     }
 
     static async Task RunDebugDumpTest(Window window, MainViewModel vm)
@@ -835,6 +834,143 @@ sealed class Program
         vm.IsSimulatorEnabled = true;
         await Delay(200);
         Console.WriteLine("OK");
+    }
+
+    static async Task RunPassRenderingTest(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        Console.WriteLine("\n--- Pass Rendering Test (#175) ---");
+
+        // Set 2D north-up, fixed camera, day mode, clean view
+        Console.Write("[Pass 0] Set 2D north-up, clean view... ");
+        if (vm.IsAutoSteerEngaged)
+            vm.ToggleAutoSteerCommand?.Execute(null);
+        vm.SelectedTrack = null;
+        vm.CameraMode = AgValoniaGPS.Models.CameraMode.Free; // Fixed camera, no follow
+        vm.Is2DMode = true;
+        vm.CameraPitch = -90.0;
+        vm.IsSimulatorPanelVisible = false;
+        vm.State.UI.IsSimulatorPanelVisible = false;
+        // Force day mode and disable auto day/night
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.AutoDayNight = false;
+        if (!vm.IsDayMode)
+            vm.ToggleDayNightCommand?.Execute(null);
+        var mapService = App.Services!.GetRequiredService<IMapService>();
+        mapService.Set3DMode(false);
+        mapService.SetPitchAbsolute(0);
+        mapService.SetNorthUp(true);
+        mapService.SetAutoPan(false); // Fixed camera position
+        mapService.Zoom(0.7); // Zoom out to see full S-N journey
+        // Center camera between start (-120) and end (+120), roughly at field center
+        mapService.PanTo(0, 0);
+        await Delay(300);
+        Console.WriteLine("OK");
+
+        // Create a W-E AB line at northing=50 (middle of field)
+        Console.Write("[Pass 1] Create W-E track at N=50... ");
+
+        var weTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "W-E Test",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(0, 50, Math.PI / 2),     // West end, heading east
+                new(200, 50, Math.PI / 2)    // East end, heading east
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true
+        };
+        vm.SavedTracks.Add(weTrack);
+        vm.SelectedTrack = weTrack;
+        await Delay(300);
+        Console.Write($"[active={vm.HasActiveTrack}] ");
+        CaptureScreenshot(window, "pass_01_we_track");
+        Console.WriteLine("OK");
+
+        // Drive S->N using simulator at 10x speed
+        Console.Write("[Pass 2] Drive S->N across W-E track (no autosteer)... ");
+
+        // First drive south to get below the field, then turn north
+        vm.IsSimulatorEnabled = true;
+        vm.IsSimulatorSpeed10x = true;
+        vm.SimulatorReverseCommand?.Execute(null); // Face south
+        await Delay(100);
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+        // Drive south for 1.5s at 10x
+        for (int i = 0; i < 45; i++)
+        {
+            simService.Tick(0);
+            await Delay(33);
+        }
+        Console.Write($"[south E={vm.Easting:F0} N={vm.Northing:F0}] ");
+
+        // Stop, turn north
+        vm.SimulatorStopCommand?.Execute(null);
+        await Delay(100);
+        vm.SimulatorReverseCommand?.Execute(null); // Reverse = face north
+        await Delay(100);
+        vm.SimulatorForwardCommand?.Execute(null);
+        await Delay(100);
+
+        var gifFrames = new System.Collections.Generic.List<string>();
+
+        // Drive north across the field, capturing frames
+        for (int i = 0; i < 150; i++)
+        {
+            simService.Tick(0); // Straight north
+            if (i % 30 == 0)
+                Console.Write($"[N={vm.Northing:F0}] ");
+            await Delay(33);
+            if (i % 5 == 0)
+            {
+                var framePath = Path.Combine(_screenshotDir, $"pass_frame_{gifFrames.Count:D4}.png");
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                var ps = new PixelSize(Math.Max((int)window.Bounds.Width, 1), Math.Max((int)window.Bounds.Height, 1));
+                var bmp = new RenderTargetBitmap(ps, new Vector(96, 96));
+                bmp.Render(window);
+                bmp.Save(framePath);
+                gifFrames.Add(framePath);
+            }
+        }
+
+        CaptureScreenshot(window, "pass_02_driving_across");
+        Console.Write($"[frames={gifFrames.Count}] ");
+
+        // Generate video
+        try
+        {
+            var scriptPath = Path.Combine(_screenshotDir, "_pass_gif.py");
+            var gifPath = Path.Combine(_screenshotDir, "pass_rendering.gif");
+            File.WriteAllText(scriptPath, $@"
+from PIL import Image
+import sys
+frames = []
+for path in sys.argv[1:]:
+    img = Image.open(path).convert('RGB').resize((640, 480), Image.LANCZOS)
+    frames.append(img)
+if frames:
+    frames[0].save('{gifPath.Replace("'", "\\'")}', save_all=True, append_images=frames[1:], duration=200, loop=0)
+    print(f'GIF: {{len(frames)}} frames')
+");
+            var psi = new System.Diagnostics.ProcessStartInfo("python3", scriptPath + " " + string.Join(" ", gifFrames))
+            { RedirectStandardOutput = true, UseShellExecute = false };
+            var proc = System.Diagnostics.Process.Start(psi);
+            proc?.WaitForExit(30000);
+            Console.Write($"[{proc?.StandardOutput.ReadToEnd().Trim()}] ");
+            foreach (var f in gifFrames) try { File.Delete(f); } catch { }
+            try { File.Delete(scriptPath); } catch { }
+        }
+        catch (Exception ex) { Console.Write($"[GIF err: {ex.Message}] "); }
+
+        // Cleanup
+        vm.SavedTracks.Remove(weTrack);
+        vm.SelectedTrack = null;
+        vm.IsSimulatorSpeed10x = false;
+
+        Console.WriteLine("OK");
+        Console.WriteLine("--- Pass Rendering Test Complete ---");
     }
 
     /// <summary>

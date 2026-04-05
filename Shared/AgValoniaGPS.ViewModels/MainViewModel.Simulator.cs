@@ -157,6 +157,11 @@ public partial class MainViewModel
                 CalculateAutoSteerGuidance(transformedPosition);
             }
         }
+        else if (HasActiveTrack && SelectedTrack != null)
+        {
+            // Display-only: update pass offset visualization without steering
+            UpdateDisplayTrack(transformedPosition);
+        }
     }
 
     #endregion

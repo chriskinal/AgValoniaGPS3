@@ -218,6 +218,41 @@ public partial class MainViewModel
     }
 
     /// <summary>
+    /// Lightweight display-only update: calculates the offset pass and updates map
+    /// without running full guidance or setting steer angle.
+    /// Called when a track is selected but autosteer is NOT engaged.
+    /// </summary>
+    private void UpdateDisplayTrack(AgValoniaGPS.Models.Position currentPosition)
+    {
+        var track = SelectedTrack;
+        if (track == null || track.Points.Count < 2) return;
+
+        var ConfigStore = ConfigurationStore.Instance;
+        double widthMinusOverlap = ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap;
+        double distAway = widthMinusOverlap * _howManyPathsAway + _nudgeOffset;
+
+        if (Math.Abs(distAway) < 0.01)
+        {
+            _mapService.SetBaseTrack(null);
+            _mapService.SetActiveTrack(track);
+        }
+        else
+        {
+            var (offsetPoints, _) = Models.Guidance.CurveProcessing.CreateOffsetCurveWithInfo(track.Points, distAway);
+            var currentTrack = new Track
+            {
+                Name = $"{track.Name} (path {_howManyPathsAway})",
+                Points = offsetPoints,
+                Type = track.Type,
+                IsVisible = true,
+                IsActive = true
+            };
+            _mapService.SetBaseTrack(track);
+            _mapService.SetActiveTrack(currentTrack);
+        }
+    }
+
+    /// <summary>
     /// Find the heading of the nearest segment to a point.
     /// For a 2-point track (AB line), returns the constant A→B heading.
     /// For curves, returns the heading of the segment closest to the point.
