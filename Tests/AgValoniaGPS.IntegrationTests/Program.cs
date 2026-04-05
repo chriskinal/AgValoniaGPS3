@@ -890,39 +890,44 @@ sealed class Program
         // Drive S->N using simulator at 10x speed
         Console.Write("[Pass 2] Drive S->N across W-E track (no autosteer)... ");
 
-        // First drive south to get below the field, then turn north
+        // Position tractor south of field by driving south then turning north
         vm.IsSimulatorEnabled = true;
         vm.IsSimulatorSpeed10x = true;
-        vm.SimulatorReverseCommand?.Execute(null); // Face south
-        await Delay(100);
+
+        // Turn to face south: steer hard right until heading ~180 deg
         vm.SimulatorForwardCommand?.Execute(null);
-        await Delay(100);
-        // Drive south for 1.5s at 10x
-        for (int i = 0; i < 45; i++)
+        await Delay(50);
+        while (vm.Heading < 170 || vm.Heading > 190)
+        {
+            simService.Tick(30); // Hard right turn
+            await Delay(5);
+        }
+        // Drive south (no capture)
+        for (int i = 0; i < 120; i++)
         {
             simService.Tick(0);
-            await Delay(33);
+            await Delay(5);
         }
-        Console.Write($"[south E={vm.Easting:F0} N={vm.Northing:F0}] ");
+        Console.Write($"[south N={vm.Northing:F0}] ");
 
-        // Stop, turn north
-        vm.SimulatorStopCommand?.Execute(null);
-        await Delay(100);
-        vm.SimulatorReverseCommand?.Execute(null); // Reverse = face north
-        await Delay(100);
-        vm.SimulatorForwardCommand?.Execute(null);
-        await Delay(100);
+        // Turn to face north
+        while (vm.Heading > 10 && vm.Heading < 350)
+        {
+            simService.Tick(30);
+            await Delay(5);
+        }
+        Console.Write($"[heading={vm.Heading:F0}] ");
 
         var gifFrames = new System.Collections.Generic.List<string>();
 
-        // Drive north across the field, capturing frames
-        for (int i = 0; i < 150; i++)
+        // Drive north across the field (N=-100 to N=+100), capturing frames
+        for (int i = 0; i < 200; i++)
         {
             simService.Tick(0); // Straight north
-            if (i % 30 == 0)
+            if (i % 40 == 0)
                 Console.Write($"[N={vm.Northing:F0}] ");
-            await Delay(33);
-            if (i % 5 == 0)
+            await Delay(10); // Fast ticks
+            if (i % 4 == 0) // Capture every 4th frame
             {
                 var framePath = Path.Combine(_screenshotDir, $"pass_frame_{gifFrames.Count:D4}.png");
                 Dispatcher.UIThread.RunJobs();

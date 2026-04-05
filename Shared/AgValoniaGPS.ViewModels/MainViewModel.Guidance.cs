@@ -218,8 +218,8 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Lightweight display-only update: calculates the offset pass and updates map
-    /// without running full guidance or setting steer angle.
+    /// Lightweight display-only update: finds the nearest pass to the vehicle
+    /// and updates the map (base track + offset pass) without steering.
     /// Called when a track is selected but autosteer is NOT engaged.
     /// </summary>
     private void UpdateDisplayTrack(AgValoniaGPS.Models.Position currentPosition)
@@ -229,7 +229,18 @@ public partial class MainViewModel
 
         var ConfigStore = ConfigurationStore.Instance;
         double widthMinusOverlap = ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap;
-        double distAway = widthMinusOverlap * _howManyPathsAway + _nudgeOffset;
+        if (widthMinusOverlap < 0.1) widthMinusOverlap = 1.0;
+
+        // Calculate perpendicular distance from vehicle to base track
+        double perpDist = CalculatePerpendicularDistance(
+            track, currentPosition.Easting, currentPosition.Northing);
+
+        // Find nearest pass number
+        int nearestPass = (int)Math.Round(perpDist / widthMinusOverlap);
+        double distAway = widthMinusOverlap * nearestPass + _nudgeOffset;
+
+        // Update _howManyPathsAway for consistency with autosteer
+        _howManyPathsAway = nearestPass;
 
         if (Math.Abs(distAway) < 0.01)
         {
@@ -241,7 +252,7 @@ public partial class MainViewModel
             var (offsetPoints, _) = Models.Guidance.CurveProcessing.CreateOffsetCurveWithInfo(track.Points, distAway);
             var currentTrack = new Track
             {
-                Name = $"{track.Name} (path {_howManyPathsAway})",
+                Name = $"{track.Name} (pass {nearestPass})",
                 Points = offsetPoints,
                 Type = track.Type,
                 IsVisible = true,
@@ -249,6 +260,57 @@ public partial class MainViewModel
             };
             _mapService.SetBaseTrack(track);
             _mapService.SetActiveTrack(currentTrack);
+        }
+
+        // Update XTE display (distance from nearest pass)
+        double xte = perpDist - (nearestPass * widthMinusOverlap);
+        CrossTrackError = xte * 100; // cm
+    }
+
+    /// <summary>
+    /// Calculate signed perpendicular distance from a point to the base track.
+    /// Positive = right of track direction, negative = left.
+    /// </summary>
+    private static double CalculatePerpendicularDistance(Track track, double easting, double northing)
+    {
+        if (track.Points.Count == 2)
+        {
+            // AB line: perpendicular distance to infinite line
+            var a = track.Points[0];
+            var b = track.Points[1];
+            double dx = b.Easting - a.Easting;
+            double dy = b.Northing - a.Northing;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.01) return 0;
+            // Signed distance (positive = right of A->B direction)
+            return ((easting - a.Easting) * dy - (northing - a.Northing) * dx) / len;
+        }
+        else
+        {
+            // Curve: find nearest segment and perpendicular distance
+            double minDist = double.MaxValue;
+            double signedDist = 0;
+            for (int i = 0; i < track.Points.Count - 1; i++)
+            {
+                var a = track.Points[i];
+                var b = track.Points[i + 1];
+                double dx = b.Easting - a.Easting;
+                double dy = b.Northing - a.Northing;
+                double segLen = Math.Sqrt(dx * dx + dy * dy);
+                if (segLen < 0.01) continue;
+                double t = Math.Clamp(
+                    ((easting - a.Easting) * dx + (northing - a.Northing) * dy) / (segLen * segLen),
+                    0, 1);
+                double projE = a.Easting + t * dx;
+                double projN = a.Northing + t * dy;
+                double dist = Math.Sqrt((easting - projE) * (easting - projE) + (northing - projN) * (northing - projN));
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    signedDist = ((easting - a.Easting) * dy - (northing - a.Northing) * dx) / segLen;
+                }
+            }
+            return signedDist;
         }
     }
 
