@@ -2672,9 +2672,6 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ZoomInCommand { get; private set; }
     public ICommand? ZoomOutCommand { get; private set; }
 
-    // Events for views to wire up to map controls
-    public event Action? ZoomInRequested;
-    public event Action? ZoomOutRequested;
     public event Action<string>? LanguageChanged;
 
     /// <summary>

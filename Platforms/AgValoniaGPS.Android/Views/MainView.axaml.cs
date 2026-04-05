@@ -201,9 +201,6 @@ public partial class MainView : UserControl
             mapService.RegisterMapControl(_mapControl);
             System.Diagnostics.Debug.WriteLine("[MainView] MapControl registered with MapService.");
 
-            viewModel.ZoomInRequested += () => _mapControl.Zoom(1.2);
-            viewModel.ZoomOutRequested += () => _mapControl.Zoom(0.8);
-
             // Wire screenshot provider for debug dump (#127)
             viewModel.ScreenshotProvider = () =>
             {

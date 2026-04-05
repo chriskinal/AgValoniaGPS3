@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Reactive;
+using AgValoniaGPS.Models.Configuration;
 using Avalonia;
 using Avalonia.Styling;
 using ReactiveUI;
@@ -76,6 +77,8 @@ public partial class MainViewModel
             IsDayMode = !IsDayMode;
             _mapService.SetDayMode(IsDayMode);
             ApplyThemeVariant(IsDayMode);
+            // Disable auto day/night when user manually toggles theme
+            ConfigurationStore.Instance.Display.AutoDayNight = false;
         });
 
         Toggle2D3DCommand = ReactiveCommand.Create(() =>

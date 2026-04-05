@@ -961,13 +961,11 @@ public partial class MainViewModel
         ZoomInCommand = ReactiveCommand.Create(() =>
         {
             _mapService.Zoom(1.2);
-            ZoomInRequested?.Invoke();
         });
 
         ZoomOutCommand = ReactiveCommand.Create(() =>
         {
             _mapService.Zoom(0.8);
-            ZoomOutRequested?.Invoke();
         });
     }
 
