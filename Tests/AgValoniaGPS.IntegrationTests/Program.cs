@@ -249,7 +249,9 @@ sealed class Program
             vm.CameraPitch = -90.0;
             vm.CameraMode = AgValoniaGPS.Models.CameraMode.NorthUp;
             vm.IsGridOn = true;
+            vm.IsDayMode = true;
             config.Display.FieldTextureVisible = true;
+            config.Display.AutoDayNight = false;
             config.Tool.Width = 6.0;
             vm.State.UI.CloseDialog();
             if (vm.ConfigurationViewModel != null) vm.ConfigurationViewModel.IsDialogVisible = false;

@@ -437,13 +437,13 @@ public partial class MainViewModel
         var points = recState.RecordedPoints;
         if (points.Count < 2) { StopDrivingRecordedPath(); return; }
 
-        // Find closest point in local range [currentIndex, currentIndex+10]
-        int searchStart = recState.CurrentPositionIndex;
-        int searchEnd = Math.Min(searchStart + 10, points.Count);
+        // Find closest point - search entire path from current position onward
+        // Wide search prevents losing track on tight curves
+        int searchStart = Math.Max(0, recState.CurrentPositionIndex - 5);
         int closestIdx = searchStart;
         double closestDist = double.MaxValue;
 
-        for (int i = searchStart; i < searchEnd; i++)
+        for (int i = searchStart; i < points.Count; i++)
         {
             double dx = points[i].Easting - vehicleE;
             double dy = points[i].Northing - vehicleN;
