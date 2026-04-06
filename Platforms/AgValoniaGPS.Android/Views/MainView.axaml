@@ -85,6 +85,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <panels:XTEChartPanel x:Name="XTEChartPanel"
                                           Canvas.Left="300" Canvas.Top="480"
                                           DataContext="{Binding}"/>
+                    <panels:RecordedPathPanel x:Name="RecordedPathPanel"
+                                              Canvas.Left="150" Canvas.Top="20"
+                                              DataContext="{Binding}"/>
                 </Canvas>
 
                 <!-- Zoom Controls - Bottom Right -->
