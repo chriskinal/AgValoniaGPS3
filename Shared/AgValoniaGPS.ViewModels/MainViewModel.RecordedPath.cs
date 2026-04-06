@@ -472,23 +472,32 @@ public partial class MainViewModel
             }
         }
 
-        // Pure Pursuit guidance using lookahead
-        int lookIdx = Math.Min(closestIdx + 5, points.Count - 1);
+        // Pure Pursuit guidance: shorter lookahead for tight curves
+        int lookAhead = Math.Max(2, Math.Min(3, points.Count - closestIdx - 1));
+        int lookIdx = Math.Min(closestIdx + lookAhead, points.Count - 1);
         var lookPt = points[lookIdx];
         double dxLook = lookPt.Easting - vehicleE;
         double dyLook = lookPt.Northing - vehicleN;
-        double dist = Math.Sqrt(dxLook * dxLook + dyLook * dyLook);
+        double lookDistSq = dxLook * dxLook + dyLook * dyLook;
+        double lookDist = Math.Sqrt(lookDistSq);
 
-        if (dist > 0.1)
+        if (lookDist > 0.1)
         {
-            double targetHeading = Math.Atan2(dxLook, dyLook);
+            // Transform to vehicle-local coordinates
             double vehicleHRad = State.Vehicle.Heading * Math.PI / 180.0;
-            double headingError = targetHeading - vehicleHRad;
-            while (headingError > Math.PI) headingError -= 2 * Math.PI;
-            while (headingError < -Math.PI) headingError += 2 * Math.PI;
+            double cosH = Math.Cos(vehicleHRad);
+            double sinH = Math.Sin(vehicleHRad);
+            double localX = dxLook * cosH - dyLook * sinH;  // lateral (right+)
+            double localY = dxLook * sinH + dyLook * cosH;  // forward
 
-            // Recorded path always steers during playback
-            double steerAngle = headingError * 2.0;
+            // Pure Pursuit formula: steer = atan(2 * wheelbase * localX / L^2)
+            double wheelbase = Math.Max(ConfigurationStore.Instance.Vehicle.Wheelbase, 2.0);
+            double steerAngle;
+            if (localY > 0.1)
+                steerAngle = Math.Atan2(2.0 * wheelbase * localX, lookDistSq);
+            else
+                steerAngle = localX > 0 ? 0.5 : -0.5; // goal behind, turn toward it
+
             double maxSteer = ConfigurationStore.Instance.Vehicle.MaxSteerAngle * Math.PI / 180.0;
             steerAngle = Math.Clamp(steerAngle, -maxSteer, maxSteer);
 

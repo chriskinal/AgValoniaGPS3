@@ -348,8 +348,7 @@ sealed class Program
             Console.Write("[RecPath] Start playback... ");
             if (pts >= 5)
             {
-                // Ensure tractor is moving forward for playback
-                vm.SimulatorForwardCommand?.Execute(null);
+                // Move forward at moderate speed for playback
                 vm.SimulatorForwardCommand?.Execute(null);
                 await Delay(50);
 
