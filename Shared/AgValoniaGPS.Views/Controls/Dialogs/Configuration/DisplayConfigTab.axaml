@@ -84,30 +84,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                           RowSpacing="12" ColumnSpacing="12" HorizontalAlignment="Center">
 
-                        <!-- Row 0: Polygons, Speedo, Keyboard, Headland Dist -->
+                        <!-- Row 0: Keyboard, Headland Dist -->
                         <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
-                            <Button Classes="DisplayToggle"
-                                    Background="{Binding Display.PolygonsVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                    BorderBrush="{Binding Display.PolygonsVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                    Command="{Binding TogglePolygonsCommand}">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Poligons.png"
-                                       Width="60" Height="60" Stretch="Uniform"/>
-                            </Button>
-                            <TextBlock Text="Polygons" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
-                            <Button Classes="DisplayToggle"
-                                    Background="{Binding Display.SpeedometerVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                    BorderBrush="{Binding Display.SpeedometerVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                    Command="{Binding ToggleSpeedometerCommand}">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Speedometer.png"
-                                       Width="60" Height="60" Stretch="Uniform"/>
-                            </Button>
-                            <TextBlock Text="Speedo" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
                             <Button Classes="DisplayToggle"
                                     Background="{Binding Display.KeyboardEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Display.KeyboardEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
