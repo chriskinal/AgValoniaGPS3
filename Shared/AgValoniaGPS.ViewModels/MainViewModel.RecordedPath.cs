@@ -416,7 +416,7 @@ public partial class MainViewModel
         double recDistSq = dxRec * dxRec + dyRec * dyRec;
 
         // Transition: close to recorded path OR near end of Dubins path
-        if (recDistSq < 100.0 || remaining < 5) // 10m from rec path or 5 points left on Dubins
+        if (recDistSq < 9.0 || remaining < 5) // 3m from rec path or 5 points left on Dubins
         {
             recState.IsFollowingDubinsToPath = false;
             recState.IsFollowingRecPath = true;
