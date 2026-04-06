@@ -251,6 +251,12 @@ public partial class MainViewModel
             AddRecordedPathPoint(posEasting, posNorthing, data.CurrentPosition.Heading);
         }
 
+        // Update recorded path playback if active
+        if (State.RecordedPath.IsDrivingRecordedPath)
+        {
+            UpdateRecordedPathPlayback();
+        }
+
         // Update headland proximity distance for HUD readout
         UpdateHeadlandProximity(data.CurrentPosition);
 

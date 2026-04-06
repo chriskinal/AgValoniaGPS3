@@ -270,6 +270,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeBoundaryCommands();
         InitializeTrackCommands();
         InitializeTrackManagementCommands();
+        InitializeRecordedPathCommands();
         InitializeNtripCommands();
         InitializeWizardCommands();
         InitializeSettingsCommands();
