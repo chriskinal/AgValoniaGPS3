@@ -79,7 +79,7 @@ Licensed under GNU GPL v3.
                     <!-- Record Start -->
                     <StackPanel Spacing="4" IsVisible="{Binding !IsRecordingPath}">
                         <Button Classes="RPBtn" Command="{Binding StartRecordedPathCommand}" ClickMode="Press"
-                                ToolTip.Tip="Start recording">
+                                ToolTip.Tip="Start recording" IsEnabled="{Binding IsFieldOpen}">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathRecord.png"
                                    Width="36" Height="36" Stretch="Uniform"/>
                         </Button>
@@ -114,8 +114,11 @@ Licensed under GNU GPL v3.
                             Background="#27AE60" Foreground="White" FontWeight="Bold"/>
                 </StackPanel>
 
+                <TextBlock Text="Open a field to enable recording."
+                           FontSize="12" TextWrapping="Wrap" IsVisible="{Binding !IsFieldOpen}"
+                           Foreground="#E74C3C"/>
                 <TextBlock Text="Drive your route, then press Stop to save."
-                           FontSize="12" TextWrapping="Wrap" IsVisible="{Binding !IsRecordingPath}"
+                           FontSize="12" TextWrapping="Wrap" IsVisible="{Binding IsFieldOpen}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             </StackPanel>
 

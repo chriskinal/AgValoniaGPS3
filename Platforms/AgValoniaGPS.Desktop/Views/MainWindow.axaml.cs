@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private MainViewModel? ViewModel => DataContext as MainViewModel;
     private ISharedMapControl? MapControl;
     private bool _isDraggingSection = false;
+    private bool _isDraggingRecPath = false;
     private Avalonia.Point _dragStartPoint;
     private const double TapDistanceThreshold = 5.0;
 
@@ -544,6 +545,40 @@ public partial class MainWindow : Window
         if (_isDraggingSection)
         {
             _isDraggingSection = false;
+            e.Pointer.Capture(null);
+        }
+    }
+
+    // --- Recorded Path Panel Drag ---
+    private void RecordedPath_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control control)
+        {
+            _isDraggingRecPath = true;
+            _dragStartPoint = e.GetPosition(this);
+            e.Pointer.Capture(control);
+        }
+    }
+
+    private void RecordedPath_PointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_isDraggingRecPath && sender is Control control)
+        {
+            var currentPoint = e.GetPosition(this);
+            var delta = currentPoint - _dragStartPoint;
+            double newLeft = Math.Clamp(Canvas.GetLeft(control) + delta.X, 0, Bounds.Width - control.Bounds.Width);
+            double newTop = Math.Clamp(Canvas.GetTop(control) + delta.Y, 0, Bounds.Height - control.Bounds.Height);
+            Canvas.SetLeft(control, newLeft);
+            Canvas.SetTop(control, newTop);
+            _dragStartPoint = currentPoint;
+        }
+    }
+
+    private void RecordedPath_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_isDraggingRecPath)
+        {
+            _isDraggingRecPath = false;
             e.Pointer.Capture(null);
         }
     }
