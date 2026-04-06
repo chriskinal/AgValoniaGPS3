@@ -405,6 +405,15 @@ public partial class MainViewModel
         _recPathRecordingPoints.Add(point);
         _lastRecPathPoint = point;
 
+        // Show path growing on map every 5 points
+        if (_recPathRecordingPoints.Count % 5 == 0)
+        {
+            var vec3List = _recPathRecordingPoints.Select(p =>
+                new Vec3(p.Easting, p.Northing, p.Heading)).ToList();
+            var liveTrack = Track.FromRecordedPath("Recording...", vec3List);
+            _mapService.SetRecordedPaths(new[] { liveTrack });
+        }
+
         if (_recPathRecordingPoints.Count % 20 == 0)
             StatusMessage = $"Recording path: {_recPathRecordingPoints.Count} points";
     }

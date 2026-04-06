@@ -348,6 +348,11 @@ sealed class Program
             Console.Write("[RecPath] Start playback... ");
             if (pts >= 5)
             {
+                // Ensure tractor is moving forward for playback
+                vm.SimulatorForwardCommand?.Execute(null);
+                vm.SimulatorForwardCommand?.Execute(null);
+                await Delay(50);
+
                 vm.PlayRecordedPathCommand?.Execute(null);
                 await Delay(200);
                 Dispatcher.UIThread.RunJobs();
@@ -357,11 +362,18 @@ sealed class Program
                 Console.Write($"[dubins={vm.State.RecordedPath.IsFollowingDubinsToPath}] ");
 
                 // Follow for a while
-                for (int i = 0; i < 300; i++)
+                for (int i = 0; i < 800; i++)
                 {
                     simService.Tick(0);
-                    await Delay(8);
+                    await Delay(5);
                     if (i % 15 == 0) Frame();
+                    if (i % 200 == 0)
+                    {
+                        var rs = vm.State.RecordedPath;
+                        var gp = rs.RecordedPoints.Count > 0 ? rs.RecordedPoints[rs.StartPathIndex] : default;
+                        double dg = Math.Sqrt(Math.Pow(gp.Easting - vm.State.Vehicle.Easting, 2) + Math.Pow(gp.Northing - vm.State.Vehicle.Northing, 2));
+                        Console.Write($"[steer={vm.SimulatorSteerAngle:F1} dubins={rs.IsFollowingDubinsToPath} rec={rs.IsFollowingRecPath} idx={rs.CurrentPositionIndex} dist={dg:F1}] ");
+                    }
                 }
                 CaptureScreenshot(window, "recpath_playback_following");
                 Frame();
