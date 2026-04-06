@@ -11,6 +11,7 @@ Licensed under GNU GPL v3.
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.RecordedPathDialogPanel"
              x:DataType="vm:MainViewModel"
+             x:Name="RecPathRoot"
              IsVisible="{Binding IsRecordedPathPanelVisible}"
              IsHitTestVisible="{Binding IsRecordedPathPanelVisible}">
 
@@ -130,7 +131,7 @@ Licensed under GNU GPL v3.
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Classes="RPWide" Content="{Binding}" Margin="0,1" ClickMode="Press"
-                                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).PickRecordedPathCommand}"
+                                            Command="{Binding #RecPathRoot.((vm:MainViewModel)DataContext).PickRecordedPathCommand}"
                                             CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
