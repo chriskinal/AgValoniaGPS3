@@ -119,9 +119,9 @@ public partial class MainViewModel
 
     private void InitializeClock()
     {
-        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        CurrentTime = Models.Timing.Clock.Current.Now.ToString("HH:mm:ss");
         var clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        clockTimer.Tick += (_, _) => CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        clockTimer.Tick += (_, _) => CurrentTime = Models.Timing.Clock.Current.Now.ToString("HH:mm:ss");
         clockTimer.Start();
     }
 
@@ -314,12 +314,12 @@ public partial class MainViewModel
         // Try GPS-based solar calculation when we have a valid position
         if (_gpsService.IsGpsDataOk() && display.AutoDayNight)
         {
-            shouldBeDay = SolarCalculator.IsDay(Latitude, Longitude, DateTime.UtcNow);
+            shouldBeDay = SolarCalculator.IsDay(Latitude, Longitude, Models.Timing.Clock.Current.UtcNow);
         }
         else
         {
             // Fallback to configurable hours
-            int hour = DateTime.Now.Hour;
+            int hour = Models.Timing.Clock.Current.Now.Hour;
             int dayStart = display.DayStartHour;
             int nightStart = display.NightStartHour;
 

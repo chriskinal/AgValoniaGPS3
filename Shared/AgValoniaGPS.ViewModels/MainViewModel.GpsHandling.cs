@@ -308,7 +308,7 @@ public partial class MainViewModel
             return;
 
         // 3-second debounce
-        var now = DateTime.UtcNow;
+        var now = Models.Timing.Clock.Current.UtcNow;
         if ((now - _lastAutoTrackTime).TotalSeconds < AUTO_TRACK_INTERVAL_SECONDS)
             return;
         _lastAutoTrackTime = now;

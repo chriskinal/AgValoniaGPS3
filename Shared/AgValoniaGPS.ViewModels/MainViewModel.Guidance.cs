@@ -119,9 +119,9 @@ public partial class MainViewModel
             if (percentRemoved > 10 && _howManyPathsAway != _lastWarnedPathsAway)
             {
                 // Only warn once per path and at most every 10 seconds
-                if ((DateTime.Now - _lastCurveLimitWarning).TotalSeconds > 10)
+                if ((Models.Timing.Clock.Current.Now - _lastCurveLimitWarning).TotalSeconds > 10)
                 {
-                    _lastCurveLimitWarning = DateTime.Now;
+                    _lastCurveLimitWarning = Models.Timing.Clock.Current.Now;
                     _lastWarnedPathsAway = _howManyPathsAway;
 
                     double minRadius = CurveProcessing.CalculateMinRadiusOfCurvature(track.Points);
