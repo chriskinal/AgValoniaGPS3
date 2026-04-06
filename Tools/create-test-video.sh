@@ -10,7 +10,7 @@ mkdir -p "$(dirname "$OUTPUT")"
 
 ffmpeg -y -i "$INPUT" \
     -f lavfi -i anullsrc=r=44100:cl=mono \
-    -vf "scale=1280:960:flags=lanczos" \
+    -vf "scale=1280:960:flags=lanczos,drawtext=text='Frame %{frame_num}':x=10:y=10:fontsize=28:fontcolor=white:borderw=2:bordercolor=black" \
     -r 10 -c:v libx264 -crf 18 -pix_fmt yuv420p \
     -c:a aac -shortest -movflags faststart \
     "$OUTPUT"
