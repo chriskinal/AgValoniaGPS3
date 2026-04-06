@@ -320,6 +320,7 @@ public partial class MainViewModel
             State.Vehicle.Northing, headingRad));
 
         recState.DubinsApproachPath = dubinsPath;
+        _dubinsClosestIdx = 0;
         recState.IsFollowingDubinsToPath = true;
         recState.IsFollowingRecPath = false;
         recState.IsEndOfLine = false;
@@ -376,59 +377,77 @@ public partial class MainViewModel
         }
     }
 
+    private int _dubinsClosestIdx;
+
     private void UpdateDubinsApproach(double vehicleE, double vehicleN, double vehicleH)
     {
         var recState = State.RecordedPath;
+        var dubinsPath = recState.DubinsApproachPath;
+        if (dubinsPath.Count < 2) { StopDrivingRecordedPath(); return; }
 
-        // Find closest point on the entire recorded path
-        int nearestIdx = FindClosestPoint(recState.RecordedPoints, vehicleE, vehicleN);
-        var nearestPt = recState.RecordedPoints[nearestIdx];
-        double dxNearest = nearestPt.Easting - vehicleE;
-        double dyNearest = nearestPt.Northing - vehicleN;
-        double nearestDistSq = dxNearest * dxNearest + dyNearest * dyNearest;
+        // Find closest point on Dubins path (search forward from last known position)
+        int searchStart = Math.Max(0, _dubinsClosestIdx - 3);
+        double closestDist = double.MaxValue;
+        for (int i = searchStart; i < dubinsPath.Count; i++)
+        {
+            double dx = dubinsPath[i].Easting - vehicleE;
+            double dy = dubinsPath[i].Northing - vehicleN;
+            double d = dx * dx + dy * dy;
+            if (d < closestDist) { closestDist = d; _dubinsClosestIdx = i; }
+        }
 
-        // Close enough to any point on path - start following from there
-        if (nearestDistSq < 100.0) // 10m
+        int remaining = dubinsPath.Count - _dubinsClosestIdx;
+
+        // Also check distance to recorded path (for early transition)
+        int nearestRecIdx = FindClosestPoint(recState.RecordedPoints, vehicleE, vehicleN);
+        var nearestRecPt = recState.RecordedPoints[nearestRecIdx];
+        double dxRec = nearestRecPt.Easting - vehicleE;
+        double dyRec = nearestRecPt.Northing - vehicleN;
+        double recDistSq = dxRec * dxRec + dyRec * dyRec;
+
+        // Transition: close to recorded path OR near end of Dubins path
+        if (recDistSq < 100.0 || remaining < 5) // 10m from rec path or 5 points left on Dubins
         {
             recState.IsFollowingDubinsToPath = false;
             recState.IsFollowingRecPath = true;
-            recState.CurrentPositionIndex = nearestIdx;
+            recState.CurrentPositionIndex = nearestRecIdx;
             recState.DubinsApproachPath.Clear();
+            _dubinsClosestIdx = 0;
             _mapService.SetYouTurnPath(null);
             StatusMessage = "Following recorded path...";
             return;
         }
 
-        // Steer toward the path start point
-        var goalPt = recState.RecordedPoints[recState.StartPathIndex];
-        double dx = goalPt.Easting - vehicleE;
-        double dy = goalPt.Northing - vehicleN;
-        double distSq = dx * dx + dy * dy;
+        // Pure Pursuit along the Dubins path: lookahead 3-5 points ahead
+        int lookAhead = Math.Min(5, dubinsPath.Count - _dubinsClosestIdx - 1);
+        if (lookAhead < 1) lookAhead = 1;
+        int lookIdx = _dubinsClosestIdx + lookAhead;
+        var lookPt = dubinsPath[lookIdx];
 
-        // Pure Pursuit: steer toward goal point
-        double cosH = Math.Cos(vehicleH);
-        double sinH = Math.Sin(vehicleH);
-        double localX = dx * cosH - dy * sinH;
-        double localY = dx * sinH + dy * cosH;
+        double dxLook = lookPt.Easting - vehicleE;
+        double dyLook = lookPt.Northing - vehicleN;
+        double lookDistSq = dxLook * dxLook + dyLook * dyLook;
 
-        // Only steer if goal is ahead (localY > 0)
-        double dist = Math.Sqrt(distSq);
-        double steerAngle;
-        if (localY > 0.5)
+        if (lookDistSq > 0.01)
         {
-            // Pure Pursuit: steerAngle = atan(2 * wheelbase * localX / L^2)
+            // Transform to vehicle-local coordinates (vehicleH already in radians)
+            double cosH = Math.Cos(vehicleH);
+            double sinH = Math.Sin(vehicleH);
+            double localX = dxLook * cosH - dyLook * sinH;  // lateral (right+)
+            double localY = dxLook * sinH + dyLook * cosH;  // forward
+
             double wheelbase = Math.Max(ConfigurationStore.Instance.Vehicle.Wheelbase, 2.0);
-            steerAngle = Math.Atan2(2.0 * wheelbase * localX, distSq);
-        }
-        else
-        {
-            // Goal is behind or beside - just turn toward it
-            steerAngle = localX > 0 ? 0.5 : -0.5;
-        }
-        double maxSteer = ConfigurationStore.Instance.Vehicle.MaxSteerAngle * Math.PI / 180.0;
-        steerAngle = Math.Clamp(steerAngle, -maxSteer, maxSteer);
+            double steerAngle;
+            if (localY > 0.1)
+                steerAngle = Math.Atan2(2.0 * wheelbase * localX, lookDistSq);
+            else
+                steerAngle = localX > 0 ? 0.5 : -0.5;
 
-        SimulatorSteerAngle = steerAngle * 180.0 / Math.PI;
+            double maxSteer = ConfigurationStore.Instance.Vehicle.MaxSteerAngle * Math.PI / 180.0;
+            steerAngle = Math.Clamp(steerAngle, -maxSteer, maxSteer);
+
+            SimulatorSteerAngle = steerAngle * 180.0 / Math.PI;
+        }
     }
 
     private void UpdateRecPathFollowing(double vehicleE, double vehicleN)
