@@ -298,11 +298,11 @@ public partial class MainViewModel
         var goal = new Vec3(goalPt.Easting, goalPt.Northing, goalPt.Heading);
 
         // Bump current position forward 3m (matching legacy)
-        double heading = State.Vehicle.Heading;
+        double headingRad = State.Vehicle.Heading * Math.PI / 180.0;
         var start = new Vec3(
-            State.Vehicle.Easting + 3.0 * Math.Sin(heading),
-            State.Vehicle.Northing + 3.0 * Math.Cos(heading),
-            heading);
+            State.Vehicle.Easting + 3.0 * Math.Sin(headingRad),
+            State.Vehicle.Northing + 3.0 * Math.Cos(headingRad),
+            headingRad);
 
         var dubins = new DubinsPathService(0.5);
         var youTurnRadius = ConfigurationStore.Instance.Guidance.UTurnRadius;
@@ -317,7 +317,7 @@ public partial class MainViewModel
 
         // Insert current position at front
         dubinsPath.Insert(0, new Vec3(State.Vehicle.Easting,
-            State.Vehicle.Northing, heading));
+            State.Vehicle.Northing, headingRad));
 
         recState.DubinsApproachPath = dubinsPath;
         recState.IsFollowingDubinsToPath = true;
