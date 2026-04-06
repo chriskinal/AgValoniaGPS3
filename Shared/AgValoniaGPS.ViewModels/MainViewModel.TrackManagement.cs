@@ -43,8 +43,8 @@ public partial class MainViewModel
 
     #region Recorded Path Recording State
 
-    private readonly List<Vec3> _recPathRecordingPoints = new();
-    private Vec3? _lastRecPathPoint;
+    private readonly List<RecPathPoint> _recPathRecordingPoints = new();
+    private RecPathPoint? _lastRecPathPoint;
     private const double RecPathMinPointSpacing = 2.0; // Minimum 2m between recorded path points
 
     #endregion
@@ -86,21 +86,40 @@ public partial class MainViewModel
                 return;
             }
 
+            // Create Track for map display
+            var vec3List = _recPathRecordingPoints.Select(p =>
+                new Vec3(p.Easting, p.Northing, p.Heading)).ToList();
             var track = Track.FromRecordedPath(
-                $"RecPath {DateTime.Now:HH:mm:ss}",
-                new List<Vec3>(_recPathRecordingPoints));
+                $"RecPath {DateTime.Now:HH:mm:ss}", vec3List);
 
             RecordedPathTracks.Add(track);
             SavedTracks.Add(track);
             UpdateRecordedPathsOnMap();
 
-            // Save to file
+            // Save to file with full data (speed, autoBtnState)
             var activeField = _fieldService.ActiveField;
             if (activeField != null && !string.IsNullOrEmpty(activeField.DirectoryPath))
             {
-                try { Services.RecPathFileService.SaveRecPath(activeField.DirectoryPath, track); }
+                try
+                {
+                    var pointsCopy = new List<RecPathPoint>(_recPathRecordingPoints);
+
+                    // Save as RecPath.txt (current/default)
+                    Services.RecPathFileService.SaveRecPath(activeField.DirectoryPath, pointsCopy);
+
+                    // Also save a timestamped .rec copy
+                    var recName = $"RecPath_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.rec";
+                    Services.RecPathFileService.SaveRecPathToFile(
+                        System.IO.Path.Combine(activeField.DirectoryPath, recName), pointsCopy);
+
+                    _logger.LogDebug($"[RecPath] Saved {pointsCopy.Count} points to RecPath.txt and {recName}");
+                }
                 catch (Exception ex) { _logger.LogDebug($"[RecPath] Save failed: {ex.Message}"); }
             }
+
+            // Store in playback state for immediate use
+            State.RecordedPath.RecordedPoints = new List<RecPathPoint>(_recPathRecordingPoints);
+            State.RecordedPath.CurrentPositionIndex = 0;
 
             StatusMessage = $"Recorded path saved ({_recPathRecordingPoints.Count} points)";
             _recPathRecordingPoints.Clear();
@@ -382,7 +401,11 @@ public partial class MainViewModel
                 return;
         }
 
-        var point = new Vec3(easting, northing, headingRadians);
+        // Capture speed (minimum 1.0 kmh, matching legacy) and section state
+        double speed = Math.Max(SpeedKmh, 1.0);
+        bool autoBtnState = IsSectionMasterOn;
+
+        var point = new RecPathPoint(easting, northing, headingRadians, speed, autoBtnState);
         _recPathRecordingPoints.Add(point);
         _lastRecPathPoint = point;
 
