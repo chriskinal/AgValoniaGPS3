@@ -363,12 +363,12 @@ sealed class Program
                 Console.Write($"[dubins={vm.State.RecordedPath.IsFollowingDubinsToPath}] ");
 
                 // Follow for a while
-                for (int i = 0; i < 800; i++)
+                for (int i = 0; i < 1200; i++)
                 {
-                    simService.Tick(0);
-                    await Delay(5);
-                    if (i % 15 == 0) Frame();
-                    if (i % 200 == 0)
+                    simService.Tick(vm.SimulatorSteerAngle);
+                    await Delay(3);
+                    if (i % 20 == 0) Frame();
+                    if (i % 300 == 0)
                     {
                         var rs = vm.State.RecordedPath;
                         var gp = rs.RecordedPoints.Count > 0 ? rs.RecordedPoints[rs.StartPathIndex] : default;

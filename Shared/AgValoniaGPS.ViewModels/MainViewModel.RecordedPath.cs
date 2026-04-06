@@ -370,8 +370,8 @@ public partial class MainViewModel
 
         if (recState.IsFollowingDubinsToPath)
         {
-            // Phase 1: Following Dubins approach path at slow speed (9 kmh matching legacy)
-            _simulatorService.StepDistance = 0.225; // ~9 kmh
+            // Phase 1: Following Dubins approach path at slow speed
+            _simulatorService.StepDistance = 0.125; // ~5 kmh - slow for steer smoothing to keep up
             UpdateDubinsApproach(vehicleE, vehicleN, vehicleH);
         }
         else if (recState.IsFollowingRecPath)
