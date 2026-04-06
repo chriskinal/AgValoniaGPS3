@@ -408,16 +408,10 @@ public partial class MainViewModel
 
         int remaining = dubinsPath.Count - _dubinsClosestIdx;
 
-        // Also check distance to recorded path (for early transition)
-        int nearestRecIdx = FindClosestPoint(recState.RecordedPoints, vehicleE, vehicleN);
-        var nearestRecPt = recState.RecordedPoints[nearestRecIdx];
-        double dxRec = nearestRecPt.Easting - vehicleE;
-        double dyRec = nearestRecPt.Northing - vehicleN;
-        double recDistSq = dxRec * dxRec + dyRec * dyRec;
-
-        // Transition: close to recorded path OR near end of Dubins path
-        if (recDistSq < 9.0 || remaining < 5) // 3m from rec path or 5 points left on Dubins
+        // Transition when Dubins path is completed
+        if (remaining < 3)
         {
+            int nearestRecIdx = FindClosestPoint(recState.RecordedPoints, vehicleE, vehicleN);
             recState.IsFollowingDubinsToPath = false;
             recState.IsFollowingRecPath = true;
             recState.CurrentPositionIndex = nearestRecIdx;
