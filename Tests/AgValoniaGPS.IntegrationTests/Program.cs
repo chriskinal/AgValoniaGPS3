@@ -230,199 +230,156 @@ sealed class Program
         var config = ConfigurationStore.Instance;
         var gifFrames = new List<string>();
 
-        void CaptureFrame()
+        void Frame()
         {
             Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
             var ps = new PixelSize(Math.Max((int)window.Bounds.Width, 1), Math.Max((int)window.Bounds.Height, 1));
             var bmp = new RenderTargetBitmap(ps, new Vector(96, 96));
             bmp.Render(window);
-            var framePath = Path.Combine(_screenshotDir, $"recpath_frame_{gifFrames.Count:D4}.png");
-            bmp.Save(framePath);
-            gifFrames.Add(framePath);
+            var p = Path.Combine(_screenshotDir, $"recpath_frame_{gifFrames.Count:D4}.png");
+            bmp.Save(p);
+            gifFrames.Add(p);
         }
 
         try
         {
-            // Setup: 2D north-up, enable grid and texture
+            // Setup
             vm.Is2DMode = true;
             vm.CameraPitch = -90.0;
             vm.CameraMode = AgValoniaGPS.Models.CameraMode.NorthUp;
             vm.IsGridOn = true;
             config.Display.FieldTextureVisible = true;
             config.Tool.Width = 6.0;
-
             vm.State.UI.CloseDialog();
-            if (vm.ConfigurationViewModel != null)
-                vm.ConfigurationViewModel.IsDialogVisible = false;
+            if (vm.ConfigurationViewModel != null) vm.ConfigurationViewModel.IsDialogVisible = false;
             await Delay(300);
-            Dispatcher.UIThread.RunJobs();
 
-            // Step 0: Load field
-            Console.Write("[RecPath 0] Load field... ");
+            // Load field
+            Console.Write("[RecPath] Load field... ");
             var settingsService = App.Services!.GetRequiredService<ISettingsService>();
             var testFieldDir = Path.Combine(settingsService.Settings.FieldsDirectory, "TestField");
-            try
-            {
-                await vm.OpenFieldAsync(testFieldDir, "TestField");
-                await Delay(500);
-                Console.WriteLine($"[open={vm.IsFieldOpen}] OK");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"PARTIAL ({ex.Message})");
-            }
+            try { await vm.OpenFieldAsync(testFieldDir, "TestField"); await Delay(500); }
+            catch (Exception ex) { Console.Write($"({ex.Message}) "); }
+            Console.WriteLine($"[open={vm.IsFieldOpen}]");
 
-            // Step 1: Initial state
-            Console.Write("[RecPath 1] Initial... ");
-            CaptureScreenshot(window, "recpath_01_initial");
-            CaptureFrame();
-            Console.WriteLine("OK");
-
-            // Step 2: Start driving
-            Console.Write("[RecPath 2] Driving... ");
+            // Accelerate
             vm.SimulatorForwardCommand?.Execute(null);
-            await Delay(100);
-            for (int i = 0; i < 30; i++) { simService.Tick(0); await Delay(20); }
-            CaptureFrame();
-            Console.WriteLine("OK");
+            vm.SimulatorForwardCommand?.Execute(null);
+            vm.SimulatorForwardCommand?.Execute(null);
+            vm.SimulatorForwardCommand?.Execute(null);
+            await Delay(50);
+            for (int i = 0; i < 20; i++) { simService.Tick(0); await Delay(10); }
 
-            // Step 3: Open panel
-            Console.Write("[RecPath 3] Panel... ");
-            vm.ToggleRecordedPathPanelCommand?.Execute(null);
-            await Delay(300);
-            Dispatcher.UIThread.RunJobs();
-            CaptureScreenshot(window, "recpath_03_panel");
-            CaptureFrame();
-            Console.WriteLine($"[visible={vm.IsRecordedPathPanelVisible}] OK");
-
-            // Step 4: Start recording
-            Console.Write("[RecPath 4] Record start... ");
+            // Open dialog, start recording
+            Console.Write("[RecPath] Open dialog + start rec... ");
+            vm.ShowRecordedPathDialogCommand?.Execute(null);
+            await Delay(200);
             vm.StartRecordedPathCommand?.Execute(null);
             await Delay(100);
-            CaptureFrame();
-            Console.WriteLine($"[recording={vm.IsRecordingPath}] OK");
+            Frame();
+            Console.WriteLine($"[recording={vm.IsRecordingPath}]");
 
-            // Step 5: Drive L-shape while recording
-            Console.Write("[RecPath 5] Recording... ");
-            // Increase speed for recording
-            vm.SimulatorForwardCommand?.Execute(null);
-            vm.SimulatorForwardCommand?.Execute(null);
-            vm.SimulatorForwardCommand?.Execute(null);
-            await Delay(50);
-            // Drive straight north (many ticks for distance)
-            for (int i = 0; i < 200; i++)
+            // Drive a circle: constant left steer for ~360 degrees
+            Console.Write("[RecPath] Recording circle... ");
+            vm.SimulatorSteerAngle = 15.0; // Constant left turn
+            for (int i = 0; i < 500; i++)
             {
-                simService.Tick(0); await Delay(10);
-                if (i % 30 == 0) CaptureFrame();
+                simService.Tick(0);
+                await Delay(8);
+                if (i % 20 == 0) Frame();
             }
-            // Turn right
-            vm.SimulatorSteerRightCommand?.Execute(null);
-            vm.SimulatorSteerRightCommand?.Execute(null);
-            await Delay(50);
-            for (int i = 0; i < 100; i++)
-            {
-                simService.Tick(0); await Delay(10);
-                if (i % 20 == 0) CaptureFrame();
-            }
-            vm.SimulatorSteerAngle = 0;
-            // Drive straight east
-            for (int i = 0; i < 150; i++)
-            {
-                simService.Tick(0); await Delay(10);
-                if (i % 30 == 0) CaptureFrame();
-            }
-            CaptureScreenshot(window, "recpath_05_recording");
+            CaptureScreenshot(window, "recpath_circle_recording");
             Console.WriteLine("OK");
 
-            // Step 6: Stop recording
-            Console.Write("[RecPath 6] Stop rec... ");
+            // Stop recording
+            Console.Write("[RecPath] Stop recording... ");
             vm.StopRecordedPathCommand?.Execute(null);
+            vm.SimulatorSteerAngle = 0;
             await Delay(300);
             Dispatcher.UIThread.RunJobs();
-            CaptureScreenshot(window, "recpath_06_saved");
-            CaptureFrame(); CaptureFrame();
-            Console.WriteLine($"[points={vm.State.RecordedPath.RecordedPoints.Count}] OK");
+            Frame(); Frame();
+            int pts = vm.State.RecordedPath.RecordedPoints.Count;
+            Console.WriteLine($"[points={pts}]");
 
-            // Step 7: Show path
-            Console.Write("[RecPath 7] Show... ");
+            // Save with name
+            if (vm.HasUnsavedRecordedPath)
+            {
+                vm.RecordedPathName = "CircleTest";
+                vm.SaveNamedRecordedPathCommand?.Execute(null);
+                await Delay(200);
+            }
+
+            // Show path on map
             vm.ShowRecordedPaths = true;
             await Delay(200);
             Dispatcher.UIThread.RunJobs();
-            CaptureScreenshot(window, "recpath_07_visible");
-            CaptureFrame(); CaptureFrame();
-            Console.WriteLine("OK");
+            CaptureScreenshot(window, "recpath_circle_saved");
+            Frame(); Frame();
 
-            // Step 8: Drive back toward start
-            Console.Write("[RecPath 8] Back... ");
+            // Close dialog for clean view
+            vm.State.UI.CloseDialog();
+            await Delay(200);
+            Frame(); Frame();
+
+            // Drive to offset position for playback (reverse out of circle)
+            Console.Write("[RecPath] Moving to start position... ");
             vm.SimulatorReverseCommand?.Execute(null);
             await Delay(50);
-            for (int i = 0; i < 80; i++)
-            {
-                simService.Tick(0); await Delay(15);
-                if (i % 15 == 0) CaptureFrame();
-            }
-            vm.SimulatorForwardCommand?.Execute(null);
-            vm.SimulatorSteerLeftCommand?.Execute(null);
-            await Delay(50);
-            for (int i = 0; i < 40; i++) { simService.Tick(0); await Delay(15); }
-            vm.SimulatorSteerAngle = 0;
             for (int i = 0; i < 60; i++)
             {
-                simService.Tick(0); await Delay(15);
-                if (i % 15 == 0) CaptureFrame();
+                simService.Tick(0); await Delay(10);
+                if (i % 15 == 0) Frame();
             }
-            CaptureFrame();
+            vm.SimulatorForwardCommand?.Execute(null);
+            await Delay(50);
+            // Steer to roughly face the circle start
+            vm.SimulatorSteerAngle = -10;
+            for (int i = 0; i < 30; i++) { simService.Tick(0); await Delay(10); }
+            vm.SimulatorSteerAngle = 0;
+            for (int i = 0; i < 30; i++)
+            {
+                simService.Tick(0); await Delay(10);
+                if (i % 10 == 0) Frame();
+            }
             Console.WriteLine("OK");
 
-            // Step 9: Playback
-            Console.Write("[RecPath 9] Play... ");
-            if (vm.State.RecordedPath.RecordedPoints.Count >= 5)
+            // Start playback
+            Console.Write("[RecPath] Start playback... ");
+            if (pts >= 5)
             {
                 vm.PlayRecordedPathCommand?.Execute(null);
                 await Delay(200);
                 Dispatcher.UIThread.RunJobs();
-                CaptureScreenshot(window, "recpath_09_playback");
-                CaptureFrame();
+                CaptureScreenshot(window, "recpath_playback_start");
+                Frame();
                 Console.Write($"[driving={vm.State.RecordedPath.IsDrivingRecordedPath}] ");
+                Console.Write($"[dubins={vm.State.RecordedPath.IsFollowingDubinsToPath}] ");
 
-                for (int i = 0; i < 100; i++)
+                // Follow for a while
+                for (int i = 0; i < 300; i++)
                 {
-                    simService.Tick(0); await Delay(20);
-                    if (i % 10 == 0) CaptureFrame();
+                    simService.Tick(0);
+                    await Delay(8);
+                    if (i % 15 == 0) Frame();
                 }
-                CaptureScreenshot(window, "recpath_10_following");
-                CaptureFrame();
+                CaptureScreenshot(window, "recpath_playback_following");
+                Frame();
 
+                // Stop playback
                 vm.PlayRecordedPathCommand?.Execute(null);
                 await Delay(200);
+                Frame();
+                Console.WriteLine("OK");
             }
             else
             {
-                Console.Write("[SKIP: <5 points] ");
+                Console.WriteLine("[SKIP: <5 points]");
             }
-            Console.WriteLine("OK");
 
-            // Step 10: Reverse + resume modes
-            Console.Write("[RecPath 10] Reverse... ");
-            vm.ReverseRecordedPathCommand?.Execute(null);
-            await Delay(200);
-            Dispatcher.UIThread.RunJobs();
-            CaptureFrame();
-            vm.CycleResumeModeCommand?.Execute(null);
-            Console.Write($"[{vm.ResumeModeLabel}] ");
-            vm.CycleResumeModeCommand?.Execute(null);
-            Console.Write($"[{vm.ResumeModeLabel}] ");
-            vm.CycleResumeModeCommand?.Execute(null);
-            Console.Write($"[{vm.ResumeModeLabel}] ");
-            Console.WriteLine("OK");
-
-            // Step 11: Close panel
-            Console.Write("[RecPath 11] Close... ");
-            vm.ToggleRecordedPathPanelCommand?.Execute(null);
-            await Delay(200);
-            CaptureFrame();
-            Console.WriteLine("OK");
+            // Final screenshot
+            CaptureScreenshot(window, "recpath_final");
+            Frame();
 
             // Save GIF
             Console.Write("[RecPath] GIF... ");
@@ -436,7 +393,7 @@ for path in sys.argv[1:]:
     img = Image.open(path).convert('RGB').resize((640, 480), Image.LANCZOS)
     frames.append(img)
 if frames:
-    frames[0].save('{gifPath.Replace("'", "\\'")}', save_all=True, append_images=frames[1:], duration=300, loop=0)
+    frames[0].save('{gifPath.Replace("'", "\\'")}', save_all=True, append_images=frames[1:], duration=200, loop=0)
     print(f'GIF: {{len(frames)}} frames')
 ");
             var psi = new System.Diagnostics.ProcessStartInfo("python3", scriptPath + " " + string.Join(" ", gifFrames))
