@@ -93,7 +93,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_KeyBoard.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Keyboard" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Keyboard" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="3" Spacing="4" HorizontalAlignment="Center">
@@ -101,10 +101,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     Background="{Binding Display.HeadlandDistanceVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Display.HeadlandDistanceVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
                                     Command="{Binding ToggleHeadlandDistanceCommand}">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_LightBar.png"
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_HeadlandDistance.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Headland Dist" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Headland Dist" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Row 1: Brightness, Svenn Arrow, Start Fullscreen, Elevation Log -->
@@ -116,13 +116,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_AutoDayNight.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Auto Day/Night" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Auto Day/Night" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center"
                                         IsVisible="{Binding !Display.AutoDayNight}">
-                                <TextBlock Text="Day" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="9" VerticalAlignment="Center"/>
+                                <TextBlock Text="Day" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="9" VerticalAlignment="Center"/>
                                 <NumericUpDown Value="{Binding Display.DayStartHour}" Minimum="0" Maximum="23"
                                                Width="55" FontSize="10" Height="24" FormatString="0"/>
-                                <TextBlock Text="Night" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="9" VerticalAlignment="Center"/>
+                                <TextBlock Text="Night" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="9" VerticalAlignment="Center"/>
                                 <NumericUpDown Value="{Binding Display.NightStartHour}" Minimum="0" Maximum="23"
                                                Width="55" FontSize="10" Height="24" FormatString="0"/>
                             </StackPanel>
@@ -133,10 +133,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     Background="{Binding Display.SvennArrowVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Display.SvennArrowVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
                                     Command="{Binding ToggleSvennArrowCommand}">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_RollHelper.png"
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_SvennArrow.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Svenn Arrow" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Svenn Arrow" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
@@ -147,7 +147,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_FullScreenBegin.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Fullscreen" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Fullscreen" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="3" Spacing="4" HorizontalAlignment="Center">
@@ -158,7 +158,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_LogElevation.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Elevation Log" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Elevation Log" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Row 2: Field Texture, Grid, Extra Guidelines, Guidelines Count -->
@@ -170,7 +170,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_FloorTexture.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Field Texture" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Field Texture" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
@@ -181,7 +181,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Grid.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Grid" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Grid" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
@@ -192,7 +192,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_ExtraGuides.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Extra Guides" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Extra Guides" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="3" Spacing="4" HorizontalAlignment="Center">
@@ -200,7 +200,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 Value="{Binding Display.ExtraGuidelinesCount, Mode=TwoWay}"
                                 Unit="" FormatString="F0"
                                 EditCommand="{Binding EditExtraGuidelinesCountCommand}"/>
-                            <TextBlock Text="Guide Count" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Guide Count" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Row 3: Direction Markers, Section Lines -->
@@ -216,7 +216,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_DirectionMarker.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Direction" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Direction" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Hidden: bitmap coverage system does not populate geometry cache (#118) -->
@@ -229,7 +229,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_SectionHighlights.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Section Lines" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Section Lines" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Units Section (Row 3, Column 3) -->
@@ -237,20 +237,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Units" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" Margin="0,0,0,4"/>
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Classes="UnitsToggle" Width="40" Height="40"
-                                        Background="{Binding Config.IsMetric, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                        BorderBrush="{Binding Config.IsMetric, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                        Command="{Binding SetMetricUnitsCommand}">
-                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Metric.png"
-                                           Width="28" Height="28" Stretch="Uniform"/>
-                                </Button>
-                                <Button Classes="UnitsToggle" Width="40" Height="40"
-                                        Background="{Binding !Config.IsMetric, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                        BorderBrush="{Binding !Config.IsMetric, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                        Command="{Binding SetImperialUnitsCommand}">
-                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Imperial.png"
-                                           Width="28" Height="28" Stretch="Uniform"/>
-                                </Button>
+                                <StackPanel Spacing="2">
+                                    <Button Classes="UnitsToggle" Width="60" Height="60"
+                                            Background="{Binding Config.IsMetric, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Config.IsMetric, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding SetMetricUnitsCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Metric.png"
+                                               Width="44" Height="44" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Metric" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <Button Classes="UnitsToggle" Width="60" Height="60"
+                                            Background="{Binding !Config.IsMetric, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding !Config.IsMetric, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding SetImperialUnitsCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Imperial.png"
+                                               Width="44" Height="44" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Imperial" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
 
@@ -263,7 +269,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Text="Light" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button>
-                            <TextBlock Text="Light Theme" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Light Theme" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="4" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
@@ -274,7 +280,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Text="Dark" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button>
-                            <TextBlock Text="Dark Theme" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Dark Theme" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                 </Border>

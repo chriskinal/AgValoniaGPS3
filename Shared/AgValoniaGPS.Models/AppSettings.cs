@@ -36,7 +36,7 @@ namespace AgValoniaGPS.Models
         public bool HeadlandDistanceVisible { get; set; } = true;
         public bool ExtraGuidelines { get; set; } = false;
         public int ExtraGuidelinesCount { get; set; } = 10;
-        public bool FieldTextureVisible { get; set; } = false;
+        public bool FieldTextureVisible { get; set; } = true;
         public bool AutoSteerSound { get; set; } = true;
         public bool UTurnSound { get; set; } = true;
         public bool HydraulicSound { get; set; } = true;

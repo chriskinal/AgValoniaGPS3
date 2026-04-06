@@ -56,7 +56,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="TextBlock.SectionHeaderDisabled">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
@@ -91,7 +91,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Action Button Style (non-toggle) -->
         <Style Selector="Button.ActionButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -102,7 +102,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.ActionButton:disabled">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
         </Style>
 
         <!-- Toggle Switch Style -->
@@ -245,7 +245,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     </TextBlock.Text>
                                 </TextBlock>
                             </Grid>
-                            <TextBlock Text="Default: 70%" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Default: 70%" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Reverse Detection -->

@@ -34,7 +34,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.DirectionBtn">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="Note:" Foreground="#DAA520" FontWeight="SemiBold"/>
                     <TextBlock Text="Pivot settings are only used for Trailing and TBT tool types."
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 
@@ -66,7 +66,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Pivot Distance -->
             <TextBlock Text="Tool Pivot Distance" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,8,0,4"/>
             <TextBlock Text="Distance from hitch pivot point to the tool working point"
-                       Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Margin="0,0,0,8"/>
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" Margin="0,0,0,8"/>
 
             <Border Classes="SettingRow">
                 <Grid ColumnDefinitions="Auto,*,Auto">
@@ -97,11 +97,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="Pivot Explanation:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Behind Pivot (positive)"/>
                         <Run Text=" - Tool working point is behind the hitch pivot (most common)"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Ahead of Pivot (negative)"/>
                         <Run Text=" - Tool working point is ahead of the hitch pivot (rare)"/>
                     </TextBlock>

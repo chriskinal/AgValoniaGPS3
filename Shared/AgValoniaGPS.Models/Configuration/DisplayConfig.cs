@@ -272,7 +272,7 @@ public class DisplayConfig : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _elevationLogEnabled, value);
     }
 
-    private bool _fieldTextureVisible;
+    private bool _fieldTextureVisible = true;
     public bool FieldTextureVisible
     {
         get => _fieldTextureVisible;

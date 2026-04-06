@@ -74,7 +74,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Passes Value -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Passes" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Passes" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <controls:EditableNumericField HorizontalAlignment="Center"
                                 Value="{Binding Guidance.TramPasses, Mode=TwoWay}"
                                 Unit="" FormatString="F0"
@@ -83,7 +83,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Display Toggle -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Display" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Display" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <Button Classes="ToggleButton"
                                     Background="{Binding Guidance.TramDisplay, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                     BorderBrush="{Binding Guidance.TramDisplay, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
@@ -106,7 +106,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Tram Line Value -->
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="Tram Line" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Tram Line" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" HorizontalAlignment="Center"/>
                             <controls:EditableNumericField HorizontalAlignment="Center"
                                 Value="{Binding Guidance.TramLine, Mode=TwoWay}"
                                 Unit="" FormatString="F0"

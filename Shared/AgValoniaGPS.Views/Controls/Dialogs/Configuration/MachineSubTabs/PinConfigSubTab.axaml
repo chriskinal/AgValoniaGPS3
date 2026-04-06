@@ -37,7 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Pin ComboBox -->
         <Style Selector="ComboBox.PinCombo">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="MinWidth" Value="100"/>
             <Setter Property="FontSize" Value="11"/>
@@ -46,7 +46,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Action Button -->
         <Style Selector="Button.ActionButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -209,7 +209,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                 <!-- Reset Button -->
                 <Button Grid.Column="0" Classes="ActionButton" Command="{Binding ResetPinConfigCommand}">
-                    <TextBlock Text="&#x21BA;" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                    <TextBlock Text="&#x21BA;" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                 </Button>
 
                 <!-- Upload Button -->
@@ -221,7 +221,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Button Grid.Column="3" Classes="ActionButton" Command="{Binding SendAndSaveMachineConfigCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="Send + Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock Text="&#x2699;" FontSize="18" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="&#x2699;" FontSize="18" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="&#x2192;" FontSize="18" Foreground="#4A9A7E" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>

@@ -76,7 +76,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
                     <TextBlock Text="Roll Correction" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
                     <TextBlock Text="Adjust roll offset to compensate for IMU mounting angle. Park on level ground and use 'Set Zero' to calibrate."
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" TextWrapping="Wrap"/>
                     <Button Classes="ActionButton" Command="{Binding SetRollZeroCommand}" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Width="24" Height="24"/>
@@ -94,7 +94,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Roll Zero Offset" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
+                        <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="2"
                         Value="{Binding Ahrs.RollZero, Mode=TwoWay}"
@@ -110,7 +110,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Roll Filter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
+                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Ahrs.RollFilter, Mode=TwoWay}"
@@ -130,7 +130,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
                             <TextBlock Text="Invert Roll" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10"/>
+                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
                         </StackPanel>
                         <ToggleSwitch Grid.Column="1" IsChecked="{Binding Ahrs.IsRollInvert}" VerticalAlignment="Center"/>
                     </Grid>

@@ -58,7 +58,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Tip Text -->
                         <TextBlock Text="Set extension length to 2 or 3x Radius"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" TextWrapping="Wrap"
                                    HorizontalAlignment="Center" TextAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -79,7 +79,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Tip Text -->
                         <TextBlock Text="Set Smoothing 3-4x Radius"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" TextWrapping="Wrap"
                                    HorizontalAlignment="Center" TextAlignment="Center"/>
                     </StackPanel>
                 </Border>

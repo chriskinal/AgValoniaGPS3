@@ -55,7 +55,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Tool.HitchLength, Mode=TwoWay}"
@@ -69,7 +69,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Tool.TrailingHitchLength, Mode=TwoWay}"
@@ -83,7 +83,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to implement" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from hitch to implement" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Tool.TrailingHitchLength, Mode=TwoWay}"
@@ -97,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Tank Trailing Hitch" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from implement to tank trailer" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from implement to tank trailer" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Tool.TankTrailingHitchLength, Mode=TwoWay}"
@@ -111,7 +111,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="4">
                     <TextBlock Text="Note:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
                     <TextBlock Text="Values are entered as positive numbers. The system automatically applies the correct sign based on tool type (negative for rear, positive for front)."
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

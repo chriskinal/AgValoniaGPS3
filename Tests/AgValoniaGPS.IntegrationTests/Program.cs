@@ -39,6 +39,7 @@ sealed class Program
     static bool _catalogMode = false;
     static bool _fieldTestMode = false;
     static bool _uturnTestMode = false;
+    static bool _tileTestMode = false;
 
     [STAThread]
     public static int Main(string[] args)
@@ -47,6 +48,7 @@ sealed class Program
         _catalogMode = args.Contains("--catalog");
         _fieldTestMode = args.Contains("--field-test");
         _uturnTestMode = args.Contains("--uturn-test");
+        _tileTestMode = args.Contains("--tile-test");
 
         // Set up isolated test data
         var testDataDir = Path.Combine(AppContext.BaseDirectory, "TestData");
@@ -69,7 +71,8 @@ sealed class Program
         };
 
         // Hook scenario runner -- runs after MainWindow is shown
-        App.OnAppReady = _uturnTestMode ? RunUTurnTest
+        App.OnAppReady = _tileTestMode ? RunTileTest
+                       : _uturnTestMode ? RunUTurnTest
                        : _fieldTestMode ? RunFieldTest
                        : _catalogMode ? RunCatalog
                        : RunScenario;
@@ -163,6 +166,52 @@ sealed class Program
         catch (Exception ex)
         {
             Console.WriteLine($"[Catalog] ERROR: {ex.Message}");
+            _scenarioFailed = true;
+        }
+
+        lifetime.Shutdown();
+    }
+
+    static async Task RunTileTest(IClassicDesktopStyleApplicationLifetime lifetime)
+    {
+        var window = lifetime.MainWindow as Window
+            ?? throw new Exception("MainWindow not found");
+        var vm = (MainViewModel)window.DataContext!;
+        var simService = App.Services!.GetRequiredService<IGpsSimulationService>();
+        var config = ConfigurationStore.Instance;
+
+        try
+        {
+            // Position tractor at lat 0.002, lon 0
+            config.Display.FieldTextureVisible = true;
+            simService.Initialize(new AgValoniaGPS.Models.Wgs84(0.002, 0.0));
+
+            // Set 2D north-up mode
+            vm.Is2DMode = true;
+            vm.CameraPitch = -90.0;
+            vm.CameraMode = AgValoniaGPS.Models.CameraMode.NorthUp;
+
+            // Tick simulator to update position
+            for (int i = 0; i < 10; i++)
+            {
+                simService.Tick(0);
+                await Delay(50);
+            }
+
+            // Zoom in (2x)
+            vm.ZoomInCommand?.Execute(null);
+            vm.ZoomInCommand?.Execute(null);
+            vm.ZoomInCommand?.Execute(null);
+            vm.ZoomInCommand?.Execute(null);
+            await Delay(500);
+            Dispatcher.UIThread.RunJobs();
+
+            CaptureScreenshot(window, "tile_test_lat0002_zoomed");
+            Console.WriteLine($"[TileTest] Captured at lat={vm.Latitude:F6}, lon={vm.Longitude:F6}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TileTest] ERROR: {ex.Message}");
             _scenarioFailed = true;
         }
 

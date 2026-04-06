@@ -50,7 +50,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       OnContent="Enabled" OffContent="Disabled"/>
                     </Grid>
                     <TextBlock Text="Physical switch input to control sections"
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
 
                     <!-- Work switch options (visible when enabled) -->
                     <StackPanel Spacing="8" IsVisible="{Binding Tool.IsWorkSwitchEnabled}">
@@ -102,7 +102,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       OnContent="Enabled" OffContent="Disabled"/>
                     </Grid>
                     <TextBlock Text="Secondary switch input (often linked to autosteer)"
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
 
                     <!-- Steer switch options (visible when enabled) -->
                     <StackPanel Spacing="8" IsVisible="{Binding Tool.IsSteerSwitchEnabled}">
@@ -127,19 +127,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,8,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="Switch Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Work Switch"/>
                         <Run Text=" - Typically connected to implement hydraulic raise/lower sensor"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Steer Switch"/>
                         <Run Text=" - Secondary input, often tied to autosteer engagement"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Active Low"/>
                         <Run Text=" - Switch is ON when circuit is closed (grounded)"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Active High"/>
                         <Run Text=" - Switch is ON when circuit is open"/>
                     </TextBlock>

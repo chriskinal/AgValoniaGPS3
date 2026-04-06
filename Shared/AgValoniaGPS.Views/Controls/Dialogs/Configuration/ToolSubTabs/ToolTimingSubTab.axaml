@@ -44,7 +44,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Look Ahead On" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                    <TextBlock Text="Time before entering coverage to turn ON" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                    <TextBlock Text="Time before entering coverage to turn ON" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11"/>
                 </StackPanel>
                 <controls:EditableNumericField Grid.Column="2" VerticalAlignment="Center"
                     Value="{Binding Tool.LookAheadOnSetting, Mode=TwoWay}"
@@ -59,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Look Ahead Off" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                    <TextBlock Text="Time before leaving coverage to turn OFF" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                    <TextBlock Text="Time before leaving coverage to turn OFF" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11"/>
                 </StackPanel>
                 <controls:EditableNumericField Grid.Column="2" VerticalAlignment="Center"
                     Value="{Binding Tool.LookAheadOffSetting, Mode=TwoWay}"
@@ -74,7 +74,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Turn Off Delay" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                    <TextBlock Text="Delay before turning OFF (alt to Look Ahead Off)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                    <TextBlock Text="Delay before turning OFF (alt to Look Ahead Off)" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11"/>
                 </StackPanel>
                 <controls:EditableNumericField Grid.Column="2" VerticalAlignment="Center"
                     Value="{Binding Tool.TurnOffDelay, Mode=TwoWay}"
@@ -86,15 +86,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="Timing Tips:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Look Ahead On"/>
                         <Run Text=" - Increase for slow-responding equipment (spray valves)"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Look Ahead Off"/>
                         <Run Text=" - Cannot exceed 80% of Look Ahead On value"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Turn Off Delay"/>
                         <Run Text=" - Alternative to Look Ahead Off (one or the other, not both)"/>
                     </TextBlock>

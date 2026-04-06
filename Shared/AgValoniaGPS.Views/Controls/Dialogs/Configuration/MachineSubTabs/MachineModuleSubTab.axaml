@@ -51,7 +51,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Action Button (non-toggle) -->
         <Style Selector="Button.ActionButton">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -87,7 +87,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16">
                     <!-- Enable Button -->
                     <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Text="Enable" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Enable" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <Button Classes="ToggleButton"
                                 Background="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                                 BorderBrush="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
@@ -99,12 +99,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- Raise Time -->
                     <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Text="Raise Time" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Raise Time" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Center"
                             Value="{Binding Machine.RaiseTime, Mode=TwoWay}"
                             Unit="" FormatString="F0"
                             EditCommand="{Binding EditRaiseTimeCommand}"/>
-                        <TextBlock Text="Plant Pop" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Plant Pop" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Raise Time Graphic -->
@@ -117,7 +117,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16">
                     <!-- Look Ahead -->
                     <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Text="Look Ahead" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Look Ahead" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Center"
                             Value="{Binding Machine.LookAhead, Mode=TwoWay}"
                             Unit="" FormatString="F1"
@@ -126,7 +126,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- Lower Time -->
                     <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Text="Lower Time" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Lower Time" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Center"
                             Value="{Binding Machine.LowerTime, Mode=TwoWay}"
                             Unit="" FormatString="F0"
@@ -141,7 +141,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Invert Relay -->
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Invert Relay" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11"/>
+                    <TextBlock Text="Invert Relay" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11"/>
                     <Button Classes="ToggleButton"
                             Background="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
                             BorderBrush="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
@@ -157,7 +157,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         HorizontalAlignment="Right" Margin="0,12,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="Send + Save" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock Text="&#x2699;" FontSize="18" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="&#x2699;" FontSize="18" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="&#x2192;" FontSize="18" Foreground="#4A9A7E" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -168,7 +168,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="8" Width="100">
                     <!-- User 1 -->
                     <StackPanel Spacing="2">
-                        <TextBlock Text="User 1" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="User 1" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Stretch"
                             Value="{Binding Machine.User1Value, Mode=TwoWay}"
                             Unit="" FormatString="F0"
@@ -177,7 +177,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- User 2 -->
                     <StackPanel Spacing="2">
-                        <TextBlock Text="User 2" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="User 2" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Stretch"
                             Value="{Binding Machine.User2Value, Mode=TwoWay}"
                             Unit="" FormatString="F0"
@@ -186,7 +186,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- User 3 -->
                     <StackPanel Spacing="2">
-                        <TextBlock Text="User 3" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="User 3" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Stretch"
                             Value="{Binding Machine.User3Value, Mode=TwoWay}"
                             Unit="" FormatString="F0"
@@ -195,7 +195,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                     <!-- User 4 -->
                     <StackPanel Spacing="2">
-                        <TextBlock Text="User 4" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="User 4" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         <controls:EditableNumericField HorizontalAlignment="Stretch"
                             Value="{Binding Machine.User4Value, Mode=TwoWay}"
                             Unit="" FormatString="F0"

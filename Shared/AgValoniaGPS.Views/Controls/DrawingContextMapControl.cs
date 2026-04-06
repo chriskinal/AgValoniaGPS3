@@ -609,8 +609,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Save context state and apply camera transform
         using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
         {
-            // Draw ground texture tiles (under everything)
-            if (_groundTexture != null)
+            // Draw ground texture tiles (under everything) - respects FieldTextureVisible toggle
+            if (_groundTexture != null
+                && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.FieldTextureVisible)
             {
                 DrawGroundTexture(context, viewWidth, viewHeight);
             }
@@ -2545,7 +2546,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             {
                 double worldX = tx * TILE_SIZE;
                 double worldY = ty * TILE_SIZE;
-                var destRect = new Rect(worldX, -(worldY + TILE_SIZE), TILE_SIZE, TILE_SIZE);
+                // Draw at world coordinates - camera transform handles Y-flip
+                var destRect = new Rect(worldX, worldY, TILE_SIZE, TILE_SIZE);
                 context.DrawImage(_groundTexture!, destRect);
             }
         }

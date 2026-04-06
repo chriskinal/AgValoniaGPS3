@@ -34,7 +34,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.DirectionBtn">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8,6"/>
@@ -51,7 +51,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Tool Offset" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                    <TextBlock Text="Lateral offset from centerline" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,2,0,6"/>
+                    <TextBlock Text="Lateral offset from centerline" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" Margin="0,2,0,6"/>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Classes="DirectionBtn" Content="Left"/>
                         <Button Classes="DirectionBtn" Content="Right"/>
@@ -71,7 +71,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Overlap / Gap" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                    <TextBlock Text="Pass overlap (positive) or gap (negative)" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,2,0,6"/>
+                    <TextBlock Text="Pass overlap (positive) or gap (negative)" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" Margin="0,2,0,6"/>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Classes="DirectionBtn" Content="Overlap"/>
                         <Button Classes="DirectionBtn" Content="Gap"/>
@@ -88,15 +88,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
                     <TextBlock Text="Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Offset"/>
                         <Run Text=" - Use when tool is not centered on tractor (side-mounted sprayer)"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Overlap"/>
                         <Run Text=" - Ensure complete coverage with slight overlap between passes"/>
                     </TextBlock>
-                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Gap"/>
                         <Run Text=" - Leave intentional gap (skip rows, tramlines)"/>
                     </TextBlock>
