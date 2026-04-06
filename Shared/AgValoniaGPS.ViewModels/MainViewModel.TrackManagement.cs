@@ -96,23 +96,15 @@ public partial class MainViewModel
             SavedTracks.Add(track);
             UpdateRecordedPathsOnMap();
 
-            // Save to file with full data (speed, autoBtnState)
+            // Save as RecPath.txt (current/default)
             var activeField = _fieldService.ActiveField;
             if (activeField != null && !string.IsNullOrEmpty(activeField.DirectoryPath))
             {
                 try
                 {
                     var pointsCopy = new List<RecPathPoint>(_recPathRecordingPoints);
-
-                    // Save as RecPath.txt (current/default)
                     Services.RecPathFileService.SaveRecPath(activeField.DirectoryPath, pointsCopy);
-
-                    // Also save a timestamped .rec copy
-                    var recName = $"RecPath_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.rec";
-                    Services.RecPathFileService.SaveRecPathToFile(
-                        System.IO.Path.Combine(activeField.DirectoryPath, recName), pointsCopy);
-
-                    _logger.LogDebug($"[RecPath] Saved {pointsCopy.Count} points to RecPath.txt and {recName}");
+                    _logger.LogDebug($"[RecPath] Saved {pointsCopy.Count} points to RecPath.txt");
                 }
                 catch (Exception ex) { _logger.LogDebug($"[RecPath] Save failed: {ex.Message}"); }
             }
@@ -121,7 +113,11 @@ public partial class MainViewModel
             State.RecordedPath.RecordedPoints = new List<RecPathPoint>(_recPathRecordingPoints);
             State.RecordedPath.CurrentPositionIndex = 0;
 
-            StatusMessage = $"Recorded path saved ({_recPathRecordingPoints.Count} points)";
+            // Prompt for name
+            HasUnsavedRecordedPath = true;
+            RecordedPathName = $"RecPath_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
+
+            StatusMessage = $"Recorded {_recPathRecordingPoints.Count} points - enter a name to save";
             _recPathRecordingPoints.Clear();
             _lastRecPathPoint = null;
         });

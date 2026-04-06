@@ -35,6 +35,10 @@ public partial class MainViewModel
     public ICommand? PickRecordedPathCommand { get; private set; }
     public ICommand? DeleteRecordedPathCommand { get; private set; }
     public ICommand? TurnOffRecordedPathCommand { get; private set; }
+    public ICommand? ShowRecordedPathDialogCommand { get; private set; }
+    public ICommand? CloseRecordedPathDialogCommand { get; private set; }
+    public ICommand? SetRecordedPathTabCommand { get; private set; }
+    public ICommand? SaveNamedRecordedPathCommand { get; private set; }
 
     private bool _isRecordedPathPanelVisible;
     public bool IsRecordedPathPanelVisible
@@ -50,6 +54,45 @@ public partial class MainViewModel
         set => this.RaiseAndSetIfChanged(ref _resumeModeLabel, value);
     }
 
+    // Dialog tab state: 0 = Record, 1 = Playback
+    private int _recordedPathTabIndex;
+    public int RecordedPathTabIndex
+    {
+        get => _recordedPathTabIndex;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _recordedPathTabIndex, value);
+            this.RaisePropertyChanged(nameof(IsRecordTabActive));
+            this.RaisePropertyChanged(nameof(IsPlaybackTabActive));
+        }
+    }
+    public bool IsRecordTabActive => RecordedPathTabIndex == 0;
+    public bool IsPlaybackTabActive => RecordedPathTabIndex == 1;
+
+    // Name for saving recorded path
+    private string _recordedPathName = "";
+    public string RecordedPathName
+    {
+        get => _recordedPathName;
+        set => this.RaiseAndSetIfChanged(ref _recordedPathName, value);
+    }
+
+    // True when a recording just finished and needs naming
+    private bool _hasUnsavedRecordedPath;
+    public bool HasUnsavedRecordedPath
+    {
+        get => _hasUnsavedRecordedPath;
+        set => this.RaiseAndSetIfChanged(ref _hasUnsavedRecordedPath, value);
+    }
+
+    // Info text about loaded path
+    private string _recordedPathInfo = "No path loaded";
+    public string RecordedPathInfo
+    {
+        get => _recordedPathInfo;
+        set => this.RaiseAndSetIfChanged(ref _recordedPathInfo, value);
+    }
+
     // List of available .rec files for the picker
     public ObservableCollection<string> AvailableRecFiles { get; } = new();
 
@@ -60,15 +103,71 @@ public partial class MainViewModel
         set => this.RaiseAndSetIfChanged(ref _selectedRecFile, value);
     }
 
+    // Font weight converter for tab buttons (Bold for active tab)
+    public static Avalonia.Data.Converters.FuncValueConverter<int, Avalonia.Media.FontWeight> TabFontWeightConverter { get; }
+        = new(tabIndex =>
+        {
+            // ConverterParameter is passed as string, but this is the bound value
+            // We'll handle this differently in XAML
+            return Avalonia.Media.FontWeight.Normal;
+        });
+
     private void InitializeRecordedPathCommands()
     {
         ToggleRecordedPathPanelCommand = ReactiveCommand.Create(() =>
         {
-            IsRecordedPathPanelVisible = !IsRecordedPathPanelVisible;
-            if (IsRecordedPathPanelVisible)
+            // Open the dialog instead of the panel
+            if (State.UI.ActiveDialog == DialogType.RecordedPath)
+                State.UI.CloseDialog();
+            else
             {
-                // Auto-load RecPath.txt when opening panel
                 LoadRecPathForPlayback();
+                State.UI.ShowDialog(DialogType.RecordedPath);
+            }
+        });
+
+        ShowRecordedPathDialogCommand = ReactiveCommand.Create(() =>
+        {
+            LoadRecPathForPlayback();
+            State.UI.ShowDialog(DialogType.RecordedPath);
+        });
+
+        CloseRecordedPathDialogCommand = ReactiveCommand.Create(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        SetRecordedPathTabCommand = ReactiveCommand.Create<string>(tab =>
+        {
+            if (int.TryParse(tab, out int idx))
+                RecordedPathTabIndex = idx;
+        });
+
+        SaveNamedRecordedPathCommand = ReactiveCommand.Create(() =>
+        {
+            if (!HasUnsavedRecordedPath) return;
+            var activeField = _fieldService.ActiveField;
+            if (activeField == null) return;
+
+            var name = string.IsNullOrWhiteSpace(RecordedPathName)
+                ? $"RecPath_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}"
+                : RecordedPathName.Trim();
+
+            if (!name.EndsWith(".rec")) name += ".rec";
+
+            try
+            {
+                Services.RecPathFileService.SaveRecPathToFile(
+                    System.IO.Path.Combine(activeField.DirectoryPath, name),
+                    State.RecordedPath.RecordedPoints);
+                HasUnsavedRecordedPath = false;
+                RecordedPathName = "";
+                LoadRecPathForPlayback(); // Refresh file list
+                StatusMessage = $"Saved: {name}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Save failed: {ex.Message}";
             }
         });
 
@@ -446,11 +545,11 @@ public partial class MainViewModel
             State.RecordedPath.RecordedPoints = points;
             State.RecordedPath.CurrentPositionIndex = 0;
             UpdateRecordedPathDisplayOnMap();
-            StatusMessage = $"Recorded path loaded ({points.Count} points)";
+            RecordedPathInfo = $"Loaded: {points.Count} points";
         }
         else
         {
-            StatusMessage = "No recorded path found";
+            RecordedPathInfo = "No path loaded";
         }
 
         // Also refresh the .rec file list
