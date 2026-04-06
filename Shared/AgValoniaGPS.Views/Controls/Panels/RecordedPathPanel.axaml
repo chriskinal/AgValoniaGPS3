@@ -30,23 +30,23 @@ the Free Software Foundation, either version 3 of the License, or
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Padding" Value="4"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="52"/>
         </Style>
         <Style Selector="Button.RecPathBtn:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
     </UserControl.Styles>
 
-    <Border Classes="FloatingPanel" MinWidth="320">
-        <StackPanel Spacing="4">
-            <!-- Header -->
-            <Grid ColumnDefinitions="Auto,*,Auto" Height="28" Margin="0,0,0,4"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand">
+    <Border Classes="FloatingPanel">
+        <StackPanel Spacing="6">
+            <!-- Drag Handle Header -->
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="28"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand"
+                  ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
                            FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
                 <TextBlock Grid.Column="1" Text="Recorded Path"
@@ -57,57 +57,88 @@ the Free Software Foundation, either version 3 of the License, or
                         FontSize="14" Cursor="Hand" Command="{Binding ToggleRecordedPathPanelCommand}" Margin="4,0,4,0"/>
             </Grid>
 
-            <!-- Control Buttons Row 1: Play/Stop, Resume Mode, Record/Stop -->
+            <!-- Buttons Row: Play, Resume, Record, Reverse, Show/Hide -->
             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-                <Button Classes="RecPathBtn" Command="{Binding PlayRecordedPathCommand}" ClickMode="Press"
-                        ToolTip.Tip="Start/Stop playback">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="{Binding State.RecordedPath.IsDrivingRecordedPath,
-                            FallbackValue='Play',
-                            StringFormat='{}{0}'}"
-                            FontSize="11" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                <!-- Play/Stop -->
+                <StackPanel Spacing="2">
+                    <Button Classes="RecPathBtn" Command="{Binding PlayRecordedPathCommand}" ClickMode="Press"
+                            ToolTip.Tip="Start/Stop playback">
+                        <Panel>
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathPlay.png"
+                                   Width="36" Height="36" Stretch="Uniform"
+                                   IsVisible="{Binding !State.RecordedPath.IsDrivingRecordedPath}"/>
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathStop.png"
+                                   Width="36" Height="36" Stretch="Uniform"
+                                   IsVisible="{Binding State.RecordedPath.IsDrivingRecordedPath}"/>
+                        </Panel>
+                    </Button>
+                    <TextBlock Text="Play" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
 
-                <Button Classes="RecPathBtn" Command="{Binding CycleResumeModeCommand}" ClickMode="Press"
-                        ToolTip.Tip="Resume mode: Start / Last / Closest">
-                    <TextBlock Text="{Binding ResumeModeLabel}" FontSize="11"/>
-                </Button>
+                <!-- Resume Mode -->
+                <StackPanel Spacing="2">
+                    <Button Classes="RecPathBtn" Command="{Binding CycleResumeModeCommand}" ClickMode="Press"
+                            ToolTip.Tip="Resume: Start / Last / Closest">
+                        <Panel>
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathResumeStart.png"
+                                   Width="36" Height="36" Stretch="Uniform"/>
+                        </Panel>
+                    </Button>
+                    <TextBlock Text="{Binding ResumeModeLabel}" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
 
-                <Button Classes="RecPathBtn" Command="{Binding StartRecordedPathCommand}" ClickMode="Press"
-                        ToolTip.Tip="Start recording"
-                        IsVisible="{Binding !IsRecordingPath}">
-                    <TextBlock Text="Rec" FontSize="11" Foreground="#E74C3C"/>
-                </Button>
-                <Button Classes="RecPathBtn" Command="{Binding StopRecordedPathCommand}" ClickMode="Press"
-                        ToolTip.Tip="Stop recording" Background="#C0392B"
-                        IsVisible="{Binding IsRecordingPath}">
-                    <TextBlock Text="Stop Rec" FontSize="11" Foreground="White"/>
-                </Button>
+                <!-- Record Start -->
+                <StackPanel Spacing="2" IsVisible="{Binding !IsRecordingPath}">
+                    <Button Classes="RecPathBtn" Command="{Binding StartRecordedPathCommand}" ClickMode="Press"
+                            ToolTip.Tip="Start recording">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathRecord.png"
+                               Width="36" Height="36" Stretch="Uniform"/>
+                    </Button>
+                    <TextBlock Text="Rec" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
+                <!-- Record Stop -->
+                <StackPanel Spacing="2" IsVisible="{Binding IsRecordingPath}">
+                    <Button Classes="RecPathBtn" Command="{Binding StopRecordedPathCommand}" ClickMode="Press"
+                            ToolTip.Tip="Stop recording">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathStop.png"
+                               Width="36" Height="36" Stretch="Uniform"/>
+                    </Button>
+                    <TextBlock Text="Stop" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
+
+                <!-- Reverse -->
+                <StackPanel Spacing="2">
+                    <Button Classes="RecPathBtn" Command="{Binding ReverseRecordedPathCommand}" ClickMode="Press"
+                            ToolTip.Tip="Reverse path direction">
+                        <TextBlock Text="A/B" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <TextBlock Text="Reverse" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
+
+                <!-- Turn Off -->
+                <StackPanel Spacing="2">
+                    <Button Classes="RecPathBtn" Command="{Binding TurnOffRecordedPathCommand}" ClickMode="Press"
+                            ToolTip.Tip="Clear and close">
+                        <TextBlock Text="X" FontSize="20" FontWeight="Bold" Foreground="#E74C3C"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <TextBlock Text="Off" FontSize="9" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                </StackPanel>
             </StackPanel>
 
-            <!-- Control Buttons Row 2: Reverse, Pick, Turn Off -->
-            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-                <Button Classes="RecPathBtn" Command="{Binding ReverseRecordedPathCommand}" ClickMode="Press"
-                        ToolTip.Tip="Reverse path direction">
-                    <TextBlock Text="Reverse" FontSize="11"/>
-                </Button>
-
-                <Button Classes="RecPathBtn" Command="{Binding ToggleRecordedPathsCommand}" ClickMode="Press"
-                        ToolTip.Tip="Toggle path visibility">
-                    <TextBlock Text="Show/Hide" FontSize="11"/>
-                </Button>
-
-                <Button Classes="RecPathBtn" Command="{Binding TurnOffRecordedPathCommand}" ClickMode="Press"
-                        ToolTip.Tip="Clear and close recorded path">
-                    <TextBlock Text="Turn Off" FontSize="11" Foreground="#E74C3C"/>
-                </Button>
-            </StackPanel>
-
-            <!-- Status -->
-            <TextBlock Text="{Binding StatusMessage}" FontSize="10" Margin="4,2"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                       TextWrapping="Wrap" MaxWidth="300"/>
+            <!-- Recording indicator -->
+            <Border Background="#CC2B2B" CornerRadius="4" Padding="8,4"
+                    IsVisible="{Binding IsRecordingPath}" HorizontalAlignment="Center">
+                <TextBlock Text="RECORDING" Foreground="White" FontSize="12" FontWeight="Bold"/>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>
