@@ -48,6 +48,7 @@ public class ApplicationState : ReactiveObject
     public ConnectionState Connections { get; } = new();
     public FieldState Field { get; } = new();
     public YouTurnState YouTurn { get; } = new();
+    public RecordedPathState RecordedPath { get; } = new();
     public BoundaryRecState BoundaryRec { get; } = new();
     public SimulatorState Simulator { get; } = new();
     public UIState UI { get; } = new();
@@ -64,6 +65,7 @@ public class ApplicationState : ReactiveObject
         Guidance.Reset();
         Sections.Reset();
         YouTurn.Reset();
+        RecordedPath.Reset();
         BoundaryRec.Reset();
         Simulator.Reset();
         // Field and Connections typically persist across field changes
