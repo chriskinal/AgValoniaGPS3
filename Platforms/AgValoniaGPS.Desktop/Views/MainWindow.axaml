@@ -119,9 +119,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                   DataContext="{Binding}"/>
 
             <!-- Recorded Path Panel (Draggable) -->
-            <panels:RecordedPathPanel x:Name="RecordedPathPanel"
-                                      Canvas.Left="200" Canvas.Top="20"
-                                      DataContext="{Binding}"/>
+            <dialogs:RecordedPathDialogPanel x:Name="RecordedPathPanel"
+                                              Canvas.Left="200" Canvas.Top="20"
+                                              DataContext="{Binding}"/>
         </Canvas>
     </Grid>
 

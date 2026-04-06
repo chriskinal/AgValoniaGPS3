@@ -116,25 +116,20 @@ public partial class MainViewModel
     {
         ToggleRecordedPathPanelCommand = ReactiveCommand.Create(() =>
         {
-            // Open the dialog instead of the panel
-            if (State.UI.ActiveDialog == DialogType.RecordedPath)
-                State.UI.CloseDialog();
-            else
-            {
+            IsRecordedPathPanelVisible = !IsRecordedPathPanelVisible;
+            if (IsRecordedPathPanelVisible)
                 LoadRecPathForPlayback();
-                State.UI.ShowDialog(DialogType.RecordedPath);
-            }
         });
 
         ShowRecordedPathDialogCommand = ReactiveCommand.Create(() =>
         {
+            IsRecordedPathPanelVisible = true;
             LoadRecPathForPlayback();
-            State.UI.ShowDialog(DialogType.RecordedPath);
         });
 
         CloseRecordedPathDialogCommand = ReactiveCommand.Create(() =>
         {
-            State.UI.CloseDialog();
+            IsRecordedPathPanelVisible = false;
         });
 
         SetRecordedPathTabCommand = ReactiveCommand.Create<string>(tab =>
@@ -443,11 +438,8 @@ public partial class MainViewModel
                 double maxSteer = ConfigurationStore.Instance.Vehicle.MaxSteerAngle * Math.PI / 180.0;
                 steerAngle = Math.Clamp(steerAngle, -maxSteer, maxSteer);
 
-                // Apply to autosteer if engaged
-                if (IsAutoSteerEngaged)
-                {
-                    SimulatorSteerAngle = steerAngle * 180.0 / Math.PI;
-                }
+                // Apply steering (recorded path always steers during playback)
+                SimulatorSteerAngle = steerAngle * 180.0 / Math.PI;
             }
         }
     }
@@ -500,7 +492,7 @@ public partial class MainViewModel
         double dyLook = lookPt.Northing - vehicleN;
         double dist = Math.Sqrt(dxLook * dxLook + dyLook * dyLook);
 
-        if (dist > 0.1 && IsAutoSteerEngaged)
+        if (dist > 0.1)
         {
             double targetHeading = Math.Atan2(dxLook, dyLook);
             double vehicleH = State.Vehicle.Heading;
@@ -508,6 +500,7 @@ public partial class MainViewModel
             while (headingError > Math.PI) headingError -= 2 * Math.PI;
             while (headingError < -Math.PI) headingError += 2 * Math.PI;
 
+            // Recorded path always steers during playback
             double steerAngle = headingError * 2.0;
             double maxSteer = ConfigurationStore.Instance.Vehicle.MaxSteerAngle * Math.PI / 180.0;
             steerAngle = Math.Clamp(steerAngle, -maxSteer, maxSteer);
