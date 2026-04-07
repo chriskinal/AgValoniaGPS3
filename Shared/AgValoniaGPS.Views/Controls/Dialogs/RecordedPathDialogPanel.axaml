@@ -8,6 +8,7 @@ Licensed under GNU GPL v3.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.RecordedPathDialogPanel"
              x:DataType="vm:MainViewModel"
@@ -61,14 +62,18 @@ Licensed under GNU GPL v3.
                         FontSize="14" Cursor="Hand" Command="{Binding CloseRecordedPathDialogCommand}" Margin="4,0,4,0"/>
             </Grid>
 
-            <!-- Tab selector -->
+            <!-- Tab selector: active tab gets accent background -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
-                <Button Grid.Column="0" Classes="RPWide" Content="Record" ClickMode="Press"
+                <Button Grid.Column="0" Content="Record" ClickMode="Press"
                         Command="{Binding SetRecordedPathTabCommand}" CommandParameter="0"
-                        FontWeight="Bold"/>
-                <Button Grid.Column="1" Classes="RPWide" Content="Playback" ClickMode="Press"
+                        FontWeight="Bold" CornerRadius="6" Padding="12,8" Cursor="Hand" BorderThickness="0"
+                        Background="{Binding IsRecordTabActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                <Button Grid.Column="1" Content="Playback" ClickMode="Press"
                         Command="{Binding SetRecordedPathTabCommand}" CommandParameter="1"
-                        FontWeight="Bold"/>
+                        FontWeight="Bold" CornerRadius="6" Padding="12,8" Cursor="Hand" BorderThickness="0"
+                        Background="{Binding IsPlaybackTabActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             </Grid>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
@@ -130,15 +135,19 @@ Licensed under GNU GPL v3.
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                         CornerRadius="6" Padding="4" MaxHeight="150">
                     <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding AvailableRecFiles}">
+                        <ItemsControl x:Name="RecFilesList" ItemsSource="{Binding AvailableRecFiles}"
+                                      Tag="{Binding PickRecordedPathCommand}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="x:String">
                                     <Button Classes="RPWide" Content="{Binding}" Margin="0,1" ClickMode="Press"
-                                            Command="{Binding #RecPathRoot.((vm:MainViewModel)DataContext).PickRecordedPathCommand}"
+                                            Command="{Binding #RecFilesList.Tag}"
                                             CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   IsVisible="{Binding !AvailableRecFiles.Count}"/>
                     </ScrollViewer>
                 </Border>
 
