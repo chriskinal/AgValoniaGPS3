@@ -100,7 +100,36 @@ public partial class MainViewModel
     public string? SelectedRecFile
     {
         get => _selectedRecFile;
-        set => this.RaiseAndSetIfChanged(ref _selectedRecFile, value);
+        set
+        {
+            if (this.RaiseAndSetIfChanged(ref _selectedRecFile, value) != null && value != null)
+                OnRecFileSelected(value);
+        }
+    }
+
+    private void OnRecFileSelected(string fileName)
+    {
+        var activeField = _fieldService.ActiveField;
+        if (activeField == null) return;
+
+        var srcPath = Path.Combine(activeField.DirectoryPath, fileName);
+        var dstPath = Path.Combine(activeField.DirectoryPath, "RecPath.txt");
+        try
+        {
+            File.Copy(srcPath, dstPath, true);
+            var points = Services.RecPathFileService.LoadRecPathPoints(activeField.DirectoryPath);
+            if (points != null && points.Count >= 2)
+            {
+                State.RecordedPath.RecordedPoints = points;
+                State.RecordedPath.CurrentPositionIndex = 0;
+                UpdateRecordedPathDisplayOnMap();
+                RecordedPathInfo = $"Selected: {fileName} ({points.Count} points)";
+            }
+        }
+        catch (Exception ex)
+        {
+            RecordedPathInfo = $"Failed to load: {ex.Message}";
+        }
     }
 
     // Font weight converter for tab buttons (Bold for active tab)

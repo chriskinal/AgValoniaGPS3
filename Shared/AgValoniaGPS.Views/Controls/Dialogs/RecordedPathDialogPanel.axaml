@@ -132,26 +132,20 @@ Licensed under GNU GPL v3.
                 <!-- Saved paths list -->
                 <TextBlock Text="Saved Paths:" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                        CornerRadius="6" Padding="4" MaxHeight="150">
-                    <ScrollViewer>
-                        <StackPanel>
-                            <ItemsControl x:Name="RecFilesList" ItemsSource="{Binding AvailableRecFiles}"
-                                          Tag="{Binding PickRecordedPathCommand}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="x:String">
-                                        <Button Classes="RPWide" Content="{Binding}" Margin="0,1" ClickMode="Press"
-                                                Command="{Binding #RecFilesList.Tag}"
-                                                CommandParameter="{Binding}"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                       IsVisible="{Binding !AvailableRecFiles.Count}"/>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
+                <ListBox ItemsSource="{Binding AvailableRecFiles}"
+                         SelectedItem="{Binding SelectedRecFile}"
+                         MaxHeight="150" CornerRadius="6"
+                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" FontSize="13" Margin="4,2"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           IsVisible="{Binding !AvailableRecFiles.Count}"/>
 
                 <!-- Playback controls -->
                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
