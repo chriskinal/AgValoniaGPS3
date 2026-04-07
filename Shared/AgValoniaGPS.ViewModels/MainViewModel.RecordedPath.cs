@@ -610,7 +610,8 @@ public partial class MainViewModel
         if (dubinsPath != null && dubinsPath.Count >= 2)
         {
             _mapService.SetYouTurnPath(dubinsPath.Select(p => (p.Easting, p.Northing)).ToList());
-            RecordedPathInfo += $" | Approach: {dubinsPath.Count} pts to idx {startIdx}";
+            var pts = State.RecordedPath.RecordedPoints.Count;
+            RecordedPathInfo = $"{pts} points | Approach to idx {startIdx}";
         }
         else
         {

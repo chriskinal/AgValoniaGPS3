@@ -1169,6 +1169,10 @@ public partial class MainViewModel : ReactiveObject
             // Load recorded path from RecPath.txt
             LoadRecPathFromField(fieldPath);
 
+            // Refresh recorded path panel if it's open
+            if (IsRecordedPathPanelVisible)
+                LoadRecPathForPlayback();
+
             // Load coverage
             State.UI.BusyMessage = "Loading coverage...";
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
