@@ -210,6 +210,7 @@ public partial class MainViewModel : ReactiveObject
         _ntripService.ConnectionStatusChanged += OnNtripConnectionChanged;
         _ntripService.RtcmDataReceived += OnRtcmDataReceived;
         _fieldService.ActiveFieldChanged += OnActiveFieldChanged;
+        FieldFullyLoaded += OnFieldFullyLoaded;
         _simulatorService.GpsDataUpdated += OnSimulatorGpsDataUpdated;
         _boundaryRecordingService.PointAdded += OnBoundaryPointAdded;
         _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
@@ -1078,6 +1079,25 @@ public partial class MainViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(WorkRateDisplay));
     }
 
+    /// <summary>
+    /// Called after a field is fully loaded. Centers camera and refreshes dependent panels.
+    /// </summary>
+    private void OnFieldFullyLoaded(Field? field)
+    {
+        // Center camera on field
+        if (CameraMode == Models.CameraMode.Free)
+            CameraMode = _previousCameraMode;
+
+        if (field?.Boundary != null)
+            CenterMapOnBoundary(field.Boundary);
+        else
+            _mapService.PanTo(State.Vehicle.Easting, State.Vehicle.Northing);
+
+        _mapService.SetVehiclePosition(
+            State.Vehicle.Easting, State.Vehicle.Northing,
+            State.Vehicle.Heading * Math.PI / 180.0);
+    }
+
     private void OnActiveFieldChanged(object? sender, Field? field)
     {
         // This event is now only used for state synchronization, not for save/load
@@ -1169,10 +1189,6 @@ public partial class MainViewModel : ReactiveObject
             // Load recorded path from RecPath.txt
             LoadRecPathFromField(fieldPath);
 
-            // Refresh recorded path panel if it's open
-            if (IsRecordedPathPanelVisible)
-                LoadRecPathForPlayback();
-
             // Load coverage
             State.UI.BusyMessage = "Loading coverage...";
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
@@ -1191,7 +1207,6 @@ public partial class MainViewModel : ReactiveObject
             _settingsService.Settings.LastOpenedField = fieldName;
             _settingsService.Save();
 
-            // Center camera on field after everything is loaded
             // Force simulator ticks so vehicle position updates to field origin
             if (IsSimulatorEnabled)
             {
@@ -1199,24 +1214,12 @@ public partial class MainViewModel : ReactiveObject
                 _simulatorService.Tick(0);
             }
 
-            // Let the GPS event propagate through the UI
+            // Let GPS events propagate through the UI
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
             await Task.Delay(100);
 
-            // Reset camera to follow mode so it tracks the vehicle
-            if (CameraMode == Models.CameraMode.Free)
-                CameraMode = _previousCameraMode;
-
-            // Center on boundary or vehicle position at origin
-            if (boundary != null)
-                CenterMapOnBoundary(boundary);
-            else
-                _mapService.PanTo(State.Vehicle.Easting, State.Vehicle.Northing);
-
-            // Also explicitly set map vehicle position for immediate display
-            _mapService.SetVehiclePosition(
-                State.Vehicle.Easting, State.Vehicle.Northing,
-                State.Vehicle.Heading * Math.PI / 180.0);
+            // Notify subscribers that the field is fully loaded
+            FieldFullyLoaded?.Invoke(field);
 
             StatusMessage = $"Opened field: {fieldName}";
         }
@@ -2715,6 +2718,12 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ZoomOutCommand { get; private set; }
 
     public event Action<string>? LanguageChanged;
+
+    /// <summary>
+    /// Fired after a field has been fully loaded (boundary, tracks, coverage, recpath).
+    /// Subscribe to react to field changes without coupling to OpenFieldAsync internals.
+    /// </summary>
+    public event Action<Field?>? FieldFullyLoaded;
 
     /// <summary>
     /// Platform-provided callback that captures the current window as a PNG byte array.

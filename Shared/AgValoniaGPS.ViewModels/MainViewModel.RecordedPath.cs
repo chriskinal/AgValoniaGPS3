@@ -144,6 +144,13 @@ public partial class MainViewModel
 
     private void InitializeRecordedPathCommands()
     {
+        // Refresh rec panel when a field is loaded
+        FieldFullyLoaded += _ =>
+        {
+            if (IsRecordedPathPanelVisible)
+                LoadRecPathForPlayback();
+        };
+
         ToggleRecordedPathPanelCommand = ReactiveCommand.Create(() =>
         {
             IsRecordedPathPanelVisible = !IsRecordedPathPanelVisible;
