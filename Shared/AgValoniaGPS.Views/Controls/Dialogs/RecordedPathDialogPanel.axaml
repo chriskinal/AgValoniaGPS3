@@ -135,19 +135,21 @@ Licensed under GNU GPL v3.
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                         CornerRadius="6" Padding="4" MaxHeight="150">
                     <ScrollViewer>
-                        <ItemsControl x:Name="RecFilesList" ItemsSource="{Binding AvailableRecFiles}"
-                                      Tag="{Binding PickRecordedPathCommand}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
-                                    <Button Classes="RPWide" Content="{Binding}" Margin="0,1" ClickMode="Press"
-                                            Command="{Binding #RecFilesList.Tag}"
-                                            CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                   IsVisible="{Binding !AvailableRecFiles.Count}"/>
+                        <StackPanel>
+                            <ItemsControl x:Name="RecFilesList" ItemsSource="{Binding AvailableRecFiles}"
+                                          Tag="{Binding PickRecordedPathCommand}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Button Classes="RPWide" Content="{Binding}" Margin="0,1" ClickMode="Press"
+                                                Command="{Binding #RecFilesList.Tag}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       IsVisible="{Binding !AvailableRecFiles.Count}"/>
+                        </StackPanel>
                     </ScrollViewer>
                 </Border>
 
