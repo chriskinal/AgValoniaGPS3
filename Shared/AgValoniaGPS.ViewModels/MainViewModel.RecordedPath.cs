@@ -225,8 +225,8 @@ public partial class MainViewModel
             {
                 File.Copy(srcPath, dstPath, true);
                 LoadRecPathForPlayback();
-                State.UI.CloseDialog();
-                StatusMessage = $"Loaded: {fileName}";
+                SelectedRecFile = fileName;
+                RecordedPathInfo = $"Selected: {fileName} ({State.RecordedPath.RecordedPoints.Count} points)";
             }
             catch (Exception ex)
             {
@@ -350,9 +350,6 @@ public partial class MainViewModel
         // Clear approach path from map
         _mapService.SetYouTurnPath(null);
 
-        // Reset simulator speed (stop controlling it)
-        _simulatorService.StepDistance = 0;
-
         StatusMessage = "Playback stopped";
     }
 
@@ -370,19 +367,12 @@ public partial class MainViewModel
 
         if (recState.IsFollowingDubinsToPath)
         {
-            // Phase 1: Following Dubins approach path at slow speed
-            _simulatorService.StepDistance = 0.125; // ~5 kmh - slow for steer smoothing to keep up
+            // Phase 1: Following Dubins approach path (user controls speed)
             UpdateDubinsApproach(vehicleE, vehicleN, vehicleH);
         }
         else if (recState.IsFollowingRecPath)
         {
-            // Phase 2: Following recorded path at recorded speed
-            int idx = recState.CurrentPositionIndex;
-            if (idx >= 0 && idx < recState.RecordedPoints.Count)
-            {
-                double recSpeed = recState.RecordedPoints[idx].Speed;
-                _simulatorService.StepDistance = Math.Max(recSpeed / 40.0, 0.1); // kph to step
-            }
+            // Phase 2: Following recorded path (user controls speed)
             UpdateRecPathFollowing(vehicleE, vehicleN);
         }
     }
