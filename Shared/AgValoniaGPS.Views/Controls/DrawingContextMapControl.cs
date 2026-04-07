@@ -2825,6 +2825,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         var contourStripPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 250, 51, 250)), lineThickness * 0.75);
 
         // Draw recorded paths (behind everything else)
+        var startBrush = new SolidColorBrush(Color.FromRgb(0, 220, 0));   // Green start
+        var endBrush = new SolidColorBrush(Color.FromRgb(220, 0, 0));     // Red end
+        double markerRadius = pointRadius * 1.5;
+
         foreach (var path in _recordedPaths)
         {
             if (path.IsVisible && path.Points.Count >= 2)
@@ -2835,6 +2839,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     var p2 = new Point(path.Points[i + 1].Easting, path.Points[i + 1].Northing);
                     context.DrawLine(recordedPathPen, p1, p2);
                 }
+
+                // Start point (green) and end point (red) markers
+                var startPt = path.Points[0];
+                var endPt = path.Points[^1];
+                context.DrawEllipse(startBrush, pointOutlinePen,
+                    new Point(startPt.Easting, startPt.Northing), markerRadius, markerRadius);
+                context.DrawEllipse(endBrush, pointOutlinePen,
+                    new Point(endPt.Easting, endPt.Northing), markerRadius, markerRadius);
             }
         }
 
