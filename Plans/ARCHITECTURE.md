@@ -38,7 +38,19 @@ The architecture achieves **91.7% shared code** across platforms (Windows, macOS
 1. **Unified Track Model** - "An AB line is just a curve with 2 points" (Brian, AgOpenGPS creator)
 2. **Zero-Copy Hot Path** - GPS→Guidance→PGN pipeline has ~0.1ms latency
 3. **Reactive State** - All state objects use ReactiveUI for automatic UI binding
-4. **Platform Abstraction** - Shared views with platform-specific services only where necessary
+4. **Cross-Platform Parity** - All code MUST go in `Shared/` unless it requires platform-specific APIs
+
+### Cross-Platform Code Rule
+
+This is a hard architectural requirement. Putting code in a single platform folder breaks feature parity for all other platforms.
+
+**`Shared/` (mandatory for):** All UI controls, panels, dialogs, view models, services, models, converters, styles, icons, localization, utilities.
+
+**`Platforms/` (only for):** Application entry point (`App.axaml.cs`, `Program.cs`), DI container setup, `MainWindow`/`MainView` layout shell with platform-specific drag handlers, `MapService` (map control registration), platform APIs (file pickers, immersive mode, etc.).
+
+When adding a new feature, verify it works on all platforms. If a UI element appears in one platform's AXAML, it must be a shared control referenced by all three.
+
+See issues #187-192 for examples of violations that were fixed: status bars, localization, flag banners, compass buttons, and screenshot utilities were moved from Desktop-only to Shared.
 
 ---
 
