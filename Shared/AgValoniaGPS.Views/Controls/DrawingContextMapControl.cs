@@ -2674,7 +2674,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         int maxTiles = 50;
         if (endTileX - startTileX > maxTiles || endTileY - startTileY > maxTiles)
         {
-            // Too zoomed out - skip texture, solid background is fine
+            // Too zoomed out for individual tiles — draw one stretched tile covering the view
+            var viewRect = new Rect(centerX - halfW, -(centerY + halfH), halfW * 2, halfH * 2);
+            context.DrawImage(_groundTexture!, viewRect);
             return;
         }
 
