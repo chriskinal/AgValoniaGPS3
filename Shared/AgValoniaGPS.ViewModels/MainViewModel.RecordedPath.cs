@@ -124,6 +124,7 @@ public partial class MainViewModel
                 State.RecordedPath.CurrentPositionIndex = 0;
                 UpdateRecordedPathDisplayOnMap();
                 RecordedPathInfo = $"Selected: {fileName} ({points.Count} points)";
+                RecalculateDubinsPreview();
             }
         }
         catch (Exception ex)
@@ -227,6 +228,7 @@ public partial class MainViewModel
                 _ => "Start"
             };
             StatusMessage = $"Resume mode: {ResumeModeLabel}";
+            RecalculateDubinsPreview();
         });
 
         ReverseRecordedPathCommand = ReactiveCommand.Create(() =>
@@ -239,6 +241,7 @@ public partial class MainViewModel
             recState.CurrentPositionIndex = 0;
             UpdateRecordedPathDisplayOnMap();
             StatusMessage = "Path reversed";
+            RecalculateDubinsPreview();
         });
 
         PickRecordedPathCommand = ReactiveCommand.Create<string>(fileName =>
@@ -302,23 +305,7 @@ public partial class MainViewModel
             State.Vehicle.Heading);
 
         // Determine start index based on resume mode
-        int startIdx;
-        switch (recState.ResumeState)
-        {
-            case 1: // Last position
-                startIdx = recState.CurrentPositionIndex;
-                if (startIdx + 5 > recState.RecordedPoints.Count)
-                    startIdx = 0;
-                break;
-            case 2: // Closest point
-                startIdx = FindClosestPoint(recState.RecordedPoints,
-                    State.Vehicle.Easting, State.Vehicle.Northing);
-                startIdx = Math.Min(startIdx + 5, recState.RecordedPoints.Count - 1);
-                break;
-            default: // Start
-                startIdx = 0;
-                break;
-        }
+        int startIdx = GetResumeStartIndex();
 
         recState.StartPathIndex = startIdx;
 
@@ -577,6 +564,7 @@ public partial class MainViewModel
             State.RecordedPath.CurrentPositionIndex = 0;
             UpdateRecordedPathDisplayOnMap();
             RecordedPathInfo = $"Loaded: {points.Count} points";
+            RecalculateDubinsPreview();
         }
         else
         {
@@ -587,6 +575,67 @@ public partial class MainViewModel
         AvailableRecFiles.Clear();
         foreach (var f in Services.RecPathFileService.ListRecFiles(activeField.DirectoryPath))
             AvailableRecFiles.Add(f);
+    }
+
+    /// <summary>
+    /// Calculate and display the Dubins approach path preview on the map.
+    /// Does not start playback - just shows where the tractor will go.
+    /// </summary>
+    private void RecalculateDubinsPreview()
+    {
+        var recState = State.RecordedPath;
+        if (recState.RecordedPoints.Count < 5)
+        {
+            _mapService.SetYouTurnPath(null);
+            return;
+        }
+
+        // Determine start index based on resume mode
+        int startIdx = GetResumeStartIndex();
+
+        var goalPt = recState.RecordedPoints[startIdx];
+        var goal = new Vec3(goalPt.Easting, goalPt.Northing, goalPt.Heading);
+
+        double headingRad = State.Vehicle.Heading * Math.PI / 180.0;
+        var start = new Vec3(
+            State.Vehicle.Easting + 3.0 * Math.Sin(headingRad),
+            State.Vehicle.Northing + 3.0 * Math.Cos(headingRad),
+            headingRad);
+
+        var dubins = new DubinsPathService(0.5);
+        var youTurnRadius = ConfigurationStore.Instance.Guidance.UTurnRadius;
+        dubins.TurningRadius = Math.Max(youTurnRadius * 1.2, 5.0);
+
+        var dubinsPath = dubins.GeneratePath(start, goal);
+        if (dubinsPath != null && dubinsPath.Count >= 2)
+        {
+            _mapService.SetYouTurnPath(dubinsPath.Select(p => (p.Easting, p.Northing)).ToList());
+            RecordedPathInfo += $" | Approach: {dubinsPath.Count} pts to idx {startIdx}";
+        }
+        else
+        {
+            _mapService.SetYouTurnPath(null);
+        }
+    }
+
+    /// <summary>
+    /// Get the path start index based on current resume mode.
+    /// </summary>
+    private int GetResumeStartIndex()
+    {
+        var recState = State.RecordedPath;
+        switch (recState.ResumeState)
+        {
+            case 1: // Last position
+                int lastIdx = recState.CurrentPositionIndex;
+                return (lastIdx + 5 > recState.RecordedPoints.Count) ? 0 : lastIdx;
+            case 2: // Closest point
+                int closestIdx = FindClosestPoint(recState.RecordedPoints,
+                    State.Vehicle.Easting, State.Vehicle.Northing);
+                return Math.Min(closestIdx + 5, recState.RecordedPoints.Count - 1);
+            default: // Start
+                return 0;
+        }
     }
 
     private void UpdateRecordedPathDisplayOnMap()
