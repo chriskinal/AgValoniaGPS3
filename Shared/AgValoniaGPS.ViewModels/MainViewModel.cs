@@ -1187,6 +1187,24 @@ public partial class MainViewModel : ReactiveObject
             _settingsService.Settings.LastOpenedField = fieldName;
             _settingsService.Save();
 
+            // Center camera on field after everything is loaded
+            // Force a simulator tick so vehicle position updates to field origin
+            if (IsSimulatorEnabled)
+            {
+                _simulatorService.Tick(0);
+                await Task.Delay(50);
+            }
+
+            // Re-center: use boundary center if available, otherwise origin (0,0)
+            if (boundary != null)
+                CenterMapOnBoundary(boundary);
+            else
+                _mapService.PanTo(0, 0);
+
+            // Reset camera to follow mode so it tracks the vehicle at field origin
+            if (CameraMode == Models.CameraMode.Free)
+                CameraMode = _previousCameraMode;
+
             StatusMessage = $"Opened field: {fieldName}";
         }
         catch (Exception ex)
