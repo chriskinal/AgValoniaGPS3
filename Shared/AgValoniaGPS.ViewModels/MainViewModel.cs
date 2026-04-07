@@ -1188,22 +1188,31 @@ public partial class MainViewModel : ReactiveObject
             _settingsService.Save();
 
             // Center camera on field after everything is loaded
-            // Force a simulator tick so vehicle position updates to field origin
+            // Force simulator ticks so vehicle position updates to field origin
             if (IsSimulatorEnabled)
             {
                 _simulatorService.Tick(0);
-                await Task.Delay(50);
+                _simulatorService.Tick(0);
             }
 
-            // Re-center: use boundary center if available, otherwise origin (0,0)
+            // Let the GPS event propagate through the UI
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(100);
+
+            // Reset camera to follow mode so it tracks the vehicle
+            if (CameraMode == Models.CameraMode.Free)
+                CameraMode = _previousCameraMode;
+
+            // Center on boundary or vehicle position at origin
             if (boundary != null)
                 CenterMapOnBoundary(boundary);
             else
-                _mapService.PanTo(0, 0);
+                _mapService.PanTo(State.Vehicle.Easting, State.Vehicle.Northing);
 
-            // Reset camera to follow mode so it tracks the vehicle at field origin
-            if (CameraMode == Models.CameraMode.Free)
-                CameraMode = _previousCameraMode;
+            // Also explicitly set map vehicle position for immediate display
+            _mapService.SetVehiclePosition(
+                State.Vehicle.Easting, State.Vehicle.Northing,
+                State.Vehicle.Heading * Math.PI / 180.0);
 
             StatusMessage = $"Opened field: {fieldName}";
         }
