@@ -351,12 +351,29 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
     private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
 
-    // Thumbnail bitmap for zoomed-out views (avoids expensive GPU downscaling)
+    // Medium-resolution bitmap for mid-zoom views (4x downsampled from full)
+    private WriteableBitmap? _coverageMedium;
+    private const double MEDIUM_CELL_SIZE = 0.4;
+    private int _mediumWidth, _mediumHeight;
+    private bool _mediumNeedsRebuild = true;
+
+    // Thumbnail bitmap for zoomed-out views (10x downsampled from full)
     private WriteableBitmap? _coverageThumbnail;
-    private const double THUMBNAIL_CELL_SIZE = 1.0; // 10x lower resolution than full
-    private const double THUMBNAIL_ZOOM_THRESHOLD = 0.3; // Use thumbnail when zoom < this
+    private const double THUMBNAIL_CELL_SIZE = 1.0;
     private int _thumbnailWidth, _thumbnailHeight;
     private bool _thumbnailNeedsRebuild = true;
+
+    // Adaptive LOD selection — picks LOD based on world-meters-per-pixel + FPS feedback
+    private const double BASE_WPP_MEDIUM = 0.15;      // below this: use full bitmap
+    private const double BASE_WPP_THUMBNAIL = 0.7;    // above this: use thumbnail; between: medium
+    private double _lodBias = 0.0;                     // 0 = best quality, 0.5 = max coarsening
+    private const double LOD_BIAS_MAX = 0.5;
+    private const double LOD_BIAS_STEP_UP = 0.15;     // degrade speed (reaches max in ~2s)
+    private const double LOD_BIAS_STEP_DOWN = 0.03;   // recover speed (reaches 0 in ~8s)
+    private const double FPS_TARGET = 24.0;
+    private const double FPS_HEADROOM = 28.0;          // only recover when clearly above target
+    private int _lodUpdateFrameCounter;
+    private DateTime _lastLodRebuildTime;
 
     // Background compositing - background image is composited into coverage bitmap
     private bool _backgroundComposited = false;
@@ -586,6 +603,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
+    private void UpdateLodBias()
+    {
+        _lodUpdateFrameCounter++;
+        if (_lodUpdateFrameCounter < 15) return; // update every ~0.5s
+        _lodUpdateFrameCounter = 0;
+
+        if (_currentFps > 0 && _currentFps < FPS_TARGET)
+            _lodBias = Math.Min(_lodBias + LOD_BIAS_STEP_UP, LOD_BIAS_MAX);
+        else if (_currentFps >= FPS_HEADROOM)
+            _lodBias = Math.Max(_lodBias - LOD_BIAS_STEP_DOWN, 0.0);
+        // FPS between TARGET and HEADROOM: hold (hysteresis dead zone)
+    }
+
     public override void Render(DrawingContext context)
     {
         _renderSw.Restart();
@@ -605,6 +635,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double aspect = bounds.Width / bounds.Height;
         double viewWidth = 200.0 * aspect / _zoom;
         double viewHeight = 200.0 / _zoom;
+
+        // Adaptive LOD: adjust quality based on actual FPS
+        UpdateLodBias();
 
         // Save context state and apply camera transform
         using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
@@ -1071,6 +1104,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Dispose old bitmaps
         _coverageWriteableBitmap?.Dispose();
         _coverageDisplayBitmap?.Dispose();
+        _coverageMedium?.Dispose();
+        _coverageMedium = null;
 
         // Data bitmap: Rgb565 for compact storage and pixel API
         _coverageWriteableBitmap = new WriteableBitmap(
@@ -1120,6 +1155,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
 
         // Set state flags
+        _mediumNeedsRebuild = true;
         _thumbnailNeedsRebuild = true;
         _bitmapExplicitlyInitialized = true;
     }
@@ -1234,7 +1270,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
             _bitmapNeedsIncrementalUpdate = false;
-            _thumbnailNeedsRebuild = true; // Rebuild thumbnail after full rebuild
+            _mediumNeedsRebuild = true;
+            _thumbnailNeedsRebuild = true;
         }
         else if (_bitmapNeedsIncrementalUpdate)
         {
@@ -1243,16 +1280,76 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (cellCount > 0)
             {
                 Console.WriteLine($"[Timing] CovBitmap: Incremental {cellCount} cells");
-                _thumbnailNeedsRebuild = true; // Rebuild thumbnail after incremental update
+                _mediumNeedsRebuild = true;
+                _thumbnailNeedsRebuild = true;
             }
             _bitmapNeedsIncrementalUpdate = false;
         }
 
-        // Update thumbnail if needed (for fast zoomed-out rendering)
-        if (_thumbnailNeedsRebuild && _coverageWriteableBitmap != null)
+        // LOD bitmaps are rebuilt lazily in DrawCoverageBitmap() only when
+        // the current zoom level actually selects that LOD. This avoids
+        // expensive rebuilds every GPS tick when zoomed in using the full bitmap.
+    }
+
+    /// <summary>
+    /// Generate a medium-resolution bitmap (4x downsampled) for mid-zoom rendering.
+    /// </summary>
+    private unsafe void UpdateCoverageMedium()
+    {
+        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
+            return;
+
+        int scale = (int)(MEDIUM_CELL_SIZE / MIN_BITMAP_CELL_SIZE);
+        _mediumWidth = (_bitmapWidth + scale - 1) / scale;
+        _mediumHeight = (_bitmapHeight + scale - 1) / scale;
+
+        if (_coverageMedium == null ||
+            _coverageMedium.PixelSize.Width != _mediumWidth ||
+            _coverageMedium.PixelSize.Height != _mediumHeight)
         {
-            UpdateCoverageThumbnail();
-            _thumbnailNeedsRebuild = false;
+            _coverageMedium?.Dispose();
+            _coverageMedium = new WriteableBitmap(
+                new PixelSize(_mediumWidth, _mediumHeight),
+                new Vector(96, 96),
+                Avalonia.Platform.PixelFormat.Bgra8888);
+        }
+
+        using var srcBuffer = _coverageWriteableBitmap.Lock();
+        using var dstBuffer = _coverageMedium.Lock();
+
+        ushort* src = (ushort*)srcBuffer.Address;
+        uint* dst = (uint*)dstBuffer.Address;
+        int srcStride = srcBuffer.RowBytes / 2;
+        int dstStride = dstBuffer.RowBytes / 4;
+
+        for (int ty = 0; ty < _mediumHeight; ty++)
+        {
+            int syStart = ty * scale;
+            int syCenter = Math.Min(syStart + scale / 2, _bitmapHeight - 1);
+
+            for (int tx = 0; tx < _mediumWidth; tx++)
+            {
+                int sxStart = tx * scale;
+                int sxCenter = Math.Min(sxStart + scale / 2, _bitmapWidth - 1);
+
+                ushort result = src[syCenter * srcStride + sxCenter];
+
+                if (result == 0)
+                {
+                    int syEnd = Math.Min(syStart + scale, _bitmapHeight);
+                    int sxEnd = Math.Min(sxStart + scale, _bitmapWidth);
+                    for (int sy = syStart; sy < syEnd && result == 0; sy++)
+                    {
+                        for (int sx = sxStart; sx < sxEnd; sx++)
+                        {
+                            ushort pixel = src[sy * srcStride + sx];
+                            if (pixel != 0) { result = pixel; break; }
+                        }
+                    }
+                }
+
+                dst[ty * dstStride + tx] = Rgb565ToBgra8888(result);
+            }
         }
     }
 
@@ -1529,7 +1626,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Sync display bitmap so background shows with proper transparency
         SyncDisplayBitmap();
 
-        // Rebuild thumbnail immediately so zoomed-out view shows correct background
+        // Rebuild LOD bitmaps immediately so zoomed-out view shows correct background
+        UpdateCoverageMedium();
+        _mediumNeedsRebuild = false;
         UpdateCoverageThumbnail();
         _thumbnailNeedsRebuild = false;
     }
@@ -1588,20 +1687,55 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             Console.WriteLine($"[DrawCovBitmap] destRect: ({_bitmapMinE:F2}, {_bitmapMinN:F2}) size ({worldWidth:F2}, {worldHeight:F2})");
         }
 
-        // Use thumbnail when zoomed out to avoid expensive GPU downscaling
-        if (_zoom < THUMBNAIL_ZOOM_THRESHOLD && _coverageThumbnail != null)
-        {
-            // Using thumbnail for zoomed-out view
-            var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
-            using (context.PushRenderOptions(_lowQualityRenderOptions))
-            {
-                context.DrawImage(_coverageThumbnail, srcRect, destRect);
-            }
-            return _thumbnailWidth * _thumbnailHeight;
-        }
-        // Full bitmap path
+        // Adaptive 3-level LOD selection based on world-meters-per-pixel + FPS bias
+        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
+        double worldPerPixel = (200.0 / _zoom) / screenHeight;
+        double mediumThreshold = BASE_WPP_MEDIUM * (1.0 - _lodBias);
+        double thumbnailThreshold = BASE_WPP_THUMBNAIL * (1.0 - _lodBias);
 
-        // Use full-resolution bitmap when zoomed in
+        // Throttle LOD rebuilds to at most once per second while coverage is updating
+        bool allowLodRebuild = (DateTime.UtcNow - _lastLodRebuildTime).TotalSeconds >= 1.0;
+
+        if (worldPerPixel > thumbnailThreshold)
+        {
+            if (_thumbnailNeedsRebuild && allowLodRebuild && _coverageWriteableBitmap != null)
+            {
+                UpdateCoverageThumbnail();
+                _thumbnailNeedsRebuild = false;
+                _mediumNeedsRebuild = false; // also refresh medium while we're at it
+                UpdateCoverageMedium();
+                _lastLodRebuildTime = DateTime.UtcNow;
+            }
+            if (_coverageThumbnail != null)
+            {
+                var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
+                using (context.PushRenderOptions(_lowQualityRenderOptions))
+                {
+                    context.DrawImage(_coverageThumbnail, srcRect, destRect);
+                }
+                return _thumbnailWidth * _thumbnailHeight;
+            }
+        }
+        if (worldPerPixel > mediumThreshold)
+        {
+            if (_mediumNeedsRebuild && allowLodRebuild && _coverageWriteableBitmap != null)
+            {
+                UpdateCoverageMedium();
+                _mediumNeedsRebuild = false;
+                _lastLodRebuildTime = DateTime.UtcNow;
+            }
+            if (_coverageMedium != null)
+            {
+                var srcRect = new Rect(0, 0, _mediumWidth, _mediumHeight);
+                using (context.PushRenderOptions(_lowQualityRenderOptions))
+                {
+                    context.DrawImage(_coverageMedium, srcRect, destRect);
+                }
+                return _mediumWidth * _mediumHeight;
+            }
+        }
+
+        // Full-resolution bitmap when zoomed in close
         var fullSrcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
 
         // Composite background into bitmap on first draw
@@ -1857,7 +1991,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             CompositeBackgroundIntoBitmap();
         }
 
-        // Rebuild thumbnail immediately (otherwise zoomed-out view shows stale data)
+        // Rebuild LOD bitmaps immediately (otherwise zoomed-out view shows stale data)
+        UpdateCoverageMedium();
+        _mediumNeedsRebuild = false;
         UpdateCoverageThumbnail();
         _thumbnailNeedsRebuild = false;
         InvalidateVisual();
@@ -1944,7 +2080,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         _bitmapHasContent = true;
 
-        // Rebuild thumbnail so zoomed-out view shows loaded coverage
+        // Rebuild LOD bitmaps so zoomed-out view shows loaded coverage
+        UpdateCoverageMedium();
+        _mediumNeedsRebuild = false;
         UpdateCoverageThumbnail();
         _thumbnailNeedsRebuild = false;
         InvalidateVisual();
