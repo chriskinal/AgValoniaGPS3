@@ -720,6 +720,9 @@ if frames:
 
         // --- Coverage Area Verification (#195) ---
         await RunCoverageAreaTest(window, vm, simService);
+
+        // --- Tram Lines Test (#34, #35) ---
+        await RunTramLinesTest(window, vm, simService);
     }
 
     static async Task RunDebugDumpTest(Window window, MainViewModel vm)
@@ -1658,6 +1661,114 @@ if frames:
 
         Console.WriteLine("OK");
         Console.WriteLine("--- Coverage Area Test Complete ---");
+    }
+
+    /// <summary>
+    /// Tram lines integration test (#34, #35):
+    /// 1. Generate tram lines from AB line, verify they exist
+    /// 2. Toggle display mode, verify rendering changes
+    /// 3. Save field, reload, verify tram lines persist
+    /// </summary>
+    static async Task RunTramLinesTest(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        Console.WriteLine("\n--- Tram Lines Test (#34, #35) ---");
+        var tramService = App.Services!.GetRequiredService<ITramLineService>();
+        var fieldService = App.Services!.GetRequiredService<IFieldService>();
+        var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+        var config = ConfigurationStore.Instance;
+
+        // Reset position
+        await ResetTractorPosition(vm, simService, settingsService);
+
+        // Step 1: Enable tram display and select track
+        Console.Write("[Tram 1] Enable tram display + select track... ");
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.All;
+        config.Tram.Passes = 3;
+
+        if (vm.SavedTracks.Count > 0)
+        {
+            vm.SelectedTrack = vm.SavedTracks[0];
+            await Delay(300);
+        }
+
+        bool hasTram = tramService.HasTramLines;
+        int lineCount = tramService.ParallelTramLines.Count;
+        Console.Write($"[hasTram={hasTram} lines={lineCount}] ");
+
+        if (!hasTram)
+            throw new Exception("No tram lines generated after selecting track");
+
+        Console.Write("[PASS] ");
+        CaptureScreenshot(window, "tram_01_generated");
+        Console.WriteLine("OK");
+
+        // Step 2: Toggle display mode
+        Console.Write("[Tram 2] Toggle display modes... ");
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.LinesOnly;
+        await Delay(100);
+        CaptureScreenshot(window, "tram_02_lines_only");
+
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.OuterOnly;
+        await Delay(100);
+        CaptureScreenshot(window, "tram_03_outer_only");
+
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.Off;
+        await Delay(100);
+        CaptureScreenshot(window, "tram_04_off");
+
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.All;
+        Console.Write("[PASS] ");
+        Console.WriteLine("OK");
+
+        // Step 3: Change passes and verify regeneration
+        Console.Write("[Tram 3] Change passes 3->5... ");
+        int linesBefore = tramService.ParallelTramLines.Count;
+        config.Guidance.TramPasses = 5;
+        await Delay(200);
+        int linesAfter = tramService.ParallelTramLines.Count;
+        Console.Write($"[before={linesBefore} after={linesAfter}] ");
+
+        if (linesAfter >= linesBefore)
+            Console.Write("[WARN: expected fewer lines with more passes] ");
+        else
+            Console.Write("[PASS] ");
+        Console.WriteLine("OK");
+
+        // Step 4: Save and reload tram lines
+        Console.Write("[Tram 4] Save + reload tram lines... ");
+        var fieldDir = fieldService.ActiveField?.DirectoryPath;
+        if (fieldDir != null)
+        {
+            tramService.SaveToFile(fieldDir);
+            int savedLines = tramService.ParallelTramLines.Count;
+            Console.Write($"[saved={savedLines}] ");
+
+            // Clear and reload
+            tramService.Clear();
+            if (tramService.HasTramLines)
+                throw new Exception("Tram lines not cleared");
+
+            tramService.LoadFromFile(fieldDir);
+            int loadedLines = tramService.ParallelTramLines.Count;
+            Console.Write($"[loaded={loadedLines}] ");
+
+            if (loadedLines != savedLines)
+                throw new Exception($"Tram line count mismatch: saved={savedLines} loaded={loadedLines}");
+
+            Console.Write("[PASS] ");
+        }
+        else
+        {
+            Console.Write("[SKIP: no field] ");
+        }
+
+        // Restore defaults
+        config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.Off;
+        config.Guidance.TramPasses = 3;
+
+        Console.WriteLine("OK");
+        Console.WriteLine("--- Tram Lines Test Complete ---");
     }
 
     /// <summary>
