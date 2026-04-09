@@ -955,15 +955,37 @@ public partial class MainViewModel
         ToggleTramDisplayCommand = ReactiveCommand.Create(() =>
         {
             var tram = ConfigStore.Tram;
-            if (tram.DisplayMode == Models.Configuration.TramDisplayMode.Off)
-                tram.DisplayMode = Models.Configuration.TramDisplayMode.All;
+
+            // Cycle through modes like legacy: if only parallel lines, toggle on/off
+            // Otherwise cycle Off -> All -> Lines -> Outer -> Off
+            if (_tramLineService.ParallelTramLines.Count > 0 &&
+                _tramLineService.OuterBoundaryTrack.Count == 0)
+            {
+                tram.DisplayMode = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off
+                    ? Models.Configuration.TramDisplayMode.Off
+                    : Models.Configuration.TramDisplayMode.LinesOnly;
+            }
             else
-                tram.DisplayMode = Models.Configuration.TramDisplayMode.Off;
+            {
+                tram.DisplayMode = tram.DisplayMode switch
+                {
+                    Models.Configuration.TramDisplayMode.Off => Models.Configuration.TramDisplayMode.All,
+                    Models.Configuration.TramDisplayMode.All => Models.Configuration.TramDisplayMode.LinesOnly,
+                    Models.Configuration.TramDisplayMode.LinesOnly => Models.Configuration.TramDisplayMode.OuterOnly,
+                    _ => Models.Configuration.TramDisplayMode.Off,
+                };
+            }
 
             ConfigStore.Guidance.TramDisplay = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off;
             UpdateTramLines(SelectedTrack);
-            StatusMessage = tram.DisplayMode == Models.Configuration.TramDisplayMode.Off
-                ? "Tram lines OFF" : "Tram lines ON";
+            StatusMessage = tram.DisplayMode switch
+            {
+                Models.Configuration.TramDisplayMode.Off => "Tram lines OFF",
+                Models.Configuration.TramDisplayMode.All => "Tram lines: All",
+                Models.Configuration.TramDisplayMode.LinesOnly => "Tram lines: Lines only",
+                Models.Configuration.TramDisplayMode.OuterOnly => "Tram lines: Outer only",
+                _ => "Tram lines"
+            };
         });
 
         BuildTramLinesCommand = ReactiveCommand.Create(() =>
@@ -980,6 +1002,50 @@ public partial class MainViewModel
             UpdateTramLines(SelectedTrack);
             StatusMessage = $"Tram lines built from '{SelectedTrack.Name}'";
         });
+
+        ShowTramSettingsCommand = ReactiveCommand.Create(() =>
+        {
+            if (SelectedTrack == null)
+            {
+                ShowErrorDialog("No Track Selected", "Select an AB line or curve track first.");
+                return;
+            }
+            State.UI.ShowDialog(Models.State.DialogType.TramSettings);
+        });
+
+        CloseTramSettingsCommand = ReactiveCommand.Create(() => State.UI.CloseDialog());
+
+        IncreaseTramPassesCommand = ReactiveCommand.Create(() =>
+        {
+            ConfigStore.Tram.Passes = Math.Min(20, ConfigStore.Tram.Passes + 1);
+            ConfigStore.Guidance.TramPasses = ConfigStore.Tram.Passes;
+            UpdateTramLines(SelectedTrack);
+            this.RaisePropertyChanged(nameof(TramPasses));
+            this.RaisePropertyChanged(nameof(TramWidthDisplay));
+            this.RaisePropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        DecreaseTramPassesCommand = ReactiveCommand.Create(() =>
+        {
+            ConfigStore.Tram.Passes = Math.Max(1, ConfigStore.Tram.Passes - 1);
+            ConfigStore.Guidance.TramPasses = ConfigStore.Tram.Passes;
+            UpdateTramLines(SelectedTrack);
+            this.RaisePropertyChanged(nameof(TramPasses));
+            this.RaisePropertyChanged(nameof(TramWidthDisplay));
+            this.RaisePropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        void SetTramMode(Models.Configuration.TramDisplayMode mode)
+        {
+            ConfigStore.Tram.DisplayMode = mode;
+            ConfigStore.Guidance.TramDisplay = mode != Models.Configuration.TramDisplayMode.Off;
+            UpdateTramLines(SelectedTrack);
+        }
+
+        SetTramModeOffCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.Off));
+        SetTramModeAllCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.All));
+        SetTramModeLinesCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.LinesOnly));
+        SetTramModeOuterCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.OuterOnly));
 
         // Map zoom commands
         Toggle3DModeCommand = ReactiveCommand.Create(() =>

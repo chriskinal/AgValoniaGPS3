@@ -72,6 +72,7 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsHelpDialogVisible));
                 this.RaisePropertyChanged(nameof(IsLanguageDialogVisible));
                 this.RaisePropertyChanged(nameof(IsRecordedPathDialogVisible));
+                this.RaisePropertyChanged(nameof(IsTramSettingsDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -114,6 +115,7 @@ public class UIState : ReactiveObject
     public bool IsHelpDialogVisible => ActiveDialog == DialogType.Help;
     public bool IsLanguageDialogVisible => ActiveDialog == DialogType.Language;
     public bool IsRecordedPathDialogVisible => ActiveDialog == DialogType.RecordedPath;
+    public bool IsTramSettingsDialogVisible => ActiveDialog == DialogType.TramSettings;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -242,7 +244,8 @@ public enum DialogType
     ImportTracks,
     Help,
     Language,
-    RecordedPath
+    RecordedPath,
+    TramSettings
 }
 
 /// <summary>
