@@ -2921,6 +2921,8 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleContourModeCommand { get; private set; }
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
+    public ICommand? ToggleTramDisplayCommand { get; private set; }
+    public ICommand? BuildTramLinesCommand { get; private set; }
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
     public ICommand? StartRecordedPathCommand { get; private set; }
     public ICommand? StopRecordedPathCommand { get; private set; }

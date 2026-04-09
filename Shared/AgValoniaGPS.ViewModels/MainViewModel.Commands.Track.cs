@@ -951,6 +951,36 @@ public partial class MainViewModel
                 });
         });
 
+        // Tram line commands
+        ToggleTramDisplayCommand = ReactiveCommand.Create(() =>
+        {
+            var tram = ConfigStore.Tram;
+            if (tram.DisplayMode == Models.Configuration.TramDisplayMode.Off)
+                tram.DisplayMode = Models.Configuration.TramDisplayMode.All;
+            else
+                tram.DisplayMode = Models.Configuration.TramDisplayMode.Off;
+
+            ConfigStore.Guidance.TramDisplay = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off;
+            UpdateTramLines(SelectedTrack);
+            StatusMessage = tram.DisplayMode == Models.Configuration.TramDisplayMode.Off
+                ? "Tram lines OFF" : "Tram lines ON";
+        });
+
+        BuildTramLinesCommand = ReactiveCommand.Create(() =>
+        {
+            if (SelectedTrack == null || SelectedTrack.Points.Count < 2)
+            {
+                ShowErrorDialog("No Track Selected",
+                    "Select an AB line or curve track before building tram lines.");
+                return;
+            }
+
+            ConfigStore.Tram.DisplayMode = Models.Configuration.TramDisplayMode.All;
+            ConfigStore.Guidance.TramDisplay = true;
+            UpdateTramLines(SelectedTrack);
+            StatusMessage = $"Tram lines built from '{SelectedTrack.Name}'";
+        });
+
         // Map zoom commands
         Toggle3DModeCommand = ReactiveCommand.Create(() =>
         {
