@@ -172,6 +172,23 @@ public partial class MainViewModel : ReactiveObject
     {
         _logger = logger;
         _tramLineService = tramLineService;
+
+        // Sync GuidanceConfig.TramDisplay -> TramConfig.DisplayMode and regenerate
+        ConfigStore.Guidance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Models.Configuration.GuidanceConfig.TramDisplay))
+            {
+                ConfigStore.Tram.DisplayMode = ConfigStore.Guidance.TramDisplay
+                    ? Models.Configuration.TramDisplayMode.All
+                    : Models.Configuration.TramDisplayMode.Off;
+                UpdateTramLines(SelectedTrack);
+            }
+            else if (e.PropertyName == nameof(Models.Configuration.GuidanceConfig.TramPasses))
+            {
+                ConfigStore.Tram.Passes = ConfigStore.Guidance.TramPasses;
+                UpdateTramLines(SelectedTrack);
+            }
+        };
         _udpService = udpService;
         _gpsService = gpsService;
         _fieldService = fieldService;
@@ -1200,6 +1217,24 @@ public partial class MainViewModel : ReactiveObject
             _logger.LogDebug($"[Coverage] Loaded coverage from {fieldPath}");
             RefreshCoverageStatistics();
 
+            // Load tram lines
+            try
+            {
+                _tramLineService.LoadFromFile(fieldPath);
+                if (_tramLineService.HasTramLines)
+                {
+                    _mapService.SetTramLines(
+                        _tramLineService.OuterBoundaryTrack,
+                        _tramLineService.InnerBoundaryTrack,
+                        _tramLineService.ParallelTramLines);
+                    _logger.LogDebug($"[Tram] Loaded tram lines from {fieldPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load tram lines");
+            }
+
             // Handle NTRIP profile
             _ = HandleNtripProfileForFieldAsync(fieldName);
 
@@ -1267,6 +1302,13 @@ public partial class MainViewModel : ReactiveObject
             // Save coverage
             _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
             _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
+
+            // Save tram lines
+            if (_tramLineService.HasTramLines)
+            {
+                _tramLineService.SaveToFile(ActiveField.DirectoryPath);
+                _logger.LogDebug($"[Tram] Saved tram lines to {ActiveField.DirectoryPath}");
+            }
 
             // Flush elevation log
             _elevationLogService.Flush(ActiveField.DirectoryPath);
