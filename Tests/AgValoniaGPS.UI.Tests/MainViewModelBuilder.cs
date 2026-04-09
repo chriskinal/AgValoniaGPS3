@@ -63,6 +63,7 @@ public class MainViewModelBuilder
             chartDataService: Substitute.For<IChartDataService>(),
             audioService: Substitute.For<IAudioService>(),
             elevationLogService: Substitute.For<IElevationLogService>(),
+            tramLineService: Substitute.For<ITramLineService>(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }
