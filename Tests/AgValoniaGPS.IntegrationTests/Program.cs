@@ -949,9 +949,11 @@ if frames:
         CaptureScreenshot(window, "tracks_01b_headland_built");
         Console.WriteLine("OK");
 
-        // Track 2: Activate AB line + engage autosteer for real guidance
-        Console.Write("[Tracks 2] Activate AB line + autosteer... ");
+        // Track 2: Activate AB line + enable tram lines + engage autosteer
+        Console.Write("[Tracks 2] Activate AB line + tram lines + autosteer... ");
         vm.State.UI.CloseDialog();
+        ConfigurationStore.Instance.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.All;
+        ConfigurationStore.Instance.Tram.Passes = 3;
         if (vm.SavedTracks.Count > 0)
         {
             vm.SelectedTrack = vm.SavedTracks[0];
@@ -961,6 +963,7 @@ if frames:
         }
         await Delay(500);
         CaptureScreenshot(window, "tracks_02_guidance_line_active");
+        CaptureScreenshot(window, "tram_lines_visible");
         Console.WriteLine("OK");
 
         // Track 3: Drive with autosteer -- tractor starts 6m east of the AB line
