@@ -223,6 +223,14 @@ public class MapService : IMapService
         _mapControl?.SetYouTurnPath(turnPath);
     }
 
+    public void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines)
+    {
+        _mapControl?.SetTramLines(outerTrack, innerTrack, parallelLines);
+    }
+
     // Track visualization for U-turns
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track)
     {

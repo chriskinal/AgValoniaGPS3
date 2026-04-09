@@ -104,6 +104,12 @@ public interface ISharedMapControl
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
     void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track);
 
+    // Tram line visualization
+    void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines);
+
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);
     void SetContourStrips(IReadOnlyList<AgValoniaGPS.Models.Track.Track> strips);
@@ -308,6 +314,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // YouTurn path
     private IReadOnlyList<(double Easting, double Northing)>? _youTurnPath;
+
+    // Tram lines
+    private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramOuterTrack;
+    private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramInnerTrack;
+    private IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? _tramParallelLines;
 
     // Coverage patches for worked area display
     private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
@@ -704,6 +715,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             {
                 DrawTrack(context);
             }
+
+            // Draw tram lines
+            DrawTramLines(context);
 
             // Draw YouTurn path
             if (_youTurnPath != null && _youTurnPath.Count > 1)
@@ -2704,6 +2718,67 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         context.DrawGeometry(null, _headlandPreviewPen, geometry);
     }
 
+    /// <summary>
+    /// Draw tram lines: two-pass rendering matching legacy AgOpenGPS.
+    /// Pass 1: black outline, Pass 2: pink/salmon fill.
+    /// </summary>
+    private void DrawTramLines(DrawingContext context)
+    {
+        var config = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram;
+        if (config.DisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.Off) return;
+
+        bool hasBoundary = (_tramOuterTrack?.Count > 1 || _tramInnerTrack?.Count > 1);
+        bool hasLines = _tramParallelLines?.Count > 0;
+        if (!hasBoundary && !hasLines) return;
+
+        byte alpha = (byte)(config.Alpha * 255);
+
+        // Two-pass rendering: black outline then pink fill
+        var outlinePen = new Pen(new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0)), 2.0);
+        var fillPen = new Pen(new SolidColorBrush(Color.FromArgb(alpha, 237, 184, 187)), 1.0);
+
+        // Mode 1 (All) or Mode 2 (LinesOnly): draw parallel tram lines
+        if ((config.DisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All || config.DisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.LinesOnly) && hasLines)
+        {
+            foreach (var line in _tramParallelLines!)
+            {
+                if (line.Count < 2) continue;
+                var geometry = new StreamGeometry();
+                using (var ctx = geometry.Open())
+                {
+                    ctx.BeginFigure(new Point(line[0].Easting, line[0].Northing), false);
+                    for (int i = 1; i < line.Count; i++)
+                        ctx.LineTo(new Point(line[i].Easting, line[i].Northing));
+                    ctx.EndFigure(false);
+                }
+                context.DrawGeometry(null, outlinePen, geometry);
+                context.DrawGeometry(null, fillPen, geometry);
+            }
+        }
+
+        // Mode 1 (All) or Mode 3 (OuterOnly): draw boundary tracks
+        if ((config.DisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All || config.DisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.OuterOnly) && hasBoundary)
+        {
+            void DrawTrack(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2> track)
+            {
+                if (track.Count < 2) return;
+                var geometry = new StreamGeometry();
+                using (var ctx = geometry.Open())
+                {
+                    ctx.BeginFigure(new Point(track[0].Easting, track[0].Northing), false);
+                    for (int i = 1; i < track.Count; i++)
+                        ctx.LineTo(new Point(track[i].Easting, track[i].Northing));
+                    ctx.EndFigure(false);
+                }
+                context.DrawGeometry(null, outlinePen, geometry);
+                context.DrawGeometry(null, fillPen, geometry);
+            }
+
+            if (_tramOuterTrack != null) DrawTrack(_tramOuterTrack);
+            if (_tramInnerTrack != null) DrawTrack(_tramInnerTrack);
+        }
+    }
+
     private void DrawYouTurnPath(DrawingContext context)
     {
         if (_youTurnPath == null || _youTurnPath.Count < 2) return;
@@ -3746,6 +3821,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath)
     {
         _youTurnPath = turnPath;
+    }
+
+    public void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines)
+    {
+        _tramOuterTrack = outerTrack;
+        _tramInnerTrack = innerTrack;
+        _tramParallelLines = parallelLines;
     }
 
     public void SetSelectionMarkers(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? markers)
