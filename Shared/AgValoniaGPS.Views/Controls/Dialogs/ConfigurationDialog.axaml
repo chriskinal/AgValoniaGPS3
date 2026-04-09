@@ -520,10 +520,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Foreground="#4A9" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Width display -->
+                        <!-- Width display (actual = sum of section widths) -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
                             <TextBlock Text="{loc:Localize Width}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
+                            <TextBlock Text="{Binding Config.ActualToolWidth, StringFormat='{}{0:F2} m'}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
