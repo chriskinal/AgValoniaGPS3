@@ -246,6 +246,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png" Stretch="Uniform"/>
                 </Button>
 
+                <!-- Create AB from Boundary Edge -->
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Create AB Line from Boundary Edge"
+                        Command="{Binding CreateTrackFromBoundaryCommand}">
+                    <TextBlock Text="BE" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+
                 <!-- Draw AB (tap on map to place points) -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Draw AB Line on Map"
                         Command="{Binding ShowDrawABDialogCommand}">
