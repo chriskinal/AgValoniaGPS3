@@ -376,4 +376,202 @@ public class FileIOTests
     }
 
     #endregion
+
+    #region Legacy Format Import
+
+    [Test]
+    public void TrackFiles_LoadLegacy_ABLine_ParsesCorrectly()
+    {
+        // Legacy format: $TrackLines header, then name, heading, A point, B point,
+        // nudge distance, track mode, visible, point count, points with heading
+        var content = @"$TrackLines
+My AB Line
+1.5708
+50.000,100.000
+50.000,200.000
+2.5
+0
+True
+2
+50.000,100.000,1.57080
+50.000,200.000,1.57080";
+
+        File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
+
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded, Has.Count.EqualTo(1));
+        Assert.That(loaded[0].Name, Is.EqualTo("My AB Line"));
+        Assert.That(loaded[0].Points, Has.Count.EqualTo(2));
+        Assert.That(loaded[0].Points[0].Easting, Is.EqualTo(50.0).Within(0.01));
+        Assert.That(loaded[0].Points[0].Northing, Is.EqualTo(100.0).Within(0.01));
+        Assert.That(loaded[0].Points[1].Northing, Is.EqualTo(200.0).Within(0.01));
+        Assert.That(loaded[0].NudgeDistance, Is.EqualTo(2.5).Within(0.01));
+        Assert.That(loaded[0].IsVisible, Is.True);
+    }
+
+    [Test]
+    public void TrackFiles_LoadLegacy_Curve_ParsesCorrectly()
+    {
+        // Legacy curve format: mode=2 means curve
+        var content = @"$TrackLines
+My Curve
+0
+0.000,0.000
+100.000,0.000
+0.0
+2
+True
+5
+0.000,0.000,0.00000
+25.000,10.000,0.30000
+50.000,15.000,0.50000
+75.000,10.000,0.30000
+100.000,0.000,0.00000";
+
+        File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
+
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded, Has.Count.EqualTo(1));
+        Assert.That(loaded[0].Name, Is.EqualTo("My Curve"));
+        Assert.That(loaded[0].Points, Has.Count.EqualTo(5));
+        Assert.That(loaded[0].Points[2].Easting, Is.EqualTo(50.0).Within(0.01));
+        Assert.That(loaded[0].Points[2].Northing, Is.EqualTo(15.0).Within(0.01));
+    }
+
+    [Test]
+    public void TrackFiles_LoadLegacy_MultipleTracks()
+    {
+        var content = @"$TrackLines
+AB Line 1
+0
+0.000,0.000
+0.000,100.000
+0.0
+0
+True
+2
+0.000,0.000,0.00000
+0.000,100.000,0.00000
+AB Line 2
+1.5708
+50.000,0.000
+50.000,100.000
+3.0
+0
+False
+2
+50.000,0.000,1.57080
+50.000,100.000,1.57080";
+
+        File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
+
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded, Has.Count.EqualTo(2));
+        Assert.That(loaded[0].Name, Is.EqualTo("AB Line 1"));
+        Assert.That(loaded[0].IsVisible, Is.True);
+        Assert.That(loaded[1].Name, Is.EqualTo("AB Line 2"));
+        Assert.That(loaded[1].IsVisible, Is.False);
+        Assert.That(loaded[1].NudgeDistance, Is.EqualTo(3.0).Within(0.01));
+    }
+
+    [Test]
+    public void TrackFiles_NudgeDistance_SurvivesRoundTrip()
+    {
+        var tracks = new[]
+        {
+            new MTrack
+            {
+                Name = "Nudged Right",
+                Type = MTrackType.ABLine,
+                Points = new List<Vec3> { new(0, 0, 0), new(0, 100, 0) },
+                NudgeDistance = 12.75,
+                IsVisible = true
+            },
+            new MTrack
+            {
+                Name = "Nudged Left",
+                Type = MTrackType.ABLine,
+                Points = new List<Vec3> { new(10, 0, 0), new(10, 100, 0) },
+                NudgeDistance = -5.5,
+                IsVisible = true
+            },
+            new MTrack
+            {
+                Name = "No Nudge",
+                Type = MTrackType.ABLine,
+                Points = new List<Vec3> { new(20, 0, 0), new(20, 100, 0) },
+                NudgeDistance = 0.0,
+                IsVisible = true
+            }
+        };
+
+        TrackFilesService.SaveTracks(_tempDir, tracks);
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded, Has.Count.EqualTo(3));
+        Assert.That(loaded[0].NudgeDistance, Is.EqualTo(12.75).Within(0.001));
+        Assert.That(loaded[1].NudgeDistance, Is.EqualTo(-5.5).Within(0.001));
+        Assert.That(loaded[2].NudgeDistance, Is.EqualTo(0.0).Within(0.001));
+    }
+
+    [Test]
+    public void TrackFiles_Visibility_SurvivesRoundTrip()
+    {
+        var tracks = new[]
+        {
+            new MTrack
+            {
+                Name = "Visible",
+                Type = MTrackType.ABLine,
+                Points = new List<Vec3> { new(0, 0, 0), new(0, 100, 0) },
+                IsVisible = true
+            },
+            new MTrack
+            {
+                Name = "Hidden",
+                Type = MTrackType.ABLine,
+                Points = new List<Vec3> { new(10, 0, 0), new(10, 100, 0) },
+                IsVisible = false
+            }
+        };
+
+        TrackFilesService.SaveTracks(_tempDir, tracks);
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded, Has.Count.EqualTo(2));
+        Assert.That(loaded[0].IsVisible, Is.True);
+        Assert.That(loaded[1].IsVisible, Is.False);
+    }
+
+    [Test]
+    public void TrackFiles_LargeNudgeDistance_Preserved()
+    {
+        var track = new MTrack
+        {
+            Name = "Large Nudge",
+            Type = MTrackType.ABLine,
+            Points = new List<Vec3> { new(0, 0, 0), new(0, 100, 0) },
+            NudgeDistance = 999.999,
+            IsVisible = true
+        };
+
+        TrackFilesService.SaveTracks(_tempDir, new[] { track });
+        var loaded = TrackFilesService.LoadTracks(_tempDir);
+
+        Assert.That(loaded[0].NudgeDistance, Is.EqualTo(999.999).Within(0.01));
+    }
+
+    [Test]
+    public void TrackFiles_CorruptFile_ThrowsInvalidData()
+    {
+        File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), "garbage\nnot valid\ndata");
+
+        // Corrupt files throw - caller is expected to catch
+        Assert.Throws<InvalidDataException>(() => TrackFilesService.LoadTracks(_tempDir));
+    }
+
+    #endregion
 }
