@@ -2366,25 +2366,29 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         using (context.PushTransform(Matrix.CreateTranslation(_vehicleX, _vehicleY)))
         using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading))) // Heading in radians, negated for screen coordinates
         {
+            // Offset image so back axle is at (0,0)
+            // Back axle is at ~30% from bottom of image, so shift image forward
+            double axleOffsetY = size * 0.2; // back axle ~20% from bottom of image
+
             if (_vehicleImage != null)
             {
-                // Draw tractor image centered at vehicle position
+                // Draw tractor image with back axle at origin
                 // The image needs to be flipped vertically because we're in a y-up coordinate system
                 using (context.PushTransform(Matrix.CreateScale(1, -1)))
                 {
-                    var destRect = new Rect(-size / 2, -size / 2, size, size);
+                    var destRect = new Rect(-size / 2, -size / 2 - axleOffsetY, size, size);
                     context.DrawImage(_vehicleImage, destRect);
                 }
             }
             else
             {
-                // Fallback: draw a simple triangle
+                // Fallback: draw a simple triangle with back axle at origin
                 var geometry = new StreamGeometry();
                 using (var ctx = geometry.Open())
                 {
-                    ctx.BeginFigure(new Point(0, size / 2), true); // Front point
-                    ctx.LineTo(new Point(-size / 3, -size / 2));   // Back left
-                    ctx.LineTo(new Point(size / 3, -size / 2));    // Back right
+                    ctx.BeginFigure(new Point(0, size / 2 + axleOffsetY), true); // Front point
+                    ctx.LineTo(new Point(-size / 3, -size / 2 + axleOffsetY));   // Back left
+                    ctx.LineTo(new Point(size / 3, -size / 2 + axleOffsetY));    // Back right
                     ctx.EndFigure(true);
                 }
                 context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
