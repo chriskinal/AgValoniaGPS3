@@ -92,9 +92,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </Button>
 
-                <!-- Row 2: Tram Lines toggle, Tram Lines Builder (generate from track) -->
+                <!-- Row 2: Tram Lines settings, Tram Lines Builder (generate from track) -->
                 <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press" Command="{Binding ToggleTramDisplayCommand}">
+                        ClickMode="Press" Command="{Binding ShowTramSettingsCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Width="28" Height="28"/>
                         <TextBlock Text="{loc:Localize TramLines}" VerticalAlignment="Center" FontSize="12"/>

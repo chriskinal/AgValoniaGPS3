@@ -202,6 +202,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
                 </Button>
 
+                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) - visible when track active -->
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Tram Lines Display Mode"
+                        Command="{Binding ToggleTramDisplayCommand}"
+                        IsVisible="{Binding HasActiveTrack}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
+                </Button>
+
                 <Separator Classes="BottomPanelSeparator"/>
 
                 <!-- AB Line Menu Button (opens flyout) - always visible -->

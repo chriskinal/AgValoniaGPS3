@@ -2923,6 +2923,20 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
     public ICommand? ToggleTramDisplayCommand { get; private set; }
     public ICommand? BuildTramLinesCommand { get; private set; }
+    public ICommand? ShowTramSettingsCommand { get; private set; }
+    public ICommand? CloseTramSettingsCommand { get; private set; }
+    public ICommand? IncreaseTramPassesCommand { get; private set; }
+    public ICommand? DecreaseTramPassesCommand { get; private set; }
+    public ICommand? SetTramModeOffCommand { get; private set; }
+    public ICommand? SetTramModeAllCommand { get; private set; }
+    public ICommand? SetTramModeLinesCommand { get; private set; }
+    public ICommand? SetTramModeOuterCommand { get; private set; }
+
+    public int TramPasses => ConfigStore.Tram.Passes;
+    public string TramToolWidthDisplay => $"{ConfigStore.ActualToolWidth:F2} m";
+    public string TramWidthDisplay => $"{ConfigStore.ActualToolWidth * ConfigStore.Tram.Passes:F2} m";
+    public string TramTrackWidthDisplay => $"{ConfigStore.Vehicle.TrackWidth:F2} m";
+    public string TramLineCountDisplay => $"{_tramLineService.ParallelTramLines.Count}";
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
     public ICommand? StartRecordedPathCommand { get; private set; }
     public ICommand? StopRecordedPathCommand { get; private set; }
