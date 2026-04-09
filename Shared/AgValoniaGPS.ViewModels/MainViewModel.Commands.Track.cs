@@ -1101,6 +1101,100 @@ public partial class MainViewModel
             StatusMessage = $"Created AB line from longest boundary edge ({maxDist:F0}m)";
         });
 
+        // Field Builder dialog
+        ShowFieldBuilderCommand = ReactiveCommand.Create(() =>
+            State.UI.ShowDialog(Models.State.DialogType.FieldBuilder));
+
+        CloseFieldBuilderCommand = ReactiveCommand.Create(() =>
+            State.UI.CloseDialog());
+
+        IncreaseHeadlandDistanceCommand = ReactiveCommand.Create(() =>
+        {
+            HeadlandDistance = Math.Min(100, HeadlandDistance + 1.0);
+            this.RaisePropertyChanged(nameof(HeadlandDistance));
+        });
+
+        DecreaseHeadlandDistanceCommand = ReactiveCommand.Create(() =>
+        {
+            HeadlandDistance = Math.Max(1, HeadlandDistance - 1.0);
+            this.RaisePropertyChanged(nameof(HeadlandDistance));
+        });
+
+        CreateCurveFromBoundaryCommand = ReactiveCommand.Create(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            var pts = boundary.Points;
+            var curvePoints = new System.Collections.Generic.List<Models.Base.Vec3>();
+            for (int i = 0; i < pts.Count; i++)
+            {
+                curvePoints.Add(new Models.Base.Vec3(pts[i].Easting, pts[i].Northing, pts[i].Heading));
+            }
+            // Close the loop
+            curvePoints.Add(new Models.Base.Vec3(pts[0].Easting, pts[0].Northing, pts[0].Heading));
+
+            var track = new Models.Track.Track
+            {
+                Name = "Boundary Curve",
+                Points = curvePoints,
+                Type = Models.Track.TrackType.Curve,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created boundary curve ({curvePoints.Count} points)";
+        });
+
+        CreateTracksFromAllEdgesCommand = ReactiveCommand.Create(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            var pts = boundary.Points;
+            int created = 0;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int next = (i + 1) % pts.Count;
+                double dx = pts[next].Easting - pts[i].Easting;
+                double dy = pts[next].Northing - pts[i].Northing;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+
+                if (dist < 5.0) continue; // Skip tiny edges
+
+                double heading = Math.Atan2(dx, dy);
+                var a = new Models.Base.Vec3(
+                    pts[i].Easting - Math.Sin(heading) * 50,
+                    pts[i].Northing - Math.Cos(heading) * 50, heading);
+                var b = new Models.Base.Vec3(
+                    pts[next].Easting + Math.Sin(heading) * 50,
+                    pts[next].Northing + Math.Cos(heading) * 50, heading);
+
+                var track = new Models.Track.Track
+                {
+                    Name = $"Edge {i + 1} ({dist:F0}m)",
+                    Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                    Type = Models.Track.TrackType.ABLine,
+                    IsVisible = true
+                };
+                SavedTracks.Add(track);
+                created++;
+            }
+
+            if (created > 0)
+                SelectedTrack = SavedTracks[SavedTracks.Count - 1];
+            StatusMessage = $"Created {created} AB lines from boundary edges";
+        });
+
         // Map zoom commands
         Toggle3DModeCommand = ReactiveCommand.Create(() =>
         {

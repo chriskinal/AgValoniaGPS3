@@ -65,6 +65,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:HelpDialogPanel/>
         <dialogs:OffsetFixDialogPanel/>
         <dialogs:TramSettingsDialogPanel/>
+        <dialogs:FieldBuilderDialogPanel/>
         <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
         <dialogs:AutoSteerConfigPanel DataContext="{Binding AutoSteerConfigViewModel}"/>
 
