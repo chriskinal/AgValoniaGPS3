@@ -721,6 +721,9 @@ if frames:
         // --- Coverage Area Verification (#195) ---
         await RunCoverageAreaTest(window, vm, simService);
 
+        // --- Track Save/Load E2E ---
+        await RunTrackSaveLoadTest(window, vm, simService);
+
         // --- Tram Lines Test (#34, #35) ---
         await RunTramLinesTest(window, vm, simService);
     }
@@ -1669,6 +1672,117 @@ if frames:
     /// 2. Toggle display mode, verify rendering changes
     /// 3. Save field, reload, verify tram lines persist
     /// </summary>
+    /// <summary>
+    /// E2E test: create tracks, save field, reload, verify tracks persist with all properties.
+    /// </summary>
+    static async Task RunTrackSaveLoadTest(
+        Window window, MainViewModel vm, IGpsSimulationService simService)
+    {
+        Console.WriteLine("\n--- Track Save/Load E2E Test ---");
+        var fieldService = App.Services!.GetRequiredService<IFieldService>();
+
+        // Step 1: Record current tracks
+        Console.Write("[TrackIO 1] Record initial tracks... ");
+        int initialCount = vm.SavedTracks.Count;
+        Console.Write($"[initial={initialCount}] ");
+
+        // Add a test track with nudge distance
+        var testTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "E2E Test Track",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(30, 0, 0),
+                new(30, 100, 0)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true,
+            NudgeDistance = 7.5
+        };
+        vm.SavedTracks.Add(testTrack);
+
+        // Add a hidden track
+        var hiddenTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "Hidden Track",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(50, 0, 0.5),
+                new(50, 80, 0.5),
+                new(60, 100, 0.8)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.Curve,
+            IsVisible = false,
+            NudgeDistance = -3.25
+        };
+        vm.SavedTracks.Add(hiddenTrack);
+
+        int afterAdd = vm.SavedTracks.Count;
+        Console.Write($"[afterAdd={afterAdd}] ");
+        Console.WriteLine("OK");
+
+        // Step 2: Save tracks by closing and reopening field
+        Console.Write("[TrackIO 2] Close + reopen field to trigger save... ");
+        var fieldDir = fieldService.ActiveField?.DirectoryPath;
+        if (fieldDir == null) { Console.WriteLine("[SKIP: no field]"); return; }
+        await vm.CloseFieldAsync();
+        await Delay(300);
+        Console.Write("[closed] ");
+        Console.WriteLine("OK");
+
+        // Step 3: Reload field
+        Console.Write("[TrackIO 3] Reload field... ");
+        var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+        var testFieldDir = Path.Combine(settingsService.Settings.FieldsDirectory, "TestField");
+        try { await vm.OpenFieldAsync(testFieldDir, "TestField"); }
+        catch (Exception ex) { Console.Write($"({ex.Message}) "); }
+        await Delay(500);
+
+        int afterReload = vm.SavedTracks.Count;
+        Console.Write($"[loaded={afterReload}] ");
+
+        if (afterReload < afterAdd)
+            throw new Exception($"Tracks lost after reload: {afterAdd} -> {afterReload}");
+        Console.Write("[count PASS] ");
+        Console.WriteLine("OK");
+
+        // Step 4: Verify properties
+        Console.Write("[TrackIO 4] Verify track properties... ");
+        var e2eTrack = vm.SavedTracks.FirstOrDefault(t => t.Name == "E2E Test Track");
+        var hidTrack = vm.SavedTracks.FirstOrDefault(t => t.Name == "Hidden Track");
+
+        if (e2eTrack == null) throw new Exception("E2E Test Track not found after reload");
+        if (hidTrack == null) throw new Exception("Hidden Track not found after reload");
+
+        // NudgeDistance
+        if (Math.Abs(e2eTrack.NudgeDistance - 7.5) > 0.1)
+            throw new Exception($"NudgeDistance wrong: expected 7.5, got {e2eTrack.NudgeDistance}");
+        if (Math.Abs(hidTrack.NudgeDistance - (-3.25)) > 0.1)
+            throw new Exception($"NudgeDistance wrong: expected -3.25, got {hidTrack.NudgeDistance}");
+        Console.Write("[nudge PASS] ");
+
+        // Visibility
+        if (!e2eTrack.IsVisible)
+            throw new Exception("E2E Test Track should be visible");
+        if (hidTrack.IsVisible)
+            throw new Exception("Hidden Track should be hidden");
+        Console.Write("[visibility PASS] ");
+
+        // Point count
+        if (e2eTrack.Points.Count != 2)
+            throw new Exception($"AB line should have 2 points, got {e2eTrack.Points.Count}");
+        if (hidTrack.Points.Count != 3)
+            throw new Exception($"Curve should have 3 points, got {hidTrack.Points.Count}");
+        Console.Write("[points PASS] ");
+
+        // Cleanup: remove test tracks
+        vm.SavedTracks.Remove(e2eTrack);
+        vm.SavedTracks.Remove(hidTrack);
+
+        Console.WriteLine("OK");
+        Console.WriteLine("--- Track Save/Load E2E Complete ---");
+    }
+
     static async Task RunTramLinesTest(
         Window window, MainViewModel vm, IGpsSimulationService simService)
     {
