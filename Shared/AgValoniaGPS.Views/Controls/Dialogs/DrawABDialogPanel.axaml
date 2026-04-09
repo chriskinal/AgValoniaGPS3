@@ -113,15 +113,58 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Button>
                 </StackPanel>
 
-                <!-- Instructions for straight line -->
+                <!-- Boundary-based creation -->
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                <TextBlock Text="From Field Boundary"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                    <!-- AB from longest boundary edge -->
+                    <Button Classes="ModeButton" ToolTip.Tip="Create AB line from longest boundary edge"
+                            Command="{Binding CreateTrackFromBoundaryCommand}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="AB" FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Longest Edge" FontSize="10" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Curve from full boundary -->
+                    <Button Classes="ModeButton" ToolTip.Tip="Create curve track from full boundary perimeter"
+                            Command="{Binding CreateCurveFromBoundaryCommand}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <TextBlock Text="Boundary Curve" FontSize="10" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- AB from each edge (creates multiple tracks) -->
+                    <Button Classes="ModeButton" ToolTip.Tip="Create AB lines from all boundary edges"
+                            Command="{Binding CreateTracksFromAllEdgesCommand}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="All" FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="All Edges" FontSize="10" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Instructions -->
                 <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="8" Padding="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="{loc:Localize StraightLine}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13"/>
+                        <TextBlock Text="Draw on Map" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13"/>
                         <TextBlock Text="{loc:Localize Tap2PointsToCreateAStraightAbLine}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
-                        <TextBlock Text="{loc:Localize Curve2}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13" Margin="0,8,0,0"/>
-                        <TextBlock Text="{loc:Localize Tap3PointsThenTapFinishInTheStatusBar}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
+                        <TextBlock Text="From Boundary" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="13" Margin="0,8,0,0"/>
+                        <TextBlock Text="Longest Edge: AB line along the longest field side. Boundary Curve: track following the entire boundary. All Edges: AB line for each boundary edge."
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
