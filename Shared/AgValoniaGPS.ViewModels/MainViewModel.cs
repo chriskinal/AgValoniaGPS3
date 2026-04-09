@@ -2923,6 +2923,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
     public ICommand? ToggleTramDisplayCommand { get; private set; }
     public ICommand? BuildTramLinesCommand { get; private set; }
+    public ICommand? CreateTrackFromBoundaryCommand { get; private set; }
     public ICommand? ShowTramSettingsCommand { get; private set; }
     public ICommand? CloseTramSettingsCommand { get; private set; }
     public ICommand? IncreaseTramPassesCommand { get; private set; }

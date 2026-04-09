@@ -1047,6 +1047,60 @@ public partial class MainViewModel
         SetTramModeLinesCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.LinesOnly));
         SetTramModeOuterCommand = ReactiveCommand.Create(() => SetTramMode(Models.Configuration.TramDisplayMode.OuterOnly));
 
+        CreateTrackFromBoundaryCommand = ReactiveCommand.Create(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            // Find the longest edge of the boundary polygon
+            var pts = boundary.Points;
+            double maxDist = 0;
+            int bestIdx = 0;
+
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int next = (i + 1) % pts.Count;
+                double dx = pts[next].Easting - pts[i].Easting;
+                double dy = pts[next].Northing - pts[i].Northing;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                if (dist > maxDist)
+                {
+                    maxDist = dist;
+                    bestIdx = i;
+                }
+            }
+
+            var p1 = pts[bestIdx];
+            var p2 = pts[(bestIdx + 1) % pts.Count];
+            double heading = Math.Atan2(p2.Easting - p1.Easting, p2.Northing - p1.Northing);
+
+            // Extend 50m past both ends for full field coverage
+            var a = new Models.Base.Vec3(
+                p1.Easting - Math.Sin(heading) * 50,
+                p1.Northing - Math.Cos(heading) * 50,
+                heading);
+            var b = new Models.Base.Vec3(
+                p2.Easting + Math.Sin(heading) * 50,
+                p2.Northing + Math.Cos(heading) * 50,
+                heading);
+
+            var track = new Models.Track.Track
+            {
+                Name = $"Boundary Edge {bestIdx + 1}",
+                Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                Type = Models.Track.TrackType.ABLine,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created AB line from longest boundary edge ({maxDist:F0}m)";
+        });
+
         // Map zoom commands
         Toggle3DModeCommand = ReactiveCommand.Create(() =>
         {
