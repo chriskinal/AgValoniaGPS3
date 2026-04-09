@@ -73,6 +73,7 @@ public partial class MainViewModel : ReactiveObject
     private readonly IChartDataService _chartDataService;
     private readonly IAudioService _audioService;
     private readonly IElevationLogService _elevationLogService;
+    private readonly ITramLineService _tramLineService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
     private readonly DispatcherTimer _simulatorTimer;
@@ -165,10 +166,12 @@ public partial class MainViewModel : ReactiveObject
         IChartDataService chartDataService,
         IAudioService audioService,
         IElevationLogService elevationLogService,
+        ITramLineService tramLineService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
         _logger = logger;
+        _tramLineService = tramLineService;
         _udpService = udpService;
         _gpsService = gpsService;
         _fieldService = fieldService;
@@ -1549,6 +1552,9 @@ public partial class MainViewModel : ReactiveObject
                     // Show the track on the map when activated
                     _mapService.SetActiveTrack(value);
 
+                    // Generate tram lines from the selected track
+                    UpdateTramLines(value);
+
                     // Initialize pass number and nudge offset from saved NudgeDistance
                     // NudgeDistance = widthMinusOverlap * howManyPathsAway + nudgeOffset
                     double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
@@ -1606,6 +1612,45 @@ public partial class MainViewModel : ReactiveObject
                 _logger.LogDebug($"[SelectedTrack] Changed to: {value?.Name ?? "None"}");
             }
         }
+    }
+
+    /// <summary>
+    /// Generate tram lines from a track and update the map.
+    /// </summary>
+    private void UpdateTramLines(Track? track)
+    {
+        var config = ConfigurationStore.Instance.Tram;
+        if (config.DisplayMode == Models.Configuration.TramDisplayMode.Off || track == null || track.Points.Count < 2)
+        {
+            _tramLineService.Clear();
+            _mapService.SetTramLines(null, null, null);
+            return;
+        }
+
+        // Generate parallel tram lines from the track
+        // Use a reasonable field width estimate (boundary size or default 500m)
+        double fieldWidth = 500;
+        if (_currentBoundary?.OuterBoundary?.Points != null && _currentBoundary.OuterBoundary.Points.Count > 0)
+        {
+            var pts = _currentBoundary.OuterBoundary.Points;
+            double maxE = pts.Max(p => p.Easting), minE = pts.Min(p => p.Easting);
+            double maxN = pts.Max(p => p.Northing), minN = pts.Min(p => p.Northing);
+            fieldWidth = Math.Max(maxE - minE, maxN - minN) * 1.2;
+        }
+
+        _tramLineService.GenerateParallelTramLines(track, fieldWidth);
+
+        // Also generate boundary tram tracks if headland exists
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+        {
+            _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+        }
+
+        // Update map
+        _mapService.SetTramLines(
+            _tramLineService.OuterBoundaryTrack,
+            _tramLineService.InnerBoundaryTrack,
+            _tramLineService.ParallelTramLines);
     }
 
     // Flag markers
