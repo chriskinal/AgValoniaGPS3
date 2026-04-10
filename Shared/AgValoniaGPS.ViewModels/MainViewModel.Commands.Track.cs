@@ -129,7 +129,6 @@ public partial class MainViewModel
                     SelectedTrack = null;
                     SaveTracksToFile();
                     StatusMessage = "All tracks deleted";
-                    State.UI.ShowDialog(Models.State.DialogType.FieldBuilder);
                 });
         });
 

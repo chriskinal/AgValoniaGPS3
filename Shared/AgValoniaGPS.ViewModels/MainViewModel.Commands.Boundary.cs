@@ -491,15 +491,25 @@ public partial class MainViewModel
         // Confirmation Dialog Commands
         CancelConfirmationDialogCommand = ReactiveCommand.Create(() =>
         {
-            State.UI.CloseDialog();
+            var prev = _previousDialogBeforeConfirmation;
             _confirmationDialogCallback = null;
+            _previousDialogBeforeConfirmation = Models.State.DialogType.None;
+            if (prev != Models.State.DialogType.None && prev != Models.State.DialogType.Confirmation)
+                State.UI.ShowDialog(prev);
+            else
+                State.UI.CloseDialog();
         });
 
         ConfirmConfirmationDialogCommand = ReactiveCommand.Create(() =>
         {
             var callback = _confirmationDialogCallback;
-            State.UI.CloseDialog();
+            var prev = _previousDialogBeforeConfirmation;
             _confirmationDialogCallback = null;
+            _previousDialogBeforeConfirmation = Models.State.DialogType.None;
+            if (prev != Models.State.DialogType.None && prev != Models.State.DialogType.Confirmation)
+                State.UI.ShowDialog(prev);
+            else
+                State.UI.CloseDialog();
             callback?.Invoke();
         });
 

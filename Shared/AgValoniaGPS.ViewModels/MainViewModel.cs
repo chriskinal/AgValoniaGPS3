@@ -2088,6 +2088,7 @@ public partial class MainViewModel : ReactiveObject
 
     // Callback to run when confirmation dialog is confirmed
     private Action? _confirmationDialogCallback;
+    private Models.State.DialogType _previousDialogBeforeConfirmation;
 
     public ICommand? CancelConfirmationDialogCommand { get; private set; }
     public ICommand? ConfirmConfirmationDialogCommand { get; private set; }
@@ -2095,12 +2096,14 @@ public partial class MainViewModel : ReactiveObject
     /// <summary>
     /// Shows a confirmation dialog with the specified title and message.
     /// When the user confirms, the callback is executed.
+    /// Restores the previous dialog on cancel.
     /// </summary>
     public void ShowConfirmationDialog(string title, string message, Action onConfirm)
     {
         ConfirmationDialogTitle = title;
         ConfirmationDialogMessage = message;
         _confirmationDialogCallback = onConfirm;
+        _previousDialogBeforeConfirmation = State.UI.ActiveDialog;
         State.UI.ShowDialog(Models.State.DialogType.Confirmation);
     }
 
