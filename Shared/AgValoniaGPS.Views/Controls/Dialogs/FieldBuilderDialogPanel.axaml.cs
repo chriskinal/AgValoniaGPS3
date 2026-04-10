@@ -785,7 +785,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         bool light = IsLightTheme;
         var canvasBorder = this.FindControl<Border>("CanvasBorder");
         if (canvasBorder != null)
-            canvasBorder.Background = new SolidColorBrush(light ? Color.FromRgb(232, 236, 240) : Color.FromRgb(26, 26, 46));
+            canvasBorder.Background = new SolidColorBrush(light ? Color.FromRgb(245, 247, 250) : Color.FromRgb(26, 26, 46));
 
         var noFieldText = this.FindControl<TextBlock>("NoFieldText");
         if (noFieldText != null)
