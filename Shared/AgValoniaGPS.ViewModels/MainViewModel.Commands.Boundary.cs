@@ -327,7 +327,13 @@ public partial class MainViewModel
 
         ResetHeadlandCommand = ReactiveCommand.Create(() =>
         {
+            // Save for undo
+            _previousHeadlandLine = _currentHeadlandLine != null ? new List<Vec3>(_currentHeadlandLine) : null;
+            _previousHasHeadland = HasHeadland;
+
             ClearHeadlandCommand?.Execute(null);
+            this.RaisePropertyChanged(nameof(HeadlandStatusText));
+            this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
             StatusMessage = "Headland reset";
         });
 
@@ -351,15 +357,54 @@ public partial class MainViewModel
 
         UndoHeadlandCommand = ReactiveCommand.Create(() =>
         {
-            StatusMessage = "Undo - not yet implemented";
+            if (_previousHeadlandLine == null && !_previousHasHeadland)
+            {
+                StatusMessage = "Nothing to undo";
+                return;
+            }
+
+            // Restore previous state
+            CurrentHeadlandLine = _previousHeadlandLine;
+            HasHeadland = _previousHasHeadland;
+            IsHeadlandOn = _previousHasHeadland;
+
+            if (_previousHeadlandLine != null && _previousHeadlandLine.Count >= 3)
+            {
+                _currentHeadlandLine = _previousHeadlandLine;
+                State.Field.HeadlandLine = _previousHeadlandLine;
+                _mapService.SetHeadlandLine(_previousHeadlandLine);
+                _mapService.SetHeadlandVisible(true);
+            }
+            else
+            {
+                _currentHeadlandLine = null;
+                State.Field.HeadlandLine = null;
+                _mapService.SetHeadlandVisible(false);
+            }
+
+            _previousHeadlandLine = null;
+            _previousHasHeadland = false;
+
+            this.RaisePropertyChanged(nameof(HeadlandStatusText));
+            this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
+            StatusMessage = "Headland undone";
         });
 
         TurnOffHeadlandCommand = ReactiveCommand.Create(() =>
         {
+            // Save for undo
+            _previousHeadlandLine = _currentHeadlandLine != null ? new List<Vec3>(_currentHeadlandLine) : null;
+            _previousHasHeadland = HasHeadland;
+
             IsHeadlandOn = false;
             HasHeadland = false;
             CurrentHeadlandLine = null;
             HeadlandPreviewLine = null;
+            _currentHeadlandLine = null;
+            State.Field.HeadlandLine = null;
+            _mapService.SetHeadlandVisible(false);
+            this.RaisePropertyChanged(nameof(HeadlandStatusText));
+            this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
             StatusMessage = "Headland turned off";
         });
 

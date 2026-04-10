@@ -2501,6 +2501,10 @@ public partial class MainViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _currentBoundary, value);
     }
 
+    // Headland undo state
+    private List<Vec3>? _previousHeadlandLine;
+    private bool _previousHasHeadland;
+
     // Headland Dialog properties (visibility managed by State.UI)
     private bool _isHeadlandCurveMode = true;
     public bool IsHeadlandCurveMode
@@ -3574,11 +3578,14 @@ public partial class MainViewModel : ReactiveObject
 
         System.Diagnostics.Debug.WriteLine($"[Headland] Result points: {result.OuterHeadlandLine?.Count ?? 0}");
 
+        // Save undo state before applying
+        _previousHeadlandLine = _currentHeadlandLine != null ? new List<Vec3>(_currentHeadlandLine) : null;
+        _previousHasHeadland = HasHeadland;
+
         CurrentHeadlandLine = result.OuterHeadlandLine;
         HeadlandPreviewLine = null;
         HasHeadland = true;
         IsHeadlandOn = true;
-        State.UI.CloseDialog();
 
         // Update _currentHeadlandLine for YouTurn zone detection (same as SetCurrentBoundary does on field load)
         if (result.OuterHeadlandLine != null && result.OuterHeadlandLine.Count >= 3)
@@ -3590,6 +3597,7 @@ public partial class MainViewModel : ReactiveObject
         }
 
         StatusMessage = $"Headland built at {HeadlandDistance:F1}m ({result.OuterHeadlandLine?.Count ?? 0} pts from {boundary.OuterBoundary.Points.Count} boundary pts)";
+        this.RaisePropertyChanged(nameof(HeadlandStatusText));
     }
 
     /// <summary>

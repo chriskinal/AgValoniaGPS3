@@ -66,7 +66,10 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.SelectedTrack) && IsVisible)
+        if (IsVisible && (e.PropertyName == nameof(MainViewModel.SelectedTrack)
+            || e.PropertyName == nameof(MainViewModel.HasHeadland)
+            || e.PropertyName == nameof(MainViewModel.CurrentHeadlandLineForPreview)
+            || e.PropertyName == nameof(MainViewModel.HeadlandStatusText)))
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
