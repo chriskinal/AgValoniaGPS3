@@ -564,9 +564,15 @@ public class RemoteTestServer : IDisposable
             var current = hit as Avalonia.Visual;
             while (current != null)
             {
-                if (current is Button btn && btn.Command != null && btn.Command.CanExecute(btn.CommandParameter))
+                if (current is Button btn)
                 {
-                    btn.Command.Execute(btn.CommandParameter);
+                    if (btn.Command != null && btn.Command.CanExecute(btn.CommandParameter))
+                    {
+                        btn.Command.Execute(btn.CommandParameter);
+                        return;
+                    }
+                    // Fire Click event for buttons with code-behind handlers
+                    btn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                     return;
                 }
 
@@ -596,6 +602,17 @@ public class RemoteTestServer : IDisposable
                 if (current is Avalonia.Controls.CheckBox cb)
                 {
                     cb.IsChecked = !cb.IsChecked;
+                    return;
+                }
+
+                // Handle TabItem clicks - select the tab
+                if (current is Avalonia.Controls.TabItem tabItem)
+                {
+                    var tabControl = tabItem.FindAncestorOfType<Avalonia.Controls.TabControl>();
+                    if (tabControl != null)
+                    {
+                        tabControl.SelectedItem = tabItem;
+                    }
                     return;
                 }
 
