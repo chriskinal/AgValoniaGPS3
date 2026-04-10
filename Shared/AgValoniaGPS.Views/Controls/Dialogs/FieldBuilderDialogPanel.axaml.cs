@@ -483,12 +483,13 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        // Draw tracks
+        // Draw tracks (all gray/inactive during draw mode)
+        bool isDrawing = _drawMode != DrawMode.None;
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
 
-            bool isSelected = track == vm.SelectedTrack;
+            bool isSelected = !isDrawing && track == vm.SelectedTrack;
             var color = new SolidColorBrush(isSelected
                 ? Color.FromRgb(50, 200, 255)
                 : Color.FromRgb(100, 130, 160));
