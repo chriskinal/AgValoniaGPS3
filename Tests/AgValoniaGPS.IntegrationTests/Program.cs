@@ -1795,6 +1795,15 @@ if frames:
         // Reset position
         await ResetTractorPosition(vm, simService, settingsService);
 
+        // Step 0: Capture Field Builder dialog
+        Console.Write("[Tram 0] Field Builder dialog... ");
+        vm.ShowFieldBuilderCommand?.Execute(null);
+        await Delay(300);
+        CaptureScreenshot(window, "field_builder_tracks_tab");
+        vm.State.UI.CloseDialog();
+        await Delay(100);
+        Console.WriteLine("OK");
+
         // Step 1: Enable tram display and select track
         Console.Write("[Tram 1] Enable tram display + select track... ");
         config.Tram.DisplayMode = AgValoniaGPS.Models.Configuration.TramDisplayMode.All;
