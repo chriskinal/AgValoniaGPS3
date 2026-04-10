@@ -424,17 +424,39 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         if (_drawMode == DrawMode.BoundaryCurvePreview)
         {
-            // Create curve from boundary segment
+            // Extend curve straight past endpoints
+            var points = new List<Vec3>(_drawPoints);
+            double ext = 200; // 200m extension
+
+            if (points.Count >= 2)
+            {
+                var s0 = points[0];
+                var s1 = points[1];
+                double sdx = s0.Easting - s1.Easting;
+                double sdy = s0.Northing - s1.Northing;
+                double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
+                if (slen > 0.01)
+                    points.Insert(0, new Vec3(s0.Easting + sdx / slen * ext, s0.Northing + sdy / slen * ext, s0.Heading));
+
+                var e0 = points[^2];
+                var e1 = points[^1];
+                double edx = e1.Easting - e0.Easting;
+                double edy = e1.Northing - e0.Northing;
+                double elen = Math.Sqrt(edx * edx + edy * edy);
+                if (elen > 0.01)
+                    points.Add(new Vec3(e1.Easting + edx / elen * ext, e1.Northing + edy / elen * ext, e1.Heading));
+            }
+
             var track = new Models.Track.Track
             {
                 Name = $"BndCurve {DateTime.Now:HH:mm:ss}",
-                Points = new List<Vec3>(_drawPoints),
+                Points = points,
                 Type = TrackType.Curve,
                 IsVisible = true
             };
             vm.SavedTracks.Add(track);
             vm.SelectedTrack = track;
-            vm.StatusMessage = $"Created boundary curve ({_drawPoints.Count} points)";
+            vm.StatusMessage = "Created boundary curve";
         }
         else
         {
@@ -599,8 +621,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
         else if (_drawMode == DrawMode.BoundaryCurvePreview)
         {
-            if (instrText != null) instrText.Text = $"Boundary curve ({_drawPoints.Count} pts) - drag ends or Create";
-            if (pointCountText != null) pointCountText.Text = $"{_drawPoints.Count} points";
+            if (instrText != null) instrText.Text = "Boundary curve - drag ends or Create";
+            if (pointCountText != null) pointCountText.Text = "";
         }
     }
 
@@ -873,6 +895,37 @@ public partial class FieldBuilderDialogPanel : UserControl
                             ToCanvas(p1.Easting - nx * ext, p1.Northing - ny * ext),
                             ToCanvas(p2.Easting + nx * ext, p2.Northing + ny * ext)
                         };
+                    }
+                }
+                // For boundary curve preview, extend straight past endpoints
+                else if (_drawMode == DrawMode.BoundaryCurvePreview && _drawPoints.Count >= 2)
+                {
+                    double ext = Math.Max(_rangeE, _rangeN) * 2;
+
+                    // Extend from start: direction from point[1] to point[0]
+                    var s0 = _drawPoints[0];
+                    var s1 = _drawPoints[1];
+                    double sdx = s0.Easting - s1.Easting;
+                    double sdy = s0.Northing - s1.Northing;
+                    double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
+                    if (slen > 0.01)
+                    {
+                        previewPoints.Insert(0, ToCanvas(
+                            s0.Easting + sdx / slen * ext,
+                            s0.Northing + sdy / slen * ext));
+                    }
+
+                    // Extend from end: direction from point[-2] to point[-1]
+                    var e0 = _drawPoints[^2];
+                    var e1 = _drawPoints[^1];
+                    double edx = e1.Easting - e0.Easting;
+                    double edy = e1.Northing - e0.Northing;
+                    double elen = Math.Sqrt(edx * edx + edy * edy);
+                    if (elen > 0.01)
+                    {
+                        previewPoints.Add(ToCanvas(
+                            e1.Easting + edx / elen * ext,
+                            e1.Northing + edy / elen * ext));
                     }
                 }
 
