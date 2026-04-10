@@ -37,6 +37,9 @@ public partial class FieldBuilderDialogPanel : UserControl
     private Action? _inlineConfirmAction;
     private MainViewModel? _viewModel;
 
+    // Theme detection
+    private bool IsLightTheme => ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
+
     // Coordinate transform (set during UpdatePreview)
     private double _minE, _minN, _rangeE, _rangeN;
     private double _scale, _offsetX, _offsetY;
@@ -778,6 +781,16 @@ public partial class FieldBuilderDialogPanel : UserControl
         canvas.Children.Clear();
         _transformValid = false;
 
+        // Theme-aware colors
+        bool light = IsLightTheme;
+        var canvasBorder = this.FindControl<Border>("CanvasBorder");
+        if (canvasBorder != null)
+            canvasBorder.Background = new SolidColorBrush(light ? Color.FromRgb(232, 236, 240) : Color.FromRgb(26, 26, 46));
+
+        var noFieldText = this.FindControl<TextBlock>("NoFieldText");
+        if (noFieldText != null)
+            noFieldText.Foreground = new SolidColorBrush(light ? Color.FromArgb(100, 0, 0, 0) : Color.FromArgb(96, 255, 255, 255));
+
         var boundary = vm.CurrentBoundary?.OuterBoundary;
         if (boundary?.Points == null || boundary.Points.Count < 3) return;
 
@@ -809,17 +822,18 @@ public partial class FieldBuilderDialogPanel : UserControl
             _canvasHeight - ((n - _minN) * _scale + _offsetY)
         );
 
-        // Draw boundary polygon (yellow - matches legacy)
+        // Draw boundary polygon
+        var boundaryColor = light ? Color.FromRgb(180, 140, 0) : Color.FromRgb(240, 200, 40);
         var boundaryPoly = new Polygon
         {
-            Stroke = new SolidColorBrush(Color.FromRgb(240, 200, 40)),
+            Stroke = new SolidColorBrush(boundaryColor),
             StrokeThickness = 2,
-            Fill = new SolidColorBrush(Color.FromArgb(20, 240, 200, 40)),
+            Fill = new SolidColorBrush(Color.FromArgb(light ? (byte)15 : (byte)20, boundaryColor.R, boundaryColor.G, boundaryColor.B)),
             Points = pts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
         };
         canvas.Children.Add(boundaryPoly);
 
-        // Draw headland (bright green dashed - matches legacy)
+        // Draw headland (green dashed)
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
@@ -827,7 +841,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 var headlandPoly = new Polygon
                 {
-                    Stroke = new SolidColorBrush(Color.FromRgb(50, 220, 50)),
+                    Stroke = new SolidColorBrush(light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 220, 50)),
                     StrokeThickness = 2,
                     StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 4 },
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
@@ -836,17 +850,16 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        // Draw tracks (all gray/inactive during draw mode)
+        // Draw tracks
         bool isDrawing = _drawMode != DrawMode.None;
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
 
             bool isSelected = !isDrawing && track == vm.SelectedTrack;
-            // Selected: white (legacy active boundary), inactive: gray
             var color = new SolidColorBrush(isSelected
-                ? Color.FromRgb(220, 220, 255)
-                : Color.FromRgb(120, 120, 140));
+                ? (light ? Color.FromRgb(30, 60, 200) : Color.FromRgb(220, 220, 255))
+                : (light ? Color.FromRgb(140, 140, 160) : Color.FromRgb(120, 120, 140)));
 
             List<Point> linePoints;
             if (track.Points.Count == 2)
@@ -885,8 +898,8 @@ public partial class FieldBuilderDialogPanel : UserControl
                 var first = ToCanvas(track.Points[0].Easting, track.Points[0].Northing);
                 var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
 
-                AddMarker(canvas, first, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A"); // Gold
-                AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B");  // RoyalBlue
+                AddMarker(canvas, first, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A", light);
+                AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B", light);
             }
         }
 
@@ -951,7 +964,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
                 var drawLine = new Polyline
                 {
-                    Stroke = new SolidColorBrush(Color.FromRgb(255, 130, 0)),  // Orange preview
+                    Stroke = new SolidColorBrush(light ? Color.FromRgb(220, 80, 0) : Color.FromRgb(255, 130, 0)),
                     StrokeThickness = 2,
                     StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
                     Points = previewPoints
@@ -982,18 +995,18 @@ public partial class FieldBuilderDialogPanel : UserControl
                     : (i == _drawPoints.Count - 1
                         ? new SolidColorBrush(Color.FromRgb(65, 105, 225))  // RoyalBlue (B/End)
                         : Brushes.Yellow);
-                AddMarker(canvas, pt, fill, label);
+                AddMarker(canvas, pt, fill, label, light);
             }
         }
     }
 
-    private static void AddMarker(Canvas canvas, Point pt, IBrush fill, string? label)
+    private static void AddMarker(Canvas canvas, Point pt, IBrush fill, string? label, bool light = false)
     {
         var marker = new Ellipse
         {
             Width = 12, Height = 12,
             Fill = fill,
-            Stroke = Brushes.White,
+            Stroke = light ? Brushes.Black : Brushes.White,
             StrokeThickness = 2
         };
         Canvas.SetLeft(marker, pt.X - 6);
@@ -1007,7 +1020,7 @@ public partial class FieldBuilderDialogPanel : UserControl
                 Text = label,
                 FontSize = 14,
                 FontWeight = FontWeight.Bold,
-                Foreground = Brushes.White
+                Foreground = light ? Brushes.Black : Brushes.White
             };
             Canvas.SetLeft(text, pt.X + 8);
             Canvas.SetTop(text, pt.Y - 8);

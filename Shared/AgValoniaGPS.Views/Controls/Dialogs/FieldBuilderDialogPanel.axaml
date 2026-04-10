@@ -71,7 +71,8 @@ Licensed under GNU GPL v3.
                 <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
 
                     <!-- LEFT: Boundary/Track Visualizer -->
-                    <Border Grid.Column="0" Background="#1A1A2E" CornerRadius="8" ClipToBounds="True">
+                    <Border Grid.Column="0" CornerRadius="8" ClipToBounds="True"
+                            x:Name="CanvasBorder">
                         <Grid>
                             <Canvas x:Name="BoundaryPreview" Background="Transparent"
                                 PointerPressed="Canvas_PointerPressed"
