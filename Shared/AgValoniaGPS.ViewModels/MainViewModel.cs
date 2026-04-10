@@ -2931,6 +2931,8 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? IncreaseHeadlandDistanceCommand { get; private set; }
     public ICommand? DecreaseHeadlandDistanceCommand { get; private set; }
 
+    public System.Collections.Generic.IReadOnlyList<Models.Base.Vec3>? CurrentHeadlandLineForPreview => _currentHeadlandLine;
+
     public string HeadlandStatusText => HasHeadland
         ? $"Headland built ({_currentHeadlandLine?.Count ?? 0} points)"
         : "No headland built";

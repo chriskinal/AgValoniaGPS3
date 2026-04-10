@@ -19,12 +19,12 @@ Licensed under GNU GPL v3.
         <Style Selector="Button.BuilderBtn">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="MinWidth" Value="90"/>
-            <Setter Property="MinHeight" Value="70"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="6"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Height" Value="34"/>
         </Style>
         <Style Selector="Button.BuilderBtn:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
@@ -47,15 +47,15 @@ Licensed under GNU GPL v3.
         <!-- Backdrop -->
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
-        <!-- Dialog -->
+        <!-- Dialog - wider for visualizer -->
         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                CornerRadius="12" Padding="16" MinWidth="500" MaxWidth="600"
+                CornerRadius="12" Padding="16" MinWidth="700" MaxWidth="800"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 BoxShadow="0 8 32 #40000000">
-            <StackPanel Spacing="8">
+            <Grid RowDefinitions="Auto,*">
                 <!-- Header -->
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
                     <TextBlock Text="Field Builder" FontSize="20" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     <Button Grid.Column="1" Content="X" Width="28" Height="28" Padding="0"
@@ -63,181 +63,170 @@ Licensed under GNU GPL v3.
                             FontSize="16" Cursor="Hand" Command="{Binding CloseFieldBuilderCommand}"/>
                 </Grid>
 
-                <!-- Tabs -->
-                <TabControl TabStripPlacement="Top">
+                <!-- Main content: Visualizer + Tabs side by side -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12" MinHeight="350">
 
-                    <!-- === TAB 1: TRACKS === -->
-                    <TabItem Header="Tracks">
-                        <StackPanel Spacing="12" Margin="0,8">
-                            <!-- Draw on Map -->
-                            <TextBlock Text="Draw on Map" FontWeight="SemiBold" FontSize="14"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Classes="BuilderBtn" ToolTip.Tip="Draw straight AB line (tap 2 points on map)"
-                                        Command="{Binding StartDrawABModeCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="AB Line" FontSize="11" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Classes="BuilderBtn" ToolTip.Tip="Draw curve (tap multiple points on map)"
-                                        Command="{Binding StartDrawCurveModeCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="Curve" FontSize="11" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
+                    <!-- LEFT: Boundary/Track Visualizer -->
+                    <Border Grid.Column="0" Background="#1A1A2E" CornerRadius="8" ClipToBounds="True">
+                        <Canvas x:Name="BoundaryPreview"/>
+                    </Border>
 
-                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                    <!-- RIGHT: Tabs with controls -->
+                    <TabControl Grid.Column="1" TabStripPlacement="Top">
 
-                            <!-- From Boundary -->
-                            <TextBlock Text="From Field Boundary" FontWeight="SemiBold" FontSize="14"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Classes="BuilderBtn" ToolTip.Tip="AB line from longest boundary edge"
-                                        Command="{Binding CreateTrackFromBoundaryCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <TextBlock Text="AB" FontSize="20" FontWeight="Bold"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                   HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Longest Edge" FontSize="10" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Classes="BuilderBtn" ToolTip.Tip="Curve track from full boundary perimeter"
-                                        Command="{Binding CreateCurveFromBoundaryCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="Boundary Curve" FontSize="10" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Classes="BuilderBtn" ToolTip.Tip="AB line for each boundary edge"
-                                        Command="{Binding CreateTracksFromAllEdgesCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <TextBlock Text="All" FontSize="20" FontWeight="Bold"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                   HorizontalAlignment="Center"/>
-                                        <TextBlock Text="All Edges" FontSize="10" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </StackPanel>
-                    </TabItem>
-
-                    <!-- === TAB 2: HEADLAND === -->
-                    <TabItem Header="Headland">
-                        <StackPanel Spacing="12" Margin="0,8">
-                            <TextBlock Text="Headland creates a working boundary inside the field edge."
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                       FontSize="12" TextWrapping="Wrap"/>
-
-                            <!-- Distance -->
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="Headland Distance:" FontSize="16"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           VerticalAlignment="Center"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <Button Content="-" Width="40" Height="40" FontSize="20" FontWeight="Bold"
-                                            Command="{Binding DecreaseHeadlandDistanceCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    <TextBlock Text="{Binding HeadlandDistance, StringFormat='{}{0:F1} m'}"
-                                               FontSize="20" FontWeight="Bold" Width="80" TextAlignment="Center"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <Button Content="+" Width="40" Height="40" FontSize="20" FontWeight="Bold"
-                                            Command="{Binding IncreaseHeadlandDistanceCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- Status -->
-                            <TextBlock Text="{Binding HeadlandStatusText}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                       FontSize="12"/>
-
-                            <!-- Build button -->
-                            <Button Classes="ActionBtn" Content="Build Headland" HorizontalAlignment="Center"
-                                    Command="{Binding BuildHeadlandCommand}" Width="200"/>
-                        </StackPanel>
-                    </TabItem>
-
-                    <!-- === TAB 3: TRAM LINES === -->
-                    <TabItem Header="Tram Lines">
-                        <StackPanel Spacing="12" Margin="0,8">
-                            <TextBlock Text="Tram lines show permanent wheel tracks for controlled traffic."
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                       FontSize="12" TextWrapping="Wrap"/>
-
-                            <!-- Info -->
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                <TextBlock Grid.Row="0" Text="Active Track:"
+                        <!-- === TAB 1: TRACKS === -->
+                        <TabItem Header="Tracks">
+                            <ScrollViewer>
+                            <StackPanel Spacing="6" Margin="0,6">
+                                <!-- Track list -->
+                                <TextBlock Text="Saved Tracks" FontWeight="SemiBold" FontSize="12"
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding SelectedTrack.Name, FallbackValue='None'}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                                <TextBlock Grid.Row="1" Text="Lines Generated:"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding TramLineCountDisplay}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" Margin="0,4,0,0"/>
-                            </Grid>
+                                <ListBox ItemsSource="{Binding SavedTracks}"
+                                         SelectedItem="{Binding SelectedTrack}"
+                                         MaxHeight="120" CornerRadius="4"
+                                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Ellipse Width="8" Height="8"
+                                                         Fill="{Binding IsActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="11"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="No tracks" FontSize="10" Margin="4,0"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           IsVisible="{Binding !SavedTracks.Count}"/>
 
-                            <!-- Passes -->
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="Passes:" FontSize="16"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           VerticalAlignment="Center"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <Button Content="-" Width="40" Height="40" FontSize="20" FontWeight="Bold"
-                                            Command="{Binding DecreaseTramPassesCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    <TextBlock Text="{Binding TramPasses}" FontSize="20" FontWeight="Bold"
-                                               Width="40" TextAlignment="Center"
+                                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                                <!-- Add Track -->
+                                <TextBlock Text="Draw on Map" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <Button Classes="BuilderBtn" Command="{Binding StartDrawABModeCommand}">
+                                    <TextBlock Text="Draw AB Line (2 pts)" FontSize="11" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button Classes="BuilderBtn" Command="{Binding StartDrawCurveModeCommand}">
+                                    <TextBlock Text="Draw Curve (multi-pt)" FontSize="11" HorizontalAlignment="Center"/>
+                                </Button>
+
+                                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                                <TextBlock Text="From Boundary" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <Button Classes="BuilderBtn" Command="{Binding CreateTrackFromBoundaryCommand}">
+                                    <TextBlock Text="AB from Longest Edge" FontSize="11" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button Classes="BuilderBtn" Command="{Binding CreateCurveFromBoundaryCommand}">
+                                    <TextBlock Text="Boundary Curve" FontSize="11" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button Classes="BuilderBtn" Command="{Binding CreateTracksFromAllEdgesCommand}">
+                                    <TextBlock Text="AB from All Edges" FontSize="11" HorizontalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- === TAB 2: HEADLAND === -->
+                        <TabItem Header="Headland">
+                            <StackPanel Spacing="12" Margin="0,6">
+                                <TextBlock Text="Working boundary inside the field edge."
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           FontSize="11" TextWrapping="Wrap"/>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Distance:" FontSize="14"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                VerticalAlignment="Center"/>
-                                    <Button Content="+" Width="40" Height="40" FontSize="20" FontWeight="Bold"
-                                            Command="{Binding IncreaseTramPassesCommand}"
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                        <Button Content="-" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding DecreaseHeadlandDistanceCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        <TextBlock Text="{Binding HeadlandDistance, StringFormat='{}{0:F1}m'}"
+                                                   FontSize="18" FontWeight="Bold" Width="60" TextAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Content="+" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding IncreaseHeadlandDistanceCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="{Binding HeadlandStatusText}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           FontSize="11"/>
+
+                                <Button Classes="ActionBtn" Content="Build Headland" HorizontalAlignment="Stretch"
+                                        Command="{Binding BuildHeadlandCommand}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <!-- === TAB 3: TRAM LINES === -->
+                        <TabItem Header="Tram Lines">
+                            <StackPanel Spacing="10" Margin="0,6">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                    <TextBlock Grid.Row="0" Text="Track:" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" FontWeight="Bold"
+                                               Text="{Binding SelectedTrack.Name, FallbackValue='None'}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <TextBlock Grid.Row="1" Text="Lines:" FontSize="11" Margin="0,2,0,0"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" FontWeight="Bold" Margin="0,2,0,0"
+                                               Text="{Binding TramLineCountDisplay}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Passes:" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                        <Button Content="-" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding DecreaseTramPassesCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        <TextBlock Text="{Binding TramPasses}" FontSize="18" FontWeight="Bold"
+                                                   Width="36" TextAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Content="+" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding IncreaseTramPassesCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="3">
+                                    <Button Grid.Column="0" Content="Off" Command="{Binding SetTramModeOffCommand}"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                </StackPanel>
-                            </Grid>
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="11"/>
+                                    <Button Grid.Column="1" Content="All" Command="{Binding SetTramModeAllCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="11"/>
+                                    <Button Grid.Column="2" Content="Lines" Command="{Binding SetTramModeLinesCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="11"/>
+                                    <Button Grid.Column="3" Content="Outer" Command="{Binding SetTramModeOuterCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="11"/>
+                                </Grid>
 
-                            <!-- Display mode -->
-                            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
-                                <Button Grid.Column="0" Content="Off" Command="{Binding SetTramModeOffCommand}"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                        HorizontalAlignment="Stretch" Height="36"/>
-                                <Button Grid.Column="1" Content="All" Command="{Binding SetTramModeAllCommand}"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                        HorizontalAlignment="Stretch" Height="36"/>
-                                <Button Grid.Column="2" Content="Lines" Command="{Binding SetTramModeLinesCommand}"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                        HorizontalAlignment="Stretch" Height="36"/>
-                                <Button Grid.Column="3" Content="Outer" Command="{Binding SetTramModeOuterCommand}"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                        HorizontalAlignment="Stretch" Height="36"/>
-                            </Grid>
-
-                            <!-- Build -->
-                            <Button Classes="ActionBtn" Content="Build Tram Lines" HorizontalAlignment="Center"
-                                    Command="{Binding BuildTramLinesCommand}" Width="200"/>
-                        </StackPanel>
-                    </TabItem>
-                </TabControl>
-            </StackPanel>
+                                <Button Classes="ActionBtn" Content="Build Tram Lines" HorizontalAlignment="Stretch"
+                                        Command="{Binding BuildTramLinesCommand}"/>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>
