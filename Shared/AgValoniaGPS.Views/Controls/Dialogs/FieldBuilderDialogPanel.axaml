@@ -71,7 +71,13 @@ Licensed under GNU GPL v3.
 
                     <!-- LEFT: Boundary/Track Visualizer -->
                     <Border Grid.Column="0" Background="#1A1A2E" CornerRadius="8" ClipToBounds="True">
-                        <Canvas x:Name="BoundaryPreview" PointerPressed="Canvas_PointerPressed" Background="Transparent"/>
+                        <Grid>
+                            <Canvas x:Name="BoundaryPreview" PointerPressed="Canvas_PointerPressed" Background="Transparent"/>
+                            <TextBlock x:Name="NoFieldText" Text="No field open"
+                                       FontSize="24" Foreground="#60FFFFFF" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       IsVisible="{Binding !IsFieldOpen}"/>
+                        </Grid>
                     </Border>
 
                     <!-- RIGHT: Tabs for main content, track creation sub-panel -->
