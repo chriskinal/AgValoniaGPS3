@@ -316,7 +316,7 @@ Licensed under GNU GPL v3.
 
                                 <!-- Clip / Undo -->
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
-                                    <Button Grid.Column="0" Classes="FBBtn" Command="{Binding ClipHeadlandLineCommand}">
+                                    <Button Grid.Column="0" Classes="FBBtn" Click="ClipHeadland_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSlice.png" Width="20" Height="20"/>
                                             <TextBlock Text="Clip" VerticalAlignment="Center"/>

@@ -22,7 +22,7 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FieldBuilderDialogPanel : UserControl
 {
     // Drawing state
-    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview, APlus, APlusPreview }
+    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview, APlus, APlusPreview, HeadlandClip }
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
     private int _boundaryPointIndex1 = -1;
@@ -284,6 +284,23 @@ public partial class FieldBuilderDialogPanel : UserControl
         return forward.Count <= reverse.Count ? forward : reverse;
     }
 
+    private int _clipClickCount;
+
+    private void ClipHeadland_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        if (!vm.HasHeadland)
+        {
+            vm.StatusMessage = "Build a headland first";
+            return;
+        }
+
+        _drawMode = DrawMode.HeadlandClip;
+        _clipClickCount = 0;
+        SetCanvasStatus("Click first point on boundary to clip");
+    }
+
     private void SetCanvasStatus(string? text)
     {
         var banner = this.FindControl<Border>("CanvasStatusBanner");
@@ -356,6 +373,30 @@ public partial class FieldBuilderDialogPanel : UserControl
                     return;
                 }
             }
+        }
+
+        if (_drawMode == DrawMode.HeadlandClip && _transformValid && DataContext is MainViewModel clipVm)
+        {
+            double clipE = (pos.X - _offsetX) / _scale + _minE;
+            double clipN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
+            clipVm.HandleHeadlandMapClick(clipE, clipN);
+            _clipClickCount++;
+
+            if (_clipClickCount == 1)
+            {
+                SetCanvasStatus("Click second point on boundary to clip");
+            }
+            else if (_clipClickCount >= 2)
+            {
+                // Two points selected, now execute clip
+                clipVm.ClipHeadlandLineCommand?.Execute(null);
+                _drawMode = DrawMode.None;
+                _clipClickCount = 0;
+                SetCanvasStatus(null);
+                Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+            }
+            e.Handled = true;
+            return;
         }
 
         if (_drawMode == DrawMode.None || isPreview) return;
