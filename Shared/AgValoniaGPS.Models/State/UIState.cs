@@ -52,8 +52,6 @@ public class UIState : ReactiveObject
                 this.RaisePropertyChanged(nameof(IsAgShareUploadDialogVisible));
                 this.RaisePropertyChanged(nameof(IsAgShareDownloadDialogVisible));
                 this.RaisePropertyChanged(nameof(IsDataIODialogVisible));
-                this.RaisePropertyChanged(nameof(IsHeadlandDialogVisible));
-                this.RaisePropertyChanged(nameof(IsHeadlandBuilderDialogVisible));
                 this.RaisePropertyChanged(nameof(IsSimCoordsDialogVisible));
                 this.RaisePropertyChanged(nameof(IsQuickABSelectorVisible));
                 this.RaisePropertyChanged(nameof(IsDrawABDialogVisible));
@@ -96,8 +94,6 @@ public class UIState : ReactiveObject
     public bool IsAgShareUploadDialogVisible => ActiveDialog == DialogType.AgShareUpload;
     public bool IsAgShareDownloadDialogVisible => ActiveDialog == DialogType.AgShareDownload;
     public bool IsDataIODialogVisible => ActiveDialog == DialogType.DataIO;
-    public bool IsHeadlandDialogVisible => ActiveDialog == DialogType.Headland;
-    public bool IsHeadlandBuilderDialogVisible => ActiveDialog == DialogType.HeadlandBuilder;
     public bool IsSimCoordsDialogVisible => ActiveDialog == DialogType.SimCoords;
     public bool IsQuickABSelectorVisible => ActiveDialog == DialogType.QuickABSelector;
     public bool IsDrawABDialogVisible => ActiveDialog == DialogType.DrawAB;

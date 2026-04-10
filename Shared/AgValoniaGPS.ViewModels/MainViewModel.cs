@@ -2509,7 +2509,7 @@ public partial class MainViewModel : ReactiveObject
             {
                 this.RaisePropertyChanged(nameof(IsHeadlandLineMode));
                 // Update preview when track type changes
-                if (State.UI.IsHeadlandDialogVisible || State.UI.IsHeadlandBuilderDialogVisible)
+                if (State.UI.IsFieldBuilderDialogVisible)
                 {
                     UpdateHeadlandPreview();
                 }

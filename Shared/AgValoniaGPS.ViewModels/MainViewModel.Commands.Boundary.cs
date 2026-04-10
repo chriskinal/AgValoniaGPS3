@@ -204,7 +204,7 @@ public partial class MainViewModel
                 StatusMessage = "Open a field first";
                 return;
             }
-            State.UI.ShowDialog(DialogType.HeadlandBuilder);
+            State.UI.ShowDialog(DialogType.FieldBuilder);
             UpdateHeadlandPreview();
         });
 
@@ -292,10 +292,10 @@ public partial class MainViewModel
             UpdateHeadlandPreview();
         });
 
-        // Headland Dialog (FormHeadLine) commands
+        // Headland Dialog - now opens Field Builder
         ShowHeadlandDialogCommand = ReactiveCommand.Create(() =>
         {
-            State.UI.ShowDialog(DialogType.Headland);
+            State.UI.ShowDialog(DialogType.FieldBuilder);
             UpdateHeadlandPreview();
         });
 

@@ -46,8 +46,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:AgShareUploadDialogPanel/>
         <dialogs:AgShareDownloadDialogPanel/>
         <dialogs:DataIODialogPanel/>
-        <dialogs:HeadlandBuilderDialogPanel/>
-        <dialogs:HeadlandDialogPanel/>
         <dialogs:QuickABSelectorPanel/>
         <dialogs:TracksDialogPanel/>
         <dialogs:ImportTracksDialogPanel/>
