@@ -14,6 +14,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
+using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
@@ -21,9 +22,12 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FieldBuilderDialogPanel : UserControl
 {
     // Drawing state
-    private enum DrawMode { None, ABLine, ABLinePreview, Curve }
+    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview }
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
+    private int _boundaryPointIndex1 = -1;
+    private int _boundaryPointIndex2 = -1;
+    private BoundaryPolygon? _selectedBoundaryPoly;
 
     // Drag state
     private int _dragPointIndex = -1;
@@ -129,6 +133,147 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (addPanel != null) addPanel.IsVisible = false;
     }
 
+    private void StartBoundaryLine_Click(object? sender, RoutedEventArgs e)
+    {
+        _drawMode = DrawMode.BoundaryLine;
+        _drawPoints.Clear();
+        _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
+        ShowDrawModeUI("Click first point on the boundary");
+
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (addPanel != null) addPanel.IsVisible = false;
+    }
+
+    private void StartBoundaryCurve_Click(object? sender, RoutedEventArgs e)
+    {
+        _drawMode = DrawMode.BoundaryCurve;
+        _drawPoints.Clear();
+        _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
+        ShowDrawModeUI("Click first point on the boundary");
+
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (addPanel != null) addPanel.IsVisible = false;
+    }
+
+    private void WholeBoundary_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var boundary = vm.CurrentBoundary;
+        if (boundary?.OuterBoundary == null || !boundary.OuterBoundary.IsValid)
+        {
+            vm.StatusMessage = "No boundary available";
+            return;
+        }
+
+        // If there are inner boundaries, show a selection panel; otherwise use outer directly
+        var boundaries = new List<(string name, BoundaryPolygon poly)>();
+        boundaries.Add(("Outer Boundary", boundary.OuterBoundary));
+        for (int i = 0; i < boundary.InnerBoundaries.Count; i++)
+            boundaries.Add(($"Inner Boundary {i + 1}", boundary.InnerBoundaries[i]));
+
+        if (boundaries.Count == 1)
+        {
+            CreateCurveFromBoundaryPoly(vm, boundary.OuterBoundary, "Outer Boundary");
+            return;
+        }
+
+        // Show inline selection for multiple boundaries
+        _drawMode = DrawMode.None;
+        _drawPoints.Clear();
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (addPanel != null) addPanel.IsVisible = false;
+
+        // Use inline confirmation as a simple selector - show each option
+        // For simplicity, just create from outer and notify about inners
+        ShowInlineConfirmation(
+            "Select Boundary",
+            $"Create curve from Outer Boundary? ({boundary.InnerBoundaries.Count} inner boundaries also available - select from track list to create from inner)",
+            () => CreateCurveFromBoundaryPoly(vm, boundary.OuterBoundary, "Outer Boundary"));
+    }
+
+    private void CreateCurveFromBoundaryPoly(MainViewModel vm, BoundaryPolygon poly, string name)
+    {
+        var pts = poly.Points;
+        var curvePoints = new List<Vec3>();
+        for (int i = 0; i < pts.Count; i++)
+            curvePoints.Add(new Vec3(pts[i].Easting, pts[i].Northing, pts[i].Heading));
+        curvePoints.Add(new Vec3(pts[0].Easting, pts[0].Northing, pts[0].Heading));
+
+        var track = new Models.Track.Track
+        {
+            Name = $"{name} Curve",
+            Points = curvePoints,
+            Type = TrackType.Curve,
+            IsVisible = true
+        };
+
+        vm.SavedTracks.Add(track);
+        vm.SelectedTrack = track;
+        vm.StatusMessage = $"Created curve from {name} ({curvePoints.Count} points)";
+
+        ExitDrawMode();
+        ShowMainTabs();
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+    }
+
+    private int FindNearestBoundaryPoint(double fieldE, double fieldN)
+    {
+        if (_selectedBoundaryPoly?.Points == null) return -1;
+
+        var pts = _selectedBoundaryPoly.Points;
+        double minDist = double.MaxValue;
+        int bestIdx = -1;
+
+        for (int i = 0; i < pts.Count; i++)
+        {
+            double dx = pts[i].Easting - fieldE;
+            double dy = pts[i].Northing - fieldN;
+            double dist = dx * dx + dy * dy;
+            if (dist < minDist)
+            {
+                minDist = dist;
+                bestIdx = i;
+            }
+        }
+        return bestIdx;
+    }
+
+    private List<Vec3> ExtractBoundarySegment(int idx1, int idx2)
+    {
+        if (_selectedBoundaryPoly?.Points == null) return new();
+        var pts = _selectedBoundaryPoly.Points;
+        int count = pts.Count;
+
+        // Walk from idx1 to idx2 in forward direction
+        var forward = new List<Vec3>();
+        int i = idx1;
+        while (true)
+        {
+            var p = pts[i];
+            forward.Add(new Vec3(p.Easting, p.Northing, p.Heading));
+            if (i == idx2) break;
+            i = (i + 1) % count;
+            if (forward.Count > count + 1) break; // Safety
+        }
+
+        // Walk from idx1 to idx2 in reverse direction
+        var reverse = new List<Vec3>();
+        i = idx1;
+        while (true)
+        {
+            var p = pts[i];
+            reverse.Add(new Vec3(p.Easting, p.Northing, p.Heading));
+            if (i == idx2) break;
+            i = (i - 1 + count) % count;
+            if (reverse.Count > count + 1) break;
+        }
+
+        // Return the shorter path
+        return forward.Count <= reverse.Count ? forward : reverse;
+    }
+
     private void ShowDrawModeUI(string instruction)
     {
         var drawPanel = this.FindControl<Border>("DrawModePanel");
@@ -154,7 +299,9 @@ public partial class FieldBuilderDialogPanel : UserControl
         var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
 
         // In preview mode, check if clicking near an existing point to drag it
-        if (_drawMode == DrawMode.ABLinePreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
+        bool isPreview = _drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview
+                         || _drawMode == DrawMode.BoundaryCurvePreview;
+        if (isPreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
         {
             for (int i = 0; i < _drawPoints.Count; i++)
             {
@@ -170,7 +317,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        if (_drawMode == DrawMode.None || _drawMode == DrawMode.ABLinePreview) return;
+        if (_drawMode == DrawMode.None || isPreview) return;
 
         // Convert canvas coords back to field coords
         double fieldE = (pos.X - _offsetX) / _scale + _minE;
@@ -219,6 +366,53 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (pointCountText != null) pointCountText.Text = $"Points: {_drawPoints.Count}";
             if (instrText != null) instrText.Text = $"Click more points or Finish ({_drawPoints.Count} placed)";
         }
+        else if (_drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryCurve)
+        {
+            // Snap to nearest boundary vertex
+            int nearIdx = FindNearestBoundaryPoint(fieldE, fieldN);
+            if (nearIdx < 0) { UpdatePreview(); e.Handled = true; return; }
+
+            var bPt = _selectedBoundaryPoly!.Points[nearIdx];
+            // Replace the free-form point with the snapped boundary point
+            _drawPoints[^1] = new Vec3(bPt.Easting, bPt.Northing, _drawPoints[^1].Heading);
+
+            if (_drawPoints.Count == 1)
+            {
+                _boundaryPointIndex1 = nearIdx;
+                if (instrText != null) instrText.Text = "Click second point on the boundary";
+                if (pointCountText != null) pointCountText.Text = "Point 1 set";
+            }
+            else if (_drawPoints.Count >= 2)
+            {
+                _boundaryPointIndex2 = nearIdx;
+
+                // Recalculate headings
+                double h = Math.Atan2(
+                    _drawPoints[1].Easting - _drawPoints[0].Easting,
+                    _drawPoints[1].Northing - _drawPoints[0].Northing);
+                _drawPoints[0] = new Vec3(_drawPoints[0].Easting, _drawPoints[0].Northing, h);
+                _drawPoints[1] = new Vec3(_drawPoints[1].Easting, _drawPoints[1].Northing, h);
+
+                // For boundary curve, extract the segment between the two points
+                if (_drawMode == DrawMode.BoundaryCurve)
+                {
+                    var segment = ExtractBoundarySegment(_boundaryPointIndex1, _boundaryPointIndex2);
+                    _drawPoints.Clear();
+                    _drawPoints.AddRange(segment);
+                    _drawMode = DrawMode.BoundaryCurvePreview;
+                }
+                else
+                {
+                    _drawMode = DrawMode.BoundaryLinePreview;
+                }
+
+                UpdateDrawModeInfo();
+                var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+                var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+                if (createPanel != null) createPanel.IsVisible = true;
+                if (finishPanel != null) finishPanel.IsVisible = false;
+            }
+        }
 
         UpdatePreview();
         e.Handled = true;
@@ -226,10 +420,32 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void CreateAB_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm && _drawPoints.Count >= 2)
+        if (DataContext is not MainViewModel vm || _drawPoints.Count < 2) return;
+
+        if (_drawMode == DrawMode.BoundaryCurvePreview)
         {
-            CreateABLineFromPoints(vm);
+            // Create curve from boundary segment
+            var track = new Models.Track.Track
+            {
+                Name = $"BndCurve {DateTime.Now:HH:mm:ss}",
+                Points = new List<Vec3>(_drawPoints),
+                Type = TrackType.Curve,
+                IsVisible = true
+            };
+            vm.SavedTracks.Add(track);
+            vm.SelectedTrack = track;
+            vm.StatusMessage = $"Created boundary curve ({_drawPoints.Count} points)";
         }
+        else
+        {
+            // AB line (free draw or boundary line)
+            CreateABLineFromPoints(vm);
+            return; // CreateABLineFromPoints handles cleanup
+        }
+
+        ExitDrawMode();
+        ShowMainTabs();
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
     }
 
     private void CreateABLineFromPoints(MainViewModel vm)
@@ -371,7 +587,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         var instrText = this.FindControl<TextBlock>("DrawInstructionText");
         var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
 
-        if (_drawMode == DrawMode.ABLinePreview && _drawPoints.Count >= 2)
+        if ((_drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview) && _drawPoints.Count >= 2)
         {
             double headingDeg = Math.Atan2(
                 _drawPoints[1].Easting - _drawPoints[0].Easting,
@@ -380,6 +596,11 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             if (instrText != null) instrText.Text = $"Heading: {headingDeg:F1} - drag points or Create";
             if (pointCountText != null) pointCountText.Text = "A and B set";
+        }
+        else if (_drawMode == DrawMode.BoundaryCurvePreview)
+        {
+            if (instrText != null) instrText.Text = $"Boundary curve ({_drawPoints.Count} pts) - drag ends or Create";
+            if (pointCountText != null) pointCountText.Text = $"{_drawPoints.Count} points";
         }
     }
 
@@ -635,8 +856,8 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 var previewPoints = _drawPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
 
-                // For AB preview, extend the line
-                if (_drawMode == DrawMode.ABLinePreview)
+                // For AB/boundary line preview, extend the line
+                if (_drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview)
                 {
                     var p1 = _drawPoints[0];
                     var p2 = _drawPoints[1];
@@ -665,14 +886,23 @@ public partial class FieldBuilderDialogPanel : UserControl
                 canvas.Children.Add(drawLine);
             }
 
-            // Draw point markers
+            // Draw point markers (only endpoints for boundary curves with many points)
+            bool isLinearMode = _drawMode == DrawMode.ABLine || _drawMode == DrawMode.ABLinePreview
+                                || _drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryLinePreview;
+            bool isCurvePreview = _drawMode == DrawMode.BoundaryCurvePreview;
+
             for (int i = 0; i < _drawPoints.Count; i++)
             {
+                // For boundary curve preview, only show first and last markers
+                if (isCurvePreview && i > 0 && i < _drawPoints.Count - 1) continue;
+
                 var pt = ToCanvas(_drawPoints[i].Easting, _drawPoints[i].Northing);
                 string? label = null;
 
-                if (_drawMode == DrawMode.ABLine || _drawMode == DrawMode.ABLinePreview)
+                if (isLinearMode)
                     label = i == 0 ? "A" : "B";
+                else if (isCurvePreview)
+                    label = i == 0 ? "Start" : "End";
 
                 var fill = i == 0 ? Brushes.Red : (i == _drawPoints.Count - 1 ? Brushes.Orange : Brushes.Yellow);
                 AddMarker(canvas, pt, fill, label);

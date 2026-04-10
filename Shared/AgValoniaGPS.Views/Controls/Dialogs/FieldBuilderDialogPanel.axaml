@@ -504,17 +504,17 @@ Licensed under GNU GPL v3.
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding CreateTrackFromBoundaryCommand}">
+                                                Click="StartBoundaryLine_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
-                                                <TextBlock Text="Longest" FontSize="14" HorizontalAlignment="Center"
+                                                <TextBlock Text="AB Line" FontSize="14" HorizontalAlignment="Center"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                             </StackPanel>
                                         </Button>
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding CreateCurveFromBoundaryCommand}">
+                                                Click="StartBoundaryCurve_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
@@ -524,11 +524,11 @@ Licensed under GNU GPL v3.
                                         </Button>
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding CreateTracksFromAllEdgesCommand}">
+                                                Click="WholeBoundary_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
-                                                <TextBlock Text="All Edges" FontSize="14" HorizontalAlignment="Center"
+                                                <TextBlock Text="Whole" FontSize="14" HorizontalAlignment="Center"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                             </StackPanel>
                                         </Button>
