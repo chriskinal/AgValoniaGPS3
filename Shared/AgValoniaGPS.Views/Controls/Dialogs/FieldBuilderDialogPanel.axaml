@@ -469,7 +469,7 @@ Licensed under GNU GPL v3.
                                         </Button>
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding CreateALineFromPositionCommand}">
+                                                Click="CreateALine_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>

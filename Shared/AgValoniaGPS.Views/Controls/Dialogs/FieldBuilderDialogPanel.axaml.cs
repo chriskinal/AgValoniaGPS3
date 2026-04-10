@@ -288,6 +288,16 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (statusText != null) statusText.Text = text ?? "";
     }
 
+    private void CreateALine_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.CreateALineFromPositionCommand?.Execute(null);
+            ShowMainTabs();
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+        }
+    }
+
     private void ShowDrawModeUI(string instruction)
     {
         SetCanvasStatus(instruction);
