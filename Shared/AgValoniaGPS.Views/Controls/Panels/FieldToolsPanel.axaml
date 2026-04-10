@@ -76,15 +76,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Button>
                 <!-- Grid.Column="1" Grid.Row="0" is intentionally blank -->
 
-                <!-- Row 1: Headland, Headland Builder -->
+                <!-- Row 1: Field Builder -->
                 <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press" Command="{Binding ShowFieldBuilderCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Width="28" Height="28"/>
-                        <TextBlock Text="{loc:Localize Headland}" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ShowFieldBuilderCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Headache.png" Width="28" Height="28"/>
