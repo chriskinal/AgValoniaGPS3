@@ -318,7 +318,12 @@ public partial class FieldBuilderDialogPanel : UserControl
                          || _drawMode == DrawMode.BoundaryCurvePreview;
         if (isPreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
         {
-            for (int i = 0; i < _drawPoints.Count; i++)
+            // For boundary curve preview, only allow dragging first and last points
+            var draggableIndices = (_drawMode == DrawMode.BoundaryCurvePreview && _drawPoints.Count > 2)
+                ? new[] { 0, _drawPoints.Count - 1 }
+                : Enumerable.Range(0, _drawPoints.Count).ToArray();
+
+            foreach (int i in draggableIndices)
             {
                 var ptCanvas = ToCanvasPoint(_drawPoints[i].Easting, _drawPoints[i].Northing);
                 double dist = Math.Sqrt(Math.Pow(pos.X - ptCanvas.X, 2) + Math.Pow(pos.Y - ptCanvas.Y, 2));
@@ -607,6 +612,28 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void Canvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        // For boundary curve, snap endpoint to boundary and re-extract segment
+        if (_isDragging && _drawMode == DrawMode.BoundaryCurvePreview && _selectedBoundaryPoly != null)
+        {
+            var draggedPt = _drawPoints[_dragPointIndex];
+            int nearIdx = FindNearestBoundaryPoint(draggedPt.Easting, draggedPt.Northing);
+            if (nearIdx >= 0)
+            {
+                // Determine which boundary indices to use
+                if (_dragPointIndex == 0)
+                    _boundaryPointIndex1 = nearIdx;
+                else
+                    _boundaryPointIndex2 = nearIdx;
+
+                // Re-extract the segment
+                var segment = ExtractBoundarySegment(_boundaryPointIndex1, _boundaryPointIndex2);
+                _drawPoints.Clear();
+                _drawPoints.AddRange(segment);
+                UpdateDrawModeInfo();
+                UpdatePreview();
+            }
+        }
+
         if (_isDragging)
         {
             _isDragging = false;
