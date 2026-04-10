@@ -1732,6 +1732,7 @@ public partial class MainViewModel : ReactiveObject
 
     // Track management commands
     public ICommand? DeleteSelectedTrackCommand { get; private set; }
+    public ICommand? DeleteAllTracksCommand { get; private set; }
     public ICommand? SwapABPointsCommand { get; private set; }
     public ICommand? SelectTrackAsActiveCommand { get; private set; }
 

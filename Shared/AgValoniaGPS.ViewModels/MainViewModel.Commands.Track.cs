@@ -113,6 +113,26 @@ public partial class MainViewModel
             }
         });
 
+        DeleteAllTracksCommand = ReactiveCommand.Create(() =>
+        {
+            if (SavedTracks.Count == 0)
+            {
+                StatusMessage = "No tracks to delete";
+                return;
+            }
+            ShowConfirmationDialog(
+                "Delete All Tracks",
+                $"Delete all {SavedTracks.Count} tracks? This cannot be undone.",
+                () =>
+                {
+                    SavedTracks.Clear();
+                    SelectedTrack = null;
+                    SaveTracksToFile();
+                    StatusMessage = "All tracks deleted";
+                    State.UI.ShowDialog(Models.State.DialogType.FieldBuilder);
+                });
+        });
+
         SwapABPointsCommand = ReactiveCommand.Create(() =>
         {
             if (SelectedTrack != null && SelectedTrack.Points.Count >= 2)

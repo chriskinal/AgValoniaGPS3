@@ -143,6 +143,16 @@ Licensed under GNU GPL v3.
                                         <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="#C0392B" BorderThickness="0"
+                                                ToolTip.Tip="Delete All Tracks" Command="{Binding DeleteAllTracksCommand}">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Del All" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </TabItem>
