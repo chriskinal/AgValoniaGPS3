@@ -24,6 +24,9 @@ public partial class FieldBuilderDialogPanel : UserControl
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
 
+    // Inline confirmation
+    private Action? _inlineConfirmAction;
+
     // Coordinate transform (set during UpdatePreview)
     private double _minE, _minN, _rangeE, _rangeN;
     private double _scale, _offsetX, _offsetY;
@@ -245,6 +248,54 @@ public partial class FieldBuilderDialogPanel : UserControl
         _drawPoints.Clear();
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
+    }
+
+    // --- Inline Confirmation ---
+
+    private void ShowInlineConfirmation(string title, string message, Action onConfirm)
+    {
+        _inlineConfirmAction = onConfirm;
+        var titleText = this.FindControl<TextBlock>("InlineConfirmTitle");
+        var msgText = this.FindControl<TextBlock>("InlineConfirmMessage");
+        var overlay = this.FindControl<Border>("InlineConfirmOverlay");
+        if (titleText != null) titleText.Text = title;
+        if (msgText != null) msgText.Text = message;
+        if (overlay != null) overlay.IsVisible = true;
+    }
+
+    private void InlineConfirmYes_Click(object? sender, RoutedEventArgs e)
+    {
+        var overlay = this.FindControl<Border>("InlineConfirmOverlay");
+        if (overlay != null) overlay.IsVisible = false;
+        _inlineConfirmAction?.Invoke();
+        _inlineConfirmAction = null;
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+    }
+
+    private void InlineConfirmNo_Click(object? sender, RoutedEventArgs e)
+    {
+        var overlay = this.FindControl<Border>("InlineConfirmOverlay");
+        if (overlay != null) overlay.IsVisible = false;
+        _inlineConfirmAction = null;
+    }
+
+    private void DeleteAllTracks_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        if (vm.SavedTracks.Count == 0)
+        {
+            vm.StatusMessage = "No tracks to delete";
+            return;
+        }
+        ShowInlineConfirmation(
+            "Delete All Tracks",
+            $"Delete all {vm.SavedTracks.Count} tracks? This cannot be undone.",
+            () =>
+            {
+                vm.SavedTracks.Clear();
+                vm.SelectedTrack = null;
+                vm.StatusMessage = "All tracks deleted";
+            });
     }
 
     // --- Preview Rendering ---
