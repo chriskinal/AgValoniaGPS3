@@ -57,9 +57,13 @@ Licensed under GNU GPL v3.
                 <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
                     <TextBlock Text="Field Builder" FontSize="24" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                    <Button Grid.Column="1" Content="X" Width="44" Height="44" Padding="0"
+                    <Button Grid.Column="1" Width="44" Height="44" Padding="0"
                             Background="#C0392B" Foreground="White" CornerRadius="8"
-                            FontSize="20" FontWeight="Bold" Cursor="Hand" Command="{Binding CloseFieldBuilderCommand}"/>
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Cursor="Hand" Command="{Binding CloseFieldBuilderCommand}">
+                        <TextBlock Text="X" FontSize="20" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
                 </Grid>
 
                 <!-- Main: Visualizer + Right Panel -->
@@ -272,79 +276,93 @@ Licensed under GNU GPL v3.
                                            VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </Grid>
 
-                            <!-- Free Draw -->
-                            <TextBlock Text="Free Draw" FontWeight="SemiBold" FontSize="16"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding StartDrawABModeCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="AB Line" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TabControl TabStripPlacement="Top">
+                                <!-- Free Draw tab -->
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Free Draw" FontSize="14" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding StartDrawABModeCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="AB Line" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding StartDrawCurveModeCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Curve" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding CreateALineFromPositionCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="A+ Line" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
                                     </StackPanel>
-                                </Button>
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding StartDrawCurveModeCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="Curve" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding CreateALineFromPositionCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="A+ Line" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
+                                </TabItem>
 
-                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
-
-                            <!-- From Boundary -->
-                            <TextBlock Text="From Boundary" FontWeight="SemiBold" FontSize="16"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding CreateTrackFromBoundaryCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="Longest" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <!-- From Boundary tab -->
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecord.png"
+                                                   Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Boundary" FontSize="14" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding CreateTrackFromBoundaryCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Longest" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding CreateCurveFromBoundaryCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Curve" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Command="{Binding CreateTracksFromAllEdgesCommand}">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="All Edges" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
                                     </StackPanel>
-                                </Button>
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding CreateCurveFromBoundaryCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="Curve" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Command="{Binding CreateTracksFromAllEdgesCommand}">
-                                    <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
-                                               Width="32" Height="32" Stretch="Uniform"/>
-                                        <TextBlock Text="All Edges" FontSize="16" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
+                                </TabItem>
+                            </TabControl>
                         </StackPanel>
                     </Border>
                 </Grid>
