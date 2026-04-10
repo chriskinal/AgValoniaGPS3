@@ -50,7 +50,7 @@ Licensed under GNU GPL v3.
 
         <!-- Dialog -->
         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                CornerRadius="12" Padding="16" MinWidth="700" MaxWidth="800"
+                CornerRadius="12" Padding="16" MinWidth="800" MaxWidth="1000"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 BoxShadow="0 8 32 #40000000">
@@ -65,7 +65,7 @@ Licensed under GNU GPL v3.
                 </Grid>
 
                 <!-- Main: Visualizer + Right Panel -->
-                <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12" MinHeight="350">
+                <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12" MinHeight="400">
 
                     <!-- LEFT: Boundary/Track Visualizer -->
                     <Border Grid.Column="0" Background="#1A1A2E" CornerRadius="8" ClipToBounds="True">
@@ -90,8 +90,6 @@ Licensed under GNU GPL v3.
                                                          Fill="{Binding IsActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"/>
                                                 <TextBlock Text="{Binding Name}" FontSize="12"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                                <TextBlock Text="{Binding Points.Count, StringFormat='({0} pts)'}" FontSize="10"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -100,13 +98,31 @@ Licensed under GNU GPL v3.
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                            IsVisible="{Binding !SavedTracks.Count}"/>
 
-                                <!-- Add Track button - opens creation sub-panel -->
-                                <Button Classes="ActionBtn" Content="+ Add Track"
-                                        x:Name="AddTrackBtn" Click="AddTrackBtn_Click"/>
-
-                                <!-- Delete selected -->
-                                <Button Classes="FBBtn" Content="Delete Selected"
-                                        Command="{Binding DeleteSelectedTrackCommand}"/>
+                                <!-- Action buttons row -->
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <!-- Add -->
+                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
+                                            Background="#27AE60" ToolTip.Tip="Add Track"
+                                            x:Name="AddTrackBtn" Click="AddTrackBtn_Click">
+                                        <TextBlock Text="+" FontSize="24" FontWeight="Bold" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <!-- Edit -->
+                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            ToolTip.Tip="Edit Selected Track"
+                                            Command="{Binding ShowDrawABDialogCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                               Width="24" Height="24" Stretch="Uniform"/>
+                                    </Button>
+                                    <!-- Delete -->
+                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
+                                            Background="#C0392B" ToolTip.Tip="Delete Selected Track"
+                                            Command="{Binding DeleteSelectedTrackCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png"
+                                               Width="24" Height="24" Stretch="Uniform"/>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
                         </TabItem>
 
@@ -226,13 +242,13 @@ Licensed under GNU GPL v3.
                             <TextBlock Text="Free Draw" FontWeight="SemiBold" FontSize="13"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             <Button Classes="FBBtn" Command="{Binding StartDrawABModeCommand}">
-                                <TextBlock Text="AB Line (tap 2 points)" FontSize="12" HorizontalAlignment="Center"/>
+                                <TextBlock Text="AB Line" FontSize="12" HorizontalAlignment="Center"/>
                             </Button>
                             <Button Classes="FBBtn" Command="{Binding StartDrawCurveModeCommand}">
-                                <TextBlock Text="Curve (tap multiple points)" FontSize="12" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"/>
                             </Button>
                             <Button Classes="FBBtn" Command="{Binding CreateALineFromPositionCommand}">
-                                <TextBlock Text="A Line (point + heading)" FontSize="12" HorizontalAlignment="Center"/>
+                                <TextBlock Text="A+ Line (point + heading)" FontSize="12" HorizontalAlignment="Center"/>
                             </Button>
 
                             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>

@@ -128,19 +128,46 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        // Draw tracks
+        // Draw tracks as extended lines (not just segments)
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
 
             bool isSelected = track == vm.SelectedTrack;
+            var color = new SolidColorBrush(isSelected
+                ? Color.FromRgb(50, 200, 255)
+                : Color.FromRgb(100, 130, 160));
+
+            // For AB lines (2 points), extend to fill the view area
+            System.Collections.Generic.List<Point> linePoints;
+            if (track.Points.Count == 2)
+            {
+                var p1 = track.Points[0];
+                var p2 = track.Points[1];
+                double dx = p2.Easting - p1.Easting;
+                double dy = p2.Northing - p1.Northing;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len < 0.01) continue;
+
+                // Extend far beyond boundary in both directions
+                double ext = Math.Max(rangeE, rangeN) * 2;
+                double nx = dx / len, ny = dy / len;
+                linePoints = new()
+                {
+                    ToCanvas(p1.Easting - nx * ext, p1.Northing - ny * ext),
+                    ToCanvas(p2.Easting + nx * ext, p2.Northing + ny * ext)
+                };
+            }
+            else
+            {
+                linePoints = track.Points.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+            }
+
             var trackLine = new Polyline
             {
-                Stroke = new SolidColorBrush(isSelected
-                    ? Color.FromRgb(50, 200, 255)
-                    : Color.FromRgb(100, 130, 160)),
+                Stroke = color,
                 StrokeThickness = isSelected ? 3 : 1.5,
-                Points = track.Points.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+                Points = linePoints
             };
             canvas.Children.Add(trackLine);
 
