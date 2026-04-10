@@ -1834,6 +1834,26 @@ if frames:
             addPanel.IsVisible = false;
         }
 
+        // Capture Headland and Tram tabs
+        vm.ShowFieldBuilderCommand?.Execute(null);
+        await Delay(300);
+        // Switch to Headland tab (index 1)
+        var tabCtrl = FindControl(window, "MainTabs") as Avalonia.Controls.TabControl;
+        if (tabCtrl != null)
+        {
+            tabCtrl.SelectedIndex = 1;
+            await Delay(200);
+            Dispatcher.UIThread.RunJobs();
+            CaptureScreenshot(window, "field_builder_headland_tab");
+
+            tabCtrl.SelectedIndex = 2;
+            await Delay(200);
+            Dispatcher.UIThread.RunJobs();
+            CaptureScreenshot(window, "field_builder_tram_tab");
+
+            tabCtrl.SelectedIndex = 0;
+        }
+
         vm.State.UI.CloseDialog();
         vm.SavedTracks.Remove(extraTrack);
         await Delay(100);
