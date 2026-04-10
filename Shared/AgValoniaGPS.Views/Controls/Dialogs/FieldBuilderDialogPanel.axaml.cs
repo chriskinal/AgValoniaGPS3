@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using AgValoniaGPS.ViewModels;
 
@@ -25,7 +26,8 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         if (e.Property.Name == nameof(IsVisible) && IsVisible)
         {
-            // Redraw when dialog becomes visible
+            // Reset to main tabs view and redraw
+            ShowMainTabs();
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
     }
@@ -34,6 +36,30 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         if (DataContext is MainViewModel vm)
             vm.State.UI.CloseDialog();
+    }
+
+    private void AddTrackBtn_Click(object? sender, RoutedEventArgs e)
+    {
+        // Switch to Add Track sub-panel
+        var tabs = this.FindControl<TabControl>("MainTabs");
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (tabs != null) tabs.IsVisible = false;
+        if (addPanel != null) addPanel.IsVisible = true;
+    }
+
+    private void BackBtn_Click(object? sender, RoutedEventArgs e)
+    {
+        ShowMainTabs();
+        // Refresh preview after returning (track may have been added)
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+    }
+
+    private void ShowMainTabs()
+    {
+        var tabs = this.FindControl<TabControl>("MainTabs");
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (tabs != null) tabs.IsVisible = true;
+        if (addPanel != null) addPanel.IsVisible = false;
     }
 
     private void UpdatePreview()
@@ -72,7 +98,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         Point ToCanvas(double e, double n) => new Point(
             (e - minE) * scale + offsetX,
-            ch - ((n - minN) * scale + offsetY) // Flip Y
+            ch - ((n - minN) * scale + offsetY)
         );
 
         // Draw boundary polygon
@@ -85,7 +111,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         };
         canvas.Children.Add(boundaryPoly);
 
-        // Draw headland if exists
+        // Draw headland
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
@@ -111,14 +137,14 @@ public partial class FieldBuilderDialogPanel : UserControl
             var trackLine = new Polyline
             {
                 Stroke = new SolidColorBrush(isSelected
-                    ? Color.FromRgb(50, 200, 255)  // Bright cyan for selected
-                    : Color.FromRgb(100, 130, 160)), // Dim for others
+                    ? Color.FromRgb(50, 200, 255)
+                    : Color.FromRgb(100, 130, 160)),
                 StrokeThickness = isSelected ? 3 : 1.5,
                 Points = track.Points.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
             };
             canvas.Children.Add(trackLine);
 
-            // Draw A/B markers for selected track
+            // A/B markers for selected track
             if (isSelected && track.Points.Count >= 2)
             {
                 var first = ToCanvas(track.Points[0].Easting, track.Points[0].Northing);

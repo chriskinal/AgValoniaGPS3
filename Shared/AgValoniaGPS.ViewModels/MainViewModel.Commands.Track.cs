@@ -1101,6 +1101,36 @@ public partial class MainViewModel
             StatusMessage = $"Created AB line from longest boundary edge ({maxDist:F0}m)";
         });
 
+        // A Line: create AB line from current position + heading
+        CreateALineFromPositionCommand = ReactiveCommand.Create(() =>
+        {
+            double heading = State.Vehicle.Heading * Math.PI / 180.0;
+            double e = Easting;
+            double n = Northing;
+
+            // Extend 200m in both directions from current position
+            var a = new Models.Base.Vec3(
+                e - Math.Sin(heading) * 200,
+                n - Math.Cos(heading) * 200,
+                heading);
+            var b = new Models.Base.Vec3(
+                e + Math.Sin(heading) * 200,
+                n + Math.Cos(heading) * 200,
+                heading);
+
+            var track = new Models.Track.Track
+            {
+                Name = $"A+ {Math.Round(State.Vehicle.Heading, 1)}\u00B0",
+                Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                Type = Models.Track.TrackType.ABLine,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created A+ line at {State.Vehicle.Heading:F0}\u00B0";
+        });
+
         // Field Builder dialog
         ShowFieldBuilderCommand = ReactiveCommand.Create(() =>
             State.UI.ShowDialog(Models.State.DialogType.FieldBuilder));

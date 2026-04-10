@@ -16,27 +16,28 @@ Licensed under GNU GPL v3.
              IsHitTestVisible="{Binding State.UI.IsFieldBuilderDialogVisible}">
 
     <UserControl.Styles>
-        <Style Selector="Button.BuilderBtn">
+        <Style Selector="Button.FBBtn">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Height" Value="34"/>
+            <Setter Property="Height" Value="36"/>
         </Style>
-        <Style Selector="Button.BuilderBtn:pointerover">
+        <Style Selector="Button.FBBtn:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.ActionBtn">
             <Setter Property="Background" Value="#27AE60"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
         <Style Selector="Button.ActionBtn:pointerover">
             <Setter Property="Background" Value="#2ECC71"/>
@@ -47,7 +48,7 @@ Licensed under GNU GPL v3.
         <!-- Backdrop -->
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
-        <!-- Dialog - wider for visualizer -->
+        <!-- Dialog -->
         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="12" Padding="16" MinWidth="700" MaxWidth="800"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"
@@ -63,7 +64,7 @@ Licensed under GNU GPL v3.
                             FontSize="16" Cursor="Hand" Command="{Binding CloseFieldBuilderCommand}"/>
                 </Grid>
 
-                <!-- Main content: Visualizer + Tabs side by side -->
+                <!-- Main: Visualizer + Right Panel -->
                 <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12" MinHeight="350">
 
                     <!-- LEFT: Boundary/Track Visualizer -->
@@ -71,67 +72,47 @@ Licensed under GNU GPL v3.
                         <Canvas x:Name="BoundaryPreview"/>
                     </Border>
 
-                    <!-- RIGHT: Tabs with controls -->
-                    <TabControl Grid.Column="1" TabStripPlacement="Top">
+                    <!-- RIGHT: Tabs for main content, track creation sub-panel -->
+                    <TabControl Grid.Column="1" TabStripPlacement="Top" x:Name="MainTabs">
 
-                        <!-- === TAB 1: TRACKS === -->
+                        <!-- === TAB 1: TRACKS (list + add button) === -->
                         <TabItem Header="Tracks">
-                            <ScrollViewer>
                             <StackPanel Spacing="6" Margin="0,6">
                                 <!-- Track list -->
-                                <TextBlock Text="Saved Tracks" FontWeight="SemiBold" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                 <ListBox ItemsSource="{Binding SavedTracks}"
                                          SelectedItem="{Binding SelectedTrack}"
-                                         MaxHeight="120" CornerRadius="4"
+                                         MaxHeight="180" CornerRadius="4"
                                          Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <Ellipse Width="8" Height="8"
                                                          Fill="{Binding IsActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"/>
-                                                <TextBlock Text="{Binding Name}" FontSize="11"
+                                                <TextBlock Text="{Binding Name}" FontSize="12"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                                <TextBlock Text="{Binding Points.Count, StringFormat='({0} pts)'}" FontSize="10"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                                <TextBlock Text="No tracks" FontSize="10" Margin="4,0"
+                                <TextBlock Text="No tracks" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                            IsVisible="{Binding !SavedTracks.Count}"/>
 
-                                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                                <!-- Add Track button - opens creation sub-panel -->
+                                <Button Classes="ActionBtn" Content="+ Add Track"
+                                        x:Name="AddTrackBtn" Click="AddTrackBtn_Click"/>
 
-                                <!-- Add Track -->
-                                <TextBlock Text="Draw on Map" FontWeight="SemiBold" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <Button Classes="BuilderBtn" Command="{Binding StartDrawABModeCommand}">
-                                    <TextBlock Text="Draw AB Line (2 pts)" FontSize="11" HorizontalAlignment="Center"/>
-                                </Button>
-                                <Button Classes="BuilderBtn" Command="{Binding StartDrawCurveModeCommand}">
-                                    <TextBlock Text="Draw Curve (multi-pt)" FontSize="11" HorizontalAlignment="Center"/>
-                                </Button>
-
-                                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-
-                                <TextBlock Text="From Boundary" FontWeight="SemiBold" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <Button Classes="BuilderBtn" Command="{Binding CreateTrackFromBoundaryCommand}">
-                                    <TextBlock Text="AB from Longest Edge" FontSize="11" HorizontalAlignment="Center"/>
-                                </Button>
-                                <Button Classes="BuilderBtn" Command="{Binding CreateCurveFromBoundaryCommand}">
-                                    <TextBlock Text="Boundary Curve" FontSize="11" HorizontalAlignment="Center"/>
-                                </Button>
-                                <Button Classes="BuilderBtn" Command="{Binding CreateTracksFromAllEdgesCommand}">
-                                    <TextBlock Text="AB from All Edges" FontSize="11" HorizontalAlignment="Center"/>
-                                </Button>
+                                <!-- Delete selected -->
+                                <Button Classes="FBBtn" Content="Delete Selected"
+                                        Command="{Binding DeleteSelectedTrackCommand}"/>
                             </StackPanel>
-                            </ScrollViewer>
                         </TabItem>
 
                         <!-- === TAB 2: HEADLAND === -->
                         <TabItem Header="Headland">
-                            <StackPanel Spacing="12" Margin="0,6">
+                            <StackPanel Spacing="10" Margin="0,6">
                                 <TextBlock Text="Working boundary inside the field edge."
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                            FontSize="11" TextWrapping="Wrap"/>
@@ -157,17 +138,16 @@ Licensed under GNU GPL v3.
                                 </Grid>
 
                                 <TextBlock Text="{Binding HeadlandStatusText}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                                           FontSize="11"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11"/>
 
-                                <Button Classes="ActionBtn" Content="Build Headland" HorizontalAlignment="Stretch"
+                                <Button Classes="ActionBtn" Content="Build Headland"
                                         Command="{Binding BuildHeadlandCommand}"/>
                             </StackPanel>
                         </TabItem>
 
                         <!-- === TAB 3: TRAM LINES === -->
                         <TabItem Header="Tram Lines">
-                            <StackPanel Spacing="10" Margin="0,6">
+                            <StackPanel Spacing="8" Margin="0,6">
                                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                                     <TextBlock Grid.Row="0" Text="Track:" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
@@ -220,11 +200,57 @@ Licensed under GNU GPL v3.
                                             HorizontalAlignment="Stretch" Height="32" FontSize="11"/>
                                 </Grid>
 
-                                <Button Classes="ActionBtn" Content="Build Tram Lines" HorizontalAlignment="Stretch"
+                                <Button Classes="ActionBtn" Content="Build Tram Lines"
                                         Command="{Binding BuildTramLinesCommand}"/>
                             </StackPanel>
                         </TabItem>
                     </TabControl>
+
+                    <!-- ADD TRACK SUB-PANEL (replaces tabs when visible) -->
+                    <Border Grid.Column="1" x:Name="AddTrackPanel" IsVisible="False"
+                            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+                        <StackPanel Spacing="8" Margin="0,4">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0" Content="Back" Padding="8,4" FontSize="12"
+                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                        CornerRadius="4" Cursor="Hand" x:Name="BackBtn" Click="BackBtn_Click"/>
+                                <TextBlock Grid.Column="1" Text="Add Track" FontWeight="Bold" FontSize="15"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </Grid>
+
+                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                            <!-- Free Draw section -->
+                            <TextBlock Text="Free Draw" FontWeight="SemiBold" FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <Button Classes="FBBtn" Command="{Binding StartDrawABModeCommand}">
+                                <TextBlock Text="AB Line (tap 2 points)" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+                            <Button Classes="FBBtn" Command="{Binding StartDrawCurveModeCommand}">
+                                <TextBlock Text="Curve (tap multiple points)" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+                            <Button Classes="FBBtn" Command="{Binding CreateALineFromPositionCommand}">
+                                <TextBlock Text="A Line (point + heading)" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+
+                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                            <!-- From Boundary section -->
+                            <TextBlock Text="From Boundary" FontWeight="SemiBold" FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <Button Classes="FBBtn" Command="{Binding CreateTrackFromBoundaryCommand}">
+                                <TextBlock Text="AB from Longest Edge" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+                            <Button Classes="FBBtn" Command="{Binding CreateCurveFromBoundaryCommand}">
+                                <TextBlock Text="Boundary Curve" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+                            <Button Classes="FBBtn" Command="{Binding CreateTracksFromAllEdgesCommand}">
+                                <TextBlock Text="AB from All Edges" FontSize="12" HorizontalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Grid>
         </Border>

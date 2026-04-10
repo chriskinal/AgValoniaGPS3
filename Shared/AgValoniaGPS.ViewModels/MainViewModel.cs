@@ -2926,6 +2926,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? CreateTrackFromBoundaryCommand { get; private set; }
     public ICommand? CreateCurveFromBoundaryCommand { get; private set; }
     public ICommand? CreateTracksFromAllEdgesCommand { get; private set; }
+    public ICommand? CreateALineFromPositionCommand { get; private set; }
     public ICommand? ShowFieldBuilderCommand { get; private set; }
     public ICommand? CloseFieldBuilderCommand { get; private set; }
     public ICommand? IncreaseHeadlandDistanceCommand { get; private set; }
