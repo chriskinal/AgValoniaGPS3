@@ -78,10 +78,35 @@ Licensed under GNU GPL v3.
                         <!-- === TAB 1: TRACKS (list + add button) === -->
                         <TabItem Header="Tracks">
                             <StackPanel Spacing="6" Margin="0,6">
+                                <!-- Action buttons ABOVE track list -->
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button Width="48" Height="48" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            ToolTip.Tip="Add Track" BorderThickness="0"
+                                            x:Name="AddTrackBtn" Click="AddTrackBtn_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
+                                               Width="32" Height="32" Stretch="Uniform"/>
+                                    </Button>
+                                    <Button Width="48" Height="48" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            ToolTip.Tip="Edit Selected Track" BorderThickness="0"
+                                            Command="{Binding ShowDrawABDialogCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                               Width="32" Height="32" Stretch="Uniform"/>
+                                    </Button>
+                                    <Button Width="48" Height="48" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            ToolTip.Tip="Delete Selected Track" BorderThickness="0"
+                                            Command="{Binding DeleteSelectedTrackCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png"
+                                               Width="32" Height="32" Stretch="Uniform"/>
+                                    </Button>
+                                </StackPanel>
+
                                 <!-- Track list -->
                                 <ListBox ItemsSource="{Binding SavedTracks}"
                                          SelectedItem="{Binding SelectedTrack}"
-                                         MaxHeight="180" CornerRadius="4"
+                                         MaxHeight="220" CornerRadius="4"
                                          Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
@@ -97,32 +122,6 @@ Licensed under GNU GPL v3.
                                 <TextBlock Text="No tracks" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                            IsVisible="{Binding !SavedTracks.Count}"/>
-
-                                <!-- Action buttons row -->
-                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                    <!-- Add -->
-                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
-                                            Background="#27AE60" ToolTip.Tip="Add Track"
-                                            x:Name="AddTrackBtn" Click="AddTrackBtn_Click">
-                                        <TextBlock Text="+" FontSize="24" FontWeight="Bold" Foreground="White"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Button>
-                                    <!-- Edit -->
-                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            ToolTip.Tip="Edit Selected Track"
-                                            Command="{Binding ShowDrawABDialogCommand}">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
-                                               Width="24" Height="24" Stretch="Uniform"/>
-                                    </Button>
-                                    <!-- Delete -->
-                                    <Button Width="44" Height="44" CornerRadius="22" Cursor="Hand"
-                                            Background="#C0392B" ToolTip.Tip="Delete Selected Track"
-                                            Command="{Binding DeleteSelectedTrackCommand}">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png"
-                                               Width="24" Height="24" Stretch="Uniform"/>
-                                    </Button>
-                                </StackPanel>
                             </StackPanel>
                         </TabItem>
 
@@ -225,46 +224,77 @@ Licensed under GNU GPL v3.
                     <!-- ADD TRACK SUB-PANEL (replaces tabs when visible) -->
                     <Border Grid.Column="1" x:Name="AddTrackPanel" IsVisible="False"
                             Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-                        <StackPanel Spacing="8" Margin="0,4">
+                        <StackPanel Spacing="6" Margin="0,4">
                             <Grid ColumnDefinitions="Auto,*">
-                                <Button Grid.Column="0" Content="Back" Padding="8,4" FontSize="12"
+                                <Button Grid.Column="0" Padding="8,4" FontSize="12" CornerRadius="4" Cursor="Hand"
                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                        CornerRadius="4" Cursor="Hand" x:Name="BackBtn" Click="BackBtn_Click"/>
+                                        x:Name="BackBtn" Click="BackBtn_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="&lt;" FontWeight="Bold"/>
+                                        <TextBlock Text="Back"/>
+                                    </StackPanel>
+                                </Button>
                                 <TextBlock Grid.Column="1" Text="Add Track" FontWeight="Bold" FontSize="15"
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                            VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </Grid>
 
-                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                            <TabControl TabStripPlacement="Top">
+                                <!-- Free Draw tab -->
+                                <TabItem Header="Free Draw">
+                                    <StackPanel Spacing="8" Margin="0,8">
+                                        <Button Classes="FBBtn" Command="{Binding StartDrawABModeCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="AB Line" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="FBBtn" Command="{Binding StartDrawCurveModeCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="Curve" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="FBBtn" Command="{Binding CreateALineFromPositionCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="A+ Line (point + heading)" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </TabItem>
 
-                            <!-- Free Draw section -->
-                            <TextBlock Text="Free Draw" FontWeight="SemiBold" FontSize="13"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <Button Classes="FBBtn" Command="{Binding StartDrawABModeCommand}">
-                                <TextBlock Text="AB Line" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
-                            <Button Classes="FBBtn" Command="{Binding StartDrawCurveModeCommand}">
-                                <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
-                            <Button Classes="FBBtn" Command="{Binding CreateALineFromPositionCommand}">
-                                <TextBlock Text="A+ Line (point + heading)" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
-
-                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-
-                            <!-- From Boundary section -->
-                            <TextBlock Text="From Boundary" FontWeight="SemiBold" FontSize="13"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <Button Classes="FBBtn" Command="{Binding CreateTrackFromBoundaryCommand}">
-                                <TextBlock Text="AB from Longest Edge" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
-                            <Button Classes="FBBtn" Command="{Binding CreateCurveFromBoundaryCommand}">
-                                <TextBlock Text="Boundary Curve" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
-                            <Button Classes="FBBtn" Command="{Binding CreateTracksFromAllEdgesCommand}">
-                                <TextBlock Text="AB from All Edges" FontSize="12" HorizontalAlignment="Center"/>
-                            </Button>
+                                <!-- From Boundary tab -->
+                                <TabItem Header="From Boundary">
+                                    <StackPanel Spacing="8" Margin="0,8">
+                                        <Button Classes="FBBtn" Command="{Binding CreateTrackFromBoundaryCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="AB from Longest Edge" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="FBBtn" Command="{Binding CreateCurveFromBoundaryCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="Boundary Curve" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="FBBtn" Command="{Binding CreateTracksFromAllEdgesCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
+                                                       Width="20" Height="20" Stretch="Uniform"/>
+                                                <TextBlock Text="AB from All Edges" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </TabItem>
+                            </TabControl>
                         </StackPanel>
                     </Border>
                 </Grid>
