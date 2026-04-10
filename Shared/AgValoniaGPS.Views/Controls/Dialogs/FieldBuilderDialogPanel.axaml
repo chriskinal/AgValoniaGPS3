@@ -87,9 +87,24 @@ Licensed under GNU GPL v3.
                                 </StackPanel>
                             </TabItem.Header>
                             <StackPanel Spacing="6" Margin="0,6">
-                                <!-- Header -->
-                                <TextBlock Text="Track List" FontWeight="Bold" FontSize="16"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <!-- Header with overflow menu -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Track List" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Width="32" Height="32" Padding="0"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
+                                        <Button.Flyout>
+                                            <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                                <MenuItem Header="Delete All Tracks"
+                                                          Command="{Binding DeleteAllTracksCommand}"/>
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                        <TextBlock Text="..." FontSize="20" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
 
                                 <!-- Track list -->
                                 <ListBox ItemsSource="{Binding SavedTracks}"
@@ -141,16 +156,6 @@ Licensed under GNU GPL v3.
                                                    Width="36" Height="36" Stretch="Uniform"/>
                                         </Button>
                                         <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    </StackPanel>
-                                    <StackPanel Spacing="2">
-                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
-                                                Background="#C0392B" BorderThickness="0"
-                                                ToolTip.Tip="Delete All Tracks" Command="{Binding DeleteAllTracksCommand}">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png"
-                                                   Width="36" Height="36" Stretch="Uniform"/>
-                                        </Button>
-                                        <TextBlock Text="Del All" FontSize="12" HorizontalAlignment="Center"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
