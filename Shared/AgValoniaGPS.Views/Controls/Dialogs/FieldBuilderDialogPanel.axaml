@@ -83,12 +83,11 @@ Licensed under GNU GPL v3.
                                        IsVisible="{Binding !IsFieldOpen}"/>
                             <!-- Status banner on top of canvas -->
                             <Border x:Name="CanvasStatusBanner" IsVisible="False"
-                                    Background="#CC000000" Padding="12,6"
-                                    HorizontalAlignment="Stretch" VerticalAlignment="Top"
-                                    CornerRadius="0,0,8,8">
+                                    Background="#DD1565C0" Padding="16,10"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Top">
                                 <TextBlock x:Name="CanvasStatusText" Text=""
-                                           FontSize="16" FontWeight="SemiBold"
-                                           Foreground="#FFFFFFFF"
+                                           FontSize="22" FontWeight="Bold"
+                                           Foreground="White"
                                            HorizontalAlignment="Center"/>
                             </Border>
                         </Grid>
