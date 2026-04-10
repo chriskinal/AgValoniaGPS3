@@ -741,11 +741,22 @@ public partial class MainViewModel
 
         DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
         {
-            int count = Flags.Count;
-            Flags.Clear();
-            _nextFlagId = 1;
-            UpdateFlagsOnMap();
-            StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
+            if (Flags.Count == 0)
+            {
+                StatusMessage = "No flags to delete";
+                return;
+            }
+            ShowConfirmationDialog(
+                "Delete All Flags",
+                $"Delete all {Flags.Count} flags? This cannot be undone.",
+                () =>
+                {
+                    int count = Flags.Count;
+                    Flags.Clear();
+                    _nextFlagId = 1;
+                    UpdateFlagsOnMap();
+                    StatusMessage = $"Deleted {count} flags";
+                });
         });
 
         DeleteFlagCommand = ReactiveCommand.Create<object>(param =>
