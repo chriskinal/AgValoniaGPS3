@@ -284,8 +284,6 @@ public partial class FieldBuilderDialogPanel : UserControl
         return forward.Count <= reverse.Count ? forward : reverse;
     }
 
-    private int _clipClickCount;
-
     private void ClipHeadland_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
@@ -296,9 +294,17 @@ public partial class FieldBuilderDialogPanel : UserControl
             return;
         }
 
-        _drawMode = DrawMode.HeadlandClip;
-        _clipClickCount = 0;
-        SetCanvasStatus("Click first point on boundary to clip");
+        if (!vm.HeadlandPointsSelected)
+        {
+            vm.StatusMessage = "Select 2 points on the map first";
+            SetCanvasStatus("Click 2 points on boundary, then Clip");
+            return;
+        }
+
+        // Execute the clip
+        vm.ClipHeadlandLineCommand?.Execute(null);
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+        SetCanvasStatus(null);
     }
 
     private void SetCanvasStatus(string? text)
@@ -375,28 +381,27 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        if (_drawMode == DrawMode.HeadlandClip && _transformValid && DataContext is MainViewModel clipVm)
+        // Headland point selection: when in no draw mode and headland is built,
+        // clicks on canvas select clip points (like legacy FormHeadLine)
+        if (_drawMode == DrawMode.None && _transformValid && DataContext is MainViewModel headVm && headVm.HasHeadland)
         {
-            double clipE = (pos.X - _offsetX) / _scale + _minE;
-            double clipN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
-            clipVm.HandleHeadlandMapClick(clipE, clipN);
-            _clipClickCount++;
+            // Check if the Headland tab is active
+            var mainTabs = this.FindControl<TabControl>("MainTabs");
+            if (mainTabs is { IsVisible: true, SelectedIndex: 1 }) // index 1 = Headland tab
+            {
+                double clipE = (pos.X - _offsetX) / _scale + _minE;
+                double clipN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
+                headVm.HandleHeadlandMapClick(clipE, clipN);
 
-            if (_clipClickCount == 1)
-            {
-                SetCanvasStatus("Click second point on boundary to clip");
+                if (headVm.HeadlandPointsSelected)
+                    SetCanvasStatus("2 points selected - click Clip to cut");
+                else
+                    SetCanvasStatus("Click second point on boundary");
+
+                UpdatePreview();
+                e.Handled = true;
+                return;
             }
-            else if (_clipClickCount >= 2)
-            {
-                // Two points selected, now execute clip
-                clipVm.ClipHeadlandLineCommand?.Execute(null);
-                _drawMode = DrawMode.None;
-                _clipClickCount = 0;
-                SetCanvasStatus(null);
-                Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
-            }
-            e.Handled = true;
-            return;
         }
 
         if (_drawMode == DrawMode.None || isPreview) return;
@@ -1173,6 +1178,33 @@ public partial class FieldBuilderDialogPanel : UserControl
                         ? new SolidColorBrush(Color.FromRgb(65, 105, 225))  // RoyalBlue (B/End)
                         : Brushes.Yellow);
                 AddMarker(canvas, pt, fill, label, light);
+            }
+        }
+
+        // Draw headland clip selection markers
+        var clipMarkers = vm.HeadlandSelectedMarkers;
+        if (clipMarkers != null && clipMarkers.Count > 0)
+        {
+            for (int i = 0; i < clipMarkers.Count; i++)
+            {
+                var pt = ToCanvas(clipMarkers[i].Easting, clipMarkers[i].Northing);
+                AddMarker(canvas, pt, Brushes.Magenta, i == 0 ? "1" : "2", light);
+            }
+
+            // Draw clip line between the two markers
+            if (clipMarkers.Count == 2)
+            {
+                var p1 = ToCanvas(clipMarkers[0].Easting, clipMarkers[0].Northing);
+                var p2 = ToCanvas(clipMarkers[1].Easting, clipMarkers[1].Northing);
+                var clipLine = new Avalonia.Controls.Shapes.Line
+                {
+                    StartPoint = p1,
+                    EndPoint = p2,
+                    Stroke = Brushes.Magenta,
+                    StrokeThickness = 2,
+                    StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 4 }
+                };
+                canvas.Children.Add(clipLine);
             }
         }
     }
