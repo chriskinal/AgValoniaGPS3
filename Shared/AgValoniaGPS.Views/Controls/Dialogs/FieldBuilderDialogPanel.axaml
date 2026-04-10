@@ -71,7 +71,7 @@ Licensed under GNU GPL v3.
 
                     <!-- LEFT: Boundary/Track Visualizer -->
                     <Border Grid.Column="0" Background="#1A1A2E" CornerRadius="8" ClipToBounds="True">
-                        <Canvas x:Name="BoundaryPreview"/>
+                        <Canvas x:Name="BoundaryPreview" PointerPressed="Canvas_PointerPressed" Background="Transparent"/>
                     </Border>
 
                     <!-- RIGHT: Tabs for main content, track creation sub-panel -->
@@ -449,7 +449,7 @@ Licensed under GNU GPL v3.
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding StartDrawABModeCommand}">
+                                                Click="StartDrawAB_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
@@ -459,7 +459,7 @@ Licensed under GNU GPL v3.
                                         </Button>
                                         <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Command="{Binding StartDrawCurveModeCommand}">
+                                                Click="StartDrawCurve_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
@@ -523,6 +523,26 @@ Licensed under GNU GPL v3.
                                     </StackPanel>
                                 </TabItem>
                             </TabControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DRAW MODE PANEL (replaces other panels during drawing) -->
+                    <Border Grid.Column="1" x:Name="DrawModePanel" IsVisible="False"
+                            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="8">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Draw on Map" FontWeight="Bold" FontSize="18"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock x:Name="DrawInstructionText" Text="" FontSize="14" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                            <TextBlock x:Name="DrawPointCountText" Text="Points: 0" FontSize="14" FontWeight="Bold"
+                                       Foreground="#1ABC9C"/>
+
+                            <Button x:Name="FinishDrawBtn" Classes="ActionBtn" Content="Finish"
+                                    Click="FinishDraw_Click" IsVisible="False" Margin="0,8,0,0"/>
+                            <Button x:Name="UndoDrawBtn" Classes="FBBtn" Content="Undo Last Point"
+                                    Click="UndoDraw_Click" IsVisible="False"/>
+                            <Button Classes="FBBtn" Content="Cancel" Click="CancelDraw_Click"
+                                    Foreground="#E74C3C"/>
                         </StackPanel>
                     </Border>
                 </Grid>

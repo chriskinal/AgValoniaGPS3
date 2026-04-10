@@ -15,6 +15,7 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia.Headless;
 using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.IntegrationTests;
@@ -618,22 +619,16 @@ public class RemoteTestServer : IDisposable
 
                 current = current.GetVisualParent();
             }
+
+            // No known interactive control found - use headless mouse simulation
+            // which will propagate PointerPressed through the visual tree
         }
 
-        // Fallback: use Avalonia's test/headless mouse simulation if available
+        // Fallback: use Avalonia headless mouse simulation
         try
         {
-            // Try headless extension methods
-            var mouseDownMethod = _window.GetType().GetMethod("MouseDown",
-                new[] { typeof(Point), typeof(MouseButton) });
-            var mouseUpMethod = _window.GetType().GetMethod("MouseUp",
-                new[] { typeof(Point), typeof(MouseButton) });
-
-            if (mouseDownMethod != null && mouseUpMethod != null)
-            {
-                mouseDownMethod.Invoke(_window, new object[] { pos, button });
-                mouseUpMethod.Invoke(_window, new object[] { pos, button });
-            }
+            _window.MouseDown(pos, button);
+            _window.MouseUp(pos, button);
         }
         catch { /* Headless methods not available */ }
     }
@@ -642,9 +637,7 @@ public class RemoteTestServer : IDisposable
     {
         try
         {
-            var mouseMoveMethod = _window.GetType().GetMethod("MouseMove",
-                new[] { typeof(Point) });
-            mouseMoveMethod?.Invoke(_window, new object[] { pos });
+            _window.MouseMove(pos);
         }
         catch { }
     }
