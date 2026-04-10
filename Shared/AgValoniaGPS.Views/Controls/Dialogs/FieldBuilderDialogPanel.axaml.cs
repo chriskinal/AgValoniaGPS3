@@ -274,8 +274,17 @@ public partial class FieldBuilderDialogPanel : UserControl
         return forward.Count <= reverse.Count ? forward : reverse;
     }
 
+    private void SetCanvasStatus(string? text)
+    {
+        var banner = this.FindControl<Border>("CanvasStatusBanner");
+        var statusText = this.FindControl<TextBlock>("CanvasStatusText");
+        if (banner != null) banner.IsVisible = text != null;
+        if (statusText != null) statusText.Text = text ?? "";
+    }
+
     private void ShowDrawModeUI(string instruction)
     {
+        SetCanvasStatus(instruction);
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         var instrText = this.FindControl<TextBlock>("DrawInstructionText");
         var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
@@ -348,6 +357,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 if (instrText != null) instrText.Text = "Click point B on the map";
                 if (pointCountText != null) pointCountText.Text = "Point A set";
+                SetCanvasStatus("Click point B");
             }
             else if (_drawPoints.Count >= 2)
             {
@@ -365,6 +375,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             if (pointCountText != null) pointCountText.Text = $"Points: {_drawPoints.Count}";
             if (instrText != null) instrText.Text = $"Click more points or Finish ({_drawPoints.Count} placed)";
+            SetCanvasStatus($"Click next point ({_drawPoints.Count} placed)");
         }
         else if (_drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryCurve)
         {
@@ -381,6 +392,7 @@ public partial class FieldBuilderDialogPanel : UserControl
                 _boundaryPointIndex1 = nearIdx;
                 if (instrText != null) instrText.Text = "Click second point on the boundary";
                 if (pointCountText != null) pointCountText.Text = "Point 1 set";
+                SetCanvasStatus("Click second point on boundary");
             }
             else if (_drawPoints.Count >= 2)
             {
@@ -616,13 +628,17 @@ public partial class FieldBuilderDialogPanel : UserControl
                 _drawPoints[1].Northing - _drawPoints[0].Northing) * 180.0 / Math.PI;
             if (headingDeg < 0) headingDeg += 360;
 
-            if (instrText != null) instrText.Text = $"Heading: {headingDeg:F1} - drag points or Create";
+            string msg = $"Heading: {headingDeg:F1} - drag points or Create";
+            if (instrText != null) instrText.Text = msg;
             if (pointCountText != null) pointCountText.Text = "A and B set";
+            SetCanvasStatus(msg);
         }
         else if (_drawMode == DrawMode.BoundaryCurvePreview)
         {
-            if (instrText != null) instrText.Text = "Boundary curve - drag ends or Create";
+            string msg = "Drag endpoints or click Create";
+            if (instrText != null) instrText.Text = msg;
             if (pointCountText != null) pointCountText.Text = "";
+            SetCanvasStatus(msg);
         }
     }
 
@@ -640,8 +656,11 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         _drawMode = DrawMode.None;
         _drawPoints.Clear();
+        _isDragging = false;
+        _dragPointIndex = -1;
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
+        SetCanvasStatus(null);
     }
 
     // --- Inline Confirmation ---

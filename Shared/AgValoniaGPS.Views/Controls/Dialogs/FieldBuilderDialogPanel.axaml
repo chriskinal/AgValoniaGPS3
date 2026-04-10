@@ -81,6 +81,16 @@ Licensed under GNU GPL v3.
                                        FontSize="24" Foreground="#60FFFFFF" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        IsVisible="{Binding !IsFieldOpen}"/>
+                            <!-- Status banner on top of canvas -->
+                            <Border x:Name="CanvasStatusBanner" IsVisible="False"
+                                    Background="#CC000000" Padding="12,6"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                    CornerRadius="0,0,8,8">
+                                <TextBlock x:Name="CanvasStatusText" Text=""
+                                           FontSize="16" FontWeight="SemiBold"
+                                           Foreground="#FFFFFFFF"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
                         </Grid>
                     </Border>
 
