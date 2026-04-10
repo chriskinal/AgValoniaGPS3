@@ -19,6 +19,7 @@ using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.ReactiveUI;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AgValoniaGPS.Desktop;
 using AgValoniaGPS.Desktop.Views;
 using AgValoniaGPS.IntegrationTests;
@@ -1795,12 +1796,46 @@ if frames:
         // Reset position
         await ResetTractorPosition(vm, simService, settingsService);
 
-        // Step 0: Capture Field Builder dialog
-        Console.Write("[Tram 0] Field Builder dialog... ");
+        // Step 0: Capture Field Builder dialog with multiple tracks
+        Console.Write("[Tram 0] Field Builder screenshots... ");
+
+        // Add a second track for the visualizer
+        var extraTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "Diagonal Test",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(-80, -60, 0.7),
+                new(80, 60, 0.7)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true
+        };
+        vm.SavedTracks.Add(extraTrack);
+
+        // Open Field Builder - main tracks tab
         vm.ShowFieldBuilderCommand?.Execute(null);
-        await Delay(300);
+        await Delay(500);
+        Dispatcher.UIThread.RunJobs();
         CaptureScreenshot(window, "field_builder_tracks_tab");
+
+        // Click Add Track to show sub-panel (simulate via code)
+        var addPanel = FindControl(window, "AddTrackPanel");
+        var mainTabs = FindControl(window, "MainTabs");
+        if (addPanel != null && mainTabs != null)
+        {
+            mainTabs.IsVisible = false;
+            addPanel.IsVisible = true;
+            await Delay(200);
+            Dispatcher.UIThread.RunJobs();
+            CaptureScreenshot(window, "field_builder_add_track");
+            // Restore
+            mainTabs.IsVisible = true;
+            addPanel.IsVisible = false;
+        }
+
         vm.State.UI.CloseDialog();
+        vm.SavedTracks.Remove(extraTrack);
         await Delay(100);
         Console.WriteLine("OK");
 
@@ -1928,6 +1963,20 @@ if frames:
         vm.SimulatorSteerAngle = 0;
         await Delay(50);
         for (int i = 0; i < 5; i++) { simService.Tick(0); await Delay(5); }
+    }
+
+    static Control? FindControl(Control parent, string name)
+    {
+        if (parent.Name == name) return parent;
+        foreach (var child in parent.GetVisualChildren())
+        {
+            if (child is Control c)
+            {
+                var found = FindControl(c, name);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     static void CaptureScreenshot(Window window, string name)
