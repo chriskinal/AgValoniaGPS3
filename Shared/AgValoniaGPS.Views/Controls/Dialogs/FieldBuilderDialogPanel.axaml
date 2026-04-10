@@ -330,28 +330,6 @@ Licensed under GNU GPL v3.
                                     </Button>
                                 </Grid>
 
-                                <!-- Section Control Toggle -->
-                                <ToggleButton HorizontalAlignment="Stretch" Height="40"
-                                              IsChecked="{Binding IsHeadlandSectionControlled}"
-                                              Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                              Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                              CornerRadius="6" Cursor="Hand" BorderThickness="0">
-                                    <ToggleButton.Styles>
-                                        <Style Selector="ToggleButton:checked">
-                                            <Setter Property="Background" Value="#1ABC9C"/>
-                                        </Style>
-                                    </ToggleButton.Styles>
-                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                        <Panel Width="24" Height="24">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOn.png"
-                                                   Width="24" Height="24" IsVisible="{Binding IsHeadlandSectionControlled}"/>
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOff.png"
-                                                   Width="24" Height="24" IsVisible="{Binding !IsHeadlandSectionControlled}"/>
-                                        </Panel>
-                                        <TextBlock Text="Section Control" VerticalAlignment="Center" FontSize="14"/>
-                                    </StackPanel>
-                                </ToggleButton>
-
                                 <!-- Turn Off -->
                                 <Button HorizontalAlignment="Stretch" Height="36"
                                         Background="#C0392B" Foreground="White" CornerRadius="6"
