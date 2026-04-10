@@ -76,10 +76,10 @@ Licensed under GNU GPL v3.
                         <!-- === TAB 1: TRACKS (list + add button) === -->
                         <TabItem>
                             <TabItem.Header>
-                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="8,4">
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png"
-                                           Width="20" Height="20" Stretch="Uniform"/>
-                                    <TextBlock Text="Tracks" VerticalAlignment="Center"/>
+                                           Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Tracks" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </TabItem.Header>
                             <StackPanel Spacing="6" Margin="0,6">
@@ -133,10 +133,10 @@ Licensed under GNU GPL v3.
                         <!-- === TAB 2: HEADLAND === -->
                         <TabItem>
                             <TabItem.Header>
-                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="8,4">
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png"
-                                           Width="20" Height="20" Stretch="Uniform"/>
-                                    <TextBlock Text="Headland" VerticalAlignment="Center"/>
+                                           Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Headland" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </TabItem.Header>
                             <StackPanel Spacing="10" Margin="0,6">
@@ -175,10 +175,10 @@ Licensed under GNU GPL v3.
                         <!-- === TAB 3: TRAM LINES === -->
                         <TabItem>
                             <TabItem.Header>
-                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="8,4">
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png"
-                                           Width="20" Height="20" Stretch="Uniform"/>
-                                    <TextBlock Text="Tram Lines" VerticalAlignment="Center"/>
+                                           Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Tram" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </TabItem.Header>
                             <StackPanel Spacing="8" Margin="0,6">
