@@ -136,6 +136,14 @@ public class RemoteTestServer : IDisposable
                     await HandleWait(req, resp);
                     break;
 
+                case "/tracks":
+                    await HandleTracks(req, resp);
+                    break;
+
+                case "/setproperty":
+                    await HandleSetProperty(req, resp);
+                    break;
+
                 default:
                     resp.StatusCode = 404;
                     await WriteJson(resp, new { error = "Unknown endpoint", path });
@@ -380,7 +388,7 @@ public class RemoteTestServer : IDisposable
 
     private void CollectElements(Avalonia.Visual visual, System.Collections.Generic.List<object> list, int depth)
     {
-        if (depth > 10) return; // Limit depth
+        if (depth > 20) return; // Limit depth
 
         if (visual is Control control && control.IsVisible && control.Bounds.Width > 0)
         {
@@ -429,6 +437,104 @@ public class RemoteTestServer : IDisposable
         await HandleScreenshot(resp);
     }
 
+    private async Task HandleTracks(HttpListenerRequest req, HttpListenerResponse resp)
+    {
+        if (req.HttpMethod == "POST")
+        {
+            // Select a track by index
+            var body = await ReadJson(req);
+            int index = body.GetProperty("index").GetInt32();
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (index >= 0 && index < _vm.SavedTracks.Count)
+                {
+                    _vm.SelectedTrack = _vm.SavedTracks[index];
+                }
+                Dispatcher.UIThread.RunJobs();
+            });
+            await Task.Delay(100);
+        }
+
+        var tracks = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var list = new System.Collections.Generic.List<object>();
+            for (int i = 0; i < _vm.SavedTracks.Count; i++)
+            {
+                var t = _vm.SavedTracks[i];
+                list.Add(new
+                {
+                    index = i,
+                    name = t.Name,
+                    isActive = t.IsActive,
+                    pointCount = t.Points.Count,
+                    isABLine = t.IsABLine,
+                    isCurve = t.IsCurve
+                });
+            }
+            return list;
+        });
+
+        await WriteJson(resp, new
+        {
+            tracks,
+            selectedTrack = _vm.SelectedTrack?.Name,
+            hasActiveTrack = _vm.HasActiveTrack
+        });
+    }
+
+    private async Task HandleSetProperty(HttpListenerRequest req, HttpListenerResponse resp)
+    {
+        var body = await ReadJson(req);
+        string propName = body.GetProperty("name").GetString() ?? "";
+        string result = "unknown";
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var prop = _vm.GetType().GetProperty(propName);
+            if (prop != null && prop.CanWrite)
+            {
+                try
+                {
+                    object? value = null;
+                    var propType = prop.PropertyType;
+
+                    if (body.TryGetProperty("value", out var jsonVal))
+                    {
+                        if (propType == typeof(double))
+                            value = jsonVal.GetDouble();
+                        else if (propType == typeof(int))
+                            value = jsonVal.GetInt32();
+                        else if (propType == typeof(bool))
+                            value = jsonVal.GetBoolean();
+                        else if (propType == typeof(string))
+                            value = jsonVal.GetString();
+                    }
+
+                    if (value != null)
+                    {
+                        prop.SetValue(_vm, value);
+                        result = "set";
+                    }
+                    else
+                    {
+                        result = "unsupported_type";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result = $"error: {ex.Message}";
+                }
+            }
+            else
+            {
+                result = prop == null ? "not_found" : "read_only";
+            }
+            Dispatcher.UIThread.RunJobs();
+        });
+
+        await WriteJson(resp, new { property = propName, result });
+    }
+
     // --- Helpers ---
 
     private static async Task<JsonElement> ReadJson(HttpListenerRequest req)
@@ -452,13 +558,48 @@ public class RemoteTestServer : IDisposable
     {
         // Find the control at the given position and invoke its click
         var hit = _window.InputHitTest(pos);
-        if (hit is Avalonia.Input.IInputElement inputElement)
+        if (hit is Avalonia.Input.IInputElement)
         {
-            // For buttons, execute the command directly
-            if (hit is Button btn && btn.Command != null && btn.Command.CanExecute(btn.CommandParameter))
+            // Walk up the visual tree to find a clickable control
+            var current = hit as Avalonia.Visual;
+            while (current != null)
             {
-                btn.Command.Execute(btn.CommandParameter);
-                return;
+                if (current is Button btn && btn.Command != null && btn.Command.CanExecute(btn.CommandParameter))
+                {
+                    btn.Command.Execute(btn.CommandParameter);
+                    return;
+                }
+
+                // Handle DataGrid row clicks - select the item
+                if (current is Avalonia.Controls.DataGridRow row)
+                {
+                    var grid = row.FindAncestorOfType<Avalonia.Controls.DataGrid>();
+                    if (grid != null)
+                    {
+                        grid.SelectedIndex = row.Index;
+                    }
+                    return;
+                }
+
+                // Handle ListBoxItem clicks - select the item
+                if (current is Avalonia.Controls.ListBoxItem lbi)
+                {
+                    var listBox = lbi.FindAncestorOfType<Avalonia.Controls.ListBox>();
+                    if (listBox != null)
+                    {
+                        listBox.SelectedItem = lbi.DataContext;
+                    }
+                    return;
+                }
+
+                // Handle CheckBox clicks - toggle
+                if (current is Avalonia.Controls.CheckBox cb)
+                {
+                    cb.IsChecked = !cb.IsChecked;
+                    return;
+                }
+
+                current = current.GetVisualParent();
             }
         }
 
