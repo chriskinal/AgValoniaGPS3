@@ -202,10 +202,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
                 </Button>
 
-                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) - visible when track active -->
+                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Tram Lines Display Mode"
                         Command="{Binding ToggleTramDisplayCommand}"
-                        IsVisible="{Binding HasActiveTrack}">
+                        IsVisible="{Binding IsFieldOpen}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
                 </Button>
 
