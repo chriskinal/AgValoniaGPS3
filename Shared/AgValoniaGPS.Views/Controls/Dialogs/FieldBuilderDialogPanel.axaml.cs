@@ -51,6 +51,10 @@ public partial class FieldBuilderDialogPanel : UserControl
         InitializeComponent();
         PropertyChanged += OnPropertyChanged;
         DataContextChanged += OnDataContextChanged;
+
+        var headingInput = this.FindControl<TextBox>("HeadingInput");
+        if (headingInput != null)
+            headingInput.TextChanged += HeadingInput_TextChanged;
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -502,7 +506,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         SetCanvasStatus($"Heading: {headingDeg:F1} - click Create");
     }
 
-    private void HeadingInput_TextChanged(object? sender, EventArgs e)
+    private void HeadingInput_TextChanged(object? sender, TextChangedEventArgs e)
     {
         if (_drawMode == DrawMode.APlusPreview)
         {

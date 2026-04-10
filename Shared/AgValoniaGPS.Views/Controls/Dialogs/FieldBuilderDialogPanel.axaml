@@ -542,7 +542,7 @@ Licensed under GNU GPL v3.
                                         Spacing="8" Margin="0,4,0,0" HorizontalAlignment="Stretch">
                                 <TextBlock Text="Heading:" FontSize="16" VerticalAlignment="Center"
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <TextBox x:Name="HeadingInput" Width="80" FontSize="16" TextChanged="HeadingInput_TextChanged"/>
+                                <TextBox x:Name="HeadingInput" Width="80" FontSize="16"/>
                                 <TextBlock Text="deg" FontSize="14" VerticalAlignment="Center"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                             </StackPanel>
