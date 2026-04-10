@@ -25,6 +25,10 @@ public partial class FieldBuilderDialogPanel : UserControl
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
 
+    // Drag state
+    private int _dragPointIndex = -1;
+    private bool _isDragging;
+
     // Inline confirmation/input
     private Action? _inlineConfirmAction;
     private MainViewModel? _viewModel;
@@ -130,26 +134,43 @@ public partial class FieldBuilderDialogPanel : UserControl
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         var instrText = this.FindControl<TextBlock>("DrawInstructionText");
         var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
-        var finishBtn = this.FindControl<Button>("FinishDrawBtn");
-        var undoBtn = this.FindControl<Button>("UndoDrawBtn");
-        var createBtn = this.FindControl<Button>("CreateABBtn");
+        var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+        var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
 
         if (drawPanel != null) drawPanel.IsVisible = true;
         if (instrText != null) instrText.Text = instruction;
         if (pointCountText != null) pointCountText.Text = "Points: 0";
-        if (finishBtn != null) finishBtn.IsVisible = _drawMode == DrawMode.Curve;
-        if (undoBtn != null) undoBtn.IsVisible = true;
-        if (createBtn != null) createBtn.IsVisible = false;
+        if (finishPanel != null) finishPanel.IsVisible = _drawMode == DrawMode.Curve;
+        if (createPanel != null) createPanel.IsVisible = false;
 
         UpdatePreview();
     }
 
     private void Canvas_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_drawMode == DrawMode.None || _drawMode == DrawMode.ABLinePreview || !_transformValid) return;
+        if (!_transformValid) return;
         if (DataContext is not MainViewModel) return;
 
         var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
+
+        // In preview mode, check if clicking near an existing point to drag it
+        if (_drawMode == DrawMode.ABLinePreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
+        {
+            for (int i = 0; i < _drawPoints.Count; i++)
+            {
+                var ptCanvas = ToCanvasPoint(_drawPoints[i].Easting, _drawPoints[i].Northing);
+                double dist = Math.Sqrt(Math.Pow(pos.X - ptCanvas.X, 2) + Math.Pow(pos.Y - ptCanvas.Y, 2));
+                if (dist < 20) // 20px hit radius
+                {
+                    _dragPointIndex = i;
+                    _isDragging = true;
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        if (_drawMode == DrawMode.None || _drawMode == DrawMode.ABLinePreview) return;
 
         // Convert canvas coords back to field coords
         double fieldE = (pos.X - _offsetX) / _scale + _minE;
@@ -185,13 +206,12 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 // Show preview instead of creating immediately
                 _drawMode = DrawMode.ABLinePreview;
-                if (instrText != null) instrText.Text = "Preview - click Create or adjust points";
-                if (pointCountText != null) pointCountText.Text = "A and B set";
+                UpdateDrawModeInfo();
 
-                var createBtn = this.FindControl<Button>("CreateABBtn");
-                var finishBtn = this.FindControl<Button>("FinishDrawBtn");
-                if (createBtn != null) createBtn.IsVisible = true;
-                if (finishBtn != null) finishBtn.IsVisible = false;
+                var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+                var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+                if (createPanel != null) createPanel.IsVisible = true;
+                if (finishPanel != null) finishPanel.IsVisible = false;
             }
         }
         else if (_drawMode == DrawMode.Curve)
@@ -260,13 +280,13 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
             var instrText = this.FindControl<TextBlock>("DrawInstructionText");
-            var createBtn = this.FindControl<Button>("CreateABBtn");
+            var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
 
             // Reset AB preview state if we went back below 2 points
             if (_drawMode == DrawMode.ABLinePreview)
             {
                 _drawMode = DrawMode.ABLine;
-                if (createBtn != null) createBtn.IsVisible = false;
+                if (createPanel != null) createPanel.IsVisible = false;
             }
 
             if (_drawMode == DrawMode.ABLine)
@@ -289,6 +309,77 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
 
             UpdatePreview();
+        }
+    }
+
+    private void Canvas_PointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_isDragging || _dragPointIndex < 0 || !_transformValid) return;
+
+        var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
+        double fieldE = (pos.X - _offsetX) / _scale + _minE;
+        double fieldN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
+
+        // Recalculate heading
+        double heading = 0;
+        if (_drawPoints.Count >= 2)
+        {
+            int otherIdx = _dragPointIndex == 0 ? 1 : 0;
+            var other = _drawPoints[otherIdx];
+            if (_dragPointIndex == 0)
+                heading = Math.Atan2(other.Easting - fieldE, other.Northing - fieldN);
+            else
+                heading = Math.Atan2(fieldE - _drawPoints[0].Easting, fieldN - _drawPoints[0].Northing);
+        }
+
+        _drawPoints[_dragPointIndex] = new Vec3(fieldE, fieldN, heading);
+
+        // Update both points' headings for AB lines
+        if (_drawPoints.Count == 2)
+        {
+            double h = Math.Atan2(
+                _drawPoints[1].Easting - _drawPoints[0].Easting,
+                _drawPoints[1].Northing - _drawPoints[0].Northing);
+            _drawPoints[0] = new Vec3(_drawPoints[0].Easting, _drawPoints[0].Northing, h);
+            _drawPoints[1] = new Vec3(_drawPoints[1].Easting, _drawPoints[1].Northing, h);
+        }
+
+        UpdateDrawModeInfo();
+        UpdatePreview();
+        e.Handled = true;
+    }
+
+    private void Canvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_isDragging)
+        {
+            _isDragging = false;
+            _dragPointIndex = -1;
+            e.Handled = true;
+        }
+    }
+
+    private Point ToCanvasPoint(double e, double n)
+    {
+        return new Point(
+            (e - _minE) * _scale + _offsetX,
+            _canvasHeight - ((n - _minN) * _scale + _offsetY));
+    }
+
+    private void UpdateDrawModeInfo()
+    {
+        var instrText = this.FindControl<TextBlock>("DrawInstructionText");
+        var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
+
+        if (_drawMode == DrawMode.ABLinePreview && _drawPoints.Count >= 2)
+        {
+            double headingDeg = Math.Atan2(
+                _drawPoints[1].Easting - _drawPoints[0].Easting,
+                _drawPoints[1].Northing - _drawPoints[0].Northing) * 180.0 / Math.PI;
+            if (headingDeg < 0) headingDeg += 360;
+
+            if (instrText != null) instrText.Text = $"Heading: {headingDeg:F1} - drag points or Create";
+            if (pointCountText != null) pointCountText.Text = "A and B set";
         }
     }
 
