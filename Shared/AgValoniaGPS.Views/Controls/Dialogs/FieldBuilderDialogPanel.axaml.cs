@@ -22,7 +22,7 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FieldBuilderDialogPanel : UserControl
 {
     // Drawing state
-    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview }
+    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview, APlus, APlusPreview }
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
     private int _boundaryPointIndex1 = -1;
@@ -290,12 +290,16 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void CreateALine_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm)
-        {
-            vm.CreateALineFromPositionCommand?.Execute(null);
-            ShowMainTabs();
-            Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
-        }
+        _drawMode = DrawMode.APlus;
+        _drawPoints.Clear();
+        ShowDrawModeUI("Click a point on the map");
+
+        var addPanel = this.FindControl<Border>("AddTrackPanel");
+        if (addPanel != null) addPanel.IsVisible = false;
+
+        // Show heading input
+        var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+        if (headingPanel != null) headingPanel.IsVisible = false; // Hidden until point placed
     }
 
     private void ShowDrawModeUI(string instruction)
@@ -307,11 +311,14 @@ public partial class FieldBuilderDialogPanel : UserControl
         var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
         var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
 
+        var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+
         if (drawPanel != null) drawPanel.IsVisible = true;
         if (instrText != null) instrText.Text = instruction;
         if (pointCountText != null) pointCountText.Text = "Points: 0";
         if (finishPanel != null) finishPanel.IsVisible = _drawMode == DrawMode.Curve;
         if (createPanel != null) createPanel.IsVisible = false;
+        if (headingPanel != null) headingPanel.IsVisible = false;
 
         UpdatePreview();
     }
@@ -325,7 +332,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         // In preview mode, check if clicking near an existing point to drag it
         bool isPreview = _drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview
-                         || _drawMode == DrawMode.BoundaryCurvePreview;
+                         || _drawMode == DrawMode.BoundaryCurvePreview || _drawMode == DrawMode.APlusPreview;
         if (isPreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
         {
             // For boundary curve preview, only allow dragging first and last points
@@ -446,14 +453,98 @@ public partial class FieldBuilderDialogPanel : UserControl
                 if (finishPanel != null) finishPanel.IsVisible = false;
             }
         }
+        else if (_drawMode == DrawMode.APlus)
+        {
+            if (_drawPoints.Count == 1)
+            {
+                // Point placed, show heading input
+                _drawMode = DrawMode.APlusPreview;
+                SetCanvasStatus("Enter heading and click Create");
+                if (instrText != null) instrText.Text = "Enter heading angle";
+                if (pointCountText != null) pointCountText.Text = "Point set";
+
+                var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+                var headingInput = this.FindControl<TextBox>("HeadingInput");
+                var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+                if (headingPanel != null) headingPanel.IsVisible = true;
+                if (headingInput != null) { headingInput.Text = "0"; headingInput.Focus(); headingInput.SelectAll(); }
+                if (createPanel != null) createPanel.IsVisible = true;
+
+                // Generate preview line at 0 degrees
+                UpdateAPlusPreview();
+            }
+        }
 
         UpdatePreview();
         e.Handled = true;
     }
 
+    private void UpdateAPlusPreview()
+    {
+        var headingInput = this.FindControl<TextBox>("HeadingInput");
+        if (headingInput == null || _drawPoints.Count < 1) return;
+
+        if (!double.TryParse(headingInput.Text, out double headingDeg)) return;
+        double headingRad = headingDeg * Math.PI / 180.0;
+
+        // Keep only the clicked point, regenerate A/B from heading
+        var origin = _drawPoints[0];
+        double ext = 200;
+        var a = new Vec3(origin.Easting - Math.Sin(headingRad) * ext, origin.Northing - Math.Cos(headingRad) * ext, headingRad);
+        var b = new Vec3(origin.Easting + Math.Sin(headingRad) * ext, origin.Northing + Math.Cos(headingRad) * ext, headingRad);
+
+        while (_drawPoints.Count > 1) _drawPoints.RemoveAt(_drawPoints.Count - 1);
+        _drawPoints[0] = new Vec3(origin.Easting, origin.Northing, headingRad);
+        _drawPoints.Add(b);
+        // Insert A before origin for the extended line
+        _drawPoints.Insert(0, a);
+
+        SetCanvasStatus($"Heading: {headingDeg:F1} - click Create");
+    }
+
+    private void HeadingInput_TextChanged(object? sender, EventArgs e)
+    {
+        if (_drawMode == DrawMode.APlusPreview)
+        {
+            // Keep only original point (index 1 if 3 points, or 0 if 1)
+            if (_drawPoints.Count == 0) return;
+            var origin = _drawPoints.Count == 3 ? _drawPoints[1] : _drawPoints[0];
+            _drawPoints.Clear();
+            _drawPoints.Add(origin);
+            UpdateAPlusPreview();
+            UpdatePreview();
+        }
+    }
+
     private void CreateAB_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm || _drawPoints.Count < 2) return;
+
+        if (_drawMode == DrawMode.APlusPreview)
+        {
+            // Create from the 3 points (extended A, origin, extended B)
+            var headingInput = this.FindControl<TextBox>("HeadingInput");
+            double headingDeg = 0;
+            if (headingInput != null) double.TryParse(headingInput.Text, out headingDeg);
+
+            var posA = _drawPoints[0];
+            var posB = _drawPoints[^1];
+            var track = new Models.Track.Track
+            {
+                Name = $"A+ {headingDeg:F1}",
+                Points = new List<Vec3> { posA, posB },
+                Type = TrackType.ABLine,
+                IsVisible = true
+            };
+            vm.SavedTracks.Add(track);
+            vm.SelectedTrack = track;
+            vm.StatusMessage = $"Created A+ line at {headingDeg:F1}";
+
+            ExitDrawMode();
+            ShowMainTabs();
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+            return;
+        }
 
         if (_drawMode == DrawMode.BoundaryCurvePreview)
         {
@@ -952,7 +1043,7 @@ public partial class FieldBuilderDialogPanel : UserControl
                 var previewPoints = _drawPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
 
                 // For AB/boundary line preview, extend the line
-                if (_drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview)
+                if (_drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview || _drawMode == DrawMode.APlusPreview)
                 {
                     var p1 = _drawPoints[0];
                     var p2 = _drawPoints[1];
@@ -1014,7 +1105,8 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             // Draw point markers (only endpoints for boundary curves with many points)
             bool isLinearMode = _drawMode == DrawMode.ABLine || _drawMode == DrawMode.ABLinePreview
-                                || _drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryLinePreview;
+                                || _drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryLinePreview
+                                || _drawMode == DrawMode.APlus || _drawMode == DrawMode.APlusPreview;
             bool isCurvePreview = _drawMode == DrawMode.BoundaryCurvePreview;
 
             for (int i = 0; i < _drawPoints.Count; i++)
