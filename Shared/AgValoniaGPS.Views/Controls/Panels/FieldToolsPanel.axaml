@@ -105,7 +105,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press">
+                        ClickMode="Press" Command="{Binding ImportTracksCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="28" Height="28"/>
                         <TextBlock Text="{loc:Localize ImportTracks}" VerticalAlignment="Center" FontSize="12"/>
