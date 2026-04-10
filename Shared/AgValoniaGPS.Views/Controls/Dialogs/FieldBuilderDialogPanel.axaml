@@ -104,7 +104,9 @@ Licensed under GNU GPL v3.
                                             Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
                                         <Button.Flyout>
                                             <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                                <MenuItem Header="Delete All Tracks"
+                                                <MenuItem Header="Rename Track"
+                                                          Click="RenameTrack_Click"/>
+                                            <MenuItem Header="Delete All Tracks"
                                                           Click="DeleteAllTracks_Click"/>
                                             </MenuFlyout>
                                         </Button.Flyout>
@@ -544,10 +546,12 @@ Licensed under GNU GPL v3.
                             <TextBlock x:Name="DrawPointCountText" Text="Points: 0" FontSize="14" FontWeight="Bold"
                                        Foreground="#1ABC9C"/>
 
+                            <Button x:Name="CreateABBtn" Classes="ActionBtn" Content="Create Track"
+                                    Click="CreateAB_Click" IsVisible="False" Margin="0,8,0,0"/>
                             <Button x:Name="FinishDrawBtn" Classes="ActionBtn" Content="Finish"
                                     Click="FinishDraw_Click" IsVisible="False" Margin="0,8,0,0"/>
                             <Button x:Name="UndoDrawBtn" Classes="FBBtn" Content="Undo Last Point"
-                                    Click="UndoDraw_Click" IsVisible="False"/>
+                                    Click="UndoDraw_Click"/>
                             <Button Classes="FBBtn" Content="Cancel" Click="CancelDraw_Click"
                                     Foreground="#E74C3C"/>
                         </StackPanel>
@@ -578,6 +582,34 @@ Licensed under GNU GPL v3.
                                     Background="#E74C3C" Foreground="White"
                                     CornerRadius="6" BorderThickness="0" Cursor="Hand"
                                     Click="InlineConfirmYes_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- Rename overlay -->
+            <Border x:Name="RenameOverlay" IsVisible="False" IsHitTestVisible="True"
+                    Background="#C0000000" CornerRadius="0"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24" MinWidth="320"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        BoxShadow="0 8 32 #80000000">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Rename Track" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBox x:Name="RenameInput" FontSize="16"
+                                 KeyDown="RenameInput_KeyDown"/>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0" Content="Cancel" HorizontalAlignment="Stretch" Height="40"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="RenameCancel_Click"/>
+                            <Button Grid.Column="1" Content="Rename" HorizontalAlignment="Stretch" Height="40"
+                                    Background="#27AE60" Foreground="White"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="RenameConfirm_Click"/>
                         </Grid>
                     </StackPanel>
                 </Border>

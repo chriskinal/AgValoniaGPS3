@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -20,12 +21,13 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FieldBuilderDialogPanel : UserControl
 {
     // Drawing state
-    private enum DrawMode { None, ABLine, Curve }
+    private enum DrawMode { None, ABLine, ABLinePreview, Curve }
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
 
-    // Inline confirmation
+    // Inline confirmation/input
     private Action? _inlineConfirmAction;
+    private MainViewModel? _viewModel;
 
     // Coordinate transform (set during UpdatePreview)
     private double _minE, _minN, _rangeE, _rangeN;
@@ -37,6 +39,26 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         InitializeComponent();
         PropertyChanged += OnPropertyChanged;
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_viewModel != null)
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+        _viewModel = DataContext as MainViewModel;
+
+        if (_viewModel != null)
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.SelectedTrack) && IsVisible)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+        }
     }
 
     private void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -45,6 +67,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             ShowMainTabs();
             ExitDrawMode();
+            HideRenamePanel();
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
     }
@@ -74,10 +97,9 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         var tabs = this.FindControl<TabControl>("MainTabs");
         var addPanel = this.FindControl<Border>("AddTrackPanel");
+        var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (tabs != null) tabs.IsVisible = true;
         if (addPanel != null) addPanel.IsVisible = false;
-
-        var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
     }
 
@@ -89,7 +111,6 @@ public partial class FieldBuilderDialogPanel : UserControl
         _drawPoints.Clear();
         ShowDrawModeUI("Click point A on the map");
 
-        // Hide add panel, show draw panel
         var addPanel = this.FindControl<Border>("AddTrackPanel");
         if (addPanel != null) addPanel.IsVisible = false;
     }
@@ -111,20 +132,22 @@ public partial class FieldBuilderDialogPanel : UserControl
         var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
         var finishBtn = this.FindControl<Button>("FinishDrawBtn");
         var undoBtn = this.FindControl<Button>("UndoDrawBtn");
+        var createBtn = this.FindControl<Button>("CreateABBtn");
 
         if (drawPanel != null) drawPanel.IsVisible = true;
         if (instrText != null) instrText.Text = instruction;
         if (pointCountText != null) pointCountText.Text = "Points: 0";
         if (finishBtn != null) finishBtn.IsVisible = _drawMode == DrawMode.Curve;
-        if (undoBtn != null) undoBtn.IsVisible = _drawMode == DrawMode.Curve;
+        if (undoBtn != null) undoBtn.IsVisible = true;
+        if (createBtn != null) createBtn.IsVisible = false;
 
         UpdatePreview();
     }
 
     private void Canvas_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_drawMode == DrawMode.None || !_transformValid) return;
-        if (DataContext is not MainViewModel vm) return;
+        if (_drawMode == DrawMode.None || _drawMode == DrawMode.ABLinePreview || !_transformValid) return;
+        if (DataContext is not MainViewModel) return;
 
         var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
 
@@ -160,9 +183,15 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
             else if (_drawPoints.Count >= 2)
             {
-                // Create AB line track
-                CreateABLineFromPoints(vm);
-                return;
+                // Show preview instead of creating immediately
+                _drawMode = DrawMode.ABLinePreview;
+                if (instrText != null) instrText.Text = "Preview - click Create or adjust points";
+                if (pointCountText != null) pointCountText.Text = "A and B set";
+
+                var createBtn = this.FindControl<Button>("CreateABBtn");
+                var finishBtn = this.FindControl<Button>("FinishDrawBtn");
+                if (createBtn != null) createBtn.IsVisible = true;
+                if (finishBtn != null) finishBtn.IsVisible = false;
             }
         }
         else if (_drawMode == DrawMode.Curve)
@@ -175,6 +204,14 @@ public partial class FieldBuilderDialogPanel : UserControl
         e.Handled = true;
     }
 
+    private void CreateAB_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && _drawPoints.Count >= 2)
+        {
+            CreateABLineFromPoints(vm);
+        }
+    }
+
     private void CreateABLineFromPoints(MainViewModel vm)
     {
         if (_drawPoints.Count < 2) return;
@@ -182,11 +219,9 @@ public partial class FieldBuilderDialogPanel : UserControl
         var a = _drawPoints[0];
         var b = _drawPoints[1];
 
-        // Use VM's SetABPointCommand logic via Position objects
         var posA = new Position { Easting = a.Easting, Northing = a.Northing };
         var posB = new Position { Easting = b.Easting, Northing = b.Northing };
 
-        // Set up drawing mode in VM and execute
         vm.CurrentABCreationMode = ABCreationMode.DrawAB;
         vm.CurrentABPointStep = ABPointStep.SettingPointA;
         vm.SetABPointCommand?.Execute(posA);
@@ -203,7 +238,6 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         if (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2)
         {
-            // Feed points into VM's curve creation
             vm.CurrentABCreationMode = ABCreationMode.DrawCurve;
             foreach (var pt in _drawPoints)
             {
@@ -223,10 +257,37 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (_drawPoints.Count > 0)
         {
             _drawPoints.RemoveAt(_drawPoints.Count - 1);
+
             var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
             var instrText = this.FindControl<TextBlock>("DrawInstructionText");
-            if (pointCountText != null) pointCountText.Text = $"Points: {_drawPoints.Count}";
-            if (instrText != null) instrText.Text = $"Click more points or Finish ({_drawPoints.Count} placed)";
+            var createBtn = this.FindControl<Button>("CreateABBtn");
+
+            // Reset AB preview state if we went back below 2 points
+            if (_drawMode == DrawMode.ABLinePreview)
+            {
+                _drawMode = DrawMode.ABLine;
+                if (createBtn != null) createBtn.IsVisible = false;
+            }
+
+            if (_drawMode == DrawMode.ABLine)
+            {
+                if (_drawPoints.Count == 0)
+                {
+                    if (instrText != null) instrText.Text = "Click point A on the map";
+                    if (pointCountText != null) pointCountText.Text = "Points: 0";
+                }
+                else
+                {
+                    if (instrText != null) instrText.Text = "Click point B on the map";
+                    if (pointCountText != null) pointCountText.Text = "Point A set";
+                }
+            }
+            else
+            {
+                if (pointCountText != null) pointCountText.Text = $"Points: {_drawPoints.Count}";
+                if (instrText != null) instrText.Text = $"Click more points or Finish ({_drawPoints.Count} placed)";
+            }
+
             UpdatePreview();
         }
     }
@@ -234,7 +295,6 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void CancelDraw_Click(object? sender, RoutedEventArgs e)
     {
         ExitDrawMode();
-        // Go back to add panel
         var addPanel = this.FindControl<Border>("AddTrackPanel");
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (addPanel != null) addPanel.IsVisible = true;
@@ -296,6 +356,63 @@ public partial class FieldBuilderDialogPanel : UserControl
                 vm.SelectedTrack = null;
                 vm.StatusMessage = "All tracks deleted";
             });
+    }
+
+    // --- Track Renaming ---
+
+    private void RenameTrack_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedTrack == null)
+        {
+            if (DataContext is MainViewModel vm2)
+                vm2.StatusMessage = "No track selected";
+            return;
+        }
+
+        var renameOverlay = this.FindControl<Border>("RenameOverlay");
+        var renameInput = this.FindControl<TextBox>("RenameInput");
+        if (renameOverlay != null) renameOverlay.IsVisible = true;
+        if (renameInput != null)
+        {
+            renameInput.Text = vm.SelectedTrack.Name;
+            renameInput.SelectAll();
+            renameInput.Focus();
+        }
+    }
+
+    private void RenameConfirm_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.SelectedTrack != null)
+        {
+            var renameInput = this.FindControl<TextBox>("RenameInput");
+            var newName = renameInput?.Text?.Trim();
+            if (!string.IsNullOrEmpty(newName))
+            {
+                vm.SelectedTrack.Name = newName;
+                vm.StatusMessage = $"Track renamed to: {newName}";
+            }
+        }
+        HideRenamePanel();
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+    }
+
+    private void RenameCancel_Click(object? sender, RoutedEventArgs e)
+    {
+        HideRenamePanel();
+    }
+
+    private void RenameInput_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+            RenameConfirm_Click(sender, e);
+        else if (e.Key == Key.Escape)
+            RenameCancel_Click(sender, e);
+    }
+
+    private void HideRenamePanel()
+    {
+        var renameOverlay = this.FindControl<Border>("RenameOverlay");
+        if (renameOverlay != null) renameOverlay.IsVisible = false;
     }
 
     // --- Preview Rendering ---
@@ -366,7 +483,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
-        // Draw tracks as extended lines
+        // Draw tracks
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
@@ -411,33 +528,47 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (isSelected && track.Points.Count >= 2)
             {
                 var first = ToCanvas(track.Points[0].Easting, track.Points[0].Northing);
-                var last = ToCanvas(track.Points[track.Points.Count - 1].Easting,
-                                    track.Points[track.Points.Count - 1].Northing);
+                var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
 
-                var markerA = new Ellipse { Width = 10, Height = 10, Fill = Brushes.Red };
-                Canvas.SetLeft(markerA, first.X - 5);
-                Canvas.SetTop(markerA, first.Y - 5);
-                canvas.Children.Add(markerA);
-
-                var markerB = new Ellipse { Width = 10, Height = 10, Fill = Brushes.LimeGreen };
-                Canvas.SetLeft(markerB, last.X - 5);
-                Canvas.SetTop(markerB, last.Y - 5);
-                canvas.Children.Add(markerB);
+                AddMarker(canvas, first, Brushes.Red, "A");
+                AddMarker(canvas, last, Brushes.LimeGreen, "B");
             }
         }
 
         // Draw points being placed in draw mode
         if (_drawMode != DrawMode.None && _drawPoints.Count > 0)
         {
-            // Draw lines between points
+            // Draw preview line between points
             if (_drawPoints.Count >= 2)
             {
+                var previewPoints = _drawPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+
+                // For AB preview, extend the line
+                if (_drawMode == DrawMode.ABLinePreview)
+                {
+                    var p1 = _drawPoints[0];
+                    var p2 = _drawPoints[1];
+                    double dx = p2.Easting - p1.Easting;
+                    double dy = p2.Northing - p1.Northing;
+                    double len = Math.Sqrt(dx * dx + dy * dy);
+                    if (len > 0.01)
+                    {
+                        double ext = Math.Max(_rangeE, _rangeN) * 2;
+                        double nx = dx / len, ny = dy / len;
+                        previewPoints = new()
+                        {
+                            ToCanvas(p1.Easting - nx * ext, p1.Northing - ny * ext),
+                            ToCanvas(p2.Easting + nx * ext, p2.Northing + ny * ext)
+                        };
+                    }
+                }
+
                 var drawLine = new Polyline
                 {
                     Stroke = new SolidColorBrush(Color.FromRgb(255, 100, 50)),
                     StrokeThickness = 2,
                     StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
-                    Points = _drawPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+                    Points = previewPoints
                 };
                 canvas.Children.Add(drawLine);
             }
@@ -446,27 +577,42 @@ public partial class FieldBuilderDialogPanel : UserControl
             for (int i = 0; i < _drawPoints.Count; i++)
             {
                 var pt = ToCanvas(_drawPoints[i].Easting, _drawPoints[i].Northing);
-                var fill = i == 0 ? Brushes.Red : (i == _drawPoints.Count - 1 ? Brushes.Orange : Brushes.Yellow);
-                var marker = new Ellipse { Width = 12, Height = 12, Fill = fill, Stroke = Brushes.White, StrokeThickness = 2 };
-                Canvas.SetLeft(marker, pt.X - 6);
-                Canvas.SetTop(marker, pt.Y - 6);
-                canvas.Children.Add(marker);
+                string? label = null;
 
-                // Label A/B for AB line mode
-                if (_drawMode == DrawMode.ABLine)
-                {
-                    var label = new TextBlock
-                    {
-                        Text = i == 0 ? "A" : "B",
-                        FontSize = 14,
-                        FontWeight = FontWeight.Bold,
-                        Foreground = Brushes.White
-                    };
-                    Canvas.SetLeft(label, pt.X + 8);
-                    Canvas.SetTop(label, pt.Y - 8);
-                    canvas.Children.Add(label);
-                }
+                if (_drawMode == DrawMode.ABLine || _drawMode == DrawMode.ABLinePreview)
+                    label = i == 0 ? "A" : "B";
+
+                var fill = i == 0 ? Brushes.Red : (i == _drawPoints.Count - 1 ? Brushes.Orange : Brushes.Yellow);
+                AddMarker(canvas, pt, fill, label);
             }
+        }
+    }
+
+    private static void AddMarker(Canvas canvas, Point pt, IBrush fill, string? label)
+    {
+        var marker = new Ellipse
+        {
+            Width = 12, Height = 12,
+            Fill = fill,
+            Stroke = Brushes.White,
+            StrokeThickness = 2
+        };
+        Canvas.SetLeft(marker, pt.X - 6);
+        Canvas.SetTop(marker, pt.Y - 6);
+        canvas.Children.Add(marker);
+
+        if (label != null)
+        {
+            var text = new TextBlock
+            {
+                Text = label,
+                FontSize = 14,
+                FontWeight = FontWeight.Bold,
+                Foreground = Brushes.White
+            };
+            Canvas.SetLeft(text, pt.X + 8);
+            Canvas.SetTop(text, pt.Y - 8);
+            canvas.Children.Add(text);
         }
     }
 }
