@@ -88,4 +88,24 @@ public class HeadlandSegment : ReactiveObject
     /// Which boundary polygon this segment is from (0 = outer, 1+ = inner).
     /// </summary>
     public int BoundaryIndex { get; set; }
+
+    /// <summary>
+    /// Straight extension length beyond the start of the offset line (meters).
+    /// </summary>
+    private double _startExtension = 50;
+    public double StartExtension
+    {
+        get => _startExtension;
+        set => this.RaiseAndSetIfChanged(ref _startExtension, value);
+    }
+
+    /// <summary>
+    /// Straight extension length beyond the end of the offset line (meters).
+    /// </summary>
+    private double _endExtension = 50;
+    public double EndExtension
+    {
+        get => _endExtension;
+        set => this.RaiseAndSetIfChanged(ref _endExtension, value);
+    }
 }

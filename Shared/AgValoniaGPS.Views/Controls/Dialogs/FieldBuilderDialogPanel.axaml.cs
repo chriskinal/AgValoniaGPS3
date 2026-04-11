@@ -38,6 +38,8 @@ public partial class FieldBuilderDialogPanel : UserControl
     private ArrowDragType _arrowDrag = ArrowDragType.None;
     private Point _arrowStartCanvasPos;
     private Point _arrowEndCanvasPos;
+    private double _headlandStartExt = 50;
+    private double _headlandEndExt = 50;
 
     // Inline confirmation/input
     private Action? _inlineConfirmAction;
@@ -296,6 +298,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         _drawMode = DrawMode.HeadlandLine;
         _drawPoints.Clear();
         _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _headlandStartExt = 50;
+        _headlandEndExt = 50;
         _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
         ShowDrawModeUI("Click first point on boundary");
     }
@@ -305,6 +309,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         _drawMode = DrawMode.HeadlandCurve;
         _drawPoints.Clear();
         _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _headlandStartExt = 50;
+        _headlandEndExt = 50;
         _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
         ShowDrawModeUI("Click first point on boundary");
     }
@@ -760,7 +766,9 @@ public partial class FieldBuilderDialogPanel : UserControl
                 BoundaryStartIndex = _boundaryPointIndex1,
                 BoundaryEndIndex = _boundaryPointIndex2,
                 BoundaryIndex = 0,
-                BoundaryPoints = new List<Vec3>(_drawPoints)
+                BoundaryPoints = new List<Vec3>(_drawPoints),
+                StartExtension = _headlandStartExt,
+                EndExtension = _headlandEndExt
             };
 
             vm.ComputeSegmentOffset(segment);
@@ -918,30 +926,43 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void Canvas_PointerMoved(object? sender, PointerEventArgs e)
     {
-        // Arrow drag for headland extend/shrink
-        if (_isDragging && _arrowDrag != ArrowDragType.None && _selectedBoundaryPoly != null && _transformValid)
+        // Arrow drag for headland extend/shrink - modifies extension lengths only
+        if (_isDragging && _arrowDrag != ArrowDragType.None && _transformValid)
         {
             var pos2 = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
             double fe = (pos2.X - _offsetX) / _scale + _minE;
             double fn = (_canvasHeight - pos2.Y - _offsetY) / _scale + _minN;
-            int nearIdx = FindNearestBoundaryPoint(fe, fn);
-            if (nearIdx >= 0)
-            {
-                int currentIdx = _arrowDrag == ArrowDragType.Start ? _boundaryPointIndex1 : _boundaryPointIndex2;
-                if (nearIdx != currentIdx)
-                {
-                    // Re-extract segment with new boundary indices
-                    if (_arrowDrag == ArrowDragType.Start)
-                        _boundaryPointIndex1 = nearIdx;
-                    else
-                        _boundaryPointIndex2 = nearIdx;
 
-                    var segment = ExtractBoundarySegment(_boundaryPointIndex1, _boundaryPointIndex2);
-                    _drawPoints.Clear();
-                    _drawPoints.AddRange(segment);
-                    UpdatePreview();
+            if (_arrowDrag == ArrowDragType.Start && _drawPoints.Count >= 2)
+            {
+                // Distance from drag position to offset line start point
+                var start = _drawPoints[0];
+                var next = _drawPoints[1];
+                double dx = start.Easting - next.Easting;
+                double dy = start.Northing - next.Northing;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len > 0.01)
+                {
+                    // Project drag position onto the extension direction
+                    double projDist = ((fe - start.Easting) * dx / len + (fn - start.Northing) * dy / len);
+                    _headlandStartExt = Math.Max(0, projDist);
                 }
             }
+            else if (_arrowDrag == ArrowDragType.End && _drawPoints.Count >= 2)
+            {
+                var end = _drawPoints[^1];
+                var prev = _drawPoints[^2];
+                double dx = end.Easting - prev.Easting;
+                double dy = end.Northing - prev.Northing;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len > 0.01)
+                {
+                    double projDist = ((fe - end.Easting) * dx / len + (fn - end.Northing) * dy / len);
+                    _headlandEndExt = Math.Max(0, projDist);
+                }
+            }
+
+            UpdatePreview();
             e.Handled = true;
             return;
         }
@@ -1316,7 +1337,10 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
 
         // Draw tracks
-        bool isDrawing = _drawMode != DrawMode.None;
+        // Don't highlight tracks during drawing or when on headland tab
+        var mainTabs = this.FindControl<TabControl>("MainTabs");
+        bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
+        bool isDrawing = _drawMode != DrawMode.None || onHeadlandTab;
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
@@ -1488,41 +1512,48 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (tempSeg.OffsetPoints.Count >= 2)
             {
                 var offsetColor = new SolidColorBrush(light ? Color.FromRgb(0, 160, 0) : Color.FromRgb(100, 255, 100));
+
+                // Build offset line with straight extensions at both ends
+                var offsetPts = new List<Point>();
+
+                // Start extension
+                if (_headlandStartExt > 0)
+                {
+                    var s0 = tempSeg.OffsetPoints[0];
+                    var s1 = tempSeg.OffsetPoints[1];
+                    double sdx = s0.Easting - s1.Easting;
+                    double sdy = s0.Northing - s1.Northing;
+                    double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
+                    if (slen > 0.01)
+                        offsetPts.Add(ToCanvas(s0.Easting + sdx / slen * _headlandStartExt, s0.Northing + sdy / slen * _headlandStartExt));
+                }
+
+                offsetPts.AddRange(tempSeg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)));
+
+                // End extension
+                if (_headlandEndExt > 0)
+                {
+                    var e0 = tempSeg.OffsetPoints[^2];
+                    var e1 = tempSeg.OffsetPoints[^1];
+                    double edx = e1.Easting - e0.Easting;
+                    double edy = e1.Northing - e0.Northing;
+                    double elen = Math.Sqrt(edx * edx + edy * edy);
+                    if (elen > 0.01)
+                        offsetPts.Add(ToCanvas(e1.Easting + edx / elen * _headlandEndExt, e1.Northing + edy / elen * _headlandEndExt));
+                }
+
                 var offsetLine = new Polyline
                 {
                     Stroke = offsetColor,
                     StrokeThickness = 3,
-                    Points = tempSeg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+                    Points = offsetPts
                 };
                 canvas.Children.Add(offsetLine);
 
-                // Draw arrow markers at offset line endpoints for extend/shrink
-                var startPt = ToCanvas(tempSeg.OffsetPoints[0].Easting, tempSeg.OffsetPoints[0].Northing);
-                var endPt = ToCanvas(tempSeg.OffsetPoints[^1].Easting, tempSeg.OffsetPoints[^1].Northing);
-
-                // Position arrows slightly beyond the offset endpoints
-                double arrowOffset = 15; // pixels beyond endpoint
-                Point arrowStart, arrowEnd;
-
-                if (tempSeg.OffsetPoints.Count >= 2)
-                {
-                    var s0 = ToCanvas(tempSeg.OffsetPoints[0].Easting, tempSeg.OffsetPoints[0].Northing);
-                    var s1 = ToCanvas(tempSeg.OffsetPoints[1].Easting, tempSeg.OffsetPoints[1].Northing);
-                    double sdx = s0.X - s1.X, sdy = s0.Y - s1.Y;
-                    double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
-                    arrowStart = slen > 0.1 ? new Point(s0.X + sdx / slen * arrowOffset, s0.Y + sdy / slen * arrowOffset) : s0;
-
-                    var e0 = ToCanvas(tempSeg.OffsetPoints[^2].Easting, tempSeg.OffsetPoints[^2].Northing);
-                    var e1 = ToCanvas(tempSeg.OffsetPoints[^1].Easting, tempSeg.OffsetPoints[^1].Northing);
-                    double edx = e1.X - e0.X, edy = e1.Y - e0.Y;
-                    double elen = Math.Sqrt(edx * edx + edy * edy);
-                    arrowEnd = elen > 0.1 ? new Point(e1.X + edx / elen * arrowOffset, e1.Y + edy / elen * arrowOffset) : e1;
-                }
-                else
-                {
-                    arrowStart = startPt;
-                    arrowEnd = endPt;
-                }
+                // Draw arrow markers at extension endpoints
+                // Arrows sit at the very ends of the extended offset line
+                Point arrowStart = offsetPts[0];
+                Point arrowEnd = offsetPts[^1];
 
                 _arrowStartCanvasPos = arrowStart;
                 _arrowEndCanvasPos = arrowEnd;
