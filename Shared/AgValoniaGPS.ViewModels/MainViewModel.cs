@@ -3021,12 +3021,32 @@ public partial class MainViewModel : ReactiveObject
     {
         if (HeadlandSegments.Count == 0)
         {
-            HasHeadland = false;
-            IsHeadlandOn = false;
-            _currentHeadlandLine = null;
-            CurrentHeadlandLine = null;
-            State.Field.HeadlandLine = null;
-            _mapService.SetHeadlandVisible(false);
+            // Default: headland = boundary
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points != null && boundary.Points.Count >= 3)
+            {
+                var bndPoints = new List<Vec3>();
+                foreach (var pt in boundary.Points)
+                    bndPoints.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+                bndPoints.Add(new Vec3(boundary.Points[0].Easting, boundary.Points[0].Northing, boundary.Points[0].Heading));
+
+                _currentHeadlandLine = bndPoints;
+                CurrentHeadlandLine = bndPoints;
+                State.Field.HeadlandLine = bndPoints;
+                HasHeadland = true;
+                IsHeadlandOn = true;
+                _mapService.SetHeadlandLine(bndPoints);
+                _mapService.SetHeadlandVisible(true);
+            }
+            else
+            {
+                HasHeadland = false;
+                IsHeadlandOn = false;
+                _currentHeadlandLine = null;
+                CurrentHeadlandLine = null;
+                State.Field.HeadlandLine = null;
+                _mapService.SetHeadlandVisible(false);
+            }
             this.RaisePropertyChanged(nameof(HeadlandStatusText));
             this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
             return;
