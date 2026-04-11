@@ -22,7 +22,7 @@ namespace AgValoniaGPS.Views.Controls.Dialogs;
 public partial class FieldBuilderDialogPanel : UserControl
 {
     // Drawing state
-    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview, APlus, APlusPreview, HeadlandClip }
+    private enum DrawMode { None, ABLine, ABLinePreview, Curve, BoundaryLine, BoundaryLinePreview, BoundaryCurve, BoundaryCurvePreview, APlus, APlusPreview, HeadlandLine, HeadlandCurve, HeadlandPreview }
     private DrawMode _drawMode = DrawMode.None;
     private readonly List<Vec3> _drawPoints = new();
     private int _boundaryPointIndex1 = -1;
@@ -284,27 +284,59 @@ public partial class FieldBuilderDialogPanel : UserControl
         return forward.Count <= reverse.Count ? forward : reverse;
     }
 
-    private void ClipHeadland_Click(object? sender, RoutedEventArgs e)
+    private void AddHeadlandLine_Click(object? sender, RoutedEventArgs e)
+    {
+        _drawMode = DrawMode.HeadlandLine;
+        _drawPoints.Clear();
+        _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
+        ShowDrawModeUI("Click first point on boundary");
+    }
+
+    private void AddHeadlandCurve_Click(object? sender, RoutedEventArgs e)
+    {
+        _drawMode = DrawMode.HeadlandCurve;
+        _drawPoints.Clear();
+        _boundaryPointIndex1 = _boundaryPointIndex2 = -1;
+        _selectedBoundaryPoly = (DataContext as MainViewModel)?.CurrentBoundary?.OuterBoundary;
+        ShowDrawModeUI("Click first point on boundary");
+    }
+
+    private void AddHeadlandBoundary_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
-
-        if (!vm.HasHeadland)
+        var boundary = vm.CurrentBoundary?.OuterBoundary;
+        if (boundary?.Points == null || boundary.Points.Count < 3)
         {
-            vm.StatusMessage = "Build a headland first";
+            vm.StatusMessage = "No boundary available";
             return;
         }
 
-        if (!vm.HeadlandPointsSelected)
+        var segment = new Models.Headland.HeadlandSegment
         {
-            vm.StatusMessage = "Select 2 points on the map first";
-            SetCanvasStatus("Click 2 points on boundary, then Clip");
-            return;
-        }
+            Name = $"Boundary {vm.HeadlandSegments.Count + 1}",
+            Type = Models.Headland.HeadlandSegmentType.Boundary,
+            Offset = vm.HeadlandDistance,
+            BoundaryIndex = 0
+        };
 
-        // Execute the clip
-        vm.ClipHeadlandLineCommand?.Execute(null);
-        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
-        SetCanvasStatus(null);
+        foreach (var pt in boundary.Points)
+            segment.BoundaryPoints.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+        // Close the loop
+        segment.BoundaryPoints.Add(new Vec3(boundary.Points[0].Easting, boundary.Points[0].Northing, boundary.Points[0].Heading));
+
+        vm.ComputeSegmentOffset(segment);
+        vm.HeadlandSegments.Add(segment);
+        vm.SelectedHeadlandSegment = segment;
+        UpdatePreview();
+    }
+
+    private void DeleteHeadlandSegment_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedHeadlandSegment == null) return;
+        vm.HeadlandSegments.Remove(vm.SelectedHeadlandSegment);
+        vm.SelectedHeadlandSegment = null;
+        UpdatePreview();
     }
 
     private void SetCanvasStatus(string? text)
@@ -359,7 +391,8 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         // In preview mode, check if clicking near an existing point to drag it
         bool isPreview = _drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview
-                         || _drawMode == DrawMode.BoundaryCurvePreview || _drawMode == DrawMode.APlusPreview;
+                         || _drawMode == DrawMode.BoundaryCurvePreview || _drawMode == DrawMode.APlusPreview
+                         || _drawMode == DrawMode.HeadlandPreview;
         if (isPreview || (_drawMode == DrawMode.Curve && _drawPoints.Count >= 2))
         {
             // For boundary curve preview, only allow dragging first and last points
@@ -378,29 +411,6 @@ public partial class FieldBuilderDialogPanel : UserControl
                     e.Handled = true;
                     return;
                 }
-            }
-        }
-
-        // Headland point selection: when in no draw mode and headland is built,
-        // clicks on canvas select clip points (like legacy FormHeadLine)
-        if (_drawMode == DrawMode.None && _transformValid && DataContext is MainViewModel headVm && headVm.HasHeadland)
-        {
-            // Check if the Headland tab is active
-            var mainTabs = this.FindControl<TabControl>("MainTabs");
-            if (mainTabs is { IsVisible: true, SelectedIndex: 1 }) // index 1 = Headland tab
-            {
-                double clipE = (pos.X - _offsetX) / _scale + _minE;
-                double clipN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
-                headVm.HandleHeadlandMapClick(clipE, clipN);
-
-                if (headVm.HeadlandPointsSelected)
-                    SetCanvasStatus("2 points selected - click Clip to cut");
-                else
-                    SetCanvasStatus("Click second point on boundary");
-
-                UpdatePreview();
-                e.Handled = true;
-                return;
             }
         }
 
@@ -455,7 +465,8 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (instrText != null) instrText.Text = $"Click more points or Finish ({_drawPoints.Count} placed)";
             SetCanvasStatus($"Click next point ({_drawPoints.Count} placed)");
         }
-        else if (_drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryCurve)
+        else if (_drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryCurve
+                 || _drawMode == DrawMode.HeadlandLine || _drawMode == DrawMode.HeadlandCurve)
         {
             // Snap to nearest boundary vertex
             int nearIdx = FindNearestBoundaryPoint(fieldE, fieldN);
@@ -483,17 +494,39 @@ public partial class FieldBuilderDialogPanel : UserControl
                 _drawPoints[0] = new Vec3(_drawPoints[0].Easting, _drawPoints[0].Northing, h);
                 _drawPoints[1] = new Vec3(_drawPoints[1].Easting, _drawPoints[1].Northing, h);
 
-                // For boundary curve, extract the segment between the two points
-                if (_drawMode == DrawMode.BoundaryCurve)
+                // For curve modes, extract the boundary segment
+                if (_drawMode == DrawMode.BoundaryCurve || _drawMode == DrawMode.HeadlandCurve)
                 {
                     var segment = ExtractBoundarySegment(_boundaryPointIndex1, _boundaryPointIndex2);
                     _drawPoints.Clear();
                     _drawPoints.AddRange(segment);
-                    _drawMode = DrawMode.BoundaryCurvePreview;
+                    _drawMode = _drawMode == DrawMode.HeadlandCurve ? DrawMode.HeadlandPreview : DrawMode.BoundaryCurvePreview;
+                }
+                else if (_drawMode == DrawMode.HeadlandLine)
+                {
+                    _drawMode = DrawMode.HeadlandPreview;
                 }
                 else
                 {
                     _drawMode = DrawMode.BoundaryLinePreview;
+                }
+
+                // Show offset input for headland modes
+                if (_drawMode == DrawMode.HeadlandPreview)
+                {
+                    var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+                    var headingInput = this.FindControl<TextBox>("HeadingInput");
+                    if (headingPanel != null) headingPanel.IsVisible = true;
+                    if (headingInput != null)
+                    {
+                        headingInput.Text = ((DataContext as MainViewModel)?.HeadlandDistance ?? 12).ToString("F1");
+                        headingInput.Focus();
+                    }
+                    // Relabel heading input as offset
+                    var headingLabel = headingPanel?.Children.OfType<TextBlock>().FirstOrDefault();
+                    if (headingLabel != null) headingLabel.Text = "Offset:";
+                    var degLabel = headingPanel?.Children.OfType<TextBlock>().LastOrDefault();
+                    if (degLabel != null) degLabel.Text = "m";
                 }
 
                 UpdateDrawModeInfo();
@@ -592,6 +625,38 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             ExitDrawMode();
             ShowMainTabs();
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+            return;
+        }
+
+        if (_drawMode == DrawMode.HeadlandPreview)
+        {
+            // Create headland segment from the drawn points + offset
+            var headingInput = this.FindControl<TextBox>("HeadingInput");
+            double offset = vm.HeadlandDistance;
+            if (headingInput != null) double.TryParse(headingInput.Text, out offset);
+
+            bool isCurve = _drawPoints.Count > 2;
+            var segment = new Models.Headland.HeadlandSegment
+            {
+                Name = $"{(isCurve ? "Curve" : "Line")} {vm.HeadlandSegments.Count + 1}",
+                Type = isCurve ? Models.Headland.HeadlandSegmentType.Curve : Models.Headland.HeadlandSegmentType.Line,
+                Offset = offset,
+                BoundaryStartIndex = _boundaryPointIndex1,
+                BoundaryEndIndex = _boundaryPointIndex2,
+                BoundaryIndex = 0,
+                BoundaryPoints = new List<Vec3>(_drawPoints)
+            };
+
+            vm.ComputeSegmentOffset(segment);
+            vm.HeadlandSegments.Add(segment);
+            vm.SelectedHeadlandSegment = segment;
+
+            ExitDrawMode();
+            ShowMainTabs();
+            // Switch to headland tab
+            var mainTabs = this.FindControl<TabControl>("MainTabs");
+            if (mainTabs != null) mainTabs.SelectedIndex = 1;
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
             return;
         }
@@ -824,6 +889,13 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (pointCountText != null) pointCountText.Text = "";
             SetCanvasStatus(msg);
         }
+        else if (_drawMode == DrawMode.HeadlandPreview)
+        {
+            string msg = "Set offset distance, drag points, then Create";
+            if (instrText != null) instrText.Text = msg;
+            if (pointCountText != null) pointCountText.Text = "";
+            SetCanvasStatus(msg);
+        }
     }
 
     private void CancelDraw_Click(object? sender, RoutedEventArgs e)
@@ -1029,6 +1101,23 @@ public partial class FieldBuilderDialogPanel : UserControl
                 };
                 canvas.Children.Add(headlandPoly);
             }
+        }
+
+        // Draw headland segments (offset lines)
+        foreach (var seg in vm.HeadlandSegments)
+        {
+            if (seg.OffsetPoints.Count < 2) continue;
+            bool segSelected = seg == vm.SelectedHeadlandSegment;
+            var segColor = new SolidColorBrush(segSelected
+                ? (light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80))
+                : (light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50)));
+            var segLine = new Polyline
+            {
+                Stroke = segColor,
+                StrokeThickness = segSelected ? 3 : 1.5,
+                Points = seg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+            };
+            canvas.Children.Add(segLine);
         }
 
         // Draw tracks

@@ -2945,6 +2945,55 @@ public partial class MainViewModel : ReactiveObject
     public string HeadlandStatusText => HasHeadland
         ? $"Headland built ({_currentHeadlandLine?.Count ?? 0} points)"
         : "No headland built";
+
+    /// <summary>
+    /// List of headland segments that form the headland polygon.
+    /// </summary>
+    public ObservableCollection<Models.Headland.HeadlandSegment> HeadlandSegments { get; } = new();
+
+    private Models.Headland.HeadlandSegment? _selectedHeadlandSegment;
+    public Models.Headland.HeadlandSegment? SelectedHeadlandSegment
+    {
+        get => _selectedHeadlandSegment;
+        set => this.RaiseAndSetIfChanged(ref _selectedHeadlandSegment, value);
+    }
+
+    /// <summary>
+    /// Compute offset points for a headland segment by offsetting boundary points inward.
+    /// </summary>
+    public void ComputeSegmentOffset(Models.Headland.HeadlandSegment segment)
+    {
+        if (segment.BoundaryPoints.Count < 2)
+        {
+            segment.OffsetPoints.Clear();
+            return;
+        }
+
+        double offset = segment.Offset;
+        var result = new List<Vec3>();
+
+        for (int i = 0; i < segment.BoundaryPoints.Count; i++)
+        {
+            var pt = segment.BoundaryPoints[i];
+
+            // Calculate inward normal from boundary direction
+            Vec3 prev = i > 0 ? segment.BoundaryPoints[i - 1] : segment.BoundaryPoints[i];
+            Vec3 next = i < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[i + 1] : segment.BoundaryPoints[i];
+
+            double dx = next.Easting - prev.Easting;
+            double dy = next.Northing - prev.Northing;
+            double len = System.Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001) len = 1;
+
+            // Inward normal (perpendicular, pointing right of travel direction)
+            double nx = dy / len;
+            double ny = -dx / len;
+
+            result.Add(new Vec3(pt.Easting + nx * offset, pt.Northing + ny * offset, pt.Heading));
+        }
+
+        segment.OffsetPoints = result;
+    }
     public ICommand? ShowTramSettingsCommand { get; private set; }
     public ICommand? CloseTramSettingsCommand { get; private set; }
     public ICommand? IncreaseTramPassesCommand { get; private set; }

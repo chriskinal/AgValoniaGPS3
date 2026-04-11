@@ -193,160 +193,78 @@ Licensed under GNU GPL v3.
                                     <TextBlock Text="Headland" FontSize="14" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </TabItem.Header>
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Spacing="8" Margin="0,6">
-                                <!-- Track Type Selection -->
-                                <TextBlock Text="Track Type" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                <Grid ColumnDefinitions="*,*" Height="56">
-                                    <RadioButton Grid.Column="0" GroupName="HeadlandTrackType" HorizontalAlignment="Stretch"
-                                                 IsChecked="{Binding IsHeadlandCurveMode}" Margin="0,0,3,0">
-                                        <RadioButton.Template>
-                                            <ControlTemplate>
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="6" Cursor="Hand">
-                                                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </RadioButton.Template>
-                                        <RadioButton.Styles>
-                                            <Style Selector="RadioButton">
-                                                <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                                            </Style>
-                                            <Style Selector="RadioButton:checked">
-                                                <Setter Property="Background" Value="#1ABC9C"/>
-                                            </Style>
-                                        </RadioButton.Styles>
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png" Width="28" Height="28"/>
-                                            <TextBlock Text="Curve" FontSize="11" HorizontalAlignment="Center"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                        </StackPanel>
-                                    </RadioButton>
-                                    <RadioButton Grid.Column="1" GroupName="HeadlandTrackType" HorizontalAlignment="Stretch"
-                                                 IsChecked="{Binding IsHeadlandLineMode}" Margin="3,0,0,0">
-                                        <RadioButton.Template>
-                                            <ControlTemplate>
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="6" Cursor="Hand">
-                                                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </RadioButton.Template>
-                                        <RadioButton.Styles>
-                                            <Style Selector="RadioButton">
-                                                <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                                            </Style>
-                                            <Style Selector="RadioButton:checked">
-                                                <Setter Property="Background" Value="#1ABC9C"/>
-                                            </Style>
-                                        </RadioButton.Styles>
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png" Width="28" Height="28"/>
-                                            <TextBlock Text="Line" FontSize="11" HorizontalAlignment="Center"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                        </StackPanel>
-                                    </RadioButton>
-                                </Grid>
+                            <StackPanel Spacing="6" Margin="0,6">
+                                <!-- Headland Segments List -->
+                                <TextBlock Text="Headland Lines" FontWeight="Bold" FontSize="16"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
 
-                                <!-- Distance -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Distance:" FontSize="14"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                        <Button Content="-" Width="36" Height="36" FontSize="18" FontWeight="Bold"
-                                                Command="{Binding IncrementHeadlandDistanceCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                        <TextBlock Text="{Binding HeadlandDistance, StringFormat='{}{0:F1}m'}"
-                                                   FontSize="18" FontWeight="Bold" Width="60" TextAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <Button Content="+" Width="36" Height="36" FontSize="18" FontWeight="Bold"
-                                                Command="{Binding DecrementHeadlandDistanceCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <ListBox ItemsSource="{Binding HeadlandSegments}"
+                                         SelectedItem="{Binding SelectedHeadlandSegment}"
+                                         MaxHeight="180" CornerRadius="4"
+                                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Type}" FontSize="12" Width="55"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Offset, StringFormat='{}{0:F1}m'}" FontSize="12"
+                                                           Foreground="#1ABC9C" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="No headland lines" FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           IsVisible="{Binding !HeadlandSegments.Count}"/>
+
+                                <!-- Add buttons -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add Line" Click="AddHeadlandLine_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Line" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
-                                </Grid>
-
-                                <!-- Tool Width Multiplier -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Tool Widths:" FontSize="14"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="{Binding HeadlandCalculatedWidth, StringFormat='{}{0:F2}m'}"
-                                                   FontSize="14" Foreground="#1ABC9C" VerticalAlignment="Center" Width="60" TextAlignment="Center"/>
-                                        <ComboBox Width="56" FontSize="14"
-                                                  Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                  Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                  SelectedIndex="{Binding HeadlandToolWidthMultiplier}">
-                                            <ComboBoxItem>0</ComboBoxItem>
-                                            <ComboBoxItem>1</ComboBoxItem>
-                                            <ComboBoxItem>2</ComboBoxItem>
-                                            <ComboBoxItem>3</ComboBoxItem>
-                                            <ComboBoxItem>4</ComboBoxItem>
-                                            <ComboBoxItem>5</ComboBoxItem>
-                                            <ComboBoxItem>6</ComboBoxItem>
-                                            <ComboBoxItem>7</ComboBoxItem>
-                                            <ComboBoxItem>8</ComboBoxItem>
-                                            <ComboBoxItem>9</ComboBoxItem>
-                                            <ComboBoxItem>10</ComboBoxItem>
-                                        </ComboBox>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add Curve" Click="AddHeadlandCurve_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
-                                </Grid>
-
-                                <TextBlock Text="{Binding HeadlandStatusText}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
-
-                                <!-- Build / Reset -->
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
-                                    <Button Grid.Column="0" Classes="ActionBtn" Command="{Binding BuildHeadlandCommand}">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandBuild.png" Width="20" Height="20"/>
-                                            <TextBlock Text="Build" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Classes="FBBtn" Command="{Binding ResetHeadlandCommand}">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandReset.png" Width="20" Height="20"/>
-                                            <TextBlock Text="Reset" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-
-                                <!-- Clip / Undo -->
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
-                                    <Button Grid.Column="0" Classes="FBBtn" Click="ClipHeadland_Click">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSlice.png" Width="20" Height="20"/>
-                                            <TextBlock Text="Clip" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Classes="FBBtn" Command="{Binding UndoHeadlandCommand}">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/UndoButton.png" Width="20" Height="20"/>
-                                            <TextBlock Text="Undo" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-
-                                <!-- Turn Off -->
-                                <Button HorizontalAlignment="Stretch" Height="36"
-                                        Background="#C0392B" Foreground="White" CornerRadius="6"
-                                        BorderThickness="0" Cursor="Hand"
-                                        Command="{Binding TurnOffHeadlandCommand}">
-                                    <Button.Styles>
-                                        <Style Selector="Button:pointerover">
-                                            <Setter Property="Background" Value="#E74C3C"/>
-                                        </Style>
-                                    </Button.Styles>
-                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SwitchOff.png" Width="20" Height="20"/>
-                                        <TextBlock Text="Turn Off" VerticalAlignment="Center" FontSize="14"/>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Offset Boundary" Click="AddHeadlandBoundary_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Boundary" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
-                                </Button>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="#C0392B" BorderThickness="0"
+                                                ToolTip.Tip="Delete Selected" Click="DeleteHeadlandSegment_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
                             </StackPanel>
-                            </ScrollViewer>
                         </TabItem>
 
                         <!-- === TAB 3: TRAM LINES === -->
