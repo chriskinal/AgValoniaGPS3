@@ -3011,6 +3011,67 @@ public partial class MainViewModel : ReactiveObject
 
         segment.OffsetPoints = result;
     }
+
+    /// <summary>
+    /// Build the headland polygon from segments. If a single Boundary segment exists,
+    /// use its offset points directly. Otherwise, concatenate all segment offset points
+    /// and check if they form a loop.
+    /// </summary>
+    public void BuildHeadlandFromSegments()
+    {
+        if (HeadlandSegments.Count == 0)
+        {
+            HasHeadland = false;
+            IsHeadlandOn = false;
+            _currentHeadlandLine = null;
+            CurrentHeadlandLine = null;
+            State.Field.HeadlandLine = null;
+            _mapService.SetHeadlandVisible(false);
+            this.RaisePropertyChanged(nameof(HeadlandStatusText));
+            this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
+            return;
+        }
+
+        // Collect all offset points from all segments
+        var allPoints = new List<Vec3>();
+        foreach (var seg in HeadlandSegments)
+        {
+            if (seg.OffsetPoints.Count > 0)
+                allPoints.AddRange(seg.OffsetPoints);
+        }
+
+        if (allPoints.Count < 3)
+        {
+            StatusMessage = "Not enough points to form headland";
+            return;
+        }
+
+        // Check if the points form a closed loop (first ~= last within tolerance)
+        double tolerance = 2.0; // 2m
+        var first = allPoints[0];
+        var last = allPoints[^1];
+        double closeDist = System.Math.Sqrt(
+            System.Math.Pow(first.Easting - last.Easting, 2) +
+            System.Math.Pow(first.Northing - last.Northing, 2));
+
+        bool isLoop = closeDist < tolerance;
+
+        // Apply as headland
+        _currentHeadlandLine = allPoints;
+        CurrentHeadlandLine = allPoints;
+        State.Field.HeadlandLine = allPoints;
+        HasHeadland = true;
+        IsHeadlandOn = true;
+        _mapService.SetHeadlandLine(allPoints);
+        _mapService.SetHeadlandVisible(true);
+
+        this.RaisePropertyChanged(nameof(HeadlandStatusText));
+        this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
+        StatusMessage = isLoop
+            ? $"Headland applied ({allPoints.Count} points, closed loop)"
+            : $"Headland applied ({allPoints.Count} points, open - add more segments to close)";
+    }
+
     public ICommand? ShowTramSettingsCommand { get; private set; }
     public ICommand? CloseTramSettingsCommand { get; private set; }
     public ICommand? IncreaseTramPassesCommand { get; private set; }

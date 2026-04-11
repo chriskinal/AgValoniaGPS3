@@ -328,6 +328,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         vm.ComputeSegmentOffset(segment);
         vm.HeadlandSegments.Add(segment);
         vm.SelectedHeadlandSegment = segment;
+        vm.BuildHeadlandFromSegments();
         UpdatePreview();
     }
 
@@ -336,6 +337,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (DataContext is not MainViewModel vm || vm.SelectedHeadlandSegment == null) return;
         vm.HeadlandSegments.Remove(vm.SelectedHeadlandSegment);
         vm.SelectedHeadlandSegment = null;
+        vm.BuildHeadlandFromSegments();
         UpdatePreview();
     }
 
@@ -651,6 +653,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             vm.ComputeSegmentOffset(segment);
             vm.HeadlandSegments.Add(segment);
             vm.SelectedHeadlandSegment = segment;
+            vm.BuildHeadlandFromSegments();
 
             ExitDrawMode();
             ShowMainTabs();
