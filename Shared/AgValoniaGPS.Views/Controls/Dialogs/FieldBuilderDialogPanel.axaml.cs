@@ -33,6 +33,12 @@ public partial class FieldBuilderDialogPanel : UserControl
     private int _dragPointIndex = -1;
     private bool _isDragging;
 
+    // Arrow drag state for headland extend/shrink
+    private enum ArrowDragType { None, Start, End }
+    private ArrowDragType _arrowDrag = ArrowDragType.None;
+    private Point _arrowStartCanvasPos;
+    private Point _arrowEndCanvasPos;
+
     // Inline confirmation/input
     private Action? _inlineConfirmAction;
     private MainViewModel? _viewModel;
@@ -73,7 +79,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (IsVisible && (e.PropertyName == nameof(MainViewModel.SelectedTrack)
             || e.PropertyName == nameof(MainViewModel.HasHeadland)
             || e.PropertyName == nameof(MainViewModel.CurrentHeadlandLineForPreview)
-            || e.PropertyName == nameof(MainViewModel.HeadlandStatusText)))
+            || e.PropertyName == nameof(MainViewModel.HeadlandStatusText)
+            || e.PropertyName == nameof(MainViewModel.SelectedHeadlandSegment)))
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
@@ -444,6 +451,28 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (DataContext is not MainViewModel) return;
 
         var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
+
+        // Check arrow drag for headland extend/shrink (higher priority than point drag)
+        if (_drawMode == DrawMode.HeadlandPreview && _arrowStartCanvasPos != default && _arrowEndCanvasPos != default)
+        {
+            double distStart = Math.Sqrt(Math.Pow(pos.X - _arrowStartCanvasPos.X, 2) + Math.Pow(pos.Y - _arrowStartCanvasPos.Y, 2));
+            double distEnd = Math.Sqrt(Math.Pow(pos.X - _arrowEndCanvasPos.X, 2) + Math.Pow(pos.Y - _arrowEndCanvasPos.Y, 2));
+
+            if (distStart < 25)
+            {
+                _arrowDrag = ArrowDragType.Start;
+                _isDragging = true;
+                e.Handled = true;
+                return;
+            }
+            if (distEnd < 25)
+            {
+                _arrowDrag = ArrowDragType.End;
+                _isDragging = true;
+                e.Handled = true;
+                return;
+            }
+        }
 
         // In preview mode, check if clicking near an existing point to drag it
         bool isPreview = _drawMode == DrawMode.ABLinePreview || _drawMode == DrawMode.BoundaryLinePreview
@@ -824,11 +853,22 @@ public partial class FieldBuilderDialogPanel : UserControl
             var instrText = this.FindControl<TextBlock>("DrawInstructionText");
             var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
 
-            // Reset AB preview state if we went back below 2 points
+            // Reset preview states if we went back below 2 points
             if (_drawMode == DrawMode.ABLinePreview)
             {
                 _drawMode = DrawMode.ABLine;
                 if (createPanel != null) createPanel.IsVisible = false;
+            }
+            else if (_drawMode == DrawMode.HeadlandPreview)
+            {
+                // Reset back to picking mode
+                _drawMode = _drawPoints.Count <= 2 ? DrawMode.HeadlandLine : DrawMode.HeadlandCurve;
+                if (createPanel != null) createPanel.IsVisible = false;
+                var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
+                if (extPanel != null) extPanel.IsVisible = false;
+                var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+                if (headingPanel != null) headingPanel.IsVisible = false;
+                SetCanvasStatus("Click point on boundary");
             }
 
             if (_drawMode == DrawMode.ABLine)
@@ -856,6 +896,34 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void Canvas_PointerMoved(object? sender, PointerEventArgs e)
     {
+        // Arrow drag for headland extend/shrink
+        if (_isDragging && _arrowDrag != ArrowDragType.None && _selectedBoundaryPoly != null && _transformValid)
+        {
+            var pos2 = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
+            double fe = (pos2.X - _offsetX) / _scale + _minE;
+            double fn = (_canvasHeight - pos2.Y - _offsetY) / _scale + _minN;
+            int nearIdx = FindNearestBoundaryPoint(fe, fn);
+            if (nearIdx >= 0)
+            {
+                int currentIdx = _arrowDrag == ArrowDragType.Start ? _boundaryPointIndex1 : _boundaryPointIndex2;
+                if (nearIdx != currentIdx)
+                {
+                    // Re-extract segment with new boundary indices
+                    if (_arrowDrag == ArrowDragType.Start)
+                        _boundaryPointIndex1 = nearIdx;
+                    else
+                        _boundaryPointIndex2 = nearIdx;
+
+                    var segment = ExtractBoundarySegment(_boundaryPointIndex1, _boundaryPointIndex2);
+                    _drawPoints.Clear();
+                    _drawPoints.AddRange(segment);
+                    UpdatePreview();
+                }
+            }
+            e.Handled = true;
+            return;
+        }
+
         if (!_isDragging || _dragPointIndex < 0 || !_transformValid) return;
 
         var pos = e.GetPosition(this.FindControl<Canvas>("BoundaryPreview"));
@@ -909,6 +977,15 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void Canvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        // Arrow drag release
+        if (_arrowDrag != ArrowDragType.None)
+        {
+            _arrowDrag = ArrowDragType.None;
+            _isDragging = false;
+            e.Handled = true;
+            return;
+        }
+
         // For boundary curve, snap endpoint to boundary and re-extract segment
         if (_isDragging && (_drawMode == DrawMode.BoundaryCurvePreview || _drawMode == DrawMode.HeadlandPreview) && _selectedBoundaryPoly != null && _drawPoints.Count > 2)
         {
@@ -981,11 +1058,24 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void CancelDraw_Click(object? sender, RoutedEventArgs e)
     {
+        bool wasHeadland = _drawMode == DrawMode.HeadlandLine || _drawMode == DrawMode.HeadlandCurve || _drawMode == DrawMode.HeadlandPreview;
         ExitDrawMode();
-        var addPanel = this.FindControl<Border>("AddTrackPanel");
-        var drawPanel = this.FindControl<Border>("DrawModePanel");
-        if (addPanel != null) addPanel.IsVisible = true;
-        if (drawPanel != null) drawPanel.IsVisible = false;
+
+        if (wasHeadland)
+        {
+            // Return to headland tab
+            ShowMainTabs();
+            var mainTabs = this.FindControl<TabControl>("MainTabs");
+            if (mainTabs != null) mainTabs.SelectedIndex = 1;
+        }
+        else
+        {
+            // Return to add track panel
+            var addPanel = this.FindControl<Border>("AddTrackPanel");
+            var drawPanel = this.FindControl<Border>("DrawModePanel");
+            if (addPanel != null) addPanel.IsVisible = true;
+            if (drawPanel != null) drawPanel.IsVisible = false;
+        }
         UpdatePreview();
     }
 
@@ -1375,13 +1465,55 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             if (tempSeg.OffsetPoints.Count >= 2)
             {
+                var offsetColor = new SolidColorBrush(light ? Color.FromRgb(0, 160, 0) : Color.FromRgb(100, 255, 100));
                 var offsetLine = new Polyline
                 {
-                    Stroke = new SolidColorBrush(light ? Color.FromRgb(0, 160, 0) : Color.FromRgb(100, 255, 100)),
+                    Stroke = offsetColor,
                     StrokeThickness = 3,
                     Points = tempSeg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(offsetLine);
+
+                // Draw arrow markers at offset line endpoints for extend/shrink
+                var startPt = ToCanvas(tempSeg.OffsetPoints[0].Easting, tempSeg.OffsetPoints[0].Northing);
+                var endPt = ToCanvas(tempSeg.OffsetPoints[^1].Easting, tempSeg.OffsetPoints[^1].Northing);
+
+                // Position arrows slightly beyond the offset endpoints
+                double arrowOffset = 15; // pixels beyond endpoint
+                Point arrowStart, arrowEnd;
+
+                if (tempSeg.OffsetPoints.Count >= 2)
+                {
+                    var s0 = ToCanvas(tempSeg.OffsetPoints[0].Easting, tempSeg.OffsetPoints[0].Northing);
+                    var s1 = ToCanvas(tempSeg.OffsetPoints[1].Easting, tempSeg.OffsetPoints[1].Northing);
+                    double sdx = s0.X - s1.X, sdy = s0.Y - s1.Y;
+                    double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
+                    arrowStart = slen > 0.1 ? new Point(s0.X + sdx / slen * arrowOffset, s0.Y + sdy / slen * arrowOffset) : s0;
+
+                    var e0 = ToCanvas(tempSeg.OffsetPoints[^2].Easting, tempSeg.OffsetPoints[^2].Northing);
+                    var e1 = ToCanvas(tempSeg.OffsetPoints[^1].Easting, tempSeg.OffsetPoints[^1].Northing);
+                    double edx = e1.X - e0.X, edy = e1.Y - e0.Y;
+                    double elen = Math.Sqrt(edx * edx + edy * edy);
+                    arrowEnd = elen > 0.1 ? new Point(e1.X + edx / elen * arrowOffset, e1.Y + edy / elen * arrowOffset) : e1;
+                }
+                else
+                {
+                    arrowStart = startPt;
+                    arrowEnd = endPt;
+                }
+
+                _arrowStartCanvasPos = arrowStart;
+                _arrowEndCanvasPos = arrowEnd;
+
+                // Draw arrow triangles
+                var arrowBrush = new SolidColorBrush(light ? Color.FromRgb(0, 120, 0) : Color.FromRgb(150, 255, 150));
+                AddArrowMarker(canvas, arrowStart, arrowBrush);
+                AddArrowMarker(canvas, arrowEnd, arrowBrush);
+            }
+            else
+            {
+                _arrowStartCanvasPos = default;
+                _arrowEndCanvasPos = default;
             }
         }
 
@@ -1439,5 +1571,24 @@ public partial class FieldBuilderDialogPanel : UserControl
             Canvas.SetTop(text, pt.Y - 8);
             canvas.Children.Add(text);
         }
+    }
+
+    private static void AddArrowMarker(Canvas canvas, Point pt, IBrush fill)
+    {
+        double size = 16;
+        var diamond = new Polygon
+        {
+            Fill = fill,
+            Stroke = Brushes.White,
+            StrokeThickness = 1.5,
+            Points = new List<Point>
+            {
+                new(pt.X, pt.Y - size / 2),
+                new(pt.X + size / 2, pt.Y),
+                new(pt.X, pt.Y + size / 2),
+                new(pt.X - size / 2, pt.Y)
+            }
+        };
+        canvas.Children.Add(diamond);
     }
 }
