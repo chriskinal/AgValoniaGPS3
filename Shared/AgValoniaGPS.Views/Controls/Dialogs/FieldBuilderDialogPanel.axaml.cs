@@ -1302,17 +1302,17 @@ public partial class FieldBuilderDialogPanel : UserControl
         };
         canvas.Children.Add(boundaryPoly);
 
-        // Draw headland (green dashed)
+        // Draw output headland path (yellow, slightly different shade from boundary)
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
             if (headPts.Count >= 3)
             {
+                var headlandColor = light ? Color.FromRgb(200, 160, 0) : Color.FromRgb(255, 220, 50);
                 var headlandPoly = new Polygon
                 {
-                    Stroke = new SolidColorBrush(light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 220, 50)),
-                    StrokeThickness = 2,
-                    StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 4 },
+                    Stroke = new SolidColorBrush(headlandColor),
+                    StrokeThickness = 2.5,
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);

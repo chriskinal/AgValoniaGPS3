@@ -3099,46 +3099,154 @@ public partial class MainViewModel : ReactiveObject
             return;
         }
 
-        // Collect all offset points from all segments
-        var allPoints = new List<Vec3>();
-        foreach (var seg in HeadlandSegments)
+        // Start with headland = boundary
+        var bnd = _currentBoundary?.OuterBoundary;
+        if (bnd?.Points == null || bnd.Points.Count < 3)
         {
-            if (seg.OffsetPoints.Count > 0)
-                allPoints.AddRange(seg.OffsetPoints);
-        }
-
-        if (allPoints.Count < 3)
-        {
-            StatusMessage = "Not enough points to form headland";
+            StatusMessage = "No boundary for headland";
             return;
         }
 
-        // Check if the points form a closed loop (first ~= last within tolerance)
-        double tolerance = 2.0; // 2m
-        var first = allPoints[0];
-        var last = allPoints[^1];
-        double closeDist = System.Math.Sqrt(
-            System.Math.Pow(first.Easting - last.Easting, 2) +
-            System.Math.Pow(first.Northing - last.Northing, 2));
+        var headland = new List<Vec3>();
+        foreach (var pt in bnd.Points)
+            headland.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+        headland.Add(new Vec3(bnd.Points[0].Easting, bnd.Points[0].Northing, bnd.Points[0].Heading));
 
-        bool isLoop = closeDist < tolerance;
+        int cutsApplied = 0;
 
-        // Apply as headland
-        _currentHeadlandLine = allPoints;
-        CurrentHeadlandLine = allPoints;
-        State.Field.HeadlandLine = allPoints;
+        // For each segment, check if the extended offset line intersects the headland at both ends
+        foreach (var seg in HeadlandSegments)
+        {
+            if (seg.OffsetPoints.Count < 2) continue;
+
+            // Build the full offset line with extensions
+            var offsetLine = new List<Vec3>();
+
+            // Start extension
+            if (seg.StartExtension > 0)
+            {
+                var s0 = seg.OffsetPoints[0];
+                var s1 = seg.OffsetPoints[1];
+                double sdx = s0.Easting - s1.Easting, sdy = s0.Northing - s1.Northing;
+                double slen = System.Math.Sqrt(sdx * sdx + sdy * sdy);
+                if (slen > 0.01)
+                    offsetLine.Add(new Vec3(s0.Easting + sdx / slen * seg.StartExtension, s0.Northing + sdy / slen * seg.StartExtension, s0.Heading));
+            }
+            offsetLine.AddRange(seg.OffsetPoints);
+            // End extension
+            if (seg.EndExtension > 0)
+            {
+                var e0 = seg.OffsetPoints[^2];
+                var e1 = seg.OffsetPoints[^1];
+                double edx = e1.Easting - e0.Easting, edy = e1.Northing - e0.Northing;
+                double elen = System.Math.Sqrt(edx * edx + edy * edy);
+                if (elen > 0.01)
+                    offsetLine.Add(new Vec3(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension, e1.Heading));
+            }
+
+            // Find intersection of offset line start with headland polygon
+            int startIntersectIdx = FindLineHeadlandIntersection(offsetLine[0], offsetLine[1], headland);
+            // Find intersection of offset line end with headland polygon
+            int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland);
+
+            if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
+            {
+                // Both ends intersect the headland - form a loop and cut
+                // Replace the headland section between the two intersection points with the offset line
+                var newHeadland = new List<Vec3>();
+
+                // Walk headland from endIntersectIdx+1 to startIntersectIdx (the part we keep)
+                int count = headland.Count - 1; // exclude closing duplicate
+                int idx = (endIntersectIdx + 1) % count;
+                while (idx != startIntersectIdx)
+                {
+                    newHeadland.Add(headland[idx]);
+                    idx = (idx + 1) % count;
+                    if (newHeadland.Count > count) break; // safety
+                }
+                newHeadland.Add(headland[startIntersectIdx]);
+
+                // Add the offset line (connecting the two intersection points)
+                for (int i = 0; i < offsetLine.Count; i++)
+                    newHeadland.Add(offsetLine[i]);
+
+                // Close the loop
+                if (newHeadland.Count > 0)
+                    newHeadland.Add(newHeadland[0]);
+
+                headland = newHeadland;
+                cutsApplied++;
+            }
+        }
+
+        // Apply headland
+        _currentHeadlandLine = headland;
+        CurrentHeadlandLine = headland;
+        State.Field.HeadlandLine = headland;
         HasHeadland = true;
         IsHeadlandOn = true;
-        _mapService.SetHeadlandLine(allPoints);
+        _mapService.SetHeadlandLine(headland);
         _mapService.SetHeadlandVisible(true);
 
         this.RaisePropertyChanged(nameof(HeadlandStatusText));
         this.RaisePropertyChanged(nameof(CurrentHeadlandLineForPreview));
-        StatusMessage = isLoop
-            ? $"Headland applied ({allPoints.Count} points, closed loop)"
-            : $"Headland applied ({allPoints.Count} points, open - add more segments to close)";
+        StatusMessage = cutsApplied > 0
+            ? $"Headland modified ({cutsApplied} cuts, {headland.Count} points)"
+            : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
 
         SaveHeadlandSegments();
+    }
+
+    /// <summary>
+    /// Find where a line segment (from lineStart toward lineDir) intersects the headland polygon.
+    /// Returns the index of the headland segment where intersection occurs, or -1 if no intersection.
+    /// </summary>
+    private static int FindLineHeadlandIntersection(Vec3 lineStart, Vec3 lineDir, List<Vec3> headland)
+    {
+        double bestDist = double.MaxValue;
+        int bestIdx = -1;
+
+        for (int i = 0; i < headland.Count - 1; i++)
+        {
+            var p1 = headland[i];
+            var p2 = headland[i + 1];
+
+            if (LineSegmentIntersection(
+                lineStart.Easting, lineStart.Northing, lineDir.Easting, lineDir.Northing,
+                p1.Easting, p1.Northing, p2.Easting, p2.Northing,
+                out double t, out _))
+            {
+                if (t >= 0 && t <= 1)
+                {
+                    // Distance from lineStart to intersection
+                    double dx = lineDir.Easting - lineStart.Easting;
+                    double dy = lineDir.Northing - lineStart.Northing;
+                    double dist = System.Math.Sqrt(dx * dx + dy * dy) * t;
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestIdx = i;
+                    }
+                }
+            }
+        }
+
+        return bestIdx;
+    }
+
+    private static bool LineSegmentIntersection(
+        double ax, double ay, double bx, double by,
+        double cx, double cy, double dx, double dy,
+        out double t, out double u)
+    {
+        double denom = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+        t = u = 0;
+        if (System.Math.Abs(denom) < 1e-10) return false;
+
+        t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / denom;
+        u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / denom;
+
+        return u >= 0 && u <= 1; // u is the parameter on the headland segment
     }
 
     private void SaveHeadlandSegments()
