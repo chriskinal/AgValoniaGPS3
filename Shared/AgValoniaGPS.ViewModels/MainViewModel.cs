@@ -1425,6 +1425,21 @@ public partial class MainViewModel : ReactiveObject
             HasHeadland = false;
             IsHeadlandOn = false;
         }
+
+        // Load headland segments
+        try
+        {
+            var segments = Services.Headland.HeadlandSegmentFileService.Load(field.DirectoryPath);
+            HeadlandSegments.Clear();
+            foreach (var seg in segments)
+                HeadlandSegments.Add(seg);
+            if (HeadlandSegments.Count > 0)
+                BuildHeadlandFromSegments();
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogDebug($"[Headland] Failed to load headland segments: {ex.Message}");
+        }
     }
 
     // Panel-based dialog data properties (visibility now managed by State.UI)
@@ -3122,6 +3137,25 @@ public partial class MainViewModel : ReactiveObject
         StatusMessage = isLoop
             ? $"Headland applied ({allPoints.Count} points, closed loop)"
             : $"Headland applied ({allPoints.Count} points, open - add more segments to close)";
+
+        SaveHeadlandSegments();
+    }
+
+    private void SaveHeadlandSegments()
+    {
+        if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName)) return;
+        try
+        {
+            var fieldsDir = _settingsService.Settings.FieldsDirectory;
+            if (string.IsNullOrEmpty(fieldsDir))
+                fieldsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AgValoniaGPS", "Fields");
+            var fieldPath = Path.Combine(fieldsDir, CurrentFieldName);
+            Services.Headland.HeadlandSegmentFileService.Save(fieldPath, HeadlandSegments);
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogDebug($"[Headland] Failed to save headland segments: {ex.Message}");
+        }
     }
 
     public ICommand? ShowTramSettingsCommand { get; private set; }
