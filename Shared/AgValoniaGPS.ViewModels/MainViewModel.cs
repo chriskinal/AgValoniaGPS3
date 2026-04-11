@@ -2971,11 +2971,11 @@ public partial class MainViewModel : ReactiveObject
 
         double offset = segment.Offset;
 
-        // Determine winding direction for closed polygons (Boundary type)
-        // Positive signed area = counter-clockwise, negative = clockwise
+        // Determine offset direction (inward toward field center)
         double sign = 1.0;
         if (segment.Type == Models.Headland.HeadlandSegmentType.Boundary && segment.BoundaryPoints.Count >= 3)
         {
+            // Closed polygon: use winding order
             double signedArea = 0;
             for (int j = 0; j < segment.BoundaryPoints.Count; j++)
             {
@@ -2983,8 +2983,40 @@ public partial class MainViewModel : ReactiveObject
                 var p2 = segment.BoundaryPoints[(j + 1) % segment.BoundaryPoints.Count];
                 signedArea += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
             }
-            // If clockwise (positive area in screen coords), flip the normal
             sign = signedArea > 0 ? 1.0 : -1.0;
+        }
+        else if (segment.BoundaryPoints.Count >= 2)
+        {
+            // Open segment: determine which side faces the field center
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points != null && boundary.Points.Count >= 3)
+            {
+                // Calculate boundary centroid
+                double cx = 0, cy = 0;
+                foreach (var bp in boundary.Points) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= boundary.Points.Count;
+                cy /= boundary.Points.Count;
+
+                // Test offset direction at midpoint
+                int mid = segment.BoundaryPoints.Count / 2;
+                var midPt = segment.BoundaryPoints[mid];
+                var prevPt = mid > 0 ? segment.BoundaryPoints[mid - 1] : segment.BoundaryPoints[mid];
+                var nextPt = mid < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[mid + 1] : segment.BoundaryPoints[mid];
+
+                double dx = nextPt.Easting - prevPt.Easting;
+                double dy = nextPt.Northing - prevPt.Northing;
+                double len = System.Math.Sqrt(dx * dx + dy * dy);
+                if (len > 0.001)
+                {
+                    double nx = dy / len, ny = -dx / len;
+                    // Check if offset toward centroid or away
+                    double testE = midPt.Easting + nx;
+                    double testN = midPt.Northing + ny;
+                    double distToCenterOrig = System.Math.Pow(midPt.Easting - cx, 2) + System.Math.Pow(midPt.Northing - cy, 2);
+                    double distToCenterTest = System.Math.Pow(testE - cx, 2) + System.Math.Pow(testN - cy, 2);
+                    sign = distToCenterTest < distToCenterOrig ? 1.0 : -1.0;
+                }
+            }
         }
 
         var result = new List<Vec3>();
