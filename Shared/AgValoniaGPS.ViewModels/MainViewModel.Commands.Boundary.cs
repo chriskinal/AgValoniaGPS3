@@ -238,7 +238,17 @@ public partial class MainViewModel
 
         BuildHeadlandCommand = ReactiveCommand.Create(() =>
         {
-            BuildHeadlandFromBoundary();
+            // If segments exist, rebuild from segments; otherwise fall back to Clipper2
+            if (HeadlandSegments.Count > 0)
+            {
+                foreach (var seg in HeadlandSegments)
+                    ComputeSegmentOffset(seg);
+                BuildHeadlandFromSegments();
+            }
+            else
+            {
+                BuildHeadlandFromBoundary();
+            }
         });
 
         ClearHeadlandCommand = ReactiveCommand.Create(() =>
