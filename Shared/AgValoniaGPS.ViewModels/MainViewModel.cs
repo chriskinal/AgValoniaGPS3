@@ -2970,13 +2970,30 @@ public partial class MainViewModel : ReactiveObject
         }
 
         double offset = segment.Offset;
+
+        // Determine winding direction for closed polygons (Boundary type)
+        // Positive signed area = counter-clockwise, negative = clockwise
+        double sign = 1.0;
+        if (segment.Type == Models.Headland.HeadlandSegmentType.Boundary && segment.BoundaryPoints.Count >= 3)
+        {
+            double signedArea = 0;
+            for (int j = 0; j < segment.BoundaryPoints.Count; j++)
+            {
+                var p1 = segment.BoundaryPoints[j];
+                var p2 = segment.BoundaryPoints[(j + 1) % segment.BoundaryPoints.Count];
+                signedArea += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
+            }
+            // If clockwise (positive area in screen coords), flip the normal
+            sign = signedArea > 0 ? 1.0 : -1.0;
+        }
+
         var result = new List<Vec3>();
 
         for (int i = 0; i < segment.BoundaryPoints.Count; i++)
         {
             var pt = segment.BoundaryPoints[i];
 
-            // Calculate inward normal from boundary direction
+            // Calculate normal from boundary direction
             Vec3 prev = i > 0 ? segment.BoundaryPoints[i - 1] : segment.BoundaryPoints[i];
             Vec3 next = i < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[i + 1] : segment.BoundaryPoints[i];
 
@@ -2985,9 +3002,9 @@ public partial class MainViewModel : ReactiveObject
             double len = System.Math.Sqrt(dx * dx + dy * dy);
             if (len < 0.001) len = 1;
 
-            // Inward normal (perpendicular, pointing right of travel direction)
-            double nx = dy / len;
-            double ny = -dx / len;
+            // Perpendicular normal, adjusted for winding
+            double nx = sign * dy / len;
+            double ny = sign * -dx / len;
 
             result.Add(new Vec3(pt.Easting + nx * offset, pt.Northing + ny * offset, pt.Heading));
         }
