@@ -319,23 +319,45 @@ public partial class FieldBuilderDialogPanel : UserControl
             return;
         }
 
-        var segment = new Models.Headland.HeadlandSegment
-        {
-            Name = $"Boundary {vm.HeadlandSegments.Count + 1}",
-            Type = Models.Headland.HeadlandSegmentType.Boundary,
-            Offset = vm.HeadlandDistance,
-            BoundaryIndex = 0
-        };
+        // Load boundary points and enter preview mode
+        _drawMode = DrawMode.HeadlandPreview;
+        _drawPoints.Clear();
+        _selectedBoundaryPoly = boundary;
 
         foreach (var pt in boundary.Points)
-            segment.BoundaryPoints.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
-        // Close the loop
-        segment.BoundaryPoints.Add(new Vec3(boundary.Points[0].Easting, boundary.Points[0].Northing, boundary.Points[0].Heading));
+            _drawPoints.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+        _drawPoints.Add(new Vec3(boundary.Points[0].Easting, boundary.Points[0].Northing, boundary.Points[0].Heading));
 
-        vm.ComputeSegmentOffset(segment);
-        vm.HeadlandSegments.Add(segment);
-        vm.SelectedHeadlandSegment = segment;
-        vm.BuildHeadlandFromSegments();
+        _boundaryPointIndex1 = 0;
+        _boundaryPointIndex2 = boundary.Points.Count - 1;
+
+        // Show draw panel with offset input
+        var drawPanel = this.FindControl<Border>("DrawModePanel");
+        var instrText = this.FindControl<TextBlock>("DrawInstructionText");
+        var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
+        var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+        var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+        var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+        var headingInput = this.FindControl<TextBox>("HeadingInput");
+
+        if (drawPanel != null) drawPanel.IsVisible = true;
+        if (instrText != null) instrText.Text = "Adjust offset distance, then Create";
+        if (pointCountText != null) pointCountText.Text = "";
+        if (createPanel != null) createPanel.IsVisible = true;
+        if (finishPanel != null) finishPanel.IsVisible = false;
+
+        if (headingPanel != null) headingPanel.IsVisible = true;
+        if (headingInput != null)
+        {
+            headingInput.Text = vm.HeadlandDistance.ToString("F1");
+            headingInput.Focus();
+        }
+        var headingLabel = headingPanel?.Children.OfType<TextBlock>().FirstOrDefault();
+        if (headingLabel != null) headingLabel.Text = "Offset:";
+        var degLabel = headingPanel?.Children.OfType<TextBlock>().LastOrDefault();
+        if (degLabel != null) degLabel.Text = "m";
+
+        SetCanvasStatus("Set offset distance, then Create");
         UpdatePreview();
     }
 
