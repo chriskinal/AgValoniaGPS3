@@ -591,12 +591,16 @@ public partial class FieldBuilderDialogPanel : UserControl
     {
         if (_drawMode == DrawMode.APlusPreview)
         {
-            // Keep only original point (index 1 if 3 points, or 0 if 1)
             if (_drawPoints.Count == 0) return;
             var origin = _drawPoints.Count == 3 ? _drawPoints[1] : _drawPoints[0];
             _drawPoints.Clear();
             _drawPoints.Add(origin);
             UpdateAPlusPreview();
+            UpdatePreview();
+        }
+        else if (_drawMode == DrawMode.HeadlandPreview)
+        {
+            // Offset changed - redraw preview
             UpdatePreview();
         }
     }
@@ -800,6 +804,22 @@ public partial class FieldBuilderDialogPanel : UserControl
         double fieldE = (pos.X - _offsetX) / _scale + _minE;
         double fieldN = (_canvasHeight - pos.Y - _offsetY) / _scale + _minN;
 
+        // For headland and boundary modes, snap to nearest boundary vertex during drag
+        bool snapToBoundary = _selectedBoundaryPoly != null &&
+            (_drawMode == DrawMode.HeadlandPreview || _drawMode == DrawMode.BoundaryLinePreview
+             || _drawMode == DrawMode.BoundaryCurvePreview);
+
+        if (snapToBoundary)
+        {
+            int nearIdx = FindNearestBoundaryPoint(fieldE, fieldN);
+            if (nearIdx >= 0)
+            {
+                var bPt = _selectedBoundaryPoly!.Points[nearIdx];
+                fieldE = bPt.Easting;
+                fieldN = bPt.Northing;
+            }
+        }
+
         // Recalculate heading
         double heading = 0;
         if (_drawPoints.Count >= 2)
@@ -832,7 +852,7 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void Canvas_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         // For boundary curve, snap endpoint to boundary and re-extract segment
-        if (_isDragging && _drawMode == DrawMode.BoundaryCurvePreview && _selectedBoundaryPoly != null)
+        if (_isDragging && (_drawMode == DrawMode.BoundaryCurvePreview || _drawMode == DrawMode.HeadlandPreview) && _selectedBoundaryPoly != null && _drawPoints.Count > 2)
         {
             var draggedPt = _drawPoints[_dragPointIndex];
             int nearIdx = FindNearestBoundaryPoint(draggedPt.Easting, draggedPt.Northing);
@@ -1270,6 +1290,38 @@ public partial class FieldBuilderDialogPanel : UserControl
                         ? new SolidColorBrush(Color.FromRgb(65, 105, 225))  // RoyalBlue (B/End)
                         : Brushes.Yellow);
                 AddMarker(canvas, pt, fill, label, light);
+            }
+        }
+
+        // Draw headland offset preview during HeadlandPreview mode
+        if (_drawMode == DrawMode.HeadlandPreview && _drawPoints.Count >= 2)
+        {
+            // Compute temporary offset from the draw points
+            var tempSeg = new Models.Headland.HeadlandSegment
+            {
+                Type = _drawPoints.Count > 2 ? Models.Headland.HeadlandSegmentType.Curve : Models.Headland.HeadlandSegmentType.Line,
+                BoundaryPoints = new List<Vec3>(_drawPoints)
+            };
+
+            // Read offset from input
+            var headingInput = this.FindControl<TextBox>("HeadingInput");
+            if (headingInput != null && double.TryParse(headingInput.Text, out double previewOffset))
+                tempSeg.Offset = previewOffset;
+            else
+                tempSeg.Offset = 12;
+
+            if (DataContext is MainViewModel previewVm)
+                previewVm.ComputeSegmentOffset(tempSeg);
+
+            if (tempSeg.OffsetPoints.Count >= 2)
+            {
+                var offsetLine = new Polyline
+                {
+                    Stroke = new SolidColorBrush(light ? Color.FromRgb(0, 160, 0) : Color.FromRgb(100, 255, 100)),
+                    StrokeThickness = 3,
+                    Points = tempSeg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+                };
+                canvas.Children.Add(offsetLine);
             }
         }
 
