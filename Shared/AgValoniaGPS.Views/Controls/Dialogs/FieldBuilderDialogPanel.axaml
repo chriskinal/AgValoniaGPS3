@@ -505,6 +505,44 @@ Licensed under GNU GPL v3.
                                                Foreground="#E74C3C"/>
                                 </StackPanel>
                             </StackPanel>
+
+                            <!-- Extend/Shrink controls for headland preview -->
+                            <StackPanel x:Name="ExtendShrinkPanel" IsVisible="False" Spacing="6" Margin="0,8,0,0">
+                                <TextBlock Text="Adjust Endpoints" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                    <TextBlock Text="Start:" VerticalAlignment="Center" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Content="-" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ShrinkStart_Click"/>
+                                        <Button Content="+" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ExtendStart_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                    <TextBlock Text="End:" VerticalAlignment="Center" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Content="-" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ShrinkEnd_Click"/>
+                                        <Button Content="+" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ExtendEnd_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </Grid>

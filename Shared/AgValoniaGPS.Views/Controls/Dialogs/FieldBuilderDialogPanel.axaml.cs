@@ -341,6 +341,60 @@ public partial class FieldBuilderDialogPanel : UserControl
         UpdatePreview();
     }
 
+    private void ExtendStart_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_drawMode != DrawMode.HeadlandPreview || _selectedBoundaryPoly == null) return;
+        if (_boundaryPointIndex1 < 0) return;
+
+        var pts = _selectedBoundaryPoly.Points;
+        int count = pts.Count;
+        // Move start index one step backward along boundary
+        _boundaryPointIndex1 = (_boundaryPointIndex1 - 1 + count) % count;
+
+        var newPt = pts[_boundaryPointIndex1];
+        _drawPoints.Insert(0, new Vec3(newPt.Easting, newPt.Northing, newPt.Heading));
+        UpdatePreview();
+    }
+
+    private void ShrinkStart_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_drawMode != DrawMode.HeadlandPreview || _drawPoints.Count <= 2) return;
+        _drawPoints.RemoveAt(0);
+        if (_selectedBoundaryPoly != null)
+        {
+            int count = _selectedBoundaryPoly.Points.Count;
+            _boundaryPointIndex1 = (_boundaryPointIndex1 + 1) % count;
+        }
+        UpdatePreview();
+    }
+
+    private void ExtendEnd_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_drawMode != DrawMode.HeadlandPreview || _selectedBoundaryPoly == null) return;
+        if (_boundaryPointIndex2 < 0) return;
+
+        var pts = _selectedBoundaryPoly.Points;
+        int count = pts.Count;
+        // Move end index one step forward along boundary
+        _boundaryPointIndex2 = (_boundaryPointIndex2 + 1) % count;
+
+        var newPt = pts[_boundaryPointIndex2];
+        _drawPoints.Add(new Vec3(newPt.Easting, newPt.Northing, newPt.Heading));
+        UpdatePreview();
+    }
+
+    private void ShrinkEnd_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_drawMode != DrawMode.HeadlandPreview || _drawPoints.Count <= 2) return;
+        _drawPoints.RemoveAt(_drawPoints.Count - 1);
+        if (_selectedBoundaryPoly != null)
+        {
+            int count = _selectedBoundaryPoly.Points.Count;
+            _boundaryPointIndex2 = (_boundaryPointIndex2 - 1 + count) % count;
+        }
+        UpdatePreview();
+    }
+
     private void SetCanvasStatus(string? text)
     {
         var banner = this.FindControl<Border>("CanvasStatusBanner");
@@ -530,6 +584,10 @@ public partial class FieldBuilderDialogPanel : UserControl
                     var degLabel = headingPanel?.Children.OfType<TextBlock>().LastOrDefault();
                     if (degLabel != null) degLabel.Text = "m";
                 }
+
+                // Show extend/shrink for headland preview
+                var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
+                if (extPanel != null) extPanel.IsVisible = _drawMode == DrawMode.HeadlandPreview;
 
                 UpdateDrawModeInfo();
                 var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
@@ -939,6 +997,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         _dragPointIndex = -1;
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
+        var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
+        if (extPanel != null) extPanel.IsVisible = false;
         SetCanvasStatus(null);
     }
 
