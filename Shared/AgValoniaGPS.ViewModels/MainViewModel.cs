@@ -3240,42 +3240,80 @@ public partial class MainViewModel : ObservableObject
 
         int cutsApplied = 0;
 
-        // Multi-pass: keep processing until no more segments become effective
-        // Handles chained lines that depend on each other
-        bool madeProgress = true;
-        int maxPasses = HeadlandSegments.Count + 1;
-        while (madeProgress && maxPasses-- > 0)
+        // Build all offset lines with extensions
+        var offsetLines = new List<(Models.Headland.HeadlandSegment seg, List<Vec3> line)>();
+        foreach (var seg in HeadlandSegments)
         {
-            madeProgress = false;
-            foreach (var seg in HeadlandSegments)
-            {
-                if (seg.IsEffective) continue; // Already applied
-                if (seg.OffsetPoints.Count < 2) continue;
+            if (seg.OffsetPoints.Count < 2) continue;
+            var ol = BuildOffsetLineWithExtensions(seg);
+            offsetLines.Add((seg, ol));
+        }
 
-            // Build the full offset line with extensions
-            var offsetLine = new List<Vec3>();
+        // Try to merge chained offset lines that intersect each other
+        // This handles the case where two lines each only touch boundary on one side
+        // but connect to each other on the other side
+        bool merged = true;
+        while (merged)
+        {
+            merged = false;
+            for (int a = 0; a < offsetLines.Count && !merged; a++)
+            {
+                for (int b = a + 1; b < offsetLines.Count && !merged; b++)
+                {
+                    // Check if end of A intersects any segment of B
+                    var lineA = offsetLines[a].line;
+                    var lineB = offsetLines[b].line;
 
-            // Start extension
-            if (seg.StartExtension > 0)
-            {
-                var s0 = seg.OffsetPoints[0];
-                var s1 = seg.OffsetPoints[1];
-                double sdx = s0.Easting - s1.Easting, sdy = s0.Northing - s1.Northing;
-                double slen = System.Math.Sqrt(sdx * sdx + sdy * sdy);
-                if (slen > 0.01)
-                    offsetLine.Add(new Vec3(s0.Easting + sdx / slen * seg.StartExtension, s0.Northing + sdy / slen * seg.StartExtension, s0.Heading));
+                    // Check A's end vs B
+                    Vec3 intersectPt = default;
+                    bool found = false;
+                    for (int si = 0; si < lineB.Count - 1 && !found; si++)
+                    {
+                        if (LineSegmentIntersection(
+                            lineA[^1].Easting, lineA[^1].Northing, lineA[^2].Easting, lineA[^2].Northing,
+                            lineB[si].Easting, lineB[si].Northing, lineB[si + 1].Easting, lineB[si + 1].Northing,
+                            out double t, out double u))
+                        {
+                            if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+                            {
+                                intersectPt = new Vec3(
+                                    lineB[si].Easting + u * (lineB[si + 1].Easting - lineB[si].Easting),
+                                    lineB[si].Northing + u * (lineB[si + 1].Northing - lineB[si].Northing), 0);
+                                found = true;
+                            }
+                        }
+                    }
+
+                    if (found)
+                    {
+                        // Merge: A's start to intersection point, then intersection point to B's end (or B's start)
+                        // Figure out which end of B is closer to the intersection
+                        double dStart = System.Math.Pow(lineB[0].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[0].Northing - intersectPt.Northing, 2);
+                        double dEnd = System.Math.Pow(lineB[^1].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[^1].Northing - intersectPt.Northing, 2);
+
+                        var combined = new List<Vec3>(lineA);
+                        combined.Add(intersectPt);
+                        if (dStart < dEnd)
+                            combined.AddRange(lineB); // B goes start to end
+                        else
+                        {
+                            var rev = new List<Vec3>(lineB);
+                            rev.Reverse();
+                            combined.AddRange(rev); // B goes end to start
+                        }
+
+                        offsetLines[a] = (offsetLines[a].seg, combined);
+                        offsetLines.RemoveAt(b);
+                        merged = true;
+                        _logger.LogDebug($"[Headland] Merged offset lines: {offsetLines[a].seg.Name} + removed segment");
+                    }
+                }
             }
-            offsetLine.AddRange(seg.OffsetPoints);
-            // End extension
-            if (seg.EndExtension > 0)
-            {
-                var e0 = seg.OffsetPoints[^2];
-                var e1 = seg.OffsetPoints[^1];
-                double edx = e1.Easting - e0.Easting, edy = e1.Northing - e0.Northing;
-                double elen = System.Math.Sqrt(edx * edx + edy * edy);
-                if (elen > 0.01)
-                    offsetLine.Add(new Vec3(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension, e1.Heading));
-            }
+        }
+
+        // Process each offset line (possibly merged chains)
+        foreach (var (seg, offsetLine) in offsetLines)
+        {
 
             // Find intersection of offset line with headland polygon
             // Search from each end along consecutive segments until intersection found
@@ -3370,8 +3408,6 @@ public partial class MainViewModel : ObservableObject
 
                 headland = chosen;
                 cutsApplied++;
-                madeProgress = true;
-            }
             }
         }
 
@@ -3395,6 +3431,29 @@ public partial class MainViewModel : ObservableObject
             : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
 
         SaveHeadlandSegments();
+    }
+
+    private static List<Vec3> BuildOffsetLineWithExtensions(Models.Headland.HeadlandSegment seg)
+    {
+        var line = new List<Vec3>();
+        if (seg.StartExtension > 0 && seg.OffsetPoints.Count >= 2)
+        {
+            var s0 = seg.OffsetPoints[0]; var s1 = seg.OffsetPoints[1];
+            double sdx = s0.Easting - s1.Easting, sdy = s0.Northing - s1.Northing;
+            double slen = System.Math.Sqrt(sdx * sdx + sdy * sdy);
+            if (slen > 0.01)
+                line.Add(new Vec3(s0.Easting + sdx / slen * seg.StartExtension, s0.Northing + sdy / slen * seg.StartExtension, s0.Heading));
+        }
+        line.AddRange(seg.OffsetPoints);
+        if (seg.EndExtension > 0 && seg.OffsetPoints.Count >= 2)
+        {
+            var e0 = seg.OffsetPoints[^2]; var e1 = seg.OffsetPoints[^1];
+            double edx = e1.Easting - e0.Easting, edy = e1.Northing - e0.Northing;
+            double elen = System.Math.Sqrt(edx * edx + edy * edy);
+            if (elen > 0.01)
+                line.Add(new Vec3(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension, e1.Heading));
+        }
+        return line;
     }
 
     /// <summary>Intersect two infinite lines. Returns false if parallel.</summary>
