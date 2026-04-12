@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB-lijn</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Over...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Areaal</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autostuur</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Perceelgrens</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Afbreken</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Sluiten</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Configuratie</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Verwijder</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Activeer Knoppen</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Afstand</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Activeer</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Richting</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Kopakker</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Taal</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Lengtegraad</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Lijn-Nudge:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Uit</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Verschuiving</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>Aan</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Overlapping:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauze</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Herstel</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Hervat</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Secties:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Start</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Maak Geleidingslijnen</value>
+  </data>
+</root>

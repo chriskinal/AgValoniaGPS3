@@ -15,12 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
-using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using AgValoniaGPS.Desktop.Views;
@@ -73,20 +70,46 @@ public partial class App : Application
         // Wire up cross-referencing services (AutoSteer → UDP)
         Services.WireUpServices();
 
+        // Extract sound files from Avalonia resources for cross-platform audio
+        ExtractSoundFiles(Services);
+
         // Load settings and sync to ConfigurationStore
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.Load();
         var configService = Services.GetRequiredService<IConfigurationService>();
         configService.LoadAppSettings();
 
+        // Apply saved language (#40)
+        var savedLang = settingsService.Settings.Language;
+        if (!string.IsNullOrEmpty(savedLang) && savedLang != "en")
+        {
+            try
+            {
+                AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                    new System.Globalization.CultureInfo(savedLang);
+            }
+            catch { /* fall back to English */ }
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-            DisableAvaloniaDataAnnotationValidation();
-
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
+
+            // Wire language change to TranslationSource (#40)
+            // Must use MainWindow's ViewModel (not DI - MainViewModel is Transient)
+            if (mainWindow.DataContext is AgValoniaGPS.ViewModels.MainViewModel windowVm)
+            {
+                windowVm.LanguageChanged += code =>
+                {
+                    try
+                    {
+                        AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                            new System.Globalization.CultureInfo(code);
+                    }
+                    catch { }
+                };
+            }
 
             desktop.Exit += (sender, args) =>
             {
@@ -103,7 +126,7 @@ public partial class App : Application
                 {
                     try
                     {
-                        await Task.Delay(1000); // Let window fully render
+                        await Task.Delay(100); // Let window render initial frame
                         await callback(desktop);
                     }
                     catch (Exception ex)
@@ -122,16 +145,42 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void DisableAvaloniaDataAnnotationValidation()
+    private static void ExtractSoundFiles(IServiceProvider services)
     {
-        // Get an array of plugins to remove
-        var dataValidationPluginsToRemove =
-            BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-
-        // remove each entry found
-        foreach (var plugin in dataValidationPluginsToRemove)
+        try
         {
-            BindingPlugins.DataValidators.Remove(plugin);
+            var audioService = services.GetService<IAudioService>() as AgValoniaGPS.Services.Audio.AudioServiceBase;
+            if (audioService == null) return;
+
+            var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "AgValoniaGPS", "Sounds");
+            System.IO.Directory.CreateDirectory(tempDir);
+
+            var soundFiles = AgValoniaGPS.Services.Audio.AudioServiceBase.GetSoundFileNames();
+
+            foreach (var fileName in soundFiles)
+            {
+                var destPath = System.IO.Path.Combine(tempDir, fileName);
+                if (System.IO.File.Exists(destPath)) continue;
+
+                try
+                {
+                    var uri = new Uri($"avares://AgValoniaGPS.Views/Assets/Sounds/{fileName}");
+                    using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+                    using var fileStream = System.IO.File.Create(destPath);
+                    stream.CopyTo(fileStream);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Audio] Failed to extract {fileName}: {ex.Message}");
+                }
+            }
+
+            audioService.SetSoundDirectory(tempDir);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Audio] Sound extraction failed: {ex.Message}");
         }
     }
+
 }

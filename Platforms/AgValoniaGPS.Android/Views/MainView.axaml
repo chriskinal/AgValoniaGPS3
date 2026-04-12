@@ -36,64 +36,70 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Top Status Bar -->
             <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <!-- Left: Status and GPS info - use MinWidth to prevent layout shifts -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#2ECC71" FontSize="14"
-                                   TextTrimming="CharacterEllipsis" Width="180"/>
-                        <TextBlock Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12"
-                                   MinWidth="70"/>
-                        <TextBlock Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#F1C40F" FontSize="12"
-                                   MinWidth="55"/>
-                        <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F1}ms'}" Foreground="#F39C12" FontSize="12"
-                                   MinWidth="75"/>
-                    </StackPanel>
+                    <!-- Left: RTK Status and Diagnostics -->
+                    <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
 
                     <!-- Right: Field Statistics (when field is active) -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10"
-                                IsVisible="{Binding HasActiveField}">
-                        <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="12" MinWidth="60"/>
-                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
-                        <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="12" FontWeight="Bold" MinWidth="60"/>
-                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
-                        <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F0}%'}" Foreground="#F39C12" FontSize="12" MinWidth="35"/>
-                        <TextBlock Text="|" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
-                        <TextBlock Text="{Binding WorkRateDisplay}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="12" MinWidth="65"/>
-                    </StackPanel>
+                    <panels:FieldStatsPanel Grid.Column="2" DataContext="{Binding}"/>
                 </Grid>
             </Border>
 
             <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Background="Transparent">
                 <controls:DrawingContextMapControl x:Name="MapControl" Margin="5"
                                                    IsGridVisible="{Binding IsGridOn}"/>
 
-                <!-- All Draggable Panels in single Canvas (must be in same Canvas for consistent drag bounds) -->
-                <Canvas ZIndex="10">
-                    <!-- Left Navigation Panel (Draggable & Rotatable) -->
-                    <panels:LeftNavigationPanel x:Name="LeftNavPanel"
-                                                Canvas.Left="20" Canvas.Top="50"
-                                                DataContext="{Binding}"/>
+                <!-- LIGHT BAR: Centered at top (#144) -->
+                <panels:LightBarPanel x:Name="LightBarPanel"
+                                      ZIndex="5"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Top"
+                                      Margin="0,4,0,0"/>
 
-                    <!-- Right Navigation Panel (Draggable & Rotatable) -->
+                <!-- LEFT SIDEBAR: Anchored to left edge -->
+                <panels:LeftNavigationPanel x:Name="LeftNavPanel"
+                                            ZIndex="9"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Margin="8,10,0,0"
+                                            DataContext="{Binding}"/>
+
+                <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            ZIndex="10" Margin="0,0,8,8" Spacing="4">
                     <panels:RightNavigationPanel x:Name="RightNavPanel"
-                                                 Canvas.Left="600" Canvas.Top="50"
                                                  DataContext="{Binding}"/>
+                    <Border Height="12"/>
+                    <Button Classes="ZoomButton" Content="+" Command="{Binding ZoomInCommand}" ClickMode="Press"
+                            HorizontalAlignment="Center"/>
+                    <Button Classes="ZoomButton" Content="-" Command="{Binding ZoomOutCommand}" ClickMode="Press"
+                            HorizontalAlignment="Center"/>
+                    <Button Command="{Binding ToggleCameraModeCommand}"
+                            Width="64" Height="64"
+                            HorizontalAlignment="Center"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            CornerRadius="32" Background="#4A90D9">
+                        <TextBlock Text="{Binding CameraModeLabel}" FontSize="20" FontWeight="Bold"
+                                   Foreground="White" HorizontalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
 
-                    <!-- Section Control Panel (Draggable) -->
+                <!-- BOTTOM: Section control stacked above bottom navigation -->
+                <StackPanel ZIndex="10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,8"
+                            Spacing="4">
                     <panels:SectionControlPanel x:Name="SectionControlPanel"
-                                                Canvas.Left="200" Canvas.Top="500"
-                                                Cursor="Hand"
-                                                DataContext="{Binding}"
-                                                PointerPressed="SectionControl_PointerPressed"
-                                                PointerMoved="SectionControl_PointerMoved"
-                                                PointerReleased="SectionControl_PointerReleased"/>
-
-                    <!-- Bottom Navigation Panel (Draggable & Rotatable) -->
+                                                HorizontalAlignment="Center"
+                                                DataContext="{Binding}"/>
                     <panels:BottomNavigationPanel x:Name="BottomNavPanel"
-                                                  Canvas.Left="200" Canvas.Top="420"
+                                                  HorizontalAlignment="Center"
                                                   DataContext="{Binding}"/>
+                </StackPanel>
 
-                    <!-- Chart Panels (Draggable) -->
+                <!-- Floating/Draggable Panels (charts, recorded path) -->
+                <Canvas ZIndex="10">
                     <panels:SteerChartPanel x:Name="SteerChartPanel"
                                             Canvas.Left="300" Canvas.Top="20"
                                             DataContext="{Binding}"/>
@@ -103,54 +109,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <panels:XTEChartPanel x:Name="XTEChartPanel"
                                           Canvas.Left="300" Canvas.Top="480"
                                           DataContext="{Binding}"/>
+                    <dialogs:RecordedPathDialogPanel x:Name="RecordedPathPanel"
+                                                      Canvas.Left="150" Canvas.Top="20"
+                                                      DataContext="{Binding}"/>
                 </Canvas>
-
-                <!-- Zoom Controls - Bottom Right -->
-                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                            Margin="0,0,20,20" Spacing="10">
-                    <Button Content="+" Command="{Binding ZoomInCommand}"
-                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
-                    <Button Content="-" Command="{Binding ZoomOutCommand}"
-                            Width="50" Height="50" FontSize="28" FontWeight="Bold"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Background="#4A5568" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="8"/>
-                </StackPanel>
             </Grid>
         </Grid>
 
-        <!-- AB Creation Instruction Banner -->
-        <Border Background="#CC000000" CornerRadius="8" Padding="16,8"
-                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0"
-                IsVisible="{Binding IsCreatingABLine}">
-            <StackPanel Orientation="Horizontal" Spacing="16">
-                <TextBlock Text="{Binding ABCreationInstructions}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" VerticalAlignment="Center"/>
-                <!-- Finish button for drive-recording Curve mode -->
-                <Button Content="Finish"
-                        Command="{Binding FinishCurveRecordingCommand}"
-                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                        Padding="12,4"
-                        IsVisible="{Binding IsRecordingCurve}"/>
-                <!-- Finish button for DrawCurve mode -->
-                <Button Content="Finish"
-                        Command="{Binding FinishDrawCurveCommand}"
-                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                        Padding="12,4"
-                        IsVisible="{Binding IsDrawingCurve}"/>
-                <!-- Undo button for DrawCurve mode -->
-                <Button Content="Undo"
-                        Command="{Binding UndoLastDrawnPointCommand}"
-                        Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                        Padding="12,4"
-                        IsVisible="{Binding IsDrawingCurve}"/>
-                <Button Content="Cancel"
-                        Command="{Binding CancelABCreationCommand}"
-                        Background="#DD3333" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                        Padding="12,4"/>
-            </StackPanel>
-        </Border>
+        <!-- Map Banners (Flag Placement, AB Creation) -->
+        <panels:MapBannersPanel DataContext="{Binding}"/>
 
         <!-- Modal Dialog Overlays (shared across platforms) -->
         <controls:DialogOverlayHost DataContext="{Binding}"/>

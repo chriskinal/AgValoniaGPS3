@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB 直线</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>关于...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>面积</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>方向盘配置</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>边界</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>取消</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>关闭</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>方向盘配置</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>删除</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>显示</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>距离</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>确保</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>标题</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>地头</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>帮助</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>语言</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>纬度</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>推测：</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>关</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>偏移</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>开</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>重叠：</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>暂停</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>重置</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>简介</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>部分：</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>开始</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>轨道</value>
+  </data>
+</root>

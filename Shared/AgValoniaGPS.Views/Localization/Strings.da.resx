@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB Linje</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Om…</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Areal</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autostyring</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Markgrænse</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Afbryd</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Lukke</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Indstillinger</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Slet</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Vis</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Afstand</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Aktiver</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Retning</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Forager</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Sprog</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Nudge:</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Offset</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pause</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Genoptag</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sektioner:</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Lav spor</value>
+  </data>
+</root>

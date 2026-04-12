@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.EditableNumericField">
+
+    <!-- When KeyboardEnabled: tappable button that opens numpad overlay -->
+    <Panel>
+        <Button x:Name="TapButton" Classes="TappableValue"
+                IsVisible="True">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock x:Name="DisplayText" Classes="LargeValue"/>
+                <TextBlock x:Name="UnitText" Classes="UnitLabel" Margin="4,0,0,8"/>
+            </StackPanel>
+        </Button>
+
+        <!-- When KeyboardEnabled OFF: inline TextBox for direct editing -->
+        <StackPanel x:Name="DirectEditPanel" Orientation="Horizontal"
+                    HorizontalAlignment="Center" IsVisible="False">
+            <TextBox x:Name="DirectInput" Width="100"
+                     FontSize="20" FontWeight="Bold"
+                     HorizontalContentAlignment="Center"
+                     VerticalAlignment="Center"/>
+            <TextBlock x:Name="DirectUnitText" Classes="UnitLabel" Margin="4,0,0,0"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+    </Panel>
+</UserControl>

@@ -26,7 +26,6 @@ using Avalonia.Interactivity;
 using Microsoft.Extensions.DependencyInjection;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Views.Controls;
-using AgValoniaGPS.Views.Behaviors;
 using AgValoniaGPS.Android.Services;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Services;
@@ -42,11 +41,7 @@ public partial class MainView : UserControl
     private DrawingContextMapControl? _mapControl;
     private MainViewModel? _viewModel;
 
-    // Panel references for position save/restore
-    private Control? _leftNavPanel;
-    private Control? _rightNavPanel;
-    private Control? _bottomNavPanel;
-    private Control? _sectionControlPanel;
+    // Panels are now anchored (no position save/restore needed)
 
     public MainView()
     {
@@ -56,15 +51,6 @@ public partial class MainView : UserControl
 
         // Get reference to map control
         _mapControl = this.FindControl<DrawingContextMapControl>("MapControl");
-
-        // Get references to panels for position save/restore
-        _leftNavPanel = this.FindControl<Control>("LeftNavPanel");
-        _rightNavPanel = this.FindControl<Control>("RightNavPanel");
-        _bottomNavPanel = this.FindControl<Control>("BottomNavPanel");
-        _sectionControlPanel = this.FindControl<Control>("SectionControlPanel");
-
-        // Restore panel positions from ConfigurationStore
-        RestorePanelPositions();
 
         // Wire up chart panel drag events
         WireChartPanelDrag("SteerChartPanel");
@@ -82,111 +68,37 @@ public partial class MainView : UserControl
     {
         if (App.Services == null) return;
 
-        SavePanelPositions();
-
         if (_viewModel != null)
         {
             var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
             display.GridVisible = _viewModel.IsGridOn;
         }
 
-        var configService = App.Services.GetRequiredService<IConfigurationService>();
-        configService.SaveAppSettings();
-
-        var fieldService = App.Services.GetRequiredService<IFieldService>();
-        var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
-        if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+        // Save on background thread — never block the UI thread on app close
+        Task.Run(() =>
         {
             try
             {
-                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
+                var configService = App.Services.GetRequiredService<IConfigurationService>();
+                configService.SaveAppSettings();
+
+                var fieldService = App.Services.GetRequiredService<IFieldService>();
+                var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
+                if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+                {
+                    coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Save] Error saving on close: {ex.Message}");
             }
-        }
+        });
     }
 
     private void MainView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property.Name == nameof(Bounds))
-        {
-            ConstrainPanelsToView();
-        }
-    }
-
-    private void ConstrainPanelsToView()
-    {
-        PanelConstraintHelper.ConstrainPanelWithExtent(_leftNavPanel, Bounds.Width, Bounds.Height,
-            subPanelExtent: 410, defaultLeft: 20, defaultTop: 50);
-        PanelConstraintHelper.ConstrainLeftTopPanel(_rightNavPanel, Bounds.Width, Bounds.Height,
-            defaultLeft: 600, defaultTop: 50);
-        PanelConstraintHelper.ConstrainLeftTopPanel(_bottomNavPanel, Bounds.Width, Bounds.Height,
-            defaultLeft: 200, defaultTop: 420);
-        PanelConstraintHelper.ConstrainLeftTopPanel(_sectionControlPanel, Bounds.Width, Bounds.Height,
-            defaultLeft: 200, defaultTop: 500);
-        PanelConstraintHelper.ConstrainSubPanels(_leftNavPanel, Bounds.Width, Bounds.Height,
-            PanelConstraintHelper.LeftNavSubPanelNames, defaultRelativeTop: 0);
-    }
-
-    private void RestorePanelPositions()
-    {
-        var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-
-        if (!double.IsNaN(display.LeftNavPanelX) && !double.IsNaN(display.LeftNavPanelY) && _leftNavPanel != null)
-        {
-            Canvas.SetLeft(_leftNavPanel, display.LeftNavPanelX);
-            Canvas.SetTop(_leftNavPanel, display.LeftNavPanelY);
-        }
-
-        if (!double.IsNaN(display.RightNavPanelX) && !double.IsNaN(display.RightNavPanelY) && _rightNavPanel != null)
-        {
-            Canvas.SetLeft(_rightNavPanel, display.RightNavPanelX);
-            Canvas.SetTop(_rightNavPanel, display.RightNavPanelY);
-        }
-
-        if (!double.IsNaN(display.BottomNavPanelX) && !double.IsNaN(display.BottomNavPanelY) && _bottomNavPanel != null)
-        {
-            Canvas.SetLeft(_bottomNavPanel, display.BottomNavPanelX);
-            Canvas.SetTop(_bottomNavPanel, display.BottomNavPanelY);
-        }
-
-        if (!double.IsNaN(display.SectionPanelX) && !double.IsNaN(display.SectionPanelY) && _sectionControlPanel != null)
-        {
-            Canvas.SetLeft(_sectionControlPanel, display.SectionPanelX);
-            Canvas.SetTop(_sectionControlPanel, display.SectionPanelY);
-        }
-    }
-
-    public void SavePanelPositions()
-    {
-        var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-
-        if (_leftNavPanel != null)
-        {
-            display.LeftNavPanelX = Canvas.GetLeft(_leftNavPanel);
-            display.LeftNavPanelY = Canvas.GetTop(_leftNavPanel);
-        }
-
-        if (_rightNavPanel != null)
-        {
-            display.RightNavPanelX = Canvas.GetLeft(_rightNavPanel);
-            display.RightNavPanelY = Canvas.GetTop(_rightNavPanel);
-        }
-
-        if (_bottomNavPanel != null)
-        {
-            display.BottomNavPanelX = Canvas.GetLeft(_bottomNavPanel);
-            display.BottomNavPanelY = Canvas.GetTop(_bottomNavPanel);
-        }
-
-        if (_sectionControlPanel != null)
-        {
-            display.SectionPanelX = Canvas.GetLeft(_sectionControlPanel);
-            display.SectionPanelY = Canvas.GetTop(_sectionControlPanel);
-        }
+        // Panels are now anchored via alignment - no constraint logic needed
     }
 
     public MainView(MainViewModel viewModel, MapService mapService, ICoverageMapService coverageService) : this()
@@ -201,8 +113,9 @@ public partial class MainView : UserControl
             mapService.RegisterMapControl(_mapControl);
             System.Diagnostics.Debug.WriteLine("[MainView] MapControl registered with MapService.");
 
-            viewModel.ZoomInRequested += () => _mapControl.Zoom(1.2);
-            viewModel.ZoomOutRequested += () => _mapControl.Zoom(0.8);
+            // Wire screenshot provider for debug dump (#127)
+            viewModel.ScreenshotProvider = () =>
+                AgValoniaGPS.Views.ScreenshotHelper.CaptureScreenshotPng(this);
 
             // Wire up MapClicked event for AB line creation
             _mapControl.MapClicked += OnMapClicked;
@@ -432,9 +345,9 @@ public partial class MainView : UserControl
             }
             else if (e.PropertyName == nameof(MainViewModel.CameraPitch))
             {
-                // CameraPitch is in degrees from -90 (looking straight down) to -10 (nearly horizontal)
-                // Map control expects radians
-                double pitchRadians = -_viewModel.CameraPitch * Math.PI / 180.0;
+                // CameraPitch: -90 = overhead, -10 = horizontal
+                // Map: 0 rad = overhead, PI/2.5 = horizontal
+                double pitchRadians = (90.0 + _viewModel.CameraPitch) * Math.PI / 180.0;
                 _mapControl.SetPitchAbsolute(pitchRadians);
             }
             else if (e.PropertyName == nameof(MainViewModel.IsSimulatorEnabled))
@@ -455,6 +368,16 @@ public partial class MainView : UserControl
             {
                 // Update map with pending Point A marker
                 _mapControl.SetPendingPointA(_viewModel.PendingPointA);
+            }
+            else if (e.PropertyName == nameof(MainViewModel.CrossTrackError))
+            {
+                bool hasGuidance = _viewModel.HasActiveTrack
+                    || _viewModel.IsContourModeOn
+                    || _viewModel.State.RecordedPath.IsDrivingRecordedPath;
+                LightBarPanel?.Update(
+                    _viewModel.CrossTrackError / 100.0,
+                    _viewModel.SimulatorSteerAngle,
+                    hasGuidance, false);
             }
         }
     }
@@ -479,21 +402,5 @@ public partial class MainView : UserControl
         }
     }
 
-    // Section Control drag handlers - use shared DragBehavior
-    private void SectionControl_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (sender is Control control)
-            DragBehavior.OnPointerPressed(control, e);
-    }
-
-    private void SectionControl_PointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (sender is Control control)
-            DragBehavior.OnPointerMoved(control, this, e);
-    }
-
-    private void SectionControl_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        DragBehavior.OnPointerReleased(e);
-    }
+    // Section control is now anchored (no drag needed)
 }

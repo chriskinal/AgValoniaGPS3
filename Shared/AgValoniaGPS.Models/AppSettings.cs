@@ -31,30 +31,34 @@ namespace AgValoniaGPS.Models
         public double WindowY { get; set; } = 100;
         public bool WindowMaximized { get; set; } = false;
         public bool StartFullscreen { get; set; } = false;
+        public bool SvennArrowVisible { get; set; } = false;
+        public bool KeyboardEnabled { get; set; } = false;
+        public bool HeadlandDistanceVisible { get; set; } = true;
+        public bool ExtraGuidelines { get; set; } = false;
+        public int ExtraGuidelinesCount { get; set; } = 10;
+        public bool FieldTextureVisible { get; set; } = true;
+        public bool AutoSteerSound { get; set; } = true;
+        public bool UTurnSound { get; set; } = true;
+        public bool HydraulicSound { get; set; } = true;
+        public bool SectionsSound { get; set; } = true;
 
         // Panel positions
         public double SimulatorPanelX { get; set; } = double.NaN; // NaN means not set
         public double SimulatorPanelY { get; set; } = double.NaN;
         public bool SimulatorPanelVisible { get; set; } = false;
 
-        // Navigation panel positions
-        public double LeftNavPanelX { get; set; } = double.NaN;
-        public double LeftNavPanelY { get; set; } = double.NaN;
-        public double RightNavPanelX { get; set; } = double.NaN;
-        public double RightNavPanelY { get; set; } = double.NaN;
-        public double BottomNavPanelX { get; set; } = double.NaN;
-        public double BottomNavPanelY { get; set; } = double.NaN;
-        public double SectionPanelX { get; set; } = double.NaN;
-        public double SectionPanelY { get; set; } = double.NaN;
+        // Localization
+        public string Language { get; set; } = "en";
 
         // UI state
         public bool GridVisible { get; set; } = true;
         public bool CompassVisible { get; set; } = true;
         public bool SpeedVisible { get; set; } = true;
+        public bool ElevationLogEnabled { get; set; } = false;
 
         // Camera settings
         public double CameraZoom { get; set; } = 100.0;
-        public double CameraPitch { get; set; } = 0.0;
+        public double CameraPitch { get; set; } = -60.0;
 
         // NTRIP settings
         public string NtripCasterIp { get; set; } = string.Empty;
@@ -94,5 +98,62 @@ namespace AgValoniaGPS.Models
 
         // Hotkey bindings (empty = use defaults)
         public Dictionary<string, string> HotkeyBindings { get; set; } = new();
+
+        /// <summary>
+        /// Validate and clamp all settings to valid ranges.
+        /// Returns list of fields that were corrected.
+        /// </summary>
+        public List<string> ValidateAndFix()
+        {
+            var defaults = new AppSettings();
+            var fixes = new List<string>();
+
+            // Simulator coordinates
+            if (SimulatorLatitude < -90 || SimulatorLatitude > 90)
+            {
+                fixes.Add($"SimulatorLatitude was {SimulatorLatitude}, reset to {defaults.SimulatorLatitude}");
+                SimulatorLatitude = defaults.SimulatorLatitude;
+            }
+            if (SimulatorLongitude < -180 || SimulatorLongitude > 180)
+            {
+                fixes.Add($"SimulatorLongitude was {SimulatorLongitude}, reset to {defaults.SimulatorLongitude}");
+                SimulatorLongitude = defaults.SimulatorLongitude;
+            }
+
+            // Window dimensions
+            if (WindowWidth < 100 || WindowWidth > 10000)
+            {
+                fixes.Add($"WindowWidth was {WindowWidth}, reset to {defaults.WindowWidth}");
+                WindowWidth = defaults.WindowWidth;
+            }
+            if (WindowHeight < 100 || WindowHeight > 10000)
+            {
+                fixes.Add($"WindowHeight was {WindowHeight}, reset to {defaults.WindowHeight}");
+                WindowHeight = defaults.WindowHeight;
+            }
+
+            // Camera
+            if (CameraZoom < 1 || CameraZoom > 10000)
+            {
+                fixes.Add($"CameraZoom was {CameraZoom}, reset to {defaults.CameraZoom}");
+                CameraZoom = defaults.CameraZoom;
+            }
+
+            // GPS update rate
+            if (GpsUpdateRate < 1 || GpsUpdateRate > 100)
+            {
+                fixes.Add($"GpsUpdateRate was {GpsUpdateRate}, reset to {defaults.GpsUpdateRate}");
+                GpsUpdateRate = defaults.GpsUpdateRate;
+            }
+
+            // NTRIP port
+            if (NtripCasterPort < 1 || NtripCasterPort > 65535)
+            {
+                fixes.Add($"NtripCasterPort was {NtripCasterPort}, reset to {defaults.NtripCasterPort}");
+                NtripCasterPort = defaults.NtripCasterPort;
+            }
+
+            return fixes;
+        }
     }
 }

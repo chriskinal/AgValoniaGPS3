@@ -1,6 +1,6 @@
 # Linux Environment Setup
 
-Guide for setting up the AgValoniaGPS3 development environment on Linux.
+Guide for setting up the AgValoniaGPS development environment on Linux.
 
 ## Prerequisites
 
@@ -89,8 +89,8 @@ sudo dnf install -y \
 ## 3. Clone and build
 
 ```bash
-git clone <repository-url> AgValoniaGPS3
-cd AgValoniaGPS3
+git clone <repository-url> AgValoniaGPS
+cd AgValoniaGPS
 
 # Restore NuGet packages and build
 dotnet build AgValoniaGPS.sln

@@ -23,14 +23,15 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Media.Immutable;
 using Avalonia.Platform.Storage;
-using Avalonia.Rendering.SceneGraph;
+using Avalonia.Rendering.Composition;
 using Avalonia.Skia;
 using Avalonia.Threading;
+using SkiaSharp;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Coverage;
 using AgValoniaGPS.Models.Track;
-using SkiaSharp;
 
 // For loading embedded resources
 using AssetLoader = Avalonia.Platform.AssetLoader;
@@ -66,7 +67,15 @@ public interface ISharedMapControl
     // Content
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double x, double y, double heading);
-    void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY);
+    void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true);
+
+    /// <summary>
+    /// Atomic update of vehicle + tool positions in a single call.
+    /// Prevents rendering mismatches between vehicle and tool.
+    /// </summary>
+    void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady);
     void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null);
     void SetGridVisible(bool visible);
     void SetNorthUp(bool isNorthUp);
@@ -94,6 +103,13 @@ public interface ISharedMapControl
     void SetNextTrack(AgValoniaGPS.Models.Track.Track? track);
     void SetIsInYouTurn(bool isInTurn);
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+    void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track);
+
+    // Tram line visualization
+    void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines);
 
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);
@@ -151,7 +167,129 @@ public interface ISharedMapControl
 }
 
 /// <summary>
-/// Cross-platform map control using Avalonia's DrawingContext.
+/// Lightweight snapshot of all state the render thread needs.
+/// Built on UI thread, sent to handler via SendHandlerMessage.
+/// Uses references (not copies) for large data — benign torn reads are acceptable.
+/// </summary>
+internal class MapRenderState
+{
+    // Camera
+    public double CameraX, CameraY, Zoom, Rotation, CameraPitch;
+    public bool Is3DMode, IsNorthUp, IsDayMode;
+
+    // Screen
+    public double BoundsWidth, BoundsHeight;
+
+    // Vehicle
+    public double VehicleX, VehicleY, VehicleHeading;
+    public bool HasValidHeading, IsReversing, ShowVehicle;
+
+    // Tool
+    public double ToolX, ToolY, ToolHeading, ToolWidth, HitchX, HitchY;
+    public bool ToolReady;
+    public double HitchLength;
+
+    // Sections
+    public bool[] SectionOn = Array.Empty<bool>();
+    public double[] SectionWidths = Array.Empty<double>();
+    public double[] SectionLeft = Array.Empty<double>();
+    public double[] SectionRight = Array.Empty<double>();
+    public int[] SectionButtonState = Array.Empty<int>();
+    public int NumSections;
+
+    // Coverage bitmap (SKBitmap reference — render thread reads directly)
+    public SKImage? CoverageSkImage;  // Legacy — kept for field load/save
+    public SKBitmap? CoverageSkBitmap; // Direct reference for render-thread drawing
+    public double BitmapMinE, BitmapMinN, BitmapMaxE, BitmapMaxN;
+    public int BitmapWidth, BitmapHeight;
+    public bool BitmapHasContent;
+    public bool BitmapExplicitlyInitialized;
+
+    // Boundary
+    public Boundary? Boundary;
+
+    // Headland
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec3>? HeadlandLine;
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? HeadlandPreview;
+    public bool IsHeadlandVisible;
+
+    // YouTurn
+    public IReadOnlyList<(double Easting, double Northing)>? YouTurnPath;
+    public bool IsInYouTurn;
+
+    // Tracks
+    public AgValoniaGPS.Models.Track.Track? ActiveTrack;
+    public AgValoniaGPS.Models.Track.Track? BaseTrack;
+    public AgValoniaGPS.Models.Track.Track? NextTrack;
+    public AgValoniaGPS.Models.Position? PendingPointA;
+    public IReadOnlyList<AgValoniaGPS.Models.Track.Track> RecordedPaths = Array.Empty<AgValoniaGPS.Models.Track.Track>();
+    public IReadOnlyList<AgValoniaGPS.Models.Track.Track> ContourStrips = Array.Empty<AgValoniaGPS.Models.Track.Track>();
+
+    // Recording
+    public List<(double Easting, double Northing)>? RecordingPoints;
+    public bool ShowBoundaryOffsetIndicator;
+    public double BoundaryOffsetMeters;
+
+    // Selection markers
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? SelectionMarkers;
+    public (AgValoniaGPS.Models.Base.Vec2 Start, AgValoniaGPS.Models.Base.Vec2 End)? ClipLine;
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? ClipPath;
+
+    // Flags
+    public IReadOnlyList<(double Easting, double Northing, string Color, string Name)> Flags
+        = Array.Empty<(double, double, string, string)>();
+
+    // Grid
+    public bool IsGridVisible;
+
+    // Guidance
+    public double GoalEasting, GoalNorthing;
+    public bool GuidanceActive;
+
+    // Ground texture (Avalonia Bitmap — safe to use from render thread via DrawBitmap)
+    public Bitmap? GroundTexture;
+
+    // Background image
+    public Bitmap? BackgroundImage;
+    public double BgMinX, BgMaxY, BgMaxX, BgMinY;
+    public bool BackgroundComposited;
+
+    // Vehicle image
+    public IImage? VehicleImage;
+
+    // Display config flags
+    public bool PolygonsVisible;
+    public bool SectionLinesVisible;
+    public bool SvennArrowVisible;
+    public bool DirectionMarkersVisible;
+    public bool FieldTextureVisible;
+    public bool ExtraGuidelines;
+    public int ExtraGuidelinesCount;
+    public bool HeadlandDistanceVisible;
+    public double HeadlandProximityDistance;
+    public bool HeadlandProximityWarning;
+    public bool HasHeadland;
+
+    // Coverage patches (for wireframe/section lines/direction markers)
+    public IReadOnlyList<CoveragePatch> CoveragePatches = Array.Empty<CoveragePatch>();
+    public List<(Geometry Geometry, IBrush Brush, int VertexCount, bool IsFinalized,
+        double MinX, double MinY, double MaxX, double MaxY)>? CachedCoverageGeometry;
+
+    // Tram lines
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? TramOuterTrack;
+    public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? TramInnerTrack;
+    public IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? TramParallelLines;
+    public AgValoniaGPS.Models.Configuration.TramDisplayMode TramDisplayMode;
+    public float TramAlpha;
+
+    // Vehicle config
+    public double AntennaPivot, AntennaOffset;
+    public bool IsMetric;
+}
+
+/// <summary>
+/// Cross-platform map control using Avalonia's CompositionCustomVisualHandler.
+/// Rendering runs on the compositor render thread for smooth 60fps.
 /// Works on Desktop, iOS, and Android without platform-specific rendering code.
 /// </summary>
 public class DrawingContextMapControl : Control, ISharedMapControl
@@ -246,6 +384,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private double _toolWidth = 0.0;
     private double _hitchX = 0.0;
     private double _hitchY = 0.0;
+    private bool _toolPositionReady;
 
     // Section state for individual section rendering
     private bool[] _sectionOn = new bool[16];
@@ -299,6 +438,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // YouTurn path
     private IReadOnlyList<(double Easting, double Northing)>? _youTurnPath;
 
+    // Tram lines
+    private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramOuterTrack;
+    private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramInnerTrack;
+    private IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? _tramParallelLines;
+
     // Coverage patches for worked area display
     private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
 
@@ -327,9 +471,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Track first non-finalized patch to skip finalized patches entirely in loop
     private int _firstNonFinalizedPatchIndex = 0;
 
-    // Cached Skia draw operation (rebuilt when coverage changes)
-    private CoverageDrawOperation? _cachedCoverageDrawOp;
-    private int _lastDrawOpPatchCount = -1;
+    // (CoverageDrawOperation removed — rendering moved to MapCompositionHandler)
 
     // WriteableBitmap for bitmap-based coverage rendering
     // O(1) render time - blit pre-rendered bitmap each frame
@@ -337,16 +479,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Display bitmap (Bgra8888) -- for rendering with black=transparent
     private WriteableBitmap? _coverageWriteableBitmap;
     private WriteableBitmap? _coverageDisplayBitmap;
+    // SKBitmap for pixel writes (SetCoveragePixel), SKImage for GPU rendering.
+    // SKImage is an immutable snapshot — GPU caches the texture.
+    // Only recreated when pixels actually change.
+    private SKBitmap? _coverageSkBitmap;
+    private SKBitmap? _previousCoverageSkBitmap; // Keeps old bitmap alive while render thread may still reference it
+    private SKImage? _coverageSkImage;          // Cached GPU texture — recreated on pixel change
+    private SKImage? _previousSkImage;          // Keeps previous image alive while render thread may use it
+    private volatile bool _coverageSkImageDirty; // True when SKBitmap has new pixels not in SKImage
+    private DateTime _lastSkImageRecreateTime;  // Throttle snapshot creation (100MB copy)
+    private volatile bool _writeableBitmapsDirty; // SKBitmap has pixels not yet synced to WriteableBitmaps
     private const double MIN_BITMAP_CELL_SIZE = 0.1; // Preferred resolution (matches RTK precision)
     private const int MAX_BITMAP_DIMENSION = 16384; // Max pixels per dimension (~1GB at 4 bytes/pixel)
     private double _actualBitmapCellSize = MIN_BITMAP_CELL_SIZE; // Dynamically adjusted for large fields
-
-    // Thumbnail bitmap for zoomed-out views (avoids expensive GPU downscaling)
-    private WriteableBitmap? _coverageThumbnail;
-    private const double THUMBNAIL_CELL_SIZE = 1.0; // 10x lower resolution than full
-    private const double THUMBNAIL_ZOOM_THRESHOLD = 0.3; // Use thumbnail when zoom < this
-    private int _thumbnailWidth, _thumbnailHeight;
-    private bool _thumbnailNeedsRebuild = true;
 
     // Background compositing - background image is composited into coverage bitmap
     private bool _backgroundComposited = false;
@@ -370,40 +515,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     // Track data
     private AgValoniaGPS.Models.Track.Track? _activeTrack;
+    private AgValoniaGPS.Models.Track.Track? _baseTrack; // Original track (shown as dashed reference)
     private AgValoniaGPS.Models.Track.Track? _nextTrack; // Next track to follow after U-turn
     private bool _isInYouTurn; // When true, current line is dotted, next line is solid
     private AgValoniaGPS.Models.Position? _pendingPointA; // Point A while waiting for Point B
     private IReadOnlyList<AgValoniaGPS.Models.Track.Track> _recordedPaths = Array.Empty<AgValoniaGPS.Models.Track.Track>();
     private IReadOnlyList<AgValoniaGPS.Models.Track.Track> _contourStrips = Array.Empty<AgValoniaGPS.Models.Track.Track>();
 
-    // Pens and brushes (reused for performance)
-    private IBrush _backgroundBrush;
-    private Pen _gridPenMinor;
-    private Pen _gridPenMajor;
-    private readonly Pen _gridPenAxisX;
-    private readonly Pen _gridPenAxisY;
-    private readonly Pen _boundaryPenOuter;
-    private readonly Pen _boundaryPenInner;
-    private readonly Pen _recordingPen;
-    private readonly IBrush _vehicleBrush;
-    private readonly Pen _vehiclePen;
-    private readonly IBrush _recordingPointBrush;
-    private readonly Pen _headlandPen;
-    private readonly Pen _headlandPreviewPen;
-    private readonly IBrush _selectionMarkerBrush;
-    private readonly Pen _selectionMarkerPen;
-    private readonly Pen _clipLinePen;
-    private readonly Pen _abLinePen;
-    private readonly Pen _abLineExtendPen;
-    private readonly IBrush _pointABrush;
-    private readonly IBrush _pointBBrush;
+    // Ground texture bitmaps (passed to render thread via state snapshot)
+    private Bitmap? _groundTexture;
+    private Bitmap? _groundTextureDay;
+    private Bitmap? _groundTextureNight;
+    // Vehicle image (passed to render thread via state snapshot)
     private IImage? _vehicleImage;
-    private readonly IBrush _toolBrush;
-    private readonly Pen _toolPen;
-    private readonly Pen _hitchPen;
 
-    // Render timer
-    private readonly DispatcherTimer _renderTimer;
+    // Composition visual for render-thread rendering
+    private CompositionCustomVisual? _customVisual;
+    private MapCompositionHandler? _handler;
 
     // Flag markers
     private IReadOnlyList<(double Easting, double Northing, string Color, string Name)> _flags = Array.Empty<(double, double, string, string)>();
@@ -450,45 +578,31 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         IsHitTestVisible = true;
         ClipToBounds = true;
 
-        // Initialize pens and brushes
-        _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-        _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
-        _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
-        _gridPenAxisX = new Pen(new SolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
-        _gridPenAxisY = new Pen(new SolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
-        _boundaryPenOuter = new Pen(Brushes.Yellow, 1);
-        _boundaryPenInner = new Pen(Brushes.Red, 1);
-        _recordingPen = new Pen(Brushes.Cyan, 0.5); // Thinner line than dot markers
-        _vehicleBrush = new SolidColorBrush(Color.FromRgb(0, 200, 0));
-        _vehiclePen = new Pen(Brushes.DarkGreen, 2);
-        _recordingPointBrush = new SolidColorBrush(Color.FromRgb(255, 128, 0));
-        _headlandPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 140, 0)), 1.0); // Orange headland line (1m width)
-        _headlandPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)), 1.5); // Semi-transparent orange preview
-        _selectionMarkerBrush = new SolidColorBrush(Color.FromRgb(255, 0, 255)); // Magenta selection markers
-        _selectionMarkerPen = new Pen(Brushes.White, 2); // White outline
-        _clipLinePen = new Pen(Brushes.Red, 3); // Red clip line
-        _abLinePen = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), 3); // Orange AB line
-        _abLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), 1.5); // Semi-transparent extended line
-        _pointABrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)); // Green Point A
-        _pointBBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0)); // Red Point B
-        _toolBrush = new SolidColorBrush(Color.FromArgb(180, 200, 80, 40)); // Semi-transparent brownish-red tool body
-        _toolPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 150, 0)), 0.1); // Thin orange outline
-        _hitchPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 0)), 0.15); // Yellow hitch line
+        // Load ground textures (day and night variants)
+        try
+        {
+            var dayUri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTexture.png");
+            using var dayStream = AssetLoader.Open(dayUri);
+            _groundTextureDay = new Bitmap(dayStream);
+
+            var nightUri = new Uri("avares://AgValoniaGPS.Views/Assets/Images/GroundTextureDark.png");
+            using var nightStream = AssetLoader.Open(nightUri);
+            _groundTextureNight = new Bitmap(nightStream);
+
+            _groundTexture = _groundTextureDay;
+            Debug.WriteLine("[DrawingContextMapControl] Loaded ground textures (day + night)");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[DrawingContextMapControl] Ground texture not found: {ex.Message}");
+        }
+
+        // All pens/brushes are now created as immutable types in MapCompositionHandler
 
         // Load vehicle (tractor) image from embedded resources
         LoadVehicleImage();
 
-        // Render timer for continuous updates (30 FPS)
-        // ARM64 Mac/iOS handles 60 FPS fine, but 30 FPS saves battery with no visible difference
-        // Intel Mac simulator needs ~10 FPS due to ARM emulation overhead
-        _renderTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(33)
-        };
-        _renderTimer.Tick += OnRenderTimerTick;
-        _renderTimer.Start();
-
-        // Handle visibility changes to stop/start timer for hidden controls
+        // Handle visibility changes
         PropertyChanged += OnControlPropertyChanged;
 
         // Wire up mouse events
@@ -496,12 +610,71 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerWheelChanged += OnPointerWheelChanged;
+
+        // Rebuild coverage bitmap when display resolution changes
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.PropertyChanged += OnDisplayConfigChanged;
     }
 
-    private void OnRenderTimerTick(object? sender, EventArgs e)
+    private void OnDisplayConfigChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Just trigger render - don't count here (we count actual completed renders)
-        InvalidateVisual();
+        if (e.PropertyName == nameof(AgValoniaGPS.Models.Configuration.DisplayConfig.DisplayResolutionMultiplier))
+        {
+            // Rebuild bitmap at new resolution using stored bounds.
+            // Can't use UpdateCoverageBitmapIfNeeded — providers may be null on this instance.
+            if (_coverageWriteableBitmap != null && _bitmapWidth > 0)
+            {
+                InitializeCoverageBitmapWithBounds(_bitmapMinE, _bitmapMaxE, _bitmapMinN, _bitmapMaxN);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Setup composition visual when control is attached to visual tree.
+    /// </summary>
+    /// <summary>
+    /// Draw a transparent fill so the control is hit-testable for pointer events.
+    /// The composition visual handles all actual rendering.
+    /// </summary>
+    public override void Render(Avalonia.Media.DrawingContext context)
+    {
+        context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        SetupCompositionVisual();
+        _mainControl = this;
+    }
+
+    private void SetupCompositionVisual()
+    {
+        var compositionVisual = ElementComposition.GetElementVisual(this);
+        Debug.WriteLine($"[MapControl] SetupCompositionVisual: compositionVisual={compositionVisual != null}, Bounds={Bounds.Width:F0}x{Bounds.Height:F0}, Name={Name}");
+        if (compositionVisual == null) return;
+
+        var compositor = compositionVisual.Compositor;
+        _handler = new MapCompositionHandler(this);
+        _customVisual = compositor.CreateCustomVisual(_handler);
+        _customVisual.Size = new Vector(Bounds.Width, Bounds.Height);
+        ElementComposition.SetElementChildVisual(this, _customVisual);
+        Debug.WriteLine($"[MapControl] SetupCompositionVisual: custom visual created, size={Bounds.Width:F0}x{Bounds.Height:F0}");
+
+        // Send initial state
+        SendStateToHandler();
+    }
+
+    /// <summary>
+    /// Handle bounds changes to resize the composition visual.
+    /// </summary>
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == BoundsProperty && _customVisual != null)
+        {
+            _customVisual.Size = new Vector(Bounds.Width, Bounds.Height);
+            SendStateToHandler();
+        }
     }
 
     private void OnControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -511,506 +684,158 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             bool isNowVisible = e.NewValue is true;
             if (isNowVisible)
             {
-                if (!_renderTimer.IsEnabled)
-                {
-                    _renderTimer.Start();
-                    Console.WriteLine($"[MapControl] Started render timer (control became visible)");
-                }
-                // Track the main visible control for static FPS access
                 _mainControl = this;
-            }
-            else
-            {
-                if (_renderTimer.IsEnabled)
-                {
-                    _renderTimer.Stop();
-                    Console.WriteLine($"[MapControl] Stopped render timer (control hidden)");
-                }
+                SendStateToHandler(); // Resume rendering
             }
         }
     }
 
     /// <summary>
-    /// Update FPS counter. Called at end of Render() to count actual completed frames.
+    /// Build a MapRenderState snapshot and send it to the composition handler.
+    /// Call this whenever data changes that affects rendering.
     /// </summary>
-    private void UpdateFpsCounter()
+    internal void SendStateToHandler()
     {
-        _frameCount++;
-
-        // Check if it's time to update FPS (every second)
-        var now = DateTime.UtcNow;
-        var elapsed = (now - _lastFpsUpdate).TotalSeconds;
-        if (elapsed >= 1.0)
-        {
-            _currentFps = _frameCount / elapsed;
-            _frameCount = 0;
-            _lastFpsUpdate = now;
-            // Fire event to update UI - must post to dispatcher to avoid
-            // "Visual was invalidated during render pass" error when
-            // the event handler updates bound properties
-            var fps = _currentFps;
-            Dispatcher.UIThread.Post(() => FpsUpdated?.Invoke(fps), DispatcherPriority.Background);
-        }
-    }
-
-    public override void Render(DrawingContext context)
-    {
-        _renderSw.Restart();
-
-        base.Render(context);
-
-        var bounds = Bounds;
-        if (bounds.Width <= 0 || bounds.Height <= 0) return;
-
-        // DEBUG: Log which control is rendering (reduced frequency)
-        // Console.WriteLine($"[Render] Control={GetHashCode()}, bounds={bounds.Width:F0}x{bounds.Height:F0}, explicit={_bitmapExplicitlyInitialized}");
-
-        // Background (day/night aware)
-        context.DrawRectangle(_backgroundBrush, null, new Rect(bounds.Size));
-
-        // Calculate view transformation
-        double aspect = bounds.Width / bounds.Height;
-        double viewWidth = 200.0 * aspect / _zoom;
-        double viewHeight = 200.0 / _zoom;
-
-        // Save context state and apply camera transform
-        using (context.PushTransform(GetCameraTransform(bounds, viewWidth, viewHeight)))
-        {
-            // Draw background image first (under everything else)
-            // Skip if background is composited into coverage bitmap
-            // Respect FieldTextureVisible config toggle
-            if (_backgroundImage != null && !_backgroundComposited
-                && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.FieldTextureVisible)
-            {
-                DrawBackgroundImage(context);
-            }
-
-            // Draw grid (if visible)
-            if (IsGridVisible)
-            {
-                DrawGrid(context, viewWidth, viewHeight);
-            }
-
-            // Draw coverage FIRST (bottom layer)
-            // Bitmap uses Rgb565 (no alpha) - only drawn when it has actual content
-            // (background image or painted coverage cells) to avoid black rectangle over grid
-            var covSw = System.Diagnostics.Stopwatch.StartNew();
-            if (_coveragePatches.Count > 0 || _coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
-            {
-                DrawCoverage(context);
-            }
-            covSw.Stop();
-
-            // Draw direction markers on coverage patches
-            if (AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.DirectionMarkersVisible
-                && _coveragePatches.Count > 0)
-            {
-                DrawDirectionMarkers(context);
-            }
-
-            // Draw boundary (on top of coverage)
-            var boundSw = System.Diagnostics.Stopwatch.StartNew();
-            if (_boundary != null)
-            {
-                DrawBoundary(context);
-            }
-            boundSw.Stop();
-
-            // Log timing every 60 frames
-            if (_renderCounter % 60 == 0)
-            {
-                Console.WriteLine($"[Timing] Render: zoom={_zoom:F3}, coverage={covSw.ElapsedMilliseconds}ms, boundary={boundSw.ElapsedMilliseconds}ms");
-            }
-
-            // Draw headland line (on top of coverage and boundary)
-            if (_isHeadlandVisible && _headlandLine != null && _headlandLine.Count > 2)
-            {
-                DrawHeadlandLine(context);
-            }
-
-            // Draw headland preview (semi-transparent)
-            if (_headlandPreview != null && _headlandPreview.Count > 2)
-            {
-                DrawHeadlandPreview(context);
-            }
-
-            // Draw recording points
-            if (_recordingPoints != null && _recordingPoints.Count > 0)
-            {
-                DrawRecordingPoints(context);
-            }
-
-            // Draw selection markers (for headland point selection)
-            if (_selectionMarkers != null && _selectionMarkers.Count > 0)
-            {
-                DrawSelectionMarkers(context);
-            }
-
-            // Draw clip line or clip path (red line between selected points)
-            if (_clipLine.HasValue || (_clipPath != null && _clipPath.Count >= 2))
-            {
-                DrawClipLine(context);
-            }
-
-            // Draw extra guidelines (parallel lines around active track)
-            var displayCfg = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-            if (displayCfg.ExtraGuidelines && _activeTrack != null && _activeTrack.Points.Count >= 2)
-            {
-                DrawExtraGuidelines(context, displayCfg.ExtraGuidelinesCount);
-            }
-
-            // Draw Track (active track, pending Point A, recorded paths, contour strips)
-            if (_activeTrack != null || _pendingPointA != null || _recordedPaths.Count > 0 || _contourStrips.Count > 0)
-            {
-                DrawTrack(context);
-            }
-
-            // Draw YouTurn path
-            if (_youTurnPath != null && _youTurnPath.Count > 1)
-            {
-                DrawYouTurnPath(context);
-            }
-
-            // Draw tool BEFORE vehicle (so vehicle appears on top)
-            if (ShowVehicle && _toolWidth > 0.1)
-            {
-                DrawTool(context);
-            }
-
-            // Draw vehicle (can be hidden for headland editing mode)
-            if (ShowVehicle)
-            {
-                DrawVehicle(context);
-            }
-
-            // Draw Svenn arrow (direction chevron ahead of vehicle)
-            if (ShowVehicle && AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.SvennArrowVisible)
-            {
-                DrawSvennArrow(context);
-            }
-
-            // Draw flags
-            if (_flags.Count > 0)
-            {
-                DrawFlags(context);
-            }
-
-            // Draw look-ahead guidance line
-            if (_guidanceActive && ShowVehicle)
-            {
-                DrawGuidanceLookAhead(context);
-            }
-
-            // Draw boundary offset indicator
-            if (_showBoundaryOffsetIndicator)
-            {
-                DrawBoundaryOffsetIndicator(context);
-            }
-        }
-
-        _renderSw.Stop();
-        _lastFullRenderMs = _renderSw.Elapsed.TotalMilliseconds;
-
-        // Log full render time every 30 frames
-        if (++_renderCounter % 30 == 0)
-        {
-            Debug.WriteLine($"[Timing] Render: {_lastFullRenderMs:F2}ms, CovDraw: {_lastCoverageRenderMs:F2}ms, Patches: {_lastDrawnPatchCount}");
-        }
-
-        // Count actual completed renders for accurate FPS
-        UpdateFpsCounter();
-    }
-
-    private Matrix GetCameraTransform(Rect bounds, double viewWidth, double viewHeight)
-    {
-        // Transform from world coordinates to screen coordinates
-        // 1. Translate so camera center is at origin
-        // 2. Scale from world units (meters) to pixels
-        // 3. Apply camera pitch (pseudo-3D perspective compression)
-        // 4. Rotate around center
-        // 5. Translate to screen center
-
-        double scaleX = bounds.Width / viewWidth;
-        double scaleY = -bounds.Height / viewHeight; // Flip Y (screen Y is down, world Y is up)
-
-        // Apply camera pitch as Y-axis compression for pseudo-3D effect
-        // _cameraPitch 0 = top-down (no compression), PI/3 = ~60° tilt (significant compression)
-        if (_is3DMode && _cameraPitch > 0.01)
-        {
-            double pitchFactor = Math.Cos(_cameraPitch); // 1.0 at 0°, 0.5 at 60°
-            scaleY *= Math.Max(0.3, pitchFactor); // Clamp to prevent extreme compression
-        }
-
-        var matrix = Matrix.Identity;
-
-        // Center on screen
-        matrix = matrix * Matrix.CreateTranslation(bounds.Width / 2, bounds.Height / 2);
-
-        // Scale from world to screen (includes Y-flip for screen coordinates)
-        matrix = Matrix.CreateScale(scaleX, scaleY) * matrix;
-
-        // Apply rotation in world space (before Y-flip so vehicle heading
-        // and camera rotation cancel correctly in track-up mode)
-        if (Math.Abs(_rotation) > 0.001)
-        {
-            matrix = Matrix.CreateRotation(-_rotation) * matrix;
-        }
-
-        // Translate camera position
-        matrix = Matrix.CreateTranslation(-_cameraX, -_cameraY) * matrix;
-
-        return matrix;
-    }
-
-    private void DrawGrid(DrawingContext context, double viewWidth, double viewHeight)
-    {
-        double gridSize = 2000.0;
-
-        // Grid spacing based on implement width so lines show pass boundaries
-        double toolW = _toolWidth > 0.5 ? _toolWidth : 6.0; // fallback 6m
-        double viewSpan = Math.Max(viewWidth, viewHeight);
-
-        // At normal zoom use tool width, at far zoom use multiples
-        double spacing, majorEvery;
-        if (viewSpan < toolW * 30)      { spacing = toolW;      majorEvery = toolW * 10; }
-        else if (viewSpan < toolW * 100) { spacing = toolW * 5;  majorEvery = toolW * 50; }
-        else                             { spacing = toolW * 10; majorEvery = toolW * 100; }
-
-        // Scale grid line thickness with zoom
-        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
-        double worldPerPixel = viewHeight / screenHeight;
-        double minorThickness = Math.Max(0.3 * worldPerPixel, 0.05);
-        double majorThickness = Math.Max(0.6 * worldPerPixel, 0.1);
-        _gridPenMinor = new Pen(_gridPenMinor.Brush, minorThickness);
-        _gridPenMajor = new Pen(_gridPenMajor.Brush, majorThickness);
-
-        // Calculate visible range (with some padding)
-        double minX = _cameraX - viewWidth;
-        double maxX = _cameraX + viewWidth;
-        double minY = _cameraY - viewHeight;
-        double maxY = _cameraY + viewHeight;
-
-        // Clamp to grid bounds
-        minX = Math.Max(minX, -gridSize);
-        maxX = Math.Min(maxX, gridSize);
-        minY = Math.Max(minY, -gridSize);
-        maxY = Math.Min(maxY, gridSize);
-
-        // Snap to grid lines
-        double startX = Math.Floor(minX / spacing) * spacing;
-        double startY = Math.Floor(minY / spacing) * spacing;
-
-        // Draw vertical lines
-        for (double x = startX; x <= maxX; x += spacing)
-        {
-            if (x < -gridSize || x > gridSize) continue;
-
-            bool isMajor = Math.Abs(x % majorEvery) < 0.1;
-            bool isAxis = Math.Abs(x) < 0.1;
-
-            Pen pen = isAxis ? _gridPenAxisY : (isMajor ? _gridPenMajor : _gridPenMinor);
-            context.DrawLine(pen, new Point(x, Math.Max(minY, -gridSize)), new Point(x, Math.Min(maxY, gridSize)));
-        }
-
-        // Draw horizontal lines
-        for (double y = startY; y <= maxY; y += spacing)
-        {
-            if (y < -gridSize || y > gridSize) continue;
-
-            bool isMajor = Math.Abs(y % majorEvery) < 0.1;
-            bool isAxis = Math.Abs(y) < 0.1;
-
-            Pen pen = isAxis ? _gridPenAxisX : (isMajor ? _gridPenMajor : _gridPenMinor);
-            context.DrawLine(pen, new Point(Math.Max(minX, -gridSize), y), new Point(Math.Min(maxX, gridSize), y));
-        }
-    }
-
-    private void DrawBackgroundImage(DrawingContext context)
-    {
-        if (_backgroundImage == null) return;
-
-        // Calculate the rectangle in world coordinates where the image should be drawn
-        double width = _bgMaxX - _bgMinX;
-        double height = _bgMaxY - _bgMinY;
-
-        // The camera transform flips Y (world Y-up to screen Y-down).
-        // The image was captured with north at top (row 0 = north).
-        //
-        // Problem: DrawImage places row 0 at the rect's "top" (smaller Y in Avalonia).
-        // After camera Y-flip, smaller world Y (south) appears at screen bottom.
-        // So without correction, image row 0 (north) ends up at screen bottom = WRONG.
-        //
-        // Fix: Apply an additional Y-flip around the image center to cancel out
-        // the camera's flip for this specific image. Two flips = no flip for content,
-        // but the positioning remains correct.
-        double centerX = (_bgMinX + _bgMaxX) / 2;
-        double centerY = (_bgMinY + _bgMaxY) / 2;
-
-        // Flip around center: translate to origin, flip Y, translate back
-        var flipTransform = Matrix.CreateTranslation(-centerX, -centerY) *
-                           Matrix.CreateScale(1, -1) *
-                           Matrix.CreateTranslation(centerX, centerY);
-
-        using (context.PushTransform(flipTransform))
-        {
-            var sourceRect = new Rect(0, 0, _backgroundImage.PixelSize.Width, _backgroundImage.PixelSize.Height);
-            var destRect = new Rect(_bgMinX, _bgMinY, width, height);
-            context.DrawImage(_backgroundImage, sourceRect, destRect);
-        }
-    }
-
-    private void DrawBoundary(DrawingContext context)
-    {
-        if (_boundary == null)
-        {
-            if (_renderCounter % 60 == 0)
-                Console.WriteLine("[MapControl] DrawBoundary: _boundary is null!");
+        if (_customVisual == null || _handler == null)
             return;
-        }
 
-        // Draw outer boundary
-        if (_boundary.OuterBoundary != null && _boundary.OuterBoundary.IsValid && _boundary.OuterBoundary.Points.Count > 1)
-        {
-            // Log occasionally to confirm we're drawing and show actual vertices
-            if (_renderCounter % 60 == 0)
-            {
-                Console.WriteLine($"[MapControl] DrawBoundary: Drawing outer boundary with {_boundary.OuterBoundary.Points.Count} points");
-                var pts = _boundary.OuterBoundary.Points;
-                if (pts.Count > 0)
-                {
-                    Console.WriteLine($"[MapControl]   First point: ({pts[0].Easting:F2}, {pts[0].Northing:F2})");
-                    if (pts.Count > 1)
-                        Console.WriteLine($"[MapControl]   Last point: ({pts[pts.Count-1].Easting:F2}, {pts[pts.Count-1].Northing:F2})");
-                }
-            }
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                var points = _boundary.OuterBoundary.Points;
-                ctx.BeginFigure(new Point(points[0].Easting, points[0].Northing), false);
-                for (int i = 1; i < points.Count; i++)
-                {
-                    ctx.LineTo(new Point(points[i].Easting, points[i].Northing));
-                }
-                ctx.LineTo(new Point(points[0].Easting, points[0].Northing)); // Close the loop
-                ctx.EndFigure(true);
-            }
-            context.DrawGeometry(null, _boundaryPenOuter, geometry);
-        }
-        else
-        {
-            // Log why we're not drawing
-            if (_renderCounter % 60 == 0)
-                Console.WriteLine($"[MapControl] DrawBoundary: NOT drawing outer! OuterBoundary={_boundary.OuterBoundary != null}, IsValid={_boundary.OuterBoundary?.IsValid}, Points={_boundary.OuterBoundary?.Points?.Count ?? 0}");
-        }
+        // Ensure coverage bitmap is ready before snapshotting state
+        EnsureCoverageBitmapReady();
 
-        // Draw inner boundaries (holes)
-        foreach (var inner in _boundary.InnerBoundaries)
-        {
-            if (inner.IsValid && inner.Points.Count > 1)
-            {
-                var geometry = new StreamGeometry();
-                using (var ctx = geometry.Open())
-                {
-                    var points = inner.Points;
-                    ctx.BeginFigure(new Point(points[0].Easting, points[0].Northing), false);
-                    for (int i = 1; i < points.Count; i++)
-                    {
-                        ctx.LineTo(new Point(points[i].Easting, points[i].Northing));
-                    }
-                    ctx.LineTo(new Point(points[0].Easting, points[0].Northing));
-                    ctx.EndFigure(true);
-                }
-                context.DrawGeometry(null, _boundaryPenInner, geometry);
-            }
-        }
+        var displayCfg = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
+        var vehicleCfg = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle;
+        var toolCfg = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tool;
+        var fieldState = AgValoniaGPS.Models.State.ApplicationState.Instance.Field;
 
-        // Draw headland polygon (working area boundary) - uses same style as inner boundaries
-        if (_boundary.HeadlandPolygon != null && _boundary.HeadlandPolygon.IsValid && _boundary.HeadlandPolygon.Points.Count > 1)
+        var state = new MapRenderState
         {
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                var points = _boundary.HeadlandPolygon.Points;
-                ctx.BeginFigure(new Point(points[0].Easting, points[0].Northing), false);
-                for (int i = 1; i < points.Count; i++)
-                {
-                    ctx.LineTo(new Point(points[i].Easting, points[i].Northing));
-                }
-                ctx.LineTo(new Point(points[0].Easting, points[0].Northing));
-                ctx.EndFigure(true);
-            }
-            context.DrawGeometry(null, _boundaryPenInner, geometry);
-        }
+            CameraX = _cameraX,
+            CameraY = _cameraY,
+            Zoom = _zoom,
+            Rotation = _rotation,
+            CameraPitch = _cameraPitch,
+            Is3DMode = _is3DMode,
+            IsNorthUp = _isNorthUp,
+            IsDayMode = _isDayMode,
+
+            BoundsWidth = Bounds.Width,
+            BoundsHeight = Bounds.Height,
+
+            VehicleX = _vehicleX,
+            VehicleY = _vehicleY,
+            VehicleHeading = _vehicleHeading,
+            HasValidHeading = _hasValidHeading,
+            IsReversing = _isReversing,
+            ShowVehicle = ShowVehicle,
+
+            ToolX = _toolX,
+            ToolY = _toolY,
+            ToolHeading = _toolHeading,
+            ToolWidth = _toolWidth,
+            HitchX = _hitchX,
+            HitchY = _hitchY,
+            ToolReady = _toolPositionReady,
+            HitchLength = toolCfg.HitchLength,
+
+            SectionOn = (bool[])_sectionOn.Clone(),
+            SectionWidths = (double[])_sectionWidths.Clone(),
+            SectionLeft = (double[])_sectionLeft.Clone(),
+            SectionRight = (double[])_sectionRight.Clone(),
+            SectionButtonState = (int[])_sectionButtonState.Clone(),
+            NumSections = _numSections,
+
+            CoverageSkImage = _coverageSkImage, // Legacy
+            CoverageSkBitmap = _coverageSkBitmap,
+            BitmapMinE = _bitmapMinE,
+            BitmapMinN = _bitmapMinN,
+            BitmapMaxE = _bitmapMaxE,
+            BitmapMaxN = _bitmapMaxN,
+            BitmapWidth = _bitmapWidth,
+            BitmapHeight = _bitmapHeight,
+            BitmapHasContent = _bitmapHasContent,
+            BitmapExplicitlyInitialized = _bitmapExplicitlyInitialized,
+
+            Boundary = _boundary,
+
+            HeadlandLine = _headlandLine,
+            HeadlandPreview = _headlandPreview,
+            IsHeadlandVisible = _isHeadlandVisible,
+
+            YouTurnPath = _youTurnPath,
+            IsInYouTurn = _isInYouTurn,
+
+            ActiveTrack = _activeTrack,
+            BaseTrack = _baseTrack,
+            NextTrack = _nextTrack,
+            PendingPointA = _pendingPointA,
+            RecordedPaths = _recordedPaths,
+            ContourStrips = _contourStrips,
+
+            RecordingPoints = _recordingPoints != null
+                ? new List<(double, double)>(_recordingPoints) : null,
+            ShowBoundaryOffsetIndicator = _showBoundaryOffsetIndicator,
+            BoundaryOffsetMeters = _boundaryOffsetMeters,
+
+            SelectionMarkers = _selectionMarkers,
+            ClipLine = _clipLine,
+            ClipPath = _clipPath,
+
+            Flags = _flags,
+            IsGridVisible = IsGridVisible,
+
+            GoalEasting = _goalEasting,
+            GoalNorthing = _goalNorthing,
+            GuidanceActive = _guidanceActive,
+
+            GroundTexture = _groundTexture,
+            BackgroundImage = _backgroundImage,
+            BgMinX = _bgMinX,
+            BgMaxY = _bgMaxY,
+            BgMaxX = _bgMaxX,
+            BgMinY = _bgMinY,
+            BackgroundComposited = _backgroundComposited,
+
+            VehicleImage = _vehicleImage,
+
+            PolygonsVisible = displayCfg.PolygonsVisible,
+            SectionLinesVisible = displayCfg.SectionLinesVisible,
+            SvennArrowVisible = displayCfg.SvennArrowVisible,
+            DirectionMarkersVisible = displayCfg.DirectionMarkersVisible,
+            FieldTextureVisible = displayCfg.FieldTextureVisible,
+            ExtraGuidelines = displayCfg.ExtraGuidelines,
+            ExtraGuidelinesCount = displayCfg.ExtraGuidelinesCount,
+            HeadlandDistanceVisible = displayCfg.HeadlandDistanceVisible,
+            HeadlandProximityDistance = fieldState.HeadlandProximityDistance ?? double.MaxValue,
+            HeadlandProximityWarning = fieldState.HeadlandProximityWarning,
+            HasHeadland = fieldState.HasHeadland,
+
+            CoveragePatches = _coveragePatches,
+            CachedCoverageGeometry = _cachedCoverageGeometry,
+
+            TramOuterTrack = _tramOuterTrack,
+            TramInnerTrack = _tramInnerTrack,
+            TramParallelLines = _tramParallelLines,
+            TramDisplayMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.DisplayMode,
+            TramAlpha = (float)AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.Alpha,
+
+            AntennaPivot = vehicleCfg.AntennaPivot,
+            AntennaOffset = vehicleCfg.AntennaOffset,
+            IsMetric = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.IsMetric,
+        };
+
+        _customVisual.SendHandlerMessage(state);
     }
 
-    private void DrawCoverage(DrawingContext context)
+    /// <summary>
+    /// Update FPS from composition handler callback (fires on UI thread).
+    /// </summary>
+    internal void ReportFps(double fps)
     {
-        _profileSw.Restart();
-
-        // Compute visible world bounds for viewport culling
-        // Use axis-aligned bounding box that contains the rotated view (conservative but fast)
-        double aspect = Bounds.Width > 0 && Bounds.Height > 0 ? Bounds.Width / Bounds.Height : 1.0;
-        double viewHalfWidth = 100.0 * aspect / _zoom;
-        double viewHalfHeight = 100.0 / _zoom;
-
-        // For rotated view, use the diagonal as the radius for the AABB
-        double viewRadius = Math.Sqrt(viewHalfWidth * viewHalfWidth + viewHalfHeight * viewHalfHeight);
-        double visMinX = _cameraX - viewRadius;
-        double visMaxX = _cameraX + viewRadius;
-        double visMinY = _cameraY - viewRadius;
-        double visMaxY = _cameraY + viewRadius;
-
-        int drawnCount;
-
-        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-        bool wireframe = !displayConfig.PolygonsVisible;
-
-        // Use bitmap-based rendering if provider is available or bitmap was explicitly initialized
-        if (_coverageBoundsProvider != null || _bitmapExplicitlyInitialized)
-        {
-            // In wireframe mode, skip bitmap and draw only outlines from geometry cache
-            if (wireframe)
-            {
-                drawnCount = 0;
-                for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
-                {
-                    var cached = _cachedCoverageGeometry[i];
-                    if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
-                        cached.MaxY < visMinY || cached.MinY > visMaxY)
-                        continue;
-                    context.DrawGeometry(null, _coverageWireframePen, cached.Geometry);
-                    drawnCount++;
-                }
-            }
-            else
-            {
-                drawnCount = DrawCoverageBitmap(context);
-
-                // Draw section line overlays on top of bitmap when enabled
-                if (displayConfig.SectionLinesVisible && _cachedCoverageGeometry.Count > 0)
-                {
-                    for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
-                    {
-                        var cached = _cachedCoverageGeometry[i];
-                        if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
-                            cached.MaxY < visMinY || cached.MinY > visMaxY)
-                            continue;
-                        context.DrawGeometry(null, _coverageSectionLinePen, cached.Geometry);
-                    }
-                }
-            }
-        }
-        else
-        {
-            // Fall back to patch-based rendering (legacy)
-            drawnCount = DrawCoveragePatches(context, visMinX, visMaxX, visMinY, visMaxY);
-        }
-
-        _profileSw.Stop();
-        _lastCoverageRenderMs = _profileSw.Elapsed.TotalMilliseconds;
-        _lastDrawnPatchCount = drawnCount;
+        _currentFps = fps;
+        FpsUpdated?.Invoke(fps);
     }
+
+    // GetCameraTransform and Draw* methods have been moved to MapCompositionHandler
 
     /// <summary>
     /// THE ONLY PLACE the coverage WriteableBitmap is created.
@@ -1021,13 +846,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         if (_bitmapWidth <= 0 || _bitmapHeight <= 0)
         {
-            Console.WriteLine($"[CreateCoverageBitmap] Invalid dimensions: {_bitmapWidth}x{_bitmapHeight}");
+            Debug.WriteLine($"[CreateCoverageBitmap] Invalid dimensions: {_bitmapWidth}x{_bitmapHeight}");
             return;
         }
 
-        // Dispose old bitmaps
+        // Dispose old bitmaps — keep SKBitmap alive until render thread moves on
         _coverageWriteableBitmap?.Dispose();
         _coverageDisplayBitmap?.Dispose();
+        _previousCoverageSkBitmap?.Dispose(); // Dispose the one from TWO recreations ago (render thread is done with it)
+        _previousCoverageSkBitmap = _coverageSkBitmap; // Keep current one alive for render thread
+        _coverageSkBitmap = null; // Clear so SendStateToHandler sends null until new one is ready
 
         // Data bitmap: Rgb565 for compact storage and pixel API
         _coverageWriteableBitmap = new WriteableBitmap(
@@ -1041,8 +869,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             new Vector(96, 96),
             Avalonia.Platform.PixelFormat.Bgra8888);
 
-        long memMB = (long)_bitmapWidth * _bitmapHeight * 6 / 1024 / 1024; // 2 + 4 bytes per pixel
-        Console.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565+Bgra8888 bitmaps (~{memMB}MB)");
+        // SKBitmap shadow for lock-free rendering — CoverageBitmapDrawOp reads this
+        // without WriteableBitmap.Lock, avoiding contention with SetCoveragePixel
+        _coverageSkBitmap = new SKBitmap(_bitmapWidth, _bitmapHeight, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+        _coverageSkBitmap.Erase(SKColor.Empty);
+
+        long memMB = (long)_bitmapWidth * _bitmapHeight * 10 / 1024 / 1024; // 2 + 4 + 4 bytes per pixel
+        Debug.WriteLine($"[CreateCoverageBitmap] Created {_bitmapWidth}x{_bitmapHeight} Rgb565+Bgra8888 bitmaps (~{memMB}MB)");
 
         // Clear data bitmap to black (0x0000)
         using (var framebuffer = _coverageWriteableBitmap.Lock())
@@ -1065,19 +898,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Composite background if available (uses its own lock)
         if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
         {
-            Console.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
+            Debug.WriteLine($"[CreateCoverageBitmap] Compositing background from {_backgroundImagePath}");
             CompositeBackgroundIntoBitmap();
+            SyncSkBitmapFromDisplay();
             _bitmapHasContent = true;
         }
         else
         {
-            Console.WriteLine($"[CreateCoverageBitmap] No background, initialized to black (transparent until coverage painted)");
+            Debug.WriteLine($"[CreateCoverageBitmap] No background, initialized to black (transparent until coverage painted)");
             _backgroundComposited = false;
             _bitmapHasContent = false;
         }
 
-        // Set state flags
-        _thumbnailNeedsRebuild = true;
         _bitmapExplicitlyInitialized = true;
     }
 
@@ -1087,25 +919,25 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private void UpdateCoverageBitmapIfNeeded()
     {
-        Console.WriteLine($"[UpdateCovBitmapIfNeeded] boundsProvider={_coverageBoundsProvider != null}, cellsProvider={_coverageAllCellsProvider != null}, needsRebuild={_bitmapNeedsFullRebuild}");
+        Debug.WriteLine($"[UpdateCovBitmapIfNeeded] boundsProvider={_coverageBoundsProvider != null}, cellsProvider={_coverageAllCellsProvider != null}, needsRebuild={_bitmapNeedsFullRebuild}");
 
         if (_coverageBoundsProvider == null || _coverageAllCellsProvider == null)
         {
-            Console.WriteLine("[UpdateCovBitmapIfNeeded] No providers, returning early");
+            Debug.WriteLine("[UpdateCovBitmapIfNeeded] No providers, returning early");
             return;
         }
 
         // Get coverage bounds
         var bounds = _coverageBoundsProvider();
-        Console.WriteLine($"[UpdateCovBitmapIfNeeded] bounds={bounds != null}, explicit={_bitmapExplicitlyInitialized}");
+        Debug.WriteLine($"[UpdateCovBitmapIfNeeded] bounds={bounds != null}, explicit={_bitmapExplicitlyInitialized}");
         if (bounds == null)
         {
             // No coverage data - but if bitmap was explicitly initialized (with background),
             // preserve it so the background stays visible
-            Console.WriteLine($"[UpdateCovBitmapIfNeeded] bounds=null, preserving bitmap (explicit={_bitmapExplicitlyInitialized})");
+            Debug.WriteLine($"[UpdateCovBitmapIfNeeded] bounds=null, preserving bitmap (explicit={_bitmapExplicitlyInitialized})");
             if (_coverageWriteableBitmap != null && !_bitmapExplicitlyInitialized)
             {
-                Console.WriteLine("[Timing] CovBitmap: Clearing bitmap (no coverage)");
+                Debug.WriteLine("[Timing] CovBitmap: Clearing bitmap (no coverage)");
                 _coverageWriteableBitmap.Dispose();
                 _coverageWriteableBitmap = null;
                 _bitmapWidth = 0;
@@ -1131,8 +963,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
         else
         {
-            // Scale up for large fields to fit in ~600MB (RGB565)
-            const long MAX_PIXELS = 300_000_000;
+            // Cap at ~25M pixels (~100MB BGRA8888) for smooth GPU rendering
+            const long MAX_PIXELS = 25_000_000;
             cellSize = MIN_BITMAP_CELL_SIZE;
 
             long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
@@ -1150,6 +982,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 else cellSize = Math.Ceiling(cellSize);
             }
         }
+
+        // Apply user resolution multiplier (1.0=High, 1.5=Medium, 2.0=Low)
+        cellSize = ApplyResolutionMultiplier(cellSize);
 
         _actualBitmapCellSize = cellSize;
 
@@ -1188,10 +1023,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             var sw = System.Diagnostics.Stopwatch.StartNew();
             int cellCount = UpdateCoverageBitmapFull();
             sw.Stop();
-            Console.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
+            Debug.WriteLine($"[Timing] CovBitmap: Full rebuild {cellCount} cells in {sw.ElapsedMilliseconds}ms");
             _bitmapNeedsFullRebuild = false;
             _bitmapNeedsIncrementalUpdate = false;
-            _thumbnailNeedsRebuild = true; // Rebuild thumbnail after full rebuild
         }
         else if (_bitmapNeedsIncrementalUpdate)
         {
@@ -1199,98 +1033,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             int cellCount = UpdateCoverageBitmapIncremental();
             if (cellCount > 0)
             {
-                Console.WriteLine($"[Timing] CovBitmap: Incremental {cellCount} cells");
-                _thumbnailNeedsRebuild = true; // Rebuild thumbnail after incremental update
+                Debug.WriteLine($"[Timing] CovBitmap: Incremental {cellCount} cells");
             }
             _bitmapNeedsIncrementalUpdate = false;
-        }
-
-        // Update thumbnail if needed (for fast zoomed-out rendering)
-        if (_thumbnailNeedsRebuild && _coverageWriteableBitmap != null)
-        {
-            UpdateCoverageThumbnail();
-            _thumbnailNeedsRebuild = false;
         }
     }
 
     /// <summary>
-    /// Generate a low-resolution thumbnail from the full bitmap for fast zoomed-out rendering.
-    /// </summary>
-    private unsafe void UpdateCoverageThumbnail()
-    {
-        if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
-            return;
-
-        // Calculate thumbnail dimensions (10x smaller)
-        int scale = (int)(THUMBNAIL_CELL_SIZE / MIN_BITMAP_CELL_SIZE);
-        _thumbnailWidth = (_bitmapWidth + scale - 1) / scale;
-        _thumbnailHeight = (_bitmapHeight + scale - 1) / scale;
-
-        // Create or recreate thumbnail bitmap
-        if (_coverageThumbnail == null ||
-            _coverageThumbnail.PixelSize.Width != _thumbnailWidth ||
-            _coverageThumbnail.PixelSize.Height != _thumbnailHeight)
-        {
-            _coverageThumbnail?.Dispose();
-            _coverageThumbnail = new WriteableBitmap(
-                new PixelSize(_thumbnailWidth, _thumbnailHeight),
-                new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888);
-        }
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-        // Downsample from full bitmap to thumbnail
-        // Center-biased: sample center first, scan block only if center is black
-        using var srcBuffer = _coverageWriteableBitmap.Lock();
-        using var dstBuffer = _coverageThumbnail.Lock();
-
-        ushort* src = (ushort*)srcBuffer.Address;
-        uint* dst = (uint*)dstBuffer.Address; // Bgra8888
-        int srcStride = srcBuffer.RowBytes / 2; // ushort stride
-        int dstStride = dstBuffer.RowBytes / 4; // uint stride
-
-        for (int ty = 0; ty < _thumbnailHeight; ty++)
-        {
-            int syStart = ty * scale;
-            int syCenter = Math.Min(syStart + scale / 2, _bitmapHeight - 1);
-
-            for (int tx = 0; tx < _thumbnailWidth; tx++)
-            {
-                int sxStart = tx * scale;
-                int sxCenter = Math.Min(sxStart + scale / 2, _bitmapWidth - 1);
-
-                // Sample center pixel first (preserves natural look)
-                ushort result = src[syCenter * srcStride + sxCenter];
-
-                // If center is black, scan block for any coverage (catches thin strips)
-                if (result == 0)
-                {
-                    int syEnd = Math.Min(syStart + scale, _bitmapHeight);
-                    int sxEnd = Math.Min(sxStart + scale, _bitmapWidth);
-
-                    for (int sy = syStart; sy < syEnd && result == 0; sy++)
-                    {
-                        for (int sx = sxStart; sx < sxEnd; sx++)
-                        {
-                            ushort pixel = src[sy * srcStride + sx];
-                            if (pixel != 0)
-                            {
-                                result = pixel;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                dst[ty * dstStride + tx] = Rgb565ToBgra8888(result);
-            }
-        }
-
-        sw.Stop();
-        Console.WriteLine($"[Timing] Thumbnail: Created {_thumbnailWidth}x{_thumbnailHeight} in {sw.ElapsedMilliseconds}ms");
-    }
-
+    /// Generate a medium-resolution bitmap (4x downsampled) for mid-zoom rendering.
     /// <summary>
     /// Composite the background image into the coverage bitmap.
     /// This allows us to draw a single bitmap instead of background + coverage separately.
@@ -1485,10 +1235,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // Sync display bitmap so background shows with proper transparency
         SyncDisplayBitmap();
-
-        // Rebuild thumbnail immediately so zoomed-out view shows correct background
-        UpdateCoverageThumbnail();
-        _thumbnailNeedsRebuild = false;
+        SyncSkBitmapFromDisplay();
     }
 
     /// <summary>
@@ -1501,22 +1248,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // The bitmap will be cleared when coverage is cleared
     }
 
-    /// <summary>
-    /// Draw coverage using WriteableBitmap (PERF-004).
-    /// O(1) render time - just blit the pre-rendered bitmap.
-    /// Bitmap is updated outside of render pass via MarkCoverageDirty.
-    /// </summary>
-    private int DrawCoverageBitmap(DrawingContext context)
-    {
-        // Debug: Log what we have (only once per second to reduce spam)
-        // Console.WriteLine($"[DrawCovBitmap] bitmap={_coverageWriteableBitmap != null}, w={_bitmapWidth}, h={_bitmapHeight}, explicit={_bitmapExplicitlyInitialized}");
+    // CoverageBitmapDrawOp removed — coverage now drawn directly in MapCompositionHandler
 
-        // If bitmap not ready yet, check if we need to create one
+    // DrawCoverageBitmap removed — coverage now drawn directly in MapCompositionHandler
+    // EnsureCoverageBitmapReady is called from SendStateToHandler before sending state
+    private void EnsureCoverageBitmapReady()
+    {
         if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
         {
-            // Console.WriteLine("[DrawCovBitmap] Bitmap not ready, returning 0");
-            // Only schedule bitmap creation if there's actual coverage to show
-            // This prevents allocating closures every frame when there's no coverage
             if (!_bitmapUpdatePending && _coverageBoundsProvider != null)
             {
                 var bounds = _coverageBoundsProvider();
@@ -1527,51 +1266,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     {
                         UpdateCoverageBitmapIfNeeded();
                         _bitmapUpdatePending = false;
+                        SendStateToHandler(); // Resend after bitmap created
                     }, DispatcherPriority.Background);
                 }
             }
-            return 0; // Bitmap not ready yet
+            return;
         }
-
-        // Draw the bitmap
-        double worldWidth = _bitmapMaxE - _bitmapMinE;
-        double worldHeight = _bitmapMaxN - _bitmapMinN;
-        var destRect = new Rect(_bitmapMinE, _bitmapMinN, worldWidth, worldHeight);
-
-        // Debug: Log destRect once per second
-        if (DateTime.Now.Second != _lastDestRectLogSecond)
-        {
-            _lastDestRectLogSecond = DateTime.Now.Second;
-            Console.WriteLine($"[DrawCovBitmap] destRect: ({_bitmapMinE:F2}, {_bitmapMinN:F2}) size ({worldWidth:F2}, {worldHeight:F2})");
-        }
-
-        // Use thumbnail when zoomed out to avoid expensive GPU downscaling
-        if (_zoom < THUMBNAIL_ZOOM_THRESHOLD && _coverageThumbnail != null)
-        {
-            // Using thumbnail for zoomed-out view
-            var srcRect = new Rect(0, 0, _thumbnailWidth, _thumbnailHeight);
-            using (context.PushRenderOptions(_lowQualityRenderOptions))
-            {
-                context.DrawImage(_coverageThumbnail, srcRect, destRect);
-            }
-            return _thumbnailWidth * _thumbnailHeight;
-        }
-        // Full bitmap path
-
-        // Use full-resolution bitmap when zoomed in
-        var fullSrcRect = new Rect(0, 0, _bitmapWidth, _bitmapHeight);
 
         // Composite background into bitmap on first draw
         if (!_backgroundComposited)
         {
             if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
             {
-                Console.WriteLine($"[DrawCovBitmap] Compositing background from {_backgroundImagePath}");
                 CompositeBackgroundIntoBitmap();
+                SyncSkBitmapFromDisplay();
             }
             else
             {
-                // No background - fill with black
                 using (var fb = _coverageWriteableBitmap.Lock())
                 {
                     unsafe
@@ -1582,21 +1293,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                             pixels[i] = 0;
                     }
                 }
+                _coverageSkBitmap?.Erase(SKColor.Empty);
                 _backgroundComposited = true;
             }
         }
-
-        // Use LowQuality when moderately zoomed out, HighQuality when zoomed in
-        var renderOptions = _zoom < 0.5 ? _lowQualityRenderOptions : _highQualityRenderOptions;
-
-        // Draw the Bgra8888 display bitmap (black pixels are transparent)
-        var drawBitmap = _coverageDisplayBitmap ?? _coverageWriteableBitmap;
-        using (context.PushRenderOptions(renderOptions))
-        {
-            context.DrawImage(drawBitmap!, fullSrcRect, destRect);
-        }
-
-        return _bitmapWidth * _bitmapHeight;
     }
 
     /// <summary>
@@ -1605,7 +1305,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     private unsafe int UpdateCoverageBitmapFull()
     {
-        Console.WriteLine($"[UpdateCovBitmapFull] Called: control={GetHashCode()}, bitmap={_coverageWriteableBitmap != null}, provider={_coverageAllCellsProvider != null}, bgPath={_backgroundImagePath}");
+        Debug.WriteLine($"[UpdateCovBitmapFull] Called: control={GetHashCode()}, bitmap={_coverageWriteableBitmap != null}, provider={_coverageAllCellsProvider != null}, bgPath={_backgroundImagePath}");
 
         if (_coverageWriteableBitmap == null || _coverageAllCellsProvider == null)
             return 0;
@@ -1620,12 +1320,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Step 2: Composite background if available (uses its own lock)
         if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
         {
-            Console.WriteLine($"[UpdateCovBitmapFull] Compositing background from {_backgroundImagePath}");
+            Debug.WriteLine($"[UpdateCovBitmapFull] Compositing background from {_backgroundImagePath}");
             CompositeBackgroundIntoBitmap();
+            SyncSkBitmapFromDisplay();
         }
         else
         {
-            Console.WriteLine($"[UpdateCovBitmapFull] No background to composite");
+            Debug.WriteLine($"[UpdateCovBitmapFull] No background to composite");
         }
 
         // Step 3: Write coverage cells
@@ -1693,6 +1394,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     dispPtr[cellY * _bitmapWidth + cellX] = Rgb565ToBgra8888(rgb565);
                 }
 
+                // Write to SKBitmap shadow (lock-free rendering)
+                _coverageSkBitmap?.SetPixel(cellX, cellY,
+                    rgb565 == 0 ? SKColor.Empty : Rgb565ToSKColor(rgb565));
+                _coverageSkImageDirty = true;
+
                 _bitmapHasContent = true;
                 cellCount++;
             }
@@ -1710,15 +1416,23 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     public ushort GetCoveragePixel(int localX, int localY)
     {
-        if (_coverageWriteableBitmap == null ||
-            localX < 0 || localX >= _bitmapWidth ||
+        if (localX < 0 || localX >= _bitmapWidth ||
             localY < 0 || localY >= _bitmapHeight)
             return 0;
 
+        // Read from SKBitmap (always up-to-date, no Lock needed)
+        if (_coverageSkBitmap != null)
+        {
+            var c = _coverageSkBitmap.GetPixel(localX, localY);
+            if (c.Alpha == 0) return 0;
+            return (ushort)(((c.Red >> 3) << 11) | ((c.Green >> 2) << 5) | (c.Blue >> 3));
+        }
+
+        // Fallback to WriteableBitmap
+        if (_coverageWriteableBitmap == null) return 0;
         using var framebuffer = _coverageWriteableBitmap.Lock();
         unsafe
         {
-            // Bitmap is always Rgb565 format
             ushort* ptr = (ushort*)framebuffer.Address;
             return ptr[localY * _bitmapWidth + localX];
         }
@@ -1729,32 +1443,77 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     public void SetCoveragePixel(int localX, int localY, ushort rgb565)
     {
-        if (_coverageWriteableBitmap == null || _coverageDisplayBitmap == null ||
-            localX < 0 || localX >= _bitmapWidth ||
+        if (localX < 0 || localX >= _bitmapWidth ||
             localY < 0 || localY >= _bitmapHeight)
             return;
 
         if (rgb565 != 0) _bitmapHasContent = true;
 
-        // Write to Rgb565 data bitmap
-        using (var framebuffer = _coverageWriteableBitmap.Lock())
+        // Write ONLY to SKBitmap (lock-free, read by render thread).
+        // WriteableBitmaps are synced lazily before save via SyncWriteableBitmapsFromSk().
+        // This eliminates per-pixel Lock/Unlock contention with the compositor.
+        _coverageSkBitmap?.SetPixel(localX, localY,
+            rgb565 == 0 ? SKColor.Empty : Rgb565ToSKColor(rgb565));
+        _writeableBitmapsDirty = true;
+        _coverageSkImageDirty = true;
+    }
+
+    /// <summary>
+    /// Sync WriteableBitmaps from SKBitmap. Called lazily before save/load operations.
+    /// </summary>
+    private unsafe void SyncWriteableBitmapsFromSk()
+    {
+        if (!_writeableBitmapsDirty || _coverageSkBitmap == null) return;
+        _writeableBitmapsDirty = false;
+
+        var skPixels = (uint*)_coverageSkBitmap.GetPixels();
+        int count = _bitmapWidth * _bitmapHeight;
+
+        // Sync to display bitmap (Bgra8888)
+        if (_coverageDisplayBitmap != null)
         {
-            unsafe
-            {
-                ushort* ptr = (ushort*)framebuffer.Address;
-                ptr[localY * _bitmapWidth + localX] = rgb565;
-            }
+            using var fb = _coverageDisplayBitmap.Lock();
+            Buffer.MemoryCopy(skPixels, (void*)fb.Address, count * 4, count * 4);
         }
 
-        // Write to Bgra8888 display bitmap (black = transparent)
-        using (var framebuffer = _coverageDisplayBitmap.Lock())
+        // Sync to data bitmap (Rgb565)
+        if (_coverageWriteableBitmap != null)
         {
-            unsafe
+            using var fb = _coverageWriteableBitmap.Lock();
+            ushort* dst = (ushort*)fb.Address;
+            for (int i = 0; i < count; i++)
             {
-                uint* ptr = (uint*)framebuffer.Address;
-                ptr[localY * _bitmapWidth + localX] = Rgb565ToBgra8888(rgb565);
+                uint bgra = skPixels[i];
+                if ((bgra & 0xFF000000) == 0) { dst[i] = 0; continue; }
+                byte r = (byte)((bgra >> 16) & 0xFF);
+                byte g = (byte)((bgra >> 8) & 0xFF);
+                byte b = (byte)(bgra & 0xFF);
+                dst[i] = (ushort)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
             }
         }
+    }
+
+    /// <summary>
+    /// Copy the entire display bitmap (Bgra8888) to the SKBitmap shadow.
+    /// Call after CompositeBackgroundIntoBitmap or any bulk bitmap operation.
+    /// </summary>
+    private unsafe void SyncSkBitmapFromDisplay()
+    {
+        if (_coverageSkBitmap == null || _coverageDisplayBitmap == null) return;
+        using var fb = _coverageDisplayBitmap.Lock();
+        var src = (uint*)fb.Address;
+        var dst = (uint*)_coverageSkBitmap.GetPixels();
+        int count = _bitmapWidth * _bitmapHeight;
+        Buffer.MemoryCopy(src, dst, count * 4, count * 4);
+        _coverageSkImageDirty = true;
+    }
+
+    private static SKColor Rgb565ToSKColor(ushort rgb565)
+    {
+        byte r = (byte)((rgb565 >> 11) << 3);
+        byte g = (byte)(((rgb565 >> 5) & 0x3F) << 2);
+        byte b = (byte)((rgb565 & 0x1F) << 3);
+        return new SKColor(r, g, b, 255);
     }
 
     /// <summary>
@@ -1789,6 +1548,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         return (uint)(b | (g << 8) | (r << 16) | (0xFF << 24));
     }
 
+    private static double ApplyResolutionMultiplier(double cellSize)
+    {
+        var multiplier = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display.DisplayResolutionMultiplier;
+        if (multiplier <= 1.0) return cellSize;
+
+        return cellSize * multiplier;
+    }
+
     /// <summary>
     /// Clear all coverage pixels - resets to background image or black.
     /// </summary>
@@ -1797,7 +1564,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         if (_coverageWriteableBitmap == null)
             return;
 
-        // Clear to black first
+        // Clear data bitmap (Rgb565)
         using (var framebuffer = _coverageWriteableBitmap.Lock())
         {
             int bufferSize = framebuffer.RowBytes * _bitmapHeight;
@@ -1807,17 +1574,31 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
+        // Clear SKBitmap shadow (used by render thread)
+        _coverageSkBitmap?.Erase(SKColor.Empty);
+
+        // Clear display bitmap (Bgra8888) so stale pixels don't show on save
+        if (_coverageDisplayBitmap != null)
+        {
+            using (var framebuffer = _coverageDisplayBitmap.Lock())
+            {
+                int bufferSize = framebuffer.RowBytes * _bitmapHeight;
+                unsafe
+                {
+                    new Span<byte>((byte*)framebuffer.Address, bufferSize).Clear();
+                }
+            }
+        }
+
         // Re-composite background if available (uses its own lock)
         if (!string.IsNullOrEmpty(_backgroundImagePath) && File.Exists(_backgroundImagePath))
         {
-            Console.WriteLine($"[ClearCoveragePixels] Re-compositing background from {_backgroundImagePath}");
+            Debug.WriteLine($"[ClearCoveragePixels] Re-compositing background from {_backgroundImagePath}");
             CompositeBackgroundIntoBitmap();
+            SyncSkBitmapFromDisplay();
         }
 
-        // Rebuild thumbnail immediately (otherwise zoomed-out view shows stale data)
-        UpdateCoverageThumbnail();
-        _thumbnailNeedsRebuild = false;
-        InvalidateVisual();
+        SendStateToHandler();
     }
 
     /// <summary>
@@ -1828,6 +1609,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         if (_coverageWriteableBitmap == null || _bitmapWidth == 0 || _bitmapHeight == 0)
             return null;
+
+        // Sync SKBitmap pixels to WriteableBitmap before reading
+        SyncWriteableBitmapsFromSk();
 
         var pixels = new ushort[_bitmapWidth * _bitmapHeight];
         using var framebuffer = _coverageWriteableBitmap.Lock();
@@ -1901,46 +1685,25 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         _bitmapHasContent = true;
 
-        // Rebuild thumbnail so zoomed-out view shows loaded coverage
-        UpdateCoverageThumbnail();
-        _thumbnailNeedsRebuild = false;
-        InvalidateVisual();
-    }
-
-    /// <summary>
-    /// Draw coverage using triangle strip patches (detailed, original method).
-    /// </summary>
-    private static readonly Pen _coverageWireframePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 150, 150, 150)), 0.2);
-
-    private int DrawCoveragePatches(DrawingContext context, double visMinX, double visMaxX, double visMinY, double visMaxY)
-    {
-        // Update tracking for active vs finalized patches
-        UpdateColorBatchesIncremental();
-
-        var displayConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
-        bool wireframe = !displayConfig.PolygonsVisible;
-        var pen = wireframe ? _coverageWireframePen
-            : displayConfig.SectionLinesVisible ? _coverageSectionLinePen
-            : null;
-
-        // Draw only visible patches from the cache
-        int drawnCount = 0;
-        for (int i = 0; i < _cachedCoverageGeometry.Count; i++)
+        // Sync SKBitmap shadow from display bitmap
+        if (_coverageSkBitmap != null && _coverageDisplayBitmap != null)
         {
-            var cached = _cachedCoverageGeometry[i];
-
-            // Viewport culling: skip patches entirely outside visible bounds
-            if (cached.MaxX < visMinX || cached.MinX > visMaxX ||
-                cached.MaxY < visMinY || cached.MinY > visMaxY)
-                continue;
-
-            context.DrawGeometry(wireframe ? null : cached.Brush, pen, cached.Geometry);
-            drawnCount++;
+            using var dispFb = _coverageDisplayBitmap.Lock();
+            unsafe
+            {
+                uint* src = (uint*)dispFb.Address;
+                var skPixels = _coverageSkBitmap.GetPixels();
+                uint* dst = (uint*)skPixels;
+                int count = _bitmapWidth * _bitmapHeight;
+                Buffer.MemoryCopy(src, dst, count * 4, count * 4);
+            }
         }
 
-        return drawnCount;
+        SendStateToHandler();
     }
 
+    private static readonly Pen _coverageWireframePen = new Pen(new SolidColorBrush(Color.FromArgb(180, 150, 150, 150)), 0.2);
+    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)), 0.3);
     private int _lastDrawnPatchCount;
 
     private void UpdateColorBatchesIncremental()
@@ -2148,32 +1911,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
-    private void DrawRecordingPoints(DrawingContext context)
-    {
-        if (_recordingPoints == null || _recordingPoints.Count == 0) return;
-
-        // Draw line strip connecting all points
-        if (_recordingPoints.Count > 1)
-        {
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                ctx.BeginFigure(new Point(_recordingPoints[0].Easting, _recordingPoints[0].Northing), false);
-                for (int i = 1; i < _recordingPoints.Count; i++)
-                {
-                    ctx.LineTo(new Point(_recordingPoints[i].Easting, _recordingPoints[i].Northing));
-                }
-                ctx.EndFigure(false);
-            }
-            context.DrawGeometry(null, _recordingPen, geometry);
-        }
-
-        // Draw point markers (0.75m radius)
-        foreach (var point in _recordingPoints)
-        {
-            context.DrawEllipse(_recordingPointBrush, null, new Point(point.Easting, point.Northing), 0.75, 0.75);
-        }
-    }
+    // DrawRecordingPoints moved to MapCompositionHandler
 
     private void LoadVehicleImage()
     {
@@ -2192,779 +1930,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
     }
 
-    // Section color brushes (matching AgOpenGPS)
-    // ButtonState: 0=Off, 1=Auto, 2=On (manual)
-    private static readonly SolidColorBrush _sectionOffBrush = new SolidColorBrush(Color.FromRgb(242, 51, 51));     // Red - manually off
-    private static readonly SolidColorBrush _sectionManualOnBrush = new SolidColorBrush(Color.FromRgb(247, 247, 0)); // Yellow - manually on
-    private static readonly SolidColorBrush _sectionAutoOnBrush = new SolidColorBrush(Color.FromRgb(0, 242, 0));    // Green - auto and active
-    private static readonly SolidColorBrush _sectionAutoOffBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Gray - auto but inactive
-    private static readonly Pen _sectionOutlinePen = new Pen(Brushes.Black, 0.1);
-    private static readonly Pen _coverageSectionLinePen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)), 0.3);
-
-    private void DrawTool(DrawingContext context)
-    {
-        // Don't draw if tool has no width (not configured or zero width)
-        if (_toolWidth < 0.1) return;
-
-        double toolDepth = 2.0; // Tool depth in meters (front to back)
-
-        // Draw tractor-side hitch bar (from rear of tractor to hitch point)
-        var rearPen = new Pen(Brushes.Black, 0.3);
-        context.DrawLine(rearPen, new Point(_vehicleX, _vehicleY), new Point(_hitchX, _hitchY));
-
-        // Draw V-shape hitch triangle: apex at fixed drawbar position relative to tool
-        double hitchHalfW = _toolWidth / 2.0;
-        double cosH = Math.Cos(-_toolHeading);
-        double sinH = Math.Sin(-_toolHeading);
-
-        // Implement left and right ends (perpendicular to tool heading)
-        var leftEnd = new Point(
-            _toolX + (-hitchHalfW) * cosH,
-            _toolY + (-hitchHalfW) * sinH);
-        var rightEnd = new Point(
-            _toolX + hitchHalfW * cosH,
-            _toolY + hitchHalfW * sinH);
-
-        // Apex at the hitch point (computed by ToolPositionService)
-        var apexPoint = new Point(_hitchX, _hitchY);
-        context.DrawLine(_hitchPen, apexPoint, leftEnd);
-        context.DrawLine(_hitchPen, apexPoint, rightEnd);
-
-        // Draw individual sections centered at tool position, rotated to tool heading
-        using (context.PushTransform(Matrix.CreateTranslation(_toolX, _toolY)))
-        using (context.PushTransform(Matrix.CreateRotation(-_toolHeading))) // Negated for screen coordinates
-        {
-            if (_numSections > 0)
-            {
-                // Draw each section individually
-                double sectionGap = 0.05; // Small gap between sections (5cm)
-
-                for (int i = 0; i < _numSections; i++)
-                {
-                    // Get section bounds (with small inset for gap)
-                    double left = _sectionLeft[i] + sectionGap / 2;
-                    double right = _sectionRight[i] - sectionGap / 2;
-                    double width = right - left;
-
-                    if (width < 0.01) continue; // Skip if section too narrow
-
-                    // Choose brush based on button state
-                    // 3-state model: 0=Off (Red), 1=Auto (Green), 2=On (Yellow)
-                    IBrush brush;
-                    switch (_sectionButtonState[i])
-                    {
-                        case 0: // Off - manually forced off
-                            brush = _sectionOffBrush; // Red
-                            break;
-                        case 2: // On - manually forced on
-                            brush = _sectionManualOnBrush; // Yellow
-                            break;
-                        default: // Auto (1) - automatic mode
-                            brush = _sectionAutoOnBrush; // Green
-                            break;
-                    }
-
-                    // Draw section rectangle
-                    var sectionRect = new Rect(left, -toolDepth / 2, width, toolDepth);
-                    context.DrawRectangle(brush, _sectionOutlinePen, sectionRect);
-                }
-            }
-            else
-            {
-                // Fallback: draw single tool rectangle if no sections configured
-                double halfWidth = _toolWidth / 2.0;
-                var toolRect = new Rect(-halfWidth, -toolDepth / 2, _toolWidth, toolDepth);
-                context.DrawRectangle(_toolBrush, _toolPen, toolRect);
-            }
-
-            // Draw a center marker line to show tool heading direction
-            var centerLine = new Pen(Brushes.White, 0.1);
-            context.DrawLine(centerLine, new Point(0, -toolDepth / 2), new Point(0, toolDepth / 2));
-        }
-    }
-
-    private void DrawVehicle(DrawingContext context)
-    {
-        // Size in meters (typical tractor ~5m)
-        double size = 5.0;
-
-        // Save transform and apply vehicle rotation
-        using (context.PushTransform(Matrix.CreateTranslation(_vehicleX, _vehicleY)))
-        using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading))) // Heading in radians, negated for screen coordinates
-        {
-            if (_vehicleImage != null)
-            {
-                // Draw tractor image centered at vehicle position
-                // The image needs to be flipped vertically because we're in a y-up coordinate system
-                using (context.PushTransform(Matrix.CreateScale(1, -1)))
-                {
-                    var destRect = new Rect(-size / 2, -size / 2, size, size);
-                    context.DrawImage(_vehicleImage, destRect);
-                }
-            }
-            else
-            {
-                // Fallback: draw a simple triangle
-                var geometry = new StreamGeometry();
-                using (var ctx = geometry.Open())
-                {
-                    ctx.BeginFigure(new Point(0, size / 2), true); // Front point
-                    ctx.LineTo(new Point(-size / 3, -size / 2));   // Back left
-                    ctx.LineTo(new Point(size / 3, -size / 2));    // Back right
-                    ctx.EndFigure(true);
-                }
-                context.DrawGeometry(_vehicleBrush, _vehiclePen, geometry);
-            }
-
-            // Draw heading unknown indicator (red "?")
-            if (!_hasValidHeading)
-            {
-                double worldPerPx = (200.0 / _zoom) / (Bounds.Height > 0 ? Bounds.Height : 600);
-                // Counter-rotate and flip Y so text stays upright
-                // Parent transforms: map Rotate(-_rotation), then Translate, then Rotate(-_vehicleHeading)
-                // To undo: Rotate(+vehicleHeading + rotation) then ScaleY(-1) for text Y-axis
-                using (context.PushTransform(
-                    Matrix.CreateRotation(_vehicleHeading + _rotation) *
-                    Matrix.CreateScale(1, -1)))
-                {
-                    var redBrush = Brushes.Red;
-                    var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
-                    double fontSize = 40 * worldPerPx;
-                    var text = new FormattedText("?", System.Globalization.CultureInfo.InvariantCulture,
-                        FlowDirection.LeftToRight, typeface, fontSize, redBrush);
-                    context.DrawText(text, new Point(size / 2 + worldPerPx * 2, -fontSize / 2));
-                }
-            }
-
-            // Draw reverse indicator (yellow downward arrow behind vehicle)
-            if (_isReversing)
-            {
-                double arrowSize = 2.0;
-                var arrowBrush = new SolidColorBrush(Color.FromArgb(200, 255, 220, 0));
-                var arrowGeometry = new StreamGeometry();
-                using (var ctx = arrowGeometry.Open())
-                {
-                    // Downward-pointing triangle behind vehicle (negative Y = behind)
-                    ctx.BeginFigure(new Point(0, -arrowSize * 2.5), true);
-                    ctx.LineTo(new Point(-arrowSize * 0.7, -arrowSize * 1.2));
-                    ctx.LineTo(new Point(arrowSize * 0.7, -arrowSize * 1.2));
-                    ctx.EndFigure(true);
-                }
-                context.DrawGeometry(arrowBrush, null, arrowGeometry);
-            }
-
-            // Draw antenna position as small blue dot
-            var vehicleConfig = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle;
-            double antPivot = vehicleConfig.AntennaPivot;
-            double antOffset = vehicleConfig.AntennaOffset;
-            {
-                // Antenna GPS position (blue dot at center when no offset configured)
-                var antennaBrush = new SolidColorBrush(Color.FromRgb(40, 120, 255));
-                var antennaPos = new Point(antOffset, antPivot);
-                context.DrawEllipse(antennaBrush, null, antennaPos, 0.25, 0.25);
-            }
-        }
-    }
-
-    private static readonly Pen _svennArrowPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 220, 0)), 0.4);
-
-    private void DrawSvennArrow(DrawingContext context)
-    {
-        // V-shaped chevron ahead of vehicle indicating travel direction
-        double aheadDistance = 8.0;  // meters ahead of vehicle
-        double wingSpan = 3.0;      // half-width of the chevron
-        double wingDepth = 3.0;     // how far back the wings extend
-
-        using (context.PushTransform(Matrix.CreateTranslation(_vehicleX, _vehicleY)))
-        using (context.PushTransform(Matrix.CreateRotation(-_vehicleHeading)))
-        {
-            // Chevron tip is ahead, wings extend back and outward
-            var tip = new Point(0, aheadDistance);
-            var leftWing = new Point(-wingSpan, aheadDistance - wingDepth);
-            var rightWing = new Point(wingSpan, aheadDistance - wingDepth);
-
-            context.DrawLine(_svennArrowPen, tip, leftWing);
-            context.DrawLine(_svennArrowPen, tip, rightWing);
-        }
-    }
-
-    private static readonly SolidColorBrush _directionMarkerTipBrush = new SolidColorBrush(Color.FromArgb(220, 220, 220, 255));
-
-    private void DrawDirectionMarkers(DrawingContext context)
-    {
-        // Minimum vertex count for direction markers (matching AgOpenGPS: >42 vertices)
-        const int minVertices = 43;
-
-        for (int p = 0; p < _coveragePatches.Count; p++)
-        {
-            var patch = _coveragePatches[p];
-            if (!patch.IsRenderable || patch.Vertices.Count < minVertices) continue;
-
-            var verts = patch.Vertices;
-
-            // Calculate heading from vertices 37 and 39 (left-edge vertices, 0-indexed)
-            double headZ = Math.Atan2(
-                verts[39].Easting - verts[37].Easting,
-                verts[39].Northing - verts[37].Northing);
-
-            // Left and right points interpolated between vertex 37 (left) and 38 (right)
-            double leftFactor = 0.37;
-            double rightFactor = 0.63;
-            double leftX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * leftFactor;
-            double leftY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * leftFactor;
-            double rightX = verts[37].Easting + (verts[38].Easting - verts[37].Easting) * rightFactor;
-            double rightY = verts[37].Northing + (verts[38].Northing - verts[37].Northing) * rightFactor;
-
-            // Calculate tip point ahead of the center between left and right
-            double centerX = (leftX + rightX) * 0.5;
-            double centerY = (leftY + rightY) * 0.5;
-            double dist = Math.Sqrt((rightX - leftX) * (rightX - leftX) + (rightY - leftY) * (rightY - leftY)) * 1.5;
-            double tipX = centerX + Math.Sin(headZ) * dist;
-            double tipY = centerY + Math.Cos(headZ) * dist;
-
-            // Inverted section color for base of arrow
-            var baseBrush = new SolidColorBrush(Color.FromArgb(150,
-                (byte)(255 - patch.Color.R), (byte)(255 - patch.Color.G), (byte)(255 - patch.Color.B)));
-
-            // Draw triangle arrow
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                ctx.BeginFigure(new Point(leftX, leftY), true);
-                ctx.LineTo(new Point(rightX, rightY));
-                ctx.LineTo(new Point(tipX, tipY));
-                ctx.EndFigure(true);
-            }
-            context.DrawGeometry(baseBrush, null, geometry);
-
-            // Draw a small highlight at the tip
-            double tipSize = dist * 0.25;
-            context.DrawEllipse(_directionMarkerTipBrush, null,
-                new Point(tipX, tipY), tipSize, tipSize);
-        }
-    }
-
-    private void DrawGuidanceLookAhead(DrawingContext context)
-    {
-        double viewHeight = 200.0 / _zoom;
-        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
-        double worldPerPixel = viewHeight / screenHeight;
-
-        var vehiclePos = new Point(_vehicleX, _vehicleY);
-        var goalPos = new Point(_goalEasting, _goalNorthing);
-
-        // Line from vehicle to goal point
-        var linePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 0, 200, 255)), 1.0 * worldPerPixel);
-        context.DrawLine(linePen, vehiclePos, goalPos);
-
-        // Small circle at goal point
-        var goalBrush = new SolidColorBrush(Color.FromArgb(200, 0, 200, 255));
-        double dotRadius = 3 * worldPerPixel;
-        context.DrawEllipse(goalBrush, null, goalPos, dotRadius, dotRadius);
-    }
-
-    private void DrawBoundaryOffsetIndicator(DrawingContext context)
-    {
-        // Reference point at vehicle
-        double refX = _vehicleX;
-        double refY = _vehicleY;
-
-        // Draw reference marker (cyan square)
-        double markerSize = 1.0;
-        var cyanBrush = new SolidColorBrush(Color.FromRgb(0, 204, 204));
-        context.DrawRectangle(cyanBrush, null,
-            new Rect(refX - markerSize / 2, refY - markerSize / 2, markerSize, markerSize));
-
-        // Draw offset arrow if offset is non-zero
-        if (Math.Abs(_boundaryOffsetMeters) > 0.01)
-        {
-            double perpAngle = _vehicleHeading + Math.PI / 2.0;
-            double offsetX = refX + _boundaryOffsetMeters * Math.Sin(perpAngle);
-            double offsetY = refY + _boundaryOffsetMeters * Math.Cos(perpAngle);
-
-            var yellowPen = new Pen(Brushes.Yellow, 0.5);
-            context.DrawLine(yellowPen, new Point(refX, refY), new Point(offsetX, offsetY));
-
-            // Arrowhead
-            double arrowSize = 1.5;
-            double dx = offsetX - refX;
-            double dy = offsetY - refY;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            if (len > 0.001)
-            {
-                dx /= len;
-                dy /= len;
-                double px = -dy;
-                double py = dx;
-
-                var arrowGeometry = new StreamGeometry();
-                using (var ctx = arrowGeometry.Open())
-                {
-                    ctx.BeginFigure(new Point(offsetX, offsetY), true);
-                    ctx.LineTo(new Point(offsetX - dx * arrowSize + px * arrowSize * 0.5,
-                                        offsetY - dy * arrowSize + py * arrowSize * 0.5));
-                    ctx.LineTo(new Point(offsetX - dx * arrowSize - px * arrowSize * 0.5,
-                                        offsetY - dy * arrowSize - py * arrowSize * 0.5));
-                    ctx.EndFigure(true);
-                }
-                context.DrawGeometry(Brushes.Yellow, null, arrowGeometry);
-            }
-        }
-    }
-
-    private void DrawHeadlandLine(DrawingContext context)
-    {
-        if (_headlandLine == null || _headlandLine.Count < 3) return;
-
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            ctx.BeginFigure(new Point(_headlandLine[0].Easting, _headlandLine[0].Northing), false);
-            for (int i = 1; i < _headlandLine.Count; i++)
-            {
-                ctx.LineTo(new Point(_headlandLine[i].Easting, _headlandLine[i].Northing));
-            }
-            // Close the polygon
-            ctx.LineTo(new Point(_headlandLine[0].Easting, _headlandLine[0].Northing));
-            ctx.EndFigure(false);
-        }
-        context.DrawGeometry(null, _headlandPen, geometry);
-    }
-
-    private void DrawHeadlandPreview(DrawingContext context)
-    {
-        if (_headlandPreview == null || _headlandPreview.Count < 3) return;
-
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            ctx.BeginFigure(new Point(_headlandPreview[0].Easting, _headlandPreview[0].Northing), false);
-            for (int i = 1; i < _headlandPreview.Count; i++)
-            {
-                ctx.LineTo(new Point(_headlandPreview[i].Easting, _headlandPreview[i].Northing));
-            }
-            // Close the polygon
-            ctx.LineTo(new Point(_headlandPreview[0].Easting, _headlandPreview[0].Northing));
-            ctx.EndFigure(false);
-        }
-        context.DrawGeometry(null, _headlandPreviewPen, geometry);
-    }
-
-    private void DrawYouTurnPath(DrawingContext context)
-    {
-        if (_youTurnPath == null || _youTurnPath.Count < 2) return;
-
-        // Create a pen for the YouTurn path - orange color for path line
-        var youTurnPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), 1.0);
-
-        // Draw the path as connected line segments
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            ctx.BeginFigure(new Point(_youTurnPath[0].Easting, _youTurnPath[0].Northing), false);
-            for (int i = 1; i < _youTurnPath.Count; i++)
-            {
-                ctx.LineTo(new Point(_youTurnPath[i].Easting, _youTurnPath[i].Northing));
-            }
-            ctx.EndFigure(false);
-        }
-        context.DrawGeometry(null, youTurnPen, geometry);
-
-        // Draw path points as small squares (less distortion than circles when scaled)
-        var pathPointBrush = new SolidColorBrush(Color.FromArgb(180, 255, 165, 0)); // Semi-transparent orange
-        double squareSize = 0.8; // meters (in world coordinates)
-        double halfSize = squareSize / 2.0;
-
-        // Draw every Nth point to avoid clutter (every 2 meters roughly)
-        int skipPoints = Math.Max(1, _youTurnPath.Count / 50);
-        for (int i = 0; i < _youTurnPath.Count; i += skipPoints)
-        {
-            var pt = _youTurnPath[i];
-            var rect = new Rect(pt.Easting - halfSize, pt.Northing - halfSize, squareSize, squareSize);
-            context.DrawRectangle(pathPointBrush, null, rect);
-        }
-
-        // Draw start point marker (green square - larger)
-        var startMarkerBrush = new SolidColorBrush(Color.FromRgb(0, 200, 0));
-        double markerSize = 2.0; // meters
-        double halfMarker = markerSize / 2.0;
-        var startRect = new Rect(
-            _youTurnPath[0].Easting - halfMarker,
-            _youTurnPath[0].Northing - halfMarker,
-            markerSize, markerSize);
-        context.DrawRectangle(startMarkerBrush, null, startRect);
-
-        // Draw end point marker (red square - larger)
-        var endMarkerBrush = new SolidColorBrush(Color.FromRgb(200, 0, 0));
-        var endPt = _youTurnPath[_youTurnPath.Count - 1];
-        var endRect = new Rect(
-            endPt.Easting - halfMarker,
-            endPt.Northing - halfMarker,
-            markerSize, markerSize);
-        context.DrawRectangle(endMarkerBrush, null, endRect);
-    }
-
-    private void DrawSelectionMarkers(DrawingContext context)
-    {
-        if (_selectionMarkers == null || _selectionMarkers.Count == 0) return;
-
-        // Draw large circles at selection points
-        double markerRadius = 4.0; // World units (meters)
-
-        // Use different colors for first (orange) and second (blue) markers
-        var orangeBrush = new SolidColorBrush(Color.FromRgb(255, 165, 0));
-        var blueBrush = new SolidColorBrush(Color.FromRgb(0, 150, 255));
-
-        for (int i = 0; i < _selectionMarkers.Count; i++)
-        {
-            var marker = _selectionMarkers[i];
-            var brush = i == 0 ? orangeBrush : blueBrush;
-            var center = new Point(marker.Easting, marker.Northing);
-            context.DrawEllipse(brush, _selectionMarkerPen, center, markerRadius, markerRadius);
-        }
-    }
-
-    private void DrawClipLine(DrawingContext context)
-    {
-        // Draw curved clip path if available (for curve mode)
-        if (_clipPath != null && _clipPath.Count >= 2)
-        {
-            for (int i = 0; i < _clipPath.Count - 1; i++)
-            {
-                var p1 = new Point(_clipPath[i].Easting, _clipPath[i].Northing);
-                var p2 = new Point(_clipPath[i + 1].Easting, _clipPath[i + 1].Northing);
-                context.DrawLine(_clipLinePen, p1, p2);
-            }
-            return;
-        }
-
-        // Draw straight clip line (for line mode)
-        if (!_clipLine.HasValue) return;
-
-        var start = new Point(_clipLine.Value.Start.Easting, _clipLine.Value.Start.Northing);
-        var end = new Point(_clipLine.Value.End.Easting, _clipLine.Value.End.Northing);
-        context.DrawLine(_clipLinePen, start, end);
-    }
-
-    private void DrawTrack(DrawingContext context)
-    {
-        // Calculate scale factor: convert from desired screen size to world units
-        // At zoom=1, viewHeight=200m maps to screen height
-        // For ~0.75mm points at 96 DPI, that's about 3 pixels
-        // worldRadius = screenPixels * (viewHeight / screenHeight)
-        double viewHeight = 200.0 / _zoom;
-        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
-        double worldPerPixel = viewHeight / screenHeight;
-
-        double pointRadius = 4 * worldPerPixel;  // ~4 pixels for point markers
-        double lineThickness = 2 * worldPerPixel; // ~2 pixels for lines
-        double labelOffset = 8 * worldPerPixel;   // Offset for A/B labels
-
-        // Create scaled pens - solid and dotted versions
-        var trackPenSolid = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness);
-        var trackPenDotted = new Pen(new SolidColorBrush(Color.FromRgb(255, 165, 0)), lineThickness)
-        {
-            DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
-        };
-        var trackExtendPenScaled = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5);
-        var trackExtendPenDotted = new Pen(new SolidColorBrush(Color.FromArgb(128, 255, 165, 0)), lineThickness * 0.5)
-        {
-            DashStyle = new DashStyle(new double[] { 4, 4 }, 0)
-        };
-        var pointOutlinePen = new Pen(Brushes.White, lineThickness * 0.5);
-
-        // Next line pen (cyan/blue for visibility)
-        var nextLinePenSolid = new Pen(new SolidColorBrush(Color.FromRgb(0, 200, 255)), lineThickness);
-        var nextLineExtendPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 200, 255)), lineThickness * 0.5);
-
-        // Recorded path pen (semi-transparent magenta)
-        var recordedPathPen = new Pen(new SolidColorBrush(Color.FromArgb(100, 200, 100, 255)), lineThickness * 0.75);
-        // Contour strip pen (semi-transparent green)
-        var contourStripPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 50, 220, 50)), lineThickness * 0.75);
-
-        // Draw recorded paths (behind everything else)
-        foreach (var path in _recordedPaths)
-        {
-            if (path.IsVisible && path.Points.Count >= 2)
-            {
-                for (int i = 0; i < path.Points.Count - 1; i++)
-                {
-                    var p1 = new Point(path.Points[i].Easting, path.Points[i].Northing);
-                    var p2 = new Point(path.Points[i + 1].Easting, path.Points[i + 1].Northing);
-                    context.DrawLine(recordedPathPen, p1, p2);
-                }
-            }
-        }
-
-        // Draw contour strips (behind active track but above recorded paths)
-        foreach (var strip in _contourStrips)
-        {
-            if (strip.IsVisible && strip.Points.Count >= 2)
-            {
-                for (int i = 0; i < strip.Points.Count - 1; i++)
-                {
-                    var p1 = new Point(strip.Points[i].Easting, strip.Points[i].Northing);
-                    var p2 = new Point(strip.Points[i + 1].Easting, strip.Points[i + 1].Northing);
-                    context.DrawLine(contourStripPen, p1, p2);
-                }
-            }
-        }
-
-        // Draw pending Point A (green marker while waiting for Point B)
-        if (_pendingPointA != null)
-        {
-            var pointA = new Point(_pendingPointA.Easting, _pendingPointA.Northing);
-            context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
-
-            // Draw "A" label offset to the right
-            DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
-        }
-
-        // Draw next track first (so current track renders on top)
-        if (_isInYouTurn && _nextTrack != null)
-        {
-            DrawSingleTrack(context, _nextTrack, nextLinePenSolid, nextLineExtendPen, pointOutlinePen,
-                pointRadius, labelOffset, worldPerPixel, "Next");
-        }
-
-        // Draw active track
-        if (_activeTrack != null)
-        {
-            // When in U-turn, draw current line as dotted; otherwise solid
-            var mainPen = _isInYouTurn ? trackPenDotted : trackPenSolid;
-            var extendPen = _isInYouTurn ? trackExtendPenDotted : trackExtendPenScaled;
-
-            DrawSingleTrack(context, _activeTrack, mainPen, extendPen, pointOutlinePen,
-                pointRadius, labelOffset, worldPerPixel, "Current");
-        }
-    }
-
-    private void DrawSingleTrack(DrawingContext context, AgValoniaGPS.Models.Track.Track track,
-        Pen mainPen, Pen extendPen, Pen pointOutlinePen,
-        double pointRadius, double labelOffset, double worldPerPixel, string lineType)
-    {
-        if (track.Points.Count < 2)
-            return;
-
-        var trackPointA = track.Points[0];
-        var trackPointB = track.Points[track.Points.Count - 1];
-
-        var pointA = new Point(trackPointA.Easting, trackPointA.Northing);
-        var pointB = new Point(trackPointB.Easting, trackPointB.Northing);
-
-        // For AB lines (2 points), draw extended line in both directions
-        if (track.Points.Count == 2)
-        {
-            Console.WriteLine($"[DrawTrack] AB Line: '{track.Name}' with 2 points");
-            double dx = pointB.X - pointA.X;
-            double dy = pointB.Y - pointA.Y;
-            double length = Math.Sqrt(dx * dx + dy * dy);
-
-            if (length > 0.01)
-            {
-                double nx = dx / length;
-                double ny = dy / length;
-                double extendDistance = 500.0;
-                var extendA = new Point(pointA.X - nx * extendDistance, pointA.Y - ny * extendDistance);
-                var extendB = new Point(pointB.X + nx * extendDistance, pointB.Y + ny * extendDistance);
-                context.DrawLine(extendPen, extendA, extendB);
-            }
-
-            // Draw main AB line
-            context.DrawLine(mainPen, pointA, pointB);
-        }
-        else
-        {
-            // For curves (>2 points), draw all segments
-            Console.WriteLine($"[DrawTrack] Curve: '{track.Name}' drawing {track.Points.Count - 1} segments");
-            for (int i = 0; i < track.Points.Count - 1; i++)
-            {
-                var p1 = new Point(track.Points[i].Easting, track.Points[i].Northing);
-                var p2 = new Point(track.Points[i + 1].Easting, track.Points[i + 1].Northing);
-                context.DrawLine(mainPen, p1, p2);
-            }
-        }
-
-        // Draw Point A marker (green)
-        context.DrawEllipse(_pointABrush, pointOutlinePen, pointA, pointRadius, pointRadius);
-
-        // Draw Point B marker (red)
-        context.DrawEllipse(_pointBBrush, pointOutlinePen, pointB, pointRadius, pointRadius);
-
-        // Draw labels - only for current line to avoid clutter
-        if (lineType == "Current")
-        {
-            DrawLabel(context, "A", pointA.X + labelOffset, pointA.Y, worldPerPixel, Brushes.LimeGreen);
-            DrawLabel(context, "B", pointB.X + labelOffset, pointB.Y, worldPerPixel, Brushes.Red);
-        }
-    }
-
-    /// <summary>
-    /// Draw parallel offset guidelines on both sides of the active track.
-    /// Offset spacing is the tool width (same as track pass spacing).
-    /// </summary>
-    private void DrawExtraGuidelines(DrawingContext context, int count)
-    {
-        if (_activeTrack == null || _activeTrack.Points.Count < 2) return;
-
-        double spacing = _toolWidth > 0.1 ? _toolWidth : 6.0; // fallback to 6m
-        double viewHeight = 200.0 / _zoom;
-        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
-        double worldPerPixel = viewHeight / screenHeight;
-        double lineThickness = 1 * worldPerPixel;
-
-        var guidelinePen = new Pen(
-            new SolidColorBrush(Color.FromArgb(60, 255, 165, 0)), lineThickness);
-
-        var track = _activeTrack;
-        if (track.Points.Count == 2)
-        {
-            // AB line: offset perpendicular
-            var pA = track.Points[0];
-            var pB = track.Points[track.Points.Count - 1];
-            double dx = pB.Easting - pA.Easting;
-            double dy = pB.Northing - pA.Northing;
-            double length = Math.Sqrt(dx * dx + dy * dy);
-            if (length < 0.01) return;
-
-            // Unit perpendicular (left)
-            double px = -dy / length;
-            double py = dx / length;
-
-            // Extend line well beyond view
-            double nx = dx / length;
-            double ny = dy / length;
-            double ext = 500.0;
-
-            for (int i = 1; i <= count; i++)
-            {
-                double offset = i * spacing;
-
-                // Left side
-                var lA = new Point(pA.Easting + px * offset - nx * ext,
-                                   pA.Northing + py * offset - ny * ext);
-                var lB = new Point(pB.Easting + px * offset + nx * ext,
-                                   pB.Northing + py * offset + ny * ext);
-                context.DrawLine(guidelinePen, lA, lB);
-
-                // Right side
-                var rA = new Point(pA.Easting - px * offset - nx * ext,
-                                   pA.Northing - py * offset - ny * ext);
-                var rB = new Point(pB.Easting - px * offset + nx * ext,
-                                   pB.Northing - py * offset + ny * ext);
-                context.DrawLine(guidelinePen, rA, rB);
-            }
-        }
-        else
-        {
-            // Curve: offset each segment perpendicular
-            for (int i = 1; i <= count; i++)
-            {
-                double offset = i * spacing;
-
-                for (int j = 0; j < track.Points.Count - 1; j++)
-                {
-                    var p1 = track.Points[j];
-                    var p2 = track.Points[j + 1];
-                    double dx = p2.Easting - p1.Easting;
-                    double dy = p2.Northing - p1.Northing;
-                    double segLen = Math.Sqrt(dx * dx + dy * dy);
-                    if (segLen < 0.001) continue;
-
-                    double px = -dy / segLen;
-                    double py = dx / segLen;
-
-                    // Left
-                    context.DrawLine(guidelinePen,
-                        new Point(p1.Easting + px * offset, p1.Northing + py * offset),
-                        new Point(p2.Easting + px * offset, p2.Northing + py * offset));
-                    // Right
-                    context.DrawLine(guidelinePen,
-                        new Point(p1.Easting - px * offset, p1.Northing - py * offset),
-                        new Point(p2.Easting - px * offset, p2.Northing - py * offset));
-                }
-            }
-        }
-    }
-
-    private void DrawFlags(DrawingContext context)
-    {
-        double viewHeight = 200.0 / _zoom;
-        double screenHeight = Bounds.Height > 0 ? Bounds.Height : 600;
-        double worldPerPixel = viewHeight / screenHeight;
-        double flagRadius = 10 * worldPerPixel;
-        double poleHeight = 28 * worldPerPixel;
-        double poleWidth = 2 * worldPerPixel;
-
-        var polePen = new Pen(Brushes.White, poleWidth);
-
-        for (int i = 0; i < _flags.Count; i++)
-        {
-            var flag = _flags[i];
-            var center = new Point(flag.Easting, flag.Northing);
-
-            // Flag color (matches FlagColor enum names)
-            IBrush fillBrush = flag.Color switch
-            {
-                "Red" => Brushes.Red,
-                "Green" => new SolidColorBrush(Color.FromRgb(0, 204, 0)),
-                "Yellow" => new SolidColorBrush(Color.FromRgb(255, 204, 0)),
-                "Blue" => new SolidColorBrush(Color.FromRgb(32, 128, 224)),
-                "Orange" => new SolidColorBrush(Color.FromRgb(255, 136, 0)),
-                "Purple" => new SolidColorBrush(Color.FromRgb(153, 51, 204)),
-                "Cyan" => new SolidColorBrush(Color.FromRgb(0, 187, 204)),
-                "Pink" => new SolidColorBrush(Color.FromRgb(255, 102, 170)),
-                "White" => Brushes.White,
-                "Black" => new SolidColorBrush(Color.FromRgb(51, 51, 51)),
-                _ => Brushes.Red
-            };
-
-            // Counter-rotate to keep flag upright regardless of map rotation
-            using (context.PushTransform(
-                Matrix.CreateTranslation(-center.X, -center.Y) *
-                Matrix.CreateRotation(_rotation) *
-                Matrix.CreateTranslation(center.X, center.Y)))
-            {
-                // Draw pole (line from ground to flag top)
-                var poleTop = new Point(center.X, center.Y + poleHeight);
-                context.DrawLine(polePen, center, poleTop);
-
-                // Draw flag marker (filled circle at top of pole)
-                var outlinePen = new Pen(Brushes.White, worldPerPixel * 0.5);
-                context.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
-
-                // Draw flag name
-                if (!string.IsNullOrEmpty(flag.Name))
-                {
-                    DrawLabel(context, flag.Name, poleTop.X + flagRadius + worldPerPixel * 2,
-                        poleTop.Y, worldPerPixel, Brushes.White);
-                }
-            }
-        }
-    }
-
-    private void DrawLabel(DrawingContext context, string text, double x, double y, double worldPerPixel, IBrush brush)
-    {
-        // Scale font size based on zoom (target ~16 pixels on screen)
-        double fontSize = 16 * worldPerPixel;
-
-        var typeface = new Typeface("Arial", FontStyle.Normal, FontWeight.Bold);
-        var formattedText = new FormattedText(
-            text,
-            System.Globalization.CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight,
-            typeface,
-            fontSize,
-            brush);
-
-        // Note: Y is flipped in world coordinates, so we need to handle that
-        // The camera transform already handles the flip, so just draw normally
-        // But text will appear upside down - we need to flip it back
-        using (context.PushTransform(Matrix.CreateScale(1, -1) * Matrix.CreateTranslation(x, y)))
-        {
-            context.DrawText(formattedText, new Point(0, -fontSize));
-        }
-    }
+    // All Draw* methods (DrawTool, DrawVehicle, DrawSvennArrow, DrawGrid, etc.)
+    // have been moved to the MapCompositionHandler inner class below.
+    // The handler runs on the render thread via CompositionCustomVisualHandler.
 
     // Mouse event handlers
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -3044,6 +2012,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 UserPanned?.Invoke();
             }
             _lastMousePosition = currentPos;
+            SendStateToHandler();
             e.Handled = true;
         }
         else if (_isRotating)
@@ -3053,6 +2022,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _cameraFollowMode = 2;
             _lastMousePosition = currentPos;
             UserPanned?.Invoke();
+            SendStateToHandler();
             e.Handled = true;
         }
     }
@@ -3089,8 +2059,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _cameraX += deltaX;
         _cameraY += deltaY;
-        // Notify ViewModel to enter Free mode (single source of truth)
         UserPanned?.Invoke();
+        SendStateToHandler();
     }
 
     public void PanTo(double x, double y)
@@ -3109,8 +2079,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         else
         {
             _zoom *= factor;
-            _zoom = Math.Clamp(_zoom, 0.02, 100.0);  // Min zoom 0.02 = 10km view height for large fields
+            _zoom = Math.Clamp(_zoom, 0.02, 100.0);
         }
+        SendStateToHandler();
     }
 
     public double GetZoom() => _zoom;
@@ -3121,11 +2092,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _rotation += deltaRadians;
         UserPanned?.Invoke();
+        SendStateToHandler();
     }
 
     public void SetGridVisible(bool visible)
     {
         IsGridVisible = visible;
+        SendStateToHandler();
     }
 
     public void Toggle3DMode()
@@ -3174,6 +2147,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             _rotation = -_vehicleHeading;
         }
+        SendStateToHandler();
     }
 
     public void SetDayMode(bool isDayMode)
@@ -3182,24 +2156,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         {
             _isDayMode = isDayMode;
             UpdateDayNightColors();
+            SendStateToHandler();
         }
     }
 
     private void UpdateDayNightColors()
     {
-        if (_isDayMode)
-        {
-            _backgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 26));
-            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.5);
-            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)), 0.5);
-        }
-        else
-        {
-            // Night mode: darker background, dimmer grid
-            _backgroundBrush = new SolidColorBrush(Color.FromRgb(10, 10, 10));
-            _gridPenMinor = new Pen(new SolidColorBrush(Color.FromArgb(40, 60, 60, 60)), 0.5);
-            _gridPenMajor = new Pen(new SolidColorBrush(Color.FromArgb(70, 60, 60, 60)), 0.5);
-        }
+        // Day/night colors are now applied in the handler via IsDayMode state flag.
+        // Only ground texture needs updating here (passed as Bitmap reference in state).
+        _groundTexture = _isDayMode ? _groundTextureDay : _groundTextureNight;
+        SendStateToHandler();
     }
 
     public void SetVehiclePosition(double x, double y, double heading)
@@ -3228,9 +2194,53 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             case 2: // Free: don't move camera at all
                 break;
         }
+
+        SendStateToHandler();
     }
 
-    public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY)
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady)
+    {
+        // Mark heading as valid once vehicle has moved from origin
+        if (!_hasValidHeading && (Math.Abs(vehicleX) > 0.1 || Math.Abs(vehicleY) > 0.1))
+            _hasValidHeading = true;
+
+        _vehicleX = vehicleX;
+        _vehicleY = vehicleY;
+        _vehicleHeading = vehicleHeading;
+        _toolX = toolX;
+        _toolY = toolY;
+        _toolHeading = toolHeading;
+        _toolWidth = toolWidth;
+        _hitchX = hitchX;
+        _hitchY = hitchY;
+        _toolPositionReady = toolReady;
+
+        // Camera follow based on mode
+        switch (_cameraFollowMode)
+        {
+            case 0: // NorthUp
+                _cameraX = vehicleX;
+                _cameraY = vehicleY;
+                _rotation = 0;
+                break;
+            case 1: // HeadingUp
+                _cameraX = vehicleX;
+                _cameraY = vehicleY;
+                _rotation = -vehicleHeading;
+                break;
+            case 2: // Free
+                break;
+        }
+
+        // Detect reversing
+        _isReversing = vehicleHeading < 0;
+
+        SendStateToHandler();
+    }
+
+    public void SetToolPosition(double x, double y, double heading, double width, double hitchX, double hitchY, bool isReady = true)
     {
         _toolX = x;
         _toolY = y;
@@ -3238,6 +2248,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _toolWidth = width;
         _hitchX = hitchX;
         _hitchY = hitchY;
+        _toolPositionReady = isReady;
     }
 
     public void SetSectionStates(bool[] sectionOn, double[] sectionWidths, int numSections, int[]? buttonStates = null)
@@ -3269,6 +2280,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _sectionRight[i] = runningPosition + _sectionWidths[i];
             runningPosition += _sectionWidths[i];
         }
+        SendStateToHandler();
     }
 
     /// <summary>
@@ -3343,6 +2355,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _goalEasting = goalEasting;
         _goalNorthing = goalNorthing;
         _guidanceActive = isActive;
+        SendStateToHandler();
     }
 
     public bool AutoPanEnabled
@@ -3354,44 +2367,47 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetFlags(IReadOnlyList<(double Easting, double Northing, string Color, string Name)> flags)
     {
         _flags = flags;
-        InvalidateVisual();
+        SendStateToHandler();
     }
 
     public void SetBoundary(Boundary? boundary)
     {
         var newOuterPoints = boundary?.OuterBoundary?.Points?.Count ?? 0;
-        Console.WriteLine($"[MapControl] SetBoundary called: boundary={boundary != null}, outerPoints={newOuterPoints}");
+        Debug.WriteLine($"[MapControl] SetBoundary called: boundary={boundary != null}, outerPoints={newOuterPoints}");
 
         // Log boundary vertices to verify they match what we expect
         if (boundary?.OuterBoundary?.Points != null && boundary.OuterBoundary.Points.Count > 0)
         {
             var pts = boundary.OuterBoundary.Points;
-            Console.WriteLine($"[MapControl] SetBoundary vertices:");
+            Debug.WriteLine($"[MapControl] SetBoundary vertices:");
             for (int i = 0; i < pts.Count; i++)
             {
-                Console.WriteLine($"[MapControl]   Point {i}: E={pts[i].Easting:F2}, N={pts[i].Northing:F2}");
+                Debug.WriteLine($"[MapControl]   Point {i}: E={pts[i].Easting:F2}, N={pts[i].Northing:F2}");
             }
         }
 
         _boundary = boundary;
         _boundaryPointsWhenSet = newOuterPoints;
         InitializeCoverageBitmap();
+        SendStateToHandler();
     }
 
     public void SetRecordingPoints(IReadOnlyList<(double Easting, double Northing)> points)
     {
         _recordingPoints = new List<(double, double)>(points);
+        SendStateToHandler();
     }
 
     public void ClearRecordingPoints()
     {
         _recordingPoints = null;
+        SendStateToHandler();
     }
 
     public void SetBackgroundImage(string imagePath, double minX, double maxY, double maxX, double minY)
     {
-        Console.WriteLine($"[MapControl] SetBackgroundImage: {imagePath}, control={GetHashCode()}");
-        Console.WriteLine($"[MapControl] Background bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
+        Debug.WriteLine($"[MapControl] SetBackgroundImage: {imagePath}, control={GetHashCode()}");
+        Debug.WriteLine($"[MapControl] Background bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
 
         _backgroundImagePath = imagePath;
         _bgMinX = minX;
@@ -3408,7 +2424,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             try
             {
                 _backgroundImage = new Bitmap(imagePath);
-                Console.WriteLine($"[MapControl] Loaded background image: {_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height}");
+                Debug.WriteLine($"[MapControl] Loaded background image: {_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height}");
                 Debug.WriteLine($"[DrawingContextMapControl] Loaded background image: {imagePath} ({_backgroundImage.PixelSize.Width}x{_backgroundImage.PixelSize.Height})");
                 Debug.WriteLine($"  Bounds: minX={minX:F1}, maxY={maxY:F1}, maxX={maxX:F1}, minY={minY:F1}");
 
@@ -3416,17 +2432,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // This handles the case where boundary is set before background (new field creation)
                 if (_coverageWriteableBitmap != null && _bitmapWidth > 0 && _bitmapHeight > 0)
                 {
-                    Console.WriteLine("[MapControl] Coverage bitmap exists, compositing background immediately");
+                    Debug.WriteLine("[MapControl] Coverage bitmap exists, compositing background immediately");
                     CompositeBackgroundIntoBitmap();
+            SyncSkBitmapFromDisplay();
                     _backgroundComposited = true;
                 }
                 else
                 {
                     // No coverage bitmap yet - will composite when bitmap is created
                     _backgroundComposited = false;
-                    Console.WriteLine("[MapControl] No coverage bitmap yet, will composite when created");
+                    Debug.WriteLine("[MapControl] No coverage bitmap yet, will composite when created");
                 }
-                InvalidateVisual();
+                SendStateToHandler();
             }
             catch (Exception ex)
             {
@@ -3461,7 +2478,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _metersPerDegreeLon = 111412.84 * Math.Cos(originLatRad)
             - 93.5 * Math.Cos(3.0 * originLatRad) + 0.118 * Math.Cos(5.0 * originLatRad);
 
-        Console.WriteLine($"[MapControl] SetBackgroundImageWithMercator: Mercator bounds Y[{mercMinY:F1}, {mercMaxY:F1}]");
+        Debug.WriteLine($"[MapControl] SetBackgroundImageWithMercator: Mercator bounds Y[{mercMinY:F1}, {mercMaxY:F1}]");
 
         // Call the regular method for the rest
         SetBackgroundImage(imagePath, minX, maxY, maxX, minY);
@@ -3469,7 +2486,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void ClearBackground()
     {
-        Console.WriteLine($"[MapControl] ClearBackground() called - fully clearing background");
+        Debug.WriteLine($"[MapControl] ClearBackground() called - fully clearing background");
         _backgroundImage?.Dispose();
         _backgroundImage = null;
         _backgroundImagePath = null;
@@ -3482,81 +2499,102 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _showBoundaryOffsetIndicator = show;
         _boundaryOffsetMeters = offsetMeters;
+        SendStateToHandler();
     }
 
-    // Headland visualization
     public void SetHeadlandLine(IReadOnlyList<AgValoniaGPS.Models.Base.Vec3>? headlandPoints)
     {
         _headlandLine = headlandPoints;
+        SendStateToHandler();
     }
 
     public void SetHeadlandPreview(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? previewPoints)
     {
         _headlandPreview = previewPoints;
+        SendStateToHandler();
     }
 
     public void SetHeadlandVisible(bool visible)
     {
         _isHeadlandVisible = visible;
+        SendStateToHandler();
     }
 
-    // YouTurn path visualization
     public void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath)
     {
         _youTurnPath = turnPath;
+        SendStateToHandler();
     }
 
     public void SetSelectionMarkers(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? markers)
     {
         _selectionMarkers = markers;
+        SendStateToHandler();
+    }
+
+    public void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines)
+    {
+        _tramOuterTrack = outerTrack;
+        _tramInnerTrack = innerTrack;
+        _tramParallelLines = parallelLines;
+        SendStateToHandler();
     }
 
     public void SetClipLine(AgValoniaGPS.Models.Base.Vec2? start, AgValoniaGPS.Models.Base.Vec2? end)
     {
-        if (start.HasValue && end.HasValue)
-        {
-            _clipLine = (start.Value, end.Value);
-        }
-        else
-        {
-            _clipLine = null;
-        }
+        _clipLine = (start.HasValue && end.HasValue) ? (start.Value, end.Value) : null;
+        SendStateToHandler();
     }
 
     public void SetClipPath(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? path)
     {
         _clipPath = path;
+        SendStateToHandler();
     }
 
-    // Track visualization
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track)
     {
         _activeTrack = track;
+        SendStateToHandler();
+    }
+
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track)
+    {
+        _baseTrack = track;
+        SendStateToHandler();
     }
 
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track)
     {
         _nextTrack = track;
+        SendStateToHandler();
     }
 
     public void SetIsInYouTurn(bool isInTurn)
     {
         _isInYouTurn = isInTurn;
+        SendStateToHandler();
     }
 
     public void SetPendingPointA(AgValoniaGPS.Models.Position? pointA)
     {
         _pendingPointA = pointA;
+        SendStateToHandler();
     }
 
     public void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths)
     {
         _recordedPaths = paths;
+        SendStateToHandler();
     }
 
     public void SetContourStrips(IReadOnlyList<AgValoniaGPS.Models.Track.Track> strips)
     {
         _contourStrips = strips;
+        SendStateToHandler();
     }
 
     // Coverage visualization
@@ -3566,18 +2604,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         _coveragePatches = patches;
 
-        // Rebuild Skia draw operation if patch count changed (new patches added)
-        // We rebuild the whole thing because Skia paths are immutable
-        if (patches.Count != _lastDrawOpPatchCount)
-        {
-            _cachedCoverageDrawOp?.Dispose();
-            _cachedCoverageDrawOp = new CoverageDrawOperation(
-                new Rect(-100000, -100000, 200000, 200000), // Large bounds to cover any field
-                patches);
-            _lastDrawOpPatchCount = patches.Count;
-        }
-
-        // Still maintain geometry cache for fallback
+        // Maintain geometry cache for coverage rendering
         RebuildCoverageGeometryCache();
 
         _profileSw.Stop();
@@ -3623,17 +2650,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void MarkCoverageFullRebuildNeeded()
     {
-        Console.WriteLine($"[MapControl] MarkCoverageFullRebuildNeeded() called, pending={_bitmapUpdatePending}");
+        Debug.WriteLine($"[MapControl] MarkCoverageFullRebuildNeeded() called, pending={_bitmapUpdatePending}");
         _bitmapNeedsFullRebuild = true;
 
         // Schedule bitmap update
         if (!_bitmapUpdatePending)
         {
-            Console.WriteLine("[MapControl] Scheduling UpdateCoverageBitmapIfNeeded via Dispatcher");
+            Debug.WriteLine("[MapControl] Scheduling UpdateCoverageBitmapIfNeeded via Dispatcher");
             _bitmapUpdatePending = true;
             Dispatcher.UIThread.Post(() =>
             {
-                Console.WriteLine("[MapControl] Running UpdateCoverageBitmapIfNeeded() from full rebuild request");
+                Debug.WriteLine("[MapControl] Running UpdateCoverageBitmapIfNeeded() from full rebuild request");
                 UpdateCoverageBitmapIfNeeded();
                 _bitmapUpdatePending = false;
             }, DispatcherPriority.Background);
@@ -3647,7 +2674,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     /// </summary>
     public void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN)
     {
-        Console.WriteLine($"[MapControl] InitializeCoverageBitmapWithBounds: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}], control={GetHashCode()}");
+        Debug.WriteLine($"[MapControl] InitializeCoverageBitmapWithBounds: E[{minE:F1}, {maxE:F1}] N[{minN:F1}, {maxN:F1}], control={GetHashCode()}");
 
         double worldWidth = maxE - minE;
         double worldHeight = maxN - minN;
@@ -3661,8 +2688,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         }
         else
         {
-            // Scale up for large fields to fit in ~600MB (RGB565)
-            const long MAX_PIXELS = 300_000_000;
+            // Cap at ~25M pixels (~100MB BGRA8888) for smooth GPU rendering
+            const long MAX_PIXELS = 25_000_000;
             cellSize = MIN_BITMAP_CELL_SIZE;
 
             long pixelsAtMinRes = (long)Math.Ceiling(worldWidth / MIN_BITMAP_CELL_SIZE) *
@@ -3681,13 +2708,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
+        // Apply user resolution multiplier (1.0=High, 1.5=Medium, 2.0=Low)
+        cellSize = ApplyResolutionMultiplier(cellSize);
+
         int requiredWidth = (int)Math.Ceiling(worldWidth / cellSize);
         int requiredHeight = (int)Math.Ceiling(worldHeight / cellSize);
 
         // Ensure valid dimensions
         if (requiredWidth <= 0 || requiredHeight <= 0)
         {
-            Console.WriteLine($"[MapControl] Invalid bitmap dimensions: {requiredWidth}x{requiredHeight}");
+            Debug.WriteLine($"[MapControl] Invalid bitmap dimensions: {requiredWidth}x{requiredHeight}");
             return;
         }
 
@@ -3700,7 +2730,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             _bitmapWidth == requiredWidth &&
             _bitmapHeight == requiredHeight)
         {
-            Console.WriteLine($"[MapControl] Bitmap already initialized with same bounds, skipping");
+            Debug.WriteLine($"[MapControl] Bitmap already initialized with same bounds, skipping");
             return;
         }
 
@@ -3717,12 +2747,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         CreateCoverageBitmap();
 
         // Trigger re-render
-        InvalidateVisual();
+        SendStateToHandler();
 
         // Mark bitmap as ready
         _bitmapNeedsFullRebuild = false;
         _bitmapNeedsIncrementalUpdate = false;
-        Console.WriteLine($"[MapControl] Bitmap initialized: {requiredWidth}x{requiredHeight} @ {cellSize}m");
+        Debug.WriteLine($"[MapControl] Bitmap initialized: {requiredWidth}x{requiredHeight} @ {cellSize}m");
     }
 
     private void RebuildCoverageGeometryCache()
@@ -3877,6 +2907,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     {
         _isPanning = true;
         _lastMousePosition = position;
+        _panStartPosition = position;
+        _hasDraggedPastThreshold = false;
+        _rotationOnPanStart = _rotation;
     }
 
     public void StartRotate(Point position)
@@ -3887,9 +2920,48 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
     public void UpdateMouse(Point position)
     {
-        if (_isPanning || _isRotating)
+        if (_isPanning)
         {
-            // Handled by OnPointerMoved
+            _rotation = _rotationOnPanStart;
+
+            double deltaX = position.X - _lastMousePosition.X;
+            double deltaY = position.Y - _lastMousePosition.Y;
+
+            double aspect = Bounds.Width / Bounds.Height;
+            double viewWidth = 200.0 * aspect / _zoom;
+            double viewHeight = 200.0 / _zoom;
+
+            double worldDeltaX = -deltaX * viewWidth / Bounds.Width;
+            double worldDeltaY = deltaY * viewHeight / Bounds.Height;
+
+            double cos = Math.Cos(_rotation);
+            double sin = Math.Sin(_rotation);
+            _cameraX += worldDeltaX * cos - worldDeltaY * sin;
+            _cameraY += worldDeltaX * sin + worldDeltaY * cos;
+
+            if (!_hasDraggedPastThreshold)
+            {
+                double dist = Math.Sqrt(Math.Pow(position.X - _panStartPosition.X, 2) +
+                                        Math.Pow(position.Y - _panStartPosition.Y, 2));
+                if (dist > DragThreshold)
+                    _hasDraggedPastThreshold = true;
+            }
+            if (_hasDraggedPastThreshold)
+            {
+                _cameraFollowMode = 2;
+                UserPanned?.Invoke();
+            }
+            _lastMousePosition = position;
+            SendStateToHandler();
+        }
+        else if (_isRotating)
+        {
+            double deltaX = position.X - _lastMousePosition.X;
+            _rotation += deltaX * 0.01;
+            _cameraFollowMode = 2;
+            _lastMousePosition = position;
+            UserPanned?.Invoke();
+            SendStateToHandler();
         }
     }
 
@@ -3936,6 +3008,1541 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Add camera position
         return (_cameraX + rotatedX, _cameraY + rotatedY);
     }
+
+    // ======================================================================
+    // MapCompositionHandler — renders on the compositor render thread
+    // ======================================================================
+
+    /// <summary>
+    /// Composition handler that performs all map rendering on the render thread.
+    /// Receives MapRenderState snapshots via OnMessage and draws in OnRender.
+    /// </summary>
+    private class MapCompositionHandler : CompositionCustomVisualHandler
+    {
+        private readonly DrawingContextMapControl _owner;
+        private MapRenderState? _state;
+
+        // FPS tracking (compositor frames, not content updates)
+        private DateTime _lastFpsUpdate = DateTime.UtcNow;
+        private int _compositorFrameCount;
+        private double _currentFps;
+        private int _renderCounter;
+        private bool _loggedSkiaStatus;
+
+        // Immutable pens/brushes for render thread (created once, reused)
+        // Background
+        private ImmutablePen? _gridPenMinorImm;
+        private ImmutablePen? _gridPenMajorImm;
+        private readonly ImmutablePen _gridPenAxisXImm;
+        private readonly ImmutablePen _gridPenAxisYImm;
+        private readonly ImmutablePen _boundaryPenOuterImm;
+        private readonly ImmutablePen _boundaryPenInnerImm;
+        private readonly ImmutablePen _recordingPenImm;
+        private readonly ImmutablePen _headlandPenImm;
+        private readonly ImmutablePen _headlandPreviewPenImm;
+        private readonly ImmutablePen _clipLinePenImm;
+        private readonly ImmutablePen _hitchPenImm;
+        private readonly ImmutablePen _svennArrowPenImm;
+        private readonly ImmutablePen _sectionOutlinePenImm;
+
+        // SKPaint objects for SkiaSharp drawing (boundary, headland, track, etc.)
+        private readonly SKPaint _boundaryOuterPaint;
+        private readonly SKPaint _boundaryInnerPaint;
+        private readonly SKPaint _headlandPaint;
+        private readonly SKPaint _headlandPreviewPaint;
+        private readonly SKPaint _recordingLinePaint;
+        private readonly SKPaint _clipLinePaint;
+        private readonly SKPaint _youTurnPaint;
+
+        // Immutable brushes
+        private static readonly IImmutableBrush _vehicleBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 200, 0));
+        private static readonly IImmutableBrush _recordingPointBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(255, 128, 0));
+        private static readonly IImmutableBrush _pointABrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 255, 0));
+        private static readonly IImmutableBrush _pointBBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(255, 0, 0));
+        private static readonly IImmutableBrush _sectionOffBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(242, 51, 51));
+        private static readonly IImmutableBrush _sectionManualOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(247, 247, 0));
+        private static readonly IImmutableBrush _sectionAutoOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 242, 0));
+
+        public MapCompositionHandler(DrawingContextMapControl owner)
+        {
+            _owner = owner;
+
+            // Create immutable pens
+            _gridPenAxisXImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(70, 204, 51, 51)), 0.5);
+            _gridPenAxisYImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(70, 51, 204, 51)), 0.5);
+            _boundaryPenOuterImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(204, 242, 112, 89)), 1);
+            _boundaryPenInnerImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(245, 245, 77)), 1);
+            _recordingPenImm = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Cyan), 0.5);
+            _headlandPenImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(251, 235, 107)), 1.0);
+            _headlandPreviewPenImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(180, 77, 250, 0)), 1.5);
+            _clipLinePenImm = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Red), 3);
+            _hitchPenImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(255, 255, 0)), 0.15);
+            _svennArrowPenImm = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(200, 255, 220, 0)), 0.4);
+            _sectionOutlinePenImm = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Black), 0.1);
+
+            // SKPaint for SkiaSharp boundary/headland/track paths
+            _boundaryOuterPaint = new SKPaint
+            {
+                Color = new SKColor(242, 112, 89, 204),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+            _boundaryInnerPaint = new SKPaint
+            {
+                Color = new SKColor(245, 245, 77),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+            _headlandPaint = new SKPaint
+            {
+                Color = new SKColor(251, 235, 107),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+            _headlandPreviewPaint = new SKPaint
+            {
+                Color = new SKColor(77, 250, 0, 180),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1.5f,
+                IsAntialias = true
+            };
+            _recordingLinePaint = new SKPaint
+            {
+                Color = new SKColor(0, 255, 255),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.5f,
+                IsAntialias = true
+            };
+            _clipLinePaint = new SKPaint
+            {
+                Color = SKColors.Red,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 3,
+                IsAntialias = true
+            };
+            _youTurnPaint = new SKPaint
+            {
+                Color = new SKColor(77, 242, 77),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+        }
+
+        public override Rect GetRenderBounds()
+        {
+            var s = _state;
+            if (s != null && s.BoundsWidth > 0 && s.BoundsHeight > 0)
+                return new Rect(0, 0, s.BoundsWidth, s.BoundsHeight);
+            return new Rect(0, 0, 4000, 4000); // Large default until state arrives
+        }
+
+        public override void OnMessage(object message)
+        {
+            if (message is MapRenderState state)
+            {
+                bool firstState = _state == null;
+                _state = state;
+                Invalidate();
+                // Start the compositor frame counter on first state
+                if (firstState)
+                    RegisterForNextAnimationFrameUpdate();
+            }
+        }
+
+        public override void OnAnimationFrameUpdate()
+        {
+            // Invalidate to re-render on every compositor tick — keeps FPS accurate
+            // and ensures the latest state is always displayed
+            Invalidate();
+            // Keep the animation frame loop running
+            RegisterForNextAnimationFrameUpdate();
+        }
+
+        public override void OnRender(ImmediateDrawingContext drawingContext)
+        {
+            _renderCounter++;
+            var s = _state;
+            if (s == null) return;
+            if (s.BoundsWidth <= 0 || s.BoundsHeight <= 0) return;
+
+            // FPS tracking — count actual rendered frames
+            _compositorFrameCount++;
+            var now = DateTime.UtcNow;
+            var elapsed = (now - _lastFpsUpdate).TotalSeconds;
+            if (elapsed >= 1.0)
+            {
+                _currentFps = _compositorFrameCount / elapsed;
+                _compositorFrameCount = 0;
+                _lastFpsUpdate = now;
+                var fps = _currentFps;
+                Dispatcher.UIThread.Post(() => _owner.ReportFps(fps), DispatcherPriority.Background);
+            }
+
+
+            try
+            {
+                // Background fill (screen space) — ImmediateDrawingContext only, no SKCanvas lease
+                var bgColor = s.IsDayMode
+                    ? Color.FromRgb(69, 102, 179)
+                    : Color.FromRgb(10, 10, 10);
+                drawingContext.FillRectangle(
+                    new ImmutableSolidColorBrush(bgColor),
+                    new Rect(0, 0, s.BoundsWidth, s.BoundsHeight));
+
+
+                // Calculate view transform
+                double aspect = s.BoundsWidth / s.BoundsHeight;
+                double viewWidth = 200.0 * aspect / s.Zoom;
+                double viewHeight = 200.0 / s.Zoom;
+
+                var cameraMatrix = GetCameraTransform(s, viewWidth, viewHeight);
+                using var cameraScope = drawingContext.PushPreTransform(cameraMatrix);
+
+                // Ground texture
+                if (s.GroundTexture != null && s.FieldTextureVisible)
+                {
+                    DrawGroundTexture(drawingContext, s, viewWidth, viewHeight);
+                }
+
+                // Background image (if not composited into coverage)
+                if (s.BackgroundImage != null && !s.BackgroundComposited && s.FieldTextureVisible)
+                {
+                    DrawBackgroundImage(drawingContext, s);
+                }
+
+                // Grid
+                if (s.IsGridVisible)
+                {
+                    DrawGrid(drawingContext, s, viewWidth, viewHeight);
+                }
+
+                // === ALL remaining drawing via SKCanvas ===
+                // dc drawing after SKCanvas lease is unreliable, so everything
+                // after grid/texture goes through SKCanvas.
+                var skiaFeature = drawingContext.TryGetFeature<ISkiaSharpApiLeaseFeature>();
+                if (!_loggedSkiaStatus)
+                {
+                    _loggedSkiaStatus = true;
+                    Debug.WriteLine($"[MapControl:OnRender] SkiaFeature={skiaFeature != null}, owner={_owner.Name}, boundary={s.Boundary != null}");
+                }
+                if (skiaFeature != null)
+                {
+                    using var skiaLease = skiaFeature.Lease();
+                    var canvas = skiaLease.SkCanvas;
+
+                    // Each draw section is wrapped so a failure in one
+                    // doesn't prevent vehicle/tool from rendering.
+                    try
+                    {
+                        // Coverage bitmap
+                        if (s.CoverageSkBitmap != null && (s.BitmapHasContent || s.BitmapExplicitlyInitialized)
+                            && s.BitmapWidth > 0 && s.BitmapHeight > 0)
+                            DrawCoverageBitmap(drawingContext, canvas, s);
+
+                        // Boundary, headland, paths
+                        if (s.Boundary != null)
+                            DrawBoundary(canvas, s);
+                        if (s.IsHeadlandVisible && s.HeadlandLine != null && s.HeadlandLine.Count > 2)
+                            DrawHeadlandLine(canvas, s);
+                        if (s.HeadlandPreview != null && s.HeadlandPreview.Count > 2)
+                            DrawHeadlandPreview(canvas, s);
+                        if (s.RecordingPoints != null && s.RecordingPoints.Count > 0)
+                            DrawRecordingPointsSk(canvas, s);
+                        if (s.ClipLine.HasValue || (s.ClipPath != null && s.ClipPath.Count >= 2))
+                            DrawClipLineSk(canvas, s);
+                        if (s.YouTurnPath != null && s.YouTurnPath.Count > 1)
+                            DrawYouTurnPathSk(canvas, s);
+
+                        // Tram lines
+                        if (s.TramDisplayMode != AgValoniaGPS.Models.Configuration.TramDisplayMode.Off)
+                            DrawTramLinesSk(canvas, s);
+
+                        // Tracks
+                        if (s.ActiveTrack != null || s.PendingPointA != null
+                            || s.RecordedPaths.Count > 0 || s.ContourStrips.Count > 0)
+                            DrawTrackSk(canvas, s);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[OnRender] Draw error (non-fatal): {ex.Message}");
+                    }
+
+                    // Vehicle/tool always draws even if above fails
+                    if (s.ExtraGuidelines && s.ActiveTrack != null && s.ActiveTrack.Points.Count >= 2)
+                        DrawExtraGuidelinesSk(canvas, s);
+                    if (s.ShowVehicle && s.ToolWidth > 0.1)
+                        DrawToolSk(canvas, s);
+                    if (s.ShowVehicle)
+                        DrawVehicleSk(canvas, s);
+                    if (s.ShowVehicle && s.SvennArrowVisible)
+                        DrawSvennArrowSk(canvas, s);
+                    if (s.GuidanceActive && s.ShowVehicle)
+                        DrawGuidanceLookAheadSk(canvas, s);
+                    if (s.SelectionMarkers != null && s.SelectionMarkers.Count > 0)
+                        DrawSelectionMarkersSk(canvas, s);
+                    if (s.Flags.Count > 0)
+                        DrawFlagsSk(canvas, s);
+                    if (s.ShowBoundaryOffsetIndicator)
+                        DrawBoundaryOffsetIndicatorSk(canvas, s);
+                }
+
+            }
+            finally { }
+
+            // Draw HUD elements in screen space (outside camera transform)
+            if (s.HeadlandDistanceVisible && s.HasHeadland && s.HeadlandProximityDistance < double.MaxValue)
+            {
+                DrawHeadlandProximityHud(drawingContext, s);
+            }
+
+        }
+
+        private static Matrix GetCameraTransform(MapRenderState s, double viewWidth, double viewHeight)
+        {
+            double scaleX = s.BoundsWidth / viewWidth;
+            double scaleY = -s.BoundsHeight / viewHeight;
+
+            if (s.Is3DMode && s.CameraPitch > 0.01)
+            {
+                double pitchFactor = Math.Cos(s.CameraPitch);
+                scaleY *= Math.Max(0.3, pitchFactor);
+            }
+
+            var matrix = Matrix.Identity;
+            matrix = matrix * Matrix.CreateTranslation(s.BoundsWidth / 2, s.BoundsHeight / 2);
+            matrix = Matrix.CreateScale(scaleX, scaleY) * matrix;
+
+            if (Math.Abs(s.Rotation) > 0.001)
+            {
+                matrix = Matrix.CreateRotation(-s.Rotation) * matrix;
+            }
+
+            matrix = Matrix.CreateTranslation(-s.CameraX, -s.CameraY) * matrix;
+            return matrix;
+        }
+
+        private void DrawGroundTexture(ImmediateDrawingContext dc, MapRenderState s, double viewWidth, double viewHeight)
+        {
+            const double TILE_SIZE = 100.0;
+            double centerX = s.CameraX;
+            double centerY = s.CameraY;
+            double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + TILE_SIZE;
+
+            int startTileX = (int)Math.Floor((centerX - diagonal) / TILE_SIZE);
+            int endTileX = (int)Math.Ceiling((centerX + diagonal) / TILE_SIZE);
+            int startTileY = (int)Math.Floor((centerY - diagonal) / TILE_SIZE);
+            int endTileY = (int)Math.Ceiling((centerY + diagonal) / TILE_SIZE);
+
+            int maxTiles = 50;
+            if (endTileX - startTileX > maxTiles || endTileY - startTileY > maxTiles)
+            {
+                var viewRect = new Rect(centerX - diagonal, -(centerY + diagonal), diagonal * 2, diagonal * 2);
+                dc.DrawBitmap(s.GroundTexture!, viewRect);
+                return;
+            }
+
+            for (int tx = startTileX; tx < endTileX; tx++)
+            {
+                for (int ty = startTileY; ty < endTileY; ty++)
+                {
+                    double worldX = tx * TILE_SIZE;
+                    double worldY = ty * TILE_SIZE;
+                    dc.DrawBitmap(s.GroundTexture!, new Rect(worldX, worldY, TILE_SIZE, TILE_SIZE));
+                }
+            }
+        }
+
+        private void DrawBackgroundImage(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            if (s.BackgroundImage == null) return;
+
+            double width = s.BgMaxX - s.BgMinX;
+            double height = s.BgMaxY - s.BgMinY;
+            double centerX = (s.BgMinX + s.BgMaxX) / 2;
+            double centerY = (s.BgMinY + s.BgMaxY) / 2;
+
+            var flipTransform = Matrix.CreateTranslation(-centerX, -centerY) *
+                               Matrix.CreateScale(1, -1) *
+                               Matrix.CreateTranslation(centerX, centerY);
+
+            using (dc.PushPreTransform(flipTransform))
+            {
+                var destRect = new Rect(s.BgMinX, s.BgMinY, width, height);
+                dc.DrawBitmap(s.BackgroundImage, destRect);
+            }
+        }
+
+        private void DrawGrid(ImmediateDrawingContext dc, MapRenderState s, double viewWidth, double viewHeight)
+        {
+            double gridSize = 2000.0;
+            double toolW = s.ToolWidth > 0.5 ? s.ToolWidth : 6.0;
+            double viewSpan = Math.Max(viewWidth, viewHeight);
+
+            double spacing, majorEvery;
+            if (viewSpan < toolW * 30) { spacing = toolW; majorEvery = toolW * 10; }
+            else if (viewSpan < toolW * 100) { spacing = toolW * 5; majorEvery = toolW * 50; }
+            else { spacing = toolW * 10; majorEvery = toolW * 100; }
+
+            double screenHeight = s.BoundsHeight > 0 ? s.BoundsHeight : 600;
+            double worldPerPixel = viewHeight / screenHeight;
+            double minorThickness = Math.Max(0.3 * worldPerPixel, 0.05);
+            double majorThickness = Math.Max(0.6 * worldPerPixel, 0.1);
+
+            // Create grid pens based on day/night mode
+            IImmutableBrush minorBrush, majorBrush;
+            if (s.IsDayMode)
+            {
+                minorBrush = new ImmutableSolidColorBrush(Color.FromArgb(120, 40, 40, 40));
+                majorBrush = new ImmutableSolidColorBrush(Color.FromArgb(180, 30, 30, 30));
+            }
+            else
+            {
+                minorBrush = new ImmutableSolidColorBrush(Color.FromArgb(80, 180, 180, 180));
+                majorBrush = new ImmutableSolidColorBrush(Color.FromArgb(120, 200, 200, 200));
+            }
+            var gridPenMinor = new ImmutablePen(minorBrush, minorThickness);
+            var gridPenMajor = new ImmutablePen(majorBrush, majorThickness);
+
+            double minX = Math.Max(s.CameraX - viewWidth, -gridSize);
+            double maxX = Math.Min(s.CameraX + viewWidth, gridSize);
+            double minY = Math.Max(s.CameraY - viewHeight, -gridSize);
+            double maxY = Math.Min(s.CameraY + viewHeight, gridSize);
+
+            double startX = Math.Floor(minX / spacing) * spacing;
+            double startY = Math.Floor(minY / spacing) * spacing;
+
+            for (double x = startX; x <= maxX; x += spacing)
+            {
+                if (x < -gridSize || x > gridSize) continue;
+                bool isMajor = Math.Abs(x % majorEvery) < 0.1;
+                bool isAxis = Math.Abs(x) < 0.1;
+                var pen = isAxis ? _gridPenAxisYImm : (isMajor ? gridPenMajor : gridPenMinor);
+                dc.DrawLine(pen, new Point(x, Math.Max(minY, -gridSize)), new Point(x, Math.Min(maxY, gridSize)));
+            }
+
+            for (double y = startY; y <= maxY; y += spacing)
+            {
+                if (y < -gridSize || y > gridSize) continue;
+                bool isMajor = Math.Abs(y % majorEvery) < 0.1;
+                bool isAxis = Math.Abs(y) < 0.1;
+                var pen = isAxis ? _gridPenAxisXImm : (isMajor ? gridPenMajor : gridPenMinor);
+                dc.DrawLine(pen, new Point(Math.Max(minX, -gridSize), y), new Point(Math.Min(maxX, gridSize), y));
+            }
+        }
+
+        private void DrawCoverageBitmap(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            if (s.CoverageSkBitmap == null || s.BitmapWidth == 0 || s.BitmapHeight == 0)
+                return;
+            if (canvas == null) return;
+
+            double worldWidth = s.BitmapMaxE - s.BitmapMinE;
+            double worldHeight = s.BitmapMaxN - s.BitmapMinN;
+
+            var src = new SKRect(0, 0, s.CoverageSkBitmap.Width, s.CoverageSkBitmap.Height);
+            var dst = new SKRect(
+                (float)s.BitmapMinE, (float)s.BitmapMinN,
+                (float)(s.BitmapMinE + worldWidth), (float)(s.BitmapMinN + worldHeight));
+
+            using var paint = new SKPaint
+            {
+                FilterQuality = s.Zoom < 0.5 ? SKFilterQuality.Low : SKFilterQuality.High
+            };
+
+            // Draw SKBitmap directly — no SKImage.FromBitmap copy needed.
+            // Pipeline writes pixels on bg thread, we read on render thread.
+            // Atomic 4-byte pixel reads mean worst case is a partially-updated frame.
+            canvas.DrawBitmap(s.CoverageSkBitmap, src, dst, paint);
+        }
+
+        private void DrawBoundary(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.Boundary == null) return;
+
+            // Draw outer boundary
+            if (s.Boundary.OuterBoundary != null && s.Boundary.OuterBoundary.IsValid
+                && s.Boundary.OuterBoundary.Points.Count > 1)
+            {
+                var points = s.Boundary.OuterBoundary.Points;
+                using var path = new SKPath();
+                path.MoveTo((float)points[0].Easting, (float)points[0].Northing);
+                for (int i = 1; i < points.Count; i++)
+                    path.LineTo((float)points[i].Easting, (float)points[i].Northing);
+                path.Close();
+                canvas.DrawPath(path, _boundaryOuterPaint);
+            }
+
+            // Draw inner boundaries
+            foreach (var inner in s.Boundary.InnerBoundaries)
+            {
+                if (inner.IsValid && inner.Points.Count > 1)
+                {
+                    var points = inner.Points;
+                    using var path = new SKPath();
+                    path.MoveTo((float)points[0].Easting, (float)points[0].Northing);
+                    for (int i = 1; i < points.Count; i++)
+                        path.LineTo((float)points[i].Easting, (float)points[i].Northing);
+                    path.Close();
+                    canvas.DrawPath(path, _boundaryInnerPaint);
+                }
+            }
+
+            // Draw headland polygon
+            if (s.Boundary.HeadlandPolygon != null && s.Boundary.HeadlandPolygon.IsValid
+                && s.Boundary.HeadlandPolygon.Points.Count > 1)
+            {
+                var points = s.Boundary.HeadlandPolygon.Points;
+                using var path = new SKPath();
+                path.MoveTo((float)points[0].Easting, (float)points[0].Northing);
+                for (int i = 1; i < points.Count; i++)
+                    path.LineTo((float)points[i].Easting, (float)points[i].Northing);
+                path.Close();
+                canvas.DrawPath(path, _boundaryInnerPaint);
+            }
+        }
+
+        private void DrawHeadlandLine(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.HeadlandLine == null || s.HeadlandLine.Count < 3) return;
+            using var path = new SKPath();
+            path.MoveTo((float)s.HeadlandLine[0].Easting, (float)s.HeadlandLine[0].Northing);
+            for (int i = 1; i < s.HeadlandLine.Count; i++)
+                path.LineTo((float)s.HeadlandLine[i].Easting, (float)s.HeadlandLine[i].Northing);
+            path.Close();
+            canvas.DrawPath(path, _headlandPaint);
+        }
+
+        private void DrawHeadlandPreview(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.HeadlandPreview == null || s.HeadlandPreview.Count < 3) return;
+            using var path = new SKPath();
+            path.MoveTo((float)s.HeadlandPreview[0].Easting, (float)s.HeadlandPreview[0].Northing);
+            for (int i = 1; i < s.HeadlandPreview.Count; i++)
+                path.LineTo((float)s.HeadlandPreview[i].Easting, (float)s.HeadlandPreview[i].Northing);
+            path.Close();
+            canvas.DrawPath(path, _headlandPreviewPaint);
+        }
+
+        private void DrawRecordingPoints(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            if (s.RecordingPoints == null || s.RecordingPoints.Count == 0) return;
+
+            // Draw line strip via SkiaSharp
+            if (canvas != null && s.RecordingPoints.Count > 1)
+            {
+                using var path = new SKPath();
+                path.MoveTo((float)s.RecordingPoints[0].Easting, (float)s.RecordingPoints[0].Northing);
+                for (int i = 1; i < s.RecordingPoints.Count; i++)
+                    path.LineTo((float)s.RecordingPoints[i].Easting, (float)s.RecordingPoints[i].Northing);
+                canvas.DrawPath(path, _recordingLinePaint);
+            }
+
+            // Draw point markers
+            foreach (var point in s.RecordingPoints)
+            {
+                dc.DrawEllipse(_recordingPointBrushImm, null, new Point(point.Easting, point.Northing), 0.75, 0.75);
+            }
+        }
+
+        private void DrawSelectionMarkers(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            if (s.SelectionMarkers == null || s.SelectionMarkers.Count == 0) return;
+            double markerRadius = 4.0;
+            var orangeBrush = new ImmutableSolidColorBrush(Color.FromRgb(255, 165, 0));
+            var blueBrush = new ImmutableSolidColorBrush(Color.FromRgb(0, 150, 255));
+            var outlinePen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), 2);
+
+            for (int i = 0; i < s.SelectionMarkers.Count; i++)
+            {
+                var marker = s.SelectionMarkers[i];
+                var brush = i == 0 ? (IImmutableBrush)orangeBrush : blueBrush;
+                dc.DrawEllipse(brush, outlinePen, new Point(marker.Easting, marker.Northing), markerRadius, markerRadius);
+            }
+        }
+
+        private void DrawClipLine(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            // Curved clip path
+            if (s.ClipPath != null && s.ClipPath.Count >= 2)
+            {
+                for (int i = 0; i < s.ClipPath.Count - 1; i++)
+                {
+                    dc.DrawLine(_clipLinePenImm,
+                        new Point(s.ClipPath[i].Easting, s.ClipPath[i].Northing),
+                        new Point(s.ClipPath[i + 1].Easting, s.ClipPath[i + 1].Northing));
+                }
+                return;
+            }
+
+            // Straight clip line
+            if (!s.ClipLine.HasValue) return;
+            dc.DrawLine(_clipLinePenImm,
+                new Point(s.ClipLine.Value.Start.Easting, s.ClipLine.Value.Start.Northing),
+                new Point(s.ClipLine.Value.End.Easting, s.ClipLine.Value.End.Northing));
+        }
+
+        private void DrawExtraGuidelines(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            if (s.ActiveTrack == null || s.ActiveTrack.Points.Count < 2) return;
+            int count = s.ExtraGuidelinesCount;
+            double spacing = s.ToolWidth > 0.1 ? s.ToolWidth : 6.0;
+            double viewHeight = 200.0 / s.Zoom;
+            double screenHeight = s.BoundsHeight > 0 ? s.BoundsHeight : 600;
+            double worldPerPixel = viewHeight / screenHeight;
+            double lineThickness = 1 * worldPerPixel;
+
+            var guidelinePen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromArgb(60, 255, 165, 0)), lineThickness);
+
+            var track = s.ActiveTrack;
+            if (track.Points.Count == 2)
+            {
+                var pA = track.Points[0];
+                var pB = track.Points[^1];
+                double dx = pB.Easting - pA.Easting;
+                double dy = pB.Northing - pA.Northing;
+                double length = Math.Sqrt(dx * dx + dy * dy);
+                if (length < 0.01) return;
+                double px = -dy / length, py = dx / length;
+                double nx = dx / length, ny = dy / length;
+                double ext = 500.0;
+
+                for (int i = 1; i <= count; i++)
+                {
+                    double offset = i * spacing;
+                    dc.DrawLine(guidelinePen,
+                        new Point(pA.Easting + px * offset - nx * ext, pA.Northing + py * offset - ny * ext),
+                        new Point(pB.Easting + px * offset + nx * ext, pB.Northing + py * offset + ny * ext));
+                    dc.DrawLine(guidelinePen,
+                        new Point(pA.Easting - px * offset - nx * ext, pA.Northing - py * offset - ny * ext),
+                        new Point(pB.Easting - px * offset + nx * ext, pB.Northing - py * offset + ny * ext));
+                }
+            }
+            else
+            {
+                for (int i = 1; i <= count; i++)
+                {
+                    double offset = i * spacing;
+                    for (int j = 0; j < track.Points.Count - 1; j++)
+                    {
+                        var p1 = track.Points[j];
+                        var p2 = track.Points[j + 1];
+                        double dx = p2.Easting - p1.Easting;
+                        double dy = p2.Northing - p1.Northing;
+                        double segLen = Math.Sqrt(dx * dx + dy * dy);
+                        if (segLen < 0.001) continue;
+                        double px = -dy / segLen, py = dx / segLen;
+                        dc.DrawLine(guidelinePen,
+                            new Point(p1.Easting + px * offset, p1.Northing + py * offset),
+                            new Point(p2.Easting + px * offset, p2.Northing + py * offset));
+                        dc.DrawLine(guidelinePen,
+                            new Point(p1.Easting - px * offset, p1.Northing - py * offset),
+                            new Point(p2.Easting - px * offset, p2.Northing - py * offset));
+                    }
+                }
+            }
+        }
+
+        private void DrawTrack(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            double viewHeight = 200.0 / s.Zoom;
+            double screenHeight = s.BoundsHeight > 0 ? s.BoundsHeight : 600;
+            double worldPerPixel = viewHeight / screenHeight;
+            double pointRadius = 4 * worldPerPixel;
+            double lineThickness = 2 * worldPerPixel;
+
+            var trackBrush = new ImmutableSolidColorBrush(Color.FromRgb(242, 179, 128));
+            var trackPenSolid = new ImmutablePen(trackBrush, lineThickness);
+            var trackExtendPen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromArgb(128, 242, 179, 128)), lineThickness * 0.5);
+            var pointOutlinePen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), lineThickness * 0.5);
+
+            var nextLinePen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromRgb(255, 191, 89)), lineThickness);
+            var recordedPathPen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromArgb(200, 250, 235, 117)), lineThickness * 0.75);
+            var contourStripPen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromArgb(200, 250, 51, 250)), lineThickness * 0.75);
+
+            var startBrush = new ImmutableSolidColorBrush(Color.FromRgb(0, 220, 0));
+            var endBrush = new ImmutableSolidColorBrush(Color.FromRgb(220, 0, 0));
+            double markerRadius = pointRadius * 1.5;
+
+            // Recorded paths
+            foreach (var path in s.RecordedPaths)
+            {
+                if (path.IsVisible && path.Points.Count >= 2)
+                {
+                    for (int i = 0; i < path.Points.Count - 1; i++)
+                    {
+                        dc.DrawLine(recordedPathPen,
+                            new Point(path.Points[i].Easting, path.Points[i].Northing),
+                            new Point(path.Points[i + 1].Easting, path.Points[i + 1].Northing));
+                    }
+                    var startPt = path.Points[0];
+                    var endPt = path.Points[^1];
+                    dc.DrawEllipse(startBrush, pointOutlinePen,
+                        new Point(startPt.Easting, startPt.Northing), markerRadius, markerRadius);
+                    dc.DrawEllipse(endBrush, pointOutlinePen,
+                        new Point(endPt.Easting, endPt.Northing), markerRadius, markerRadius);
+                }
+            }
+
+            // Contour strips
+            foreach (var strip in s.ContourStrips)
+            {
+                if (strip.IsVisible && strip.Points.Count >= 2)
+                {
+                    for (int i = 0; i < strip.Points.Count - 1; i++)
+                    {
+                        dc.DrawLine(contourStripPen,
+                            new Point(strip.Points[i].Easting, strip.Points[i].Northing),
+                            new Point(strip.Points[i + 1].Easting, strip.Points[i + 1].Northing));
+                    }
+                }
+            }
+
+            // Pending Point A
+            if (s.PendingPointA != null)
+            {
+                dc.DrawEllipse(_pointABrushImm, pointOutlinePen,
+                    new Point(s.PendingPointA.Easting, s.PendingPointA.Northing), pointRadius, pointRadius);
+            }
+
+            // Next track (during U-turn)
+            if (s.IsInYouTurn && s.NextTrack != null)
+            {
+                DrawSingleTrack(dc, s.NextTrack, nextLinePen, trackExtendPen, pointOutlinePen, pointRadius, false);
+            }
+
+            // Base track
+            if (s.BaseTrack != null && s.ActiveTrack != null && s.BaseTrack != s.ActiveTrack)
+            {
+                var basePen = new ImmutablePen(
+                    new ImmutableSolidColorBrush(Color.FromArgb(180, 252, 252, 0)), lineThickness * 0.75);
+                DrawSingleTrack(dc, s.BaseTrack, basePen, basePen, pointOutlinePen, pointRadius, true);
+            }
+
+            // Active track with pass area
+            if (s.ActiveTrack != null)
+            {
+                double toolWidth = s.ToolWidth > 0 ? s.ToolWidth : 6.0;
+                var passPen = new ImmutablePen(
+                    new ImmutableSolidColorBrush(Color.FromArgb(30, 200, 200, 50)), toolWidth);
+
+                if (s.ActiveTrack.Points.Count == 2)
+                {
+                    var a = s.ActiveTrack.Points[0];
+                    var b = s.ActiveTrack.Points[^1];
+                    double dx = b.Easting - a.Easting;
+                    double dy = b.Northing - a.Northing;
+                    double len = Math.Sqrt(dx * dx + dy * dy);
+                    if (len > 0.01)
+                    {
+                        double nx = dx / len, ny = dy / len;
+                        dc.DrawLine(passPen,
+                            new Point(a.Easting - nx * 2000, a.Northing - ny * 2000),
+                            new Point(b.Easting + nx * 2000, b.Northing + ny * 2000));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < s.ActiveTrack.Points.Count - 1; i++)
+                    {
+                        dc.DrawLine(passPen,
+                            new Point(s.ActiveTrack.Points[i].Easting, s.ActiveTrack.Points[i].Northing),
+                            new Point(s.ActiveTrack.Points[i + 1].Easting, s.ActiveTrack.Points[i + 1].Northing));
+                    }
+                }
+
+                DrawSingleTrack(dc, s.ActiveTrack, trackPenSolid, trackExtendPen, pointOutlinePen, pointRadius, true);
+            }
+        }
+
+        private static void DrawSingleTrack(ImmediateDrawingContext dc,
+            AgValoniaGPS.Models.Track.Track track,
+            ImmutablePen mainPen, ImmutablePen extendPen, ImmutablePen pointOutlinePen,
+            double pointRadius, bool lineOnly)
+        {
+            if (track.Points.Count < 2) return;
+
+            var pointA = new Point(track.Points[0].Easting, track.Points[0].Northing);
+            var pointB = new Point(track.Points[^1].Easting, track.Points[^1].Northing);
+
+            if (track.Points.Count == 2)
+            {
+                double dx = pointB.X - pointA.X;
+                double dy = pointB.Y - pointA.Y;
+                double length = Math.Sqrt(dx * dx + dy * dy);
+                if (length > 0.01)
+                {
+                    double nx = dx / length, ny = dy / length;
+                    double ext = 2000.0;
+                    var extA = new Point(pointA.X - nx * ext, pointA.Y - ny * ext);
+                    var extB = new Point(pointB.X + nx * ext, pointB.Y + ny * ext);
+
+                    if (lineOnly)
+                    {
+                        dc.DrawLine(mainPen, extA, extB);
+                    }
+                    else
+                    {
+                        dc.DrawLine(extendPen, extA, extB);
+                        dc.DrawLine(mainPen, pointA, pointB);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < track.Points.Count - 1; i++)
+                {
+                    dc.DrawLine(mainPen,
+                        new Point(track.Points[i].Easting, track.Points[i].Northing),
+                        new Point(track.Points[i + 1].Easting, track.Points[i + 1].Northing));
+                }
+            }
+
+            if (!lineOnly)
+            {
+                dc.DrawEllipse(_pointABrushImm, pointOutlinePen, pointA, pointRadius, pointRadius);
+                dc.DrawEllipse(_pointBBrushImm, pointOutlinePen, pointB, pointRadius, pointRadius);
+            }
+        }
+
+        private void DrawYouTurnPath(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            if (s.YouTurnPath == null || s.YouTurnPath.Count < 2) return;
+
+            // Draw path via SkiaSharp
+            if (canvas != null)
+            {
+                using var path = new SKPath();
+                path.MoveTo((float)s.YouTurnPath[0].Easting, (float)s.YouTurnPath[0].Northing);
+                for (int i = 1; i < s.YouTurnPath.Count; i++)
+                    path.LineTo((float)s.YouTurnPath[i].Easting, (float)s.YouTurnPath[i].Northing);
+                canvas.DrawPath(path, _youTurnPaint);
+            }
+
+            // Start/end markers
+            double markerSize = 2.0;
+            double halfMarker = markerSize / 2.0;
+            var startBrush = new ImmutableSolidColorBrush(Color.FromRgb(0, 200, 0));
+            var endBrush = new ImmutableSolidColorBrush(Color.FromRgb(200, 0, 0));
+
+            dc.FillRectangle(startBrush, new Rect(
+                s.YouTurnPath[0].Easting - halfMarker,
+                s.YouTurnPath[0].Northing - halfMarker,
+                markerSize, markerSize));
+
+            var endPt = s.YouTurnPath[^1];
+            dc.FillRectangle(endBrush, new Rect(
+                endPt.Easting - halfMarker,
+                endPt.Northing - halfMarker,
+                markerSize, markerSize));
+        }
+
+        private void DrawTool(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            if (s.ToolWidth < 0.1) return;
+            double toolDepth = 2.0;
+
+            // Hitch bar
+            double barEndX = s.HitchX + Math.Sin(s.VehicleHeading) * s.HitchLength;
+            double barEndY = s.HitchY + Math.Cos(s.VehicleHeading) * s.HitchLength;
+            var rearPen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Black), 0.3);
+            dc.DrawLine(rearPen, new Point(barEndX, barEndY), new Point(s.HitchX, s.HitchY));
+
+            // V-shape hitch
+            double hitchHalfW = s.ToolWidth / 2.0;
+            double cosH = Math.Cos(-s.ToolHeading);
+            double sinH = Math.Sin(-s.ToolHeading);
+            var leftEnd = new Point(s.ToolX + (-hitchHalfW) * cosH, s.ToolY + (-hitchHalfW) * sinH);
+            var rightEnd = new Point(s.ToolX + hitchHalfW * cosH, s.ToolY + hitchHalfW * sinH);
+            var apex = new Point(s.HitchX, s.HitchY);
+            dc.DrawLine(_hitchPenImm, apex, leftEnd);
+            dc.DrawLine(_hitchPenImm, apex, rightEnd);
+
+            // Sections
+            using (dc.PushPreTransform(Matrix.CreateTranslation(s.ToolX, s.ToolY)))
+            using (dc.PushPreTransform(Matrix.CreateRotation(-s.ToolHeading)))
+            {
+                if (s.NumSections > 0)
+                {
+                    double sectionGap = 0.05;
+                    for (int i = 0; i < s.NumSections; i++)
+                    {
+                        double left = s.SectionLeft[i] + sectionGap / 2;
+                        double right = s.SectionRight[i] - sectionGap / 2;
+                        double width = right - left;
+                        if (width < 0.01) continue;
+
+                        IImmutableBrush brush = s.SectionButtonState[i] switch
+                        {
+                            0 => _sectionOffBrushImm,
+                            2 => _sectionManualOnBrushImm,
+                            _ => _sectionAutoOnBrushImm
+                        };
+                        dc.DrawRectangle(brush, _sectionOutlinePenImm,
+                            new Rect(left, -toolDepth / 2, width, toolDepth), 0, 0, default);
+                    }
+                }
+                else
+                {
+                    double halfWidth = s.ToolWidth / 2.0;
+                    var toolBrush = new ImmutableSolidColorBrush(Color.FromArgb(191, 0, 242, 0));
+                    var toolPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(247, 247, 0)), 0.1);
+                    dc.DrawRectangle(toolBrush, toolPen,
+                        new Rect(-halfWidth, -toolDepth / 2, s.ToolWidth, toolDepth), 0, 0, default);
+                }
+
+                // Center marker
+                var centerPen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), 0.1);
+                dc.DrawLine(centerPen, new Point(0, -toolDepth / 2), new Point(0, toolDepth / 2));
+            }
+        }
+
+        private void DrawVehicle(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            double size = 5.0;
+
+            using (dc.PushPreTransform(Matrix.CreateTranslation(s.VehicleX, s.VehicleY)))
+            using (dc.PushPreTransform(Matrix.CreateRotation(-s.VehicleHeading)))
+            {
+                if (s.VehicleImage is Bitmap vehicleBitmap)
+                {
+                    using (dc.PushPreTransform(Matrix.CreateScale(1, -1)))
+                    {
+                        dc.DrawBitmap(vehicleBitmap, new Rect(-size / 2, -size / 2, size, size));
+                    }
+                }
+                else
+                {
+                    // Fallback triangle using ImmediateDrawingContext (DrawLine)
+                    var vehiclePen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(0, 200, 0)), 0.3);
+                    var vehicleBrush = new ImmutableSolidColorBrush(Color.FromArgb(180, 0, 200, 0));
+                    // Triangle: tip at top (0, size/2), base at (-size/3, -size/2) and (size/3, -size/2)
+                    var p1 = new Point(0, size / 2);
+                    var p2 = new Point(-size / 3, -size / 2);
+                    var p3 = new Point(size / 3, -size / 2);
+                    dc.DrawLine(vehiclePen, p1, p2);
+                    dc.DrawLine(vehiclePen, p2, p3);
+                    dc.DrawLine(vehiclePen, p3, p1);
+                    // Fill center with ellipse approximation
+                    dc.DrawEllipse(vehicleBrush, null, new Point(0, -size / 6), size / 3, size / 3);
+                }
+
+                // Heading unknown indicator — draw "?" using dc (skip if no canvas)
+                if (!s.HasValidHeading)
+                {
+                    var questionPen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Red), 0.3);
+                    dc.DrawLine(questionPen, new Point(size / 2 + 1, size / 2), new Point(size / 2 + 1, -size / 4));
+                    dc.DrawEllipse(new ImmutableSolidColorBrush(Colors.Red), null,
+                        new Point(size / 2 + 1, -size / 2), 0.2, 0.2);
+                }
+
+                // Reverse indicator
+                if (s.IsReversing)
+                {
+                    double arrowSize = 2.0;
+                    var arrowBrush = new ImmutableSolidColorBrush(Color.FromArgb(200, 255, 220, 0));
+                    dc.FillRectangle(arrowBrush, new Rect(-arrowSize * 0.7, -arrowSize * 2.5, arrowSize * 1.4, arrowSize * 1.3));
+                }
+
+                // Antenna position
+                var antennaBrush = new ImmutableSolidColorBrush(Color.FromRgb(40, 120, 255));
+                dc.DrawEllipse(antennaBrush, null, new Point(s.AntennaOffset, s.AntennaPivot), 0.25, 0.25);
+            }
+        }
+
+        private void DrawSvennArrow(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            double aheadDistance = 8.0;
+            double wingSpan = 3.0;
+            double wingDepth = 3.0;
+
+            using (dc.PushPreTransform(Matrix.CreateTranslation(s.VehicleX, s.VehicleY)))
+            using (dc.PushPreTransform(Matrix.CreateRotation(-s.VehicleHeading)))
+            {
+                var tip = new Point(0, aheadDistance);
+                var leftWing = new Point(-wingSpan, aheadDistance - wingDepth);
+                var rightWing = new Point(wingSpan, aheadDistance - wingDepth);
+                dc.DrawLine(_svennArrowPenImm, tip, leftWing);
+                dc.DrawLine(_svennArrowPenImm, tip, rightWing);
+            }
+        }
+
+        private void DrawFlags(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            double viewHeight = 200.0 / s.Zoom;
+            double screenHeight = s.BoundsHeight > 0 ? s.BoundsHeight : 600;
+            double worldPerPixel = viewHeight / screenHeight;
+            double flagRadius = 10 * worldPerPixel;
+            double poleHeight = 28 * worldPerPixel;
+            double poleWidth = 2 * worldPerPixel;
+
+            var polePen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), poleWidth);
+
+            for (int i = 0; i < s.Flags.Count; i++)
+            {
+                var flag = s.Flags[i];
+                var center = new Point(flag.Easting, flag.Northing);
+
+                IImmutableBrush fillBrush = flag.Color switch
+                {
+                    "Red" => new ImmutableSolidColorBrush(Colors.Red),
+                    "Green" => new ImmutableSolidColorBrush(Color.FromRgb(0, 204, 0)),
+                    "Yellow" => new ImmutableSolidColorBrush(Color.FromRgb(255, 204, 0)),
+                    "Blue" => new ImmutableSolidColorBrush(Color.FromRgb(32, 128, 224)),
+                    "Orange" => new ImmutableSolidColorBrush(Color.FromRgb(255, 136, 0)),
+                    "Purple" => new ImmutableSolidColorBrush(Color.FromRgb(153, 51, 204)),
+                    "Cyan" => new ImmutableSolidColorBrush(Color.FromRgb(0, 187, 204)),
+                    "Pink" => new ImmutableSolidColorBrush(Color.FromRgb(255, 102, 170)),
+                    "White" => new ImmutableSolidColorBrush(Colors.White),
+                    "Black" => new ImmutableSolidColorBrush(Color.FromRgb(51, 51, 51)),
+                    _ => new ImmutableSolidColorBrush(Colors.Red)
+                };
+
+                // Counter-rotate to keep flag upright
+                using (dc.PushPreTransform(
+                    Matrix.CreateTranslation(-center.X, -center.Y) *
+                    Matrix.CreateRotation(s.Rotation) *
+                    Matrix.CreateTranslation(center.X, center.Y)))
+                {
+                    // Pole
+                    var poleTop = new Point(center.X, center.Y + poleHeight);
+                    dc.DrawLine(polePen, center, poleTop);
+
+                    // Flag marker
+                    var outlinePen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.White), worldPerPixel * 0.5);
+                    dc.DrawEllipse(fillBrush, outlinePen, poleTop, flagRadius, flagRadius);
+
+                    // Flag name via SkiaSharp
+                    if (!string.IsNullOrEmpty(flag.Name) && canvas != null)
+                    {
+                        float fontSize = (float)(16 * worldPerPixel);
+                        using var font = new SKFont(SKTypeface.Default, fontSize);
+                        using var paint = new SKPaint(font) { Color = SKColors.White };
+                        canvas.Save();
+                        canvas.Scale(1, -1, (float)poleTop.X, (float)poleTop.Y);
+                        canvas.DrawText(flag.Name,
+                            (float)(poleTop.X + flagRadius + worldPerPixel * 2),
+                            (float)poleTop.Y + fontSize / 2,
+                            font, paint);
+                        canvas.Restore();
+                    }
+                }
+            }
+        }
+
+        private void DrawGuidanceLookAhead(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            double viewHeight = 200.0 / s.Zoom;
+            double screenHeight = s.BoundsHeight > 0 ? s.BoundsHeight : 600;
+            double worldPerPixel = viewHeight / screenHeight;
+
+            var vehiclePos = new Point(s.VehicleX, s.VehicleY);
+            var goalPos = new Point(s.GoalEasting, s.GoalNorthing);
+
+            var linePen = new ImmutablePen(
+                new ImmutableSolidColorBrush(Color.FromArgb(160, 0, 200, 255)), 1.0 * worldPerPixel);
+            dc.DrawLine(linePen, vehiclePos, goalPos);
+
+            var goalBrush = new ImmutableSolidColorBrush(Color.FromArgb(200, 0, 200, 255));
+            double dotRadius = 3 * worldPerPixel;
+            dc.DrawEllipse(goalBrush, null, goalPos, dotRadius, dotRadius);
+        }
+
+        private void DrawBoundaryOffsetIndicator(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            double refX = s.VehicleX;
+            double refY = s.VehicleY;
+            double markerSize = 1.0;
+            var cyanBrush = new ImmutableSolidColorBrush(Color.FromRgb(0, 204, 204));
+            dc.FillRectangle(cyanBrush,
+                new Rect(refX - markerSize / 2, refY - markerSize / 2, markerSize, markerSize));
+
+            if (Math.Abs(s.BoundaryOffsetMeters) > 0.01)
+            {
+                double perpAngle = s.VehicleHeading + Math.PI / 2.0;
+                double offsetX = refX + s.BoundaryOffsetMeters * Math.Sin(perpAngle);
+                double offsetY = refY + s.BoundaryOffsetMeters * Math.Cos(perpAngle);
+
+                var yellowPen = new ImmutablePen(new ImmutableSolidColorBrush(Colors.Yellow), 0.5);
+                dc.DrawLine(yellowPen, new Point(refX, refY), new Point(offsetX, offsetY));
+            }
+        }
+
+        private void DrawHeadlandProximityHud(ImmediateDrawingContext dc, MapRenderState s)
+        {
+            double distance = s.HeadlandProximityDistance;
+
+            string text = s.IsMetric
+                ? $"{distance:F1} m"
+                : $"{(distance * 39.3700787):F0} in";
+
+            bool warning = s.HeadlandProximityWarning;
+            float fontSize = (float)Math.Clamp(s.BoundsHeight / 20.0, 14, 36);
+
+            // Acquire SKCanvas lease for HUD drawing (screen space, no camera transform)
+            var skiaFeature = dc.TryGetFeature<ISkiaSharpApiLeaseFeature>();
+            if (skiaFeature == null) return;
+            using var skiaLease = skiaFeature.Lease();
+            var canvas = skiaLease.SkCanvas;
+
+            // Measure text
+            using var font = new SKFont(SKTypeface.Default, fontSize);
+            using var textPaint = new SKPaint(font)
+            {
+                Color = warning ? new SKColor(255, 60, 60) : new SKColor(255, 242, 64),
+                IsAntialias = true
+            };
+            float textWidth = textPaint.MeasureText(text);
+            float textHeight = fontSize * 1.2f;
+            float x = (float)(s.BoundsWidth - textWidth) / 2;
+            float y = 8;
+
+            // Background box
+            var bgColor = warning ? new SKColor(80, 0, 0, 180) : new SKColor(40, 40, 0, 180);
+            using var bgPaint = new SKPaint { Color = bgColor, Style = SKPaintStyle.Fill };
+            var bgRect = new SKRoundRect(new SKRect(x - 12, y - 4, x + textWidth + 12, y + textHeight + 4), 6);
+            canvas.DrawRoundRect(bgRect, bgPaint);
+
+            // Text
+            canvas.DrawText(text, x, y + fontSize, font, textPaint);
+        }
+
+
+        // ═══════════════════════════════════════════════════════════════
+        // SKCanvas-only drawing methods (no ImmediateDrawingContext)
+        // Used because dc drawing after SKCanvas lease is unreliable.
+        // ═══════════════════════════════════════════════════════════════
+
+        private SKBitmap? _vehicleSkBitmap; // Cached SKBitmap version of vehicle image
+
+        private void DrawVehicleSk(SKCanvas canvas, MapRenderState s)
+        {
+            float size = 5.0f;
+            float vx = (float)s.VehicleX, vy = (float)s.VehicleY;
+
+            canvas.Save();
+            canvas.Translate(vx, vy);
+            canvas.RotateRadians(-(float)s.VehicleHeading);
+
+            // Try to draw vehicle image, fall back to triangle
+            if (_vehicleSkBitmap == null && s.VehicleImage is Avalonia.Media.Imaging.Bitmap avBitmap)
+            {
+                // Convert Avalonia Bitmap to SKBitmap once
+                try
+                {
+                    using var ms = new System.IO.MemoryStream();
+                    avBitmap.Save(ms);
+                    ms.Position = 0;
+                    _vehicleSkBitmap = SKBitmap.Decode(ms);
+                }
+                catch { /* Fall back to triangle */ }
+            }
+
+            if (_vehicleSkBitmap != null)
+            {
+                // Y-flip because world coordinates have Y-up but bitmap is Y-down
+                canvas.Scale(1, -1);
+                var dst = new SKRect(-size / 2, -size / 2, size / 2, size / 2);
+                canvas.DrawBitmap(_vehicleSkBitmap, dst);
+                canvas.Scale(1, -1); // Restore for antenna dot
+            }
+            else
+            {
+                // Fallback triangle
+                using var vehiclePaint = new SKPaint { Color = new SKColor(0, 200, 0), Style = SKPaintStyle.Fill, IsAntialias = true };
+                using var path = new SKPath();
+                path.MoveTo(0, size / 2);
+                path.LineTo(-size / 3, -size / 2);
+                path.LineTo(size / 3, -size / 2);
+                path.Close();
+                canvas.DrawPath(path, vehiclePaint);
+            }
+
+            // Antenna dot
+            using var antennaPaint = new SKPaint { Color = new SKColor(40, 120, 255), Style = SKPaintStyle.Fill };
+            canvas.DrawCircle((float)s.AntennaOffset, (float)s.AntennaPivot, 0.25f, antennaPaint);
+
+            canvas.Restore();
+        }
+
+        private void DrawToolSk(SKCanvas canvas, MapRenderState s)
+        {
+            float tx = (float)s.ToolX, ty = (float)s.ToolY;
+            float toolDepth = 2.0f;
+
+            // Hitch bar (rear axle to hitch point)
+            float barEndX = (float)(s.HitchX + Math.Sin(s.VehicleHeading) * s.HitchLength);
+            float barEndY = (float)(s.HitchY + Math.Cos(s.VehicleHeading) * s.HitchLength);
+            using var rearPaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 0.3f };
+            canvas.DrawLine(barEndX, barEndY, (float)s.HitchX, (float)s.HitchY, rearPaint);
+
+            // V-shape hitch (hitch point to tool ends)
+            float hitchHalfW = (float)(s.ToolWidth / 2.0);
+            float cosH = (float)Math.Cos(-s.ToolHeading);
+            float sinH = (float)Math.Sin(-s.ToolHeading);
+            using var hitchPaint = new SKPaint { Color = new SKColor(255, 255, 0), Style = SKPaintStyle.Stroke, StrokeWidth = 0.15f };
+            canvas.DrawLine((float)s.HitchX, (float)s.HitchY,
+                tx + (-hitchHalfW) * cosH, ty + (-hitchHalfW) * sinH, hitchPaint);
+            canvas.DrawLine((float)s.HitchX, (float)s.HitchY,
+                tx + hitchHalfW * cosH, ty + hitchHalfW * sinH, hitchPaint);
+
+            canvas.Save();
+            canvas.Translate(tx, ty);
+            canvas.RotateRadians(-(float)s.ToolHeading);
+
+            if (s.NumSections > 0)
+            {
+                // Section colors: 0=Off(red), 2=ManualOn(yellow), default=AutoOn(green)
+                float sectionGap = 0.05f;
+                for (int i = 0; i < s.NumSections; i++)
+                {
+                    float left = (float)s.SectionLeft[i] + sectionGap / 2;
+                    float right = (float)s.SectionRight[i] - sectionGap / 2;
+                    float width = right - left;
+                    if (width < 0.01f) continue;
+
+                    SKColor secColor = s.SectionButtonState[i] switch
+                    {
+                        0 => new SKColor(242, 51, 51),   // Off = red
+                        2 => new SKColor(247, 247, 0),    // ManualOn = yellow
+                        _ => new SKColor(0, 242, 0)       // AutoOn = green
+                    };
+
+                    using var secPaint = new SKPaint { Color = secColor, Style = SKPaintStyle.Fill };
+                    canvas.DrawRect(left, -toolDepth / 2, width, toolDepth, secPaint);
+
+                    using var outlinePaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 0.1f };
+                    canvas.DrawRect(left, -toolDepth / 2, width, toolDepth, outlinePaint);
+                }
+            }
+            else
+            {
+                // No sections — draw single tool bar
+                float halfWidth = (float)(s.ToolWidth / 2);
+                using var toolPaint = new SKPaint { Color = new SKColor(0, 242, 0, 191), Style = SKPaintStyle.Fill };
+                canvas.DrawRect(-halfWidth, -toolDepth / 2, (float)s.ToolWidth, toolDepth, toolPaint);
+            }
+
+            // Center line
+            using var centerPaint = new SKPaint { Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 0.1f };
+            canvas.DrawLine(0, -toolDepth / 2, 0, toolDepth / 2, centerPaint);
+
+            canvas.Restore();
+        }
+
+        private void DrawTrackSk(SKCanvas canvas, MapRenderState s)
+        {
+            // Active track (magenta)
+            if (s.ActiveTrack != null && s.ActiveTrack.Points.Count >= 2)
+            {
+                using var trackPaint = new SKPaint
+                {
+                    Color = new SKColor(252, 86, 186),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 0.5f,
+                    IsAntialias = true
+                };
+                DrawTrackPointsSk(canvas, s.ActiveTrack.Points, trackPaint);
+            }
+
+            // Base track (purple)
+            if (s.BaseTrack != null && s.BaseTrack.Points.Count >= 2)
+            {
+                using var basePaint = new SKPaint
+                {
+                    Color = new SKColor(180, 100, 255),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 0.3f,
+                    IsAntialias = true
+                };
+                DrawTrackPointsSk(canvas, s.BaseTrack.Points, basePaint);
+            }
+
+            // Next track for U-turn (cyan)
+            if (s.IsInYouTurn && s.NextTrack != null && s.NextTrack.Points.Count >= 2)
+            {
+                using var nextPaint = new SKPaint
+                {
+                    Color = new SKColor(0, 200, 200),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 0.4f,
+                    IsAntialias = true
+                };
+                DrawTrackPointsSk(canvas, s.NextTrack.Points, nextPaint);
+            }
+
+            // Pending point A
+            if (s.PendingPointA != null)
+            {
+                using var pointPaint = new SKPaint { Color = new SKColor(0, 255, 0), Style = SKPaintStyle.Fill };
+                canvas.DrawCircle((float)s.PendingPointA.Easting, (float)s.PendingPointA.Northing, 1.0f, pointPaint);
+            }
+        }
+
+        private static void DrawTrackPointsSk(SKCanvas canvas, IReadOnlyList<AgValoniaGPS.Models.Base.Vec3> points, SKPaint paint)
+        {
+            if (points.Count < 2) return;
+            using var path = new SKPath();
+            path.MoveTo((float)points[0].Easting, (float)points[0].Northing);
+            for (int i = 1; i < points.Count; i++)
+                path.LineTo((float)points[i].Easting, (float)points[i].Northing);
+            canvas.DrawPath(path, paint);
+        }
+
+        private void DrawGuidanceLookAheadSk(SKCanvas canvas, MapRenderState s)
+        {
+            using var goalPaint = new SKPaint { Color = new SKColor(255, 100, 100), Style = SKPaintStyle.Fill };
+            canvas.DrawCircle((float)s.GoalEasting, (float)s.GoalNorthing, 0.5f, goalPaint);
+
+            using var linePaint = new SKPaint
+            {
+                Color = new SKColor(255, 255, 0, 150),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.2f
+            };
+            canvas.DrawLine((float)s.VehicleX, (float)s.VehicleY,
+                           (float)s.GoalEasting, (float)s.GoalNorthing, linePaint);
+        }
+
+        private void DrawRecordingPointsSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.RecordingPoints == null) return;
+            using var linePaint = new SKPaint { Color = new SKColor(0, 255, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 0.5f, IsAntialias = true };
+            using var pointPaint = new SKPaint { Color = new SKColor(255, 128, 0), Style = SKPaintStyle.Fill };
+            for (int i = 1; i < s.RecordingPoints.Count; i++)
+            {
+                var (e1, n1) = s.RecordingPoints[i - 1];
+                var (e2, n2) = s.RecordingPoints[i];
+                canvas.DrawLine((float)e1, (float)n1, (float)e2, (float)n2, linePaint);
+            }
+            if (s.RecordingPoints.Count > 0)
+            {
+                var (e, n) = s.RecordingPoints[s.RecordingPoints.Count - 1];
+                canvas.DrawCircle((float)e, (float)n, 0.3f, pointPaint);
+            }
+        }
+
+        private void DrawClipLineSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.ClipLine.HasValue)
+            {
+                var (start, end) = s.ClipLine.Value;
+                canvas.DrawLine((float)start.Easting, (float)start.Northing,
+                    (float)end.Easting, (float)end.Northing, _clipLinePaint);
+            }
+            if (s.ClipPath != null && s.ClipPath.Count >= 2)
+            {
+                for (int i = 1; i < s.ClipPath.Count; i++)
+                    canvas.DrawLine((float)s.ClipPath[i-1].Easting, (float)s.ClipPath[i-1].Northing,
+                        (float)s.ClipPath[i].Easting, (float)s.ClipPath[i].Northing, _clipLinePaint);
+            }
+        }
+
+        private void DrawYouTurnPathSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.YouTurnPath == null || s.YouTurnPath.Count < 2) return;
+            using var path = new SKPath();
+            path.MoveTo((float)s.YouTurnPath[0].Easting, (float)s.YouTurnPath[0].Northing);
+            for (int i = 1; i < s.YouTurnPath.Count; i++)
+                path.LineTo((float)s.YouTurnPath[i].Easting, (float)s.YouTurnPath[i].Northing);
+            canvas.DrawPath(path, _youTurnPaint);
+        }
+
+        /// <summary>
+        /// Draw tram lines: two-pass rendering matching legacy AgOpenGPS.
+        /// Pass 1: black outline, Pass 2: pink/salmon fill.
+        /// </summary>
+        private void DrawTramLinesSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.Off) return;
+
+            bool hasBoundary = (s.TramOuterTrack?.Count > 1 || s.TramInnerTrack?.Count > 1);
+            bool hasLines = s.TramParallelLines?.Count > 0;
+            if (!hasBoundary && !hasLines) return;
+
+            byte alpha = (byte)(s.TramAlpha * 255);
+
+            using var outlinePaint = new SKPaint
+            {
+                Color = new SKColor(0, 0, 0, alpha),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 2.0f,
+                IsAntialias = true
+            };
+            using var fillPaint = new SKPaint
+            {
+                Color = new SKColor(237, 184, 187, alpha),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1.0f,
+                IsAntialias = true
+            };
+
+            // Mode All or LinesOnly: draw parallel tram lines
+            if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
+                || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.LinesOnly) && hasLines)
+            {
+                foreach (var line in s.TramParallelLines!)
+                {
+                    if (line.Count < 2) continue;
+                    using var path = new SKPath();
+                    path.MoveTo((float)line[0].Easting, (float)line[0].Northing);
+                    for (int i = 1; i < line.Count; i++)
+                        path.LineTo((float)line[i].Easting, (float)line[i].Northing);
+                    canvas.DrawPath(path, outlinePaint);
+                    canvas.DrawPath(path, fillPaint);
+                }
+            }
+
+            // Mode All or OuterOnly: draw boundary tracks
+            if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
+                || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.OuterOnly) && hasBoundary)
+            {
+                void DrawTramTrack(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2> track)
+                {
+                    if (track.Count < 2) return;
+                    using var path = new SKPath();
+                    path.MoveTo((float)track[0].Easting, (float)track[0].Northing);
+                    for (int i = 1; i < track.Count; i++)
+                        path.LineTo((float)track[i].Easting, (float)track[i].Northing);
+                    canvas.DrawPath(path, outlinePaint);
+                    canvas.DrawPath(path, fillPaint);
+                }
+
+                if (s.TramOuterTrack != null) DrawTramTrack(s.TramOuterTrack);
+                if (s.TramInnerTrack != null) DrawTramTrack(s.TramInnerTrack);
+            }
+        }
+
+        private void DrawFlagsSk(SKCanvas canvas, MapRenderState s)
+        {
+            foreach (var (easting, northing, color, name) in s.Flags)
+            {
+                var skColor = color switch
+                {
+                    "Red" => SKColors.Red,
+                    "Green" => SKColors.Green,
+                    "Blue" => SKColors.Blue,
+                    "Yellow" => SKColors.Yellow,
+                    _ => SKColors.White
+                };
+                using var paint = new SKPaint { Color = skColor, Style = SKPaintStyle.Fill };
+                canvas.DrawCircle((float)easting, (float)northing, 0.8f, paint);
+                using var outlinePaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 0.1f };
+                canvas.DrawCircle((float)easting, (float)northing, 0.8f, outlinePaint);
+            }
+        }
+
+        private void DrawSvennArrowSk(SKCanvas canvas, MapRenderState s)
+        {
+            float aheadDistance = 8.0f;
+            float wingSpan = 3.0f;
+            float wingDepth = 3.0f;
+
+            canvas.Save();
+            canvas.Translate((float)s.VehicleX, (float)s.VehicleY);
+            canvas.RotateRadians(-(float)s.VehicleHeading);
+
+            using var paint = new SKPaint
+            {
+                Color = new SKColor(255, 220, 0, 200),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.4f,
+                IsAntialias = true
+            };
+            canvas.DrawLine(0, aheadDistance, -wingSpan, aheadDistance - wingDepth, paint);
+            canvas.DrawLine(0, aheadDistance, wingSpan, aheadDistance - wingDepth, paint);
+
+            canvas.Restore();
+        }
+
+        private void DrawExtraGuidelinesSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.ActiveTrack == null || s.ActiveTrack.Points.Count < 2) return;
+            int count = s.ExtraGuidelinesCount;
+            double spacing = s.ToolWidth > 0.1 ? s.ToolWidth : 6.0;
+
+            using var paint = new SKPaint
+            {
+                Color = new SKColor(255, 165, 0, 60),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.3f,
+                IsAntialias = true
+            };
+
+            var track = s.ActiveTrack;
+            if (track.Points.Count == 2)
+            {
+                var pA = track.Points[0];
+                var pB = track.Points[track.Points.Count - 1];
+                double dx = pB.Easting - pA.Easting;
+                double dy = pB.Northing - pA.Northing;
+                double length = Math.Sqrt(dx * dx + dy * dy);
+                if (length < 0.01) return;
+                double px = -dy / length, py = dx / length;
+                double nx = dx / length, ny = dy / length;
+                double ext = 500.0;
+
+                for (int i = 1; i <= count; i++)
+                {
+                    double offset = i * spacing;
+                    canvas.DrawLine(
+                        (float)(pA.Easting + px * offset - nx * ext), (float)(pA.Northing + py * offset - ny * ext),
+                        (float)(pB.Easting + px * offset + nx * ext), (float)(pB.Northing + py * offset + ny * ext), paint);
+                    canvas.DrawLine(
+                        (float)(pA.Easting - px * offset - nx * ext), (float)(pA.Northing - py * offset - ny * ext),
+                        (float)(pB.Easting - px * offset + nx * ext), (float)(pB.Northing - py * offset + ny * ext), paint);
+                }
+            }
+            else
+            {
+                for (int i = 1; i <= count; i++)
+                {
+                    double offset = i * spacing;
+                    var posPoints = Models.Guidance.CurveProcessing.CreateOffsetCurve(track.Points, offset);
+                    var negPoints = Models.Guidance.CurveProcessing.CreateOffsetCurve(track.Points, -offset);
+                    if (posPoints.Count >= 2) DrawTrackPointsSk(canvas, posPoints, paint);
+                    if (negPoints.Count >= 2) DrawTrackPointsSk(canvas, negPoints, paint);
+                }
+            }
+        }
+
+        private void DrawSelectionMarkersSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (s.SelectionMarkers == null) return;
+            for (int i = 0; i < s.SelectionMarkers.Count; i++)
+            {
+                var marker = s.SelectionMarkers[i];
+                var color = i == 0 ? new SKColor(255, 165, 0) : new SKColor(0, 150, 255);
+                using var fillPaint = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
+                using var outlinePaint = new SKPaint { Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 0.3f };
+                canvas.DrawCircle((float)marker.Easting, (float)marker.Northing, 4.0f, fillPaint);
+                canvas.DrawCircle((float)marker.Easting, (float)marker.Northing, 4.0f, outlinePaint);
+            }
+        }
+
+        private void DrawBoundaryOffsetIndicatorSk(SKCanvas canvas, MapRenderState s)
+        {
+            if (!s.ShowBoundaryOffsetIndicator) return;
+            // Simple indicator at vehicle position
+            using var paint = new SKPaint
+            {
+                Color = new SKColor(255, 165, 0, 180),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.3f
+            };
+            float radius = (float)Math.Abs(s.BoundaryOffsetMeters);
+            if (radius > 0.1f)
+                canvas.DrawCircle((float)s.VehicleX, (float)s.VehicleY, radius, paint);
+        }
+    }
 }
 
 /// <summary>
@@ -3953,106 +4560,4 @@ public class MapClickEventArgs : EventArgs
     }
 }
 
-/// <summary>
-/// Custom draw operation for coverage rendering using direct Skia access.
-/// This bypasses Avalonia's DrawingContext overhead for better performance.
-/// The draw operation renders in world coordinates - the parent context handles transforms.
-/// </summary>
-public class CoverageDrawOperation : ICustomDrawOperation
-{
-    private readonly List<(SKPath Path, SKPaint Paint)> _coveragePaths;
-
-    public Rect Bounds { get; }
-
-    public CoverageDrawOperation(Rect bounds, IReadOnlyList<CoveragePatch> patches)
-    {
-        Bounds = bounds;
-        _coveragePaths = new List<(SKPath, SKPaint)>();
-
-        // Pre-build Skia paths for all patches
-        BuildCoveragePaths(patches);
-    }
-
-    private void BuildCoveragePaths(IReadOnlyList<CoveragePatch> patches)
-    {
-        foreach (var patch in patches)
-        {
-            if (!patch.IsRenderable || patch.Vertices.Count < 4)
-                continue;
-
-            var vertices = patch.Vertices;
-
-            // Create paint with patch color (60% alpha)
-            var paint = new SKPaint
-            {
-                Color = new SKColor(patch.Color.R, patch.Color.G, patch.Color.B, 152),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = false // Faster without antialiasing for coverage
-            };
-
-            // Build path from triangle strip (convert to polygon)
-            var path = new SKPath();
-            var leftEdge = new List<SKPoint>();
-            var rightEdge = new List<SKPoint>();
-
-            // Skip vertex 0 (color data), collect left (odd) and right (even) edges
-            for (int i = 1; i < vertices.Count; i++)
-            {
-                var v = vertices[i];
-                var pt = new SKPoint((float)v.Easting, (float)v.Northing);
-                if (i % 2 == 1)
-                    leftEdge.Add(pt);
-                else
-                    rightEdge.Add(pt);
-            }
-
-            if (leftEdge.Count > 0 && rightEdge.Count > 0)
-            {
-                // Draw as polygon: down left edge, back up right edge
-                path.MoveTo(leftEdge[0]);
-                for (int i = 1; i < leftEdge.Count; i++)
-                    path.LineTo(leftEdge[i]);
-
-                // Connect to right edge at end
-                path.LineTo(rightEdge[rightEdge.Count - 1]);
-
-                // Back up right edge
-                for (int i = rightEdge.Count - 2; i >= 0; i--)
-                    path.LineTo(rightEdge[i]);
-
-                path.Close();
-            }
-
-            _coveragePaths.Add((path, paint));
-        }
-    }
-
-    public void Render(ImmediateDrawingContext context)
-    {
-        var leaseFeature = context.TryGetFeature(typeof(ISkiaSharpApiLeaseFeature)) as ISkiaSharpApiLeaseFeature;
-        if (leaseFeature == null)
-            return; // Skia not available
-
-        using var lease = leaseFeature.Lease();
-        var canvas = lease.SkCanvas;
-
-        // Draw all coverage paths (transform already applied by parent context)
-        foreach (var (path, paint) in _coveragePaths)
-        {
-            canvas.DrawPath(path, paint);
-        }
-    }
-
-    public void Dispose()
-    {
-        foreach (var (path, paint) in _coveragePaths)
-        {
-            path.Dispose();
-            paint.Dispose();
-        }
-        _coveragePaths.Clear();
-    }
-
-    public bool HitTest(Point p) => false;
-    public bool Equals(ICustomDrawOperation? other) => false;
-}
+// CoverageDrawOperation removed — coverage drawn directly in MapCompositionHandler

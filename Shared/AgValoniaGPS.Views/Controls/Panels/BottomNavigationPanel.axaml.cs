@@ -18,12 +18,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Layout;
 using AgValoniaGPS.Models.State;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
-public partial class BottomNavigationPanel : DraggableRotatablePanel
+public partial class BottomNavigationPanel : UserControl
 {
     private Border? _mainPanel;
     private Border? _abLineFlyoutPanel;
@@ -44,9 +43,6 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
         _flagMenuButton = this.FindControl<Button>("FlagMenuButton");
         _abLineFlyoutPanel = this.FindControl<Border>("ABLineFlyoutPanel");
         _flagsFlyoutPanel = this.FindControl<Border>("FlagsFlyoutPanel");
-
-        // Initialize drag and rotate behavior from base class
-        InitializeDragRotate();
 
         // Wire up menu buttons to toggle flyouts
         if (_abLineMenuButton != null)
@@ -89,20 +85,6 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
         if (e.Current == DialogType.None)
         {
             CloseAllFlyouts();
-        }
-    }
-
-    /// <summary>
-    /// Override to rotate the ButtonStack orientation.
-    /// </summary>
-    protected override void RotatePanel()
-    {
-        var buttonStack = FindButtonStack();
-        if (buttonStack != null)
-        {
-            buttonStack.Orientation = buttonStack.Orientation == Orientation.Vertical
-                ? Orientation.Horizontal
-                : Orientation.Vertical;
         }
     }
 
@@ -199,29 +181,19 @@ public partial class BottomNavigationPanel : DraggableRotatablePanel
     {
         if (button == null || _mainPanel == null) return;
 
-        // Get the button's position relative to the main panel
+        // Get button position relative to this panel's internal Canvas
         var buttonBounds = button.Bounds;
         var buttonPosition = button.TranslatePoint(new Point(0, 0), _mainPanel);
 
         if (buttonPosition.HasValue)
         {
-            // Get the main panel's canvas position
-            var panelLeft = Canvas.GetLeft(_mainPanel);
-            var panelTop = Canvas.GetTop(_mainPanel);
-            if (double.IsNaN(panelLeft)) panelLeft = 0;
-            if (double.IsNaN(panelTop)) panelTop = -78;
-
-            // Always use estimated height for consistent first-open positioning
-            // The panel renders the same every time, so this is reliable
             var flyoutHeight = estimatedHeight;
-
-            // Calculate X position - center flyout over button
             var flyoutWidth = flyout.Bounds.Width > 10 ? flyout.Bounds.Width : 170;
-            var flyoutLeft = panelLeft + buttonPosition.Value.X + buttonBounds.Width / 2 - flyoutWidth / 2;
+            var flyoutLeft = buttonPosition.Value.X + buttonBounds.Width / 2 - flyoutWidth / 2;
 
-            // Position flyout above the main panel
+            // Position flyout above the main panel (negative Y in Canvas)
             Canvas.SetLeft(flyout, flyoutLeft);
-            Canvas.SetTop(flyout, panelTop - flyoutHeight - 10);
+            Canvas.SetTop(flyout, -flyoutHeight - 10);
         }
     }
 

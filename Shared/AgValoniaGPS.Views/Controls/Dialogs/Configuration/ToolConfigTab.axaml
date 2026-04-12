@@ -35,7 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,0,2,0"/>
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
         </Style>
         <Style Selector="TabControl.SubTabs > TabItem:selected">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>

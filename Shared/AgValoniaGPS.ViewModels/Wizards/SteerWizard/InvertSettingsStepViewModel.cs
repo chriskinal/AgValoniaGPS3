@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -41,21 +43,21 @@ public class InvertSettingsStepViewModel : WizardStepViewModel
     public bool InvertWas
     {
         get => _invertWas;
-        set => this.RaiseAndSetIfChanged(ref _invertWas, value);
+        set => SetProperty(ref _invertWas, value);
     }
 
     private bool _invertMotor;
     public bool InvertMotor
     {
         get => _invertMotor;
-        set => this.RaiseAndSetIfChanged(ref _invertMotor, value);
+        set => SetProperty(ref _invertMotor, value);
     }
 
     private bool _invertRelays;
     public bool InvertRelays
     {
         get => _invertRelays;
-        set => this.RaiseAndSetIfChanged(ref _invertRelays, value);
+        set => SetProperty(ref _invertRelays, value);
     }
 
     public InvertSettingsStepViewModel(IConfigurationService configService)

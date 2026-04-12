@@ -129,19 +129,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <!-- Zoom Button Style -->
     <Style Selector="Button.ZoomButton">
-        <Setter Property="Width" Value="50"/>
-        <Setter Property="Height" Value="50"/>
-        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="Width" Value="64"/>
+        <Setter Property="Height" Value="64"/>
+        <Setter Property="FontSize" Value="32"/>
         <Setter Property="FontWeight" Value="Bold"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Background" Value="#4A5568"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
     <Style Selector="Button.ZoomButton:pointerover">
-        <Setter Property="Background" Value="#5A6578"/>
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
     </Style>
 
 </Styles>

@@ -16,9 +16,11 @@
 
 using System;
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -46,13 +48,13 @@ public partial class MainViewModel
     public bool IsNtripConnected
     {
         get => _isNtripConnected;
-        set => this.RaiseAndSetIfChanged(ref _isNtripConnected, value);
+        set => SetProperty(ref _isNtripConnected, value);
     }
 
     public string NtripStatus
     {
         get => _ntripStatus;
-        set => this.RaiseAndSetIfChanged(ref _ntripStatus, value);
+        set => SetProperty(ref _ntripStatus, value);
     }
 
     public string NtripBytesReceived
@@ -63,31 +65,31 @@ public partial class MainViewModel
     public string NtripCasterAddress
     {
         get => _ntripCasterAddress;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterAddress, value);
+        set => SetProperty(ref _ntripCasterAddress, value);
     }
 
     public int NtripCasterPort
     {
         get => _ntripCasterPort;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterPort, value);
+        set => SetProperty(ref _ntripCasterPort, value);
     }
 
     public string NtripMountPoint
     {
         get => _ntripMountPoint;
-        set => this.RaiseAndSetIfChanged(ref _ntripMountPoint, value);
+        set => SetProperty(ref _ntripMountPoint, value);
     }
 
     public string NtripUsername
     {
         get => _ntripUsername;
-        set => this.RaiseAndSetIfChanged(ref _ntripUsername, value);
+        set => SetProperty(ref _ntripUsername, value);
     }
 
     public string NtripPassword
     {
         get => _ntripPassword;
-        set => this.RaiseAndSetIfChanged(ref _ntripPassword, value);
+        set => SetProperty(ref _ntripPassword, value);
     }
 
     #endregion
@@ -183,7 +185,7 @@ public partial class MainViewModel
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => UpdateNtripConnectionProperties(e));
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateNtripConnectionProperties(e));
         }
     }
 
@@ -200,14 +202,13 @@ public partial class MainViewModel
 
     private void OnRtcmDataReceived(object? sender, RtcmDataReceivedEventArgs e)
     {
-        // Marshal to UI thread (use Invoke for synchronous execution to avoid modal dialog issues)
         if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
             UpdateNtripDataProperties();
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(() => UpdateNtripDataProperties());
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateNtripDataProperties());
         }
     }
 
@@ -218,7 +219,7 @@ public partial class MainViewModel
 
         // Legacy property updates
         _ntripBytesReceived = _ntripService.TotalBytesReceived;
-        this.RaisePropertyChanged(nameof(NtripBytesReceived));
+        OnPropertyChanged(nameof(NtripBytesReceived));
     }
 
     #endregion

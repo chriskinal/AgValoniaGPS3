@@ -46,11 +46,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:AgShareUploadDialogPanel/>
         <dialogs:AgShareDownloadDialogPanel/>
         <dialogs:DataIODialogPanel/>
-        <dialogs:HeadlandBuilderDialogPanel/>
-        <dialogs:HeadlandDialogPanel/>
         <dialogs:QuickABSelectorPanel/>
         <dialogs:TracksDialogPanel/>
         <dialogs:ImportTracksDialogPanel/>
+        <dialogs:LanguageDialogPanel/>
         <dialogs:DrawABDialogPanel/>
         <dialogs:NtripProfilesDialogPanel/>
         <dialogs:NtripProfileEditorPanel/>
@@ -61,6 +60,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:FlagByLatLonDialogPanel/>
         <dialogs:FlagListDialogPanel/>
         <dialogs:ViewSettingsDialogPanel/>
+        <dialogs:HelpDialogPanel/>
+        <dialogs:OffsetFixDialogPanel/>
+        <dialogs:TramSettingsDialogPanel/>
+        <dialogs:FieldBuilderDialogPanel/>
         <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
         <dialogs:AutoSteerConfigPanel DataContext="{Binding AutoSteerConfigViewModel}"/>
 

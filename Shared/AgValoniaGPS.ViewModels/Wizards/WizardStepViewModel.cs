@@ -15,14 +15,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards;
 
 /// <summary>
 /// Base class for wizard steps. Each step represents one page in a wizard.
 /// </summary>
-public abstract class WizardStepViewModel : ReactiveObject
+public abstract class WizardStepViewModel : ObservableObject
 {
     /// <summary>
     /// The title displayed at the top of the step.
@@ -68,7 +68,7 @@ public abstract class WizardStepViewModel : ReactiveObject
     public string? ValidationMessage
     {
         get => _validationMessage;
-        protected set => this.RaiseAndSetIfChanged(ref _validationMessage, value);
+        protected set => SetProperty(ref _validationMessage, value);
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public abstract class WizardStepViewModel : ReactiveObject
         internal set
         {
             var oldValue = _isActive;
-            this.RaiseAndSetIfChanged(ref _isActive, value);
+            SetProperty(ref _isActive, value);
             if (oldValue != value)
             {
                 if (value)
@@ -126,7 +126,7 @@ public abstract class WizardStepViewModel : ReactiveObject
     protected void ClearValidation()
     {
         ValidationMessage = null;
-        this.RaisePropertyChanged(nameof(HasValidationError));
+        OnPropertyChanged(nameof(HasValidationError));
     }
 
     /// <summary>
@@ -135,6 +135,6 @@ public abstract class WizardStepViewModel : ReactiveObject
     protected void SetValidationError(string message)
     {
         ValidationMessage = message;
-        this.RaisePropertyChanged(nameof(HasValidationError));
+        OnPropertyChanged(nameof(HasValidationError));
     }
 }

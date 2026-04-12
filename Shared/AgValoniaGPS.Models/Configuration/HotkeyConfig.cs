@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -44,7 +44,7 @@ public enum HotkeyAction
     Section8
 }
 
-public class HotkeyConfig : ReactiveObject
+public class HotkeyConfig : ObservableObject
 {
     private Dictionary<HotkeyAction, string> _bindings;
     private Dictionary<string, HotkeyAction>? _reverseMap;
@@ -104,14 +104,14 @@ public class HotkeyConfig : ReactiveObject
 
         _bindings[action] = key.ToUpperInvariant();
         _reverseMap = null;
-        this.RaisePropertyChanged(nameof(Bindings));
+        OnPropertyChanged(nameof(Bindings));
     }
 
     public void ResetToDefaults()
     {
         _bindings = new Dictionary<HotkeyAction, string>(Defaults);
         _reverseMap = null;
-        this.RaisePropertyChanged(nameof(Bindings));
+        OnPropertyChanged(nameof(Bindings));
     }
 
     public void LoadFromDictionary(Dictionary<string, string> dict)
@@ -124,7 +124,7 @@ public class HotkeyConfig : ReactiveObject
             }
         }
         _reverseMap = null;
-        this.RaisePropertyChanged(nameof(Bindings));
+        OnPropertyChanged(nameof(Bindings));
     }
 
     public Dictionary<string, string> ToDictionary()

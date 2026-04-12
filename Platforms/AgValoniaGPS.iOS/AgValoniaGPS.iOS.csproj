@@ -29,16 +29,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.9" />
-    <PackageReference Include="Avalonia.iOS" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.0" />
+    <PackageReference Include="Avalonia" Version="12.0.0" />
+    <PackageReference Include="Avalonia.iOS" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
-    <PackageReference Include="Avalonia.Labs.Controls" Version="11.3.1" />
-    <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <!-- HotAvalonia removed - uses DynamicMethod which is not supported on iOS (no JIT allowed) -->
   </ItemGroup>
 

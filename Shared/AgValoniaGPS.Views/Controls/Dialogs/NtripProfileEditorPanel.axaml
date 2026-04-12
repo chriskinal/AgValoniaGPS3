@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -97,11 +98,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="20">
             <StackPanel Spacing="12">
                 <!-- Header -->
-                <TextBlock Classes="Header" Text="Edit NTRIP Profile"/>
+                <TextBlock Classes="Header" Text="{loc:Localize EditNtripProfile}"/>
 
                 <!-- Profile Name -->
                 <StackPanel>
-                    <TextBlock Classes="Label" Text="Profile Name"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize ProfileName}"/>
                     <TextBox Text="{Binding EditingNtripProfile.Name, FallbackValue='', TargetNullValue=''}" Watermark="e.g., Local Base Station"/>
                 </StackPanel>
 
@@ -109,22 +110,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Caster Settings Section -->
-                <TextBlock Text="Caster Settings" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="{loc:Localize CasterSettings}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
 
                 <!-- Host -->
                 <StackPanel>
-                    <TextBlock Classes="Label" Text="Caster Host"/>
+                    <TextBlock Classes="Label" Text="{loc:Localize CasterHost}"/>
                     <TextBox Text="{Binding EditingNtripProfile.CasterHost, FallbackValue='', TargetNullValue=''}" Watermark="e.g., rtk2go.com"/>
                 </StackPanel>
 
                 <!-- Port -->
                 <Grid ColumnDefinitions="*,*" Margin="0,0,0,0">
                     <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                        <TextBlock Classes="Label" Text="Port"/>
+                        <TextBlock Classes="Label" Text="{loc:Localize Port}"/>
                         <TextBox Text="{Binding EditingNtripProfile.CasterPort, FallbackValue=2101}" Watermark="2101"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="6,0,0,0">
-                        <TextBlock Classes="Label" Text="Mount Point"/>
+                        <TextBlock Classes="Label" Text="{loc:Localize MountPoint}"/>
                         <TextBox Text="{Binding EditingNtripProfile.MountPoint, FallbackValue='', TargetNullValue=''}" Watermark="NEAR-RTCM3"/>
                     </StackPanel>
                 </Grid>
@@ -132,18 +133,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Credentials -->
                 <Grid ColumnDefinitions="*,*" Margin="0,0,0,0">
                     <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                        <TextBlock Classes="Label" Text="Username"/>
+                        <TextBlock Classes="Label" Text="{loc:Localize Username}"/>
                         <TextBox Text="{Binding EditingNtripProfile.Username, FallbackValue='', TargetNullValue=''}" Watermark="(optional)"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="6,0,0,0">
-                        <TextBlock Classes="Label" Text="Password"/>
+                        <TextBlock Classes="Label" Text="{loc:Localize Password}"/>
                         <TextBox Text="{Binding EditingNtripProfile.Password, FallbackValue='', TargetNullValue=''}" Watermark="(optional)" PasswordChar="*"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Test Connection -->
                 <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,0">
-                    <Button Grid.Column="0" Classes="DialogButton TestButton" Content="Test Connection"
+                    <Button Grid.Column="0" Classes="DialogButton TestButton" Content="{loc:Localize TestConnection}"
                             Command="{Binding TestNtripConnectionCommand}"
                             IsEnabled="{Binding !IsTestingNtripConnection}"/>
                     <TextBlock Grid.Column="1" Text="{Binding NtripTestStatus}"
@@ -156,8 +157,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Field Associations Section -->
-                <TextBlock Text="Associated Fields" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
-                <TextBlock Text="Select fields that will use this NTRIP profile:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Margin="0,0,0,4"/>
+                <TextBlock Text="{loc:Localize AssociatedFields}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="{loc:Localize SelectFieldsThatWillUseThisNtripProfile}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" Margin="0,0,0,4"/>
 
                 <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4"
                         MaxHeight="120" Padding="4">
@@ -172,17 +173,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </ItemsControl>
                     </ScrollViewer>
                 </Border>
-                <TextBlock Text="Fields not selected will use the default profile (if set)." Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,4,0,0"/>
+                <TextBlock Text="{loc:Localize FieldsNotSelectedWillUseTheDefaultProfileIfSet}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="11" Margin="0,4,0,0"/>
 
                 <!-- Separator -->
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Options -->
                 <CheckBox IsChecked="{Binding EditingNtripProfile.AutoConnectOnFieldLoad, FallbackValue=True}"
-                          Content="Auto-connect when associated field is loaded"/>
+                          Content="{loc:Localize AutoConnectWhenAssociatedFieldIsLoaded}"/>
 
                 <CheckBox IsChecked="{Binding EditingNtripProfile.IsDefault, FallbackValue=False}"
-                          Content="Set as default profile (for fields without specific association)"/>
+                          Content="{loc:Localize SetAsDefaultProfileForFieldsWithoutSpecificAssociation}"/>
 
                 <!-- Action Buttons -->
                 <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,8,0,0">
@@ -190,11 +191,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Grid.Column="0"/>
 
                     <!-- Cancel Button -->
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             Command="{Binding CancelNtripProfileEditCommand}" Margin="0,0,8,0"/>
 
                     <!-- Save Button -->
-                    <Button Grid.Column="2" Classes="DialogButton" Content="Save Profile"
+                    <Button Grid.Column="2" Classes="DialogButton" Content="{loc:Localize SaveProfile}"
                             Command="{Binding SaveNtripProfileCommand}"/>
                 </Grid>
             </StackPanel>

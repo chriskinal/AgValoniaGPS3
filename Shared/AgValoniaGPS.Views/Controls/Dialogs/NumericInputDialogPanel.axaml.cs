@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Input;
 
@@ -24,6 +25,19 @@ public partial class NumericInputDialogPanel : UserControl
     public NumericInputDialogPanel()
     {
         InitializeComponent();
+        DirectInput.TextChanged += DirectInput_TextChanged;
+    }
+
+    private void DirectInput_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        // Parse direct text input into the ViewModel's numeric value
+        if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
+        {
+            if (decimal.TryParse(DirectInput.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+            {
+                vm.NumericInputDialogValue = value;
+            }
+        }
     }
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)

@@ -1,0 +1,76 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.MapBannersPanel"
+             x:DataType="vm:MainViewModel"
+             HorizontalAlignment="Center" VerticalAlignment="Top">
+
+    <StackPanel Spacing="8" Margin="0,80,0,0">
+        <!-- Flag Placement Banner -->
+        <Border Background="#CC2980B9" CornerRadius="8" Padding="16,8"
+                HorizontalAlignment="Center"
+                IsVisible="{Binding IsPlaceFlagOnClickMode}">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="Tap on map to place a flag"
+                           Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                <Button Content="Cancel"
+                        Command="{Binding PlaceFlagOnClickCommand}"
+                        Background="#DD3333" Foreground="White"
+                        Padding="12,4"/>
+            </StackPanel>
+        </Border>
+
+        <!-- AB Creation Instruction Banner -->
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="8" Padding="16,8"
+                HorizontalAlignment="Center"
+                IsVisible="{Binding IsCreatingABLine}">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="{Binding ABCreationInstructions}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" VerticalAlignment="Center"/>
+                <!-- Finish button for drive-recording Curve mode -->
+                <Button Content="Finish"
+                        Command="{Binding FinishCurveRecordingCommand}"
+                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        Padding="12,4"
+                        IsVisible="{Binding IsRecordingCurve}"/>
+                <!-- Finish button for DrawCurve mode -->
+                <Button Content="Finish"
+                        Command="{Binding FinishDrawCurveCommand}"
+                        Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        Padding="12,4"
+                        IsVisible="{Binding IsDrawingCurve}"/>
+                <!-- Undo button for DrawCurve mode -->
+                <Button Content="Undo"
+                        Command="{Binding UndoLastDrawnPointCommand}"
+                        Background="#E67E22" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        Padding="12,4"
+                        IsVisible="{Binding IsDrawingCurve}"/>
+                <Button Content="Cancel"
+                        Command="{Binding CancelABCreationCommand}"
+                        Background="#DD3333" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                        Padding="12,4"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+
+</UserControl>

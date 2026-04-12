@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB Līnija</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Par...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Platība</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Automātiskā stūrēšana</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Robeža</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Atcelt</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Aizvērt</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Konfigurācija</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Dzēst</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Parādīt</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Attālums</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Iespējot</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Virziens</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Laukmala</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Palīdzība</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Valoda</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Platums</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Pabīdīt:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Izslēgts</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Nobīde</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>Ieslēgts</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Pārklājums:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauze</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Atiestatīt</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Turpināt</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sekcijas:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Sākt</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Izveidojiet vadības līnijas</value>
+  </data>
+</root>

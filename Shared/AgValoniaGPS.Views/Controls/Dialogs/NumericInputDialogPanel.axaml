@@ -17,15 +17,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
              xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
+             xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.NumericInputDialogPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding State.UI.IsNumericInputDialogVisible}"
              IsHitTestVisible="{Binding State.UI.IsNumericInputDialogVisible}">
+
+    <UserControl.Resources>
+        <conv:InverseBoolConverter x:Key="InverseBool"/>
+    </UserControl.Resources>
 
     <!-- Full screen overlay with backdrop -->
     <Grid>
@@ -41,28 +47,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{Binding NumericInputDialogTitle}" FontSize="18" FontWeight="Bold"
                            Foreground="#1ABC9C" HorizontalAlignment="Center"/>
 
-                <!-- Current Value Display -->
-                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12,8">
+                <!-- Current Value Display (shown with on-screen keyboard) -->
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="12,8"
+                        IsVisible="{Binding Display.KeyboardEnabled}">
                     <TextBlock x:Name="ValueDisplay" FontSize="32" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"
                                Text="{Binding NumericInputDialogDisplayText}"/>
                 </Border>
 
-                <!-- Numeric Keyboard -->
+                <!-- Numeric Keyboard (visible when KeyboardEnabled) -->
                 <controls:NumericKeyboardPanel x:Name="Keyboard"
+                    IsVisible="{Binding Display.KeyboardEnabled}"
                     Value="{Binding NumericInputDialogValue, Mode=TwoWay}"
                     DisplayText="{Binding NumericInputDialogDisplayText, Mode=OneWayToSource}"
                     IntegerOnly="{Binding NumericInputDialogIntegerOnly}"
                     AllowNegative="{Binding NumericInputDialogAllowNegative}"/>
 
+                <!-- Text input fallback (shown when on-screen keyboard is disabled) -->
+                <TextBox x:Name="DirectInput"
+                         IsVisible="{Binding Display.KeyboardEnabled, Converter={StaticResource InverseBool}}"
+                         Text="{Binding NumericInputDialogDisplayText, Mode=TwoWay}"
+                         FontSize="32" FontWeight="Bold"
+                         HorizontalContentAlignment="Center"
+                         Watermark="Enter value..."
+                         Margin="0,4"/>
+
                 <!-- Action Buttons -->
                 <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
-                    <Button Grid.Column="0" Content="Cancel" Margin="0,0,4,0"
+                    <Button Grid.Column="0" Content="{loc:Localize Cancel}" Margin="0,0,4,0"
                             Command="{Binding CancelNumericInputDialogCommand}"
                             Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="16"
                             HorizontalContentAlignment="Center" CornerRadius="6"/>
-                    <Button Grid.Column="1" Content="OK" Margin="4,0,0,0"
+                    <Button Grid.Column="1" Content="{loc:Localize OK}" Margin="4,0,0,0"
                             Command="{Binding ConfirmNumericInputDialogCommand}"
                             Background="#1ABC9C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="44" FontSize="16"

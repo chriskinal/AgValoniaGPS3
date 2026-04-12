@@ -8,23 +8,17 @@
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- TODO: Enable compiled bindings after fixing binding errors in:
-         - AgShareDownloadDialogPanel.axaml (missing DataType in DataTemplate)
-         - AgShareUploadDialogPanel.axaml (missing DataType in DataTemplate)
-         - AutoSteerConfigPanel.axaml (missing EditSidehillCompensationCommand)
-         - ConfigurationDialog.axaml (missing IsMetric property)
-         - NewFieldDialogPanel.axaml (missing x:DataType)
-         - NumericStepView.axaml (missing x:DataType)
-    -->
-    <!-- <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault> -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <DefineConstants>$(DefineConstants);__AVALONIA__</DefineConstants>
   </PropertyGroup>
 
   <!-- Avalonia is needed for avares:// resource compilation -->
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Labs.Controls" Version="11.3.1" />
-    <PackageReference Include="Avalonia.Labs.Gif" Version="11.3.1" />
-    <PackageReference Include="Mapsui.Avalonia" Version="5.0.2" />
+    <PackageReference Include="Avalonia" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Skia" Version="12.0.0" />
+    <PackageReference Include="Mapsui" Version="5.0.2" />
+    <PackageReference Include="Mapsui.Rendering.Skia" Version="5.0.2" />
+    <PackageReference Include="Mapsui.Tiling" Version="5.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
@@ -35,11 +29,20 @@
     <ProjectReference Include="..\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
   </ItemGroup>
 
+  <!-- Localization: configure code generator for base .resx (#40) -->
+  <ItemGroup>
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- Shared Assets: Icons and Images accessible by both Desktop and iOS -->
   <ItemGroup>
     <AvaloniaResource Include="Assets\Icons\**\*.png" />
     <AvaloniaResource Include="Assets\Icons\**\*.gif" />
     <AvaloniaResource Include="Assets\Images\**\*.png" />
+    <AvaloniaResource Include="Assets\Sounds\**\*.wav" />
   </ItemGroup>
 
 </Project>

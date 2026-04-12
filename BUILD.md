@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 
-# AgValoniaGPS3 Build Guide
+# AgValoniaGPS Build Guide
 
-This guide covers building AgValoniaGPS3 on Windows, macOS (Intel and Apple Silicon), and Linux.
+This guide covers building AgValoniaGPS on Windows, macOS (Intel and Apple Silicon), and Linux.
 
 ## Table of Contents
 
@@ -54,8 +54,8 @@ This guide covers building AgValoniaGPS3 on Windows, macOS (Intel and Apple Sili
 
 2. **Git** (for cloning the repository)
    ```bash
-   git clone https://github.com/your-repo/AgValoniaGPS3.git
-   cd AgValoniaGPS3
+   git clone https://github.com/your-repo/AgValoniaGPS.git
+   cd AgValoniaGPS
    ```
 
 3. **Restore NuGet packages** (automatic on first build, or manual):
@@ -438,7 +438,7 @@ sudo apt install libfontconfig1
 
 - Avalonia Documentation: https://docs.avaloniaui.net/
 - .NET Documentation: https://docs.microsoft.com/dotnet/
-- Report issues: https://github.com/your-repo/AgValoniaGPS3/issues
+- Report issues: https://github.com/your-repo/AgValoniaGPS/issues
 
 ---
 

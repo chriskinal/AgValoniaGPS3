@@ -78,19 +78,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <!-- Navigation Button Bar -->
     <Border x:Name="MainPanel" Classes="FloatingPanel">
         <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
-            <!-- Touch Handle: Tap to rotate, Hold to drag -->
-            <Grid x:Name="DragHandle" Height="40" Margin="0"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                  Cursor="Hand"
-                  ToolTip.Tip="Tap to rotate | Hold and drag to move">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                    <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
-                    <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
-                </StackPanel>
-            </Grid>
-
-            <Separator Classes="RightPanelSeparator" Margin="0,4,0,4"/>
-
             <!-- 1. Contour/Track Mode Toggle -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Contour Mode On/Off"
                     Command="{Binding ToggleContourModeCommand}">

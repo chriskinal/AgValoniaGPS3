@@ -26,8 +26,20 @@ Thank you for your interest in contributing to AgValoniaGPS! This document lists
 2. Clone your fork locally
 3. Build the project following instructions in `CLAUDE.md`
 4. Pick a feature from the list below
-5. Create a feature branch and implement
-6. Submit a pull request
+5. Create a feature branch off `develop` and implement
+6. Submit a pull request targeting the `develop` branch
+
+## Branch Strategy
+
+- **`master`** - Stable releases only
+- **`develop`** - Active development branch, PR target for all new work
+- **Feature branches** - Create `feature/your-feature` off `develop` for each issue
+
+## Key Documents
+
+- **[Plans/ARCHITECTURE.md](Plans/ARCHITECTURE.md)** - Full architecture documentation: service communication, state management, domain models, data flow diagrams
+- **[CLAUDE.md](CLAUDE.md)** - Build commands, key files reference, common development tasks
+- **[PGN.md](PGN.md)** - UDP packet protocol for hardware communication
 
 ## Architecture Overview
 
@@ -41,6 +53,20 @@ Thank you for your interest in contributing to AgValoniaGPS! This document lists
   - `AgValoniaGPS.Desktop/` - Windows/macOS/Linux
   - `AgValoniaGPS.iOS/` - iOS/iPadOS
   - `AgValoniaGPS.Android/` - Android
+
+### Cross-Platform Parity Rule
+
+**All code MUST go in `Shared/` unless it requires platform-specific APIs.** This is a hard architectural requirement, not a preference. Putting code in a single platform folder means the other platforms lose that feature.
+
+**What goes in `Shared/`:** UI controls, panels, dialogs, view models, services, models, converters, styles, icons, localization strings.
+
+**What goes in `Platforms/`:** Application entry point (`App.axaml.cs`), DI container setup, `MainWindow`/`MainView` (layout shell + drag handlers), `MapService` (map control registration), platform-specific APIs (file pickers, notifications).
+
+**Example violations fixed in #187-192:**
+- Status bar indicators were in Desktop `MainWindow.axaml` instead of a shared `StatusBarPanel`
+- Localization init was Desktop-only in `App.axaml.cs` instead of all three platforms
+- Flag placement banner existed only in Desktop
+- Screenshot capture code was duplicated across all three platforms instead of a shared helper
 
 ## Features Needing Implementation
 

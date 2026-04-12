@@ -16,14 +16,16 @@
 
 using System;
 using System.Linq;
-using System.Reactive;
-using ReactiveUI;
+
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -35,7 +37,7 @@ public partial class MainViewModel
     private void InitializeTrackCommands()
     {
         // AB Line Guidance Commands - Bottom Bar
-        SnapLeftCommand = ReactiveCommand.Create(() =>
+        SnapLeftCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -44,12 +46,13 @@ public partial class MainViewModel
             }
             _howManyPathsAway -= _isHeadingSameWay ? 1 : -1;
             _nudgeOffset = 0;
-            _trackGuidanceState = null; // Force global search for nearest segment
+            _trackGuidanceState = null;
+            SyncGuidanceStateToPipeline();
             double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
             StatusMessage = $"Snapped left to path {_howManyPathsAway} ({Math.Abs(widthMinusOverlap * _howManyPathsAway):F1}m offset)";
         });
 
-        SnapRightCommand = ReactiveCommand.Create(() =>
+        SnapRightCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -58,17 +61,18 @@ public partial class MainViewModel
             }
             _howManyPathsAway += _isHeadingSameWay ? 1 : -1;
             _nudgeOffset = 0;
-            _trackGuidanceState = null; // Force global search for nearest segment
+            _trackGuidanceState = null;
+            SyncGuidanceStateToPipeline();
             double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
             StatusMessage = $"Snapped right to path {_howManyPathsAway} ({Math.Abs(widthMinusOverlap * _howManyPathsAway):F1}m offset)";
         });
 
-        StopGuidanceCommand = ReactiveCommand.Create(() =>
+        StopGuidanceCommand = new RelayCommand(() =>
         {
             StatusMessage = "Guidance Stopped";
         });
 
-        UTurnCommand = ReactiveCommand.Create(() =>
+        UTurnCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -91,18 +95,18 @@ public partial class MainViewModel
         });
 
         // AB Line Guidance Commands - Flyout Menu
-        ShowTracksDialogCommand = ReactiveCommand.Create(() =>
+        ShowTracksDialogCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(DialogType.Tracks);
         });
 
-        CloseTracksDialogCommand = ReactiveCommand.Create(() =>
+        CloseTracksDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
         // Track management commands
-        DeleteSelectedTrackCommand = ReactiveCommand.Create(() =>
+        DeleteSelectedTrackCommand = new RelayCommand(() =>
         {
             if (SelectedTrack != null)
             {
@@ -113,7 +117,26 @@ public partial class MainViewModel
             }
         });
 
-        SwapABPointsCommand = ReactiveCommand.Create(() =>
+        DeleteAllTracksCommand = new RelayCommand(() =>
+        {
+            if (SavedTracks.Count == 0)
+            {
+                StatusMessage = "No tracks to delete";
+                return;
+            }
+            ShowConfirmationDialog(
+                "Delete All Tracks",
+                $"Delete all {SavedTracks.Count} tracks? This cannot be undone.",
+                () =>
+                {
+                    SavedTracks.Clear();
+                    SelectedTrack = null;
+                    SaveTracksToFile();
+                    StatusMessage = "All tracks deleted";
+                });
+        });
+
+        SwapABPointsCommand = new RelayCommand(() =>
         {
             if (SelectedTrack != null && SelectedTrack.Points.Count >= 2)
             {
@@ -122,7 +145,7 @@ public partial class MainViewModel
             }
         });
 
-        SelectTrackAsActiveCommand = ReactiveCommand.Create(() =>
+        SelectTrackAsActiveCommand = new RelayCommand(() =>
         {
             if (SelectedTrack != null)
             {
@@ -140,27 +163,27 @@ public partial class MainViewModel
         });
 
         // Quick AB Selector
-        ShowQuickABSelectorCommand = ReactiveCommand.Create(() =>
+        ShowQuickABSelectorCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(DialogType.QuickABSelector);
         });
 
-        CloseQuickABSelectorCommand = ReactiveCommand.Create(() =>
+        CloseQuickABSelectorCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        ShowDrawABDialogCommand = ReactiveCommand.Create(() =>
+        ShowDrawABDialogCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(DialogType.DrawAB);
         });
 
-        CloseDrawABDialogCommand = ReactiveCommand.Create(() =>
+        CloseDrawABDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        StartNewABLineCommand = ReactiveCommand.Create(() =>
+        StartNewABLineCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DriveAB;
@@ -169,7 +192,7 @@ public partial class MainViewModel
             StatusMessage = "Drive-in AB Line: tap to set Point A at current position";
         });
 
-        StartNewABCurveCommand = ReactiveCommand.Create(() =>
+        StartNewABCurveCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.Curve;
@@ -188,12 +211,12 @@ public partial class MainViewModel
             }
 
             StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
-            this.RaisePropertyChanged(nameof(IsRecordingCurve));
-            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            OnPropertyChanged(nameof(IsRecordingCurve));
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
         });
 
-        StartAPlusLineCommand = ReactiveCommand.Create(() =>
+        StartAPlusLineCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
 
@@ -220,7 +243,7 @@ public partial class MainViewModel
             StatusMessage = $"A+ line '{track.Name}' created at heading {Heading:F1}";
         });
 
-        StartDriveABCommand = ReactiveCommand.Create(() =>
+        StartDriveABCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DriveAB;
@@ -229,7 +252,7 @@ public partial class MainViewModel
             StatusMessage = ABCreationInstructions;
         });
 
-        StartCurveRecordingCommand = ReactiveCommand.Create(() =>
+        StartCurveRecordingCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.Curve;
@@ -250,12 +273,12 @@ public partial class MainViewModel
             }
 
             StatusMessage = $"Curve recording started ({_recordedCurvePoints.Count} pts) - drive along path, tap when done";
-            this.RaisePropertyChanged(nameof(IsRecordingCurve));
-            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            OnPropertyChanged(nameof(IsRecordingCurve));
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
         });
 
-        FinishCurveRecordingCommand = ReactiveCommand.Create(() =>
+        FinishCurveRecordingCommand = new RelayCommand(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.Curve)
             {
@@ -299,11 +322,11 @@ public partial class MainViewModel
             CurrentABCreationMode = ABCreationMode.None;
             _recordedCurvePoints.Clear();
             _lastCurvePoint = null;
-            this.RaisePropertyChanged(nameof(IsRecordingCurve));
-            this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+            OnPropertyChanged(nameof(IsRecordingCurve));
+            OnPropertyChanged(nameof(RecordedCurvePointCount));
         });
 
-        StartDrawABModeCommand = ReactiveCommand.Create(() =>
+        StartDrawABModeCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DrawAB;
@@ -312,18 +335,18 @@ public partial class MainViewModel
             StatusMessage = ABCreationInstructions;
         });
 
-        StartDrawCurveModeCommand = ReactiveCommand.Create(() =>
+        StartDrawCurveModeCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             CurrentABCreationMode = ABCreationMode.DrawCurve;
             _drawnCurvePoints.Clear();
             StatusMessage = ABCreationInstructions;
-            this.RaisePropertyChanged(nameof(IsDrawingCurve));
-            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            OnPropertyChanged(nameof(IsDrawingCurve));
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
         });
 
-        FinishDrawCurveCommand = ReactiveCommand.Create(() =>
+        FinishDrawCurveCommand = new RelayCommand(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.DrawCurve)
             {
@@ -381,11 +404,11 @@ public partial class MainViewModel
             // Reset state
             CurrentABCreationMode = ABCreationMode.None;
             _drawnCurvePoints.Clear();
-            this.RaisePropertyChanged(nameof(IsDrawingCurve));
-            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
+            OnPropertyChanged(nameof(IsDrawingCurve));
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
         });
 
-        UndoLastDrawnPointCommand = ReactiveCommand.Create(() =>
+        UndoLastDrawnPointCommand = new RelayCommand(() =>
         {
             if (CurrentABCreationMode != ABCreationMode.DrawCurve || _drawnCurvePoints.Count == 0)
             {
@@ -405,12 +428,12 @@ public partial class MainViewModel
                 _mapService.ClearRecordingPoints();
             }
 
-            this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            OnPropertyChanged(nameof(DrawnCurvePointCount));
+            OnPropertyChanged(nameof(ABCreationInstructions));
             StatusMessage = $"Removed last point ({_drawnCurvePoints.Count} points remaining)";
         });
 
-        SetABPointCommand = ReactiveCommand.Create<object?>(param =>
+        SetABPointCommand = new RelayCommand<object?>(param =>
         {
             _logger.LogDebug($"[SetABPointCommand] Called with param={param?.GetType().Name ?? "null"}, Mode={CurrentABCreationMode}, Step={CurrentABPointStep}");
 
@@ -446,8 +469,8 @@ public partial class MainViewModel
                 var displayPoints = _drawnCurvePoints.Select(p => (p.Easting, p.Northing)).ToList();
                 _mapService.SetRecordingPoints(displayPoints);
 
-                this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
-                this.RaisePropertyChanged(nameof(ABCreationInstructions));
+                OnPropertyChanged(nameof(DrawnCurvePointCount));
+                OnPropertyChanged(nameof(ABCreationInstructions));
                 StatusMessage = $"Added point {_drawnCurvePoints.Count} - tap more points or Finish";
                 _logger.LogDebug($"[SetABPointCommand] DrawCurve - Added point {_drawnCurvePoints.Count}: E={curveMapPos.Easting:F2}, N={curveMapPos.Northing:F2}");
                 return;
@@ -522,7 +545,7 @@ public partial class MainViewModel
             }
         });
 
-        CancelABCreationCommand = ReactiveCommand.Create(() =>
+        CancelABCreationCommand = new RelayCommand(() =>
         {
             // Clean up curve recording state if active
             if (CurrentABCreationMode == ABCreationMode.Curve)
@@ -530,8 +553,8 @@ public partial class MainViewModel
                 _mapService.ClearRecordingPoints(); // Clear recording display from map
                 _recordedCurvePoints.Clear();
                 _lastCurvePoint = null;
-                this.RaisePropertyChanged(nameof(IsRecordingCurve));
-                this.RaisePropertyChanged(nameof(RecordedCurvePointCount));
+                OnPropertyChanged(nameof(IsRecordingCurve));
+                OnPropertyChanged(nameof(RecordedCurvePointCount));
             }
 
             // Clean up draw curve state if active
@@ -539,8 +562,8 @@ public partial class MainViewModel
             {
                 _mapService.ClearRecordingPoints(); // Clear drawing display from map
                 _drawnCurvePoints.Clear();
-                this.RaisePropertyChanged(nameof(IsDrawingCurve));
-                this.RaisePropertyChanged(nameof(DrawnCurvePointCount));
+                OnPropertyChanged(nameof(IsDrawingCurve));
+                OnPropertyChanged(nameof(DrawnCurvePointCount));
             }
 
             CurrentABCreationMode = ABCreationMode.None;
@@ -549,7 +572,7 @@ public partial class MainViewModel
             StatusMessage = "AB line/curve creation cancelled";
         });
 
-        CycleABLinesCommand = ReactiveCommand.Create(() =>
+        CycleABLinesCommand = new RelayCommand(() =>
         {
             if (SavedTracks.Count == 0)
             {
@@ -563,7 +586,7 @@ public partial class MainViewModel
             StatusMessage = $"Active track: {SelectedTrack.Name}";
         });
 
-        SmoothABLineCommand = ReactiveCommand.Create(() =>
+        SmoothABLineCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -595,33 +618,82 @@ public partial class MainViewModel
         });
 
         // Nudge commands
-        NudgeLeftCommand = ReactiveCommand.Create(() =>
+        NudgeLeftCommand = new RelayCommand(() =>
         {
             NudgeTrack(-ConfigStore.AutoSteer.NudgeDistance * 0.01); // cm to m, negative = left
         });
 
-        NudgeRightCommand = ReactiveCommand.Create(() =>
+        NudgeRightCommand = new RelayCommand(() =>
         {
             NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.01); // cm to m, positive = right
         });
 
-        FineNudgeLeftCommand = ReactiveCommand.Create(() =>
+        FineNudgeLeftCommand = new RelayCommand(() =>
         {
             NudgeTrack(-ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, left
         });
 
-        FineNudgeRightCommand = ReactiveCommand.Create(() =>
+        FineNudgeRightCommand = new RelayCommand(() =>
         {
             NudgeTrack(ConfigStore.AutoSteer.NudgeDistance * 0.0025); // 1/4 of standard nudge, right
         });
 
-        // Bottom Strip Commands
-        ChangeMappingColorCommand = ReactiveCommand.Create(() =>
+        // Half-tool-width nudge (legacy FormNudge half-tool buttons)
+        HalfToolNudgeLeftCommand = new RelayCommand(() =>
         {
-            StatusMessage = "Section Mapping Color - not yet implemented";
+            double halfWidth = (ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap) * 0.5;
+            NudgeTrack(-halfWidth);
         });
 
-        SnapToPivotCommand = ReactiveCommand.Create(() =>
+        HalfToolNudgeRightCommand = new RelayCommand(() =>
+        {
+            double halfWidth = (ConfigStore.ActualToolWidth - ConfigStore.Tool.Overlap) * 0.5;
+            NudgeTrack(halfWidth);
+        });
+
+        // Reset nudge to zero (legacy FormNudge zero button)
+        ResetNudgeCommand = new RelayCommand(() =>
+        {
+            if (SelectedTrack == null) return;
+            _nudgeOffset = 0;
+            SelectedTrack.NudgeDistance = 0;
+            _trackGuidanceState = null;
+            SyncGuidanceStateToPipeline();
+            StatusMessage = "Nudge reset to zero";
+        });
+
+        // Bottom Strip Commands - cycle through preset coverage colors
+        ChangeMappingColorCommand = new RelayCommand(() =>
+        {
+            uint[] presets = new uint[]
+            {
+                0x98FB98, // Pale green (default)
+                0x00CED1, // Dark turquoise
+                0xFFD700, // Gold
+                0xFF8C00, // Dark orange
+                0xFF69B4, // Hot pink
+                0x87CEEB, // Sky blue
+                0xDDA0DD, // Plum
+                0xF0E68C, // Khaki
+            };
+
+            var tool = ConfigStore.Tool;
+            uint current = tool.SingleCoverageColor;
+
+            // Find current index and cycle to next
+            int idx = Array.IndexOf(presets, current);
+            int next = (idx + 1) % presets.Length;
+            tool.SingleCoverageColor = presets[next];
+
+            // Extract RGB for status message
+            byte r = (byte)((presets[next] >> 16) & 0xFF);
+            byte g = (byte)((presets[next] >> 8) & 0xFF);
+            byte b = (byte)(presets[next] & 0xFF);
+            string[] names = { "Green", "Turquoise", "Gold", "Orange", "Pink", "Blue", "Plum", "Khaki" };
+            StatusMessage = $"Coverage color: {names[next]}";
+        });
+
+        SnapToPivotCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -639,7 +711,7 @@ public partial class MainViewModel
             NudgeTrack(xte);
         });
 
-        ToggleYouSkipCommand = ReactiveCommand.Create(() =>
+        ToggleYouSkipCommand = new RelayCommand(() =>
         {
             IsSkipWorkedMode = !IsSkipWorkedMode;
             StatusMessage = IsSkipWorkedMode
@@ -647,7 +719,7 @@ public partial class MainViewModel
                 : "Skip worked tracks: OFF — fixed skip pattern";
         });
 
-        ToggleUTurnSkipRowsCommand = ReactiveCommand.Create(() =>
+        ToggleUTurnSkipRowsCommand = new RelayCommand(() =>
         {
             IsUTurnSkipRowsEnabled = !IsUTurnSkipRowsEnabled;
             IsSkipWorkedMode = IsUTurnSkipRowsEnabled;
@@ -659,29 +731,40 @@ public partial class MainViewModel
                 : "U-Turn skip rows: OFF";
         });
 
-        CycleUTurnSkipRowsCommand = ReactiveCommand.Create(() =>
+        CycleUTurnSkipRowsCommand = new RelayCommand(() =>
         {
             UTurnSkipRows = (UTurnSkipRows + 1) % 10;
             StatusMessage = $"Skip rows: {UTurnSkipRows}";
         });
 
         // Flags Commands
-        PlaceRedFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Red));
-        PlaceGreenFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Green));
-        PlaceYellowFlagCommand = ReactiveCommand.Create(() => PlaceFlag(FlagColor.Yellow));
+        PlaceRedFlagCommand = new RelayCommand(() => PlaceFlag(FlagColor.Red));
+        PlaceGreenFlagCommand = new RelayCommand(() => PlaceFlag(FlagColor.Green));
+        PlaceYellowFlagCommand = new RelayCommand(() => PlaceFlag(FlagColor.Yellow));
 
-        PlaceFlagHereCommand = ReactiveCommand.Create(() => PlaceFlag(NextAutoColor()));
+        PlaceFlagHereCommand = new RelayCommand(() => PlaceFlag(NextAutoColor()));
 
-        DeleteAllFlagsCommand = ReactiveCommand.Create(() =>
+        DeleteAllFlagsCommand = new RelayCommand(() =>
         {
-            int count = Flags.Count;
-            Flags.Clear();
-            _nextFlagId = 1;
-            UpdateFlagsOnMap();
-            StatusMessage = count > 0 ? $"Deleted {count} flags" : "No flags to delete";
+            if (Flags.Count == 0)
+            {
+                StatusMessage = "No flags to delete";
+                return;
+            }
+            ShowConfirmationDialog(
+                "Delete All Flags",
+                $"Delete all {Flags.Count} flags? This cannot be undone.",
+                () =>
+                {
+                    int count = Flags.Count;
+                    Flags.Clear();
+                    _nextFlagId = 1;
+                    UpdateFlagsOnMap();
+                    StatusMessage = $"Deleted {count} flags";
+                });
         });
 
-        DeleteFlagCommand = ReactiveCommand.Create<object>(param =>
+        DeleteFlagCommand = new RelayCommand<object>(param =>
         {
             if (param is Flag flag)
             {
@@ -691,17 +774,17 @@ public partial class MainViewModel
             }
         });
 
-        ShowFlagListCommand = ReactiveCommand.Create(() =>
+        ShowFlagListCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(Models.State.DialogType.FlagList);
         });
 
-        CloseFlagListCommand = ReactiveCommand.Create(() =>
+        CloseFlagListCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        PlaceFlagOnClickCommand = ReactiveCommand.Create(() =>
+        PlaceFlagOnClickCommand = new RelayCommand(() =>
         {
             IsPlaceFlagOnClickMode = !IsPlaceFlagOnClickMode;
             StatusMessage = IsPlaceFlagOnClickMode
@@ -713,7 +796,7 @@ public partial class MainViewModel
         });
 
         // Section control commands
-        ToggleManualModeCommand = ReactiveCommand.Create(() =>
+        ToggleManualModeCommand = new RelayCommand(() =>
         {
             IsManualSectionMode = !IsManualSectionMode;
             if (IsManualSectionMode)
@@ -728,7 +811,7 @@ public partial class MainViewModel
             StatusMessage = IsManualSectionMode ? "All sections ON" : "All sections OFF";
         });
 
-        ToggleSectionMasterCommand = ReactiveCommand.Create(() =>
+        ToggleSectionMasterCommand = new RelayCommand(() =>
         {
             IsSectionMasterOn = !IsSectionMasterOn;
             if (IsSectionMasterOn)
@@ -743,7 +826,7 @@ public partial class MainViewModel
             StatusMessage = IsSectionMasterOn ? "All sections AUTO" : "All sections OFF";
         });
 
-        ToggleSectionCommand = ReactiveCommand.Create<object>(param =>
+        ToggleSectionCommand = new RelayCommand<object>(param =>
         {
             if (param == null) return;
 
@@ -771,16 +854,16 @@ public partial class MainViewModel
             StatusMessage = $"Section {sectionIndex + 1}: {newState}";
         });
 
-        ToggleYouTurnCommand = ReactiveCommand.Create(() =>
+        ToggleYouTurnCommand = new RelayCommand(() =>
         {
             IsYouTurnEnabled = !IsYouTurnEnabled;
             StatusMessage = IsYouTurnEnabled ? "YouTurn enabled" : "YouTurn disabled";
         });
 
-        ManualYouTurnLeftCommand = ReactiveCommand.Create(TriggerManualYouTurnLeft);
-        ManualYouTurnRightCommand = ReactiveCommand.Create(TriggerManualYouTurnRight);
+        ManualYouTurnLeftCommand = new RelayCommand(TriggerManualYouTurnLeft);
+        ManualYouTurnRightCommand = new RelayCommand(TriggerManualYouTurnRight);
 
-        ToggleAutoSteerCommand = ReactiveCommand.Create(() =>
+        ToggleAutoSteerCommand = new RelayCommand(() =>
         {
             if (!IsAutoSteerAvailable)
             {
@@ -799,32 +882,36 @@ public partial class MainViewModel
                     return;
                 }
 
-                // Check for headland
-                if (!HasHeadland || _currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+                // Headland is only required when U-turns are enabled
+                if (IsYouTurnEnabled && (!HasHeadland || _currentHeadlandLine == null || _currentHeadlandLine.Count < 3))
                 {
                     ShowErrorDialog("Missing Headland",
-                        "AutoSteer requires a headland boundary for U-turn detection.\n\nPlease create a headland using the Headland button in the boundary panel.");
+                        "U-Turn guidance requires a headland boundary.\n\nPlease create a headland using the Headland button in the boundary panel, or disable U-turns.");
                     return;
                 }
             }
 
             IsAutoSteerEngaged = !IsAutoSteerEngaged;
+            _audioService.Play(IsAutoSteerEngaged
+                ? Services.Interfaces.SoundEffect.AutoSteerOn
+                : Services.Interfaces.SoundEffect.AutoSteerOff);
             if (IsAutoSteerEngaged)
             {
                 double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
                 _logger.LogDebug($"[NUDGE] AutoSteer ENGAGED: _howManyPathsAway={_howManyPathsAway}, offset={_howManyPathsAway * widthMinusOverlap:F2}m");
             }
+            SyncGuidanceStateToPipeline();
             StatusMessage = IsAutoSteerEngaged ? "AutoSteer ENGAGED" : "AutoSteer disengaged";
         });
 
         // Contour commands
-        ToggleContourModeCommand = ReactiveCommand.Create(() =>
+        ToggleContourModeCommand = new RelayCommand(() =>
         {
             IsContourModeOn = !IsContourModeOn;
             StatusMessage = IsContourModeOn ? "Contour mode ON" : "Contour mode OFF";
         });
 
-        DeleteContoursCommand = ReactiveCommand.Create(() =>
+        DeleteContoursCommand = new RelayCommand(() =>
         {
             _coverageMapService.ClearAll();
             // Reset track guidance state to force global search for nearest segment
@@ -841,7 +928,7 @@ public partial class MainViewModel
             StatusMessage = "Coverage/contours cleared";
         });
 
-        DeleteAppliedAreaCommand = ReactiveCommand.Create(() =>
+        DeleteAppliedAreaCommand = new RelayCommand(() =>
         {
             ShowConfirmationDialog(
                 "Delete Applied Area",
@@ -900,23 +987,295 @@ public partial class MainViewModel
                 });
         });
 
+        // Tram line commands
+        ToggleTramDisplayCommand = new RelayCommand(() =>
+        {
+            var tram = ConfigStore.Tram;
+
+            // Cycle through modes like legacy: if only parallel lines, toggle on/off
+            // Otherwise cycle Off -> All -> Lines -> Outer -> Off
+            if (_tramLineService.ParallelTramLines.Count > 0 &&
+                _tramLineService.OuterBoundaryTrack.Count == 0)
+            {
+                tram.DisplayMode = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off
+                    ? Models.Configuration.TramDisplayMode.Off
+                    : Models.Configuration.TramDisplayMode.LinesOnly;
+            }
+            else
+            {
+                tram.DisplayMode = tram.DisplayMode switch
+                {
+                    Models.Configuration.TramDisplayMode.Off => Models.Configuration.TramDisplayMode.All,
+                    Models.Configuration.TramDisplayMode.All => Models.Configuration.TramDisplayMode.LinesOnly,
+                    Models.Configuration.TramDisplayMode.LinesOnly => Models.Configuration.TramDisplayMode.OuterOnly,
+                    _ => Models.Configuration.TramDisplayMode.Off,
+                };
+            }
+
+            ConfigStore.Guidance.TramDisplay = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off;
+            UpdateTramLines(SelectedTrack);
+            StatusMessage = tram.DisplayMode switch
+            {
+                Models.Configuration.TramDisplayMode.Off => "Tram lines OFF",
+                Models.Configuration.TramDisplayMode.All => "Tram lines: All",
+                Models.Configuration.TramDisplayMode.LinesOnly => "Tram lines: Lines only",
+                Models.Configuration.TramDisplayMode.OuterOnly => "Tram lines: Outer only",
+                _ => "Tram lines"
+            };
+        });
+
+        BuildTramLinesCommand = new RelayCommand(() =>
+        {
+            if (SelectedTrack == null || SelectedTrack.Points.Count < 2)
+            {
+                ShowErrorDialog("No Track Selected",
+                    "Select an AB line or curve track before building tram lines.");
+                return;
+            }
+
+            ConfigStore.Tram.DisplayMode = Models.Configuration.TramDisplayMode.All;
+            ConfigStore.Guidance.TramDisplay = true;
+            UpdateTramLines(SelectedTrack);
+            StatusMessage = $"Tram lines built from '{SelectedTrack.Name}'";
+        });
+
+        ShowTramSettingsCommand = new RelayCommand(() =>
+        {
+            if (SelectedTrack == null)
+            {
+                ShowErrorDialog("No Track Selected", "Select an AB line or curve track first.");
+                return;
+            }
+            State.UI.ShowDialog(Models.State.DialogType.TramSettings);
+        });
+
+        CloseTramSettingsCommand = new RelayCommand(() => State.UI.CloseDialog());
+
+        IncreaseTramPassesCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Tram.Passes = Math.Min(20, ConfigStore.Tram.Passes + 1);
+            ConfigStore.Guidance.TramPasses = ConfigStore.Tram.Passes;
+            UpdateTramLines(SelectedTrack);
+            OnPropertyChanged(nameof(TramPasses));
+            OnPropertyChanged(nameof(TramWidthDisplay));
+            OnPropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        DecreaseTramPassesCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Tram.Passes = Math.Max(1, ConfigStore.Tram.Passes - 1);
+            ConfigStore.Guidance.TramPasses = ConfigStore.Tram.Passes;
+            UpdateTramLines(SelectedTrack);
+            OnPropertyChanged(nameof(TramPasses));
+            OnPropertyChanged(nameof(TramWidthDisplay));
+            OnPropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        void SetTramMode(Models.Configuration.TramDisplayMode mode)
+        {
+            ConfigStore.Tram.DisplayMode = mode;
+            ConfigStore.Guidance.TramDisplay = mode != Models.Configuration.TramDisplayMode.Off;
+            UpdateTramLines(SelectedTrack);
+        }
+
+        SetTramModeOffCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.Off));
+        SetTramModeAllCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.All));
+        SetTramModeLinesCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.LinesOnly));
+        SetTramModeOuterCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.OuterOnly));
+
+        CreateTrackFromBoundaryCommand = new RelayCommand(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            // Find the longest edge of the boundary polygon
+            var pts = boundary.Points;
+            double maxDist = 0;
+            int bestIdx = 0;
+
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int next = (i + 1) % pts.Count;
+                double dx = pts[next].Easting - pts[i].Easting;
+                double dy = pts[next].Northing - pts[i].Northing;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                if (dist > maxDist)
+                {
+                    maxDist = dist;
+                    bestIdx = i;
+                }
+            }
+
+            var p1 = pts[bestIdx];
+            var p2 = pts[(bestIdx + 1) % pts.Count];
+            double heading = Math.Atan2(p2.Easting - p1.Easting, p2.Northing - p1.Northing);
+
+            // Extend 50m past both ends for full field coverage
+            var a = new Models.Base.Vec3(
+                p1.Easting - Math.Sin(heading) * 50,
+                p1.Northing - Math.Cos(heading) * 50,
+                heading);
+            var b = new Models.Base.Vec3(
+                p2.Easting + Math.Sin(heading) * 50,
+                p2.Northing + Math.Cos(heading) * 50,
+                heading);
+
+            var track = new Models.Track.Track
+            {
+                Name = $"Boundary Edge {bestIdx + 1}",
+                Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                Type = Models.Track.TrackType.ABLine,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created AB line from longest boundary edge ({maxDist:F0}m)";
+        });
+
+        // A Line: create AB line from current position + heading
+        CreateALineFromPositionCommand = new RelayCommand(() =>
+        {
+            double heading = State.Vehicle.Heading * Math.PI / 180.0;
+            double e = Easting;
+            double n = Northing;
+
+            // Extend 200m in both directions from current position
+            var a = new Models.Base.Vec3(
+                e - Math.Sin(heading) * 200,
+                n - Math.Cos(heading) * 200,
+                heading);
+            var b = new Models.Base.Vec3(
+                e + Math.Sin(heading) * 200,
+                n + Math.Cos(heading) * 200,
+                heading);
+
+            var track = new Models.Track.Track
+            {
+                Name = $"A+ {Math.Round(State.Vehicle.Heading, 1)}\u00B0",
+                Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                Type = Models.Track.TrackType.ABLine,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created A+ line at {State.Vehicle.Heading:F0}\u00B0";
+        });
+
+        // Field Builder dialog
+        ShowFieldBuilderCommand = new RelayCommand(() =>
+            State.UI.ShowDialog(Models.State.DialogType.FieldBuilder));
+
+        CloseFieldBuilderCommand = new RelayCommand(() =>
+            State.UI.CloseDialog());
+
+        IncreaseHeadlandDistanceCommand = new RelayCommand(() =>
+        {
+            HeadlandDistance = Math.Min(100, HeadlandDistance + 1.0);
+            OnPropertyChanged(nameof(HeadlandDistance));
+        });
+
+        DecreaseHeadlandDistanceCommand = new RelayCommand(() =>
+        {
+            HeadlandDistance = Math.Max(1, HeadlandDistance - 1.0);
+            OnPropertyChanged(nameof(HeadlandDistance));
+        });
+
+        CreateCurveFromBoundaryCommand = new RelayCommand(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            var pts = boundary.Points;
+            var curvePoints = new System.Collections.Generic.List<Models.Base.Vec3>();
+            for (int i = 0; i < pts.Count; i++)
+            {
+                curvePoints.Add(new Models.Base.Vec3(pts[i].Easting, pts[i].Northing, pts[i].Heading));
+            }
+            // Close the loop
+            curvePoints.Add(new Models.Base.Vec3(pts[0].Easting, pts[0].Northing, pts[0].Heading));
+
+            var track = new Models.Track.Track
+            {
+                Name = "Boundary Curve",
+                Points = curvePoints,
+                Type = Models.Track.TrackType.Curve,
+                IsVisible = true
+            };
+
+            SavedTracks.Add(track);
+            SelectedTrack = track;
+            StatusMessage = $"Created boundary curve ({curvePoints.Count} points)";
+        });
+
+        CreateTracksFromAllEdgesCommand = new RelayCommand(() =>
+        {
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points == null || boundary.Points.Count < 3)
+            {
+                ShowErrorDialog("No Boundary", "Load a field with a boundary first.");
+                return;
+            }
+
+            var pts = boundary.Points;
+            int created = 0;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int next = (i + 1) % pts.Count;
+                double dx = pts[next].Easting - pts[i].Easting;
+                double dy = pts[next].Northing - pts[i].Northing;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+
+                if (dist < 5.0) continue; // Skip tiny edges
+
+                double heading = Math.Atan2(dx, dy);
+                var a = new Models.Base.Vec3(
+                    pts[i].Easting - Math.Sin(heading) * 50,
+                    pts[i].Northing - Math.Cos(heading) * 50, heading);
+                var b = new Models.Base.Vec3(
+                    pts[next].Easting + Math.Sin(heading) * 50,
+                    pts[next].Northing + Math.Cos(heading) * 50, heading);
+
+                var track = new Models.Track.Track
+                {
+                    Name = $"Edge {i + 1} ({dist:F0}m)",
+                    Points = new System.Collections.Generic.List<Models.Base.Vec3> { a, b },
+                    Type = Models.Track.TrackType.ABLine,
+                    IsVisible = true
+                };
+                SavedTracks.Add(track);
+                created++;
+            }
+
+            if (created > 0)
+                SelectedTrack = SavedTracks[SavedTracks.Count - 1];
+            StatusMessage = $"Created {created} AB lines from boundary edges";
+        });
+
         // Map zoom commands
-        Toggle3DModeCommand = ReactiveCommand.Create(() =>
+        Toggle3DModeCommand = new RelayCommand(() =>
         {
             _mapService.Toggle3DMode();
             Is2DMode = !_mapService.Is3DMode;
         });
 
-        ZoomInCommand = ReactiveCommand.Create(() =>
+        ZoomInCommand = new RelayCommand(() =>
         {
             _mapService.Zoom(1.2);
-            ZoomInRequested?.Invoke();
         });
 
-        ZoomOutCommand = ReactiveCommand.Create(() =>
+        ZoomOutCommand = new RelayCommand(() =>
         {
             _mapService.Zoom(0.8);
-            ZoomOutRequested?.Invoke();
         });
     }
 
@@ -1130,6 +1489,7 @@ public partial class MainViewModel
 
         // Invalidate guidance state to force recalculation
         _trackGuidanceState = null;
+        SyncGuidanceStateToPipeline();
 
         double totalOffset = (ConfigStore.ActualToolWidth - Tool.Overlap) * _howManyPathsAway + _nudgeOffset;
         _logger.LogDebug("[NUDGE] NudgeTrack: dist={Dist:F3}m (adjusted={Adj:F3}m), nudgeOffset={Offset:F3}m, totalOffset={Total:F3}m",

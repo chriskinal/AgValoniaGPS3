@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -43,9 +45,9 @@ public class ADConverterStepViewModel : WizardStepViewModel
         get => _adConverter;
         set
         {
-            this.RaiseAndSetIfChanged(ref _adConverter, value);
-            this.RaisePropertyChanged(nameof(IsDifferentialSelected));
-            this.RaisePropertyChanged(nameof(IsSingleSelected));
+            SetProperty(ref _adConverter, value);
+            OnPropertyChanged(nameof(IsDifferentialSelected));
+            OnPropertyChanged(nameof(IsSingleSelected));
         }
     }
 

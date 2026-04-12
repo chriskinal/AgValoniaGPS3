@@ -20,14 +20,11 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
-public partial class LeftNavigationPanel : DraggableRotatablePanel
+public partial class LeftNavigationPanel : UserControl
 {
     public LeftNavigationPanel()
     {
         InitializeComponent();
-
-        // Initialize drag and rotate behavior from base class
-        InitializeDragRotate();
 
         // Wire up sub-panel drag events
         WireUpSubPanelDrag<SimulatorPanel>("SimulatorPanelControl");

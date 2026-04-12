@@ -59,6 +59,13 @@ public interface IMapService
     void SetBoundary(Boundary? boundary);
     void SetVehiclePosition(double easting, double northing, double headingRadians);
 
+    /// <summary>
+    /// Atomic update of vehicle + tool + hitch positions in a single call.
+    /// </summary>
+    void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady);
+
     // Grid
     bool IsGridVisible { get; set; }
 
@@ -96,12 +103,19 @@ public interface IMapService
     // YouTurn path visualization
     void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath);
 
+    // Tram line visualization
+    void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines);
+
     // Track visualization for U-turns
     void SetNextTrack(AgValoniaGPS.Models.Track.Track? track);
     void SetIsInYouTurn(bool isInTurn);
 
     // Active Track for guidance
     void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track);
+    void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track);
 
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);

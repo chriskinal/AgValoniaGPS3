@@ -147,6 +147,14 @@ public class MapService : IMapService
         _mapControl?.SetVehiclePosition(easting, northing, headingRadians);
     }
 
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady)
+    {
+        _mapControl?.SetAllPositions(vehicleX, vehicleY, vehicleHeading,
+            toolX, toolY, toolHeading, toolWidth, hitchX, hitchY, toolReady);
+    }
+
     public void SetReversing(bool isReversing) { if (_mapControl != null) _mapControl.IsReversing = isReversing; }
     public void SetGuidancePoints(double goalEasting, double goalNorthing, bool isActive) { _mapControl?.SetGuidancePoints(goalEasting, goalNorthing, isActive); }
 
@@ -215,6 +223,14 @@ public class MapService : IMapService
         _mapControl?.SetYouTurnPath(turnPath);
     }
 
+    public void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines)
+    {
+        _mapControl?.SetTramLines(outerTrack, innerTrack, parallelLines);
+    }
+
     // Track visualization for U-turns
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track)
     {
@@ -230,6 +246,11 @@ public class MapService : IMapService
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track)
     {
         _mapControl?.SetActiveTrack(track);
+    }
+
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track)
+    {
+        _mapControl?.SetBaseTrack(track);
     }
 
     // Recorded path / contour strip visualization

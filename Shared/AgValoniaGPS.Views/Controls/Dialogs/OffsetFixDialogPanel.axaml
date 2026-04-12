@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.OffsetFixDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsOffsetFixPanelVisible}"
+             IsHitTestVisible="{Binding State.UI.IsOffsetFixPanelVisible}">
+
+    <!-- Floating non-modal panel - user can interact with map behind it -->
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+            CornerRadius="12" Padding="16"
+            Width="280"
+            HorizontalAlignment="Right" VerticalAlignment="Top"
+            Margin="0,60,16,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+        <StackPanel Spacing="8">
+            <!-- Header with close button -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{loc:Localize GpsOffsetFix}" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                <Button Grid.Column="1" Content="X" Width="28" Height="28"
+                        Command="{Binding CloseOffsetFixDialogCommand}"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        FontSize="14" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                        Padding="0" CornerRadius="4"/>
+            </Grid>
+
+            <!-- D-pad layout (compact) -->
+            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*,*"
+                  HorizontalAlignment="Center" Margin="0,4">
+                <Button Grid.Row="0" Grid.Column="1" Width="60" Height="50"
+                        Command="{Binding OffsetFixNorthCommand}"
+                        Background="#2E7D32" Foreground="White" CornerRadius="6"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="N" FontSize="18" FontWeight="Bold"/>
+                </Button>
+                <Button Grid.Row="1" Grid.Column="0" Width="60" Height="50"
+                        Command="{Binding OffsetFixWestCommand}"
+                        Background="#1565C0" Foreground="White" CornerRadius="6"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="W" FontSize="18" FontWeight="Bold"/>
+                </Button>
+                <Button Grid.Row="1" Grid.Column="1" Width="60" Height="50"
+                        Command="{Binding OffsetFixZeroCommand}"
+                        Background="#C62828" Foreground="White" CornerRadius="6"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="0" FontSize="18" FontWeight="Bold"/>
+                </Button>
+                <Button Grid.Row="1" Grid.Column="2" Width="60" Height="50"
+                        Command="{Binding OffsetFixEastCommand}"
+                        Background="#1565C0" Foreground="White" CornerRadius="6"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="E" FontSize="18" FontWeight="Bold"/>
+                </Button>
+                <Button Grid.Row="2" Grid.Column="1" Width="60" Height="50"
+                        Command="{Binding OffsetFixSouthCommand}"
+                        Background="#2E7D32" Foreground="White" CornerRadius="6"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="S" FontSize="18" FontWeight="Bold"/>
+                </Button>
+            </Grid>
+
+            <!-- Manual offset input -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Localize NSM}" FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{loc:Localize EWM}" FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="0" x:Name="NorthingInput"
+                         Text="{Binding State.Field.DriftNorthing, StringFormat='{}{0:F3}', Mode=TwoWay}"
+                         FontSize="16" FontWeight="Bold" HorizontalContentAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="EastingInput"
+                         Text="{Binding State.Field.DriftEasting, StringFormat='{}{0:F3}', Mode=TwoWay}"
+                         FontSize="16" FontWeight="Bold" HorizontalContentAlignment="Center"/>
+            </Grid>
+
+            <TextBlock Text="{loc:Localize 1CmPerClick}" FontSize="10"
+                       Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</UserControl>

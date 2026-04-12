@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using AgValoniaGPS.Models.Base;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -23,28 +23,28 @@ namespace AgValoniaGPS.Models.State;
 /// Current vehicle position, heading, and motion state.
 /// Updated by GPS service every frame.
 /// </summary>
-public class VehicleState : ReactiveObject
+public class VehicleState : ObservableObject
 {
     // GPS Position (WGS84)
     private double _latitude;
     public double Latitude
     {
         get => _latitude;
-        set => this.RaiseAndSetIfChanged(ref _latitude, value);
+        set => SetProperty(ref _latitude, value);
     }
 
     private double _longitude;
     public double Longitude
     {
         get => _longitude;
-        set => this.RaiseAndSetIfChanged(ref _longitude, value);
+        set => SetProperty(ref _longitude, value);
     }
 
     private double _altitude;
     public double Altitude
     {
         get => _altitude;
-        set => this.RaiseAndSetIfChanged(ref _altitude, value);
+        set => SetProperty(ref _altitude, value);
     }
 
     // Local coordinates (UTM/field plane)
@@ -52,14 +52,14 @@ public class VehicleState : ReactiveObject
     public double Easting
     {
         get => _easting;
-        set => this.RaiseAndSetIfChanged(ref _easting, value);
+        set => SetProperty(ref _easting, value);
     }
 
     private double _northing;
     public double Northing
     {
         get => _northing;
-        set => this.RaiseAndSetIfChanged(ref _northing, value);
+        set => SetProperty(ref _northing, value);
     }
 
     // Motion
@@ -67,14 +67,14 @@ public class VehicleState : ReactiveObject
     public double Heading
     {
         get => _heading;
-        set => this.RaiseAndSetIfChanged(ref _heading, value);
+        set => SetProperty(ref _heading, value);
     }
 
     private double _speed;
     public double Speed
     {
         get => _speed;
-        set => this.RaiseAndSetIfChanged(ref _speed, value);
+        set => SetProperty(ref _speed, value);
     }
 
     // GPS quality
@@ -85,13 +85,13 @@ public class VehicleState : ReactiveObject
         set
         {
             var oldValue = _fixQuality;
-            this.RaiseAndSetIfChanged(ref _fixQuality, value);
+            SetProperty(ref _fixQuality, value);
             if (oldValue != value)
             {
                 // Notify computed properties that depend on FixQuality
-                this.RaisePropertyChanged(nameof(FixQualityText));
-                this.RaisePropertyChanged(nameof(HasValidFix));
-                this.RaisePropertyChanged(nameof(HasRtkFix));
+                OnPropertyChanged(nameof(FixQualityText));
+                OnPropertyChanged(nameof(HasValidFix));
+                OnPropertyChanged(nameof(HasRtkFix));
             }
         }
     }
@@ -103,11 +103,11 @@ public class VehicleState : ReactiveObject
         set
         {
             var oldValue = _satelliteCount;
-            this.RaiseAndSetIfChanged(ref _satelliteCount, value);
+            SetProperty(ref _satelliteCount, value);
             if (oldValue != value)
             {
                 // Notify computed properties that depend on SatelliteCount
-                this.RaisePropertyChanged(nameof(HasValidFix));
+                OnPropertyChanged(nameof(HasValidFix));
             }
         }
     }
@@ -116,14 +116,14 @@ public class VehicleState : ReactiveObject
     public double Hdop
     {
         get => _hdop;
-        set => this.RaiseAndSetIfChanged(ref _hdop, value);
+        set => SetProperty(ref _hdop, value);
     }
 
     private double _age;
     public double Age
     {
         get => _age;
-        set => this.RaiseAndSetIfChanged(ref _age, value);
+        set => SetProperty(ref _age, value);
     }
 
     // IMU data
@@ -131,21 +131,21 @@ public class VehicleState : ReactiveObject
     public double ImuRoll
     {
         get => _imuRoll;
-        set => this.RaiseAndSetIfChanged(ref _imuRoll, value);
+        set => SetProperty(ref _imuRoll, value);
     }
 
     private double _imuPitch;
     public double ImuPitch
     {
         get => _imuPitch;
-        set => this.RaiseAndSetIfChanged(ref _imuPitch, value);
+        set => SetProperty(ref _imuPitch, value);
     }
 
     private double _imuYawRate;
     public double ImuYawRate
     {
         get => _imuYawRate;
-        set => this.RaiseAndSetIfChanged(ref _imuYawRate, value);
+        set => SetProperty(ref _imuYawRate, value);
     }
 
     // Computed properties

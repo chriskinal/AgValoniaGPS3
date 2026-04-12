@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -43,9 +45,9 @@ public class MotorDriverStepViewModel : WizardStepViewModel
         get => _motorDriver;
         set
         {
-            this.RaiseAndSetIfChanged(ref _motorDriver, value);
-            this.RaisePropertyChanged(nameof(IsIBT2Selected));
-            this.RaisePropertyChanged(nameof(IsCytronSelected));
+            SetProperty(ref _motorDriver, value);
+            OnPropertyChanged(nameof(IsIBT2Selected));
+            OnPropertyChanged(nameof(IsCytronSelected));
         }
     }
 

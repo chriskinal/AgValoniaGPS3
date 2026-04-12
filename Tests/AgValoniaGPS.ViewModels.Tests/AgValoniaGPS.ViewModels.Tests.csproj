@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.7.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- NO Avalonia packages — pure C# ViewModel tests -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\AgValoniaGPS.Models\AgValoniaGPS.Models.csproj" />
+    <ProjectReference Include="..\..\Shared\AgValoniaGPS.Services\AgValoniaGPS.Services.csproj" />
+    <ProjectReference Include="..\..\Shared\AgValoniaGPS.ViewModels\AgValoniaGPS.ViewModels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+</Project>

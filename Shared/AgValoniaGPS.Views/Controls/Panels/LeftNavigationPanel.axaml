@@ -63,25 +63,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <!-- Canvas fills the parent control so sub-panels can render anywhere within the screen -->
+    <!-- Panel for proper layout measurement; Canvas overlay for sub-panels -->
     <!-- Background must be null (not set) to allow pointer events to pass through to controls behind -->
-    <Canvas ClipToBounds="False" Background="{x:Null}">
+    <Panel ClipToBounds="False" Background="{x:Null}">
         <!-- Navigation Button Bar -->
-        <Border Classes="FloatingPanel" Canvas.Left="0" Canvas.Top="0">
+        <Border Classes="FloatingPanel">
             <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
-                <!-- Touch Handle: Tap to rotate, Hold to drag -->
-                <Grid x:Name="DragHandle" Height="40" Margin="0"
-                      Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                      Cursor="Hand"
-                      ToolTip.Tip="Tap to rotate | Hold and drag to move">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                        <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold" IsHitTestVisible="False"/>
-                        <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="18" FontWeight="Bold" IsHitTestVisible="False"/>
-                    </StackPanel>
-                </Grid>
-
-                <Separator Classes="LeftPanelSeparator" Margin="0,4,0,4"/>
-
                 <!-- 1. File/Application Menu -->
                 <Button Classes="LeftPanelButton" ToolTip.Tip="File Menu"
                         Command="{Binding ToggleFileMenuPanelCommand}">
@@ -134,8 +121,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
         </Border>
 
-        <!-- All Sub-Panels - positioned relative to the nav bar -->
-
+        <!-- Sub-panels Canvas overlay (absolute positioning relative to nav bar) -->
+        <Canvas ClipToBounds="False">
         <!-- View Settings Panel -->
         <controls:ViewSettingsPanel x:Name="ViewSettingsPanelControl"
                                     Canvas.Left="90" Canvas.Top="0"
@@ -189,5 +176,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Canvas.Left="100" Canvas.Top="0"
                                        ZIndex="25"
                                        DataContext="{Binding}"/>
-    </Canvas>
+        </Canvas>
+    </Panel>
 </UserControl>

@@ -179,6 +179,17 @@ public interface ICoverageMapService
     void SetFieldBounds(double minE, double maxE, double minN, double maxN);
 
     /// <summary>
+    /// Whether field bounds have been set (coverage can be tracked).
+    /// </summary>
+    bool IsFieldBoundsSet { get; }
+
+    /// <summary>
+    /// Initialize coverage bounds centered on a position.
+    /// Used when no boundary exists to enable coverage tracking.
+    /// </summary>
+    void SetFieldBoundsFromPosition(double easting, double northing, double halfSize = 250.0);
+
+    /// <summary>
     /// Clear field bounds (when field is closed)
     /// </summary>
     void ClearFieldBounds();
@@ -209,6 +220,12 @@ public interface ICoverageMapService
     /// Event fired when coverage is updated
     /// </summary>
     event EventHandler<CoverageUpdatedEventArgs>? CoverageUpdated;
+
+    /// <summary>
+    /// Event fired when bounds are dynamically expanded.
+    /// Listeners (e.g., map control) should reinitialize their bitmap.
+    /// </summary>
+    event EventHandler<BoundsExpandedEventArgs>? BoundsExpanded;
 
     /// <summary>
     /// Set pixel access callbacks for unified WriteableBitmap storage.
@@ -275,4 +292,15 @@ public class CoverageUpdatedEventArgs : EventArgs
     /// True if bitmap pixels were loaded directly from file - skip repainting
     /// </summary>
     public bool PixelsAlreadyLoaded { get; init; }
+}
+
+/// <summary>
+/// Event arguments when coverage bounds are dynamically expanded.
+/// </summary>
+public class BoundsExpandedEventArgs : EventArgs
+{
+    public double MinE { get; init; }
+    public double MaxE { get; init; }
+    public double MinN { get; init; }
+    public double MaxN { get; init; }
 }

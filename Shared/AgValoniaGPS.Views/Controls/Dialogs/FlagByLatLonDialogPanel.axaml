@@ -9,6 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -26,10 +27,10 @@ the Free Software Foundation, either version 3 of the License, or
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 MinWidth="400" MaxWidth="500">
             <StackPanel Spacing="16">
-                <TextBlock Text="Place Flag by Lat/Lon" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize PlaceFlagByLatLon}" FontSize="20" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Enter WGS84 coordinates in decimal degrees"
+                <TextBlock Text="{loc:Localize EnterWgs84CoordinatesInDecimalDegrees}"
                            FontSize="12"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalAlignment="Center"/>
@@ -38,7 +39,7 @@ the Free Software Foundation, either version 3 of the License, or
 
                 <!-- Latitude -->
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Latitude (-90 to 90)"
+                    <TextBlock Text="{loc:Localize Latitude90To902}"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                FontSize="13"/>
                     <TextBox Text="{Binding FlagLatitudeInput, Mode=TwoWay}"
@@ -48,7 +49,7 @@ the Free Software Foundation, either version 3 of the License, or
 
                 <!-- Longitude -->
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Longitude (-180 to 180)"
+                    <TextBlock Text="{loc:Localize Longitude180To1802}"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                FontSize="13"/>
                     <TextBox Text="{Binding FlagLongitudeInput, Mode=TwoWay}"
@@ -66,12 +67,12 @@ the Free Software Foundation, either version 3 of the License, or
 
                 <!-- Buttons -->
                 <Grid ColumnDefinitions="*,12,*">
-                    <Button Grid.Column="0" Content="Cancel"
+                    <Button Grid.Column="0" Content="{loc:Localize Cancel}"
                             Command="{Binding CloseFlagByLatLonDialogCommand}"
                             Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="6"/>
-                    <Button Grid.Column="2" Content="Place Flag"
+                    <Button Grid.Column="2" Content="{loc:Localize PlaceFlag}"
                             Command="{Binding PlaceFlagByLatLonCommand}"
                             Background="#27AE60" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"

@@ -19,7 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AgValoniaGPS.Android.App"
              xmlns:local="using:AgValoniaGPS.Android"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
 
     <Application.Resources>
         <!-- Include shared resources (converters) -->

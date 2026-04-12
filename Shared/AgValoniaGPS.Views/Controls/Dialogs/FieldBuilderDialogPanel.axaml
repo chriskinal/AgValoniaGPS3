@@ -1,0 +1,619 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+Licensed under GNU GPL v3.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.FieldBuilderDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsFieldBuilderDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsFieldBuilderDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.FBBtn">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Height" Value="36"/>
+        </Style>
+        <Style Selector="Button.FBBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="Button.ActionBtn">
+            <Setter Property="Background" Value="#27AE60"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.ActionBtn:pointerover">
+            <Setter Property="Background" Value="#2ECC71"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog - full screen -->
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="0" Padding="16"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Panel>
+            <Grid RowDefinitions="Auto,*">
+                <!-- Header -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                    <TextBlock Text="Field Builder" FontSize="24" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <Button Grid.Column="1" Width="44" Height="44" Padding="0"
+                            Background="#C0392B" Foreground="White" CornerRadius="8"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Cursor="Hand" Command="{Binding CloseFieldBuilderCommand}">
+                        <TextBlock Text="X" FontSize="20" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+
+                <!-- Main: Visualizer + Right Panel -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
+
+                    <!-- LEFT: Boundary/Track Visualizer -->
+                    <Border Grid.Column="0" CornerRadius="8" ClipToBounds="True"
+                            x:Name="CanvasBorder">
+                        <Grid>
+                            <Canvas x:Name="BoundaryPreview" Background="Transparent"
+                                PointerPressed="Canvas_PointerPressed"
+                                PointerMoved="Canvas_PointerMoved"
+                                PointerReleased="Canvas_PointerReleased"/>
+                            <TextBlock x:Name="NoFieldText" Text="No field open"
+                                       FontSize="24" Foreground="#60FFFFFF" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       IsVisible="{Binding !IsFieldOpen}"/>
+                            <!-- Status banner on top of canvas -->
+                            <Border x:Name="CanvasStatusBanner" IsVisible="False"
+                                    Background="#DD1565C0" Padding="16,10"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                                <TextBlock x:Name="CanvasStatusText" Text=""
+                                           FontSize="22" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- RIGHT: Tabs for main content, track creation sub-panel -->
+                    <TabControl Grid.Column="1" TabStripPlacement="Top" x:Name="MainTabs">
+
+                        <!-- === TAB 1: TRACKS (list + add button) === -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png"
+                                           Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Tracks" FontSize="14" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
+                            <StackPanel Spacing="6" Margin="0,6">
+                                <!-- Header with overflow menu -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Track List" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Width="32" Height="32" Padding="0"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
+                                        <Button.Flyout>
+                                            <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                                <MenuItem Header="Rename Track"
+                                                          Click="RenameTrack_Click"/>
+                                            <MenuItem Header="Delete All Tracks"
+                                                          Click="DeleteAllTracks_Click"/>
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                        <TextBlock Text="..." FontSize="20" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Track list -->
+                                <ListBox ItemsSource="{Binding SavedTracks}"
+                                         SelectedItem="{Binding SelectedTrack}"
+                                         MaxHeight="220" CornerRadius="4"
+                                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Ellipse Width="8" Height="8"
+                                                         Fill="{Binding IsActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="14"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="No tracks" FontSize="16"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           IsVisible="{Binding !SavedTracks.Count}"/>
+
+                                <!-- Action buttons below list -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,6,0,0">
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add Track" x:Name="AddTrackBtn" Click="AddTrackBtn_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AddNew.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Add" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Edit Track" Click="EditTrack_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Edit" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Delete Track" Command="{Binding DeleteSelectedTrackCommand}">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+
+                        <!-- === TAB 2: HEADLAND === -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png"
+                                           Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Headland" FontSize="14" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
+                            <StackPanel Spacing="6" Margin="0,6">
+                                <!-- Headland Segments List -->
+                                <TextBlock Text="Headland Lines" FontWeight="Bold" FontSize="16"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                                <ListBox ItemsSource="{Binding HeadlandSegments}"
+                                         SelectedItem="{Binding SelectedHeadlandSegment}"
+                                         MaxHeight="180" CornerRadius="4"
+                                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Type}" FontSize="12" Width="55"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Offset, StringFormat='{}{0:F1}m'}" FontSize="12"
+                                                           Foreground="#1ABC9C" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="No headland lines" FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           IsVisible="{Binding !HeadlandSegments.Count}"/>
+
+                                <!-- Add buttons -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add Line" Click="AddHeadlandLine_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Line" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add Curve" Click="AddHeadlandCurve_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Curve" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Offset Boundary" Click="AddHeadlandBoundary_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Boundary" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Edit Selected" Click="EditHeadlandSegment_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Edit" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="#C0392B" BorderThickness="0"
+                                                ToolTip.Tip="Delete Selected" Click="DeleteHeadlandSegment_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+
+                        <!-- === TAB 3: TRAM LINES === -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png"
+                                           Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Tram" FontSize="14" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
+                            <StackPanel Spacing="8" Margin="0,6">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                    <TextBlock Grid.Row="0" Text="Track:" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="14" FontWeight="Bold"
+                                               Text="{Binding SelectedTrack.Name, FallbackValue='None'}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <TextBlock Grid.Row="1" Text="Lines:" FontSize="14" Margin="0,2,0,0"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" FontSize="14" FontWeight="Bold" Margin="0,2,0,0"
+                                               Text="{Binding TramLineCountDisplay}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Passes:" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                        <Button Content="-" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding DecreaseTramPassesCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        <TextBlock Text="{Binding TramPasses}" FontSize="18" FontWeight="Bold"
+                                                   Width="36" TextAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Content="+" Width="36" Height="36" FontSize="18" FontWeight="Bold"
+                                                Command="{Binding IncreaseTramPassesCommand}"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="3">
+                                    <Button Grid.Column="0" Content="Off" Command="{Binding SetTramModeOffCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="14"/>
+                                    <Button Grid.Column="1" Content="All" Command="{Binding SetTramModeAllCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="14"/>
+                                    <Button Grid.Column="2" Content="Lines" Command="{Binding SetTramModeLinesCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="14"/>
+                                    <Button Grid.Column="3" Content="Outer" Command="{Binding SetTramModeOuterCommand}"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                            HorizontalAlignment="Stretch" Height="32" FontSize="14"/>
+                                </Grid>
+
+                                <Button Classes="ActionBtn" Content="Build Tram Lines"
+                                        Command="{Binding BuildTramLinesCommand}"/>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+
+                    <!-- ADD TRACK SUB-PANEL (replaces tabs when visible) -->
+                    <Border Grid.Column="1" x:Name="AddTrackPanel" IsVisible="False"
+                            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+                        <StackPanel Spacing="6" Margin="0,4">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0" Padding="8,4" FontSize="14" CornerRadius="4" Cursor="Hand"
+                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                        x:Name="BackBtn" Click="BackBtn_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="&lt;" FontWeight="Bold"/>
+                                        <TextBlock Text="Back"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Grid.Column="1" Text="Add Track" FontWeight="Bold" FontSize="15"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </Grid>
+
+                            <TabControl TabStripPlacement="Top">
+                                <!-- Free Draw tab -->
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Free Draw" FontSize="14" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="StartDrawAB_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="AB Line" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="StartDrawCurve_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Curve" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="CreateALine_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="A+ Line" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </TabItem>
+
+                                <!-- From Boundary tab -->
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecord.png"
+                                                   Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Boundary" FontSize="14" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12">
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="StartBoundaryLine_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="AB Line" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="StartBoundaryCurve_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Curve" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Width="90" Height="80" CornerRadius="8" Padding="4" Cursor="Hand" BorderThickness="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Click="WholeBoundary_Click">
+                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
+                                                       Width="36" Height="36" Stretch="Uniform"/>
+                                                <TextBlock Text="Whole" FontSize="14" HorizontalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </TabItem>
+                            </TabControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- DRAW MODE PANEL (replaces other panels during drawing) -->
+                    <Border Grid.Column="1" x:Name="DrawModePanel" IsVisible="False"
+                            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" Padding="8">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Draw on Map" FontWeight="Bold" FontSize="18"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock x:Name="DrawInstructionText" Text="" FontSize="14" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                            <TextBlock x:Name="DrawPointCountText" Text="Points: 0" FontSize="14" FontWeight="Bold"
+                                       Foreground="#1ABC9C"/>
+
+                            <!-- Heading input for A+ Line -->
+                            <StackPanel x:Name="HeadingInputPanel" IsVisible="False" Orientation="Horizontal"
+                                        Spacing="8" Margin="0,4,0,0" HorizontalAlignment="Stretch">
+                                <TextBlock Text="Heading:" FontSize="16" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <TextBox x:Name="HeadingInput" Width="80" FontSize="16"/>
+                                <TextBlock Text="deg" FontSize="14" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,8,0,0">
+                                <StackPanel x:Name="CreateABBtnPanel" Spacing="2" IsVisible="False">
+                                    <Button x:Name="CreateABBtn" Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="#27AE60" BorderThickness="0" Click="CreateAB_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/OK64.png"
+                                               Width="36" Height="36" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Create" FontSize="12" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                </StackPanel>
+                                <StackPanel x:Name="FinishDrawBtnPanel" Spacing="2" IsVisible="False">
+                                    <Button x:Name="FinishDrawBtn" Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="#27AE60" BorderThickness="0" Click="FinishDraw_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/OK64.png"
+                                               Width="36" Height="36" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Finish" FontSize="12" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                </StackPanel>
+                                <StackPanel x:Name="UndoDrawBtnPanel" Spacing="2">
+                                    <Button x:Name="UndoDrawBtn" Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                            Click="UndoDraw_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/UndoButton.png"
+                                               Width="36" Height="36" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Undo" FontSize="12" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                            Click="CancelDraw_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SwitchOff.png"
+                                               Width="36" Height="36" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Cancel" FontSize="12" HorizontalAlignment="Center"
+                                               Foreground="#E74C3C"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Extend/Shrink controls for headland preview -->
+                            <StackPanel x:Name="ExtendShrinkPanel" IsVisible="False" Spacing="6" Margin="0,8,0,0">
+                                <TextBlock Text="Adjust Endpoints" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                    <TextBlock Text="Start:" VerticalAlignment="Center" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Content="-" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ShrinkStart_Click"/>
+                                        <Button Content="+" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ExtendStart_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                    <TextBlock Text="End:" VerticalAlignment="Center" FontSize="14"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button Content="-" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ShrinkEnd_Click"/>
+                                        <Button Content="+" Width="36" Height="32" FontSize="16" FontWeight="Bold"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                CornerRadius="4" BorderThickness="0" Cursor="Hand"
+                                                Click="ExtendEnd_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Inline confirmation overlay (stays within Field Builder) -->
+            <Border x:Name="InlineConfirmOverlay" IsVisible="False" IsHitTestVisible="True"
+                    Background="#C0000000" CornerRadius="0"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24" MinWidth="320"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        BoxShadow="0 8 32 #80000000">
+                    <StackPanel Spacing="12">
+                        <TextBlock x:Name="InlineConfirmTitle" FontSize="18" FontWeight="Bold"
+                                   Foreground="#E74C3C"/>
+                        <TextBlock x:Name="InlineConfirmMessage" FontSize="14" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
+                            <Button Grid.Column="0" Content="No" HorizontalAlignment="Stretch" Height="40"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="InlineConfirmNo_Click"/>
+                            <Button Grid.Column="1" Content="Yes" HorizontalAlignment="Stretch" Height="40"
+                                    Background="#E74C3C" Foreground="White"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="InlineConfirmYes_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- Rename overlay -->
+            <Border x:Name="RenameOverlay" IsVisible="False" IsHitTestVisible="True"
+                    Background="#C0000000" CornerRadius="0"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24" MinWidth="320"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        BoxShadow="0 8 32 #80000000">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Rename Track" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBox x:Name="RenameInput" FontSize="16"
+                                 KeyDown="RenameInput_KeyDown"/>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0" Content="Cancel" HorizontalAlignment="Stretch" Height="40"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="RenameCancel_Click"/>
+                            <Button Grid.Column="1" Content="Rename" HorizontalAlignment="Stretch" Height="40"
+                                    Background="#27AE60" Foreground="White"
+                                    CornerRadius="6" BorderThickness="0" Cursor="Hand"
+                                    Click="RenameConfirm_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+            </Panel>
+        </Border>
+    </Grid>
+</UserControl>

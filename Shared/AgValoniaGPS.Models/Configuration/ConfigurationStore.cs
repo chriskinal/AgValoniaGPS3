@@ -15,16 +15,16 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
 /// <summary>
 /// Central configuration store - the ONLY place configuration lives.
 /// All components access this directly; no private copies.
-/// Implements INotifyPropertyChanged via ReactiveObject for UI binding.
+/// Implements INotifyPropertyChanged via ObservableObject for UI binding.
 /// </summary>
-public class ConfigurationStore : ReactiveObject
+public class ConfigurationStore : ObservableObject
 {
     private static ConfigurationStore? _instance;
 
@@ -39,7 +39,7 @@ public class ConfigurationStore : ReactiveObject
     /// </summary>
     public static void SetInstance(ConfigurationStore store) => _instance = store;
 
-    // Sub-configurations (each is a ReactiveObject for binding)
+    // Sub-configurations (each is an ObservableObject for binding)
     public VehicleConfig Vehicle { get; } = new();
     public ToolConfig Tool { get; } = new();
     public GuidanceConfig Guidance { get; } = new();
@@ -57,14 +57,14 @@ public class ConfigurationStore : ReactiveObject
     public string ActiveProfileName
     {
         get => _activeProfileName;
-        set => this.RaiseAndSetIfChanged(ref _activeProfileName, value);
+        set => SetProperty(ref _activeProfileName, value);
     }
 
     private string _activeProfilePath = string.Empty;
     public string ActiveProfilePath
     {
         get => _activeProfilePath;
-        set => this.RaiseAndSetIfChanged(ref _activeProfilePath, value);
+        set => SetProperty(ref _activeProfilePath, value);
     }
 
     // Dirty tracking for save prompts
@@ -72,7 +72,7 @@ public class ConfigurationStore : ReactiveObject
     public bool HasUnsavedChanges
     {
         get => _hasUnsavedChanges;
-        set => this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value);
+        set => SetProperty(ref _hasUnsavedChanges, value);
     }
 
     // Unit settings
@@ -80,7 +80,7 @@ public class ConfigurationStore : ReactiveObject
     public bool IsMetric
     {
         get => _isMetric;
-        set => this.RaiseAndSetIfChanged(ref _isMetric, value);
+        set => SetProperty(ref _isMetric, value);
     }
 
     // Section configuration
@@ -88,7 +88,7 @@ public class ConfigurationStore : ReactiveObject
     public int NumSections
     {
         get => _numSections;
-        set => this.RaiseAndSetIfChanged(ref _numSections, Math.Clamp(value, 1, 16));
+        set => SetProperty(ref _numSections, Math.Clamp(value, 1, 16));
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class ConfigurationStore : ReactiveObject
     public double[] SectionPositions
     {
         get => _sectionPositions;
-        set => this.RaiseAndSetIfChanged(ref _sectionPositions, value);
+        set => SetProperty(ref _sectionPositions, value);
     }
 
     // Events for significant changes

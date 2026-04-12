@@ -33,9 +33,9 @@ public class MapService : IMapService
     private ISharedMapControl? _mapControl;
 
     /// <summary>
-    /// Set the underlying map control. Must be called after the control is created.
+    /// Register the map control to receive service calls.
     /// </summary>
-    public void SetMapControl(ISharedMapControl mapControl)
+    public void RegisterMapControl(ISharedMapControl mapControl)
     {
         _mapControl = mapControl;
     }
@@ -43,7 +43,7 @@ public class MapService : IMapService
     private ISharedMapControl GetMapControl()
     {
         if (_mapControl == null)
-            throw new System.InvalidOperationException("Map control not set. Call SetMapControl first.");
+            throw new System.InvalidOperationException("Map control not set. Call RegisterMapControl first.");
         return _mapControl;
     }
 
@@ -51,7 +51,7 @@ public class MapService : IMapService
 
     public void Set3DMode(bool is3D) => GetMapControl().Set3DMode(is3D);
 
-    public bool Is3DMode => _mapControl != null && !GetMapControl().IsGridVisible; // TODO: Add Is3DMode to IMapControl
+    public bool Is3DMode => _mapControl?.Is3DMode ?? false;
 
     public void SetPitch(double deltaRadians) => GetMapControl().SetPitch(deltaRadians);
 
@@ -98,6 +98,12 @@ public class MapService : IMapService
 
     public void SetVehiclePosition(double easting, double northing, double headingRadians) =>
         GetMapControl().SetVehiclePosition(easting, northing, headingRadians);
+
+    public void SetAllPositions(double vehicleX, double vehicleY, double vehicleHeading,
+        double toolX, double toolY, double toolHeading, double toolWidth,
+        double hitchX, double hitchY, bool toolReady) =>
+        GetMapControl().SetAllPositions(vehicleX, vehicleY, vehicleHeading,
+            toolX, toolY, toolHeading, toolWidth, hitchX, hitchY, toolReady);
 
     public bool IsGridVisible
     {
@@ -155,6 +161,12 @@ public class MapService : IMapService
     public void SetYouTurnPath(IReadOnlyList<(double Easting, double Northing)>? turnPath) =>
         GetMapControl().SetYouTurnPath(turnPath);
 
+    public void SetTramLines(
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
+        IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines) =>
+        GetMapControl().SetTramLines(outerTrack, innerTrack, parallelLines);
+
     // Track visualization for U-turns
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track) =>
         GetMapControl().SetNextTrack(track);
@@ -165,6 +177,9 @@ public class MapService : IMapService
     // Active Track for guidance
     public void SetActiveTrack(AgValoniaGPS.Models.Track.Track? track) =>
         GetMapControl().SetActiveTrack(track);
+
+    public void SetBaseTrack(AgValoniaGPS.Models.Track.Track? track) =>
+        GetMapControl().SetBaseTrack(track);
 
     // Recorded path / contour strip visualization
     public void SetRecordedPaths(System.Collections.Generic.IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths) =>

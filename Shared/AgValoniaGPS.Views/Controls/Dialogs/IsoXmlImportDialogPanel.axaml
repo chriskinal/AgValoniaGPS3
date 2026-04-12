@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -131,11 +132,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Header -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="24" Height="24"/>
-                    <TextBlock Classes="Header" Text="Import Field from ISO-XML"/>
+                    <TextBlock Classes="Header" Text="{loc:Localize ImportFieldFromIsoXml}"/>
                 </StackPanel>
 
                 <!-- Info text -->
-                <TextBlock Grid.Row="1" Text="Place ISO-XML folders (containing TASKDATA.xml) in Documents/AgValoniaGPS/Import"
+                <TextBlock Grid.Row="1" Text="{loc:Localize PlaceIsoXmlFoldersContainingTaskdataxmlInDocumentsAgvaloniagpsImport}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
                 <!-- ISO-XML Folders ListBox -->
@@ -149,7 +150,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <DataTemplate>
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"/>
-                                <TextBlock Grid.Column="1" Text="TASKDATA" Foreground="#E67E22" FontSize="11"
+                                <TextBlock Grid.Column="1" Text="{loc:Localize Taskdata}" Foreground="#E67E22" FontSize="11"
                                            IsVisible="{Binding IsTaskData}"/>
                             </Grid>
                         </DataTemplate>
@@ -158,7 +159,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Field name input -->
                 <StackPanel Grid.Row="3" Margin="0,12,0,0" Spacing="6">
-                    <TextBlock Text="New Field Name:" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
+                    <TextBlock Text="{loc:Localize NewFieldName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBox Grid.Column="0"
                                  Classes="DialogInput"
@@ -193,10 +194,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Action Buttons -->
                 <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
                     <Border Grid.Column="0"/>
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             MinWidth="80" MinHeight="44"
                             Command="{Binding CancelIsoXmlImportDialogCommand}"/>
-                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="Import"
+                    <Button Grid.Column="2" Classes="DialogButton OkButton" Content="{loc:Localize Import}"
                             MinWidth="80" MinHeight="44" Margin="12,0,0,0"
                             Command="{Binding ConfirmIsoXmlImportDialogCommand}"/>
                 </Grid>

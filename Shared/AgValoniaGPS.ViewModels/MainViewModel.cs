@@ -20,9 +20,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reactive;
 using System.Windows.Input;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Guidance;
@@ -41,7 +41,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AgValoniaGPS.ViewModels;
 
-public partial class MainViewModel : ReactiveObject
+public partial class MainViewModel : ObservableObject
 {
     private readonly IUdpCommunicationService _udpService;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsService _gpsService;
@@ -71,15 +71,20 @@ public partial class MainViewModel : ReactiveObject
     private readonly ISectionControlService _sectionControlService;
     private readonly INtripProfileService _ntripProfileService;
     private readonly IChartDataService _chartDataService;
+    private readonly IAudioService _audioService;
+    private readonly IElevationLogService _elevationLogService;
+    private readonly ITramLineService _tramLineService;
+    private readonly IGpsPipelineService _gpsPipelineService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
-    private readonly DispatcherTimer _simulatorTimer;
+    private readonly Avalonia.Threading.DispatcherTimer _simulatorTimer;
 
     /// <summary>
     /// Centralized application state - single source of truth for all runtime state.
     /// Use this for new code. Existing properties will gradually migrate to use State.
     /// </summary>
     public ApplicationState State => _appState;
+    public DisplayConfig Display => ConfigurationStore.Instance.Display;
 
     // Convenience accessors for ConfigurationStore (replaces _vehicleConfig usage)
     private static ConfigurationStore ConfigStore => ConfigurationStore.Instance;
@@ -160,10 +165,32 @@ public partial class MainViewModel : ReactiveObject
         ISectionControlService sectionControlService,
         INtripProfileService ntripProfileService,
         IChartDataService chartDataService,
+        IAudioService audioService,
+        IElevationLogService elevationLogService,
+        ITramLineService tramLineService,
+        IGpsPipelineService gpsPipelineService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
         _logger = logger;
+        _tramLineService = tramLineService;
+
+        // Sync GuidanceConfig.TramDisplay -> TramConfig.DisplayMode and regenerate
+        ConfigStore.Guidance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Models.Configuration.GuidanceConfig.TramDisplay))
+            {
+                ConfigStore.Tram.DisplayMode = ConfigStore.Guidance.TramDisplay
+                    ? Models.Configuration.TramDisplayMode.All
+                    : Models.Configuration.TramDisplayMode.Off;
+                UpdateTramLines(SelectedTrack);
+            }
+            else if (e.PropertyName == nameof(Models.Configuration.GuidanceConfig.TramPasses))
+            {
+                ConfigStore.Tram.Passes = ConfigStore.Guidance.TramPasses;
+                UpdateTramLines(SelectedTrack);
+            }
+        };
         _udpService = udpService;
         _gpsService = gpsService;
         _fieldService = fieldService;
@@ -190,6 +217,9 @@ public partial class MainViewModel : ReactiveObject
         _sectionControlService = sectionControlService;
         _ntripProfileService = ntripProfileService;
         _chartDataService = chartDataService;
+        _audioService = audioService;
+        _elevationLogService = elevationLogService;
+        _gpsPipelineService = gpsPipelineService;
         _appState = appState;
         _nmeaParser = new NmeaParserService(gpsService);
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -199,10 +229,15 @@ public partial class MainViewModel : ReactiveObject
         _udpService.DataReceived += OnUdpDataReceived;
         _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
         _autoSteerService.Start(); // Enable zero-copy GPS pipeline
+
+        // Start the background GPS processing pipeline
+        _gpsPipelineService.CycleCompleted += OnGpsCycleCompleted;
+        _gpsPipelineService.Start();
         _udpService.ModuleConnectionChanged += OnModuleConnectionChanged;
         _ntripService.ConnectionStatusChanged += OnNtripConnectionChanged;
         _ntripService.RtcmDataReceived += OnRtcmDataReceived;
         _fieldService.ActiveFieldChanged += OnActiveFieldChanged;
+        FieldFullyLoaded += OnFieldFullyLoaded;
         _simulatorService.GpsDataUpdated += OnSimulatorGpsDataUpdated;
         _boundaryRecordingService.PointAdded += OnBoundaryPointAdded;
         _boundaryRecordingService.StateChanged += OnBoundaryStateChanged;
@@ -210,6 +245,16 @@ public partial class MainViewModel : ReactiveObject
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
         _toolPositionService.PositionUpdated += OnToolPositionUpdated;
         _sectionControlService.SectionStateChanged += OnSectionStateChanged;
+        _coverageMapService.BoundsExpanded += OnCoverageBoundsExpanded;
+
+        // Sync drift compensation to AutoSteerService when edited via TextBox
+        State.Field.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(State.Field.DriftEasting) or nameof(State.Field.DriftNorthing))
+            {
+                _autoSteerService.SetDriftCompensation(State.Field.DriftEasting, State.Field.DriftNorthing);
+            }
+        };
 
         // Subscribe to ConfigurationStore changes to update NumSections
         _numSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
@@ -222,10 +267,10 @@ public partial class MainViewModel : ReactiveObject
             else if (e.PropertyName == nameof(Models.Configuration.ConfigurationStore.IsMetric))
             {
                 // Refresh all unit-dependent displays
-                this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
-                this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
-                this.RaisePropertyChanged(nameof(WorkRateDisplay));
-                this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+                OnPropertyChanged(nameof(WorkedAreaDisplay));
+                OnPropertyChanged(nameof(BoundaryAreaDisplay));
+                OnPropertyChanged(nameof(WorkRateDisplay));
+                OnPropertyChanged(nameof(SimulatorSpeedDisplay));
             }
         };
 
@@ -233,15 +278,14 @@ public partial class MainViewModel : ReactiveObject
         // since ViewModels cannot reference Views directly
 
         // Note: NOT subscribing to DisplaySettings events - using direct property access instead
-        // to avoid threading issues with ReactiveUI
+        // to avoid threading issues
 
         // Note: Simulator coordinates are restored in RestoreSettings() from saved app settings
         // Default values only used if no settings exist (first run)
 
-        // Create simulator timer (100ms tick rate, matching WinForms implementation)
-        _simulatorTimer = new DispatcherTimer
+        _simulatorTimer = new Avalonia.Threading.DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(100)
+            Interval = TimeSpan.FromMilliseconds(33) // ~30Hz — pipeline back-pressure skips if processing is slow
         };
         _simulatorTimer.Tick += OnSimulatorTick;
 
@@ -253,6 +297,7 @@ public partial class MainViewModel : ReactiveObject
         InitializeBoundaryCommands();
         InitializeTrackCommands();
         InitializeTrackManagementCommands();
+        InitializeRecordedPathCommands();
         InitializeNtripCommands();
         InitializeWizardCommands();
         InitializeSettingsCommands();
@@ -305,7 +350,7 @@ public partial class MainViewModel : ReactiveObject
 
         // IMPORTANT: Notify bindings that IsGridOn changed
         // (setting _displaySettings directly doesn't trigger property change notification)
-        this.RaisePropertyChanged(nameof(IsGridOn));
+        OnPropertyChanged(nameof(IsGridOn));
 
         // Restore simulator settings (always restore coords, regardless of enabled state)
         _simulatorService.Initialize(new AgValoniaGPS.Models.Wgs84(
@@ -456,7 +501,7 @@ public partial class MainViewModel : ReactiveObject
     public string StatusMessage
     {
         get => _statusMessage;
-        set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+        set => SetProperty(ref _statusMessage, value);
     }
 
     /// <summary>
@@ -465,7 +510,7 @@ public partial class MainViewModel : ReactiveObject
     public double CurrentFps
     {
         get => _currentFps;
-        set => this.RaiseAndSetIfChanged(ref _currentFps, value);
+        set => SetProperty(ref _currentFps, value);
     }
 
     /// <summary>
@@ -475,51 +520,51 @@ public partial class MainViewModel : ReactiveObject
     public double GpsToPgnLatencyMs
     {
         get => _gpsToPgnLatencyMs;
-        set => this.RaiseAndSetIfChanged(ref _gpsToPgnLatencyMs, value);
+        set => SetProperty(ref _gpsToPgnLatencyMs, value);
     }
 
     public string NetworkStatus
     {
         get => _networkStatus;
-        set => this.RaiseAndSetIfChanged(ref _networkStatus, value);
+        set => SetProperty(ref _networkStatus, value);
     }
 
     // Guidance/Steering properties
     public double CrossTrackError
     {
         get => _crossTrackError;
-        set => this.RaiseAndSetIfChanged(ref _crossTrackError, value);
+        set => SetProperty(ref _crossTrackError, value);
     }
 
     public string CurrentGuidanceLine
     {
         get => _currentGuidanceLine;
-        set => this.RaiseAndSetIfChanged(ref _currentGuidanceLine, value);
+        set => SetProperty(ref _currentGuidanceLine, value);
     }
 
     public bool IsAutoSteerActive
     {
         get => _isAutoSteerActive;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerActive, value);
+        set => SetProperty(ref _isAutoSteerActive, value);
     }
 
     public int ActiveSections
     {
         get => _activeSections;
-        set => this.RaiseAndSetIfChanged(ref _activeSections, value);
+        set => SetProperty(ref _activeSections, value);
     }
 
     // AutoSteer Hello and Data properties
     public bool IsAutoSteerHelloOk
     {
         get => _isAutoSteerHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerHelloOk, value);
+        set => SetProperty(ref _isAutoSteerHelloOk, value);
     }
 
     public bool IsAutoSteerDataOk
     {
         get => _isAutoSteerDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerDataOk, value);
+        set => SetProperty(ref _isAutoSteerDataOk, value);
     }
 
     // Right Navigation Panel Properties
@@ -531,7 +576,7 @@ public partial class MainViewModel : ReactiveObject
     public bool IsContourModeOn
     {
         get => _isContourModeOn;
-        set => this.RaiseAndSetIfChanged(ref _isContourModeOn, value);
+        set => SetProperty(ref _isContourModeOn, value);
     }
 
     private bool _showRecordedPaths;
@@ -540,7 +585,7 @@ public partial class MainViewModel : ReactiveObject
         get => _showRecordedPaths;
         set
         {
-            this.RaiseAndSetIfChanged(ref _showRecordedPaths, value);
+            SetProperty(ref _showRecordedPaths, value);
             UpdateRecordedPathsOnMap();
         }
     }
@@ -549,7 +594,14 @@ public partial class MainViewModel : ReactiveObject
     public bool IsRecordingContour
     {
         get => _isRecordingContour;
-        set => this.RaiseAndSetIfChanged(ref _isRecordingContour, value);
+        set => SetProperty(ref _isRecordingContour, value);
+    }
+
+    private bool _isRecordingPath;
+    public bool IsRecordingPath
+    {
+        get => _isRecordingPath;
+        set => SetProperty(ref _isRecordingPath, value);
     }
 
     public ObservableCollection<Track> ContourStrips { get; } = new();
@@ -562,13 +614,13 @@ public partial class MainViewModel : ReactiveObject
     public bool IsManualSectionMode
     {
         get => _isManualAllOn;
-        set => this.RaiseAndSetIfChanged(ref _isManualAllOn, value);
+        set => SetProperty(ref _isManualAllOn, value);
     }
 
     public bool IsSectionMasterOn
     {
         get => _isAutoAllOn;
-        set => this.RaiseAndSetIfChanged(ref _isAutoAllOn, value);
+        set => SetProperty(ref _isAutoAllOn, value);
     }
 
     public bool IsAutoSteerAvailable
@@ -576,7 +628,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isAutoSteerAvailable;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isAutoSteerAvailable, value);
+            SetProperty(ref _isAutoSteerAvailable, value);
             RaiseUTurnButtonVisibleChanged();
         }
     }
@@ -584,7 +636,7 @@ public partial class MainViewModel : ReactiveObject
     public bool IsAutoSteerEngaged
     {
         get => _isAutoSteerEngaged;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSteerEngaged, value);
+        set => SetProperty(ref _isAutoSteerEngaged, value);
     }
 
     // IsYouTurnEnabled is now in MainViewModel.YouTurn.cs
@@ -593,33 +645,33 @@ public partial class MainViewModel : ReactiveObject
     public bool IsMachineHelloOk
     {
         get => _isMachineHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isMachineHelloOk, value);
+        set => SetProperty(ref _isMachineHelloOk, value);
     }
 
     public bool IsMachineDataOk
     {
         get => _isMachineDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isMachineDataOk, value);
+        set => SetProperty(ref _isMachineDataOk, value);
     }
 
     // IMU Hello and Data properties
     public bool IsImuHelloOk
     {
         get => _isImuHelloOk;
-        set => this.RaiseAndSetIfChanged(ref _isImuHelloOk, value);
+        set => SetProperty(ref _isImuHelloOk, value);
     }
 
     public bool IsImuDataOk
     {
         get => _isImuDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isImuDataOk, value);
+        set => SetProperty(ref _isImuDataOk, value);
     }
 
     // GPS Hello and Data properties (GPS doesn't have hello, just data from NMEA)
     public bool IsGpsDataOk
     {
         get => _isGpsDataOk;
-        set => this.RaiseAndSetIfChanged(ref _isGpsDataOk, value);
+        set => SetProperty(ref _isGpsDataOk, value);
     }
 
     // NTRIP properties are in MainViewModel.Ntrip.cs
@@ -627,45 +679,47 @@ public partial class MainViewModel : ReactiveObject
     public string DebugLog
     {
         get => _debugLog;
-        set => this.RaiseAndSetIfChanged(ref _debugLog, value);
+        set => SetProperty(ref _debugLog, value);
     }
 
     // Tool position properties (for map rendering)
     public double ToolEasting
     {
         get => _toolEasting;
-        set => this.RaiseAndSetIfChanged(ref _toolEasting, value);
+        set => SetProperty(ref _toolEasting, value);
     }
 
     public double ToolNorthing
     {
         get => _toolNorthing;
-        set => this.RaiseAndSetIfChanged(ref _toolNorthing, value);
+        set => SetProperty(ref _toolNorthing, value);
     }
 
     public double ToolHeadingRadians
     {
         get => _toolHeading;
-        set => this.RaiseAndSetIfChanged(ref _toolHeading, value);
+        set => SetProperty(ref _toolHeading, value);
     }
 
     public double ToolWidth
     {
         get => _toolWidth;
-        set => this.RaiseAndSetIfChanged(ref _toolWidth, value);
+        set => SetProperty(ref _toolWidth, value);
     }
 
     public double HitchEasting
     {
         get => _hitchEasting;
-        set => this.RaiseAndSetIfChanged(ref _hitchEasting, value);
+        set => SetProperty(ref _hitchEasting, value);
     }
 
     public double HitchNorthing
     {
         get => _hitchNorthing;
-        set => this.RaiseAndSetIfChanged(ref _hitchNorthing, value);
+        set => SetProperty(ref _hitchNorthing, value);
     }
+
+    public bool IsToolPositionReady => _toolPositionService.IsToolPositionReady;
 
     // OnAutoSteerStateUpdated is now in MainViewModel.Guidance.cs
 
@@ -721,6 +775,12 @@ public partial class MainViewModel : ReactiveObject
         _sectionControlService.Update(e.ToolPosition, e.ToolHeading, e.VehicleHeading, Speed);
         _lastSectionControlMs = _updateSw.Elapsed.TotalMilliseconds;
 
+        // Calculate hydraulic lift state based on tool position vs headland
+        byte hydLiftState = CalculateHydLiftState(e.ToolPosition, Speed);
+
+        // Push section bits + u-turn state + hydraulic lift to AutoSteerService for PGN 239
+        _autoSteerService.SetMachineState(_sectionControlService.GetSectionBits(), _isInYouTurn, hydLiftState);
+
         // Update coverage painting - paint when sections are active and moving
         _updateSw.Restart();
         UpdateCoveragePainting(e.ToolPosition, e.ToolHeading);
@@ -736,6 +796,37 @@ public partial class MainViewModel : ReactiveObject
         {
             Debug.WriteLine($"[Timing] SectionCtrl: {_lastSectionControlMs:F2}ms (Bnd:{Services.Section.SectionControlService.LastBoundaryMs:F2} Hdl:{Services.Section.SectionControlService.LastHeadlandMs:F2} Cov:{Services.Section.SectionControlService.LastCoverageCheckMs:F2}) | Paint: {_lastCoveragePaintingMs:F2}ms | Props: {_lastPropertyUpdateMs:F2}ms");
         }
+    }
+
+    /// <summary>
+    /// Calculate hydraulic lift state: raise in headland, lower in cultivated area.
+    /// Matches legacy AgOpenGPS CHead.SetHydPosition() logic.
+    /// PGN 239 values: 0=off, 1=lower(down), 2=raise(up)
+    /// </summary>
+    private byte CalculateHydLiftState(Models.Base.Vec3 toolPosition, double speed)
+    {
+        var machine = Models.Configuration.ConfigurationStore.Instance.Machine;
+        if (!machine.HydraulicLiftEnabled) return 0;
+
+        // Don't operate at very low speed or in reverse
+        if (speed < 0.2 || IsReversing) return 0;
+
+        // Check if tool is in headland zone (between outer boundary and headland line)
+        var headlandLine = State.Field.HeadlandLine;
+        if (headlandLine == null || headlandLine.Count < 3) return 0;
+
+        var boundary = State.Field.CurrentBoundary;
+        if (boundary == null || !boundary.IsValid) return 0;
+
+        bool inBoundary = boundary.IsPointInside(toolPosition.Easting, toolPosition.Northing);
+        if (!inBoundary) return 0; // Outside field entirely
+
+        bool inCultivatedArea = Models.Base.GeometryMath.IsPointInPolygon(
+            headlandLine, new Models.Base.Vec2(toolPosition.Easting, toolPosition.Northing));
+
+        // In headland (between boundary and headland line) = RAISE
+        // In cultivated area (inside headland line) = LOWER
+        return inCultivatedArea ? (byte)1 : (byte)2;
     }
 
     /// <summary>
@@ -795,12 +886,22 @@ public partial class MainViewModel : ReactiveObject
 
 
 
-    // AutoSteer guidance methods (CalculateAutoSteerGuidance)
+    // AutoSteer guidance state and event handlers
     // are now in MainViewModel.Guidance.cs
 
-    // YouTurn methods (ProcessYouTurn, CreateYouTurnPath, CalculateYouTurnGuidance, etc.)
+    // YouTurn methods (ProcessYouTurn, CreateYouTurnPath, CompleteYouTurn, etc.)
     // are now in MainViewModel.YouTurn.cs
 
+
+    private void OnCoverageBoundsExpanded(object? sender, BoundsExpandedEventArgs e)
+    {
+        // Reinitialize display bitmap with new expanded bounds
+        Dispatcher.UIThread.Post(() =>
+        {
+            _mapService.InitializeCoverageBitmapWithBounds(e.MinE, e.MaxE, e.MinN, e.MaxN);
+            _logger.LogDebug($"[Coverage] Display bitmap reinitialized for expanded bounds: E[{e.MinE:F0},{e.MaxE:F0}] N[{e.MinN:F0},{e.MaxN:F0}]");
+        });
+    }
 
     private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
     {
@@ -887,13 +988,13 @@ public partial class MainViewModel : ReactiveObject
     public Field? ActiveField
     {
         get => _activeField;
-        set => this.RaiseAndSetIfChanged(ref _activeField, value);
+        set => SetProperty(ref _activeField, value);
     }
 
     public string FieldsRootDirectory
     {
         get => _fieldsRootDirectory;
-        set => this.RaiseAndSetIfChanged(ref _fieldsRootDirectory, value);
+        set => SetProperty(ref _fieldsRootDirectory, value);
     }
 
     public string? ActiveFieldName => ActiveField?.Name;
@@ -906,14 +1007,48 @@ public partial class MainViewModel : ReactiveObject
     // Field statistics properties for UI binding
     public string WorkedAreaDisplay => FormatArea(_coverageMapService.TotalWorkedArea);
 
-    public string BoundaryAreaDisplay
+    /// <summary>
+    /// Workable area in m²: boundary area minus headland area.
+    /// </summary>
+    private double WorkableAreaSqM
     {
         get
         {
             var boundary = State.Field.CurrentBoundary;
-            if (boundary != null && boundary.IsValid)
+            double totalSqM = (boundary?.AreaHectares ?? 0) * 10000;
+            if (totalSqM <= 0) return 0;
+
+            // Subtract headland area if headland exists
+            var headland = State.Field.HeadlandLine;
+            if (headland != null && headland.Count >= 3)
             {
-                return FormatArea(boundary.AreaHectares * 10000); // Convert ha back to m²
+                double headlandArea = Math.Abs(PolygonArea(headland));
+                return headlandArea; // Headland polygon IS the cultivated area
+            }
+            return totalSqM;
+        }
+    }
+
+    private static double PolygonArea(System.Collections.Generic.List<Models.Base.Vec3> polygon)
+    {
+        double area = 0;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            int j = (i + 1) % polygon.Count;
+            area += polygon[i].Easting * polygon[j].Northing;
+            area -= polygon[j].Easting * polygon[i].Northing;
+        }
+        return area / 2.0;
+    }
+
+    public string BoundaryAreaDisplay
+    {
+        get
+        {
+            double areaSqM = WorkableAreaSqM;
+            if (areaSqM > 0)
+            {
+                return FormatArea(areaSqM);
             }
             return ConfigStore.IsMetric ? "0.00 ha" : "0.00 ac";
         }
@@ -923,13 +1058,11 @@ public partial class MainViewModel : ReactiveObject
     {
         get
         {
-            var boundary = State.Field.CurrentBoundary;
-            double boundaryArea = boundary?.AreaHectares ?? 0;
-            double boundaryAreaSqM = boundaryArea * 10000; // Convert back to sq meters for comparison
-            if (boundaryAreaSqM > 0)
+            double workableArea = WorkableAreaSqM;
+            if (workableArea > 0)
             {
                 double workedArea = _coverageMapService.TotalWorkedArea;
-                return ((boundaryAreaSqM - workedArea) * 100 / boundaryAreaSqM);
+                return ((workableArea - workedArea) * 100 / workableArea);
             }
             return 100;
         }
@@ -967,9 +1100,28 @@ public partial class MainViewModel : ReactiveObject
     /// </summary>
     public void RefreshCoverageStatistics()
     {
-        this.RaisePropertyChanged(nameof(WorkedAreaDisplay));
-        this.RaisePropertyChanged(nameof(RemainingPercent));
-        this.RaisePropertyChanged(nameof(WorkRateDisplay));
+        OnPropertyChanged(nameof(WorkedAreaDisplay));
+        OnPropertyChanged(nameof(RemainingPercent));
+        OnPropertyChanged(nameof(WorkRateDisplay));
+    }
+
+    /// <summary>
+    /// Called after a field is fully loaded. Centers camera and refreshes dependent panels.
+    /// </summary>
+    private void OnFieldFullyLoaded(Field? field)
+    {
+        // Center camera on field
+        if (CameraMode == Models.CameraMode.Free)
+            CameraMode = _previousCameraMode;
+
+        if (field?.Boundary != null)
+            CenterMapOnBoundary(field.Boundary);
+        else
+            _mapService.PanTo(State.Vehicle.Easting, State.Vehicle.Northing);
+
+        _mapService.SetVehiclePosition(
+            State.Vehicle.Easting, State.Vehicle.Northing,
+            State.Vehicle.Heading * Math.PI / 180.0);
     }
 
     private void OnActiveFieldChanged(object? sender, Field? field)
@@ -978,9 +1130,9 @@ public partial class MainViewModel : ReactiveObject
         // Save/load is handled by OpenFieldAsync and CloseFieldAsync
         State.Field.ActiveField = field;
         ActiveField = field;
-        this.RaisePropertyChanged(nameof(ActiveFieldName));
-        this.RaisePropertyChanged(nameof(ActiveFieldArea));
-        this.RaisePropertyChanged(nameof(HasActiveField));
+        OnPropertyChanged(nameof(ActiveFieldName));
+        OnPropertyChanged(nameof(ActiveFieldArea));
+        OnPropertyChanged(nameof(HasActiveField));
     }
 
     /// <summary>
@@ -1037,7 +1189,7 @@ public partial class MainViewModel : ReactiveObject
 
                 var boundaryAreas = new List<double> { boundary.AreaHectares * 10000 };
                 _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
-                this.RaisePropertyChanged(nameof(BoundaryAreaDisplay));
+                OnPropertyChanged(nameof(BoundaryAreaDisplay));
             }
 
             // Load background image
@@ -1060,7 +1212,10 @@ public partial class MainViewModel : ReactiveObject
             // Load tracks
             LoadTracksFromField(field);
 
-            // Load coverage
+            // Load recorded path from RecPath.txt
+            LoadRecPathFromField(fieldPath);
+
+            // Load coverage (shows busy overlay — pixel buffer callback needs UI thread for bitmap access)
             State.UI.BusyMessage = "Loading coverage...";
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 
@@ -1068,12 +1223,47 @@ public partial class MainViewModel : ReactiveObject
             _logger.LogDebug($"[Coverage] Loaded coverage from {fieldPath}");
             RefreshCoverageStatistics();
 
+            // Load tram lines
+            try
+            {
+                _tramLineService.LoadFromFile(fieldPath);
+                if (_tramLineService.HasTramLines)
+                {
+                    _mapService.SetTramLines(
+                        _tramLineService.OuterBoundaryTrack,
+                        _tramLineService.InnerBoundaryTrack,
+                        _tramLineService.ParallelTramLines);
+                    _logger.LogDebug($"[Tram] Loaded tram lines from {fieldPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load tram lines");
+            }
+
             // Handle NTRIP profile
             _ = HandleNtripProfileForFieldAsync(fieldName);
+
+            // Sync elevation log enabled state from config
+            _elevationLogService.IsEnabled = Models.Configuration.ConfigurationStore.Instance.Display.ElevationLogEnabled;
 
             // Save as last opened field
             _settingsService.Settings.LastOpenedField = fieldName;
             _settingsService.Save();
+
+            // Force simulator ticks so vehicle position updates to field origin
+            if (IsSimulatorEnabled)
+            {
+                _simulatorService.Tick(0);
+                _simulatorService.Tick(0);
+            }
+
+            // Let GPS events propagate through the UI
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(100);
+
+            // Notify subscribers that the field is fully loaded
+            FieldFullyLoaded?.Invoke(field);
 
             StatusMessage = $"Opened field: {fieldName}";
         }
@@ -1115,9 +1305,21 @@ public partial class MainViewModel : ReactiveObject
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
             await Task.Delay(50);
 
-            // Save coverage
-            _coverageMapService.SaveToFile(ActiveField.DirectoryPath);
-            _logger.LogDebug($"[Coverage] Saved coverage to {ActiveField.DirectoryPath}");
+            // Save coverage on background thread (RLE compression can take seconds)
+            var savePath = ActiveField.DirectoryPath;
+            await Task.Run(() => _coverageMapService.SaveToFile(savePath));
+            _logger.LogDebug($"[Coverage] Saved coverage to {savePath}");
+
+            // Save tram lines
+            if (_tramLineService.HasTramLines)
+            {
+                _tramLineService.SaveToFile(ActiveField.DirectoryPath);
+                _logger.LogDebug($"[Tram] Saved tram lines to {ActiveField.DirectoryPath}");
+            }
+
+            // Flush elevation log
+            _elevationLogService.Flush(ActiveField.DirectoryPath);
+            _elevationLogService.Clear();
 
             // Save tracks
             SaveTracksToFile();
@@ -1199,7 +1401,7 @@ public partial class MainViewModel : ReactiveObject
                 // Use direct field assignment to avoid triggering save
                 _currentHeadlandLine = headlandLine.Tracks[0].TrackPoints;
                 _mapService.SetHeadlandLine(_currentHeadlandLine);
-                this.RaisePropertyChanged(nameof(CurrentHeadlandLine));
+                OnPropertyChanged(nameof(CurrentHeadlandLine));
 
                 HasHeadland = true;
                 IsHeadlandOn = true;
@@ -1230,6 +1432,21 @@ public partial class MainViewModel : ReactiveObject
             HasHeadland = false;
             IsHeadlandOn = false;
         }
+
+        // Load headland segments
+        try
+        {
+            var segments = Services.Headland.HeadlandSegmentFileService.Load(field.DirectoryPath);
+            HeadlandSegments.Clear();
+            foreach (var seg in segments)
+                HeadlandSegments.Add(seg);
+            if (HeadlandSegments.Count > 0)
+                BuildHeadlandFromSegments();
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogDebug($"[Headland] Failed to load headland segments: {ex.Message}");
+        }
     }
 
     // Panel-based dialog data properties (visibility now managed by State.UI)
@@ -1237,14 +1454,14 @@ public partial class MainViewModel : ReactiveObject
     public decimal? SimCoordsDialogLatitude
     {
         get => _simCoordsDialogLatitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLatitude, value);
+        set => SetProperty(ref _simCoordsDialogLatitude, value);
     }
 
     private decimal? _simCoordsDialogLongitude;
     public decimal? SimCoordsDialogLongitude
     {
         get => _simCoordsDialogLongitude;
-        set => this.RaiseAndSetIfChanged(ref _simCoordsDialogLongitude, value);
+        set => SetProperty(ref _simCoordsDialogLongitude, value);
     }
 
     // Field Selection Dialog properties (visibility managed by State.UI)
@@ -1254,7 +1471,7 @@ public partial class MainViewModel : ReactiveObject
     public FieldSelectionItem? SelectedFieldInfo
     {
         get => _selectedFieldInfo;
-        set => this.RaiseAndSetIfChanged(ref _selectedFieldInfo, value);
+        set => SetProperty(ref _selectedFieldInfo, value);
     }
 
     private string _fieldSelectionDirectory = string.Empty;
@@ -1267,10 +1484,10 @@ public partial class MainViewModel : ReactiveObject
         get => _currentABCreationMode;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentABCreationMode, value);
-            this.RaisePropertyChanged(nameof(IsCreatingABLine));
-            this.RaisePropertyChanged(nameof(EnableABClickSelection));
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            SetProperty(ref _currentABCreationMode, value);
+            OnPropertyChanged(nameof(IsCreatingABLine));
+            OnPropertyChanged(nameof(EnableABClickSelection));
+            OnPropertyChanged(nameof(ABCreationInstructions));
         }
     }
 
@@ -1280,8 +1497,8 @@ public partial class MainViewModel : ReactiveObject
         get => _currentABPointStep;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentABPointStep, value);
-            this.RaisePropertyChanged(nameof(ABCreationInstructions));
+            SetProperty(ref _currentABPointStep, value);
+            OnPropertyChanged(nameof(ABCreationInstructions));
         }
     }
 
@@ -1290,7 +1507,7 @@ public partial class MainViewModel : ReactiveObject
     public Position? PendingPointA
     {
         get => _pendingPointA;
-        set => this.RaiseAndSetIfChanged(ref _pendingPointA, value);
+        set => SetProperty(ref _pendingPointA, value);
     }
 
     // Curve recording state (drive mode)
@@ -1336,8 +1553,8 @@ public partial class MainViewModel : ReactiveObject
         get => _isPlaceFlagOnClickMode;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isPlaceFlagOnClickMode, value);
-            this.RaisePropertyChanged(nameof(EnableABClickSelection));
+            SetProperty(ref _isPlaceFlagOnClickMode, value);
+            OnPropertyChanged(nameof(EnableABClickSelection));
         }
     }
 
@@ -1384,7 +1601,7 @@ public partial class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _selectedTrack;
-            this.RaiseAndSetIfChanged(ref _selectedTrack, value);
+            SetProperty(ref _selectedTrack, value);
             if (!ReferenceEquals(oldValue, value))
             {
                 // Sync IsActive state with selection
@@ -1398,6 +1615,9 @@ public partial class MainViewModel : ReactiveObject
                     State.Field.ActiveTrack = value;
                     // Show the track on the map when activated
                     _mapService.SetActiveTrack(value);
+
+                    // Generate tram lines from the selected track
+                    UpdateTramLines(value);
 
                     // Initialize pass number and nudge offset from saved NudgeDistance
                     // NudgeDistance = widthMinusOverlap * howManyPathsAway + nudgeOffset
@@ -1442,6 +1662,7 @@ public partial class MainViewModel : ReactiveObject
                     State.Field.ActiveTrack = null;
                     // Clear the track and guidance from the map when deactivated
                     _mapService.SetActiveTrack(null);
+                    _mapService.SetBaseTrack(null);
                     _mapService.SetGuidancePoints(0, 0, false);
                     _isSelectedTrackOnBoundary = false;
                     // Clear any U-turn state associated with the deactivated track
@@ -1452,9 +1673,51 @@ public partial class MainViewModel : ReactiveObject
                 HasActiveTrack = value != null;
                 IsAutoSteerAvailable = value != null;
 
+                // Sync to pipeline so guidance computes on background thread
+                SyncGuidanceStateToPipeline();
+
                 _logger.LogDebug($"[SelectedTrack] Changed to: {value?.Name ?? "None"}");
             }
         }
+    }
+
+    /// <summary>
+    /// Generate tram lines from a track and update the map.
+    /// </summary>
+    private void UpdateTramLines(Track? track)
+    {
+        var config = ConfigurationStore.Instance.Tram;
+        if (config.DisplayMode == Models.Configuration.TramDisplayMode.Off || track == null || track.Points.Count < 2)
+        {
+            _tramLineService.Clear();
+            _mapService.SetTramLines(null, null, null);
+            return;
+        }
+
+        // Generate parallel tram lines from the track
+        // Use a reasonable field width estimate (boundary size or default 500m)
+        double fieldWidth = 500;
+        if (_currentBoundary?.OuterBoundary?.Points != null && _currentBoundary.OuterBoundary.Points.Count > 0)
+        {
+            var pts = _currentBoundary.OuterBoundary.Points;
+            double maxE = pts.Max(p => p.Easting), minE = pts.Min(p => p.Easting);
+            double maxN = pts.Max(p => p.Northing), minN = pts.Min(p => p.Northing);
+            fieldWidth = Math.Max(maxE - minE, maxN - minN) * 1.2;
+        }
+
+        _tramLineService.GenerateParallelTramLines(track, fieldWidth);
+
+        // Also generate boundary tram tracks if headland exists
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+        {
+            _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+        }
+
+        // Update map
+        _mapService.SetTramLines(
+            _tramLineService.OuterBoundaryTrack,
+            _tramLineService.InnerBoundaryTrack,
+            _tramLineService.ParallelTramLines);
     }
 
     // Flag markers
@@ -1494,6 +1757,7 @@ public partial class MainViewModel : ReactiveObject
 
     // Track management commands
     public ICommand? DeleteSelectedTrackCommand { get; private set; }
+    public ICommand? DeleteAllTracksCommand { get; private set; }
     public ICommand? SwapABPointsCommand { get; private set; }
     public ICommand? SelectTrackAsActiveCommand { get; private set; }
 
@@ -1504,14 +1768,14 @@ public partial class MainViewModel : ReactiveObject
     public NtripProfile? SelectedNtripProfile
     {
         get => _selectedNtripProfile;
-        set => this.RaiseAndSetIfChanged(ref _selectedNtripProfile, value);
+        set => SetProperty(ref _selectedNtripProfile, value);
     }
 
     private NtripProfile? _editingNtripProfile;
     public NtripProfile? EditingNtripProfile
     {
         get => _editingNtripProfile;
-        set => this.RaiseAndSetIfChanged(ref _editingNtripProfile, value);
+        set => SetProperty(ref _editingNtripProfile, value);
     }
 
     /// <summary>
@@ -1541,21 +1805,21 @@ public partial class MainViewModel : ReactiveObject
     public ObservableCollection<AppDirectoryInfo> AppDirectories
     {
         get => _appDirectories;
-        set => this.RaiseAndSetIfChanged(ref _appDirectories, value);
+        set => SetProperty(ref _appDirectories, value);
     }
 
     private string _ntripTestStatus = string.Empty;
     public string NtripTestStatus
     {
         get => _ntripTestStatus;
-        set => this.RaiseAndSetIfChanged(ref _ntripTestStatus, value);
+        set => SetProperty(ref _ntripTestStatus, value);
     }
 
     private bool _isTestingNtripConnection;
     public bool IsTestingNtripConnection
     {
         get => _isTestingNtripConnection;
-        set => this.RaiseAndSetIfChanged(ref _isTestingNtripConnection, value);
+        set => SetProperty(ref _isTestingNtripConnection, value);
     }
 
     // New Field Dialog properties (visibility managed by State.UI)
@@ -1563,21 +1827,21 @@ public partial class MainViewModel : ReactiveObject
     public string NewFieldName
     {
         get => _newFieldName;
-        set => this.RaiseAndSetIfChanged(ref _newFieldName, value);
+        set => SetProperty(ref _newFieldName, value);
     }
 
     private double _newFieldLatitude;
     public double NewFieldLatitude
     {
         get => _newFieldLatitude;
-        set => this.RaiseAndSetIfChanged(ref _newFieldLatitude, value);
+        set => SetProperty(ref _newFieldLatitude, value);
     }
 
     private double _newFieldLongitude;
     public double NewFieldLongitude
     {
         get => _newFieldLongitude;
-        set => this.RaiseAndSetIfChanged(ref _newFieldLongitude, value);
+        set => SetProperty(ref _newFieldLongitude, value);
     }
 
     public ICommand? CancelNewFieldDialogCommand { get; private set; }
@@ -1588,7 +1852,7 @@ public partial class MainViewModel : ReactiveObject
     public string FromExistingFieldName
     {
         get => _fromExistingFieldName;
-        set => this.RaiseAndSetIfChanged(ref _fromExistingFieldName, value);
+        set => SetProperty(ref _fromExistingFieldName, value);
     }
 
     private FieldSelectionItem? _fromExistingSelectedField;
@@ -1597,7 +1861,7 @@ public partial class MainViewModel : ReactiveObject
         get => _fromExistingSelectedField;
         set
         {
-            this.RaiseAndSetIfChanged(ref _fromExistingSelectedField, value);
+            SetProperty(ref _fromExistingSelectedField, value);
             if (value != null)
             {
                 // Auto-populate field name when selection changes
@@ -1611,28 +1875,28 @@ public partial class MainViewModel : ReactiveObject
     public bool CopyFlags
     {
         get => _copyFlags;
-        set => this.RaiseAndSetIfChanged(ref _copyFlags, value);
+        set => SetProperty(ref _copyFlags, value);
     }
 
     private bool _copyMapping = true;
     public bool CopyMapping
     {
         get => _copyMapping;
-        set => this.RaiseAndSetIfChanged(ref _copyMapping, value);
+        set => SetProperty(ref _copyMapping, value);
     }
 
     private bool _copyHeadland = true;
     public bool CopyHeadland
     {
         get => _copyHeadland;
-        set => this.RaiseAndSetIfChanged(ref _copyHeadland, value);
+        set => SetProperty(ref _copyHeadland, value);
     }
 
     private bool _copyLines = true;
     public bool CopyLines
     {
         get => _copyLines;
-        set => this.RaiseAndSetIfChanged(ref _copyLines, value);
+        set => SetProperty(ref _copyLines, value);
     }
 
     public ICommand? CancelFromExistingFieldDialogCommand { get; private set; }
@@ -1655,7 +1919,7 @@ public partial class MainViewModel : ReactiveObject
         get => _selectedKmlFile;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedKmlFile, value);
+            SetProperty(ref _selectedKmlFile, value);
             if (value != null)
             {
                 KmlImportFieldName = Path.GetFileNameWithoutExtension(value.Name);
@@ -1668,28 +1932,28 @@ public partial class MainViewModel : ReactiveObject
     public string KmlImportFieldName
     {
         get => _kmlImportFieldName;
-        set => this.RaiseAndSetIfChanged(ref _kmlImportFieldName, value);
+        set => SetProperty(ref _kmlImportFieldName, value);
     }
 
     private int _kmlBoundaryPointCount;
     public int KmlBoundaryPointCount
     {
         get => _kmlBoundaryPointCount;
-        set => this.RaiseAndSetIfChanged(ref _kmlBoundaryPointCount, value);
+        set => SetProperty(ref _kmlBoundaryPointCount, value);
     }
 
     private double _kmlCenterLatitude;
     public double KmlCenterLatitude
     {
         get => _kmlCenterLatitude;
-        set => this.RaiseAndSetIfChanged(ref _kmlCenterLatitude, value);
+        set => SetProperty(ref _kmlCenterLatitude, value);
     }
 
     private double _kmlCenterLongitude;
     public double KmlCenterLongitude
     {
         get => _kmlCenterLongitude;
-        set => this.RaiseAndSetIfChanged(ref _kmlCenterLongitude, value);
+        set => SetProperty(ref _kmlCenterLongitude, value);
     }
 
     private List<(double Latitude, double Longitude)> _kmlBoundaryPoints = new();
@@ -1709,7 +1973,7 @@ public partial class MainViewModel : ReactiveObject
         get => _selectedIsoXmlFile;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedIsoXmlFile, value);
+            SetProperty(ref _selectedIsoXmlFile, value);
             if (value != null)
             {
                 IsoXmlImportFieldName = value.Name;
@@ -1721,7 +1985,7 @@ public partial class MainViewModel : ReactiveObject
     public string IsoXmlImportFieldName
     {
         get => _isoXmlImportFieldName;
-        set => this.RaiseAndSetIfChanged(ref _isoXmlImportFieldName, value);
+        set => SetProperty(ref _isoXmlImportFieldName, value);
     }
 
     public ICommand? CancelIsoXmlImportDialogCommand { get; private set; }
@@ -1735,42 +1999,42 @@ public partial class MainViewModel : ReactiveObject
     public double BoundaryMapCenterLatitude
     {
         get => _boundaryMapCenterLatitude;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCenterLatitude, value);
+        set => SetProperty(ref _boundaryMapCenterLatitude, value);
     }
 
     private double _boundaryMapCenterLongitude;
     public double BoundaryMapCenterLongitude
     {
         get => _boundaryMapCenterLongitude;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCenterLongitude, value);
+        set => SetProperty(ref _boundaryMapCenterLongitude, value);
     }
 
     private int _boundaryMapPointCount;
     public int BoundaryMapPointCount
     {
         get => _boundaryMapPointCount;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapPointCount, value);
+        set => SetProperty(ref _boundaryMapPointCount, value);
     }
 
     private string _boundaryMapCoordinateText = string.Empty;
     public string BoundaryMapCoordinateText
     {
         get => _boundaryMapCoordinateText;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCoordinateText, value);
+        set => SetProperty(ref _boundaryMapCoordinateText, value);
     }
 
     private bool _boundaryMapIncludeBackground = true;
     public bool BoundaryMapIncludeBackground
     {
         get => _boundaryMapIncludeBackground;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapIncludeBackground, value);
+        set => SetProperty(ref _boundaryMapIncludeBackground, value);
     }
 
     private bool _boundaryMapCanSave;
     public bool BoundaryMapCanSave
     {
         get => _boundaryMapCanSave;
-        set => this.RaiseAndSetIfChanged(ref _boundaryMapCanSave, value);
+        set => SetProperty(ref _boundaryMapCanSave, value);
     }
 
     // Result properties for boundary map dialog
@@ -1795,35 +2059,35 @@ public partial class MainViewModel : ReactiveObject
     public string NumericInputDialogTitle
     {
         get => _numericInputDialogTitle;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogTitle, value);
+        set => SetProperty(ref _numericInputDialogTitle, value);
     }
 
     private decimal? _numericInputDialogValue;
     public decimal? NumericInputDialogValue
     {
         get => _numericInputDialogValue;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogValue, value);
+        set => SetProperty(ref _numericInputDialogValue, value);
     }
 
     private string _numericInputDialogDisplayText = string.Empty;
     public string NumericInputDialogDisplayText
     {
         get => _numericInputDialogDisplayText;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogDisplayText, value);
+        set => SetProperty(ref _numericInputDialogDisplayText, value);
     }
 
     private bool _numericInputDialogIntegerOnly;
     public bool NumericInputDialogIntegerOnly
     {
         get => _numericInputDialogIntegerOnly;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogIntegerOnly, value);
+        set => SetProperty(ref _numericInputDialogIntegerOnly, value);
     }
 
     private bool _numericInputDialogAllowNegative = true;
     public bool NumericInputDialogAllowNegative
     {
         get => _numericInputDialogAllowNegative;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDialogAllowNegative, value);
+        set => SetProperty(ref _numericInputDialogAllowNegative, value);
     }
 
     // Callback to run when numeric input is confirmed
@@ -1837,18 +2101,19 @@ public partial class MainViewModel : ReactiveObject
     public string ConfirmationDialogTitle
     {
         get => _confirmationDialogTitle;
-        set => this.RaiseAndSetIfChanged(ref _confirmationDialogTitle, value);
+        set => SetProperty(ref _confirmationDialogTitle, value);
     }
 
     private string _confirmationDialogMessage = string.Empty;
     public string ConfirmationDialogMessage
     {
         get => _confirmationDialogMessage;
-        set => this.RaiseAndSetIfChanged(ref _confirmationDialogMessage, value);
+        set => SetProperty(ref _confirmationDialogMessage, value);
     }
 
     // Callback to run when confirmation dialog is confirmed
     private Action? _confirmationDialogCallback;
+    private Models.State.DialogType _previousDialogBeforeConfirmation;
 
     public ICommand? CancelConfirmationDialogCommand { get; private set; }
     public ICommand? ConfirmConfirmationDialogCommand { get; private set; }
@@ -1856,12 +2121,14 @@ public partial class MainViewModel : ReactiveObject
     /// <summary>
     /// Shows a confirmation dialog with the specified title and message.
     /// When the user confirms, the callback is executed.
+    /// Restores the previous dialog on cancel.
     /// </summary>
     public void ShowConfirmationDialog(string title, string message, Action onConfirm)
     {
         ConfirmationDialogTitle = title;
         ConfirmationDialogMessage = message;
         _confirmationDialogCallback = onConfirm;
+        _previousDialogBeforeConfirmation = State.UI.ActiveDialog;
         State.UI.ShowDialog(Models.State.DialogType.Confirmation);
     }
 
@@ -1870,14 +2137,14 @@ public partial class MainViewModel : ReactiveObject
     public string ErrorDialogTitle
     {
         get => _errorDialogTitle;
-        set => this.RaiseAndSetIfChanged(ref _errorDialogTitle, value);
+        set => SetProperty(ref _errorDialogTitle, value);
     }
 
     private string _errorDialogMessage = string.Empty;
     public string ErrorDialogMessage
     {
         get => _errorDialogMessage;
-        set => this.RaiseAndSetIfChanged(ref _errorDialogMessage, value);
+        set => SetProperty(ref _errorDialogMessage, value);
     }
 
     public ICommand? DismissErrorDialogCommand { get; private set; }
@@ -1897,21 +2164,21 @@ public partial class MainViewModel : ReactiveObject
     public string AgShareSettingsServerUrl
     {
         get => _agShareSettingsServerUrl;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsServerUrl, value);
+        set => SetProperty(ref _agShareSettingsServerUrl, value);
     }
 
     private string _agShareSettingsApiKey = string.Empty;
     public string AgShareSettingsApiKey
     {
         get => _agShareSettingsApiKey;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsApiKey, value);
+        set => SetProperty(ref _agShareSettingsApiKey, value);
     }
 
     private bool _agShareSettingsEnabled;
     public bool AgShareSettingsEnabled
     {
         get => _agShareSettingsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _agShareSettingsEnabled, value);
+        set => SetProperty(ref _agShareSettingsEnabled, value);
     }
 
     public ICommand? CancelAgShareSettingsDialogCommand { get; private set; }
@@ -1939,7 +2206,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isFileMenuVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isFileMenuVisible, value) && value)
+            if (SetProperty(ref _isFileMenuVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFieldToolsVisible = false;
@@ -1954,7 +2221,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isFieldToolsVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isFieldToolsVisible, value) && value)
+            if (SetProperty(ref _isFieldToolsVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFileMenuVisible = false;
@@ -1969,7 +2236,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isSettingsVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isSettingsVisible, value) && value)
+            if (SetProperty(ref _isSettingsVisible, value) && value)
             {
                 // Close other sheets when opening this one
                 IsFileMenuVisible = false;
@@ -1984,7 +2251,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isBoundaryPanelVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isBoundaryPanelVisible, value) && value)
+            if (SetProperty(ref _isBoundaryPanelVisible, value) && value)
             {
                 RefreshBoundaryList();
             }
@@ -1998,14 +2265,14 @@ public partial class MainViewModel : ReactiveObject
     public int SelectedBoundaryIndex
     {
         get => _selectedBoundaryIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedBoundaryIndex, value);
+        set => SetProperty(ref _selectedBoundaryIndex, value);
     }
 
     private bool _isBoundaryPlayerPanelVisible;
     public bool IsBoundaryPlayerPanelVisible
     {
         get => _isBoundaryPlayerPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryPlayerPanelVisible, value);
+        set => SetProperty(ref _isBoundaryPlayerPanelVisible, value);
     }
 
     // Boundary Player settings
@@ -2015,7 +2282,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isBoundarySectionControlOn;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isBoundarySectionControlOn, value);
+            SetProperty(ref _isBoundarySectionControlOn, value);
             StatusMessage = value ? "Boundary records when section is on" : "Boundary section control off";
         }
     }
@@ -2026,7 +2293,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isDrawRightSide;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isDrawRightSide, value);
+            SetProperty(ref _isDrawRightSide, value);
             StatusMessage = value ? "Boundary on right side" : "Boundary on left side";
             UpdateBoundaryOffsetIndicator();
         }
@@ -2038,7 +2305,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isDrawAtPivot;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isDrawAtPivot, value);
+            SetProperty(ref _isDrawAtPivot, value);
             StatusMessage = value ? "Recording at pivot point" : "Recording at tool";
         }
     }
@@ -2050,7 +2317,7 @@ public partial class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _boundaryOffset;
-            this.RaiseAndSetIfChanged(ref _boundaryOffset, value);
+            SetProperty(ref _boundaryOffset, value);
             if (Math.Abs(oldValue - value) > 0.0001)
                 UpdateBoundaryOffsetIndicator();
         }
@@ -2098,7 +2365,7 @@ public partial class MainViewModel : ReactiveObject
     public ConfigurationViewModel? ConfigurationViewModel
     {
         get => _configurationViewModel;
-        set => this.RaiseAndSetIfChanged(ref _configurationViewModel, value);
+        set => SetProperty(ref _configurationViewModel, value);
     }
 
     // AutoSteer Configuration Panel
@@ -2106,7 +2373,7 @@ public partial class MainViewModel : ReactiveObject
     public AutoSteerConfigViewModel? AutoSteerConfigViewModel
     {
         get => _autoSteerConfigViewModel;
-        set => this.RaiseAndSetIfChanged(ref _autoSteerConfigViewModel, value);
+        set => SetProperty(ref _autoSteerConfigViewModel, value);
     }
 
     public ICommand? ShowConfigurationDialogCommand { get; private set; }
@@ -2122,21 +2389,21 @@ public partial class MainViewModel : ReactiveObject
     public bool IsProfileSelectionVisible
     {
         get => _isProfileSelectionVisible;
-        set => this.RaiseAndSetIfChanged(ref _isProfileSelectionVisible, value);
+        set => SetProperty(ref _isProfileSelectionVisible, value);
     }
 
     private System.Collections.ObjectModel.ObservableCollection<string> _availableProfiles = new();
     public System.Collections.ObjectModel.ObservableCollection<string> AvailableProfiles
     {
         get => _availableProfiles;
-        set => this.RaiseAndSetIfChanged(ref _availableProfiles, value);
+        set => SetProperty(ref _availableProfiles, value);
     }
 
     private string? _selectedProfile;
     public string? SelectedProfile
     {
         get => _selectedProfile;
-        set => this.RaiseAndSetIfChanged(ref _selectedProfile, value);
+        set => SetProperty(ref _selectedProfile, value);
     }
 
     public string CurrentProfileName => _configurationService.Store.ActiveProfileName;
@@ -2148,7 +2415,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isHeadlandOn;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isHeadlandOn, value))
+            if (SetProperty(ref _isHeadlandOn, value))
             {
                 StatusMessage = value ? "Headland ON" : "Headland OFF";
                 _mapService.SetHeadlandVisible(value);
@@ -2163,7 +2430,7 @@ public partial class MainViewModel : ReactiveObject
     public bool IsSectionControlInHeadland
     {
         get => _isSectionControlInHeadland;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlInHeadland, value);
+        set => SetProperty(ref _isSectionControlInHeadland, value);
     }
 
     // UTurnSkipRows and IsUTurnSkipRowsEnabled are now in MainViewModel.YouTurn.cs
@@ -2172,14 +2439,14 @@ public partial class MainViewModel : ReactiveObject
     public double HeadlandDistance
     {
         get => _headlandDistance;
-        set => this.RaiseAndSetIfChanged(ref _headlandDistance, Math.Max(1.0, Math.Min(100.0, value)));
+        set => SetProperty(ref _headlandDistance, Math.Max(1.0, Math.Min(100.0, value)));
     }
 
     private int _headlandPasses = 1;
     public int HeadlandPasses
     {
         get => _headlandPasses;
-        set => this.RaiseAndSetIfChanged(ref _headlandPasses, Math.Max(1, Math.Min(5, value)));
+        set => SetProperty(ref _headlandPasses, Math.Max(1, Math.Min(5, value)));
     }
 
     private List<Models.Base.Vec3>? _currentHeadlandLine;
@@ -2188,7 +2455,7 @@ public partial class MainViewModel : ReactiveObject
         get => _currentHeadlandLine;
         set
         {
-            this.RaiseAndSetIfChanged(ref _currentHeadlandLine, value);
+            SetProperty(ref _currentHeadlandLine, value);
             _mapService.SetHeadlandLine(value);
             SaveHeadlandToFile(value);
 
@@ -2206,7 +2473,7 @@ public partial class MainViewModel : ReactiveObject
         get => _headlandPreviewLine;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPreviewLine, value);
+            SetProperty(ref _headlandPreviewLine, value);
             _mapService.SetHeadlandPreview(value);
         }
     }
@@ -2215,7 +2482,7 @@ public partial class MainViewModel : ReactiveObject
     public bool HasHeadland
     {
         get => _hasHeadland;
-        set => this.RaiseAndSetIfChanged(ref _hasHeadland, value);
+        set => SetProperty(ref _hasHeadland, value);
     }
 
     // Bottom strip state properties (matching AgOpenGPS conditional button visibility)
@@ -2226,7 +2493,7 @@ public partial class MainViewModel : ReactiveObject
     public bool HasActiveTrack
     {
         get => _hasActiveTrack;
-        set => this.RaiseAndSetIfChanged(ref _hasActiveTrack, value);
+        set => SetProperty(ref _hasActiveTrack, value);
     }
 
     private bool _hasBoundary;
@@ -2236,7 +2503,7 @@ public partial class MainViewModel : ReactiveObject
     public bool HasBoundary
     {
         get => _hasBoundary;
-        set => this.RaiseAndSetIfChanged(ref _hasBoundary, value);
+        set => SetProperty(ref _hasBoundary, value);
     }
 
     private bool _isNudgeEnabled;
@@ -2246,7 +2513,7 @@ public partial class MainViewModel : ReactiveObject
     public bool IsNudgeEnabled
     {
         get => _isNudgeEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isNudgeEnabled, value);
+        set => SetProperty(ref _isNudgeEnabled, value);
     }
 
     /// <summary>
@@ -2256,8 +2523,12 @@ public partial class MainViewModel : ReactiveObject
     public Boundary? CurrentBoundary
     {
         get => _currentBoundary;
-        private set => this.RaiseAndSetIfChanged(ref _currentBoundary, value);
+        private set => SetProperty(ref _currentBoundary, value);
     }
+
+    // Headland undo state
+    private List<Vec3>? _previousHeadlandLine;
+    private bool _previousHasHeadland;
 
     // Headland Dialog properties (visibility managed by State.UI)
     private bool _isHeadlandCurveMode = true;
@@ -2267,11 +2538,11 @@ public partial class MainViewModel : ReactiveObject
         set
         {
             var oldValue = _isHeadlandCurveMode;
-            if (this.RaiseAndSetIfChanged(ref _isHeadlandCurveMode, value))
+            if (SetProperty(ref _isHeadlandCurveMode, value))
             {
-                this.RaisePropertyChanged(nameof(IsHeadlandLineMode));
+                OnPropertyChanged(nameof(IsHeadlandLineMode));
                 // Update preview when track type changes
-                if (State.UI.IsHeadlandDialogVisible || State.UI.IsHeadlandBuilderDialogVisible)
+                if (State.UI.IsFieldBuilderDialogVisible)
                 {
                     UpdateHeadlandPreview();
                 }
@@ -2296,14 +2567,14 @@ public partial class MainViewModel : ReactiveObject
     public bool IsHeadlandZoomMode
     {
         get => _isHeadlandZoomMode;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandZoomMode, value);
+        set => SetProperty(ref _isHeadlandZoomMode, value);
     }
 
     private bool _isHeadlandSectionControlled = true;
     public bool IsHeadlandSectionControlled
     {
         get => _isHeadlandSectionControlled;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControlled, value);
+        set => SetProperty(ref _isHeadlandSectionControlled, value);
     }
 
     private int _headlandToolWidthMultiplier = 1;
@@ -2312,8 +2583,8 @@ public partial class MainViewModel : ReactiveObject
         get => _headlandToolWidthMultiplier;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandToolWidthMultiplier, value);
-            this.RaisePropertyChanged(nameof(HeadlandCalculatedWidth));
+            SetProperty(ref _headlandToolWidthMultiplier, value);
+            OnPropertyChanged(nameof(HeadlandCalculatedWidth));
             // Update distance based on tool width multiplier
             if (value > 0)
             {
@@ -2332,8 +2603,8 @@ public partial class MainViewModel : ReactiveObject
         get => _headlandPoint1Index;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPoint1Index, value);
-            this.RaisePropertyChanged(nameof(HeadlandPointsSelected));
+            SetProperty(ref _headlandPoint1Index, value);
+            OnPropertyChanged(nameof(HeadlandPointsSelected));
         }
     }
     private double _headlandPoint1T = 0;  // Parameter along segment (0 = start vertex, 1 = end vertex)
@@ -2345,8 +2616,8 @@ public partial class MainViewModel : ReactiveObject
         get => _headlandPoint2Index;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandPoint2Index, value);
-            this.RaisePropertyChanged(nameof(HeadlandPointsSelected));
+            SetProperty(ref _headlandPoint2Index, value);
+            OnPropertyChanged(nameof(HeadlandPointsSelected));
         }
     }
     private double _headlandPoint2T = 0;  // Parameter along segment (0 = start vertex, 1 = end vertex)
@@ -2367,7 +2638,7 @@ public partial class MainViewModel : ReactiveObject
     public List<Models.Base.Vec2>? HeadlandSelectedMarkers
     {
         get => _headlandSelectedMarkers;
-        set => this.RaiseAndSetIfChanged(ref _headlandSelectedMarkers, value);
+        set => SetProperty(ref _headlandSelectedMarkers, value);
     }
 
     public bool HeadlandPointsSelected => _headlandPoint1Index >= 0 && _headlandPoint2Index >= 0;
@@ -2494,14 +2765,14 @@ public partial class MainViewModel : ReactiveObject
     public bool IsFieldOpen
     {
         get => _isFieldOpen;
-        set => this.RaiseAndSetIfChanged(ref _isFieldOpen, value);
+        set => SetProperty(ref _isFieldOpen, value);
     }
 
     private string _currentFieldName = string.Empty;
     public string CurrentFieldName
     {
         get => _currentFieldName;
-        set => this.RaiseAndSetIfChanged(ref _currentFieldName, value);
+        set => SetProperty(ref _currentFieldName, value);
     }
 
     // Commands
@@ -2511,6 +2782,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleConfigurationPanelCommand { get; private set; }
     public ICommand? ToggleJobMenuPanelCommand { get; private set; }
     public ICommand? ToggleFieldToolsPanelCommand { get; private set; }
+    public ICommand? ToggleAutoTrackCommand { get; private set; }
     public ICommand? ToggleGridCommand { get; private set; }
     public ICommand? ToggleDayNightCommand { get; private set; }
     public ICommand? Toggle2D3DCommand { get; private set; }
@@ -2520,6 +2792,7 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? DecreaseCameraPitchCommand { get; private set; }
     public ICommand? IncreaseBrightnessCommand { get; private set; }
     public ICommand? DecreaseBrightnessCommand { get; private set; }
+    public ICommand? CycleDisplayResolutionCommand { get; private set; }
 
     // iOS Sheet Toggle Commands
     public ICommand? ToggleFileMenuCommand { get; private set; }
@@ -2565,9 +2838,20 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ZoomInCommand { get; private set; }
     public ICommand? ZoomOutCommand { get; private set; }
 
-    // Events for views to wire up to map controls
-    public event Action? ZoomInRequested;
-    public event Action? ZoomOutRequested;
+    public event Action<string>? LanguageChanged;
+
+    /// <summary>
+    /// Fired after a field has been fully loaded (boundary, tracks, coverage, recpath).
+    /// Subscribe to react to field changes without coupling to OpenFieldAsync internals.
+    /// </summary>
+    public event Action<Field?>? FieldFullyLoaded;
+
+    /// <summary>
+    /// Platform-provided callback that captures the current window as a PNG byte array.
+    /// Set by platform code (MainWindow/MainView) after ViewModel is created.
+    /// Used by debug dump to include a screenshot.
+    /// </summary>
+    public Func<byte[]?>? ScreenshotProvider { get; set; }
 
     // Boundary Recording Commands
     public ICommand? ToggleBoundaryPanelCommand { get; private set; }
@@ -2639,6 +2923,9 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? NudgeRightCommand { get; private set; }
     public ICommand? FineNudgeLeftCommand { get; private set; }
     public ICommand? FineNudgeRightCommand { get; private set; }
+    public ICommand? HalfToolNudgeLeftCommand { get; private set; }
+    public ICommand? HalfToolNudgeRightCommand { get; private set; }
+    public ICommand? ResetNudgeCommand { get; private set; }
     public ICommand? StartDrawABModeCommand { get; private set; }
     public ICommand? StartDrawCurveModeCommand { get; private set; }
     public ICommand? FinishDrawCurveCommand { get; private set; }
@@ -2668,7 +2955,436 @@ public partial class MainViewModel : ReactiveObject
     public ICommand? ToggleContourModeCommand { get; private set; }
     public ICommand? DeleteContoursCommand { get; private set; }
     public ICommand? DeleteAppliedAreaCommand { get; private set; }
+    public ICommand? ToggleTramDisplayCommand { get; private set; }
+    public ICommand? BuildTramLinesCommand { get; private set; }
+    public ICommand? CreateTrackFromBoundaryCommand { get; private set; }
+    public ICommand? CreateCurveFromBoundaryCommand { get; private set; }
+    public ICommand? CreateTracksFromAllEdgesCommand { get; private set; }
+    public ICommand? CreateALineFromPositionCommand { get; private set; }
+    public ICommand? ShowFieldBuilderCommand { get; private set; }
+    public ICommand? CloseFieldBuilderCommand { get; private set; }
+    public ICommand? IncreaseHeadlandDistanceCommand { get; private set; }
+    public ICommand? DecreaseHeadlandDistanceCommand { get; private set; }
+
+    public System.Collections.Generic.IReadOnlyList<Models.Base.Vec3>? CurrentHeadlandLineForPreview => _currentHeadlandLine;
+
+    public string HeadlandStatusText
+    {
+        get
+        {
+            if (!HasHeadland || _currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+                return HeadlandSegments.Count > 0 ? $"{HeadlandSegments.Count} lines (no intersections)" : "No headland lines";
+
+            double area = System.Math.Abs(CalculateSignedArea(_currentHeadlandLine)) / 10000.0; // m2 -> hectares
+            return $"{area:F2} ha ({HeadlandSegments.Count} lines)";
+        }
+    }
+
+    /// <summary>
+    /// List of headland segments that form the headland polygon.
+    /// </summary>
+    public ObservableCollection<Models.Headland.HeadlandSegment> HeadlandSegments { get; } = new();
+
+    private Models.Headland.HeadlandSegment? _selectedHeadlandSegment;
+    public Models.Headland.HeadlandSegment? SelectedHeadlandSegment
+    {
+        get => _selectedHeadlandSegment;
+        set => SetProperty(ref _selectedHeadlandSegment, value);
+    }
+
+    /// <summary>
+    /// Compute offset points for a headland segment by offsetting boundary points inward.
+    /// </summary>
+    public void ComputeSegmentOffset(Models.Headland.HeadlandSegment segment)
+    {
+        if (segment.BoundaryPoints.Count < 2)
+        {
+            segment.OffsetPoints.Clear();
+            return;
+        }
+
+        double offset = segment.Offset;
+
+        // Determine offset direction (inward toward field center)
+        double sign = 1.0;
+        if (segment.Type == Models.Headland.HeadlandSegmentType.Boundary && segment.BoundaryPoints.Count >= 3)
+        {
+            // Closed polygon: use winding order
+            double signedArea = 0;
+            for (int j = 0; j < segment.BoundaryPoints.Count; j++)
+            {
+                var p1 = segment.BoundaryPoints[j];
+                var p2 = segment.BoundaryPoints[(j + 1) % segment.BoundaryPoints.Count];
+                signedArea += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
+            }
+            sign = signedArea > 0 ? 1.0 : -1.0;
+        }
+        else if (segment.BoundaryPoints.Count >= 2)
+        {
+            // Open segment: determine which side faces the field center
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points != null && boundary.Points.Count >= 3)
+            {
+                // Calculate boundary centroid
+                double cx = 0, cy = 0;
+                foreach (var bp in boundary.Points) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= boundary.Points.Count;
+                cy /= boundary.Points.Count;
+
+                // Test offset direction at midpoint
+                int mid = segment.BoundaryPoints.Count / 2;
+                var midPt = segment.BoundaryPoints[mid];
+                var prevPt = mid > 0 ? segment.BoundaryPoints[mid - 1] : segment.BoundaryPoints[mid];
+                var nextPt = mid < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[mid + 1] : segment.BoundaryPoints[mid];
+
+                double dx = nextPt.Easting - prevPt.Easting;
+                double dy = nextPt.Northing - prevPt.Northing;
+                double len = System.Math.Sqrt(dx * dx + dy * dy);
+                if (len > 0.001)
+                {
+                    double nx = dy / len, ny = -dx / len;
+                    // Check if offset toward centroid or away
+                    double testE = midPt.Easting + nx;
+                    double testN = midPt.Northing + ny;
+                    double distToCenterOrig = System.Math.Pow(midPt.Easting - cx, 2) + System.Math.Pow(midPt.Northing - cy, 2);
+                    double distToCenterTest = System.Math.Pow(testE - cx, 2) + System.Math.Pow(testN - cy, 2);
+                    sign = distToCenterTest < distToCenterOrig ? 1.0 : -1.0;
+                }
+            }
+        }
+
+        var result = new List<Vec3>();
+
+        for (int i = 0; i < segment.BoundaryPoints.Count; i++)
+        {
+            var pt = segment.BoundaryPoints[i];
+
+            // Calculate normal from boundary direction
+            Vec3 prev = i > 0 ? segment.BoundaryPoints[i - 1] : segment.BoundaryPoints[i];
+            Vec3 next = i < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[i + 1] : segment.BoundaryPoints[i];
+
+            double dx = next.Easting - prev.Easting;
+            double dy = next.Northing - prev.Northing;
+            double len = System.Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001) len = 1;
+
+            // Perpendicular normal, adjusted for winding
+            double nx = sign * dy / len;
+            double ny = sign * -dx / len;
+
+            result.Add(new Vec3(pt.Easting + nx * offset, pt.Northing + ny * offset, pt.Heading));
+        }
+
+        segment.OffsetPoints = result;
+    }
+
+    /// <summary>
+    /// Build the headland polygon from segments. If a single Boundary segment exists,
+    /// use its offset points directly. Otherwise, concatenate all segment offset points
+    /// and check if they form a loop.
+    /// </summary>
+    public void BuildHeadlandFromSegments()
+    {
+        if (HeadlandSegments.Count == 0)
+        {
+            // Default: headland = boundary
+            var boundary = _currentBoundary?.OuterBoundary;
+            if (boundary?.Points != null && boundary.Points.Count >= 3)
+            {
+                var bndPoints = new List<Vec3>();
+                foreach (var pt in boundary.Points)
+                    bndPoints.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+                bndPoints.Add(new Vec3(boundary.Points[0].Easting, boundary.Points[0].Northing, boundary.Points[0].Heading));
+
+                _currentHeadlandLine = bndPoints;
+                CurrentHeadlandLine = bndPoints;
+                State.Field.HeadlandLine = bndPoints;
+                HasHeadland = true;
+                IsHeadlandOn = true;
+                _mapService.SetHeadlandLine(bndPoints);
+                _mapService.SetHeadlandVisible(true);
+            }
+            else
+            {
+                HasHeadland = false;
+                IsHeadlandOn = false;
+                _currentHeadlandLine = null;
+                CurrentHeadlandLine = null;
+                State.Field.HeadlandLine = null;
+                _mapService.SetHeadlandVisible(false);
+            }
+            OnPropertyChanged(nameof(HeadlandStatusText));
+            OnPropertyChanged(nameof(CurrentHeadlandLineForPreview));
+            return;
+        }
+
+        // Start with headland = boundary
+        var bnd = _currentBoundary?.OuterBoundary;
+        if (bnd?.Points == null || bnd.Points.Count < 3)
+        {
+            StatusMessage = "No boundary for headland";
+            return;
+        }
+
+        var headland = new List<Vec3>();
+        foreach (var pt in bnd.Points)
+            headland.Add(new Vec3(pt.Easting, pt.Northing, pt.Heading));
+        headland.Add(new Vec3(bnd.Points[0].Easting, bnd.Points[0].Northing, bnd.Points[0].Heading));
+
+        int cutsApplied = 0;
+
+        // For each segment, check if the extended offset line intersects the headland at both ends
+        foreach (var seg in HeadlandSegments)
+        {
+            if (seg.OffsetPoints.Count < 2) continue;
+
+            // Build the full offset line with extensions
+            var offsetLine = new List<Vec3>();
+
+            // Start extension
+            if (seg.StartExtension > 0)
+            {
+                var s0 = seg.OffsetPoints[0];
+                var s1 = seg.OffsetPoints[1];
+                double sdx = s0.Easting - s1.Easting, sdy = s0.Northing - s1.Northing;
+                double slen = System.Math.Sqrt(sdx * sdx + sdy * sdy);
+                if (slen > 0.01)
+                    offsetLine.Add(new Vec3(s0.Easting + sdx / slen * seg.StartExtension, s0.Northing + sdy / slen * seg.StartExtension, s0.Heading));
+            }
+            offsetLine.AddRange(seg.OffsetPoints);
+            // End extension
+            if (seg.EndExtension > 0)
+            {
+                var e0 = seg.OffsetPoints[^2];
+                var e1 = seg.OffsetPoints[^1];
+                double edx = e1.Easting - e0.Easting, edy = e1.Northing - e0.Northing;
+                double elen = System.Math.Sqrt(edx * edx + edy * edy);
+                if (elen > 0.01)
+                    offsetLine.Add(new Vec3(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension, e1.Heading));
+            }
+
+            // Find intersection of offset line start with headland polygon
+            int startIntersectIdx = FindLineHeadlandIntersection(offsetLine[0], offsetLine[1], headland, out Vec3 startIntersectPt);
+            // Find intersection of offset line end with headland polygon
+            int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland, out Vec3 endIntersectPt);
+
+            _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
+
+            if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
+            {
+                // Both ends intersect - split the polygon into two halves
+                int count = headland.Count - 1; // exclude closing duplicate
+
+                // The dividing line goes from startIntersectPt to endIntersectPt
+                // For curves, include interior offset points between the intersections
+                var divLine = new List<Vec3> { startIntersectPt };
+                if (seg.OffsetPoints.Count > 2)
+                {
+                    for (int j = 1; j < seg.OffsetPoints.Count - 1; j++)
+                        divLine.Add(seg.OffsetPoints[j]);
+                }
+                divLine.Add(endIntersectPt);
+
+                var divLineReverse = new List<Vec3>(divLine);
+                divLineReverse.Reverse();
+
+                // Path A: start at startIntersectPt, walk headland forward to endIntersectPt, then divLine back
+                var pathA = new List<Vec3>();
+                int idx = (startIntersectIdx + 1) % count;
+                pathA.Add(startIntersectPt);
+                while (idx != (endIntersectIdx + 1) % count)
+                {
+                    pathA.Add(headland[idx]);
+                    idx = (idx + 1) % count;
+                    if (pathA.Count > count + 2) break;
+                }
+                pathA.Add(endIntersectPt);
+
+                // Path B: start at endIntersectPt, walk headland forward to startIntersectPt, then divLine back
+                var pathB = new List<Vec3>();
+                idx = (endIntersectIdx + 1) % count;
+                pathB.Add(endIntersectPt);
+                while (idx != (startIntersectIdx + 1) % count)
+                {
+                    pathB.Add(headland[idx]);
+                    idx = (idx + 1) % count;
+                    if (pathB.Count > count + 2) break;
+                }
+                pathB.Add(startIntersectPt);
+
+                // Complete each polygon by adding the dividing line
+                // pathA + divLineReverse forms polygon A
+                // pathB + divLine forms polygon B
+                var polyA = new List<Vec3>(pathA);
+                polyA.AddRange(divLineReverse);
+                var polyB = new List<Vec3>(pathB);
+                polyB.AddRange(divLine);
+
+                // Pick the polygon that contains the field centroid (= working area)
+                double cx = 0, cy = 0;
+                var bndPts = bnd.Points;
+                foreach (var bp in bndPts) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= bndPts.Count; cy /= bndPts.Count;
+
+                bool aContains = IsPointInPolygon(cx, cy, polyA);
+                bool bContains = IsPointInPolygon(cx, cy, polyB);
+
+                _logger.LogDebug($"[Headland] PathA: {polyA.Count} pts, PathB: {polyB.Count} pts, centroid: ({cx:F1},{cy:F1}), aContains={aContains}, bContains={bContains}");
+
+                List<Vec3> chosen;
+                if (aContains && !bContains) chosen = polyA;
+                else if (bContains && !aContains) chosen = polyB;
+                else chosen = System.Math.Abs(CalculateSignedArea(polyA)) >= System.Math.Abs(CalculateSignedArea(polyB)) ? polyA : polyB;
+                if (chosen.Count > 0)
+                    chosen.Add(chosen[0]); // close loop
+
+                headland = chosen;
+                cutsApplied++;
+            }
+        }
+
+        // Apply headland
+        _currentHeadlandLine = headland;
+        CurrentHeadlandLine = headland;
+        State.Field.HeadlandLine = headland;
+        HasHeadland = true;
+        IsHeadlandOn = true;
+        _mapService.SetHeadlandLine(headland);
+        _mapService.SetHeadlandVisible(true);
+
+        OnPropertyChanged(nameof(HeadlandStatusText));
+        OnPropertyChanged(nameof(CurrentHeadlandLineForPreview));
+        // Log headland points for debugging
+        for (int p = 0; p < headland.Count; p++)
+            _logger.LogDebug($"[Headland] Point {p}: E={headland[p].Easting:F1} N={headland[p].Northing:F1}");
+
+        StatusMessage = cutsApplied > 0
+            ? $"Headland modified ({cutsApplied} cuts, {headland.Count} points)"
+            : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
+
+        SaveHeadlandSegments();
+    }
+
+    private static bool IsPointInPolygon(double px, double py, List<Vec3> polygon)
+    {
+        bool inside = false;
+        int count = polygon.Count;
+        for (int i = 0, j = count - 1; i < count; j = i++)
+        {
+            double yi = polygon[i].Northing, yj = polygon[j].Northing;
+            double xi = polygon[i].Easting, xj = polygon[j].Easting;
+            if (((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+                inside = !inside;
+        }
+        return inside;
+    }
+
+    private static double CalculateSignedArea(List<Vec3> polygon)
+    {
+        double area = 0;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            var p1 = polygon[i];
+            var p2 = polygon[(i + 1) % polygon.Count];
+            area += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
+        }
+        return area / 2.0;
+    }
+
+    /// <summary>
+    /// Find where a line segment (from lineStart toward lineDir) intersects the headland polygon.
+    /// Returns the index of the headland segment where intersection occurs, or -1 if no intersection.
+    /// </summary>
+    private static int FindLineHeadlandIntersection(Vec3 lineStart, Vec3 lineDir, List<Vec3> headland, out Vec3 intersectionPoint)
+    {
+        double bestDist = double.MaxValue;
+        int bestIdx = -1;
+        intersectionPoint = default;
+
+        for (int i = 0; i < headland.Count - 1; i++)
+        {
+            var p1 = headland[i];
+            var p2 = headland[i + 1];
+
+            if (LineSegmentIntersection(
+                lineStart.Easting, lineStart.Northing, lineDir.Easting, lineDir.Northing,
+                p1.Easting, p1.Northing, p2.Easting, p2.Northing,
+                out double t, out double u))
+            {
+                if (t >= 0) // Ray from lineStart through lineDir
+                {
+                    // Distance from lineStart to intersection
+                    double dx = lineDir.Easting - lineStart.Easting;
+                    double dy = lineDir.Northing - lineStart.Northing;
+                    double dist = System.Math.Sqrt(dx * dx + dy * dy) * t;
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestIdx = i;
+                        // Compute actual intersection point on the headland segment
+                        var hp1 = headland[i];
+                        var hp2 = headland[i + 1];
+                        intersectionPoint = new Vec3(
+                            hp1.Easting + u * (hp2.Easting - hp1.Easting),
+                            hp1.Northing + u * (hp2.Northing - hp1.Northing),
+                            hp1.Heading);
+                    }
+                }
+            }
+        }
+
+        return bestIdx;
+    }
+
+    private static bool LineSegmentIntersection(
+        double ax, double ay, double bx, double by,
+        double cx, double cy, double dx, double dy,
+        out double t, out double u)
+    {
+        double denom = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+        t = u = 0;
+        if (System.Math.Abs(denom) < 1e-10) return false;
+
+        t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / denom;
+        u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / denom;
+
+        return u >= 0 && u <= 1; // u is the parameter on the headland segment
+    }
+
+    private void SaveHeadlandSegments()
+    {
+        if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName)) return;
+        try
+        {
+            var fieldsDir = _settingsService.Settings.FieldsDirectory;
+            if (string.IsNullOrEmpty(fieldsDir))
+                fieldsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AgValoniaGPS", "Fields");
+            var fieldPath = Path.Combine(fieldsDir, CurrentFieldName);
+            Services.Headland.HeadlandSegmentFileService.Save(fieldPath, HeadlandSegments);
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogDebug($"[Headland] Failed to save headland segments: {ex.Message}");
+        }
+    }
+
+    public ICommand? ShowTramSettingsCommand { get; private set; }
+    public ICommand? CloseTramSettingsCommand { get; private set; }
+    public ICommand? IncreaseTramPassesCommand { get; private set; }
+    public ICommand? DecreaseTramPassesCommand { get; private set; }
+    public ICommand? SetTramModeOffCommand { get; private set; }
+    public ICommand? SetTramModeAllCommand { get; private set; }
+    public ICommand? SetTramModeLinesCommand { get; private set; }
+    public ICommand? SetTramModeOuterCommand { get; private set; }
+
+    public int TramPasses => ConfigStore.Tram.Passes;
+    public string TramToolWidthDisplay => $"{ConfigStore.ActualToolWidth:F2} m";
+    public string TramWidthDisplay => $"{ConfigStore.ActualToolWidth * ConfigStore.Tram.Passes:F2} m";
+    public string TramTrackWidthDisplay => $"{ConfigStore.Vehicle.TrackWidth:F2} m";
+    public string TramLineCountDisplay => $"{_tramLineService.ParallelTramLines.Count}";
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
+    public ICommand? StartRecordedPathCommand { get; private set; }
+    public ICommand? StopRecordedPathCommand { get; private set; }
     public ICommand? StartContourRecordingCommand { get; private set; }
     public ICommand? StopContourRecordingCommand { get; private set; }
     public ICommand? DeleteContourTrackCommand { get; private set; }
@@ -2956,10 +3672,19 @@ public partial class MainViewModel : ReactiveObject
         else
         {
             _coverageMapService.ClearFieldBounds();
+            _autoCoverageBoundsInitialized = false; // Allow auto-init from GPS position
         }
 
         // Sync to FieldState for section control boundary/headland detection
         State.Field.CurrentBoundary = boundary;
+
+        // Update area display
+        OnPropertyChanged(nameof(BoundaryAreaDisplay));
+        if (boundary != null && boundary.IsValid)
+        {
+            var boundaryAreas = new System.Collections.Generic.List<double> { boundary.AreaHectares * 10000 };
+            _fieldStatistics.UpdateBoundaryAreas(boundaryAreas);
+        }
 
         // Populate HeadlandLine from HeadlandPolygon for section control IsPointInHeadland check
         _logger.LogDebug($"[Headland] SetCurrentBoundary: HeadlandPolygon={boundary?.HeadlandPolygon != null}, IsValid={boundary?.HeadlandPolygon?.IsValid}, PointCount={boundary?.HeadlandPolygon?.Points?.Count ?? 0}");
@@ -2986,6 +3711,9 @@ public partial class MainViewModel : ReactiveObject
             IsHeadlandOn = false;
             _logger.LogDebug($"[Headland] No valid HeadlandPolygon - YouTurn headland detection disabled");
         }
+
+        // Sync boundary + headland to pipeline for guidance computations
+        SyncGuidanceStateToPipeline();
     }
 
     /// <summary>
@@ -3276,13 +4004,26 @@ public partial class MainViewModel : ReactiveObject
 
         System.Diagnostics.Debug.WriteLine($"[Headland] Result points: {result.OuterHeadlandLine?.Count ?? 0}");
 
+        // Save undo state before applying
+        _previousHeadlandLine = _currentHeadlandLine != null ? new List<Vec3>(_currentHeadlandLine) : null;
+        _previousHasHeadland = HasHeadland;
+
         CurrentHeadlandLine = result.OuterHeadlandLine;
         HeadlandPreviewLine = null;
         HasHeadland = true;
         IsHeadlandOn = true;
-        State.UI.CloseDialog();
+
+        // Update _currentHeadlandLine for YouTurn zone detection (same as SetCurrentBoundary does on field load)
+        if (result.OuterHeadlandLine != null && result.OuterHeadlandLine.Count >= 3)
+        {
+            _currentHeadlandLine = result.OuterHeadlandLine;
+            State.Field.HeadlandLine = result.OuterHeadlandLine;
+            _mapService.SetHeadlandLine(result.OuterHeadlandLine);
+            _mapService.SetHeadlandVisible(true);
+        }
 
         StatusMessage = $"Headland built at {HeadlandDistance:F1}m ({result.OuterHeadlandLine?.Count ?? 0} pts from {boundary.OuterBoundary.Points.Count} boundary pts)";
+        OnPropertyChanged(nameof(HeadlandStatusText));
     }
 
     /// <summary>
@@ -3525,7 +4266,7 @@ public partial class MainViewModel : ReactiveObject
         HeadlandSelectedMarkers = markers.Count > 0 ? markers : null;
 
         // Also notify that HeadlandClipPath may have changed (it's computed from curve mode indices)
-        this.RaisePropertyChanged(nameof(HeadlandClipPath));
+        OnPropertyChanged(nameof(HeadlandClipPath));
     }
 
     /// <summary>
@@ -4349,6 +5090,25 @@ public partial class MainViewModel : ReactiveObject
         catch (System.Exception ex)
         {
             _logger.LogDebug($"[TrackFiles] Failed to load tracks: {ex.Message}");
+        }
+    }
+
+    private void LoadRecPathFromField(string fieldPath)
+    {
+        try
+        {
+            var recPath = Services.RecPathFileService.LoadRecPath(fieldPath);
+            if (recPath != null)
+            {
+                SavedTracks.Add(recPath);
+                RecordedPathTracks.Add(recPath);
+                UpdateRecordedPathsOnMap();
+                _logger.LogDebug($"[RecPath] Loaded recorded path with {recPath.Points.Count} points");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug($"[RecPath] Failed to load RecPath.txt: {ex.Message}");
         }
     }
 }

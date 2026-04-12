@@ -17,11 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Ntrip;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -32,26 +32,26 @@ public partial class MainViewModel
 {
     private void InitializeNtripCommands()
     {
-        ShowNtripProfilesDialogCommand = ReactiveCommand.Create(() =>
+        ShowNtripProfilesDialogCommand = new RelayCommand(() =>
         {
             RefreshNtripProfiles();
             State.UI.ShowDialog(DialogType.NtripProfiles);
         });
 
-        CloseNtripProfilesDialogCommand = ReactiveCommand.Create(() =>
+        CloseNtripProfilesDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
             SelectedNtripProfile = null;
         });
 
-        AddNtripProfileCommand = ReactiveCommand.Create(() =>
+        AddNtripProfileCommand = new RelayCommand(() =>
         {
             EditingNtripProfile = _ntripProfileService.CreateNewProfile("New Profile");
             PopulateAvailableFieldsForProfile(EditingNtripProfile);
             State.UI.ShowDialog(DialogType.NtripProfileEditor);
         });
 
-        EditNtripProfileCommand = ReactiveCommand.Create(() =>
+        EditNtripProfileCommand = new RelayCommand(() =>
         {
             if (SelectedNtripProfile != null)
             {
@@ -74,7 +74,7 @@ public partial class MainViewModel
             }
         });
 
-        DeleteNtripProfileCommand = ReactiveCommand.Create(() =>
+        DeleteNtripProfileCommand = new RelayCommand(() =>
         {
             if (SelectedNtripProfile != null)
             {
@@ -92,7 +92,7 @@ public partial class MainViewModel
             }
         });
 
-        SetDefaultNtripProfileCommand = ReactiveCommand.CreateFromTask(async () =>
+        SetDefaultNtripProfileCommand = new AsyncRelayCommand(async () =>
         {
             if (SelectedNtripProfile != null)
             {
@@ -102,7 +102,7 @@ public partial class MainViewModel
             }
         });
 
-        SaveNtripProfileCommand = ReactiveCommand.CreateFromTask(async () =>
+        SaveNtripProfileCommand = new AsyncRelayCommand(async () =>
         {
             if (EditingNtripProfile != null)
             {
@@ -120,7 +120,7 @@ public partial class MainViewModel
             }
         });
 
-        CancelNtripProfileEditCommand = ReactiveCommand.Create(() =>
+        CancelNtripProfileEditCommand = new RelayCommand(() =>
         {
             EditingNtripProfile = null;
             AvailableFieldsForProfile.Clear();
@@ -128,7 +128,7 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.NtripProfiles);
         });
 
-        TestNtripConnectionCommand = ReactiveCommand.CreateFromTask(async () =>
+        TestNtripConnectionCommand = new AsyncRelayCommand(async () =>
         {
             if (EditingNtripProfile == null) return;
             if (string.IsNullOrWhiteSpace(EditingNtripProfile.CasterHost))

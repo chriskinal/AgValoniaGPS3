@@ -68,8 +68,8 @@ public class DisplaySettingsService : IDisplaySettingsService
         get => Display.CameraPitch;
         set
         {
-            // Clamp pitch between -90 and -10 degrees
-            var clampedValue = Math.Max(-90, Math.Min(-10, value));
+            // Clamp pitch between -90 (overhead/0 deg) and -20 (max tilt/70 deg)
+            var clampedValue = Math.Max(-90, Math.Min(-20, value));
             if (Math.Abs(Display.CameraPitch - clampedValue) > 0.01)
             {
                 Display.CameraPitch = clampedValue;
@@ -95,7 +95,7 @@ public class DisplaySettingsService : IDisplaySettingsService
                 }
                 else
                 {
-                    CameraPitch = -62.0; // Default 3D pitch
+                    CameraPitch = -60.0; // Default 3D pitch (30 deg)
                 }
                 ViewModeChanged?.Invoke(this, value);
             }

@@ -17,6 +17,7 @@
 using System;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Models.Timing;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -67,7 +68,7 @@ public class GpsService : IGpsService
         TransformAntennaToPivot(newData);
 
         CurrentData = newData;
-        _lastGpsDataReceived = DateTime.Now;
+        _lastGpsDataReceived = Clock.Current.Now;
         IsConnected = newData.IsValid;
         GpsDataUpdated?.Invoke(this, CurrentData);
     }
@@ -91,10 +92,6 @@ public class GpsService : IGpsService
     private void TransformAntennaToPivot(GpsData gpsData)
     {
         var vehicle = ConfigurationStore.Instance.Vehicle;
-
-        // Skip transformation if no offsets configured
-        if (Math.Abs(vehicle.AntennaPivot) < 0.001 && Math.Abs(vehicle.AntennaOffset) < 0.001)
-            return;
 
         // Convert heading to radians
         double headingRadians = gpsData.CurrentPosition.Heading * Math.PI / 180.0;
@@ -122,6 +119,19 @@ public class GpsService : IGpsService
             pivotNorthing -= Math.Cos(perpHeading) * vehicle.AntennaOffset;
         }
 
+        // Apply roll correction: when the vehicle tilts, the high-mounted antenna
+        // shifts laterally. Correct by projecting the antenna height through the
+        // roll angle perpendicular to heading. Matches legacy AgOpenGPS formula.
+        double imuRoll = SensorState.Instance.ImuRoll;
+        if (Math.Abs(imuRoll) > 0.01 && Math.Abs(vehicle.AntennaHeight) > 0.01)
+        {
+            double rollRadians = imuRoll * Math.PI / 180.0;
+            double rollCorrectionDistance = Math.Sin(rollRadians) * -vehicle.AntennaHeight;
+
+            pivotEasting += Math.Cos(-headingRadians) * rollCorrectionDistance;
+            pivotNorthing += Math.Sin(-headingRadians) * rollCorrectionDistance;
+        }
+
         // Create new Position with transformed coordinates (Position is a record with init-only props)
         gpsData.CurrentPosition = gpsData.CurrentPosition with
         {
@@ -135,7 +145,7 @@ public class GpsService : IGpsService
     /// </summary>
     public void UpdateImuData()
     {
-        _lastImuDataReceived = DateTime.Now;
+        _lastImuDataReceived = Clock.Current.Now;
     }
 
     /// <summary>
@@ -143,7 +153,7 @@ public class GpsService : IGpsService
     /// </summary>
     public bool IsGpsDataOk()
     {
-        bool ok = (DateTime.Now - _lastGpsDataReceived).TotalMilliseconds < GPS_TIMEOUT_MS;
+        bool ok = (Clock.Current.Now - _lastGpsDataReceived).TotalMilliseconds < GPS_TIMEOUT_MS;
 
         if (!ok && IsConnected)
         {
@@ -158,6 +168,6 @@ public class GpsService : IGpsService
     /// </summary>
     public bool IsImuDataOk()
     {
-        return (DateTime.Now - _lastImuDataReceived).TotalMilliseconds < IMU_TIMEOUT_MS;
+        return (Clock.Current.Now - _lastImuDataReceived).TotalMilliseconds < IMU_TIMEOUT_MS;
     }
 }

@@ -21,6 +21,7 @@ using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Coverage;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Services.Pipeline;
 using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
 using AgValoniaGPS.Services.Track;
@@ -89,6 +90,9 @@ public static class ServiceCollectionExtensions
         // Chart data service (collects rolling time-series for diagnostic charts)
         services.AddSingleton<IChartDataService, ChartDataService>();
 
+        // Audio service (cross-platform sound effects)
+        services.AddSingleton<IAudioService, AgValoniaGPS.Android.Services.AudioService>();
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 
@@ -120,6 +124,12 @@ public static class ServiceCollectionExtensions
 
         // Configuration service (single source of truth)
         services.AddSingleton<IConfigurationService, ConfigurationService>();
+
+        // Elevation log service (#120)
+        services.AddSingleton<IElevationLogService, ElevationLogService>();
+
+        // GPS processing pipeline (background-thread orchestration)
+        services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // Android-specific services
         services.AddSingleton<IMapService, MapService>();

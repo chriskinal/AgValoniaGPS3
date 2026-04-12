@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -40,7 +42,7 @@ public class DanfossStepViewModel : WizardStepViewModel
     public bool DanfossEnabled
     {
         get => _danfossEnabled;
-        set => this.RaiseAndSetIfChanged(ref _danfossEnabled, value);
+        set => SetProperty(ref _danfossEnabled, value);
     }
 
     public DanfossStepViewModel(IConfigurationService configService)

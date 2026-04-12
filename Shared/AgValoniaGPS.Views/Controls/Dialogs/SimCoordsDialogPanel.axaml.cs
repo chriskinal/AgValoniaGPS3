@@ -20,6 +20,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Views.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
@@ -54,6 +55,10 @@ public partial class SimCoordsDialogPanel : UserControl
                 _longitudeValue = vm.SimCoordsDialogLongitude;
 
                 UpdateDisplays();
+
+                // Also populate direct input TextBoxes
+                LatitudeInput.Text = FormatValue(_latitudeValue);
+                LongitudeInput.Text = FormatValue(_longitudeValue);
 
                 // Default to latitude field
                 SelectLatitude();
@@ -141,6 +146,15 @@ public partial class SimCoordsDialogPanel : UserControl
     {
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
+            // Read from direct input TextBoxes when on-screen keyboard is disabled
+            if (!ConfigurationStore.Instance.Display.KeyboardEnabled)
+            {
+                if (decimal.TryParse(LatitudeInput.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedLat))
+                    _latitudeValue = parsedLat;
+                if (decimal.TryParse(LongitudeInput.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedLon))
+                    _longitudeValue = parsedLon;
+            }
+
             // Clamp values to valid ranges
             var lat = _latitudeValue ?? 0m;
             var lon = _longitudeValue ?? 0m;

@@ -33,8 +33,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Custom Button template that preserves bound Background on all states -->
         <Style Selector="Button.SectionButton">
             <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Width" Value="48"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
@@ -72,14 +72,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="12"
             BoxShadow="0 4 16 2 #40000000">
         <StackPanel Orientation="Horizontal" Spacing="8">
-            <!-- Drag handle and label -->
-            <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="0,0,4,0">
-                <TextBlock Text="&#x2261;" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="Sect" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="10" FontWeight="Bold"
-                           HorizontalAlignment="Center"/>
-            </StackPanel>
-
             <!-- Section buttons - 2 rows of up to 8 each -->
             <StackPanel Orientation="Vertical" Spacing="4">
                 <!-- Row 1: Sections 1-8 -->

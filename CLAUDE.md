@@ -20,6 +20,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 This file provides guidance to Claude Code when working with this repository.
 
+**Key documentation:**
+- **[Plans/ARCHITECTURE.md](Plans/ARCHITECTURE.md)** - Full architecture: services, state management, data flow
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contributor guide with cross-platform parity rules
+- **[PGN.md](PGN.md)** - UDP packet protocol for hardware communication
+
 ## Project Overview
 
 AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built with Avalonia UI. It's a clean rewrite achieving **91.7% shared code** across platforms.
@@ -333,8 +338,8 @@ User-Agent: NTRIP AgValoniaGPS
 
 ## Code Style
 
+- **Cross-platform parity is mandatory.** All code MUST go in `Shared/` unless it requires platform-specific APIs. Platforms only contain: app entry point, DI setup, MainWindow/MainView shell with drag handlers, MapService registration. See `CONTRIBUTING.md` for examples of violations fixed in #187-192.
 - Use `Classes.Active` binding for state-based styling instead of converters where possible
-- Keep platform code minimal - prefer shared code
 - Dialogs are overlay panels via `DialogOverlayHost`, not separate windows
 - Use dependency injection for services
 - Use shared `GeometryMath` utilities instead of duplicating distance/angle calculations

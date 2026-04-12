@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.Models.Configuration;
 /// NOT persisted, NOT part of ConfigurationStore.
 /// This separates runtime state from configuration.
 /// </summary>
-public class SensorState : ReactiveObject
+public class SensorState : ObservableObject
 {
     private static SensorState? _instance;
 
@@ -42,35 +42,35 @@ public class SensorState : ReactiveObject
     public double ImuHeading
     {
         get => _imuHeading;
-        set => this.RaiseAndSetIfChanged(ref _imuHeading, value);
+        set => SetProperty(ref _imuHeading, value);
     }
 
     private double _imuRoll;
     public double ImuRoll
     {
         get => _imuRoll;
-        set => this.RaiseAndSetIfChanged(ref _imuRoll, value);
+        set => SetProperty(ref _imuRoll, value);
     }
 
     private double _imuPitch;
     public double ImuPitch
     {
         get => _imuPitch;
-        set => this.RaiseAndSetIfChanged(ref _imuPitch, value);
+        set => SetProperty(ref _imuPitch, value);
     }
 
     private double _imuYawRate;
     public double ImuYawRate
     {
         get => _imuYawRate;
-        set => this.RaiseAndSetIfChanged(ref _imuYawRate, value);
+        set => SetProperty(ref _imuYawRate, value);
     }
 
     private short _angularVelocity;
     public short AngularVelocity
     {
         get => _angularVelocity;
-        set => this.RaiseAndSetIfChanged(ref _angularVelocity, value);
+        set => SetProperty(ref _angularVelocity, value);
     }
 
     // Validity checks

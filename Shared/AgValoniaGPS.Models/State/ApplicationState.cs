@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.Models.State;
 /// Single source of truth for ALL runtime state.
 /// Singleton, Observable, Injectable.
 /// </summary>
-public class ApplicationState : ReactiveObject
+public class ApplicationState : ObservableObject
 {
     private static ApplicationState? _instance;
 
@@ -48,6 +48,7 @@ public class ApplicationState : ReactiveObject
     public ConnectionState Connections { get; } = new();
     public FieldState Field { get; } = new();
     public YouTurnState YouTurn { get; } = new();
+    public RecordedPathState RecordedPath { get; } = new();
     public BoundaryRecState BoundaryRec { get; } = new();
     public SimulatorState Simulator { get; } = new();
     public UIState UI { get; } = new();
@@ -64,6 +65,7 @@ public class ApplicationState : ReactiveObject
         Guidance.Reset();
         Sections.Reset();
         YouTurn.Reset();
+        RecordedPath.Reset();
         BoundaryRec.Reset();
         Simulator.Reset();
         // Field and Connections typically persist across field changes

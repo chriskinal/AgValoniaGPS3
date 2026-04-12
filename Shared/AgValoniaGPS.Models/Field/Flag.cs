@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models
 {
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.Models
         Purple = 5, Cyan = 6, Pink = 7, White = 8, Black = 9
     }
 
-    public class Flag : ReactiveObject
+    public class Flag : ObservableObject
     {
         private FlagColor _flagColor;
         private string _name = "";
@@ -63,7 +63,7 @@ namespace AgValoniaGPS.Models
         public FlagColor FlagColor
         {
             get => _flagColor;
-            set => this.RaiseAndSetIfChanged(ref _flagColor, value);
+            set => SetProperty(ref _flagColor, value);
         }
 
         public int UniqueNumber { get; set; }
@@ -71,13 +71,13 @@ namespace AgValoniaGPS.Models
         public string Name
         {
             get => _name;
-            set => this.RaiseAndSetIfChanged(ref _name, value);
+            set => SetProperty(ref _name, value);
         }
 
         public string Notes
         {
             get => _notes;
-            set => this.RaiseAndSetIfChanged(ref _notes, value);
+            set => SetProperty(ref _notes, value);
         }
 
         public static string ColorToHex(FlagColor color) => color switch

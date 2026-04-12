@@ -20,6 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolHitchSubTab"
              x:DataType="vm:ConfigurationViewModel">
@@ -30,19 +31,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,4"/>
-        </Style>
-        <Style Selector="Button.TappableValue">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="MinWidth" Value="120"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.TappableValue:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
         </Style>
     </UserControl.Styles>
 
@@ -67,11 +55,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from rear axle to hitch point" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditToolHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.HitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.HitchLength, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditToolHitchLengthCommand}"/>
                 </Grid>
             </Border>
 
@@ -80,11 +69,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from hitch to trailing tool" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.TrailingHitchLength, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditTrailingHitchLengthCommand}"/>
                 </Grid>
             </Border>
 
@@ -93,11 +83,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Trailing Hitch Length" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from hitch to implement" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from hitch to implement" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTrailingHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.TrailingHitchLength, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditTrailingHitchLengthCommand}"/>
                 </Grid>
             </Border>
 
@@ -106,11 +97,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
                         <TextBlock Text="Tank Trailing Hitch" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
-                        <TextBlock Text="Distance from implement to tank trailer" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12"/>
+                        <TextBlock Text="Distance from implement to tank trailer" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="TappableValue" Command="{Binding EditTankHitchLengthCommand}">
-                        <TextBlock Text="{Binding Tool.TankTrailingHitchLength, StringFormat='{}{0:F2} m'}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
-                    </Button>
+                    <controls:EditableNumericField Grid.Column="1"
+                        Value="{Binding Tool.TankTrailingHitchLength, Mode=TwoWay}"
+                        Unit="m" FormatString="F2"
+                        EditCommand="{Binding EditTankHitchLengthCommand}"/>
                 </Grid>
             </Border>
 
@@ -119,7 +111,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel Spacing="4">
                     <TextBlock Text="Note:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
                     <TextBlock Text="Values are entered as positive numbers. The system automatically applies the correct sign based on tool type (negative for rear, positive for front)."
-                               Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="12" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

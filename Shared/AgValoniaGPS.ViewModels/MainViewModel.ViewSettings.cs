@@ -17,8 +17,11 @@
 using System;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Services;
 using Avalonia.Threading;
-using ReactiveUI;
+
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -48,61 +51,61 @@ public partial class MainViewModel
     public bool IsViewSettingsPanelVisible
     {
         get => _isViewSettingsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isViewSettingsPanelVisible, value);
+        set => SetProperty(ref _isViewSettingsPanelVisible, value);
     }
 
     public bool IsFileMenuPanelVisible
     {
         get => _isFileMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFileMenuPanelVisible, value);
+        set => SetProperty(ref _isFileMenuPanelVisible, value);
     }
 
     public bool IsToolsPanelVisible
     {
         get => _isToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isToolsPanelVisible, value);
+        set => SetProperty(ref _isToolsPanelVisible, value);
     }
 
     public bool IsConfigurationPanelVisible
     {
         get => _isConfigurationPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isConfigurationPanelVisible, value);
+        set => SetProperty(ref _isConfigurationPanelVisible, value);
     }
 
     public bool IsJobMenuPanelVisible
     {
         get => _isJobMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isJobMenuPanelVisible, value);
+        set => SetProperty(ref _isJobMenuPanelVisible, value);
     }
 
     public bool IsFieldToolsPanelVisible
     {
         get => _isFieldToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFieldToolsPanelVisible, value);
+        set => SetProperty(ref _isFieldToolsPanelVisible, value);
     }
 
     public bool IsSimulatorPanelVisible
     {
         get => _isSimulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+        set => SetProperty(ref _isSimulatorPanelVisible, value);
     }
 
     public bool IsSteerChartPanelVisible
     {
         get => _isSteerChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSteerChartPanelVisible, value);
+        set => SetProperty(ref _isSteerChartPanelVisible, value);
     }
 
     public bool IsHeadingChartPanelVisible
     {
         get => _isHeadingChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isHeadingChartPanelVisible, value);
+        set => SetProperty(ref _isHeadingChartPanelVisible, value);
     }
 
     public bool IsXTEChartPanelVisible
     {
         get => _isXTEChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isXTEChartPanelVisible, value);
+        set => SetProperty(ref _isXTEChartPanelVisible, value);
     }
 
     #endregion
@@ -113,7 +116,7 @@ public partial class MainViewModel
     public string CurrentTime
     {
         get => _currentTime;
-        private set => this.RaiseAndSetIfChanged(ref _currentTime, value);
+        private set => SetProperty(ref _currentTime, value);
     }
 
     private void InitializeClock()
@@ -128,18 +131,18 @@ public partial class MainViewModel
 
     #region Camera Mode
 
-    private CameraMode _cameraMode = CameraMode.NorthUp;
-    private CameraMode _previousCameraMode = CameraMode.NorthUp;
+    private CameraMode _cameraMode = CameraMode.HeadingUp;
+    private CameraMode _previousCameraMode = CameraMode.HeadingUp;
     public CameraMode CameraMode
     {
         get => _cameraMode;
         set
         {
             var old = _cameraMode;
-            this.RaiseAndSetIfChanged(ref _cameraMode, value);
+            SetProperty(ref _cameraMode, value);
             if (old != value)
             {
-                this.RaisePropertyChanged(nameof(CameraModeLabel));
+                OnPropertyChanged(nameof(CameraModeLabel));
                 ApplyCameraMode();
             }
         }
@@ -201,7 +204,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsGridOn = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -211,9 +214,13 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsDayMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
+            _mapService.SetDayMode(value);
+            ApplyThemeVariant(value);
         }
     }
+
+    private double _last3DPitch = -60.0;
 
     public double CameraPitch
     {
@@ -221,8 +228,25 @@ public partial class MainViewModel
         set
         {
             _displaySettings.CameraPitch = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(Is2DMode));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Is2DMode));
+            OnPropertyChanged(nameof(CameraPitchDisplay));
+            // Remember last 3D pitch for restoring when toggling back from 2D
+            if (value > -89.0)
+                _last3DPitch = value;
+        }
+    }
+
+    public string CameraPitchDisplay
+    {
+        get
+        {
+            double pitch = _displaySettings.CameraPitch;
+            if (pitch <= -89.0) return "2D (overhead)";
+            // Convert: -90 = overhead, -10 = nearly horizontal
+            // Show as tilt angle: 0 = overhead, 80 = horizontal
+            double tilt = 90.0 + pitch;
+            return $"Tilt: {tilt:F0} deg";
         }
     }
 
@@ -232,7 +256,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Is2DMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -242,7 +266,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsNorthUp = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -252,14 +276,23 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Brightness = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(BrightnessDisplay));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(BrightnessDisplay));
         }
     }
 
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    public string DisplayResolutionLabel => ConfigStore.Display.DisplayResolutionMultiplier switch
+    {
+        < 1.25 => "Ultra",
+        < 2.0  => "High",
+        < 3.25 => "Med",
+        < 5.0  => "Low",
+        _ => "Min",
+    };
 
     #endregion
 
@@ -269,6 +302,7 @@ public partial class MainViewModel
 
     private void InitializeAutoDayNight()
     {
+        CheckAutoDayNight();
         _autoDayNightTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(60)
@@ -278,26 +312,34 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Switch day/night mode automatically based on local time.
-    /// Uses configurable DayStartHour and NightStartHour from DisplayConfig.
-    /// Only applies when AutoDayNight is enabled in DisplayConfig.
+    /// Switch day/night mode automatically based on solar position.
+    /// Uses GPS-based sunrise/sunset when available, falls back to configured hours.
+    /// GPS-based only when AutoDayNight is enabled.
     /// </summary>
     private void CheckAutoDayNight()
     {
         var display = ConfigurationStore.Instance.Display;
         if (!display.AutoDayNight) return;
-
-        int hour = DateTime.Now.Hour;
-        int dayStart = display.DayStartHour;
-        int nightStart = display.NightStartHour;
-
-        bool shouldBeDay;
-        if (dayStart < nightStart)
-            shouldBeDay = hour >= dayStart && hour < nightStart;
+        
+        bool shouldBeDay = false;
+        // Try GPS-based solar calculation when we have a valid position
+        if (_gpsService.IsGpsDataOk() && display.AutoDayNight)
+        {
+            shouldBeDay = SolarCalculator.IsDay(Latitude, Longitude, DateTime.UtcNow);
+        }
         else
-            // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
-            shouldBeDay = hour >= dayStart || hour < nightStart;
+        {
+            // Fallback to configurable hours
+            int hour = DateTime.Now.Hour;
+            int dayStart = display.DayStartHour;
+            int nightStart = display.NightStartHour;
 
+            if (dayStart < nightStart)
+                shouldBeDay = hour >= dayStart && hour < nightStart;
+            else
+                // Handles wrap-around (e.g. day=22, night=6 for night-shift work)
+                shouldBeDay = hour >= dayStart || hour < nightStart;
+        }
         if (IsDayMode != shouldBeDay)
         {
             IsDayMode = shouldBeDay;
@@ -321,7 +363,7 @@ public partial class MainViewModel
     /// </summary>
     private void RaiseUTurnButtonVisibleChanged()
     {
-        this.RaisePropertyChanged(nameof(IsUTurnButtonVisible));
+        OnPropertyChanged(nameof(IsUTurnButtonVisible));
     }
 
     #endregion

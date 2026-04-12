@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -53,8 +54,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Background" Value="#4A5A6A"/>
         </Style>
         <Style Selector="ListBox">
-            <Setter Property="Background" Value="#1E2930"/>
-            <Setter Property="BorderBrush" Value="#4A5F73"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
@@ -64,10 +65,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="ListBoxItem:pointerover">
-            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -76,9 +77,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Dialog panel -->
-        <Border Background="#2C3E50"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 CornerRadius="12"
-                BorderBrush="#444"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
@@ -88,12 +89,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Padding="16">
             <Grid RowDefinitions="Auto,Auto,*,Auto">
                 <!-- Header -->
-                <TextBlock Grid.Row="0" Classes="Header" Text="Import Tracks From Field"/>
+                <TextBlock Grid.Row="0" Classes="Header" Text="{loc:Localize ImportTracksFromField}"/>
 
                 <!-- Description -->
-                <TextBlock Grid.Row="1" Foreground="#BDC3C7" FontSize="13" Margin="0,0,0,8"
+                <TextBlock Grid.Row="1" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="13" Margin="0,0,0,8"
                            TextWrapping="Wrap"
-                           Text="Select a field to import its tracks into the current field:"/>
+                           Text="{loc:Localize SelectAFieldToImportItsTracksIntoTheCurrentField}"/>
 
                 <!-- Field list -->
                 <ScrollViewer Grid.Row="2" MinHeight="150" MaxHeight="250">
@@ -103,7 +104,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <DataTemplate>
                                 <Border Background="Transparent" Padding="12,10" Margin="2" CornerRadius="4"
                                         PointerReleased="FieldItem_PointerReleased">
-                                    <TextBlock Text="{Binding}" Foreground="White" FontSize="14"
+                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14"
                                                VerticalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
@@ -114,7 +115,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Buttons -->
                 <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
                     <Border Grid.Column="0"/>
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="Cancel"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
                             Command="{Binding CloseImportTracksDialogCommand}"/>
                 </Grid>
             </Grid>

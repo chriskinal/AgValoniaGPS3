@@ -1,0 +1,193 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+Licensed under GNU GPL v3.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.RecordedPathDialogPanel"
+             x:DataType="vm:MainViewModel"
+             x:Name="RecPathRoot"
+             IsVisible="{Binding IsRecordedPathPanelVisible}"
+             IsHitTestVisible="{Binding IsRecordedPathPanelVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.RPBtn">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="56"/>
+            <Setter Property="Height" Value="56"/>
+        </Style>
+        <Style Selector="Button.RPBtn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="Button.RPWide">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.RPWide:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+            CornerRadius="12" Padding="12" MinWidth="340"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1">
+        <StackPanel Spacing="8">
+            <!-- Drag Handle Header -->
+            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="28"
+                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand"
+                  ToolTip.Tip="Drag to move">
+                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                           FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
+                <TextBlock Grid.Column="1" Text="Recorded Path"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           FontSize="14" FontWeight="Bold" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                <Button Grid.Column="2" Content="X" Width="22" Height="22" Padding="0" BorderThickness="0"
+                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        FontSize="14" Cursor="Hand" Command="{Binding CloseRecordedPathDialogCommand}" Margin="4,0,4,0"/>
+            </Grid>
+
+            <!-- Tab selector: active tab gets accent background -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                <Button Grid.Column="0" Content="Record" ClickMode="Press"
+                        Command="{Binding SetRecordedPathTabCommand}" CommandParameter="0"
+                        FontWeight="Bold" CornerRadius="6" Padding="12,8" Cursor="Hand" BorderThickness="0"
+                        Background="{Binding IsRecordTabActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                <Button Grid.Column="1" Content="Playback" ClickMode="Press"
+                        Command="{Binding SetRecordedPathTabCommand}" CommandParameter="1"
+                        FontWeight="Bold" CornerRadius="6" Padding="12,8" Cursor="Hand" BorderThickness="0"
+                        Background="{Binding IsPlaybackTabActive, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            </Grid>
+
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+            <!-- RECORD TAB -->
+            <StackPanel Spacing="10" IsVisible="{Binding IsRecordTabActive}">
+                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                    <!-- Record Start -->
+                    <StackPanel Spacing="4" IsVisible="{Binding !IsRecordingPath}">
+                        <Button Classes="RPBtn" Command="{Binding StartRecordedPathCommand}" ClickMode="Press"
+                                ToolTip.Tip="Start recording" IsEnabled="{Binding IsFieldOpen}">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathRecord.png"
+                                   Width="36" Height="36" Stretch="Uniform"/>
+                        </Button>
+                        <TextBlock Text="Record" FontSize="10" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    </StackPanel>
+                    <!-- Record Stop -->
+                    <StackPanel Spacing="4" IsVisible="{Binding IsRecordingPath}">
+                        <Button Classes="RPBtn" Command="{Binding StopRecordedPathCommand}" ClickMode="Press"
+                                ToolTip.Tip="Stop recording">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathStop.png"
+                                   Width="36" Height="36" Stretch="Uniform"/>
+                        </Button>
+                        <TextBlock Text="Stop" FontSize="10" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Recording indicator -->
+                <Border Background="#CC2B2B" CornerRadius="6" Padding="12,6"
+                        IsVisible="{Binding IsRecordingPath}" HorizontalAlignment="Center">
+                    <TextBlock Text="RECORDING..." Foreground="White" FontSize="14" FontWeight="Bold"/>
+                </Border>
+
+                <!-- Name input after recording -->
+                <StackPanel Spacing="6" IsVisible="{Binding HasUnsavedRecordedPath}">
+                    <TextBlock Text="Save as:" FontSize="13"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    <TextBox Text="{Binding RecordedPathName}" Watermark="RecPath name..." FontSize="14"/>
+                    <Button Classes="RPWide" Content="Save" ClickMode="Press"
+                            Command="{Binding SaveNamedRecordedPathCommand}"
+                            Background="#27AE60" Foreground="White" FontWeight="Bold"/>
+                </StackPanel>
+
+                <TextBlock Text="Open a field to enable recording."
+                           FontSize="12" TextWrapping="Wrap" IsVisible="{Binding !IsFieldOpen}"
+                           Foreground="#E74C3C"/>
+                <TextBlock Text="Drive your route, then press Stop to save."
+                           FontSize="12" TextWrapping="Wrap" IsVisible="{Binding IsFieldOpen}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            </StackPanel>
+
+            <!-- PLAYBACK TAB -->
+            <StackPanel Spacing="10" IsVisible="{Binding IsPlaybackTabActive}">
+                <!-- Saved paths list -->
+                <TextBlock Text="Saved Paths:" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                <ListBox ItemsSource="{Binding AvailableRecFiles}"
+                         SelectedItem="{Binding SelectedRecFile}"
+                         MaxHeight="150" CornerRadius="6"
+                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" FontSize="13" Margin="4,2"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock Text="No saved .rec files found" FontSize="12" Margin="8,4"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           IsVisible="{Binding !AvailableRecFiles.Count}"/>
+
+                <!-- Playback controls -->
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                    <StackPanel Spacing="4">
+                        <Button Classes="RPBtn" Command="{Binding PlayRecordedPathCommand}" ClickMode="Press"
+                                ToolTip.Tip="Play / Stop">
+                            <Panel>
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathPlay.png"
+                                       Width="36" Height="36" Stretch="Uniform"
+                                       IsVisible="{Binding !State.RecordedPath.IsDrivingRecordedPath}"/>
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathStop.png"
+                                       Width="36" Height="36" Stretch="Uniform"
+                                       IsVisible="{Binding State.RecordedPath.IsDrivingRecordedPath}"/>
+                            </Panel>
+                        </Button>
+                        <TextBlock Text="Play" FontSize="10" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <Button Classes="RPBtn" Command="{Binding CycleResumeModeCommand}" ClickMode="Press"
+                                ToolTip.Tip="Resume: Start / Last / Closest">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPathResumeStart.png"
+                                   Width="36" Height="36" Stretch="Uniform"/>
+                        </Button>
+                        <TextBlock Text="{Binding ResumeModeLabel}" FontSize="10" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <Button Classes="RPBtn" Command="{Binding ReverseRecordedPathCommand}" ClickMode="Press"
+                                ToolTip.Tip="Reverse direction">
+                            <TextBlock Text="A/B" FontSize="16" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                        <TextBlock Text="Reverse" FontSize="10" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Text="{Binding RecordedPathInfo}" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

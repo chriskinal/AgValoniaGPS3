@@ -65,8 +65,6 @@ public class Field
     /// </summary>
     public BackgroundImage? BackgroundImage { get; set; }
 
-    public List<ABLine> ABLines { get; set; } = new();
-
     /// <summary>
     /// Total area in hectares (calculated from boundary)
     /// </summary>

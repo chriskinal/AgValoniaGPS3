@@ -26,7 +26,9 @@ using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Logging;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -34,28 +36,28 @@ public partial class MainViewModel
 {
     private void InitializeSettingsCommands()
     {
-        ShowAppDirectoriesDialogCommand = ReactiveCommand.Create(() =>
+        ShowAppDirectoriesDialogCommand = new RelayCommand(() =>
         {
             RefreshAppDirectories();
             State.UI.ShowDialog(Models.State.DialogType.AppDirectories);
         });
 
-        CloseAppDirectoriesDialogCommand = ReactiveCommand.Create(() =>
+        CloseAppDirectoriesDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        ShowAboutDialogCommand = ReactiveCommand.Create(() =>
+        ShowAboutDialogCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(Models.State.DialogType.About);
         });
 
-        CloseAboutDialogCommand = ReactiveCommand.Create(() =>
+        CloseAboutDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        ResetAllSettingsCommand = ReactiveCommand.Create(() =>
+        ResetAllSettingsCommand = new RelayCommand(() =>
         {
             ShowConfirmationDialog(
                 "Reset All Settings",
@@ -70,7 +72,7 @@ public partial class MainViewModel
         });
 
         // Log Viewer (#22)
-        ShowLogViewerDialogCommand = ReactiveCommand.Create(() =>
+        ShowLogViewerDialogCommand = new RelayCommand(() =>
         {
             RefreshLogEntries();
             _logStoreSubscribed = true;
@@ -78,7 +80,7 @@ public partial class MainViewModel
             State.UI.ShowDialog(Models.State.DialogType.LogViewer);
         });
 
-        CloseLogViewerDialogCommand = ReactiveCommand.Create(() =>
+        CloseLogViewerDialogCommand = new RelayCommand(() =>
         {
             if (_logStoreSubscribed)
             {
@@ -88,20 +90,20 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
-        ClearLogEntriesCommand = ReactiveCommand.Create(() =>
+        ClearLogEntriesCommand = new RelayCommand(() =>
         {
             LogStore.Instance.Clear();
             FilteredLogEntries.Clear();
         });
 
-        SetLogFilterCommand = ReactiveCommand.Create<string>(level =>
+        SetLogFilterCommand = new RelayCommand<string>(level =>
         {
             LogFilterLevel = Enum.TryParse<LogLevel>(level, out var parsed) ? parsed : LogLevel.Debug;
             RefreshLogEntries();
         });
 
         // Flag By Lat/Lon (#23)
-        ShowFlagByLatLonDialogCommand = ReactiveCommand.Create(() =>
+        ShowFlagByLatLonDialogCommand = new RelayCommand(() =>
         {
             FlagLatitudeInput = "";
             FlagLongitudeInput = "";
@@ -109,27 +111,138 @@ public partial class MainViewModel
             State.UI.ShowDialog(Models.State.DialogType.FlagByLatLon);
         });
 
-        CloseFlagByLatLonDialogCommand = ReactiveCommand.Create(() =>
+        CloseFlagByLatLonDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        PlaceFlagByLatLonCommand = ReactiveCommand.Create(() =>
+        PlaceFlagByLatLonCommand = new RelayCommand(() =>
         {
             PlaceFlagAtLatLon();
         });
 
         // View All Settings (#29)
-        ShowViewSettingsDialogCommand = ReactiveCommand.Create(() =>
+        ShowViewSettingsDialogCommand = new RelayCommand(() =>
         {
             RefreshSettingsTree();
             State.UI.ShowDialog(Models.State.DialogType.ViewSettings);
         });
 
-        CloseViewSettingsDialogCommand = ReactiveCommand.Create(() =>
+        CloseViewSettingsDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
+
+        // Help (#16)
+        ShowHelpDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.Help);
+        });
+
+        CloseHelpDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        // Language Selection (#40)
+        ShowLanguageDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.Language);
+        });
+
+        CloseLanguageDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        SetLanguageCommand = new RelayCommand<string>(code =>
+        {
+            if (string.IsNullOrEmpty(code)) return;
+            _settingsService.Settings.Language = code;
+            _settingsService.Save();
+
+            // Notify that language changed - Views layer applies via LanguageChanged event
+            LanguageChanged?.Invoke(code);
+
+            try
+            {
+                var culture = new System.Globalization.CultureInfo(code);
+                StatusMessage = $"Language: {culture.NativeName}";
+            }
+            catch
+            {
+                StatusMessage = $"Language: {code}";
+            }
+            State.UI.CloseDialog();
+        });
+        // Debug Dump (#127)
+        CreateDebugDumpCommand = new RelayCommand(() =>
+        {
+            try
+            {
+                // Capture screenshot before creating dump (runs on UI thread)
+                byte[]? screenshot = null;
+                try { screenshot = ScreenshotProvider?.Invoke(); }
+                catch { /* screenshot is optional */ }
+
+                var zipPath = Services.DebugDumpService.CreateDump(
+                    _settingsService, _appState, screenshotPng: screenshot);
+                StatusMessage = $"Debug dump saved: {zipPath}";
+                _logger.LogInformation($"Debug dump created: {zipPath}");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Debug dump failed: {ex.Message}";
+                _logger.LogError(ex, "Debug dump failed");
+            }
+        });
+
+        // Offset Fix (#36) - GPS drift compensation
+        const double OFFSET_STEP = 0.01; // 1cm per click
+
+        ShowOffsetFixDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.IsOffsetFixPanelVisible = !State.UI.IsOffsetFixPanelVisible;
+        });
+
+        CloseOffsetFixDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.IsOffsetFixPanelVisible = false;
+        });
+
+        OffsetFixNorthCommand = new RelayCommand(() => ApplyDrift(0, OFFSET_STEP));
+        OffsetFixSouthCommand = new RelayCommand(() => ApplyDrift(0, -OFFSET_STEP));
+        OffsetFixEastCommand = new RelayCommand(() => ApplyDrift(OFFSET_STEP, 0));
+        OffsetFixWestCommand = new RelayCommand(() => ApplyDrift(-OFFSET_STEP, 0));
+        OffsetFixZeroCommand = new RelayCommand(() =>
+        {
+            State.Field.DriftEasting = 0;
+            State.Field.DriftNorthing = 0;
+            _autoSteerService.SetDriftCompensation(0, 0);
+            double headingRad = Heading * Math.PI / 180.0;
+            _toolPositionService.ResetTrailingState(
+                new Models.Base.Vec3(Easting, Northing, headingRad), headingRad);
+            SyncGuidanceStateToPipeline();
+        });
+    }
+
+    public ICommand? CreateDebugDumpCommand { get; private set; }
+
+    private void ApplyDrift(double deltaEasting, double deltaNorthing)
+    {
+        State.Field.DriftEasting += deltaEasting;
+        State.Field.DriftNorthing += deltaNorthing;
+        _autoSteerService.SetDriftCompensation(State.Field.DriftEasting, State.Field.DriftNorthing);
+
+        // Reset trailing tool at the NEW drifted position.
+        // Easting/Northing still reflect the OLD drift (pre-delta), so add the delta.
+        double headingRad = Heading * Math.PI / 180.0;
+        var driftedPos = new Models.Base.Vec3(
+            Easting + deltaEasting,
+            Northing + deltaNorthing,
+            headingRad);
+        _toolPositionService.ResetTrailingState(driftedPos, headingRad);
+        SyncGuidanceStateToPipeline();
     }
 
     private void RefreshAppDirectories()
@@ -155,7 +268,7 @@ public partial class MainViewModel
     public LogLevel LogFilterLevel
     {
         get => _logFilterLevel;
-        set => this.RaiseAndSetIfChanged(ref _logFilterLevel, value);
+        set => SetProperty(ref _logFilterLevel, value);
     }
 
     public ObservableCollection<LogEntry> FilteredLogEntries { get; } = new();
@@ -180,6 +293,15 @@ public partial class MainViewModel
     public ICommand? CloseLogViewerDialogCommand { get; private set; }
     public ICommand? ClearLogEntriesCommand { get; private set; }
     public ICommand? SetLogFilterCommand { get; private set; }
+
+    // Offset Fix (#36)
+    public ICommand? ShowOffsetFixDialogCommand { get; private set; }
+    public ICommand? CloseOffsetFixDialogCommand { get; private set; }
+    public ICommand? OffsetFixNorthCommand { get; private set; }
+    public ICommand? OffsetFixSouthCommand { get; private set; }
+    public ICommand? OffsetFixEastCommand { get; private set; }
+    public ICommand? OffsetFixWestCommand { get; private set; }
+    public ICommand? OffsetFixZeroCommand { get; private set; }
 }
 
 // --- Flag By Lat/Lon (#23) ---
@@ -189,21 +311,21 @@ public partial class MainViewModel
     public string FlagLatitudeInput
     {
         get => _flagLatitudeInput;
-        set => this.RaiseAndSetIfChanged(ref _flagLatitudeInput, value);
+        set => SetProperty(ref _flagLatitudeInput, value);
     }
 
     private string _flagLongitudeInput = "";
     public string FlagLongitudeInput
     {
         get => _flagLongitudeInput;
-        set => this.RaiseAndSetIfChanged(ref _flagLongitudeInput, value);
+        set => SetProperty(ref _flagLongitudeInput, value);
     }
 
     private string _flagByLatLonError = "";
     public string FlagByLatLonError
     {
         get => _flagByLatLonError;
-        set => this.RaiseAndSetIfChanged(ref _flagByLatLonError, value);
+        set => SetProperty(ref _flagByLatLonError, value);
     }
 
     private void PlaceFlagAtLatLon()
@@ -310,6 +432,11 @@ public partial class MainViewModel
 
     public ICommand? ShowViewSettingsDialogCommand { get; private set; }
     public ICommand? CloseViewSettingsDialogCommand { get; private set; }
+    public ICommand? ShowHelpDialogCommand { get; private set; }
+    public ICommand? CloseHelpDialogCommand { get; private set; }
+    public ICommand? ShowLanguageDialogCommand { get; private set; }
+    public ICommand? CloseLanguageDialogCommand { get; private set; }
+    public ICommand? SetLanguageCommand { get; private set; }
 }
 
 public class SettingsGroupItem

@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -26,6 +27,53 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.ConfigurationDialog"
              x:DataType="vm:ConfigurationViewModel"
              IsVisible="{Binding IsDialogVisible, FallbackValue=False}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <!-- Main tab icons -->
+                    <ImageBrush x:Key="IconVehicle" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_VehicleMenu.png"/>
+                    <ImageBrush x:Key="IconTool" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_ImplementMenu.png"/>
+                    <ImageBrush x:Key="IconUTurn" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_UTurnMenu.png"/>
+                    <ImageBrush x:Key="IconMachine" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_ModulesMenu.png"/>
+                    <ImageBrush x:Key="IconTram" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_TramMenu.png"/>
+                    <ImageBrush x:Key="IconSources" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesMenu.png"/>
+                    <ImageBrush x:Key="IconDisplay" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_Display.png"/>
+                    <ImageBrush x:Key="IconFeatures" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_FeatureMenu.png"/>
+                    <!-- Sub-tab icons -->
+                    <ImageBrush x:Key="IconVehicleConfig" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_VehicleConfig.png"/>
+                    <ImageBrush x:Key="IconHitch" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ImplementHitch.png"/>
+                    <ImageBrush x:Key="IconAntenna" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ImplementAntenna.png"/>
+                    <ImageBrush x:Key="IconModulesMachine" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConS_ModulesMachine.png"/>
+                    <ImageBrush x:Key="IconGPSDual" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesGPSDual.png"/>
+                    <ImageBrush x:Key="IconGPSSingle" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesGPSSingle.png"/>
+                    <ImageBrush x:Key="IconSourcesHead" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesHead.png"/>
+                    <ImageBrush x:Key="IconRTKAlarm" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesRTKAlarm.png"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Main tab icons -->
+                    <ImageBrush x:Key="IconVehicle" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_VehicleMenu.png"/>
+                    <ImageBrush x:Key="IconTool" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_ImplementMenu.png"/>
+                    <ImageBrush x:Key="IconUTurn" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_UTurnMenu.png"/>
+                    <ImageBrush x:Key="IconMachine" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_ModulesMenu.png"/>
+                    <ImageBrush x:Key="IconTram" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_TramMenu.png"/>
+                    <ImageBrush x:Key="IconSources" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_SourcesMenu.png"/>
+                    <ImageBrush x:Key="IconDisplay" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_Display.png"/>
+                    <ImageBrush x:Key="IconFeatures" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_FeatureMenu.png"/>
+                    <!-- Sub-tab icons -->
+                    <ImageBrush x:Key="IconVehicleConfig" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/ConS_VehicleConfig.png"/>
+                    <ImageBrush x:Key="IconHitch" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/ConS_ImplementHitch.png"/>
+                    <ImageBrush x:Key="IconAntenna" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/ConS_ImplementAntenna.png"/>
+                    <ImageBrush x:Key="IconModulesMachine" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/ConS_ModulesMachine.png"/>
+                    <ImageBrush x:Key="IconGPSDual" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_SourcesGPSDual.png"/>
+                    <ImageBrush x:Key="IconGPSSingle" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_SourcesGPSSingle.png"/>
+                    <ImageBrush x:Key="IconSourcesHead" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_SourcesHead.png"/>
+                    <ImageBrush x:Key="IconRTKAlarm" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_SourcesRTKAlarm.png"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <!-- Main TabControl styling for left icon strip -->
@@ -67,7 +115,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header with title -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
-                    <TextBlock Text="Configuration" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <TextBlock Text="{loc:Localize Configuration}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                 </Border>
 
                 <!-- Main content area with TabControl -->
@@ -76,8 +124,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Vehicle Tab -->
                     <TabItem ToolTip.Tip="Vehicle">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_VehicleMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconVehicle}"/>
                         </TabItem.Header>
                         <config:VehicleConfigTab/>
                     </TabItem>
@@ -85,8 +132,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Tool Tab -->
                     <TabItem ToolTip.Tip="Implement/Tool">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_ImplementMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconTool}"/>
                         </TabItem.Header>
                         <config:ToolConfigTab/>
                     </TabItem>
@@ -94,8 +140,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- U-Turn Tab -->
                     <TabItem ToolTip.Tip="U-Turn">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_UTurnMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconUTurn}"/>
                         </TabItem.Header>
                         <config:UTurnConfigTab/>
                     </TabItem>
@@ -103,8 +148,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Machine Control Tab -->
                     <TabItem ToolTip.Tip="Machine Control">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_ModulesMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconMachine}"/>
                         </TabItem.Header>
                         <config:MachineControlConfigTab/>
                     </TabItem>
@@ -112,8 +156,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Tram Lines Tab -->
                     <TabItem ToolTip.Tip="Tram Lines">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_TramMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconTram}"/>
                         </TabItem.Header>
                         <config:TramConfigTab/>
                     </TabItem>
@@ -121,8 +164,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Data Sources Tab -->
                     <TabItem ToolTip.Tip="Data Sources">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_SourcesMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconSources}"/>
                         </TabItem.Header>
                         <config:SourcesConfigTab/>
                     </TabItem>
@@ -130,8 +172,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Display Tab -->
                     <TabItem ToolTip.Tip="Display">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_Display.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconDisplay}"/>
                         </TabItem.Header>
                         <config:DisplayConfigTab/>
                     </TabItem>
@@ -139,8 +180,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <!-- Additional Options Tab -->
                     <TabItem ToolTip.Tip="Additional Options">
                         <TabItem.Header>
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_FeatureMenu.png"
-                                   Width="40" Height="40" Stretch="Uniform"/>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconFeatures}"/>
                         </TabItem.Header>
                         <config:AdditionalOptionsConfigTab/>
                     </TabItem>
@@ -240,13 +280,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Cancel"/>
+                                    <TextBlock Text="{loc:Localize Cancel}"/>
                                 </Button>
                                 <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmNumericInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="OK"/>
+                                    <TextBlock Text="{loc:Localize OK}"/>
                                 </Button>
                             </Grid>
                         </Grid>
@@ -350,7 +390,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <Button Classes="KeyButton" Content="v" Command="{Binding TextInputKeyCommand}" CommandParameter="v"/>
                                     <Button Classes="KeyButton" Content="b" Command="{Binding TextInputKeyCommand}" CommandParameter="b"/>
                                     <Button Classes="KeyButton" Content="n" Command="{Binding TextInputKeyCommand}" CommandParameter="n"/>
-                                    <Button Classes="KeyButton" Content="m" Command="{Binding TextInputKeyCommand}" CommandParameter="m"/>
+                                    <Button Classes="KeyButton" Content="{loc:Localize Meters}" Command="{Binding TextInputKeyCommand}" CommandParameter="m"/>
                                     <Button Classes="KeyButton" Content="." Command="{Binding TextInputKeyCommand}" CommandParameter="."/>
                                     <Button Classes="KeyButton" Content="-" Command="{Binding TextInputKeyCommand}" CommandParameter="-"/>
                                     <Button Classes="KeyButton" Content="_" Command="{Binding TextInputKeyCommand}" CommandParameter="_"/>
@@ -360,9 +400,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
                                     <Button Classes="KeyButton SpecialKey" Content="⌫" MinWidth="60"
                                             Command="{Binding TextInputBackspaceCommand}"/>
-                                    <Button Classes="KeyButton" Content="Space" MinWidth="140"
+                                    <Button Classes="KeyButton" Content="{loc:Localize Space}" MinWidth="140"
                                             Command="{Binding TextInputSpaceCommand}"/>
-                                    <Button Classes="KeyButton SpecialKey" Content="Clear" MinWidth="60"
+                                    <Button Classes="KeyButton SpecialKey" Content="{loc:Localize Clear}" MinWidth="60"
                                             Command="{Binding TextInputClearCommand}"/>
                                     <Button Classes="KeyButton" Content="@" Command="{Binding TextInputKeyCommand}" CommandParameter="@"/>
                                     <Button Classes="KeyButton" Content=":" Command="{Binding TextInputKeyCommand}" CommandParameter=":"/>
@@ -376,13 +416,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding CancelTextInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="Cancel"/>
+                                    <TextBlock Text="{loc:Localize Cancel}"/>
                                 </Button>
                                 <Button Grid.Column="1" Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                         Command="{Binding ConfirmTextInputCommand}"
                                         HorizontalContentAlignment="Center">
-                                    <TextBlock Text="OK"/>
+                                    <TextBlock Text="{loc:Localize OK}"/>
                                 </Button>
                             </Grid>
                         </Grid>
@@ -460,7 +500,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     FontSize="16" FontWeight="Bold" CornerRadius="8" Height="48"
                                     Command="{Binding CancelColorPickerCommand}"
                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                                <TextBlock Text="Cancel"/>
+                                <TextBlock Text="{loc:Localize Cancel}"/>
                             </Button>
                         </Grid>
                     </Border>
@@ -475,15 +515,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                         <!-- Units display -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Units:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Display.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
+                            <TextBlock Text="{loc:Localize Units}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Config.IsMetric, Converter={x:Static conv:BoolToStringConverter.Instance}, ConverterParameter='Metric|Imperial'}"
                                        Foreground="#4A9" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Width display -->
+                        <!-- Width display (actual = sum of section widths) -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="0,0,24,0">
-                            <TextBlock Text="Width:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Tool.Width, StringFormat='{}{0:F2} m'}"
+                            <TextBlock Text="{loc:Localize Width}" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Config.ActualToolWidth, StringFormat='{}{0:F2} m'}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
 

@@ -1,0 +1,44 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+Licensed under GNU GPL v3.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.LightBarPanel"
+             IsHitTestVisible="False"
+             IsVisible="False">
+
+    <!-- Light Bar: arrow indicators showing cross-track error.
+         Green arrows (right) = steer right to correct.
+         Orange-red arrows (left) = steer left to correct.
+         Matches legacy AgOpenGPS DrawLightBar + DrawLightBarText rendering.
+         Positioned below status bar, centered horizontally. -->
+
+    <Border Background="#40000000" CornerRadius="6" Padding="6,3"
+            HorizontalAlignment="Center">
+        <StackPanel Orientation="Vertical" Spacing="2"
+                    HorizontalAlignment="Center">
+
+            <!-- Dead zone indicator line -->
+            <Border x:Name="DeadZoneLine" Height="3" CornerRadius="1"
+                    Background="#82F882" IsVisible="False"
+                    HorizontalAlignment="Stretch" Margin="0,0,0,2"/>
+
+            <!-- Secondary long-term average text -->
+            <TextBlock x:Name="LongAvgText"
+                       HorizontalAlignment="Center"
+                       Foreground="#F2F24D" FontSize="11"
+                       IsVisible="False"/>
+
+            <!-- Main XTE display text -->
+            <TextBlock x:Name="XteText"
+                       HorizontalAlignment="Center"
+                       FontSize="16" FontWeight="Bold"/>
+
+            <!-- Arrow dot canvas -->
+            <Canvas x:Name="DotCanvas" Width="560" Height="24"
+                    HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</UserControl>

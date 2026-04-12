@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Diagnostics;
+using AgValoniaGPS.Models.Timing;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -27,7 +27,7 @@ namespace AgValoniaGPS.Services;
 public class ChartDataService : IChartDataService
 {
     private readonly IAutoSteerService _autoSteerService;
-    private readonly Stopwatch _stopwatch = new();
+    private long _startTimestamp = Clock.Current.GetTimestamp();
     private bool _isRunning;
 
     // Colors: ARGB uint values -- saturated for visibility on both light and dark bg
@@ -41,7 +41,9 @@ public class ChartDataService : IChartDataService
 
     public double TimeWindowSeconds { get; set; } = 20.0;
     public bool IsRunning => _isRunning;
-    public double CurrentTime => _stopwatch.Elapsed.TotalSeconds;
+    public double CurrentTime => _isRunning
+        ? Clock.Current.ElapsedSeconds(_startTimestamp, Clock.Current.GetTimestamp())
+        : 0.0;
 
     // Steer chart series
     public ChartSeries SetSteerAngle { get; }
@@ -75,7 +77,7 @@ public class ChartDataService : IChartDataService
     {
         if (_isRunning) return;
         _isRunning = true;
-        _stopwatch.Restart();
+        _startTimestamp = Clock.Current.GetTimestamp();
         _autoSteerService.StateUpdated += OnStateUpdated;
     }
 
@@ -84,12 +86,11 @@ public class ChartDataService : IChartDataService
         if (!_isRunning) return;
         _isRunning = false;
         _autoSteerService.StateUpdated -= OnStateUpdated;
-        _stopwatch.Stop();
     }
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
-        double t = _stopwatch.Elapsed.TotalSeconds;
+        double t = Clock.Current.ElapsedSeconds(_startTimestamp, Clock.Current.GetTimestamp());
         double trimTime = t - TimeWindowSeconds - 2.0; // keep 2s extra buffer
 
         // Steer data

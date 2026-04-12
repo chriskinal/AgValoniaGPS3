@@ -23,6 +23,7 @@ using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.Coverage;
 using AgValoniaGPS.Models.Headland;
 using AgValoniaGPS.Models.State;
+using AgValoniaGPS.Models.Timing;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services.Section;
@@ -61,7 +62,7 @@ public class SectionControlService : ISectionControlService
 
     // Coverage check throttling - don't check every frame (too expensive with many patches)
     private const double COVERAGE_CHECK_INTERVAL_MS = 150; // Check coverage every 150ms
-    private readonly Stopwatch _coverageThrottleSw = Stopwatch.StartNew();
+    private long _coverageThrottleTimestamp = Clock.Current.GetTimestamp();
     private readonly CoverageResult[] _cachedCurrentCoverage = new CoverageResult[16];
     private readonly CoverageResult[] _cachedLookOnCoverage = new CoverageResult[16];
     private readonly CoverageResult[] _cachedLookOffCoverage = new CoverageResult[16];
@@ -149,6 +150,17 @@ public class SectionControlService : ISectionControlService
                 RecalculateSectionPositions();
             }
         };
+
+        // Also listen for ToolConfig changes (section width changes don't trigger store-level event)
+        ConfigurationStore.Instance.Tool.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ToolConfig.SectionWidths) ||
+                e.PropertyName == nameof(ToolConfig.TotalSectionWidth) ||
+                e.PropertyName == nameof(ToolConfig.Offset))
+            {
+                RecalculateSectionPositions();
+            }
+        };
     }
 
     public void Update(Vec3 toolPosition, double toolHeading, double vehicleHeading, double speed)
@@ -217,10 +229,11 @@ public class SectionControlService : ISectionControlService
         _totalCoverageMs = 0;
 
         // Check if coverage cache should be invalidated (throttle coverage checks)
-        if (_coverageThrottleSw.Elapsed.TotalMilliseconds >= COVERAGE_CHECK_INTERVAL_MS)
+        var now = Clock.Current.GetTimestamp();
+        if (Clock.Current.ElapsedMs(_coverageThrottleTimestamp, now) >= COVERAGE_CHECK_INTERVAL_MS)
         {
             _coverageCacheValid = false;
-            _coverageThrottleSw.Restart();
+            _coverageThrottleTimestamp = now;
         }
 
         // Update each section

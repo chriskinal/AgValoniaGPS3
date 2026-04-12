@@ -16,6 +16,7 @@
 
 using System;
 using Avalonia;
+using Avalonia.Android;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,33 +71,107 @@ public partial class App : Avalonia.Application
             Console.WriteLine($"[App] Error syncing settings: {ex.Message}");
         }
 
-        if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
-        {
-            Console.WriteLine("[App] Creating MainView...");
+        // Extract sound files from Avalonia resources
+        ExtractSoundFiles(Services);
 
+        // Apply saved language (#40)
+        var savedLang = settingsService.Settings.Language;
+        if (!string.IsNullOrEmpty(savedLang) && savedLang != "en")
+        {
             try
             {
-                Console.WriteLine("[App] Getting MainViewModel...");
-                var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
-                Console.WriteLine("[App] Getting MapService...");
-                var mapService = (MapService)_serviceProvider.GetRequiredService<IMapService>();
-                Console.WriteLine("[App] Getting CoverageMapService...");
-                var coverageService = _serviceProvider.GetRequiredService<ICoverageMapService>();
-                Console.WriteLine("[App] All services retrieved, creating MainView...");
+                AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                    new System.Globalization.CultureInfo(savedLang);
+            }
+            catch { /* fall back to English */ }
+        }
 
+        // Create ViewModel on the UI thread before the factory lambda
+        Console.WriteLine("[App] Getting MainViewModel...");
+        var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
+        Console.WriteLine("[App] Getting MapService...");
+        var mapService = (MapService)_serviceProvider.GetRequiredService<IMapService>();
+        Console.WriteLine("[App] Getting CoverageMapService...");
+        var coverageService = _serviceProvider.GetRequiredService<ICoverageMapService>();
+
+        // Wire language change to TranslationSource (#40)
+        viewModel.LanguageChanged += code =>
+        {
+            try
+            {
+                AgValoniaGPS.Views.Localization.TranslationSource.Instance.CurrentCulture =
+                    new System.Globalization.CultureInfo(code);
+            }
+            catch { }
+        };
+
+        // Provide DI to chart panels for auto-configuration
+        AgValoniaGPS.Views.Controls.Panels.SteerChartPanel.ServiceProvider = Services;
+        AgValoniaGPS.Views.Controls.Panels.HeadingChartPanel.ServiceProvider = Services;
+        AgValoniaGPS.Views.Controls.Panels.XTEChartPanel.ServiceProvider = Services;
+
+        if (ApplicationLifetime is IActivityApplicationLifetime activityLifetime)
+        {
+            Console.WriteLine("[App] Using IActivityApplicationLifetime with MainViewFactory...");
+            activityLifetime.MainViewFactory = () =>
+            {
+                Console.WriteLine("[App] MainViewFactory creating MainView...");
                 var mainView = new MainView(viewModel, mapService, coverageService);
-                singleViewLifetime.MainView = mainView;
                 MainView = mainView;
                 Console.WriteLine("[App] MainView created and assigned.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[App] Error creating MainView: {ex}");
-                throw;
-            }
+                return mainView;
+            };
+        }
+        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
+        {
+            Console.WriteLine("[App] Fallback: Using ISingleViewApplicationLifetime...");
+            var mainView = new MainView(viewModel, mapService, coverageService);
+            singleViewLifetime.MainView = mainView;
+            MainView = mainView;
+            Console.WriteLine("[App] MainView created and assigned.");
         }
 
         base.OnFrameworkInitializationCompleted();
         Console.WriteLine("[App] Framework initialization completed.");
+    }
+
+    private static void ExtractSoundFiles(IServiceProvider services)
+    {
+        try
+        {
+            var audioService = services.GetService<IAudioService>() as AgValoniaGPS.Services.Audio.AudioServiceBase;
+            if (audioService == null) return;
+
+            var cacheDir = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Sounds");
+            System.IO.Directory.CreateDirectory(cacheDir);
+
+            var soundFiles = AgValoniaGPS.Services.Audio.AudioServiceBase.GetSoundFileNames();
+
+            foreach (var fileName in soundFiles)
+            {
+                var destPath = System.IO.Path.Combine(cacheDir, fileName);
+                if (System.IO.File.Exists(destPath)) continue;
+
+                try
+                {
+                    var uri = new Uri($"avares://AgValoniaGPS.Views/Assets/Sounds/{fileName}");
+                    using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+                    using var fileStream = System.IO.File.Create(destPath);
+                    stream.CopyTo(fileStream);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Audio] Failed to extract {fileName}: {ex.Message}");
+                }
+            }
+
+            audioService.SetSoundDirectory(cacheDir);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Audio] Sound extraction failed: {ex.Message}");
+        }
     }
 }

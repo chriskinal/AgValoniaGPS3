@@ -82,21 +82,14 @@ public class ChartControl : Control
         {
             Interval = TimeSpan.FromMilliseconds(33) // 30 FPS
         };
-        _renderTimer.Tick += (_, _) => InvalidateVisual();
-
-        PropertyChanged += OnControlPropertyChanged;
-    }
-
-    private void OnControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property.Name == nameof(IsVisible))
+        _renderTimer.Tick += (_, _) =>
         {
-            bool visible = e.NewValue is true;
-            if (visible && !_renderTimer.IsEnabled)
-                _renderTimer.Start();
-            else if (!visible && _renderTimer.IsEnabled)
-                _renderTimer.Stop();
-        }
+            // Skip render if chart panel is hidden (walk up to grandparent UserControl)
+            var panel = this.Parent?.Parent as Control;
+            if (panel != null && !panel.IsVisible) return;
+            if (_series.Count > 0)
+                InvalidateVisual();
+        };
     }
 
     /// <summary>
@@ -123,6 +116,10 @@ public class ChartControl : Control
         _series.Add(series);
         var color = Color.FromUInt32(series.Color);
         _seriesPens[series.Color] = new Pen(new SolidColorBrush(color), 1.5);
+
+        // Start render timer (tick handler skips invalidation when panel is hidden)
+        if (!_renderTimer.IsEnabled)
+            _renderTimer.Start();
     }
 
     /// <summary>

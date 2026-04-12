@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB linija</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>O programu...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Površina</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Autopilot</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Granica</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Prekini</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Zatvori</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Podešavanja</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Obriši</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Displej</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Rastojanje</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Omogući</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Pravac</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Uvrtine</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Pomoć</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Jezik</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Pomeraj:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>OFF</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Odstojanje</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>ON</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Preklop:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauza</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Nastavi</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sekcije:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Pokreni</value>
+  </data>
+</root>

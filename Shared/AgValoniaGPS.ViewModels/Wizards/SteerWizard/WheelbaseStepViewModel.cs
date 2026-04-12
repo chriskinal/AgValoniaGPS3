@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -37,14 +39,14 @@ public class WheelbaseStepViewModel : WizardStepViewModel
     public double Wheelbase
     {
         get => _wheelbase;
-        set => this.RaiseAndSetIfChanged(ref _wheelbase, value);
+        set => SetProperty(ref _wheelbase, value);
     }
 
     private string _unit = "m";
     public string Unit
     {
         get => _unit;
-        set => this.RaiseAndSetIfChanged(ref _unit, value);
+        set => SetProperty(ref _unit, value);
     }
 
     public WheelbaseStepViewModel(IConfigurationService configService)

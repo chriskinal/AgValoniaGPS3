@@ -49,15 +49,13 @@ public class BoolToToggleBackgroundConverter : IValueConverter
 {
     public static readonly BoolToToggleBackgroundConverter Instance = new();
 
-    private static readonly IBrush ActiveBrush = new SolidColorBrush(Color.Parse("#DD1E8449"));
-    private static readonly IBrush InactiveBrush = new SolidColorBrush(Color.Parse("#DD34495E"));
+    private static readonly IBrush ActiveBrush = new SolidColorBrush(Color.FromRgb(30, 132, 73));
+    private static readonly IBrush InactiveBrush = new SolidColorBrush(Color.FromRgb(200, 208, 216));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isActive)
-        {
             return isActive ? ActiveBrush : InactiveBrush;
-        }
         return InactiveBrush;
     }
 

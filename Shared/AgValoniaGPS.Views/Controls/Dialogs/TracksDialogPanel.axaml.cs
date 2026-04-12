@@ -18,6 +18,7 @@ using System;
 using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using AgValoniaGPS.Models.Track;
 
 namespace AgValoniaGPS.Views.Controls.Dialogs;
@@ -36,6 +37,16 @@ public partial class TracksDialogPanel : UserControl
         {
             vm.State.UI.CloseDialog();
         }
+    }
+
+    private void TrackVisibility_Click(object? sender, RoutedEventArgs e)
+    {
+        // Visibility toggled - notify ViewModel to save and refresh map
+        if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
+        {
+            vm.OnTrackVisibilityChanged();
+        }
+        e.Handled = true;
     }
 
     private void TrackItem_PointerReleased(object? sender, PointerReleasedEventArgs e)

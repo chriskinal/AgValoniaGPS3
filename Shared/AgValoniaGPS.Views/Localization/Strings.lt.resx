@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABLine">
+    <value>AB linija</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Apie...</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Plotas</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Vairo nuostatos</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Ribos</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Atšaukti</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Uždaryti</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Profiliai</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Ištrinti</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Ekranas</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Atstumas</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Įgalinti</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Kryptis</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Galulaukės</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Pagalba</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Kalba</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Platuma</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Stumtelti:</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>išjungta</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Poslinkis</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>Įjungta</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Persidengimas:</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Pauzė</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Atkurti</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Pratęsti paskutinį</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Sekcijos:</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Startas</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Vėžės</value>
+  </data>
+</root>

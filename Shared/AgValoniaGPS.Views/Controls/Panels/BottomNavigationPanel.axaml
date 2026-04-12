@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -101,24 +102,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <!-- Main container -->
-    <Canvas ClipToBounds="False" Background="{x:Null}">
-        <!-- Main bottom bar - negative Top positions above bottom edge -->
-        <Border x:Name="MainPanel" Classes="FloatingPanel" Canvas.Left="0" Canvas.Top="-78">
+    <!-- Main container: Panel for proper layout measurement, Canvas overlay for flyouts -->
+    <Panel ClipToBounds="False" Background="{x:Null}">
+        <!-- Main bottom bar -->
+        <Border x:Name="MainPanel" Classes="FloatingPanel">
             <StackPanel x:Name="ButtonStack" Spacing="4" Orientation="Horizontal">
-
-                <!-- Touch Handle: Tap to rotate, Hold to drag -->
-                <Grid x:Name="DragHandle" Width="40" Margin="0"
-                      Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                      Cursor="Hand"
-                      ToolTip.Tip="Tap to rotate | Hold and drag to move">
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                        <TextBlock Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" FontWeight="Bold" IsHitTestVisible="False"/>
-                        <TextBlock Text="R" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="14" FontWeight="Bold" IsHitTestVisible="False"/>
-                    </StackPanel>
-                </Grid>
-
-                <Separator Classes="BottomPanelSeparator"/>
 
                 <!-- === AB LINE DEPENDENT BUTTONS (Hidden when no AB line) === -->
 
@@ -214,6 +202,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
                 </Button>
 
+                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) -->
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Tram Lines Display Mode"
+                        Command="{Binding ToggleTramDisplayCommand}"
+                        IsVisible="{Binding IsFieldOpen}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
+                </Button>
+
                 <Separator Classes="BottomPanelSeparator"/>
 
                 <!-- AB Line Menu Button (opens flyout) - always visible -->
@@ -223,6 +218,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
         </Border>
 
+        <!-- Flyout overlay Canvas (absolute positioning for flyouts above the bar) -->
+        <Canvas ClipToBounds="False">
         <!-- AB Line Flyout Menu (positioned above the AB Line menu button) -->
         <Border x:Name="ABLineFlyoutPanel" Classes="FlyoutPanel"
                 Canvas.Left="500" Canvas.Top="-350"
@@ -234,10 +231,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Stretch="Uniform"/>
                 </Button>
 
+                <!-- Auto Track toggle (green=on, dim=off) -->
+                <Button Classes="BottomPanelButton"
+                        ToolTip.Tip="Auto Track Select (closest track)"
+                        Command="{Binding ToggleAutoTrackCommand}"
+                        Classes.Active="{Binding IsAutoTrackEnabled}">
+                    <TextBlock Text="AT" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+
                 <!-- Quick AB (mode selector for drive-in creation) -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Quick AB Line Creator"
                         Command="{Binding ShowQuickABSelectorCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Create AB from Boundary Edge -->
+                <Button Classes="BottomPanelButton" ToolTip.Tip="Create AB Line from Boundary Edge"
+                        Command="{Binding CreateTrackFromBoundaryCommand}">
+                    <TextBlock Text="BE" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Button>
 
                 <!-- Draw AB (tap on map to place points) -->
@@ -294,6 +307,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusMinusB.png" Stretch="Uniform"/>
                     </Button>
                 </StackPanel>
+
+                <!-- Half-Tool-Width Nudge + Reset -->
+                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Nudge Left Half Tool Width"
+                            Command="{Binding HalfToolNudgeLeftCommand}">
+                        <TextBlock Text="&lt;&lt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Reset Nudge"
+                            Command="{Binding ResetNudgeCommand}">
+                        <TextBlock Text="0" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Nudge Right Half Tool Width"
+                            Command="{Binding HalfToolNudgeRightCommand}">
+                        <TextBlock Text="&gt;&gt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </Border>
 
@@ -309,7 +341,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding PlaceFlagHereCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="20" Height="20" Stretch="Uniform"/>
-                        <TextBlock Text="Place Here" VerticalAlignment="Center" FontSize="13"
+                        <TextBlock Text="{loc:Localize PlaceHere}" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
@@ -321,7 +353,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding PlaceFlagOnClickCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Width="20" Height="20" Stretch="Uniform"/>
-                        <TextBlock Text="Place on Map" VerticalAlignment="Center" FontSize="13"
+                        <TextBlock Text="{loc:Localize PlaceOnMap}" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
@@ -333,11 +365,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding ShowFlagListCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Width="20" Height="20" Stretch="Uniform"/>
-                        <TextBlock Text="Flag List" VerticalAlignment="Center" FontSize="13"
+                        <TextBlock Text="{loc:Localize FlagList}" VerticalAlignment="Center" FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
         </Border>
-    </Canvas>
+        </Canvas>
+    </Panel>
 </UserControl>

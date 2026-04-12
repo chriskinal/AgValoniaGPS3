@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -37,7 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 MinWidth="420" MaxWidth="600">
             <StackPanel Spacing="16">
                 <!-- Title -->
-                <TextBlock Text="App Directories" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{loc:Localize AppDirectories}" FontSize="20" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
 
                 <!-- Directory list -->
@@ -58,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </ItemsControl>
 
                 <!-- Close button -->
-                <Button Content="Close" Margin="0,8,0,0"
+                <Button Content="{loc:Localize Close}" Margin="0,8,0,0"
                         Command="{Binding CloseAppDirectoriesDialogCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="44" FontSize="16" FontWeight="Bold"

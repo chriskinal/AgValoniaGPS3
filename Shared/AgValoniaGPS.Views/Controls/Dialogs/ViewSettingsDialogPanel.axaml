@@ -9,6 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
@@ -28,9 +29,9 @@ the Free Software Foundation, either version 3 of the License, or
                 <!-- Header -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="12,12,0,0" Padding="16,12">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">
-                        <TextBlock Text="All Settings" FontSize="18" FontWeight="Bold"
+                        <TextBlock Text="{loc:Localize AllSettings}" FontSize="18" FontWeight="Bold"
                                    Foreground="{DynamicResource SystemControlHighlightAccentBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Read-only view of current configuration values"
+                        <TextBlock Text="{loc:Localize ReadOnlyViewOfCurrentConfigurationValues}"
                                    FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -72,7 +73,7 @@ the Free Software Foundation, either version 3 of the License, or
                 </Border>
 
                 <!-- Close button -->
-                <Button Grid.Row="2" Content="Close" Margin="16,4,16,12"
+                <Button Grid.Row="2" Content="{loc:Localize Close}" Margin="16,4,16,12"
                         Command="{Binding CloseViewSettingsDialogCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                         HorizontalAlignment="Stretch" Height="40" FontSize="14" FontWeight="Bold"

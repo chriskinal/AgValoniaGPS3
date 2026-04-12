@@ -15,14 +15,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Linq;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
 /// <summary>
 /// Section control state - which sections are on, coverage mode.
 /// </summary>
-public class SectionState : ReactiveObject
+public class SectionState : ObservableObject
 {
     public const int MaxSections = 16;
 
@@ -37,7 +37,7 @@ public class SectionState : ReactiveObject
         if (index >= 0 && index < MaxSections && _sectionActive[index] != active)
         {
             _sectionActive[index] = active;
-            this.RaisePropertyChanged($"Section{index + 1}Active");
+            OnPropertyChanged($"Section{index + 1}Active");
             UpdateActiveSectionCount();
         }
     }
@@ -57,7 +57,7 @@ public class SectionState : ReactiveObject
     public int ActiveSectionCount
     {
         get => _activeSectionCount;
-        private set => this.RaiseAndSetIfChanged(ref _activeSectionCount, value);
+        private set => SetProperty(ref _activeSectionCount, value);
     }
 
     private void UpdateActiveSectionCount()
@@ -70,7 +70,7 @@ public class SectionState : ReactiveObject
     public int NumberOfSections
     {
         get => _numberOfSections;
-        set => this.RaiseAndSetIfChanged(ref _numberOfSections, value);
+        set => SetProperty(ref _numberOfSections, value);
     }
 
     // Master control
@@ -78,21 +78,21 @@ public class SectionState : ReactiveObject
     public bool IsMasterOn
     {
         get => _isMasterOn;
-        set => this.RaiseAndSetIfChanged(ref _isMasterOn, value);
+        set => SetProperty(ref _isMasterOn, value);
     }
 
     private bool _isManualMode;
     public bool IsManualMode
     {
         get => _isManualMode;
-        set => this.RaiseAndSetIfChanged(ref _isManualMode, value);
+        set => SetProperty(ref _isManualMode, value);
     }
 
     private bool _isAutoMode;
     public bool IsAutoMode
     {
         get => _isAutoMode;
-        set => this.RaiseAndSetIfChanged(ref _isAutoMode, value);
+        set => SetProperty(ref _isAutoMode, value);
     }
 
     // Headland section control
@@ -100,7 +100,7 @@ public class SectionState : ReactiveObject
     public bool IsSectionControlInHeadland
     {
         get => _isSectionControlInHeadland;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlInHeadland, value);
+        set => SetProperty(ref _isSectionControlInHeadland, value);
     }
 
     public void Reset()

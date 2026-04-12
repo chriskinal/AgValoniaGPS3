@@ -45,6 +45,8 @@ public class AutoSteerService : IAutoSteerService
     // Local coordinate system reference
     private LocalPlane? _localPlane;
     private SharedFieldProperties _sharedFieldProperties;
+    private double _driftEasting;
+    private double _driftNorthing;
 
     // Current track for guidance (set by MainViewModel)
     private TrackModel? _currentTrack;
@@ -230,12 +232,50 @@ public class AutoSteerService : IAutoSteerService
     }
 
     /// <summary>
+    /// Set GPS drift compensation (offset fix). Applied to local coordinates
+    /// before guidance and tool position calculations, so tractor + implement
+    /// move together. Values in meters.
+    /// </summary>
+    public void SetDriftCompensation(double driftEasting, double driftNorthing)
+    {
+        _driftEasting = driftEasting;
+        _driftNorthing = driftNorthing;
+    }
+
+    public void SendMachineConfig()
+    {
+        var config = ConfigurationStore.Instance.Machine;
+        var pgn = PgnBuilder.BuildMachineConfigPgn(config);
+        _udpService.SendToModules(pgn);
+    }
+
+    public void SendMachinePinConfig()
+    {
+        var config = ConfigurationStore.Instance.Machine;
+        var pgn = PgnBuilder.BuildMachinePinsPgn(config);
+        _udpService.SendToModules(pgn);
+    }
+
+    public void SetMachineState(ushort sectionBits, bool isInUTurn, byte hydLiftState = 0)
+    {
+        _state.SectionStates = sectionBits;
+        _state.IsInUTurn = isInUTurn;
+        _state.HydLiftState = hydLiftState;
+    }
+
+    /// <summary>
     /// Set the current track for guidance.
     /// Called by MainViewModel when active track changes.
     /// </summary>
     public void SetCurrentTrack(TrackModel? track)
     {
         _currentTrack = track;
+    }
+
+    public void UpdateGuidanceResults(double steerAngle, double crossTrackError)
+    {
+        _state.SteerAngle = steerAngle;
+        _state.CrossTrackError = crossTrackError;
     }
 
     /// <summary>
@@ -263,8 +303,10 @@ public class AutoSteerService : IAutoSteerService
         {
             var geoCoord = _localPlane.ConvertWgs84ToGeoCoord(
                 new Wgs84(_state.Latitude, _state.Longitude));
-            _state.Easting = geoCoord.Easting;
-            _state.Northing = geoCoord.Northing;
+            // Apply GPS drift compensation (offset fix) before any calculations
+            // This shifts tractor + implement together, matching legacy behavior
+            _state.Easting = geoCoord.Easting + _driftEasting;
+            _state.Northing = geoCoord.Northing + _driftNorthing;
         }
 
         // Calculate guidance if we have an active track
@@ -360,6 +402,15 @@ public class AutoSteerService : IAutoSteerService
         // This keeps the module informed of current position/speed even when not engaged
         var pgn = PgnBuilder.BuildAutoSteerPgn(ref _state);
         _udpService.SendToModules(pgn);
+
+        // Send PGN 239 (Machine Data) - section control, speed, tramline state
+        // Sent every GPS cycle so machine module has current section/speed info
+        var machinePgn = PgnBuilder.BuildMachinePgn(ref _state,
+            uturn: _state.IsInUTurn ? (byte)1 : (byte)0,
+            hydLift: _state.HydLiftState,
+            tram: _state.TramState,
+            geoStop: _state.GeoStopState);
+        _udpService.SendToModules(machinePgn);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

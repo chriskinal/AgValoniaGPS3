@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using System.Reactive;
 using System.Windows.Input;
-using ReactiveUI;
+
 using AgValoniaGPS.ViewModels.Wizards;
 using AgValoniaGPS.ViewModels.Wizards.SteerWizard;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -32,7 +34,7 @@ public partial class MainViewModel
     public SteerWizardViewModel? SteerWizardViewModel
     {
         get => _steerWizardViewModel;
-        set => this.RaiseAndSetIfChanged(ref _steerWizardViewModel, value);
+        set => SetProperty(ref _steerWizardViewModel, value);
     }
 
     // Wizard commands
@@ -40,7 +42,7 @@ public partial class MainViewModel
 
     private void InitializeWizardCommands()
     {
-        ShowSteerWizardCommand = ReactiveCommand.Create(ShowSteerWizard);
+        ShowSteerWizardCommand = new RelayCommand(ShowSteerWizard);
     }
 
     private void ShowSteerWizard()

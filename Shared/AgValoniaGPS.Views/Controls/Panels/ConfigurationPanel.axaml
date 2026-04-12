@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
@@ -55,7 +56,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                   Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
                 <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
                            VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Vehicle Configuration" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
+                <TextBlock Grid.Column="1" Text="{loc:Localize VehicleConfiguration}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center" IsHitTestVisible="False"/>
                 <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
                         Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
@@ -70,14 +71,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding ShowNewProfileDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
-                        <TextBlock Text="New Profile" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize NewProfile}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press"
                         Command="{Binding ShowLoadProfileDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
-                        <TextBlock Text="Load Profile" VerticalAlignment="Center" FontSize="12"/>
+                        <TextBlock Text="{loc:Localize LoadProfile}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
 
@@ -86,7 +87,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding ShowConfigurationDialogCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Width="28" Height="28"/>
-                        <TextBlock Text="Vehicle Settings" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:Localize VehicleSettings}" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
             </Grid>
@@ -107,7 +108,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border Classes="FloatingPanel" MinWidth="300" IsVisible="{Binding IsProfileSelectionVisible}"
             HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel Spacing="8">
-            <TextBlock Text="Select Profile" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+            <TextBlock Text="{loc:Localize SelectProfile}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        HorizontalAlignment="Center" Margin="0,4,0,8"/>
 
             <ListBox ItemsSource="{Binding AvailableProfiles}"
@@ -121,10 +122,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </ListBox>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
-                <Button Grid.Column="0" Content="Cancel" HorizontalContentAlignment="Center"
+                <Button Grid.Column="0" Content="{loc:Localize Cancel}" HorizontalContentAlignment="Center"
                         Background="#E74C3C" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="6" Height="36"
                         Command="{Binding CancelProfileSelectionCommand}"/>
-                <Button Grid.Column="1" Content="Load" HorizontalContentAlignment="Center"
+                <Button Grid.Column="1" Content="{loc:Localize Load}" HorizontalContentAlignment="Center"
                         Background="#4A9A7E" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" CornerRadius="6" Height="36"
                         Command="{Binding LoadSelectedProfileCommand}"/>
             </Grid>

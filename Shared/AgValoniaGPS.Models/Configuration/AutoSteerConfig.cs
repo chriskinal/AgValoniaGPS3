@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -22,7 +22,7 @@ namespace AgValoniaGPS.Models.Configuration;
 /// AutoSteer module configuration.
 /// Settings sent to the steering module via PGN 251/252.
 /// </summary>
-public class AutoSteerConfig : ReactiveObject
+public class AutoSteerConfig : ObservableObject
 {
     // ============================================
     // Tab 1: Pure Pursuit / Stanley Algorithm
@@ -37,7 +37,7 @@ public class AutoSteerConfig : ReactiveObject
     public double SteerResponseHold
     {
         get => _steerResponseHold;
-        set => this.RaiseAndSetIfChanged(ref _steerResponseHold, value);
+        set => SetProperty(ref _steerResponseHold, value);
     }
 
     private double _integralGain = 0.0;
@@ -48,7 +48,7 @@ public class AutoSteerConfig : ReactiveObject
     public double IntegralGain
     {
         get => _integralGain;
-        set => this.RaiseAndSetIfChanged(ref _integralGain, value);
+        set => SetProperty(ref _integralGain, value);
     }
 
     private bool _isStanleyMode = false;
@@ -58,7 +58,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool IsStanleyMode
     {
         get => _isStanleyMode;
-        set => this.RaiseAndSetIfChanged(ref _isStanleyMode, value);
+        set => SetProperty(ref _isStanleyMode, value);
     }
 
     // Stanley-specific settings
@@ -70,7 +70,7 @@ public class AutoSteerConfig : ReactiveObject
     public double StanleyAggressiveness
     {
         get => _stanleyAggressiveness;
-        set => this.RaiseAndSetIfChanged(ref _stanleyAggressiveness, value);
+        set => SetProperty(ref _stanleyAggressiveness, value);
     }
 
     private double _stanleyOvershootReduction = 1.0;
@@ -81,7 +81,7 @@ public class AutoSteerConfig : ReactiveObject
     public double StanleyOvershootReduction
     {
         get => _stanleyOvershootReduction;
-        set => this.RaiseAndSetIfChanged(ref _stanleyOvershootReduction, value);
+        set => SetProperty(ref _stanleyOvershootReduction, value);
     }
 
     // ============================================
@@ -96,7 +96,7 @@ public class AutoSteerConfig : ReactiveObject
     public int WasOffset
     {
         get => _wasOffset;
-        set => this.RaiseAndSetIfChanged(ref _wasOffset, value);
+        set => SetProperty(ref _wasOffset, value);
     }
 
     private double _countsPerDegree = 100;
@@ -107,7 +107,7 @@ public class AutoSteerConfig : ReactiveObject
     public double CountsPerDegree
     {
         get => _countsPerDegree;
-        set => this.RaiseAndSetIfChanged(ref _countsPerDegree, value);
+        set => SetProperty(ref _countsPerDegree, value);
     }
 
     private int _ackermann = 100;
@@ -119,7 +119,7 @@ public class AutoSteerConfig : ReactiveObject
     public int Ackermann
     {
         get => _ackermann;
-        set => this.RaiseAndSetIfChanged(ref _ackermann, value);
+        set => SetProperty(ref _ackermann, value);
     }
 
     private int _maxSteerAngle = 45;
@@ -130,7 +130,7 @@ public class AutoSteerConfig : ReactiveObject
     public int MaxSteerAngle
     {
         get => _maxSteerAngle;
-        set => this.RaiseAndSetIfChanged(ref _maxSteerAngle, value);
+        set => SetProperty(ref _maxSteerAngle, value);
     }
 
     // ============================================
@@ -146,7 +146,7 @@ public class AutoSteerConfig : ReactiveObject
     public double DeadzoneHeading
     {
         get => _deadzoneHeading;
-        set => this.RaiseAndSetIfChanged(ref _deadzoneHeading, value);
+        set => SetProperty(ref _deadzoneHeading, value);
     }
 
     private int _deadzoneDelay = 5;
@@ -157,7 +157,7 @@ public class AutoSteerConfig : ReactiveObject
     public int DeadzoneDelay
     {
         get => _deadzoneDelay;
-        set => this.RaiseAndSetIfChanged(ref _deadzoneDelay, value);
+        set => SetProperty(ref _deadzoneDelay, value);
     }
 
     private double _speedFactor = 1.0;
@@ -169,7 +169,7 @@ public class AutoSteerConfig : ReactiveObject
     public double SpeedFactor
     {
         get => _speedFactor;
-        set => this.RaiseAndSetIfChanged(ref _speedFactor, value);
+        set => SetProperty(ref _speedFactor, value);
     }
 
     private double _acquireFactor = 0.9;
@@ -181,7 +181,7 @@ public class AutoSteerConfig : ReactiveObject
     public double AcquireFactor
     {
         get => _acquireFactor;
-        set => this.RaiseAndSetIfChanged(ref _acquireFactor, value);
+        set => SetProperty(ref _acquireFactor, value);
     }
 
     // ============================================
@@ -196,7 +196,7 @@ public class AutoSteerConfig : ReactiveObject
     public int ProportionalGain
     {
         get => _proportionalGain;
-        set => this.RaiseAndSetIfChanged(ref _proportionalGain, value);
+        set => SetProperty(ref _proportionalGain, value);
     }
 
     private int _maxPwm = 235;
@@ -207,7 +207,7 @@ public class AutoSteerConfig : ReactiveObject
     public int MaxPwm
     {
         get => _maxPwm;
-        set => this.RaiseAndSetIfChanged(ref _maxPwm, value);
+        set => SetProperty(ref _maxPwm, value);
     }
 
     private int _minPwm = 5;
@@ -218,7 +218,7 @@ public class AutoSteerConfig : ReactiveObject
     public int MinPwm
     {
         get => _minPwm;
-        set => this.RaiseAndSetIfChanged(ref _minPwm, value);
+        set => SetProperty(ref _minPwm, value);
     }
 
     // ============================================
@@ -232,7 +232,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool TurnSensorEnabled
     {
         get => _turnSensorEnabled;
-        set => this.RaiseAndSetIfChanged(ref _turnSensorEnabled, value);
+        set => SetProperty(ref _turnSensorEnabled, value);
     }
 
     private bool _pressureSensorEnabled = false;
@@ -242,7 +242,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool PressureSensorEnabled
     {
         get => _pressureSensorEnabled;
-        set => this.RaiseAndSetIfChanged(ref _pressureSensorEnabled, value);
+        set => SetProperty(ref _pressureSensorEnabled, value);
     }
 
     private bool _currentSensorEnabled = false;
@@ -252,7 +252,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool CurrentSensorEnabled
     {
         get => _currentSensorEnabled;
-        set => this.RaiseAndSetIfChanged(ref _currentSensorEnabled, value);
+        set => SetProperty(ref _currentSensorEnabled, value);
     }
 
     private int _turnSensorCounts = 255;
@@ -262,7 +262,7 @@ public class AutoSteerConfig : ReactiveObject
     public int TurnSensorCounts
     {
         get => _turnSensorCounts;
-        set => this.RaiseAndSetIfChanged(ref _turnSensorCounts, Math.Clamp(value, 0, 255));
+        set => SetProperty(ref _turnSensorCounts, Math.Clamp(value, 0, 255));
     }
 
     private int _pressureTripPoint = 0;
@@ -272,7 +272,7 @@ public class AutoSteerConfig : ReactiveObject
     public int PressureTripPoint
     {
         get => _pressureTripPoint;
-        set => this.RaiseAndSetIfChanged(ref _pressureTripPoint, Math.Clamp(value, 0, 99));
+        set => SetProperty(ref _pressureTripPoint, Math.Clamp(value, 0, 99));
     }
 
     private int _currentTripPoint = 0;
@@ -282,7 +282,7 @@ public class AutoSteerConfig : ReactiveObject
     public int CurrentTripPoint
     {
         get => _currentTripPoint;
-        set => this.RaiseAndSetIfChanged(ref _currentTripPoint, Math.Clamp(value, 0, 99));
+        set => SetProperty(ref _currentTripPoint, Math.Clamp(value, 0, 99));
     }
 
     // ============================================
@@ -296,7 +296,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool DanfossEnabled
     {
         get => _danfossEnabled;
-        set => this.RaiseAndSetIfChanged(ref _danfossEnabled, value);
+        set => SetProperty(ref _danfossEnabled, value);
     }
 
     private bool _invertWas = false;
@@ -306,7 +306,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool InvertWas
     {
         get => _invertWas;
-        set => this.RaiseAndSetIfChanged(ref _invertWas, value);
+        set => SetProperty(ref _invertWas, value);
     }
 
     private bool _invertMotor = false;
@@ -316,7 +316,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool InvertMotor
     {
         get => _invertMotor;
-        set => this.RaiseAndSetIfChanged(ref _invertMotor, value);
+        set => SetProperty(ref _invertMotor, value);
     }
 
     private bool _invertRelays = false;
@@ -326,7 +326,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool InvertRelays
     {
         get => _invertRelays;
-        set => this.RaiseAndSetIfChanged(ref _invertRelays, value);
+        set => SetProperty(ref _invertRelays, value);
     }
 
     private int _motorDriver = 0;
@@ -336,7 +336,7 @@ public class AutoSteerConfig : ReactiveObject
     public int MotorDriver
     {
         get => _motorDriver;
-        set => this.RaiseAndSetIfChanged(ref _motorDriver, value);
+        set => SetProperty(ref _motorDriver, value);
     }
 
     private int _adConverter = 0;
@@ -346,7 +346,7 @@ public class AutoSteerConfig : ReactiveObject
     public int AdConverter
     {
         get => _adConverter;
-        set => this.RaiseAndSetIfChanged(ref _adConverter, value);
+        set => SetProperty(ref _adConverter, value);
     }
 
     private int _imuAxisSwap = 0;
@@ -356,7 +356,7 @@ public class AutoSteerConfig : ReactiveObject
     public int ImuAxisSwap
     {
         get => _imuAxisSwap;
-        set => this.RaiseAndSetIfChanged(ref _imuAxisSwap, value);
+        set => SetProperty(ref _imuAxisSwap, value);
     }
 
     private int _externalEnable = 0;
@@ -366,7 +366,7 @@ public class AutoSteerConfig : ReactiveObject
     public int ExternalEnable
     {
         get => _externalEnable;
-        set => this.RaiseAndSetIfChanged(ref _externalEnable, value);
+        set => SetProperty(ref _externalEnable, value);
     }
 
     // ============================================
@@ -381,7 +381,7 @@ public class AutoSteerConfig : ReactiveObject
     public double UTurnCompensation
     {
         get => _uTurnCompensation;
-        set => this.RaiseAndSetIfChanged(ref _uTurnCompensation, value);
+        set => SetProperty(ref _uTurnCompensation, value);
     }
 
     private double _sideHillCompensation = 0.0;
@@ -392,7 +392,7 @@ public class AutoSteerConfig : ReactiveObject
     public double SideHillCompensation
     {
         get => _sideHillCompensation;
-        set => this.RaiseAndSetIfChanged(ref _sideHillCompensation, value);
+        set => SetProperty(ref _sideHillCompensation, value);
     }
 
     private bool _steerInReverse = false;
@@ -402,7 +402,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool SteerInReverse
     {
         get => _steerInReverse;
-        set => this.RaiseAndSetIfChanged(ref _steerInReverse, value);
+        set => SetProperty(ref _steerInReverse, value);
     }
 
     // ============================================
@@ -416,7 +416,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool ManualTurnsEnabled
     {
         get => _manualTurnsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _manualTurnsEnabled, value);
+        set => SetProperty(ref _manualTurnsEnabled, value);
     }
 
     private double _manualTurnsSpeed = 12.0;
@@ -426,7 +426,7 @@ public class AutoSteerConfig : ReactiveObject
     public double ManualTurnsSpeed
     {
         get => _manualTurnsSpeed;
-        set => this.RaiseAndSetIfChanged(ref _manualTurnsSpeed, value);
+        set => SetProperty(ref _manualTurnsSpeed, value);
     }
 
     private double _minSteerSpeed = 0.0;
@@ -436,7 +436,7 @@ public class AutoSteerConfig : ReactiveObject
     public double MinSteerSpeed
     {
         get => _minSteerSpeed;
-        set => this.RaiseAndSetIfChanged(ref _minSteerSpeed, value);
+        set => SetProperty(ref _minSteerSpeed, value);
     }
 
     private double _maxSteerSpeed = 15.0;
@@ -446,7 +446,7 @@ public class AutoSteerConfig : ReactiveObject
     public double MaxSteerSpeed
     {
         get => _maxSteerSpeed;
-        set => this.RaiseAndSetIfChanged(ref _maxSteerSpeed, value);
+        set => SetProperty(ref _maxSteerSpeed, value);
     }
 
     // ============================================
@@ -460,7 +460,7 @@ public class AutoSteerConfig : ReactiveObject
     public int LineWidth
     {
         get => _lineWidth;
-        set => this.RaiseAndSetIfChanged(ref _lineWidth, value);
+        set => SetProperty(ref _lineWidth, value);
     }
 
     private int _nudgeDistance = 20;
@@ -470,7 +470,7 @@ public class AutoSteerConfig : ReactiveObject
     public int NudgeDistance
     {
         get => _nudgeDistance;
-        set => this.RaiseAndSetIfChanged(ref _nudgeDistance, value);
+        set => SetProperty(ref _nudgeDistance, value);
     }
 
     private double _nextGuidanceTime = 1.5;
@@ -480,7 +480,7 @@ public class AutoSteerConfig : ReactiveObject
     public double NextGuidanceTime
     {
         get => _nextGuidanceTime;
-        set => this.RaiseAndSetIfChanged(ref _nextGuidanceTime, value);
+        set => SetProperty(ref _nextGuidanceTime, value);
     }
 
     private int _cmPerPixel = 5;
@@ -490,7 +490,7 @@ public class AutoSteerConfig : ReactiveObject
     public int CmPerPixel
     {
         get => _cmPerPixel;
-        set => this.RaiseAndSetIfChanged(ref _cmPerPixel, value);
+        set => SetProperty(ref _cmPerPixel, value);
     }
 
     private bool _lightbarEnabled = true;
@@ -500,7 +500,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool LightbarEnabled
     {
         get => _lightbarEnabled;
-        set => this.RaiseAndSetIfChanged(ref _lightbarEnabled, value);
+        set => SetProperty(ref _lightbarEnabled, value);
     }
 
     private bool _steerBarEnabled = false;
@@ -510,7 +510,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool SteerBarEnabled
     {
         get => _steerBarEnabled;
-        set => this.RaiseAndSetIfChanged(ref _steerBarEnabled, value);
+        set => SetProperty(ref _steerBarEnabled, value);
     }
 
     private bool _guidanceBarOn = true;
@@ -520,7 +520,7 @@ public class AutoSteerConfig : ReactiveObject
     public bool GuidanceBarOn
     {
         get => _guidanceBarOn;
-        set => this.RaiseAndSetIfChanged(ref _guidanceBarOn, value);
+        set => SetProperty(ref _guidanceBarOn, value);
     }
 
     // ============================================

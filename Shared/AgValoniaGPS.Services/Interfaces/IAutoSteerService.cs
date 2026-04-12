@@ -70,6 +70,12 @@ public interface IAutoSteerService
         double easting, double northing);
 
     /// <summary>
+    /// Update guidance results from external calculation (e.g. ViewModel guidance).
+    /// Used so chart data reflects the actual steering behavior.
+    /// </summary>
+    void UpdateGuidanceResults(double steerAngle, double crossTrackError);
+
+    /// <summary>
     /// Engage auto-steer (start sending steering commands to hardware).
     /// </summary>
     void Engage();
@@ -116,6 +122,30 @@ public interface IAutoSteerService
     /// </summary>
     /// <param name="angleDegrees">Target steer angle (-40 to +40 degrees)</param>
     void SetFreeDriveAngle(double angleDegrees);
+
+    /// <summary>
+    /// Set GPS drift compensation (offset fix). Applied to local coordinates
+    /// before guidance/tool calculations so tractor + implement move together.
+    /// </summary>
+    void SetDriftCompensation(double driftEasting, double driftNorthing);
+
+    /// <summary>
+    /// Send PGN 238 (Machine Config) to machine module.
+    /// Contains hydraulic lift timing, relay invert, and user values.
+    /// </summary>
+    void SendMachineConfig();
+
+    /// <summary>
+    /// Send PGN 236 (Machine Pin Config) to machine module.
+    /// Contains 24 relay pin function assignments.
+    /// </summary>
+    void SendMachinePinConfig();
+
+    /// <summary>
+    /// Update machine control state sent via PGN 239.
+    /// Called by ViewModel after section control updates.
+    /// </summary>
+    void SetMachineState(ushort sectionBits, bool isInUTurn, byte hydLiftState = 0);
 
     // ═══════════════════════════════════════════════════════════════════════
     // Module Feedback (PGN 253, 250)

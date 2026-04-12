@@ -1,0 +1,121 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+Licensed under GNU GPL v3.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.TramSettingsDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsTramSettingsDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsTramSettingsDialogVisible}">
+
+    <Grid>
+        <!-- Semi-transparent backdrop -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog panel -->
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="12"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MinWidth="360"
+                MaxWidth="440"
+                Padding="20">
+            <StackPanel Spacing="12">
+                <!-- Header -->
+                <TextBlock Text="Tram Lines Settings" FontSize="20" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           HorizontalAlignment="Center"/>
+
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                <!-- Info display -->
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" Margin="8">
+                    <TextBlock Grid.Row="0" Text="Tool Width:"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TramToolWidthDisplay}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
+
+                    <TextBlock Grid.Row="1" Text="Tram Width:"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TramWidthDisplay}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" Margin="0,6,0,0"/>
+
+                    <TextBlock Grid.Row="2" Text="Track Width:"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TramTrackWidthDisplay}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" Margin="0,6,0,0"/>
+
+                    <TextBlock Grid.Row="3" Text="Lines Generated:"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TramLineCountDisplay}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" Margin="0,6,0,0"/>
+                </Grid>
+
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                <!-- Passes -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Passes:" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               VerticalAlignment="Center" FontSize="16"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button Content="-" Width="40" Height="40" FontSize="20" FontWeight="Bold"
+                                Command="{Binding DecreaseTramPassesCommand}"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="{Binding TramPasses}" FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
+                        <Button Content="+" Width="40" Height="40" FontSize="20" FontWeight="Bold"
+                                Command="{Binding IncreaseTramPassesCommand}"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Display Mode -->
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
+                    <Button Grid.Column="0" Content="Off" Command="{Binding SetTramModeOffCommand}"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="36"/>
+                    <Button Grid.Column="1" Content="All" Command="{Binding SetTramModeAllCommand}"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="36"/>
+                    <Button Grid.Column="2" Content="Lines" Command="{Binding SetTramModeLinesCommand}"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="36"/>
+                    <Button Grid.Column="3" Content="Outer" Command="{Binding SetTramModeOuterCommand}"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            HorizontalAlignment="Stretch" Height="36"/>
+                </Grid>
+
+                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                <!-- Buttons -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <Button Grid.Column="1" Content="Build" Width="100" Height="40"
+                            Command="{Binding BuildTramLinesCommand}"
+                            Background="#27AE60" Foreground="White" FontWeight="Bold"
+                            CornerRadius="6"/>
+                    <Button Grid.Column="2" Content="Close" Width="100" Height="40"
+                            Command="{Binding CloseTramSettingsCommand}"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            CornerRadius="6"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -282,61 +282,34 @@ public class TrackManagementScreenshotTests
 
     #endregion
 
-    #region Delete Confirmation Dialog Tests
+    #region Delete Track Tests
 
     [AvaloniaTest]
-    public void DeleteConfirmation_Dialog_Rendered()
+    public void DeleteTrack_RemovesDirectly()
     {
         var vm = new MainViewModelBuilder().Build();
-        var dialog = new ConfirmationDialogPanel { DataContext = vm };
-
-        var window = new Window { Content = dialog, Width = 500, Height = 300 };
-        window.Show();
-
-        // Set up a track and trigger deletion
         var track = CreateABLine("Test Track", 0, 0, 0, 100);
         vm.SavedTracks.Add(track);
         vm.SelectedTrack = track;
 
-        // Execute the delete command (which shows confirmation dialog)
+        // Delete command removes directly (no confirmation dialog)
         vm.DeleteContourTrackCommand!.Execute(null);
 
-        SaveScreenshot(window, "delete_confirmation_dialog.png");
-
-        Assert.That(vm.State.UI.ActiveDialog, Is.EqualTo(DialogType.Confirmation));
-        Assert.That(vm.State.UI.IsConfirmationDialogVisible, Is.True);
+        Assert.That(vm.SavedTracks, Has.Count.EqualTo(0));
+        Assert.That(vm.SelectedTrack, Is.Null);
     }
 
     [AvaloniaTest]
-    public void DeleteConfirmation_Cancel_KeepsTrack()
+    public void DeleteTrack_NoSelection_DoesNothing()
     {
         var vm = new MainViewModelBuilder().Build();
         var track = CreateABLine("Keeper Track", 0, 0, 0, 100);
         vm.SavedTracks.Add(track);
-        vm.SelectedTrack = track;
+        vm.SelectedTrack = null;
 
-        // Trigger delete, then cancel
         vm.DeleteContourTrackCommand!.Execute(null);
-        vm.CancelConfirmationDialogCommand!.Execute(null);
 
         Assert.That(vm.SavedTracks, Has.Count.EqualTo(1));
-        Assert.That(vm.State.UI.ActiveDialog, Is.EqualTo(DialogType.None));
-    }
-
-    [AvaloniaTest]
-    public void DeleteConfirmation_Confirm_RemovesTrack()
-    {
-        var vm = new MainViewModelBuilder().Build();
-        var track = CreateContourStrip("Doomed Contour", 0, 0);
-        vm.SavedTracks.Add(track);
-        vm.SelectedTrack = track;
-
-        // Trigger delete, then confirm
-        vm.DeleteContourTrackCommand!.Execute(null);
-        vm.ConfirmConfirmationDialogCommand!.Execute(null);
-
-        Assert.That(vm.SavedTracks, Has.Count.EqualTo(0));
-        Assert.That(vm.State.UI.ActiveDialog, Is.EqualTo(DialogType.None));
     }
 
     #endregion
