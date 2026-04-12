@@ -1601,7 +1601,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
                 var drawLine = new Polyline
                 {
-                    Stroke = new SolidColorBrush(light ? Color.FromRgb(220, 80, 0) : Color.FromRgb(255, 130, 0)),
+                    Stroke = new SolidColorBrush(light ? Color.FromRgb(30, 100, 200) : Color.FromRgb(100, 180, 255)),
                     StrokeThickness = 2,
                     StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
                     Points = previewPoints
