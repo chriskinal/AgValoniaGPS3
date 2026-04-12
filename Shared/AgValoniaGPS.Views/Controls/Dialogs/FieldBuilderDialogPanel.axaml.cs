@@ -370,6 +370,104 @@ public partial class FieldBuilderDialogPanel : UserControl
         UpdatePreview();
     }
 
+    private void EditHeadlandSegment_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedHeadlandSegment == null) return;
+
+        var seg = vm.SelectedHeadlandSegment;
+
+        // Load segment into draw mode for editing
+        _drawMode = DrawMode.HeadlandPreview;
+        _drawPoints.Clear();
+        _drawPoints.AddRange(seg.BoundaryPoints);
+        _boundaryPointIndex1 = seg.BoundaryStartIndex;
+        _boundaryPointIndex2 = seg.BoundaryEndIndex;
+        _headlandStartExt = seg.StartExtension;
+        _headlandEndExt = seg.EndExtension;
+        _selectedBoundaryPoly = vm.CurrentBoundary?.OuterBoundary;
+
+        // Remove the segment (will be re-added when Create is clicked)
+        vm.HeadlandSegments.Remove(seg);
+        vm.SelectedHeadlandSegment = null;
+
+        // Show draw panel with offset input
+        var drawPanel = this.FindControl<Border>("DrawModePanel");
+        var instrText = this.FindControl<TextBlock>("DrawInstructionText");
+        var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
+        var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+        var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+        var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+        var headingInput = this.FindControl<TextBox>("HeadingInput");
+        var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
+
+        if (drawPanel != null) drawPanel.IsVisible = true;
+        if (instrText != null) instrText.Text = "Edit headland line - adjust offset and endpoints";
+        if (pointCountText != null) pointCountText.Text = "";
+        if (createPanel != null) createPanel.IsVisible = true;
+        if (finishPanel != null) finishPanel.IsVisible = false;
+        if (extPanel != null) extPanel.IsVisible = true;
+
+        if (headingPanel != null) headingPanel.IsVisible = true;
+        if (headingInput != null)
+        {
+            headingInput.Text = seg.Offset.ToString("F1");
+            headingInput.Focus();
+        }
+        var headingLabel = headingPanel?.Children.OfType<TextBlock>().FirstOrDefault();
+        if (headingLabel != null) headingLabel.Text = "Offset:";
+        var degLabel = headingPanel?.Children.OfType<TextBlock>().LastOrDefault();
+        if (degLabel != null) degLabel.Text = "m";
+
+        SetCanvasStatus("Edit headland line");
+        UpdatePreview();
+    }
+
+    private void EditTrack_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.SelectedTrack == null) return;
+
+        var track = vm.SelectedTrack;
+
+        // Load track into AB line preview for editing
+        _drawMode = track.Points.Count == 2 ? DrawMode.ABLinePreview : DrawMode.Curve;
+        _drawPoints.Clear();
+        _drawPoints.AddRange(track.Points);
+        _selectedBoundaryPoly = vm.CurrentBoundary?.OuterBoundary;
+
+        // Remove the track (will be re-added when Create is clicked)
+        vm.SavedTracks.Remove(track);
+        vm.SelectedTrack = null;
+
+        // Show draw panel
+        var drawPanel = this.FindControl<Border>("DrawModePanel");
+        var instrText = this.FindControl<TextBlock>("DrawInstructionText");
+        var pointCountText = this.FindControl<TextBlock>("DrawPointCountText");
+        var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
+        var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+
+        if (drawPanel != null) drawPanel.IsVisible = true;
+        if (createPanel != null) createPanel.IsVisible = true;
+        if (finishPanel != null) finishPanel.IsVisible = false;
+
+        var tabs = this.FindControl<TabControl>("MainTabs");
+        if (tabs != null) tabs.IsVisible = false;
+
+        if (track.Points.Count == 2)
+        {
+            if (instrText != null) instrText.Text = "Edit AB line - drag points or Create";
+            if (pointCountText != null) pointCountText.Text = "A and B set";
+            UpdateDrawModeInfo();
+        }
+        else
+        {
+            if (instrText != null) instrText.Text = "Edit curve - drag points, then Create";
+            if (pointCountText != null) pointCountText.Text = $"{_drawPoints.Count} points";
+        }
+
+        SetCanvasStatus("Edit track");
+        UpdatePreview();
+    }
+
     private void DeleteHeadlandSegment_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm || vm.SelectedHeadlandSegment == null) return;
@@ -1310,11 +1408,28 @@ public partial class FieldBuilderDialogPanel : UserControl
         bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
         bool isDrawing = _drawMode != DrawMode.None || onHeadlandTab;
 
-        // Draw headland segments (offset lines with extensions)
+        // Draw output headland path (yellow-orange, on top of boundary)
+        if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
+        {
+            var headPts = vm.CurrentHeadlandLineForPreview;
+            if (headPts.Count >= 3)
+            {
+                var headlandColor = light ? Color.FromRgb(220, 140, 0) : Color.FromRgb(255, 200, 30);
+                var headlandPoly = new Polygon
+                {
+                    Stroke = new SolidColorBrush(headlandColor),
+                    StrokeThickness = 3,
+                    Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
+                };
+                canvas.Children.Add(headlandPoly);
+            }
+        }
+
+        // Draw headland segments (offset lines with extensions, ON TOP of headland path)
         foreach (var seg in vm.HeadlandSegments)
         {
             if (seg.OffsetPoints.Count < 2) continue;
-            bool segSelected = seg == vm.SelectedHeadlandSegment && !isDrawing;
+            bool segSelected = seg == vm.SelectedHeadlandSegment && _drawMode == DrawMode.None;
             var segColor = new SolidColorBrush(segSelected
                 ? (light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80))
                 : (light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50)));
@@ -1347,28 +1462,11 @@ public partial class FieldBuilderDialogPanel : UserControl
             };
             canvas.Children.Add(segLine);
 
-            // Endpoint markers for selected segment (only start/end, not all curve points)
+            // Endpoint markers for selected segment
             if (segSelected)
             {
                 AddMarker(canvas, segPts[0], new SolidColorBrush(Color.FromRgb(218, 165, 32)), null, light);
                 AddMarker(canvas, segPts[^1], new SolidColorBrush(Color.FromRgb(65, 105, 225)), null, light);
-            }
-        }
-
-        // Draw output headland path (bright yellow-orange, thicker, ON TOP of everything)
-        if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
-        {
-            var headPts = vm.CurrentHeadlandLineForPreview;
-            if (headPts.Count >= 3)
-            {
-                var headlandColor = light ? Color.FromRgb(220, 140, 0) : Color.FromRgb(255, 200, 30);
-                var headlandPoly = new Polygon
-                {
-                    Stroke = new SolidColorBrush(headlandColor),
-                    StrokeThickness = 3,
-                    Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
-                };
-                canvas.Children.Add(headlandPoly);
             }
         }
 

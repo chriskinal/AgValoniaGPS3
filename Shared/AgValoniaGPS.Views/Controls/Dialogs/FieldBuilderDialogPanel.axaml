@@ -163,7 +163,7 @@ Licensed under GNU GPL v3.
                                     <StackPanel Spacing="2">
                                         <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
-                                                ToolTip.Tip="Edit Track" Command="{Binding ShowDrawABDialogCommand}">
+                                                ToolTip.Tip="Edit Track" Click="EditTrack_Click">
                                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
                                                    Width="36" Height="36" Stretch="Uniform"/>
                                         </Button>
@@ -251,6 +251,16 @@ Licensed under GNU GPL v3.
                                                    Width="36" Height="36" Stretch="Uniform"/>
                                         </Button>
                                         <TextBlock Text="Boundary" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Edit Selected" Click="EditHeadlandSegment_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Edit" FontSize="12" HorizontalAlignment="Center"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     </StackPanel>
                                     <StackPanel Spacing="2">
