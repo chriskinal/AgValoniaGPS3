@@ -872,28 +872,8 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         if (_session.Target == DrawTarget.TrackBoundaryCurve && _session.IsPreview)
         {
-            // Extend curve straight past endpoints
+            // Store the actual boundary segment points (A/B at selected positions)
             var points = new List<Vec3>(_session.Points);
-            double ext = 200; // 200m extension
-
-            if (points.Count >= 2)
-            {
-                var s0 = points[0];
-                var s1 = points[1];
-                double sdx = s0.Easting - s1.Easting;
-                double sdy = s0.Northing - s1.Northing;
-                double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
-                if (slen > 0.01)
-                    points.Insert(0, new Vec3(s0.Easting + sdx / slen * ext, s0.Northing + sdy / slen * ext, s0.Heading));
-
-                var e0 = points[^2];
-                var e1 = points[^1];
-                double edx = e1.Easting - e0.Easting;
-                double edy = e1.Northing - e0.Northing;
-                double elen = Math.Sqrt(edx * edx + edy * edy);
-                if (elen > 0.01)
-                    points.Add(new Vec3(e1.Easting + edx / elen * ext, e1.Northing + edy / elen * ext, e1.Heading));
-            }
 
             var track = new Models.Track.Track
             {
