@@ -41,6 +41,7 @@ public class AutoSteerService : IAutoSteerService
     // Dependencies
     private readonly ITrackGuidanceService _guidanceService;
     private readonly IUdpCommunicationService _udpService;
+    private ITramLineService? _tramLineService;
 
     // Local coordinate system reference
     private LocalPlane? _localPlane;
@@ -80,6 +81,14 @@ public class AutoSteerService : IAutoSteerService
         _state = new VehicleState();
         _sharedFieldProperties = new SharedFieldProperties();
         _guidanceInput = new TrackInput();
+    }
+
+    /// <summary>
+    /// Set the tram line service for real-time wheel detection in PGN 239.
+    /// </summary>
+    public void SetTramLineService(ITramLineService tramLineService)
+    {
+        _tramLineService = tramLineService;
     }
 
     public void Start()
@@ -363,6 +372,9 @@ public class AutoSteerService : IAutoSteerService
             CalculateGuidance();
         }
 
+        // Detect tram line wheel positions for PGN 239
+        UpdateTramState();
+
         // Build and send PGNs
         SendPgns();
 
@@ -393,6 +405,22 @@ public class AutoSteerService : IAutoSteerService
         _state.SteerAngle = output.SteerAngle;
         _state.IsOnTrack = Math.Abs(output.DistanceFromLinePivot) < 1.0; // Within 1 meter
         _state.MarkGuidanceEnd();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void UpdateTramState()
+    {
+        if (_tramLineService != null && _tramLineService.HasTramLines &&
+            ConfigurationStore.Instance.Tram.DisplayMode != Models.Configuration.TramDisplayMode.Off)
+        {
+            _state.TramState = _tramLineService.DetectTramWheels(
+                new Models.Base.Vec3(_state.Easting, _state.Northing, _state.Heading),
+                _state.HeadingRadians, 0.5);
+        }
+        else
+        {
+            _state.TramState = 0;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

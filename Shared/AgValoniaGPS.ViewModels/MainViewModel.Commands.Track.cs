@@ -1083,6 +1083,58 @@ public partial class MainViewModel
         SetTramModeLinesCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.LinesOnly));
         SetTramModeOuterCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.OuterOnly));
 
+        IncreaseTramStartPassCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Tram.StartPass++;
+            UpdateTramLines(SelectedTrack);
+            OnPropertyChanged(nameof(TramStartPass));
+            OnPropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        DecreaseTramStartPassCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Tram.StartPass = Math.Max(0, ConfigStore.Tram.StartPass - 1);
+            UpdateTramLines(SelectedTrack);
+            OnPropertyChanged(nameof(TramStartPass));
+            OnPropertyChanged(nameof(TramLineCountDisplay));
+        });
+
+        SwapTramSideCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Tram.IsOuterInverted = !ConfigStore.Tram.IsOuterInverted;
+            UpdateTramLines(SelectedTrack);
+            StatusMessage = $"Tram side: {(ConfigStore.Tram.IsOuterInverted ? "Inverted" : "Normal")}";
+        });
+
+        ClearTramLinesCommand = new RelayCommand(() =>
+        {
+            ShowConfirmationDialog("Clear Tram Lines",
+                "Delete all tram lines? This cannot be undone.",
+                () =>
+                {
+                    _tramLineService.Clear();
+                    ConfigStore.Tram.DisplayMode = Models.Configuration.TramDisplayMode.Off;
+                    _mapService.SetTramLines(
+                        _tramLineService.OuterBoundaryTrack,
+                        _tramLineService.InnerBoundaryTrack,
+                        _tramLineService.ParallelTramLines);
+                    OnPropertyChanged(nameof(TramLineCountDisplay));
+                    StatusMessage = "Tram lines cleared";
+                });
+        });
+
+        ToggleTramLeftManualCommand = new RelayCommand(() =>
+        {
+            _tramLineService.IsLeftManualOn = !_tramLineService.IsLeftManualOn;
+            OnPropertyChanged(nameof(TramLeftManualOn));
+        });
+
+        ToggleTramRightManualCommand = new RelayCommand(() =>
+        {
+            _tramLineService.IsRightManualOn = !_tramLineService.IsRightManualOn;
+            OnPropertyChanged(nameof(TramRightManualOn));
+        });
+
         CreateTrackFromBoundaryCommand = new RelayCommand(() =>
         {
             var boundary = _currentBoundary?.OuterBoundary;

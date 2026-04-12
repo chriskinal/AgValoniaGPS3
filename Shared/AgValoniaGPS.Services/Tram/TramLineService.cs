@@ -239,6 +239,40 @@ public class TramLineService(
     }
 
     /// <summary>
+    /// Detect which wheels are on tram lines.
+    /// Returns a byte: bit 0 = right wheel, bit 1 = left wheel.
+    /// </summary>
+    public byte DetectTramWheels(Vec3 vehiclePosition, double vehicleHeading, double tolerance)
+    {
+        var config = ConfigurationStore.Instance;
+        double halfTrack = config.Vehicle.TrackWidth / 2.0;
+
+        // Calculate left and right wheel positions
+        double perpHeading = vehicleHeading + Math.PI / 2.0;
+        double sinPerp = Math.Sin(perpHeading);
+        double cosPerp = Math.Cos(perpHeading);
+
+        var rightWheel = new Vec3(
+            vehiclePosition.Easting + sinPerp * halfTrack,
+            vehiclePosition.Northing + cosPerp * halfTrack,
+            vehicleHeading);
+        var leftWheel = new Vec3(
+            vehiclePosition.Easting - sinPerp * halfTrack,
+            vehiclePosition.Northing - cosPerp * halfTrack,
+            vehicleHeading);
+
+        byte result = 0;
+
+        bool rightOn = IsOnTramLine(rightWheel, tolerance) || _isRightManualOn;
+        bool leftOn = IsOnTramLine(leftWheel, tolerance) || _isLeftManualOn;
+
+        if (rightOn) result |= 1;
+        if (leftOn) result |= 2;
+
+        return result;
+    }
+
+    /// <summary>
     /// Get squared distance from point to polyline
     /// </summary>
     private double DistanceToPolylineSquared(List<Vec2> polyline, Vec3 position)

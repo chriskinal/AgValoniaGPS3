@@ -228,6 +228,7 @@ public partial class MainViewModel : ObservableObject
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
         _udpService.DataReceived += OnUdpDataReceived;
         _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
+        (_autoSteerService as Services.AutoSteer.AutoSteerService)?.SetTramLineService(_tramLineService);
         _autoSteerService.Start(); // Enable zero-copy GPS pipeline
 
         // Start the background GPS processing pipeline
@@ -3803,10 +3804,29 @@ public partial class MainViewModel : ObservableObject
     public ICommand? SetTramModeOuterCommand { get; private set; }
 
     public int TramPasses => ConfigStore.Tram.Passes;
+    public int TramStartPass => ConfigStore.Tram.StartPass;
+    public double TramWidth => ConfigStore.Tram.TramWidth;
     public string TramToolWidthDisplay => $"{ConfigStore.ActualToolWidth:F2} m";
-    public string TramWidthDisplay => $"{ConfigStore.ActualToolWidth * ConfigStore.Tram.Passes:F2} m";
+    public string TramWidthDisplay => $"{ConfigStore.Tram.TramWidth:F2} m";
     public string TramTrackWidthDisplay => $"{ConfigStore.Vehicle.TrackWidth:F2} m";
     public string TramLineCountDisplay => $"{_tramLineService.ParallelTramLines.Count}";
+    public ICommand? IncreaseTramStartPassCommand { get; private set; }
+    public ICommand? DecreaseTramStartPassCommand { get; private set; }
+    public ICommand? SwapTramSideCommand { get; private set; }
+    public ICommand? ClearTramLinesCommand { get; private set; }
+    public ICommand? ToggleTramLeftManualCommand { get; private set; }
+    public ICommand? ToggleTramRightManualCommand { get; private set; }
+    public bool TramLeftManualOn => _tramLineService.IsLeftManualOn;
+    public bool TramRightManualOn => _tramLineService.IsRightManualOn;
+
+    /// <summary>
+    /// Get tram line geometry for canvas preview rendering.
+    /// </summary>
+    public (IReadOnlyList<Models.Base.Vec2> outer, IReadOnlyList<Models.Base.Vec2> inner, IReadOnlyList<IReadOnlyList<Models.Base.Vec2>> parallel)? GetTramLineData()
+    {
+        if (!_tramLineService.HasTramLines) return null;
+        return (_tramLineService.OuterBoundaryTrack, _tramLineService.InnerBoundaryTrack, _tramLineService.ParallelTramLines);
+    }
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
     public ICommand? StartRecordedPathCommand { get; private set; }
     public ICommand? StopRecordedPathCommand { get; private set; }
