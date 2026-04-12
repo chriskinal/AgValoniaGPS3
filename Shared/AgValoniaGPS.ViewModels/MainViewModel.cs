@@ -3270,10 +3270,17 @@ public partial class MainViewModel : ObservableObject
                     offsetLine.Add(new Vec3(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension, e1.Heading));
             }
 
-            // Find intersection of offset line start with headland polygon
-            int startIntersectIdx = FindLineHeadlandIntersection(offsetLine[0], offsetLine[1], headland, out Vec3 startIntersectPt);
-            // Find intersection of offset line end with headland polygon
-            int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland, out Vec3 endIntersectPt);
+            // Find intersection of offset line with headland polygon
+            // Search from each end along consecutive segments until intersection found
+            int startIntersectIdx = -1;
+            Vec3 startIntersectPt = default;
+            for (int oi = 0; oi < offsetLine.Count - 1 && startIntersectIdx < 0; oi++)
+                startIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi + 1], headland, out startIntersectPt);
+
+            int endIntersectIdx = -1;
+            Vec3 endIntersectPt = default;
+            for (int oi = offsetLine.Count - 1; oi > 0 && endIntersectIdx < 0; oi--)
+                endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi - 1], headland, out endIntersectPt);
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
 
