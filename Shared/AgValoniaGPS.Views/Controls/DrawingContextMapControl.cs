@@ -4170,6 +4170,27 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             using var antennaPaint = new SKPaint { Color = new SKColor(40, 120, 255), Style = SKPaintStyle.Fill };
             canvas.DrawCircle((float)s.AntennaOffset, (float)s.AntennaPivot, 0.25f, antennaPaint);
 
+            // Heading unknown "?" indicator
+            if (!s.HasValidHeading)
+            {
+                using var qPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Stroke, StrokeWidth = 0.3f, IsAntialias = true };
+                canvas.DrawLine(size / 2 + 1, size / 2, size / 2 + 1, -size / 4, qPaint);
+                using var dotPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Fill };
+                canvas.DrawCircle(size / 2 + 1, -size / 2, 0.2f, dotPaint);
+            }
+
+            // Reverse indicator
+            if (s.IsReversing)
+            {
+                using var revPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Fill, IsAntialias = true };
+                using var revPath = new SKPath();
+                revPath.MoveTo(0, -size / 2 - 1);
+                revPath.LineTo(-size / 4, -size / 2 - 2.5f);
+                revPath.LineTo(size / 4, -size / 2 - 2.5f);
+                revPath.Close();
+                canvas.DrawPath(revPath, revPaint);
+            }
+
             canvas.Restore();
         }
 
