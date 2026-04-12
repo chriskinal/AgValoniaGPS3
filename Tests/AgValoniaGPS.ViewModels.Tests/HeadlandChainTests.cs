@@ -974,6 +974,192 @@ public class HeadlandChainTests
     }
 
     // ---------------------------------------------------------------
+    // TEST GROUP 18: Regression - dividing line follows merged chain shape
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void LShapeChain_HeadlandFollowsCorner_NotDiagonal()
+    {
+        // Regression: two chained lines forming an L-shape produced a diagonal headland
+        // path because the dividing line used the original segment's 2 points instead
+        // of the merged chain's interior points (the corner).
+        //
+        // Setup: horizontal line across top + vertical line down right side
+        // Expected: headland cuts an L-shaped corner from the top-right
+        // Bug: headland cut diagonally from top-left to bottom-right
+        var vm = CreateVmWithBoundary(200, 200);
+
+        // Horizontal line along top: from left toward right
+        var segH = new HeadlandSegment
+        {
+            Name = "Top Horizontal",
+            Type = HeadlandSegmentType.Line,
+            Offset = 20,
+            BoundaryPoints = new() { new Vec3(20, 180, Math.PI / 2), new Vec3(160, 180, Math.PI / 2) },
+            StartExtension = 50,
+            EndExtension = 60
+        };
+
+        // Vertical line along right: from top down toward bottom
+        var segV = new HeadlandSegment
+        {
+            Name = "Right Vertical",
+            Type = HeadlandSegmentType.Line,
+            Offset = 20,
+            BoundaryPoints = new() { new Vec3(180, 170, Math.PI), new Vec3(180, 20, Math.PI) },
+            StartExtension = 60,
+            EndExtension = 50
+        };
+
+        vm.ComputeSegmentOffset(segH);
+        vm.ComputeSegmentOffset(segV);
+        vm.HeadlandSegments.Add(segH);
+        vm.HeadlandSegments.Add(segV);
+        vm.BuildHeadlandFromSegments();
+
+        bool anyEffective = segH.IsEffective || segV.IsEffective;
+        Assert.That(anyEffective, Is.True,
+            $"L-shape chain should be effective. H={segH.IsEffective}, V={segV.IsEffective}");
+
+        var headland = GetHeadlandLine(vm);
+        Assert.That(headland, Is.Not.Null);
+
+        // Key assertion: the headland path should have a point near the L-corner
+        // (approximately at (160, 160) after offset). If the bug is present,
+        // no headland point will be near this corner - the path goes diagonal.
+        bool hasCornerPoint = false;
+        foreach (var pt in headland!)
+        {
+            // The corner should be roughly where the two offset lines meet
+            // Horizontal offset at y~160, vertical offset at x~160
+            double distToCorner = Math.Sqrt(
+                Math.Pow(pt.Easting - 160, 2) + Math.Pow(pt.Northing - 160, 2));
+            if (distToCorner < 30) // Within 30m of expected corner
+            {
+                hasCornerPoint = true;
+                break;
+            }
+        }
+
+        Assert.That(hasCornerPoint, Is.True,
+            "Headland path should have a point near the L-corner (~160,160), not cut diagonally. " +
+            $"Points: {string.Join("; ", headland.Select(p => $"({p.Easting:F0},{p.Northing:F0})"))}");
+
+        // Additional: area should reflect an L-cut (not a diagonal triangle cut)
+        // L-cut removes ~20m from top + ~20m from right = roughly 200*180 - 20*180 = smaller than diagonal
+        double headArea = Math.Abs(CalculateArea(headland));
+        double fullArea = 200 * 200;
+        // An L-cut from two 20m offsets removes ~7600 (top strip + right strip - corner overlap)
+        // A diagonal cut would remove roughly half the field (~20000)
+        Assert.That(headArea, Is.GreaterThan(fullArea * 0.6),
+            $"L-cut should keep most area (not diagonal). Area: {headArea:F0}, full: {fullArea:F0}");
+    }
+
+    [Test]
+    public void TwoSequentialCuts_SecondCutOnSameHeadlandSegment_Works()
+    {
+        // Regression: after first cut creates a long headland edge, second line
+        // intersects that edge at two points. Old code rejected this because
+        // startIntersectIdx == endIntersectIdx (same segment).
+        var vm = CreateVmWithBoundary(200, 200);
+
+        // First cut: horizontal across bottom
+        var seg1 = new HeadlandSegment
+        {
+            Name = "Bottom Cut",
+            Type = HeadlandSegmentType.Line,
+            Offset = 30,
+            BoundaryPoints = new() { new Vec3(10, 15, Math.PI / 2), new Vec3(190, 15, Math.PI / 2) },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        // Second cut: vertical down right side - both endpoints will hit the
+        // new bottom edge (a single long segment created by the first cut)
+        var seg2 = new HeadlandSegment
+        {
+            Name = "Right Cut",
+            Type = HeadlandSegmentType.Line,
+            Offset = 30,
+            BoundaryPoints = new() { new Vec3(185, 190, Math.PI), new Vec3(185, 50, Math.PI) },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        vm.ComputeSegmentOffset(seg1);
+        vm.ComputeSegmentOffset(seg2);
+        vm.HeadlandSegments.Add(seg1);
+        vm.HeadlandSegments.Add(seg2);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg1.IsEffective, Is.True, "First cut should be effective");
+        Assert.That(seg2.IsEffective, Is.True,
+            "Second cut should be effective even when both intersections are on same headland segment");
+
+        var headland = GetHeadlandLine(vm);
+        Assert.That(headland, Is.Not.Null);
+        double headArea = Math.Abs(CalculateArea(headland!));
+        double fullArea = 200 * 200;
+        // Two cuts: 30m from bottom + 30m from right
+        Assert.That(headArea, Is.LessThan(fullArea * 0.8),
+            $"Two perpendicular cuts should reduce area. Area: {headArea:F0}");
+    }
+
+    // ---------------------------------------------------------------
+    // TEST GROUP 19: Extension save/load regression
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void ExtensionsSavedAndLoaded()
+    {
+        // Regression: StartExtension and EndExtension were not included in the DTO,
+        // so they always reverted to 50m default on save/load.
+        var tempDir = Path.Combine(Path.GetTempPath(), "headland_test_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var segments = new List<HeadlandSegment>
+            {
+                new()
+                {
+                    Name = "Custom Extensions",
+                    Type = HeadlandSegmentType.Line,
+                    Offset = 12,
+                    StartExtension = 25,
+                    EndExtension = 75,
+                    BoundaryPoints = new() { new Vec3(10, 50, 0), new Vec3(90, 50, 0) }
+                },
+                new()
+                {
+                    Name = "Default Extensions",
+                    Type = HeadlandSegmentType.Curve,
+                    Offset = 8,
+                    StartExtension = 50,
+                    EndExtension = 50,
+                    BoundaryPoints = new() { new Vec3(0, 0, 0), new Vec3(50, 50, 0), new Vec3(100, 0, 0) }
+                }
+            };
+
+            AgValoniaGPS.Services.Headland.HeadlandSegmentFileService.Save(tempDir, segments);
+            var loaded = AgValoniaGPS.Services.Headland.HeadlandSegmentFileService.Load(tempDir);
+
+            Assert.That(loaded.Count, Is.EqualTo(2));
+            Assert.That(loaded[0].StartExtension, Is.EqualTo(25),
+                "StartExtension should survive save/load");
+            Assert.That(loaded[0].EndExtension, Is.EqualTo(75),
+                "EndExtension should survive save/load");
+            Assert.That(loaded[1].StartExtension, Is.EqualTo(50));
+            Assert.That(loaded[1].EndExtension, Is.EqualTo(50));
+            Assert.That(loaded[0].Offset, Is.EqualTo(12));
+            Assert.That(loaded[0].Name, Is.EqualTo("Custom Extensions"));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
 
