@@ -3245,12 +3245,13 @@ public partial class MainViewModel : ObservableObject
         int cutsApplied = 0;
 
         // Build all offset lines with extensions
-        var offsetLines = new List<(Models.Headland.HeadlandSegment seg, List<Vec3> line)>();
+        // Track list of segments per chain (merging combines multiple segments)
+        var offsetLines = new List<(List<Models.Headland.HeadlandSegment> segs, List<Vec3> line)>();
         foreach (var seg in HeadlandSegments)
         {
             if (seg.OffsetPoints.Count < 2) continue;
             var ol = BuildOffsetLineWithExtensions(seg);
-            offsetLines.Add((seg, ol));
+            offsetLines.Add((new List<Models.Headland.HeadlandSegment> { seg }, ol));
         }
 
         // Try to merge chained offset lines that intersect each other
@@ -3296,30 +3297,62 @@ public partial class MainViewModel : ObservableObject
                     if (found)
                     {
                         // Trim A at intersection: keep A[0..aSegIdx] + intersectPt
-                        // Then append B from the closest end
                         var trimmedA = new List<Vec3>();
                         for (int k = 0; k <= aSegIdx; k++)
                             trimmedA.Add(lineA[k]);
                         trimmedA.Add(intersectPt);
 
-                        // Determine which end of B to connect from
+                        // Find which segment of B contains the intersection and trim B too
+                        int bSegIdx = -1;
+                        for (int bi = 0; bi < lineB.Count - 1; bi++)
+                        {
+                            if (LineSegmentIntersection(
+                                lineA[aSegIdx].Easting, lineA[aSegIdx].Northing, lineA[aSegIdx + 1].Easting, lineA[aSegIdx + 1].Northing,
+                                lineB[bi].Easting, lineB[bi].Northing, lineB[bi + 1].Easting, lineB[bi + 1].Northing,
+                                out double t2, out double u2))
+                            {
+                                if (t2 >= 0 && t2 <= 1 && u2 >= 0 && u2 <= 1)
+                                {
+                                    bSegIdx = bi;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Determine which end of B to connect from and trim at intersection
                         double dBStart = System.Math.Pow(lineB[0].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[0].Northing - intersectPt.Northing, 2);
                         double dBEnd = System.Math.Pow(lineB[^1].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[^1].Northing - intersectPt.Northing, 2);
 
                         var combined = new List<Vec3>(trimmedA);
                         if (dBStart < dBEnd)
-                            combined.AddRange(lineB);
+                        {
+                            // B goes forward from intersection: trim B start, keep bSegIdx+1..end
+                            if (bSegIdx >= 0)
+                                for (int k = bSegIdx + 1; k < lineB.Count; k++)
+                                    combined.Add(lineB[k]);
+                            else
+                                combined.AddRange(lineB);
+                        }
                         else
                         {
-                            var rev = new List<Vec3>(lineB);
-                            rev.Reverse();
-                            combined.AddRange(rev);
+                            // B goes backward from intersection: trim B end, keep 0..bSegIdx reversed
+                            if (bSegIdx >= 0)
+                                for (int k = bSegIdx; k >= 0; k--)
+                                    combined.Add(lineB[k]);
+                            else
+                            {
+                                var rev = new List<Vec3>(lineB);
+                                rev.Reverse();
+                                combined.AddRange(rev);
+                            }
                         }
 
-                        offsetLines[a] = (offsetLines[a].seg, combined);
+                        var mergedSegs = new List<Models.Headland.HeadlandSegment>(offsetLines[a].segs);
+                        mergedSegs.AddRange(offsetLines[b].segs);
+                        offsetLines[a] = (mergedSegs, combined);
                         offsetLines.RemoveAt(b);
                         merged = true;
-                        _logger.LogDebug($"[Headland] Merged offset lines: {offsetLines[a].seg.Name} + removed segment");
+                        _logger.LogDebug($"[Headland] Merged offset lines: {mergedSegs.Count} segments combined");
                     }
                 }
             }
@@ -3329,7 +3362,7 @@ public partial class MainViewModel : ObservableObject
         // These can divide the polygon without touching the boundary
         for (int ci = 0; ci < offsetLines.Count; ci++)
         {
-            var (closedSeg, closedLine) = offsetLines[ci];
+            var (closedSegs, closedLine) = offsetLines[ci];
             if (closedLine.Count < 4) continue;
             double loopDist = System.Math.Sqrt(
                 System.Math.Pow(closedLine[0].Easting - closedLine[^1].Easting, 2) +
@@ -3353,14 +3386,14 @@ public partial class MainViewModel : ObservableObject
                 {
                     // Loop is outside the centroid - headland is unchanged
                     // (the loop is in the headland area, not the working area)
-                    closedSeg.IsEffective = true;
+                    foreach (var cs in closedSegs) cs.IsEffective = true;
                     _logger.LogDebug($"[Headland] Closed loop found (outside centroid) - headland unchanged");
                 }
                 else
                 {
                     // Loop contains centroid - the loop IS the headland
                     headland = loopPoly;
-                    closedSeg.IsEffective = true;
+                    foreach (var cs in closedSegs) cs.IsEffective = true;
                     cutsApplied++;
                     _logger.LogDebug($"[Headland] Closed loop contains centroid - used as headland");
                 }
@@ -3371,8 +3404,9 @@ public partial class MainViewModel : ObservableObject
         }
 
         // Process each offset line (possibly merged chains)
-        foreach (var (seg, offsetLine) in offsetLines)
+        foreach (var (segs, offsetLine) in offsetLines)
         {
+            var seg = segs[0]; // Primary segment for logging
 
             // Find intersection of offset line with headland polygon
             // Search from each end, limited to half the line to avoid finding the wrong end
@@ -3386,14 +3420,32 @@ public partial class MainViewModel : ObservableObject
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
             int endStart = System.Math.Max(1, offsetLine.Count - halfCount);
-            for (int oi = endStart; oi < offsetLine.Count && endIntersectIdx < 0; oi++)
+            // Search from end backward to find the far-end intersection first
+            for (int oi = offsetLine.Count - 1; oi >= endStart && endIntersectIdx < 0; oi--)
                 endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi - 1], offsetLine[oi], headland, out endIntersectPt);
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
 
-            seg.IsEffective = startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx;
+            // Check that both ends intersect at different locations
+            // Allow same headland segment if intersection points are far apart
+            bool intersectionsFarEnough = false;
+            if (startIntersectIdx >= 0 && endIntersectIdx >= 0)
+            {
+                if (startIntersectIdx != endIntersectIdx)
+                {
+                    intersectionsFarEnough = true;
+                }
+                else
+                {
+                    double ptDist = System.Math.Sqrt(
+                        System.Math.Pow(startIntersectPt.Easting - endIntersectPt.Easting, 2) +
+                        System.Math.Pow(startIntersectPt.Northing - endIntersectPt.Northing, 2));
+                    intersectionsFarEnough = ptDist > 1.0; // At least 1m apart
+                }
+            }
+            foreach (var s in segs) s.IsEffective = intersectionsFarEnough;
 
-            if (seg.IsEffective)
+            if (intersectionsFarEnough)
             {
                 // Both ends intersect - split the polygon into two halves
                 int count = headland.Count - 1; // exclude closing duplicate
@@ -3411,29 +3463,51 @@ public partial class MainViewModel : ObservableObject
                 var divLineReverse = new List<Vec3>(divLine);
                 divLineReverse.Reverse();
 
-                // Path A: start at startIntersectPt, walk headland forward to endIntersectPt, then divLine back
                 var pathA = new List<Vec3>();
-                int idx = (startIntersectIdx + 1) % count;
-                pathA.Add(startIntersectPt);
-                while (idx != (endIntersectIdx + 1) % count)
-                {
-                    pathA.Add(headland[idx]);
-                    idx = (idx + 1) % count;
-                    if (pathA.Count > count + 2) break;
-                }
-                pathA.Add(endIntersectPt);
-
-                // Path B: start at endIntersectPt, walk headland forward to startIntersectPt, then divLine back
                 var pathB = new List<Vec3>();
-                idx = (endIntersectIdx + 1) % count;
-                pathB.Add(endIntersectPt);
-                while (idx != (startIntersectIdx + 1) % count)
+                int idx;
+
+                if (startIntersectIdx == endIntersectIdx)
                 {
-                    pathB.Add(headland[idx]);
-                    idx = (idx + 1) % count;
-                    if (pathB.Count > count + 2) break;
+                    // Both intersections on the same headland segment
+                    // pathA: just the direct connection between the two points
+                    pathA.Add(startIntersectPt);
+                    pathA.Add(endIntersectPt);
+
+                    // pathB: walk the entire headland polygon
+                    pathB.Add(endIntersectPt);
+                    idx = (endIntersectIdx + 1) % count;
+                    for (int step = 0; step < count; step++)
+                    {
+                        pathB.Add(headland[idx]);
+                        idx = (idx + 1) % count;
+                    }
+                    pathB.Add(startIntersectPt);
                 }
-                pathB.Add(startIntersectPt);
+                else
+                {
+                    // Path A: start at startIntersectPt, walk headland forward to endIntersectPt
+                    idx = (startIntersectIdx + 1) % count;
+                    pathA.Add(startIntersectPt);
+                    while (idx != (endIntersectIdx + 1) % count)
+                    {
+                        pathA.Add(headland[idx]);
+                        idx = (idx + 1) % count;
+                        if (pathA.Count > count + 2) break;
+                    }
+                    pathA.Add(endIntersectPt);
+
+                    // Path B: start at endIntersectPt, walk headland forward to startIntersectPt
+                    idx = (endIntersectIdx + 1) % count;
+                    pathB.Add(endIntersectPt);
+                    while (idx != (startIntersectIdx + 1) % count)
+                    {
+                        pathB.Add(headland[idx]);
+                        idx = (idx + 1) % count;
+                        if (pathB.Count > count + 2) break;
+                    }
+                    pathB.Add(startIntersectPt);
+                }
 
                 // Complete each polygon by adding the dividing line
                 // pathA + divLineReverse forms polygon A
@@ -3459,6 +3533,7 @@ public partial class MainViewModel : ObservableObject
                 else if (bContains && !aContains) chosen = polyB;
                 else chosen = System.Math.Abs(CalculateSignedArea(polyA)) >= System.Math.Abs(CalculateSignedArea(polyB)) ? polyA : polyB;
                 if (chosen.Count > 0)
+                {
                     // Remove consecutive duplicate points
                     for (int d = chosen.Count - 1; d > 0; d--)
                     {
@@ -3467,6 +3542,7 @@ public partial class MainViewModel : ObservableObject
                         if (ddx * ddx + ddy * ddy < 0.01) chosen.RemoveAt(d);
                     }
                     chosen.Add(chosen[0]); // close loop
+                }
 
                 headland = chosen;
                 cutsApplied++;
