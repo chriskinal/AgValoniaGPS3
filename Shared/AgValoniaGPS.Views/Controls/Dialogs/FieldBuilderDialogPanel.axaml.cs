@@ -781,9 +781,11 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (headingInput != null) double.TryParse(headingInput.Text, out offset);
 
             bool isCurve = _session.Points.Count > 2;
+            string segName = _session.BackupSegment?.Name
+                ?? $"{(isCurve ? "Curve" : "Line")} {vm.HeadlandSegments.Count + 1}";
             var segment = new Models.Headland.HeadlandSegment
             {
-                Name = $"{(isCurve ? "Curve" : "Line")} {vm.HeadlandSegments.Count + 1}",
+                Name = segName,
                 Type = isCurve ? Models.Headland.HeadlandSegmentType.Curve : Models.Headland.HeadlandSegmentType.Line,
                 Offset = offset,
                 BoundaryStartIndex = _session.BoundaryStartIndex,
