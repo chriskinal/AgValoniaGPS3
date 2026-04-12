@@ -394,8 +394,10 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
         else
         {
-            _session.Target = DrawTarget.TrackCurve;
-            _session.Phase = DrawPhase.PickingMore;
+            // Curves with many points are likely boundary-derived, use boundary curve mode
+            // for proper snapping and endpoint-only display
+            _session.Target = DrawTarget.TrackBoundaryCurve;
+            _session.Phase = DrawPhase.Preview;
         }
 
         // Remove the track (will be re-added when Create is clicked)
