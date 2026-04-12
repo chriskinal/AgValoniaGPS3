@@ -3213,11 +3213,19 @@ public partial class MainViewModel : ObservableObject
                 for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
                     pathB.Add(seg.OffsetPoints[j]);
 
-                // Calculate signed areas to pick the larger polygon (= inside of field)
-                double areaA = CalculateSignedArea(pathA);
-                double areaB = CalculateSignedArea(pathB);
+                // Pick the polygon that contains the field centroid (= working area)
+                double cx = 0, cy = 0;
+                var bndPts = bnd.Points;
+                foreach (var bp in bndPts) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= bndPts.Count; cy /= bndPts.Count;
 
-                var chosen = System.Math.Abs(areaA) >= System.Math.Abs(areaB) ? pathA : pathB;
+                bool aContains = IsPointInPolygon(cx, cy, pathA);
+                bool bContains = IsPointInPolygon(cx, cy, pathB);
+
+                List<Vec3> chosen;
+                if (aContains && !bContains) chosen = pathA;
+                else if (bContains && !aContains) chosen = pathB;
+                else chosen = System.Math.Abs(CalculateSignedArea(pathA)) >= System.Math.Abs(CalculateSignedArea(pathB)) ? pathA : pathB;
                 if (chosen.Count > 0)
                     chosen.Add(chosen[0]); // close loop
 
@@ -3242,6 +3250,20 @@ public partial class MainViewModel : ObservableObject
             : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
 
         SaveHeadlandSegments();
+    }
+
+    private static bool IsPointInPolygon(double px, double py, List<Vec3> polygon)
+    {
+        bool inside = false;
+        int count = polygon.Count;
+        for (int i = 0, j = count - 1; i < count; j = i++)
+        {
+            double yi = polygon[i].Northing, yj = polygon[j].Northing;
+            double xi = polygon[i].Easting, xj = polygon[j].Easting;
+            if (((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+                inside = !inside;
+        }
+        return inside;
     }
 
     private static double CalculateSignedArea(List<Vec3> polygon)
