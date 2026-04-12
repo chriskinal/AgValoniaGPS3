@@ -72,6 +72,7 @@ public class MainViewModelBuilder
             chartDataService: Substitute.For<IChartDataService>(),
             audioService: Substitute.For<IAudioService>(),
             elevationLogService: Substitute.For<IElevationLogService>(),
+            tramLineService: Substitute.For<AgValoniaGPS.Services.Interfaces.ITramLineService>(),
             gpsPipelineService: GpsPipelineService,
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());

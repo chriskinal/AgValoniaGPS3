@@ -3117,13 +3117,9 @@ public partial class MainViewModel : ObservableObject
             result.Add(new Vec3(last.bx, last.by, pts[^1].Heading));
         }
 
-        // Remove self-intersections only for closed polygons (Boundary type)
-        // Open segments (Line/Curve) shouldn't have self-intersection removal as it
-        // can create artifacts that interfere with headland intersection detection
-        if (segment.Type == Models.Headland.HeadlandSegmentType.Boundary)
-            segment.OffsetPoints = RemoveSelfIntersections(result);
-        else
-            segment.OffsetPoints = result;
+        // Remove self-intersections (inverted fillets when offset > corner radius)
+        // Safe for all types since edge-based offset produces accurate distances
+        segment.OffsetPoints = result.Count > 3 ? RemoveSelfIntersections(result) : result;
     }
 
     /// <summary>
