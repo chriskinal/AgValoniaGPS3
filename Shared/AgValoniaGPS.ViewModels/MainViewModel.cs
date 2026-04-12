@@ -3292,11 +3292,12 @@ public partial class MainViewModel : ObservableObject
                     var lineA = offsetLines[a].line;
                     var lineB = offsetLines[b].line;
 
-                    // Check all segment pairs between A and B for intersection
+                    // Check segment pairs between A's ends and B for intersection
+                    // Search from A's end backward to prefer extending the chain (not cutting it short)
                     Vec3 intersectPt = default;
                     bool found = false;
                     int aSegIdx = -1;
-                    for (int ai = 0; ai < lineA.Count - 1 && !found; ai++)
+                    for (int ai = lineA.Count - 2; ai >= 0 && !found; ai--)
                     {
                         for (int bi = 0; bi < lineB.Count - 1 && !found; bi++)
                         {
@@ -3383,13 +3384,61 @@ public partial class MainViewModel : ObservableObject
 
         // Check for closed loops: merged chains whose start and end meet
         // These can divide the polygon without touching the boundary
+        // First try to close near-miss loops by finding where end segments intersect start segments
         for (int ci = 0; ci < offsetLines.Count; ci++)
         {
             var (closedSegs, closedLine) = offsetLines[ci];
-            if (closedLine.Count < 4) continue;
+            if (closedLine.Count < 6 || closedSegs.Count < 2) continue; // Need multiple merged segments
+
             double loopDist = System.Math.Sqrt(
                 System.Math.Pow(closedLine[0].Easting - closedLine[^1].Easting, 2) +
                 System.Math.Pow(closedLine[0].Northing - closedLine[^1].Northing, 2));
+
+            if (loopDist >= 5.0)
+            {
+                // Ends don't meet directly - check if end segments intersect start segments
+                // This handles the case where extensions overshoot past the closing corner
+                int searchRange = System.Math.Max(3, closedLine.Count / 2);
+                Vec3 closeIntersectPt = default;
+                int startSegClose = -1, endSegClose = -1;
+
+                for (int si = 0; si < System.Math.Min(searchRange, closedLine.Count / 2) && startSegClose < 0; si++)
+                {
+                    int endSearchStart = System.Math.Max(closedLine.Count / 2, si + 2);
+                    for (int ei = endSearchStart; ei < closedLine.Count - 1 && startSegClose < 0; ei++)
+                    {
+                        if (LineSegmentIntersection(
+                            closedLine[si].Easting, closedLine[si].Northing, closedLine[si + 1].Easting, closedLine[si + 1].Northing,
+                            closedLine[ei].Easting, closedLine[ei].Northing, closedLine[ei + 1].Easting, closedLine[ei + 1].Northing,
+                            out double t, out double u))
+                        {
+                            if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+                            {
+                                closeIntersectPt = new Vec3(
+                                    closedLine[si].Easting + t * (closedLine[si + 1].Easting - closedLine[si].Easting),
+                                    closedLine[si].Northing + t * (closedLine[si + 1].Northing - closedLine[si].Northing), 0);
+                                startSegClose = si;
+                                endSegClose = ei;
+                            }
+                        }
+                    }
+                }
+
+                if (startSegClose >= 0)
+                {
+                    // Trim both ends at the intersection to close the loop
+                    var trimmed = new List<Vec3> { closeIntersectPt };
+                    for (int k = startSegClose + 1; k <= endSegClose; k++)
+                        trimmed.Add(closedLine[k]);
+                    trimmed.Add(closeIntersectPt);
+
+                    offsetLines[ci] = (closedSegs, trimmed);
+                    closedLine = trimmed;
+                    loopDist = 0; // Now it's a closed loop
+                    _logger.LogDebug($"[Headland] Closed loop by trimming extensions at intersection ({closeIntersectPt.Easting:F1},{closeIntersectPt.Northing:F1})");
+                }
+            }
+
             if (loopDist < 5.0) // Close enough to form a loop
             {
                 // This is a closed loop - use it directly as a divider

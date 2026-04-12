@@ -364,7 +364,6 @@ public class HeadlandOffsetTests
     }
 
     [Test]
-    [Ignore("Closed loop support needs further work - chain merging not connecting all 4 lines")]
     public void ClosedLoop_NoBoundaryTouch_StillEffective()
     {
         var vm = CreateVm();
