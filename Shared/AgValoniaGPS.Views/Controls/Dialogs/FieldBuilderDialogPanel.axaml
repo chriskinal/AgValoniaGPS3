@@ -442,7 +442,7 @@ Licensed under GNU GPL v3.
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                                 Click="WholeBoundary_Click">
                                             <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png"
+                                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryOuter.png"
                                                        Width="36" Height="36" Stretch="Uniform"/>
                                                 <TextBlock Text="Whole" FontSize="14" HorizontalAlignment="Center"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
