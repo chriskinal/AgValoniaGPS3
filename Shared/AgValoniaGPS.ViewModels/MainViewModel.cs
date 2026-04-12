@@ -3182,33 +3182,30 @@ public partial class MainViewModel : ObservableObject
                 // Build two candidate polygons and keep the bigger one
                 int count = headland.Count - 1; // exclude closing duplicate
 
-                // Path A: walk from endIntersectIdx+1 to startIntersectIdx + trimmed offset
+                // Path A: endIntersectPt -> walk headland (end+1 to start) -> startIntersectPt -> offset reversed
                 var pathA = new List<Vec3>();
                 pathA.Add(endIntersectPt);
                 int idx = (endIntersectIdx + 1) % count;
-                while (idx != startIntersectIdx)
+                while (idx != (startIntersectIdx + 1) % count)
                 {
                     pathA.Add(headland[idx]);
                     idx = (idx + 1) % count;
-                    if (pathA.Count > count) break;
+                    if (pathA.Count > count + 1) break;
                 }
-                pathA.Add(headland[startIntersectIdx]);
                 pathA.Add(startIntersectPt);
-                // Add offset in reverse (start to end)
                 for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
                     pathA.Add(seg.OffsetPoints[j]);
 
-                // Path B: walk from startIntersectIdx+1 to endIntersectIdx + trimmed offset
+                // Path B: startIntersectPt -> walk headland (start+1 to end) -> endIntersectPt -> offset reversed
                 var pathB = new List<Vec3>();
                 pathB.Add(startIntersectPt);
                 idx = (startIntersectIdx + 1) % count;
-                while (idx != endIntersectIdx)
+                while (idx != (endIntersectIdx + 1) % count)
                 {
                     pathB.Add(headland[idx]);
                     idx = (idx + 1) % count;
-                    if (pathB.Count > count) break;
+                    if (pathB.Count > count + 1) break;
                 }
-                pathB.Add(headland[endIntersectIdx]);
                 pathB.Add(endIntersectPt);
                 for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
                     pathB.Add(seg.OffsetPoints[j]);
