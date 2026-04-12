@@ -1392,13 +1392,13 @@ public partial class FieldBuilderDialogPanel : UserControl
             _canvasHeight - ((n - _minN) * _scale + _offsetY)
         );
 
-        // Draw boundary polygon
-        var boundaryColor = light ? Color.FromRgb(180, 140, 0) : Color.FromRgb(240, 200, 40);
+        // Draw boundary polygon (red/orange solid)
+        var boundaryColor = light ? Color.FromRgb(200, 100, 30) : Color.FromRgb(240, 160, 40);
         var boundaryPoly = new Polygon
         {
             Stroke = new SolidColorBrush(boundaryColor),
             StrokeThickness = 2,
-            Fill = new SolidColorBrush(Color.FromArgb(light ? (byte)15 : (byte)20, boundaryColor.R, boundaryColor.G, boundaryColor.B)),
+            Fill = new SolidColorBrush(Color.FromArgb(light ? (byte)10 : (byte)15, boundaryColor.R, boundaryColor.G, boundaryColor.B)),
             Points = pts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
         };
         canvas.Children.Add(boundaryPoly);
@@ -1408,17 +1408,18 @@ public partial class FieldBuilderDialogPanel : UserControl
         bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
         bool isDrawing = _drawMode != DrawMode.None || onHeadlandTab;
 
-        // Draw output headland path (yellow-orange, on top of boundary)
+        // Draw output headland path (yellow dashed, distinct from boundary)
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
             if (headPts.Count >= 3)
             {
-                var headlandColor = light ? Color.FromRgb(220, 140, 0) : Color.FromRgb(255, 200, 30);
+                var headlandColor = light ? Color.FromRgb(200, 180, 0) : Color.FromRgb(255, 230, 50);
                 var headlandPoly = new Polygon
                 {
                     Stroke = new SolidColorBrush(headlandColor),
                     StrokeThickness = 3,
+                    StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);
