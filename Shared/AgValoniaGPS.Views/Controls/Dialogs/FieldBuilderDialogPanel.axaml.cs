@@ -407,8 +407,33 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
         else if (track.Points.Count == 2)
         {
-            _session.Target = DrawTarget.TrackABLine;
+            // Check if both points are on the boundary (boundary-derived track)
+            bool isBoundaryLine = false;
+            var bndPoly = vm.CurrentBoundary?.OuterBoundary;
+            if (bndPoly?.Points != null)
+            {
+                bool aOnBnd = false, bOnBnd = false;
+                foreach (var bp in bndPoly.Points)
+                {
+                    double dA = Math.Pow(bp.Easting - track.Points[0].Easting, 2) + Math.Pow(bp.Northing - track.Points[0].Northing, 2);
+                    double dB = Math.Pow(bp.Easting - track.Points[1].Easting, 2) + Math.Pow(bp.Northing - track.Points[1].Northing, 2);
+                    if (dA < 1.0) aOnBnd = true;
+                    if (dB < 1.0) bOnBnd = true;
+                    if (aOnBnd && bOnBnd) break;
+                }
+                isBoundaryLine = aOnBnd && bOnBnd;
+            }
+
+            _session.Target = isBoundaryLine ? DrawTarget.TrackBoundaryLine : DrawTarget.TrackABLine;
             _session.Phase = DrawPhase.Preview;
+
+            if (isBoundaryLine && bndPoly != null)
+            {
+                _session.BoundaryPoly = bndPoly;
+                // Find boundary indices for the two points
+                _session.BoundaryStartIndex = _session.FindNearestBoundaryPoint(track.Points[0].Easting, track.Points[0].Northing);
+                _session.BoundaryEndIndex = _session.FindNearestBoundaryPoint(track.Points[1].Easting, track.Points[1].Northing);
+            }
         }
         else
         {
