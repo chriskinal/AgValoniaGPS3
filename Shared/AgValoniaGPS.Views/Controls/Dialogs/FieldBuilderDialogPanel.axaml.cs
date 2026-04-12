@@ -636,8 +636,10 @@ public partial class FieldBuilderDialogPanel : UserControl
 
                 var createPanel = this.FindControl<StackPanel>("CreateABBtnPanel");
                 var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
+                var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
                 if (createPanel != null) createPanel.IsVisible = true;
                 if (finishPanel != null) finishPanel.IsVisible = false;
+                if (headingPanel != null) headingPanel.IsVisible = false;
             }
         }
         else if (_session.Target == DrawTarget.TrackCurve)
@@ -714,6 +716,13 @@ public partial class FieldBuilderDialogPanel : UserControl
                 // Show extend/shrink for headland preview
                 var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
                 if (extPanel != null) extPanel.IsVisible = _session.IsHeadland && _session.IsPreview;
+
+                // Hide heading/offset input for non-headland, non-APlus modes
+                if (!_session.IsHeadland && _session.Target != DrawTarget.TrackAPlus)
+                {
+                    var hp = this.FindControl<StackPanel>("HeadingInputPanel");
+                    if (hp != null) hp.IsVisible = false;
+                }
 
                 UpdateDrawModeInfo();
                 var createPanel2 = this.FindControl<StackPanel>("CreateABBtnPanel");
