@@ -385,7 +385,27 @@ public partial class FieldBuilderDialogPanel : UserControl
         _session.BoundaryPoly = vm.CurrentBoundary?.OuterBoundary;
         _session.Points.AddRange(track.Points);
 
-        if (track.Points.Count == 2)
+        bool isAPlus = track.Name?.StartsWith("A+") == true;
+
+        if (isAPlus && track.Points.Count == 2)
+        {
+            _session.Target = DrawTarget.TrackAPlus;
+            _session.Phase = DrawPhase.Preview;
+            // Compute heading from the two track points
+            double headingRad = Math.Atan2(
+                track.Points[1].Easting - track.Points[0].Easting,
+                track.Points[1].Northing - track.Points[0].Northing);
+            _session.Heading = headingRad * 180.0 / Math.PI;
+            if (_session.Heading < 0) _session.Heading += 360;
+            // Set origin at midpoint
+            var mid = new Vec3(
+                (track.Points[0].Easting + track.Points[1].Easting) / 2,
+                (track.Points[0].Northing + track.Points[1].Northing) / 2,
+                headingRad);
+            _session.Points.Clear();
+            _session.Points.Add(mid);
+        }
+        else if (track.Points.Count == 2)
         {
             _session.Target = DrawTarget.TrackABLine;
             _session.Phase = DrawPhase.Preview;
@@ -416,7 +436,22 @@ public partial class FieldBuilderDialogPanel : UserControl
         var tabs = this.FindControl<TabControl>("MainTabs");
         if (tabs != null) tabs.IsVisible = false;
 
-        if (track.Points.Count == 2)
+        if (isAPlus)
+        {
+            if (instrText != null) instrText.Text = "Edit A+ line - adjust heading";
+            if (pointCountText != null) pointCountText.Text = "Point set";
+            var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
+            var headingInput = this.FindControl<TextBox>("HeadingInput");
+            if (headingPanel != null) headingPanel.IsVisible = true;
+            if (headingInput != null)
+            {
+                headingInput.Text = _session.Heading.ToString("F1");
+                headingInput.Focus();
+                headingInput.SelectAll();
+            }
+            UpdateAPlusPreview();
+        }
+        else if (track.Points.Count == 2)
         {
             if (instrText != null) instrText.Text = "Edit AB line - drag points or Create";
             if (pointCountText != null) pointCountText.Text = "A and B set";
@@ -758,7 +793,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             var posB = _session.Points[^1];
             var track = new Models.Track.Track
             {
-                Name = $"A+ {headingDeg:F1}",
+                Name = _session.BackupTrack?.Name ?? $"A+ {headingDeg:F1}",
                 Points = new List<Vec3> { posA, posB },
                 Type = TrackType.ABLine,
                 IsVisible = true
@@ -837,7 +872,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             var track = new Models.Track.Track
             {
-                Name = $"BndCurve {DateTime.Now:HH:mm:ss}",
+                Name = _session.BackupTrack?.Name ?? $"BndCurve {DateTime.Now:HH:mm:ss}",
                 Points = points,
                 Type = TrackType.Curve,
                 IsVisible = true
@@ -872,7 +907,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         // Store the actual clicked A/B points (not extended past boundary)
         var track = new Models.Track.Track
         {
-            Name = $"AB_{headingDeg:F1} {DateTime.Now:HH:mm:ss}",
+            Name = _session.BackupTrack?.Name ?? $"AB_{headingDeg:F1} {DateTime.Now:HH:mm:ss}",
             Points = new List<Vec3> { new Vec3(a.Easting, a.Northing, heading), new Vec3(b.Easting, b.Northing, heading) },
             Type = Models.Track.TrackType.ABLine,
             IsVisible = true
