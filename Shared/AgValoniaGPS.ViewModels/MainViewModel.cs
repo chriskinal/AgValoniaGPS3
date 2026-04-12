@@ -3375,15 +3375,17 @@ public partial class MainViewModel : ObservableObject
         {
 
             // Find intersection of offset line with headland polygon
-            // Search from each end along consecutive segments until intersection found
+            // Search from each end, limited to half the line to avoid finding the wrong end
+            int halfCount = System.Math.Max(2, offsetLine.Count / 2);
+
             int startIntersectIdx = -1;
             Vec3 startIntersectPt = default;
-            for (int oi = 0; oi < offsetLine.Count - 1 && startIntersectIdx < 0; oi++)
+            for (int oi = 0; oi < System.Math.Min(halfCount, offsetLine.Count - 1) && startIntersectIdx < 0; oi++)
                 startIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi + 1], headland, out startIntersectPt);
 
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
-            for (int oi = offsetLine.Count - 1; oi > 0 && endIntersectIdx < 0; oi--)
+            for (int oi = offsetLine.Count - 1; oi > System.Math.Max(0, offsetLine.Count - 1 - halfCount) && endIntersectIdx < 0; oi--)
                 endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi - 1], headland, out endIntersectPt);
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");

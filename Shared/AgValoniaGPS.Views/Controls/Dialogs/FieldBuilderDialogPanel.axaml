@@ -412,7 +412,7 @@ Licensed under GNU GPL v3.
                                 <TabItem>
                                     <TabItem.Header>
                                         <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="12,4">
-                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryRecord.png"
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png"
                                                    Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center"/>
                                             <TextBlock Text="Boundary" FontSize="14" HorizontalAlignment="Center"/>
                                         </StackPanel>
