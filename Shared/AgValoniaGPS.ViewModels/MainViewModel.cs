@@ -3240,10 +3240,17 @@ public partial class MainViewModel : ObservableObject
 
         int cutsApplied = 0;
 
-        // For each segment, check if the extended offset line intersects the headland at both ends
-        foreach (var seg in HeadlandSegments)
+        // Multi-pass: keep processing until no more segments become effective
+        // Handles chained lines that depend on each other
+        bool madeProgress = true;
+        int maxPasses = HeadlandSegments.Count + 1;
+        while (madeProgress && maxPasses-- > 0)
         {
-            if (seg.OffsetPoints.Count < 2) continue;
+            madeProgress = false;
+            foreach (var seg in HeadlandSegments)
+            {
+                if (seg.IsEffective) continue; // Already applied
+                if (seg.OffsetPoints.Count < 2) continue;
 
             // Build the full offset line with extensions
             var offsetLine = new List<Vec3>();
@@ -3363,6 +3370,8 @@ public partial class MainViewModel : ObservableObject
 
                 headland = chosen;
                 cutsApplied++;
+                madeProgress = true;
+            }
             }
         }
 
