@@ -3172,43 +3172,53 @@ public partial class MainViewModel : ObservableObject
 
             if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
             {
-                // Both ends intersect - build trimmed offset line (from intersection to intersection)
-                // The trimmed line goes: startIntersectPt -> core offset points -> endIntersectPt
-                var trimmedOffset = new List<Vec3>();
-                trimmedOffset.Add(startIntersectPt);
-                trimmedOffset.AddRange(seg.OffsetPoints); // core offset (no extensions)
-                trimmedOffset.Add(endIntersectPt);
-
-                // Build two candidate polygons and keep the bigger one
+                // Both ends intersect - split the polygon into two halves
                 int count = headland.Count - 1; // exclude closing duplicate
 
-                // Path A: endIntersectPt -> walk headland (end+1 to start) -> startIntersectPt -> offset reversed
+                // The dividing line goes from startIntersectPt to endIntersectPt
+                // For curves, include interior offset points between the intersections
+                var divLine = new List<Vec3> { startIntersectPt };
+                if (seg.OffsetPoints.Count > 2)
+                {
+                    for (int j = 1; j < seg.OffsetPoints.Count - 1; j++)
+                        divLine.Add(seg.OffsetPoints[j]);
+                }
+                divLine.Add(endIntersectPt);
+
+                var divLineReverse = new List<Vec3>(divLine);
+                divLineReverse.Reverse();
+
+                // Path A: start at startIntersectPt, walk headland forward to endIntersectPt, then divLine back
                 var pathA = new List<Vec3>();
-                pathA.Add(endIntersectPt);
-                int idx = (endIntersectIdx + 1) % count;
-                while (idx != (startIntersectIdx + 1) % count)
+                int idx = (startIntersectIdx + 1) % count;
+                pathA.Add(startIntersectPt);
+                while (idx != (endIntersectIdx + 1) % count)
                 {
                     pathA.Add(headland[idx]);
                     idx = (idx + 1) % count;
-                    if (pathA.Count > count + 1) break;
+                    if (pathA.Count > count + 2) break;
                 }
-                pathA.Add(startIntersectPt);
-                for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
-                    pathA.Add(seg.OffsetPoints[j]);
+                pathA.Add(endIntersectPt);
 
-                // Path B: startIntersectPt -> walk headland (start+1 to end) -> endIntersectPt -> offset reversed
+                // Path B: start at endIntersectPt, walk headland forward to startIntersectPt, then divLine back
                 var pathB = new List<Vec3>();
-                pathB.Add(startIntersectPt);
-                idx = (startIntersectIdx + 1) % count;
-                while (idx != (endIntersectIdx + 1) % count)
+                idx = (endIntersectIdx + 1) % count;
+                pathB.Add(endIntersectPt);
+                while (idx != (startIntersectIdx + 1) % count)
                 {
                     pathB.Add(headland[idx]);
                     idx = (idx + 1) % count;
-                    if (pathB.Count > count + 1) break;
+                    if (pathB.Count > count + 2) break;
                 }
-                pathB.Add(endIntersectPt);
-                for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
-                    pathB.Add(seg.OffsetPoints[j]);
+                pathB.Add(startIntersectPt);
+
+                // Complete each polygon by adding the dividing line
+                // pathA + divLineReverse forms polygon A
+                // pathB + divLine forms polygon B
+                var polyA = new List<Vec3>(pathA);
+                polyA.AddRange(divLineReverse);
+                var polyB = new List<Vec3>(pathB);
+                polyB.AddRange(divLine);
 
                 // Pick the polygon that contains the field centroid (= working area)
                 double cx = 0, cy = 0;
@@ -3216,13 +3226,15 @@ public partial class MainViewModel : ObservableObject
                 foreach (var bp in bndPts) { cx += bp.Easting; cy += bp.Northing; }
                 cx /= bndPts.Count; cy /= bndPts.Count;
 
-                bool aContains = IsPointInPolygon(cx, cy, pathA);
-                bool bContains = IsPointInPolygon(cx, cy, pathB);
+                bool aContains = IsPointInPolygon(cx, cy, polyA);
+                bool bContains = IsPointInPolygon(cx, cy, polyB);
+
+                _logger.LogDebug($"[Headland] PathA: {polyA.Count} pts, PathB: {polyB.Count} pts, centroid: ({cx:F1},{cy:F1}), aContains={aContains}, bContains={bContains}");
 
                 List<Vec3> chosen;
-                if (aContains && !bContains) chosen = pathA;
-                else if (bContains && !aContains) chosen = pathB;
-                else chosen = System.Math.Abs(CalculateSignedArea(pathA)) >= System.Math.Abs(CalculateSignedArea(pathB)) ? pathA : pathB;
+                if (aContains && !bContains) chosen = polyA;
+                else if (bContains && !aContains) chosen = polyB;
+                else chosen = System.Math.Abs(CalculateSignedArea(polyA)) >= System.Math.Abs(CalculateSignedArea(polyB)) ? polyA : polyB;
                 if (chosen.Count > 0)
                     chosen.Add(chosen[0]); // close loop
 
@@ -3242,6 +3254,10 @@ public partial class MainViewModel : ObservableObject
 
         OnPropertyChanged(nameof(HeadlandStatusText));
         OnPropertyChanged(nameof(CurrentHeadlandLineForPreview));
+        // Log headland points for debugging
+        for (int p = 0; p < headland.Count; p++)
+            _logger.LogDebug($"[Headland] Point {p}: E={headland[p].Easting:F1} N={headland[p].Northing:F1}");
+
         StatusMessage = cutsApplied > 0
             ? $"Headland modified ({cutsApplied} cuts, {headland.Count} points)"
             : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
