@@ -1621,11 +1621,12 @@ public partial class FieldBuilderDialogPanel : UserControl
             bool isLinearMode = _drawMode == DrawMode.ABLine || _drawMode == DrawMode.ABLinePreview
                                 || _drawMode == DrawMode.BoundaryLine || _drawMode == DrawMode.BoundaryLinePreview
                                 || _drawMode == DrawMode.APlus || _drawMode == DrawMode.APlusPreview;
-            bool isCurvePreview = _drawMode == DrawMode.BoundaryCurvePreview;
+            bool isCurvePreview = _drawMode == DrawMode.BoundaryCurvePreview
+                || (_drawMode == DrawMode.HeadlandPreview && _drawPoints.Count > 2);
 
             for (int i = 0; i < _drawPoints.Count; i++)
             {
-                // For boundary curve preview, only show first and last markers
+                // For curve previews, only show first and last markers
                 if (isCurvePreview && i > 0 && i < _drawPoints.Count - 1) continue;
 
                 var pt = ToCanvas(_drawPoints[i].Easting, _drawPoints[i].Northing);
