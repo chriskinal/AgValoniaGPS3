@@ -852,7 +852,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                                     <TextBlock Text="{loc:Localize SidehillDegree}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center"/>
                                                     <Grid ColumnDefinitions="Auto,*">
-                                                        <Button Classes="TappableValue" Command="{Binding EditSidehillCompensationCommand}">
+                                                        <Button Classes="TappableValue" Command="{ReflectionBinding EditSidehillCompensationCommand}">
                                                             <TextBlock Text="{Binding AutoSteer.SideHillCompensation, StringFormat='{}{0:F2}'}"
                                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold" FontSize="16"/>
                                                         </Button>

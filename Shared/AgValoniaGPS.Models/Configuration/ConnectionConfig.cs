@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -22,49 +22,49 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Network and communication configuration.
 /// Replaces: NTRIP and AgShare parts of AppSettings
 /// </summary>
-public class ConnectionConfig : ReactiveObject
+public class ConnectionConfig : ObservableObject
 {
     // NTRIP
     private string _ntripCasterHost = string.Empty;
     public string NtripCasterHost
     {
         get => _ntripCasterHost;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterHost, value);
+        set => SetProperty(ref _ntripCasterHost, value);
     }
 
     private int _ntripCasterPort = 2101;
     public int NtripCasterPort
     {
         get => _ntripCasterPort;
-        set => this.RaiseAndSetIfChanged(ref _ntripCasterPort, value);
+        set => SetProperty(ref _ntripCasterPort, value);
     }
 
     private string _ntripMountPoint = string.Empty;
     public string NtripMountPoint
     {
         get => _ntripMountPoint;
-        set => this.RaiseAndSetIfChanged(ref _ntripMountPoint, value);
+        set => SetProperty(ref _ntripMountPoint, value);
     }
 
     private string _ntripUsername = string.Empty;
     public string NtripUsername
     {
         get => _ntripUsername;
-        set => this.RaiseAndSetIfChanged(ref _ntripUsername, value);
+        set => SetProperty(ref _ntripUsername, value);
     }
 
     private string _ntripPassword = string.Empty;
     public string NtripPassword
     {
         get => _ntripPassword;
-        set => this.RaiseAndSetIfChanged(ref _ntripPassword, value);
+        set => SetProperty(ref _ntripPassword, value);
     }
 
     private bool _ntripAutoConnect;
     public bool NtripAutoConnect
     {
         get => _ntripAutoConnect;
-        set => this.RaiseAndSetIfChanged(ref _ntripAutoConnect, value);
+        set => SetProperty(ref _ntripAutoConnect, value);
     }
 
     // AgShare
@@ -72,21 +72,21 @@ public class ConnectionConfig : ReactiveObject
     public string AgShareServer
     {
         get => _agShareServer;
-        set => this.RaiseAndSetIfChanged(ref _agShareServer, value);
+        set => SetProperty(ref _agShareServer, value);
     }
 
     private string _agShareApiKey = string.Empty;
     public string AgShareApiKey
     {
         get => _agShareApiKey;
-        set => this.RaiseAndSetIfChanged(ref _agShareApiKey, value);
+        set => SetProperty(ref _agShareApiKey, value);
     }
 
     private bool _agShareEnabled;
     public bool AgShareEnabled
     {
         get => _agShareEnabled;
-        set => this.RaiseAndSetIfChanged(ref _agShareEnabled, value);
+        set => SetProperty(ref _agShareEnabled, value);
     }
 
     // GPS Mode
@@ -94,21 +94,21 @@ public class ConnectionConfig : ReactiveObject
     public bool IsDualGps
     {
         get => _isDualGps;
-        set => this.RaiseAndSetIfChanged(ref _isDualGps, value);
+        set => SetProperty(ref _isDualGps, value);
     }
 
     private int _gpsUpdateRate = 10;
     public int GpsUpdateRate
     {
         get => _gpsUpdateRate;
-        set => this.RaiseAndSetIfChanged(ref _gpsUpdateRate, value);
+        set => SetProperty(ref _gpsUpdateRate, value);
     }
 
     private bool _useRtk = true;
     public bool UseRtk
     {
         get => _useRtk;
-        set => this.RaiseAndSetIfChanged(ref _useRtk, value);
+        set => SetProperty(ref _useRtk, value);
     }
 
     // Dual Antenna Settings
@@ -116,28 +116,28 @@ public class ConnectionConfig : ReactiveObject
     public double DualHeadingOffset
     {
         get => _dualHeadingOffset;
-        set => this.RaiseAndSetIfChanged(ref _dualHeadingOffset, value);
+        set => SetProperty(ref _dualHeadingOffset, value);
     }
 
     private double _dualReverseDistance = 0.25;
     public double DualReverseDistance
     {
         get => _dualReverseDistance;
-        set => this.RaiseAndSetIfChanged(ref _dualReverseDistance, value);
+        set => SetProperty(ref _dualReverseDistance, value);
     }
 
     private bool _autoDualFix;
     public bool AutoDualFix
     {
         get => _autoDualFix;
-        set => this.RaiseAndSetIfChanged(ref _autoDualFix, value);
+        set => SetProperty(ref _autoDualFix, value);
     }
 
     private double _dualSwitchSpeed = 1.2;
     public double DualSwitchSpeed
     {
         get => _dualSwitchSpeed;
-        set => this.RaiseAndSetIfChanged(ref _dualSwitchSpeed, value);
+        set => SetProperty(ref _dualSwitchSpeed, value);
     }
 
     // Single Antenna Settings
@@ -145,28 +145,28 @@ public class ConnectionConfig : ReactiveObject
     public double MinGpsStep
     {
         get => _minGpsStep;
-        set => this.RaiseAndSetIfChanged(ref _minGpsStep, value);
+        set => SetProperty(ref _minGpsStep, value);
     }
 
     private double _fixToFixDistance = 0.5;
     public double FixToFixDistance
     {
         get => _fixToFixDistance;
-        set => this.RaiseAndSetIfChanged(ref _fixToFixDistance, value);
+        set => SetProperty(ref _fixToFixDistance, value);
     }
 
     private double _headingFusionWeight = 0.7;
     public double HeadingFusionWeight
     {
         get => _headingFusionWeight;
-        set => this.RaiseAndSetIfChanged(ref _headingFusionWeight, value);
+        set => SetProperty(ref _headingFusionWeight, value);
     }
 
     private bool _reverseDetection = true;
     public bool ReverseDetection
     {
         get => _reverseDetection;
-        set => this.RaiseAndSetIfChanged(ref _reverseDetection, value);
+        set => SetProperty(ref _reverseDetection, value);
     }
 
     // Heading Source (0=GPS, 1=Dual, 2=IMU, 3=Fusion) - may not be needed with new layout
@@ -174,7 +174,7 @@ public class ConnectionConfig : ReactiveObject
     public int HeadingSource
     {
         get => _headingSource;
-        set => this.RaiseAndSetIfChanged(ref _headingSource, value);
+        set => SetProperty(ref _headingSource, value);
     }
 
     // RTK Monitoring
@@ -182,34 +182,34 @@ public class ConnectionConfig : ReactiveObject
     public int MinFixQuality
     {
         get => _minFixQuality;
-        set => this.RaiseAndSetIfChanged(ref _minFixQuality, value);
+        set => SetProperty(ref _minFixQuality, value);
     }
 
     private bool _rtkLostAlarm = true;
     public bool RtkLostAlarm
     {
         get => _rtkLostAlarm;
-        set => this.RaiseAndSetIfChanged(ref _rtkLostAlarm, value);
+        set => SetProperty(ref _rtkLostAlarm, value);
     }
 
     private int _rtkLostAction; // 0=Warn, 1=Pause AutoSteer, 2=Stop Sections
     public int RtkLostAction
     {
         get => _rtkLostAction;
-        set => this.RaiseAndSetIfChanged(ref _rtkLostAction, value);
+        set => SetProperty(ref _rtkLostAction, value);
     }
 
     private double _maxDifferentialAge = 5.0;
     public double MaxDifferentialAge
     {
         get => _maxDifferentialAge;
-        set => this.RaiseAndSetIfChanged(ref _maxDifferentialAge, value);
+        set => SetProperty(ref _maxDifferentialAge, value);
     }
 
     private double _maxHdop = 2.0;
     public double MaxHdop
     {
         get => _maxHdop;
-        set => this.RaiseAndSetIfChanged(ref _maxHdop, value);
+        set => SetProperty(ref _maxHdop, value);
     }
 }

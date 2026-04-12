@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.Models.State;
 /// UI state - active dialogs, panels, selections.
 /// Replaces 25+ dialog visibility flags with a proper dialog system.
 /// </summary>
-public class UIState : ReactiveObject
+public class UIState : ObservableObject
 {
     // Active dialog (only one modal at a time)
     private DialogType _activeDialog = DialogType.None;
@@ -35,43 +35,43 @@ public class UIState : ReactiveObject
             if (_activeDialog != value)
             {
                 var previous = _activeDialog;
-                this.RaiseAndSetIfChanged(ref _activeDialog, value);
+                SetProperty(ref _activeDialog, value);
 
                 // Raise property changed for all dialog visibility properties
-                this.RaisePropertyChanged(nameof(IsDialogOpen));
-                this.RaisePropertyChanged(nameof(IsFieldSelectionDialogVisible));
-                this.RaisePropertyChanged(nameof(IsTracksDialogVisible));
-                this.RaisePropertyChanged(nameof(IsConfigurationDialogVisible));
-                this.RaisePropertyChanged(nameof(IsNewFieldDialogVisible));
-                this.RaisePropertyChanged(nameof(IsFromExistingFieldDialogVisible));
-                this.RaisePropertyChanged(nameof(IsKmlImportDialogVisible));
-                this.RaisePropertyChanged(nameof(IsIsoXmlImportDialogVisible));
-                this.RaisePropertyChanged(nameof(IsBoundaryMapDialogVisible));
-                this.RaisePropertyChanged(nameof(IsNumericInputDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAgShareSettingsDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAgShareUploadDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAgShareDownloadDialogVisible));
-                this.RaisePropertyChanged(nameof(IsDataIODialogVisible));
-                this.RaisePropertyChanged(nameof(IsSimCoordsDialogVisible));
-                this.RaisePropertyChanged(nameof(IsQuickABSelectorVisible));
-                this.RaisePropertyChanged(nameof(IsDrawABDialogVisible));
-                this.RaisePropertyChanged(nameof(IsNtripProfilesDialogVisible));
-                this.RaisePropertyChanged(nameof(IsNtripProfileEditorDialogVisible));
-                this.RaisePropertyChanged(nameof(IsConfirmationDialogVisible));
-                this.RaisePropertyChanged(nameof(IsErrorDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAppDirectoriesDialogVisible));
-                this.RaisePropertyChanged(nameof(IsHotkeyConfigDialogVisible));
-                this.RaisePropertyChanged(nameof(IsAboutDialogVisible));
-                this.RaisePropertyChanged(nameof(IsLogViewerDialogVisible));
-                this.RaisePropertyChanged(nameof(IsFlagByLatLonDialogVisible));
-                this.RaisePropertyChanged(nameof(IsFlagListDialogVisible));
-                this.RaisePropertyChanged(nameof(IsViewSettingsDialogVisible));
-                this.RaisePropertyChanged(nameof(IsImportTracksDialogVisible));
-                this.RaisePropertyChanged(nameof(IsHelpDialogVisible));
-                this.RaisePropertyChanged(nameof(IsLanguageDialogVisible));
-                this.RaisePropertyChanged(nameof(IsRecordedPathDialogVisible));
-                this.RaisePropertyChanged(nameof(IsTramSettingsDialogVisible));
-                this.RaisePropertyChanged(nameof(IsFieldBuilderDialogVisible));
+                OnPropertyChanged(nameof(IsDialogOpen));
+                OnPropertyChanged(nameof(IsFieldSelectionDialogVisible));
+                OnPropertyChanged(nameof(IsTracksDialogVisible));
+                OnPropertyChanged(nameof(IsConfigurationDialogVisible));
+                OnPropertyChanged(nameof(IsNewFieldDialogVisible));
+                OnPropertyChanged(nameof(IsFromExistingFieldDialogVisible));
+                OnPropertyChanged(nameof(IsKmlImportDialogVisible));
+                OnPropertyChanged(nameof(IsIsoXmlImportDialogVisible));
+                OnPropertyChanged(nameof(IsBoundaryMapDialogVisible));
+                OnPropertyChanged(nameof(IsNumericInputDialogVisible));
+                OnPropertyChanged(nameof(IsAgShareSettingsDialogVisible));
+                OnPropertyChanged(nameof(IsAgShareUploadDialogVisible));
+                OnPropertyChanged(nameof(IsAgShareDownloadDialogVisible));
+                OnPropertyChanged(nameof(IsDataIODialogVisible));
+                OnPropertyChanged(nameof(IsSimCoordsDialogVisible));
+                OnPropertyChanged(nameof(IsQuickABSelectorVisible));
+                OnPropertyChanged(nameof(IsDrawABDialogVisible));
+                OnPropertyChanged(nameof(IsNtripProfilesDialogVisible));
+                OnPropertyChanged(nameof(IsNtripProfileEditorDialogVisible));
+                OnPropertyChanged(nameof(IsConfirmationDialogVisible));
+                OnPropertyChanged(nameof(IsErrorDialogVisible));
+                OnPropertyChanged(nameof(IsAppDirectoriesDialogVisible));
+                OnPropertyChanged(nameof(IsHotkeyConfigDialogVisible));
+                OnPropertyChanged(nameof(IsAboutDialogVisible));
+                OnPropertyChanged(nameof(IsLogViewerDialogVisible));
+                OnPropertyChanged(nameof(IsFlagByLatLonDialogVisible));
+                OnPropertyChanged(nameof(IsFlagListDialogVisible));
+                OnPropertyChanged(nameof(IsViewSettingsDialogVisible));
+                OnPropertyChanged(nameof(IsImportTracksDialogVisible));
+                OnPropertyChanged(nameof(IsHelpDialogVisible));
+                OnPropertyChanged(nameof(IsLanguageDialogVisible));
+                OnPropertyChanged(nameof(IsRecordedPathDialogVisible));
+                OnPropertyChanged(nameof(IsTramSettingsDialogVisible));
+                OnPropertyChanged(nameof(IsFieldBuilderDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -120,35 +120,35 @@ public class UIState : ReactiveObject
     public bool IsSimulatorPanelVisible
     {
         get => _isSimulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+        set => SetProperty(ref _isSimulatorPanelVisible, value);
     }
 
     private bool _isBoundaryPanelVisible;
     public bool IsBoundaryPanelVisible
     {
         get => _isBoundaryPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isBoundaryPanelVisible, value);
+        set => SetProperty(ref _isBoundaryPanelVisible, value);
     }
 
     private bool _isViewSettingsPanelVisible;
     public bool IsViewSettingsPanelVisible
     {
         get => _isViewSettingsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isViewSettingsPanelVisible, value);
+        set => SetProperty(ref _isViewSettingsPanelVisible, value);
     }
 
     private bool _isSectionControlPanelVisible;
     public bool IsSectionControlPanelVisible
     {
         get => _isSectionControlPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSectionControlPanelVisible, value);
+        set => SetProperty(ref _isSectionControlPanelVisible, value);
     }
 
     private bool _isOffsetFixPanelVisible;
     public bool IsOffsetFixPanelVisible
     {
         get => _isOffsetFixPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isOffsetFixPanelVisible, value);
+        set => SetProperty(ref _isOffsetFixPanelVisible, value);
     }
 
     // Busy overlay state (for blocking operations like file save/load)
@@ -156,14 +156,14 @@ public class UIState : ReactiveObject
     public bool IsBusy
     {
         get => _isBusy;
-        set => this.RaiseAndSetIfChanged(ref _isBusy, value);
+        set => SetProperty(ref _isBusy, value);
     }
 
     private string _busyMessage = "";
     public string BusyMessage
     {
         get => _busyMessage;
-        set => this.RaiseAndSetIfChanged(ref _busyMessage, value);
+        set => SetProperty(ref _busyMessage, value);
     }
 
     // Selection state (shared across dialogs)
@@ -171,7 +171,7 @@ public class UIState : ReactiveObject
     public object? SelectedItem
     {
         get => _selectedItem;
-        set => this.RaiseAndSetIfChanged(ref _selectedItem, value);
+        set => SetProperty(ref _selectedItem, value);
     }
 
     // Dialog events

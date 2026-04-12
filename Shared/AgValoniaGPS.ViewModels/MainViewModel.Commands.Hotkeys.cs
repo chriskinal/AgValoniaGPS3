@@ -16,9 +16,12 @@
 
 using System.Collections.Generic;
 using System.Windows.Input;
-using ReactiveUI;
+
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.State;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -28,14 +31,14 @@ public partial class MainViewModel
     public ICommand? ShowHotkeyConfigDialogCommand { get; private set; }
     public ICommand? CloseHotkeyConfigDialogCommand { get; private set; }
     public ICommand? ResetHotkeysToDefaultCommand { get; private set; }
-    public ReactiveCommand<HotkeyAction, System.Reactive.Unit>? StartEditHotkeyCommand { get; private set; }
+    public ICommand? StartEditHotkeyCommand { get; private set; }
 
     // Editing state
     private HotkeyAction? _editingHotkeyAction;
     public HotkeyAction? EditingHotkeyAction
     {
         get => _editingHotkeyAction;
-        set => this.RaiseAndSetIfChanged(ref _editingHotkeyAction, value);
+        set => SetProperty(ref _editingHotkeyAction, value);
     }
 
     // Dispatch table: HotkeyAction -> command
@@ -43,26 +46,26 @@ public partial class MainViewModel
 
     private void InitializeHotkeyCommands()
     {
-        ShowHotkeyConfigDialogCommand = ReactiveCommand.Create(() =>
+        ShowHotkeyConfigDialogCommand = new RelayCommand(() =>
         {
             IsFileMenuPanelVisible = false;
             State.UI.ShowDialog(DialogType.HotkeyConfig);
         });
 
-        CloseHotkeyConfigDialogCommand = ReactiveCommand.Create(() =>
+        CloseHotkeyConfigDialogCommand = new RelayCommand(() =>
         {
             EditingHotkeyAction = null;
             State.UI.CloseDialog();
             _configurationService.SaveAppSettings();
         });
 
-        ResetHotkeysToDefaultCommand = ReactiveCommand.Create(() =>
+        ResetHotkeysToDefaultCommand = new RelayCommand(() =>
         {
             ConfigStore.Hotkeys.ResetToDefaults();
             _hotkeyDispatch = null;
         });
 
-        StartEditHotkeyCommand = ReactiveCommand.Create<HotkeyAction>(action =>
+        StartEditHotkeyCommand = new RelayCommand<HotkeyAction>(action =>
         {
             EditingHotkeyAction = action;
         });

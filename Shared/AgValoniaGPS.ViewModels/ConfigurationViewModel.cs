@@ -17,13 +17,15 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Reactive;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using ReactiveUI;
+
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -31,7 +33,7 @@ namespace AgValoniaGPS.ViewModels;
 /// ViewModel for the Configuration Dialog.
 /// Binds directly to ConfigurationStore - no property mapping needed.
 /// </summary>
-public partial class ConfigurationViewModel : ReactiveObject
+public partial class ConfigurationViewModel : ObservableObject
 {
     private readonly IConfigurationService _configService;
 
@@ -41,7 +43,7 @@ public partial class ConfigurationViewModel : ReactiveObject
     public bool IsDialogVisible
     {
         get => _isDialogVisible;
-        set => this.RaiseAndSetIfChanged(ref _isDialogVisible, value);
+        set => SetProperty(ref _isDialogVisible, value);
     }
 
     #endregion
@@ -52,49 +54,49 @@ public partial class ConfigurationViewModel : ReactiveObject
     public bool IsNumericInputVisible
     {
         get => _isNumericInputVisible;
-        set => this.RaiseAndSetIfChanged(ref _isNumericInputVisible, value);
+        set => SetProperty(ref _isNumericInputVisible, value);
     }
 
     private string _numericInputTitle = string.Empty;
     public string NumericInputTitle
     {
         get => _numericInputTitle;
-        set => this.RaiseAndSetIfChanged(ref _numericInputTitle, value);
+        set => SetProperty(ref _numericInputTitle, value);
     }
 
     private string _numericInputUnit = string.Empty;
     public string NumericInputUnit
     {
         get => _numericInputUnit;
-        set => this.RaiseAndSetIfChanged(ref _numericInputUnit, value);
+        set => SetProperty(ref _numericInputUnit, value);
     }
 
     private decimal? _numericInputValue;
     public decimal? NumericInputValue
     {
         get => _numericInputValue;
-        set => this.RaiseAndSetIfChanged(ref _numericInputValue, value);
+        set => SetProperty(ref _numericInputValue, value);
     }
 
     private string _numericInputDisplayText = string.Empty;
     public string NumericInputDisplayText
     {
         get => _numericInputDisplayText;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDisplayText, value);
+        set => SetProperty(ref _numericInputDisplayText, value);
     }
 
     private bool _numericInputIntegerOnly;
     public bool NumericInputIntegerOnly
     {
         get => _numericInputIntegerOnly;
-        set => this.RaiseAndSetIfChanged(ref _numericInputIntegerOnly, value);
+        set => SetProperty(ref _numericInputIntegerOnly, value);
     }
 
     private bool _numericInputAllowNegative = true;
     public bool NumericInputAllowNegative
     {
         get => _numericInputAllowNegative;
-        set => this.RaiseAndSetIfChanged(ref _numericInputAllowNegative, value);
+        set => SetProperty(ref _numericInputAllowNegative, value);
     }
 
     private double _numericInputMin = double.MinValue;
@@ -134,7 +136,7 @@ public partial class ConfigurationViewModel : ReactiveObject
 
         // Set initial value and display
         _numericInputValue = (decimal)currentValue;
-        this.RaisePropertyChanged(nameof(NumericInputValue));
+        OnPropertyChanged(nameof(NumericInputValue));
 
         NumericInputDisplayText = integerOnly
             ? ((int)currentValue).ToString(CultureInfo.InvariantCulture)
@@ -145,7 +147,7 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeNumericInputCommands()
     {
-        ConfirmNumericInputCommand = ReactiveCommand.Create(() =>
+        ConfirmNumericInputCommand = new RelayCommand(() =>
         {
             if (_numericInputCallback != null)
             {
@@ -164,13 +166,13 @@ public partial class ConfigurationViewModel : ReactiveObject
             _numericInputCallback = null;
         });
 
-        CancelNumericInputCommand = ReactiveCommand.Create(() =>
+        CancelNumericInputCommand = new RelayCommand(() =>
         {
             IsNumericInputVisible = false;
             _numericInputCallback = null;
         });
 
-        NumericInputDigitCommand = ReactiveCommand.Create<string>(digit =>
+        NumericInputDigitCommand = new RelayCommand<string>(digit =>
         {
             if (string.IsNullOrEmpty(digit)) return;
 
@@ -211,11 +213,11 @@ public partial class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
 
-        NumericInputBackspaceCommand = ReactiveCommand.Create(() =>
+        NumericInputBackspaceCommand = new RelayCommand(() =>
         {
             _isFirstDigitEntry = false; // User is editing
 
@@ -236,19 +238,19 @@ public partial class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
 
-        NumericInputClearCommand = ReactiveCommand.Create(() =>
+        NumericInputClearCommand = new RelayCommand(() =>
         {
             NumericInputDisplayText = "0";
             _numericInputValue = 0;
             _isFirstDigitEntry = false;
-            this.RaisePropertyChanged(nameof(NumericInputValue));
+            OnPropertyChanged(nameof(NumericInputValue));
         });
 
-        NumericInputNegateCommand = ReactiveCommand.Create(() =>
+        NumericInputNegateCommand = new RelayCommand(() =>
         {
             if (!NumericInputAllowNegative) return;
 
@@ -267,7 +269,7 @@ public partial class ConfigurationViewModel : ReactiveObject
             if (decimal.TryParse(NumericInputDisplayText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
             {
                 _numericInputValue = parsed;
-                this.RaisePropertyChanged(nameof(NumericInputValue));
+                OnPropertyChanged(nameof(NumericInputValue));
             }
         });
     }
@@ -280,28 +282,28 @@ public partial class ConfigurationViewModel : ReactiveObject
     public bool IsTextInputVisible
     {
         get => _isTextInputVisible;
-        set => this.RaiseAndSetIfChanged(ref _isTextInputVisible, value);
+        set => SetProperty(ref _isTextInputVisible, value);
     }
 
     private string _textInputTitle = string.Empty;
     public string TextInputTitle
     {
         get => _textInputTitle;
-        set => this.RaiseAndSetIfChanged(ref _textInputTitle, value);
+        set => SetProperty(ref _textInputTitle, value);
     }
 
     private string _textInputValue = string.Empty;
     public string TextInputValue
     {
         get => _textInputValue;
-        set => this.RaiseAndSetIfChanged(ref _textInputValue, value);
+        set => SetProperty(ref _textInputValue, value);
     }
 
     private bool _textInputIsPassword;
     public bool TextInputIsPassword
     {
         get => _textInputIsPassword;
-        set => this.RaiseAndSetIfChanged(ref _textInputIsPassword, value);
+        set => SetProperty(ref _textInputIsPassword, value);
     }
 
     private Action<string>? _textInputCallback;
@@ -324,35 +326,35 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeTextInputCommands()
     {
-        ConfirmTextInputCommand = ReactiveCommand.Create(() =>
+        ConfirmTextInputCommand = new RelayCommand(() =>
         {
             _textInputCallback?.Invoke(TextInputValue);
             IsTextInputVisible = false;
         });
 
-        CancelTextInputCommand = ReactiveCommand.Create(() =>
+        CancelTextInputCommand = new RelayCommand(() =>
         {
             IsTextInputVisible = false;
         });
 
-        TextInputKeyCommand = ReactiveCommand.Create<string>(key =>
+        TextInputKeyCommand = new RelayCommand<string>(key =>
         {
             if (string.IsNullOrEmpty(key)) return;
             TextInputValue += key;
         });
 
-        TextInputBackspaceCommand = ReactiveCommand.Create(() =>
+        TextInputBackspaceCommand = new RelayCommand(() =>
         {
             if (TextInputValue.Length > 0)
                 TextInputValue = TextInputValue.Substring(0, TextInputValue.Length - 1);
         });
 
-        TextInputClearCommand = ReactiveCommand.Create(() =>
+        TextInputClearCommand = new RelayCommand(() =>
         {
             TextInputValue = string.Empty;
         });
 
-        TextInputSpaceCommand = ReactiveCommand.Create(() =>
+        TextInputSpaceCommand = new RelayCommand(() =>
         {
             TextInputValue += " ";
         });
@@ -366,14 +368,14 @@ public partial class ConfigurationViewModel : ReactiveObject
     public bool IsColorPickerVisible
     {
         get => _isColorPickerVisible;
-        set => this.RaiseAndSetIfChanged(ref _isColorPickerVisible, value);
+        set => SetProperty(ref _isColorPickerVisible, value);
     }
 
     private string _colorPickerTitle = "Select Color";
     public string ColorPickerTitle
     {
         get => _colorPickerTitle;
-        set => this.RaiseAndSetIfChanged(ref _colorPickerTitle, value);
+        set => SetProperty(ref _colorPickerTitle, value);
     }
 
     // -1 = single coverage color, 0-15 = section index
@@ -414,7 +416,7 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeColorPickerCommands()
     {
-        SelectPresetColorCommand = ReactiveCommand.Create<object>(param =>
+        SelectPresetColorCommand = new RelayCommand<object>(param =>
         {
             if (param is uint color)
             {
@@ -427,17 +429,17 @@ public partial class ConfigurationViewModel : ReactiveObject
             IsColorPickerVisible = false;
         });
 
-        CancelColorPickerCommand = ReactiveCommand.Create(() =>
+        CancelColorPickerCommand = new RelayCommand(() =>
         {
             IsColorPickerVisible = false;
         });
 
-        EditSingleCoverageColorCommand = ReactiveCommand.Create(() =>
+        EditSingleCoverageColorCommand = new RelayCommand(() =>
         {
             ShowColorPicker("Coverage Color", -1);
         });
 
-        EditSectionColorCommand = ReactiveCommand.Create<object>(param =>
+        EditSectionColorCommand = new RelayCommand<object>(param =>
         {
             int sectionIndex = 0;
             if (param is int intVal)
@@ -455,7 +457,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         {
             // Single coverage color
             Tool.SingleCoverageColor = color;
-            this.RaisePropertyChanged(nameof(SingleCoverageColor));
+            OnPropertyChanged(nameof(SingleCoverageColor));
         }
         else
         {
@@ -468,22 +470,22 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void RefreshSectionColorProperties()
     {
-        this.RaisePropertyChanged(nameof(SectionColor1));
-        this.RaisePropertyChanged(nameof(SectionColor2));
-        this.RaisePropertyChanged(nameof(SectionColor3));
-        this.RaisePropertyChanged(nameof(SectionColor4));
-        this.RaisePropertyChanged(nameof(SectionColor5));
-        this.RaisePropertyChanged(nameof(SectionColor6));
-        this.RaisePropertyChanged(nameof(SectionColor7));
-        this.RaisePropertyChanged(nameof(SectionColor8));
-        this.RaisePropertyChanged(nameof(SectionColor9));
-        this.RaisePropertyChanged(nameof(SectionColor10));
-        this.RaisePropertyChanged(nameof(SectionColor11));
-        this.RaisePropertyChanged(nameof(SectionColor12));
-        this.RaisePropertyChanged(nameof(SectionColor13));
-        this.RaisePropertyChanged(nameof(SectionColor14));
-        this.RaisePropertyChanged(nameof(SectionColor15));
-        this.RaisePropertyChanged(nameof(SectionColor16));
+        OnPropertyChanged(nameof(SectionColor1));
+        OnPropertyChanged(nameof(SectionColor2));
+        OnPropertyChanged(nameof(SectionColor3));
+        OnPropertyChanged(nameof(SectionColor4));
+        OnPropertyChanged(nameof(SectionColor5));
+        OnPropertyChanged(nameof(SectionColor6));
+        OnPropertyChanged(nameof(SectionColor7));
+        OnPropertyChanged(nameof(SectionColor8));
+        OnPropertyChanged(nameof(SectionColor9));
+        OnPropertyChanged(nameof(SectionColor10));
+        OnPropertyChanged(nameof(SectionColor11));
+        OnPropertyChanged(nameof(SectionColor12));
+        OnPropertyChanged(nameof(SectionColor13));
+        OnPropertyChanged(nameof(SectionColor14));
+        OnPropertyChanged(nameof(SectionColor15));
+        OnPropertyChanged(nameof(SectionColor16));
     }
 
     #endregion
@@ -606,30 +608,30 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void RefreshAllPinProperties()
     {
-        this.RaisePropertyChanged(nameof(Pin1Function));
-        this.RaisePropertyChanged(nameof(Pin2Function));
-        this.RaisePropertyChanged(nameof(Pin3Function));
-        this.RaisePropertyChanged(nameof(Pin4Function));
-        this.RaisePropertyChanged(nameof(Pin5Function));
-        this.RaisePropertyChanged(nameof(Pin6Function));
-        this.RaisePropertyChanged(nameof(Pin7Function));
-        this.RaisePropertyChanged(nameof(Pin8Function));
-        this.RaisePropertyChanged(nameof(Pin9Function));
-        this.RaisePropertyChanged(nameof(Pin10Function));
-        this.RaisePropertyChanged(nameof(Pin11Function));
-        this.RaisePropertyChanged(nameof(Pin12Function));
-        this.RaisePropertyChanged(nameof(Pin13Function));
-        this.RaisePropertyChanged(nameof(Pin14Function));
-        this.RaisePropertyChanged(nameof(Pin15Function));
-        this.RaisePropertyChanged(nameof(Pin16Function));
-        this.RaisePropertyChanged(nameof(Pin17Function));
-        this.RaisePropertyChanged(nameof(Pin18Function));
-        this.RaisePropertyChanged(nameof(Pin19Function));
-        this.RaisePropertyChanged(nameof(Pin20Function));
-        this.RaisePropertyChanged(nameof(Pin21Function));
-        this.RaisePropertyChanged(nameof(Pin22Function));
-        this.RaisePropertyChanged(nameof(Pin23Function));
-        this.RaisePropertyChanged(nameof(Pin24Function));
+        OnPropertyChanged(nameof(Pin1Function));
+        OnPropertyChanged(nameof(Pin2Function));
+        OnPropertyChanged(nameof(Pin3Function));
+        OnPropertyChanged(nameof(Pin4Function));
+        OnPropertyChanged(nameof(Pin5Function));
+        OnPropertyChanged(nameof(Pin6Function));
+        OnPropertyChanged(nameof(Pin7Function));
+        OnPropertyChanged(nameof(Pin8Function));
+        OnPropertyChanged(nameof(Pin9Function));
+        OnPropertyChanged(nameof(Pin10Function));
+        OnPropertyChanged(nameof(Pin11Function));
+        OnPropertyChanged(nameof(Pin12Function));
+        OnPropertyChanged(nameof(Pin13Function));
+        OnPropertyChanged(nameof(Pin14Function));
+        OnPropertyChanged(nameof(Pin15Function));
+        OnPropertyChanged(nameof(Pin16Function));
+        OnPropertyChanged(nameof(Pin17Function));
+        OnPropertyChanged(nameof(Pin18Function));
+        OnPropertyChanged(nameof(Pin19Function));
+        OnPropertyChanged(nameof(Pin20Function));
+        OnPropertyChanged(nameof(Pin21Function));
+        OnPropertyChanged(nameof(Pin22Function));
+        OnPropertyChanged(nameof(Pin23Function));
+        OnPropertyChanged(nameof(Pin24Function));
     }
 
     /// <summary>
@@ -714,23 +716,23 @@ public partial class ConfigurationViewModel : ReactiveObject
     /// </summary>
     private void RefreshSectionWidthProperties()
     {
-        this.RaisePropertyChanged(nameof(Section1Width));
-        this.RaisePropertyChanged(nameof(Section2Width));
-        this.RaisePropertyChanged(nameof(Section3Width));
-        this.RaisePropertyChanged(nameof(Section4Width));
-        this.RaisePropertyChanged(nameof(Section5Width));
-        this.RaisePropertyChanged(nameof(Section6Width));
-        this.RaisePropertyChanged(nameof(Section7Width));
-        this.RaisePropertyChanged(nameof(Section8Width));
-        this.RaisePropertyChanged(nameof(Section9Width));
-        this.RaisePropertyChanged(nameof(Section10Width));
-        this.RaisePropertyChanged(nameof(Section11Width));
-        this.RaisePropertyChanged(nameof(Section12Width));
-        this.RaisePropertyChanged(nameof(Section13Width));
-        this.RaisePropertyChanged(nameof(Section14Width));
-        this.RaisePropertyChanged(nameof(Section15Width));
-        this.RaisePropertyChanged(nameof(Section16Width));
-        this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+        OnPropertyChanged(nameof(Section1Width));
+        OnPropertyChanged(nameof(Section2Width));
+        OnPropertyChanged(nameof(Section3Width));
+        OnPropertyChanged(nameof(Section4Width));
+        OnPropertyChanged(nameof(Section5Width));
+        OnPropertyChanged(nameof(Section6Width));
+        OnPropertyChanged(nameof(Section7Width));
+        OnPropertyChanged(nameof(Section8Width));
+        OnPropertyChanged(nameof(Section9Width));
+        OnPropertyChanged(nameof(Section10Width));
+        OnPropertyChanged(nameof(Section11Width));
+        OnPropertyChanged(nameof(Section12Width));
+        OnPropertyChanged(nameof(Section13Width));
+        OnPropertyChanged(nameof(Section14Width));
+        OnPropertyChanged(nameof(Section15Width));
+        OnPropertyChanged(nameof(Section16Width));
+        OnPropertyChanged(nameof(CalculatedSectionTotal));
     }
 
     // Zone end section properties (for binding in zone mode)
@@ -748,14 +750,14 @@ public partial class ConfigurationViewModel : ReactiveObject
     /// </summary>
     private void RefreshZoneEndProperties()
     {
-        this.RaisePropertyChanged(nameof(Zone1EndSection));
-        this.RaisePropertyChanged(nameof(Zone2EndSection));
-        this.RaisePropertyChanged(nameof(Zone3EndSection));
-        this.RaisePropertyChanged(nameof(Zone4EndSection));
-        this.RaisePropertyChanged(nameof(Zone5EndSection));
-        this.RaisePropertyChanged(nameof(Zone6EndSection));
-        this.RaisePropertyChanged(nameof(Zone7EndSection));
-        this.RaisePropertyChanged(nameof(Zone8EndSection));
+        OnPropertyChanged(nameof(Zone1EndSection));
+        OnPropertyChanged(nameof(Zone2EndSection));
+        OnPropertyChanged(nameof(Zone3EndSection));
+        OnPropertyChanged(nameof(Zone4EndSection));
+        OnPropertyChanged(nameof(Zone5EndSection));
+        OnPropertyChanged(nameof(Zone6EndSection));
+        OnPropertyChanged(nameof(Zone7EndSection));
+        OnPropertyChanged(nameof(Zone8EndSection));
     }
 
     #endregion
@@ -770,7 +772,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         get => _selectedProfileName;
         set
         {
-            this.RaiseAndSetIfChanged(ref _selectedProfileName, value);
+            SetProperty(ref _selectedProfileName, value);
             if (value != null && value != Config.ActiveProfileName)
             {
                 _configService.LoadProfile(value);
@@ -963,14 +965,14 @@ public partial class ConfigurationViewModel : ReactiveObject
         _configService = configService;
 
         // Initialize commands
-        LoadProfileCommand = ReactiveCommand.Create<string>(LoadProfile);
-        SaveProfileCommand = ReactiveCommand.Create(SaveProfile);
-        NewProfileCommand = ReactiveCommand.Create<string>(CreateNewProfile);
-        DeleteProfileCommand = ReactiveCommand.Create(DeleteProfile);
-        ApplyCommand = ReactiveCommand.Create(ApplyChanges);
-        CancelCommand = ReactiveCommand.Create(Cancel);
-        SetToolTypeCommand = ReactiveCommand.Create<string>(SetToolType);
-        SetVehicleTypeCommand = ReactiveCommand.Create<string>(SetVehicleType);
+        LoadProfileCommand = new RelayCommand<string>(LoadProfile);
+        SaveProfileCommand = new RelayCommand(SaveProfile);
+        NewProfileCommand = new RelayCommand<string>(CreateNewProfile);
+        DeleteProfileCommand = new RelayCommand(DeleteProfile);
+        ApplyCommand = new RelayCommand(ApplyChanges);
+        CancelCommand = new RelayCommand(Cancel);
+        SetToolTypeCommand = new RelayCommand<string>(SetToolType);
+        SetVehicleTypeCommand = new RelayCommand<string>(SetVehicleType);
 
         // Initialize numeric input commands
         InitializeNumericInputCommands();
@@ -994,12 +996,12 @@ public partial class ConfigurationViewModel : ReactiveObject
         {
             if (e.PropertyName == nameof(ConfigurationStore.HasUnsavedChanges))
             {
-                this.RaisePropertyChanged(nameof(HasUnsavedChanges));
+                OnPropertyChanged(nameof(HasUnsavedChanges));
             }
             // Update calculated section total when NumSections changes
             if (e.PropertyName == nameof(ConfigurationStore.NumSections))
             {
-                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+                OnPropertyChanged(nameof(CalculatedSectionTotal));
             }
         };
 
@@ -1008,7 +1010,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         {
             if (e.PropertyName == nameof(ToolConfig.DefaultSectionWidth))
             {
-                this.RaisePropertyChanged(nameof(CalculatedSectionTotal));
+                OnPropertyChanged(nameof(CalculatedSectionTotal));
             }
         };
 
@@ -1022,32 +1024,32 @@ public partial class ConfigurationViewModel : ReactiveObject
     private void InitializeVehicleEditCommands()
     {
         // Vehicle dimensions stored in meters, edit in meters
-        EditWheelbaseCommand = ReactiveCommand.Create(() =>
+        EditWheelbaseCommand = new RelayCommand(() =>
             ShowNumericInput("Wheelbase", Vehicle.Wheelbase,
                 v => Vehicle.Wheelbase = v,
                 "m", integerOnly: false, allowNegative: false, min: 0.5, max: 10));
 
-        EditTrackWidthCommand = ReactiveCommand.Create(() =>
+        EditTrackWidthCommand = new RelayCommand(() =>
             ShowNumericInput("Track Width", Vehicle.TrackWidth,
                 v => Vehicle.TrackWidth = v,
                 "m", integerOnly: false, allowNegative: false, min: 0.5, max: 5));
 
-        EditHitchLengthCommand = ReactiveCommand.Create(() =>
+        EditHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Hitch Length", Tool.HitchLength,
                 v => Tool.HitchLength = v,
                 "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
 
-        EditAntennaPivotCommand = ReactiveCommand.Create(() =>
+        EditAntennaPivotCommand = new RelayCommand(() =>
             ShowNumericInput("Antenna Pivot", Vehicle.AntennaPivot,
                 v => Vehicle.AntennaPivot = v,
                 "m", integerOnly: false, allowNegative: true, min: -10, max: 10));
 
-        EditAntennaHeightCommand = ReactiveCommand.Create(() =>
+        EditAntennaHeightCommand = new RelayCommand(() =>
             ShowNumericInput("Antenna Height", Vehicle.AntennaHeight,
                 v => Vehicle.AntennaHeight = v,
                 "m", integerOnly: false, allowNegative: false, min: 0, max: 10));
 
-        EditAntennaOffsetCommand = ReactiveCommand.Create(() =>
+        EditAntennaOffsetCommand = new RelayCommand(() =>
             ShowNumericInput("Antenna Offset", Vehicle.AntennaOffset,
                 v => Vehicle.AntennaOffset = v,
                 "m", integerOnly: false, allowNegative: true, min: -5, max: 5));
@@ -1056,19 +1058,19 @@ public partial class ConfigurationViewModel : ReactiveObject
         // Left = antenna is LEFT of tractor center = negative offset
         // Center = antenna is on centerline = zero offset
         // Right = antenna is RIGHT of tractor center = positive offset
-        SetAntennaOffsetLeftCommand = ReactiveCommand.Create(() =>
+        SetAntennaOffsetLeftCommand = new RelayCommand(() =>
         {
             Vehicle.AntennaOffset = -Math.Abs(Vehicle.AntennaOffset);
             if (Math.Abs(Vehicle.AntennaOffset) < 0.01)
                 Vehicle.AntennaOffset = -0.5; // Default to 0.5m if currently zero
         });
 
-        SetAntennaOffsetCenterCommand = ReactiveCommand.Create(() =>
+        SetAntennaOffsetCenterCommand = new RelayCommand(() =>
         {
             Vehicle.AntennaOffset = 0;
         });
 
-        SetAntennaOffsetRightCommand = ReactiveCommand.Create(() =>
+        SetAntennaOffsetRightCommand = new RelayCommand(() =>
         {
             Vehicle.AntennaOffset = Math.Abs(Vehicle.AntennaOffset);
             if (Math.Abs(Vehicle.AntennaOffset) < 0.01)
@@ -1079,56 +1081,56 @@ public partial class ConfigurationViewModel : ReactiveObject
     private void InitializeToolEditCommands()
     {
         // Tool dimensions stored in meters, edit in meters
-        EditToolWidthCommand = ReactiveCommand.Create(() =>
+        EditToolWidthCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Width", Tool.Width,
                 v => Tool.Width = v,
                 "m", integerOnly: false, allowNegative: false, min: 0.5, max: 50));
 
-        EditToolOverlapCommand = ReactiveCommand.Create(() =>
+        EditToolOverlapCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Overlap", Tool.Overlap,
                 v => Tool.Overlap = v,
                 "m", integerOnly: false, allowNegative: true, min: -2, max: 2));
 
-        EditToolOffsetCommand = ReactiveCommand.Create(() =>
+        EditToolOffsetCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Offset", Tool.Offset,
                 v => Tool.Offset = v,
                 "m", integerOnly: false, allowNegative: true, min: -5, max: 5));
 
-        EditToolHitchLengthCommand = ReactiveCommand.Create(() =>
+        EditToolHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Hitch Length", Tool.HitchLength,
                 v => Tool.HitchLength = v,
                 "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
 
-        EditTrailingHitchLengthCommand = ReactiveCommand.Create(() =>
+        EditTrailingHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Trailing Hitch Length", Tool.TrailingHitchLength,
                 v => Tool.TrailingHitchLength = v,
                 "m", integerOnly: false, allowNegative: true, min: -15, max: 15));
 
-        EditTankHitchLengthCommand = ReactiveCommand.Create(() =>
+        EditTankHitchLengthCommand = new RelayCommand(() =>
             ShowNumericInput("Tank Hitch Length", Tool.TankTrailingHitchLength,
                 v => Tool.TankTrailingHitchLength = v,
                 "m", integerOnly: false, allowNegative: false, min: 0, max: 15));
 
-        EditToolPivotCommand = ReactiveCommand.Create(() =>
+        EditToolPivotCommand = new RelayCommand(() =>
             ShowNumericInput("Tool Pivot Distance", Tool.TrailingToolToPivotLength,
                 v => Tool.TrailingToolToPivotLength = v,
                 "m", integerOnly: false, allowNegative: true, min: -10, max: 10));
 
-        SetPivotBehindCommand = ReactiveCommand.Create(() =>
+        SetPivotBehindCommand = new RelayCommand(() =>
         {
             // If current value is negative, make it positive (behind pivot)
             if (Tool.TrailingToolToPivotLength < 0)
                 Tool.TrailingToolToPivotLength = Math.Abs(Tool.TrailingToolToPivotLength);
         });
 
-        SetPivotAheadCommand = ReactiveCommand.Create(() =>
+        SetPivotAheadCommand = new RelayCommand(() =>
         {
             // If current value is positive, make it negative (ahead of pivot)
             if (Tool.TrailingToolToPivotLength > 0)
                 Tool.TrailingToolToPivotLength = -Math.Abs(Tool.TrailingToolToPivotLength);
         });
 
-        ZeroToolPivotCommand = ReactiveCommand.Create(() =>
+        ZeroToolPivotCommand = new RelayCommand(() =>
         {
             Tool.TrailingToolToPivotLength = 0;
         });
@@ -1136,79 +1138,79 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeSectionsEditCommands()
     {
-        EditNumSectionsCommand = ReactiveCommand.Create(() =>
+        EditNumSectionsCommand = new RelayCommand(() =>
             ShowNumericInput("Number of Sections", Config.NumSections,
                 v => Config.NumSections = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 16));
 
-        EditLookAheadOnCommand = ReactiveCommand.Create(() =>
+        EditLookAheadOnCommand = new RelayCommand(() =>
             ShowNumericInput("Look Ahead On", Tool.LookAheadOnSetting,
                 v => Tool.LookAheadOnSetting = v,
                 "s", integerOnly: false, allowNegative: false, min: 0, max: 5));
 
-        EditLookAheadOffCommand = ReactiveCommand.Create(() =>
+        EditLookAheadOffCommand = new RelayCommand(() =>
             ShowNumericInput("Look Ahead Off", Tool.LookAheadOffSetting,
                 v => Tool.LookAheadOffSetting = v,
                 "s", integerOnly: false, allowNegative: false, min: 0, max: 5));
 
-        EditTurnOffDelayCommand = ReactiveCommand.Create(() =>
+        EditTurnOffDelayCommand = new RelayCommand(() =>
             ShowNumericInput("Turn Off Delay", Tool.TurnOffDelay,
                 v => Tool.TurnOffDelay = v,
                 "s", integerOnly: false, allowNegative: false, min: 0, max: 5));
 
-        EditDefaultSectionWidthCommand = ReactiveCommand.Create(() =>
+        EditDefaultSectionWidthCommand = new RelayCommand(() =>
             ShowNumericInput("Default Section Width", Tool.DefaultSectionWidth,
                 v => Tool.DefaultSectionWidth = v,
                 "cm", integerOnly: false, allowNegative: false, min: 10, max: 500));
 
-        EditMinCoverageCommand = ReactiveCommand.Create(() =>
+        EditMinCoverageCommand = new RelayCommand(() =>
             ShowNumericInput("Minimum Coverage", Tool.MinCoverage,
                 v => Tool.MinCoverage = (int)v,
                 "%", integerOnly: true, allowNegative: false, min: 0, max: 100));
 
-        EditCutoffSpeedCommand = ReactiveCommand.Create(() =>
+        EditCutoffSpeedCommand = new RelayCommand(() =>
             ShowNumericInput("Slow Speed Cutoff", Tool.SlowSpeedCutoff,
                 v => Tool.SlowSpeedCutoff = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
 
-        EditCoverageMarginCommand = ReactiveCommand.Create(() =>
+        EditCoverageMarginCommand = new RelayCommand(() =>
             ShowNumericInput("Coverage Margin", Tool.CoverageMargin,
                 v => Tool.CoverageMargin = v,
                 "cm", integerOnly: false, allowNegative: false, min: 0, max: 50));
 
         // Individual section width commands
-        EditSection1WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(1));
-        EditSection2WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(2));
-        EditSection3WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(3));
-        EditSection4WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(4));
-        EditSection5WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(5));
-        EditSection6WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(6));
-        EditSection7WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(7));
-        EditSection8WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(8));
-        EditSection9WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(9));
-        EditSection10WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(10));
-        EditSection11WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(11));
-        EditSection12WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(12));
-        EditSection13WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(13));
-        EditSection14WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(14));
-        EditSection15WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(15));
-        EditSection16WidthCommand = ReactiveCommand.Create(() => EditSectionWidth(16));
+        EditSection1WidthCommand = new RelayCommand(() => EditSectionWidth(1));
+        EditSection2WidthCommand = new RelayCommand(() => EditSectionWidth(2));
+        EditSection3WidthCommand = new RelayCommand(() => EditSectionWidth(3));
+        EditSection4WidthCommand = new RelayCommand(() => EditSectionWidth(4));
+        EditSection5WidthCommand = new RelayCommand(() => EditSectionWidth(5));
+        EditSection6WidthCommand = new RelayCommand(() => EditSectionWidth(6));
+        EditSection7WidthCommand = new RelayCommand(() => EditSectionWidth(7));
+        EditSection8WidthCommand = new RelayCommand(() => EditSectionWidth(8));
+        EditSection9WidthCommand = new RelayCommand(() => EditSectionWidth(9));
+        EditSection10WidthCommand = new RelayCommand(() => EditSectionWidth(10));
+        EditSection11WidthCommand = new RelayCommand(() => EditSectionWidth(11));
+        EditSection12WidthCommand = new RelayCommand(() => EditSectionWidth(12));
+        EditSection13WidthCommand = new RelayCommand(() => EditSectionWidth(13));
+        EditSection14WidthCommand = new RelayCommand(() => EditSectionWidth(14));
+        EditSection15WidthCommand = new RelayCommand(() => EditSectionWidth(15));
+        EditSection16WidthCommand = new RelayCommand(() => EditSectionWidth(16));
 
         // Zone edit command
-        EditNumZonesCommand = ReactiveCommand.Create(() =>
+        EditNumZonesCommand = new RelayCommand(() =>
             ShowNumericInput("Number of Zones", Tool.Zones,
                 v => { Tool.Zones = (int)v; RefreshZoneEndProperties(); },
                 "", integerOnly: true, allowNegative: false, min: 2, max: 8));
 
         // Zone end section commands
-        EditZone1EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(1));
-        EditZone2EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(2));
-        EditZone3EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(3));
-        EditZone4EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(4));
-        EditZone5EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(5));
-        EditZone6EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(6));
-        EditZone7EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(7));
-        EditZone8EndCommand = ReactiveCommand.Create(() => EditZoneEndSection(8));
+        EditZone1EndCommand = new RelayCommand(() => EditZoneEndSection(1));
+        EditZone2EndCommand = new RelayCommand(() => EditZoneEndSection(2));
+        EditZone3EndCommand = new RelayCommand(() => EditZoneEndSection(3));
+        EditZone4EndCommand = new RelayCommand(() => EditZoneEndSection(4));
+        EditZone5EndCommand = new RelayCommand(() => EditZoneEndSection(5));
+        EditZone6EndCommand = new RelayCommand(() => EditZoneEndSection(6));
+        EditZone7EndCommand = new RelayCommand(() => EditZoneEndSection(7));
+        EditZone8EndCommand = new RelayCommand(() => EditZoneEndSection(8));
     }
 
     /// <summary>
@@ -1249,27 +1251,27 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeUTurnEditCommands()
     {
-        EditUTurnRadiusCommand = ReactiveCommand.Create(() =>
+        EditUTurnRadiusCommand = new RelayCommand(() =>
             ShowNumericInput("U-Turn Radius", Guidance.UTurnRadius,
                 v => Guidance.UTurnRadius = v,
                 "m", integerOnly: false, allowNegative: false, min: 2, max: 30));
 
-        EditUTurnExtensionCommand = ReactiveCommand.Create(() =>
+        EditUTurnExtensionCommand = new RelayCommand(() =>
             ShowNumericInput("U-Turn Extension", Guidance.UTurnExtension,
                 v => Guidance.UTurnExtension = v,
                 "m", integerOnly: false, allowNegative: false, min: 0, max: 50));
 
-        EditUTurnDistanceCommand = ReactiveCommand.Create(() =>
+        EditUTurnDistanceCommand = new RelayCommand(() =>
             ShowNumericInput("Distance from Boundary", Guidance.UTurnDistanceFromBoundary,
                 v => Guidance.UTurnDistanceFromBoundary = v,
                 "m", integerOnly: false, allowNegative: true, min: -10, max: 10));
 
-        EditUTurnSkipWidthCommand = ReactiveCommand.Create(() =>
+        EditUTurnSkipWidthCommand = new RelayCommand(() =>
             ShowNumericInput("Skip Width", Guidance.UTurnSkipWidth,
                 v => Guidance.UTurnSkipWidth = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 10));
 
-        EditUTurnSmoothingCommand = ReactiveCommand.Create(() =>
+        EditUTurnSmoothingCommand = new RelayCommand(() =>
             ShowNumericInput("Smoothing", Guidance.UTurnSmoothing,
                 v => Guidance.UTurnSmoothing = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 50));
@@ -1278,20 +1280,20 @@ public partial class ConfigurationViewModel : ReactiveObject
     private void InitializeGpsEditCommands()
     {
         // GPS Mode commands
-        SetSingleGpsCommand = ReactiveCommand.Create(() =>
+        SetSingleGpsCommand = new RelayCommand(() =>
         {
             Connections.IsDualGps = false;
             Config.MarkChanged();
         });
 
-        SetDualGpsCommand = ReactiveCommand.Create(() =>
+        SetDualGpsCommand = new RelayCommand(() =>
         {
             Connections.IsDualGps = true;
             Config.MarkChanged();
         });
 
         // Heading source command (parameter is source index as string)
-        SetHeadingSourceCommand = ReactiveCommand.Create<string>(source =>
+        SetHeadingSourceCommand = new RelayCommand<string>(source =>
         {
             if (int.TryParse(source, out var sourceIndex))
             {
@@ -1300,23 +1302,23 @@ public partial class ConfigurationViewModel : ReactiveObject
             }
         });
 
-        EditFusionWeightCommand = ReactiveCommand.Create(() =>
+        EditFusionWeightCommand = new RelayCommand(() =>
             ShowNumericInput("Heading Fusion Weight", Connections.HeadingFusionWeight,
                 v => Connections.HeadingFusionWeight = v,
                 "", integerOnly: false, allowNegative: false, min: 0, max: 1));
 
-        EditMinFixQualityCommand = ReactiveCommand.Create(() =>
+        EditMinFixQualityCommand = new RelayCommand(() =>
             ShowNumericInput("Minimum Fix Quality", Connections.MinFixQuality,
                 v => Connections.MinFixQuality = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 5));
 
-        ToggleRtkAlarmCommand = ReactiveCommand.Create(() =>
+        ToggleRtkAlarmCommand = new RelayCommand(() =>
         {
             Connections.RtkLostAlarm = !Connections.RtkLostAlarm;
             Config.MarkChanged();
         });
 
-        SetRtkLostActionCommand = ReactiveCommand.Create<string>(action =>
+        SetRtkLostActionCommand = new RelayCommand<string>(action =>
         {
             if (int.TryParse(action, out var actionIndex))
             {
@@ -1325,17 +1327,17 @@ public partial class ConfigurationViewModel : ReactiveObject
             }
         });
 
-        EditMaxDiffAgeCommand = ReactiveCommand.Create(() =>
+        EditMaxDiffAgeCommand = new RelayCommand(() =>
             ShowNumericInput("Max Differential Age", Connections.MaxDifferentialAge,
                 v => Connections.MaxDifferentialAge = v,
                 "sec", integerOnly: false, allowNegative: false, min: 1, max: 30));
 
-        EditMaxHdopCommand = ReactiveCommand.Create(() =>
+        EditMaxHdopCommand = new RelayCommand(() =>
             ShowNumericInput("Max HDOP", Connections.MaxHdop,
                 v => Connections.MaxHdop = v,
                 "", integerOnly: false, allowNegative: false, min: 0.5, max: 10));
 
-        SetGpsUpdateRateCommand = ReactiveCommand.Create<string>(rate =>
+        SetGpsUpdateRateCommand = new RelayCommand<string>(rate =>
         {
             if (int.TryParse(rate, out var rateHz))
             {
@@ -1344,52 +1346,52 @@ public partial class ConfigurationViewModel : ReactiveObject
             }
         });
 
-        ToggleUseRtkCommand = ReactiveCommand.Create(() =>
+        ToggleUseRtkCommand = new RelayCommand(() =>
         {
             Connections.UseRtk = !Connections.UseRtk;
             Config.MarkChanged();
         });
 
         // Dual Antenna Settings
-        EditDualHeadingOffsetCommand = ReactiveCommand.Create(() =>
+        EditDualHeadingOffsetCommand = new RelayCommand(() =>
             ShowNumericInput("Heading Offset", Connections.DualHeadingOffset,
                 v => Connections.DualHeadingOffset = v,
                 "°", integerOnly: false, allowNegative: false, min: 0, max: 360));
 
-        EditDualReverseDistanceCommand = ReactiveCommand.Create(() =>
+        EditDualReverseDistanceCommand = new RelayCommand(() =>
             ShowNumericInput("Reverse Distance", Connections.DualReverseDistance,
                 v => Connections.DualReverseDistance = v,
                 "m", integerOnly: false, allowNegative: false, min: 0, max: 5));
 
-        ToggleAutoDualFixCommand = ReactiveCommand.Create(() =>
+        ToggleAutoDualFixCommand = new RelayCommand(() =>
         {
             Connections.AutoDualFix = !Connections.AutoDualFix;
             Config.MarkChanged();
         });
 
-        EditDualSwitchSpeedCommand = ReactiveCommand.Create(() =>
+        EditDualSwitchSpeedCommand = new RelayCommand(() =>
             ShowNumericInput("Switch Speed", Connections.DualSwitchSpeed,
                 v => Connections.DualSwitchSpeed = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
 
         // Single Antenna Settings
-        EditMinGpsStepCommand = ReactiveCommand.Create(() =>
+        EditMinGpsStepCommand = new RelayCommand(() =>
             ShowNumericInput("Minimum GPS Step", Connections.MinGpsStep,
                 v => Connections.MinGpsStep = v,
                 "m", integerOnly: false, allowNegative: false, min: 0.01, max: 1));
 
-        EditFixToFixDistanceCommand = ReactiveCommand.Create(() =>
+        EditFixToFixDistanceCommand = new RelayCommand(() =>
             ShowNumericInput("Fix to Fix Distance", Connections.FixToFixDistance,
                 v => Connections.FixToFixDistance = v,
                 "m", integerOnly: false, allowNegative: false, min: 0.1, max: 5));
 
-        ToggleReverseDetectionCommand = ReactiveCommand.Create(() =>
+        ToggleReverseDetectionCommand = new RelayCommand(() =>
         {
             Connections.ReverseDetection = !Connections.ReverseDetection;
             Config.MarkChanged();
         });
 
-        ToggleAlarmStopsAutosteerCommand = ReactiveCommand.Create(() =>
+        ToggleAlarmStopsAutosteerCommand = new RelayCommand(() =>
         {
             // Toggle between RtkLostAction 0 (Warn) and 1 (Pause AutoSteer)
             Connections.RtkLostAction = Connections.RtkLostAction == 1 ? 0 : 1;
@@ -1399,17 +1401,17 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeRollEditCommands()
     {
-        EditRollZeroCommand = ReactiveCommand.Create(() =>
+        EditRollZeroCommand = new RelayCommand(() =>
             ShowNumericInput("Roll Zero Offset", Ahrs.RollZero,
                 v => Ahrs.RollZero = v,
                 "°", integerOnly: false, allowNegative: true, min: -20, max: 20));
 
-        EditRollFilterCommand = ReactiveCommand.Create(() =>
+        EditRollFilterCommand = new RelayCommand(() =>
             ShowNumericInput("Roll Filter", Ahrs.RollFilter,
                 v => Ahrs.RollFilter = v,
                 "", integerOnly: false, allowNegative: false, min: 0, max: 1));
 
-        ToggleRollInvertCommand = ReactiveCommand.Create(() =>
+        ToggleRollInvertCommand = new RelayCommand(() =>
         {
             Ahrs.IsRollInvert = !Ahrs.IsRollInvert;
             Config.MarkChanged();
@@ -1417,7 +1419,7 @@ public partial class ConfigurationViewModel : ReactiveObject
 
         // Set roll zero to current roll value (would need access to current sensor data)
         // For now, this just resets to 0
-        SetRollZeroCommand = ReactiveCommand.Create(() =>
+        SetRollZeroCommand = new RelayCommand(() =>
         {
             Ahrs.RollZero = 0;
             Config.MarkChanged();
@@ -1426,18 +1428,18 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeTramCommands()
     {
-        EditTramPassesCommand = ReactiveCommand.Create(() =>
+        EditTramPassesCommand = new RelayCommand(() =>
             ShowNumericInput("Tram Passes", Guidance.TramPasses,
                 v => Guidance.TramPasses = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 20));
 
-        ToggleTramDisplayCommand = ReactiveCommand.Create(() =>
+        ToggleTramDisplayCommand = new RelayCommand(() =>
         {
             Guidance.TramDisplay = !Guidance.TramDisplay;
             Config.MarkChanged();
         });
 
-        EditTramLineCommand = ReactiveCommand.Create(() =>
+        EditTramLineCommand = new RelayCommand(() =>
             ShowNumericInput("Tram Line", Guidance.TramLine,
                 v => Guidance.TramLine = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 100));
@@ -1446,69 +1448,69 @@ public partial class ConfigurationViewModel : ReactiveObject
     private void InitializeMachineCommands()
     {
         // Machine Module Commands
-        ToggleHydraulicLiftCommand = ReactiveCommand.Create(() =>
+        ToggleHydraulicLiftCommand = new RelayCommand(() =>
         {
             Machine.HydraulicLiftEnabled = !Machine.HydraulicLiftEnabled;
             Config.MarkChanged();
         });
 
-        EditRaiseTimeCommand = ReactiveCommand.Create(() =>
+        EditRaiseTimeCommand = new RelayCommand(() =>
             ShowNumericInput("Raise Time", Machine.RaiseTime,
                 v => Machine.RaiseTime = (int)v,
                 "sec", integerOnly: true, allowNegative: false, min: 0, max: 20));
 
-        EditLookAheadCommand = ReactiveCommand.Create(() =>
+        EditLookAheadCommand = new RelayCommand(() =>
             ShowNumericInput("Look Ahead", Machine.LookAhead,
                 v => Machine.LookAhead = v,
                 "sec", integerOnly: false, allowNegative: false, min: 0, max: 10));
 
-        EditLowerTimeCommand = ReactiveCommand.Create(() =>
+        EditLowerTimeCommand = new RelayCommand(() =>
             ShowNumericInput("Lower Time", Machine.LowerTime,
                 v => Machine.LowerTime = (int)v,
                 "sec", integerOnly: true, allowNegative: false, min: 0, max: 20));
 
-        ToggleInvertRelayCommand = ReactiveCommand.Create(() =>
+        ToggleInvertRelayCommand = new RelayCommand(() =>
         {
             Machine.InvertRelay = !Machine.InvertRelay;
             Config.MarkChanged();
         });
 
         // User Value Commands
-        EditUser1Command = ReactiveCommand.Create(() =>
+        EditUser1Command = new RelayCommand(() =>
             ShowNumericInput("User 1", Machine.User1Value,
                 v => Machine.User1Value = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 255));
 
-        EditUser2Command = ReactiveCommand.Create(() =>
+        EditUser2Command = new RelayCommand(() =>
             ShowNumericInput("User 2", Machine.User2Value,
                 v => Machine.User2Value = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 255));
 
-        EditUser3Command = ReactiveCommand.Create(() =>
+        EditUser3Command = new RelayCommand(() =>
             ShowNumericInput("User 3", Machine.User3Value,
                 v => Machine.User3Value = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 255));
 
-        EditUser4Command = ReactiveCommand.Create(() =>
+        EditUser4Command = new RelayCommand(() =>
             ShowNumericInput("User 4", Machine.User4Value,
                 v => Machine.User4Value = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 255));
 
         // Pin Config Commands
-        ResetPinConfigCommand = ReactiveCommand.Create(() =>
+        ResetPinConfigCommand = new RelayCommand(() =>
         {
             Machine.ResetPinAssignments();
             RefreshAllPinProperties();
             Config.MarkChanged();
         });
 
-        UploadPinConfigCommand = ReactiveCommand.Create(() =>
+        UploadPinConfigCommand = new RelayCommand(() =>
         {
             // TODO: Implement upload from hardware
             // This would typically read the current pin config from the machine module
         });
 
-        SendAndSaveMachineConfigCommand = ReactiveCommand.Create(() =>
+        SendAndSaveMachineConfigCommand = new RelayCommand(() =>
         {
             // TODO: Implement send to hardware
             // This would send the current config to the machine module via UDP
@@ -1519,110 +1521,110 @@ public partial class ConfigurationViewModel : ReactiveObject
 
     private void InitializeDisplayCommands()
     {
-        TogglePolygonsCommand = ReactiveCommand.Create(() =>
+        TogglePolygonsCommand = new RelayCommand(() =>
         {
             Display.PolygonsVisible = !Display.PolygonsVisible;
             Config.MarkChanged();
         });
 
-        ToggleSpeedometerCommand = ReactiveCommand.Create(() =>
+        ToggleSpeedometerCommand = new RelayCommand(() =>
         {
             Display.SpeedometerVisible = !Display.SpeedometerVisible;
             Config.MarkChanged();
         });
 
-        ToggleKeyboardCommand = ReactiveCommand.Create(() =>
+        ToggleKeyboardCommand = new RelayCommand(() =>
         {
             Display.KeyboardEnabled = !Display.KeyboardEnabled;
             Config.MarkChanged();
         });
 
-        ToggleHeadlandDistanceCommand = ReactiveCommand.Create(() =>
+        ToggleHeadlandDistanceCommand = new RelayCommand(() =>
         {
             Display.HeadlandDistanceVisible = !Display.HeadlandDistanceVisible;
             Config.MarkChanged();
         });
 
-        ToggleAutoDayNightCommand = ReactiveCommand.Create(() =>
+        ToggleAutoDayNightCommand = new RelayCommand(() =>
         {
             Display.AutoDayNight = !Display.AutoDayNight;
             Config.MarkChanged();
         });
 
-        ToggleSvennArrowCommand = ReactiveCommand.Create(() =>
+        ToggleSvennArrowCommand = new RelayCommand(() =>
         {
             Display.SvennArrowVisible = !Display.SvennArrowVisible;
             Config.MarkChanged();
         });
 
-        ToggleStartFullscreenCommand = ReactiveCommand.Create(() =>
+        ToggleStartFullscreenCommand = new RelayCommand(() =>
         {
             Display.StartFullscreen = !Display.StartFullscreen;
             Config.MarkChanged();
             FullscreenChanged?.Invoke(Display.StartFullscreen);
         });
 
-        ToggleElevationLogCommand = ReactiveCommand.Create(() =>
+        ToggleElevationLogCommand = new RelayCommand(() =>
         {
             Display.ElevationLogEnabled = !Display.ElevationLogEnabled;
             Config.MarkChanged();
         });
 
-        ToggleFieldTextureCommand = ReactiveCommand.Create(() =>
+        ToggleFieldTextureCommand = new RelayCommand(() =>
         {
             Display.FieldTextureVisible = !Display.FieldTextureVisible;
             Config.MarkChanged();
         });
 
-        ToggleGridCommand = ReactiveCommand.Create(() =>
+        ToggleGridCommand = new RelayCommand(() =>
         {
             Display.GridVisible = !Display.GridVisible;
             Config.MarkChanged();
         });
 
-        ToggleExtraGuidelinesCommand = ReactiveCommand.Create(() =>
+        ToggleExtraGuidelinesCommand = new RelayCommand(() =>
         {
             Display.ExtraGuidelines = !Display.ExtraGuidelines;
             Config.MarkChanged();
         });
 
-        EditExtraGuidelinesCountCommand = ReactiveCommand.Create(() =>
+        EditExtraGuidelinesCountCommand = new RelayCommand(() =>
             ShowNumericInput("Extra Guidelines Count", Display.ExtraGuidelinesCount,
                 v => Display.ExtraGuidelinesCount = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 50));
 
-        ToggleLineSmoothCommand = ReactiveCommand.Create(() =>
+        ToggleLineSmoothCommand = new RelayCommand(() =>
         {
             Display.LineSmoothEnabled = !Display.LineSmoothEnabled;
             Config.MarkChanged();
         });
 
-        ToggleDirectionMarkersCommand = ReactiveCommand.Create(() =>
+        ToggleDirectionMarkersCommand = new RelayCommand(() =>
         {
             Display.DirectionMarkersVisible = !Display.DirectionMarkersVisible;
             Config.MarkChanged();
         });
 
-        ToggleSectionLinesCommand = ReactiveCommand.Create(() =>
+        ToggleSectionLinesCommand = new RelayCommand(() =>
         {
             Display.SectionLinesVisible = !Display.SectionLinesVisible;
             Config.MarkChanged();
         });
 
-        ToggleDayNightThemeCommand = ReactiveCommand.Create(() =>
+        ToggleDayNightThemeCommand = new RelayCommand(() =>
         {
             Display.IsDayMode = !Display.IsDayMode;
             MainViewModel.ApplyThemeVariant(Display.IsDayMode);
             Config.MarkChanged();
         });
 
-        SetMetricUnitsCommand = ReactiveCommand.Create(() =>
+        SetMetricUnitsCommand = new RelayCommand(() =>
         {
             Config.IsMetric = true;
             Config.MarkChanged();
         });
 
-        SetImperialUnitsCommand = ReactiveCommand.Create(() =>
+        SetImperialUnitsCommand = new RelayCommand(() =>
         {
             Config.IsMetric = false;
             Config.MarkChanged();
@@ -1632,45 +1634,45 @@ public partial class ConfigurationViewModel : ReactiveObject
     private void InitializeAdditionalOptionsCommands()
     {
         // Screen Buttons
-        ToggleUTurnButtonCommand = ReactiveCommand.Create(() =>
+        ToggleUTurnButtonCommand = new RelayCommand(() =>
         {
             Display.UTurnButtonVisible = !Display.UTurnButtonVisible;
             Config.MarkChanged();
         });
 
-        ToggleLateralButtonCommand = ReactiveCommand.Create(() =>
+        ToggleLateralButtonCommand = new RelayCommand(() =>
         {
             Display.LateralButtonVisible = !Display.LateralButtonVisible;
             Config.MarkChanged();
         });
 
         // Sounds
-        ToggleAutoSteerSoundCommand = ReactiveCommand.Create(() =>
+        ToggleAutoSteerSoundCommand = new RelayCommand(() =>
         {
             Display.AutoSteerSound = !Display.AutoSteerSound;
             Config.MarkChanged();
         });
 
-        ToggleUTurnSoundCommand = ReactiveCommand.Create(() =>
+        ToggleUTurnSoundCommand = new RelayCommand(() =>
         {
             Display.UTurnSound = !Display.UTurnSound;
             Config.MarkChanged();
         });
 
-        ToggleHydraulicSoundCommand = ReactiveCommand.Create(() =>
+        ToggleHydraulicSoundCommand = new RelayCommand(() =>
         {
             Display.HydraulicSound = !Display.HydraulicSound;
             Config.MarkChanged();
         });
 
-        ToggleSectionsSoundCommand = ReactiveCommand.Create(() =>
+        ToggleSectionsSoundCommand = new RelayCommand(() =>
         {
             Display.SectionsSound = !Display.SectionsSound;
             Config.MarkChanged();
         });
 
         // Hardware Messages
-        ToggleHardwareMessagesCommand = ReactiveCommand.Create(() =>
+        ToggleHardwareMessagesCommand = new RelayCommand(() =>
         {
             Display.HardwareMessagesEnabled = !Display.HardwareMessagesEnabled;
             Config.MarkChanged();
@@ -1691,7 +1693,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         if (string.IsNullOrEmpty(profileName)) return;
         _configService.LoadProfile(profileName);
         _selectedProfileName = profileName;
-        this.RaisePropertyChanged(nameof(SelectedProfileName));
+        OnPropertyChanged(nameof(SelectedProfileName));
     }
 
     private void SaveProfile()
@@ -1707,7 +1709,7 @@ public partial class ConfigurationViewModel : ReactiveObject
         _configService.CreateProfile(profileName);
         RefreshProfileList();
         _selectedProfileName = profileName;
-        this.RaisePropertyChanged(nameof(SelectedProfileName));
+        OnPropertyChanged(nameof(SelectedProfileName));
     }
 
     private void DeleteProfile()

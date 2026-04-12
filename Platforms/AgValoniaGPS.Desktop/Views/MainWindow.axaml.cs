@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -325,27 +326,25 @@ public partial class MainWindow : Window
             display.GridVisible = ViewModel.IsGridOn;
         }
 
-        // Save configuration (syncs ConfigurationStore to AppSettings and saves to disk)
+        // Save on background thread — don't block the window close
         var configService = App.Services.GetRequiredService<IConfigurationService>();
-        configService.SaveAppSettings();
-
-        // Save coverage to active field before closing
         var fieldService = App.Services.GetRequiredService<IFieldService>();
         var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
-        if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+        var fieldPath = fieldService.ActiveField?.DirectoryPath;
+
+        Task.Run(() =>
         {
             try
             {
-                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
+                configService.SaveAppSettings();
+                if (!string.IsNullOrEmpty(fieldPath))
+                    coverageService.SaveToFile(fieldPath);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Save] Error saving on close: {ex.Message}");
             }
-        }
-
-        // Settings will be saved automatically by App.Exit handler
+        });
     }
 
     private void MainWindow_KeyDown(object? sender, KeyEventArgs e)

@@ -51,7 +51,7 @@ public class MapService : IMapService
 
     public void Set3DMode(bool is3D) => GetMapControl().Set3DMode(is3D);
 
-    public bool Is3DMode => _mapControl != null && !GetMapControl().IsGridVisible; // TODO: Add Is3DMode to IMapControl
+    public bool Is3DMode => _mapControl?.Is3DMode ?? false;
 
     public void SetPitch(double deltaRadians) => GetMapControl().SetPitch(deltaRadians);
 

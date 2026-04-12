@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -23,14 +23,14 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Vehicle physical configuration.
 /// Replaces: Vehicle.cs, VehicleConfiguration.cs (physical parts)
 /// </summary>
-public class VehicleConfig : ReactiveObject
+public class VehicleConfig : ObservableObject
 {
     // Identity
     private string _name = string.Empty;
     public string Name
     {
         get => _name;
-        set => this.RaiseAndSetIfChanged(ref _name, value);
+        set => SetProperty(ref _name, value);
     }
 
     // Vehicle type
@@ -41,13 +41,13 @@ public class VehicleConfig : ReactiveObject
         set
         {
             var oldValue = _type;
-            this.RaiseAndSetIfChanged(ref _type, value);
+            SetProperty(ref _type, value);
             if (oldValue != value)
             {
                 // Notify computed properties that depend on Type
-                this.RaisePropertyChanged(nameof(WheelbaseImageSource));
-                this.RaisePropertyChanged(nameof(AntennaImageSource));
-                this.RaisePropertyChanged(nameof(VehicleTypeDisplayName));
+                OnPropertyChanged(nameof(WheelbaseImageSource));
+                OnPropertyChanged(nameof(AntennaImageSource));
+                OnPropertyChanged(nameof(VehicleTypeDisplayName));
             }
         }
     }
@@ -60,10 +60,10 @@ public class VehicleConfig : ReactiveObject
         set
         {
             var oldValue = _wheelbase;
-            this.RaiseAndSetIfChanged(ref _wheelbase, value);
+            SetProperty(ref _wheelbase, value);
             if (oldValue != value)
             {
-                this.RaisePropertyChanged(nameof(MinTurningRadius));
+                OnPropertyChanged(nameof(MinTurningRadius));
             }
         }
     }
@@ -72,7 +72,7 @@ public class VehicleConfig : ReactiveObject
     public double TrackWidth
     {
         get => _trackWidth;
-        set => this.RaiseAndSetIfChanged(ref _trackWidth, value);
+        set => SetProperty(ref _trackWidth, value);
     }
 
     // Antenna position
@@ -80,21 +80,21 @@ public class VehicleConfig : ReactiveObject
     public double AntennaHeight
     {
         get => _antennaHeight;
-        set => this.RaiseAndSetIfChanged(ref _antennaHeight, value);
+        set => SetProperty(ref _antennaHeight, value);
     }
 
     private double _antennaPivot = 0.0;
     public double AntennaPivot
     {
         get => _antennaPivot;
-        set => this.RaiseAndSetIfChanged(ref _antennaPivot, value);
+        set => SetProperty(ref _antennaPivot, value);
     }
 
     private double _antennaOffset = 0.0;
     public double AntennaOffset
     {
         get => _antennaOffset;
-        set => this.RaiseAndSetIfChanged(ref _antennaOffset, value);
+        set => SetProperty(ref _antennaOffset, value);
     }
 
     // Steering limits
@@ -105,10 +105,10 @@ public class VehicleConfig : ReactiveObject
         set
         {
             var oldValue = _maxSteerAngle;
-            this.RaiseAndSetIfChanged(ref _maxSteerAngle, value);
+            SetProperty(ref _maxSteerAngle, value);
             if (oldValue != value)
             {
-                this.RaisePropertyChanged(nameof(MinTurningRadius));
+                OnPropertyChanged(nameof(MinTurningRadius));
             }
         }
     }
@@ -117,7 +117,7 @@ public class VehicleConfig : ReactiveObject
     public double MaxAngularVelocity
     {
         get => _maxAngularVelocity;
-        set => this.RaiseAndSetIfChanged(ref _maxAngularVelocity, value);
+        set => SetProperty(ref _maxAngularVelocity, value);
     }
 
     // Computed properties

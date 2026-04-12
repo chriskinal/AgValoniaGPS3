@@ -15,10 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+
 using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -53,6 +55,11 @@ public partial class MainViewModel
     {
         // Ignore GPS data when simulator is disabled
         if (!_isSimulatorEnabled) return;
+
+        // The simulator builds GpsData and feeds it to the GpsService.
+        // The GpsPipelineService (subscribed to GpsService.GpsDataUpdated)
+        // handles all heavy processing: tool position, guidance, section control,
+        // coverage painting, and boundary checks on a background thread.
 
         var simulatedData = e.Data;
 
@@ -105,63 +112,8 @@ public partial class MainViewModel
             Timestamp = Models.Timing.Clock.Current.Now
         };
 
-        // Directly update GPS service (bypasses NMEA parsing like WinForms version does)
-        // This applies antenna-to-pivot transformation to gpsData.CurrentPosition
+        // Feed into GpsService — this fires GpsDataUpdated which the pipeline picks up
         _gpsService.UpdateGpsData(gpsData);
-
-        // Use the TRANSFORMED position (pivot/tractor center) for all guidance calculations
-        var transformedPosition = gpsData.CurrentPosition;
-
-        // NOTE: _toolPositionService.Update() is NOT called here.
-        // GpsHandling.UpdateGpsProperties (triggered by _gpsService.UpdateGpsData above)
-        // already calls it with drift-compensated coordinates. Calling it again here
-        // with undrifted coords would overwrite the correct drifted tool position.
-
-        // Process through AutoSteer pipeline for latency measurement
-        _autoSteerService.ProcessSimulatedPosition(
-            transformedPosition.Latitude, transformedPosition.Longitude, transformedPosition.Altitude,
-            transformedPosition.Heading, transformedPosition.Speed, gpsData.FixQuality,
-            gpsData.SatellitesInUse, gpsData.Hdop,
-            transformedPosition.Easting, transformedPosition.Northing);
-
-        // Auto-disengage autosteer if vehicle is outside the outer boundary
-        // BUT skip this check:
-        // - On first pass (howManyPathsAway == 0) if track runs along boundary
-        // - During U-turn execution (arc extends into headland which may be outside outer boundary)
-        bool skipBoundaryCheck = (_isSelectedTrackOnBoundary && _howManyPathsAway == 0) || _isInYouTurn;
-        if (IsAutoSteerEngaged && !skipBoundaryCheck && !IsPointInsideBoundary(transformedPosition.Easting, transformedPosition.Northing))
-        {
-            IsAutoSteerEngaged = false;
-            StatusMessage = "AutoSteer disengaged - outside boundary";
-        }
-
-        // Calculate autosteer guidance if engaged and we have an active track
-        if (IsAutoSteerEngaged && HasActiveTrack && SelectedTrack != null)
-        {
-            // Increment YouTurn counter (used for throttling)
-            _youTurnCounter++;
-
-            // Check for YouTurn execution or create path if approaching headland
-            if (IsYouTurnEnabled && _currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
-            {
-                ProcessYouTurn(transformedPosition);
-            }
-
-            // If we're in a YouTurn, use YouTurn guidance; otherwise use AB line guidance
-            if (_isYouTurnTriggered && _youTurnPath != null && _youTurnPath.Count > 0)
-            {
-                CalculateYouTurnGuidance(transformedPosition);
-            }
-            else
-            {
-                CalculateAutoSteerGuidance(transformedPosition);
-            }
-        }
-        else if (HasActiveTrack && SelectedTrack != null)
-        {
-            // Display-only: update pass offset visualization without steering
-            UpdateDisplayTrack(transformedPosition);
-        }
     }
 
     #endregion
@@ -173,7 +125,7 @@ public partial class MainViewModel
         get => _isSimulatorEnabled;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isSimulatorEnabled, value))
+            if (SetProperty(ref _isSimulatorEnabled, value))
             {
                 // Update centralized state
                 State.Simulator.IsEnabled = value;
@@ -210,9 +162,9 @@ public partial class MainViewModel
         get => _simulatorSteerAngle;
         set
         {
-            this.RaiseAndSetIfChanged(ref _simulatorSteerAngle, value);
+            SetProperty(ref _simulatorSteerAngle, value);
             State.Simulator.SteerAngle = value;
-            this.RaisePropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
+            OnPropertyChanged(nameof(SimulatorSteerAngleDisplay)); // Notify display property
             if (_isSimulatorEnabled)
             {
                 _simulatorService.SteerAngle = value;
@@ -233,7 +185,7 @@ public partial class MainViewModel
         {
             // Clamp to valid range
             value = Math.Max(-10, Math.Min(25, value));
-            this.RaiseAndSetIfChanged(ref _simulatorSpeedKph, value);
+            SetProperty(ref _simulatorSpeedKph, value);
             UpdateSimulatorSpeed();
         }
     }
@@ -246,9 +198,9 @@ public partial class MainViewModel
         get => _isSimulatorSpeed10x;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isSimulatorSpeed10x, value);
+            SetProperty(ref _isSimulatorSpeed10x, value);
             UpdateSimulatorSpeed();
-            this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+            OnPropertyChanged(nameof(SimulatorSpeedDisplay));
         }
     }
 
@@ -257,7 +209,7 @@ public partial class MainViewModel
         double effectiveSpeed = _isSimulatorSpeed10x ? _simulatorSpeedKph * 10 : _simulatorSpeedKph;
         State.Simulator.Speed = effectiveSpeed;
         State.Simulator.TargetSpeed = effectiveSpeed;
-        this.RaisePropertyChanged(nameof(SimulatorSpeedDisplay));
+        OnPropertyChanged(nameof(SimulatorSpeedDisplay));
         if (_isSimulatorEnabled)
         {
             // Convert kph to stepDistance: stepDistance = speedKph / 40

@@ -15,9 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using System.Reactive;
 using System.Threading.Tasks;
-using ReactiveUI;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -44,10 +44,10 @@ public class AntennaOffsetStepViewModel : WizardStepViewModel
         get => _antennaOffset;
         set
         {
-            this.RaiseAndSetIfChanged(ref _antennaOffset, value);
-            this.RaisePropertyChanged(nameof(IsLeft));
-            this.RaisePropertyChanged(nameof(IsCenter));
-            this.RaisePropertyChanged(nameof(IsRight));
+            SetProperty(ref _antennaOffset, value);
+            OnPropertyChanged(nameof(IsLeft));
+            OnPropertyChanged(nameof(IsCenter));
+            OnPropertyChanged(nameof(IsRight));
         }
     }
 
@@ -55,7 +55,7 @@ public class AntennaOffsetStepViewModel : WizardStepViewModel
     public string Unit
     {
         get => _unit;
-        set => this.RaiseAndSetIfChanged(ref _unit, value);
+        set => SetProperty(ref _unit, value);
     }
 
     /// <summary>
@@ -73,17 +73,17 @@ public class AntennaOffsetStepViewModel : WizardStepViewModel
     /// </summary>
     public bool IsRight => AntennaOffset > 0;
 
-    public ReactiveCommand<Unit, Unit> SetLeftCommand { get; }
-    public ReactiveCommand<Unit, Unit> SetCenterCommand { get; }
-    public ReactiveCommand<Unit, Unit> SetRightCommand { get; }
+    public ICommand SetLeftCommand { get; }
+    public ICommand SetCenterCommand { get; }
+    public ICommand SetRightCommand { get; }
 
     public AntennaOffsetStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
 
-        SetLeftCommand = ReactiveCommand.Create(() => { AntennaOffset = -0.5; });
-        SetCenterCommand = ReactiveCommand.Create(() => { AntennaOffset = 0; });
-        SetRightCommand = ReactiveCommand.Create(() => { AntennaOffset = 0.5; });
+        SetLeftCommand = new RelayCommand(() => { AntennaOffset = -0.5; });
+        SetCenterCommand = new RelayCommand(() => { AntennaOffset = 0; });
+        SetRightCommand = new RelayCommand(() => { AntennaOffset = 0.5; });
     }
 
     protected override void OnEntering()

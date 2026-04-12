@@ -19,7 +19,9 @@ using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services;
 using Avalonia.Threading;
-using ReactiveUI;
+
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -49,61 +51,61 @@ public partial class MainViewModel
     public bool IsViewSettingsPanelVisible
     {
         get => _isViewSettingsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isViewSettingsPanelVisible, value);
+        set => SetProperty(ref _isViewSettingsPanelVisible, value);
     }
 
     public bool IsFileMenuPanelVisible
     {
         get => _isFileMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFileMenuPanelVisible, value);
+        set => SetProperty(ref _isFileMenuPanelVisible, value);
     }
 
     public bool IsToolsPanelVisible
     {
         get => _isToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isToolsPanelVisible, value);
+        set => SetProperty(ref _isToolsPanelVisible, value);
     }
 
     public bool IsConfigurationPanelVisible
     {
         get => _isConfigurationPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isConfigurationPanelVisible, value);
+        set => SetProperty(ref _isConfigurationPanelVisible, value);
     }
 
     public bool IsJobMenuPanelVisible
     {
         get => _isJobMenuPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isJobMenuPanelVisible, value);
+        set => SetProperty(ref _isJobMenuPanelVisible, value);
     }
 
     public bool IsFieldToolsPanelVisible
     {
         get => _isFieldToolsPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isFieldToolsPanelVisible, value);
+        set => SetProperty(ref _isFieldToolsPanelVisible, value);
     }
 
     public bool IsSimulatorPanelVisible
     {
         get => _isSimulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSimulatorPanelVisible, value);
+        set => SetProperty(ref _isSimulatorPanelVisible, value);
     }
 
     public bool IsSteerChartPanelVisible
     {
         get => _isSteerChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isSteerChartPanelVisible, value);
+        set => SetProperty(ref _isSteerChartPanelVisible, value);
     }
 
     public bool IsHeadingChartPanelVisible
     {
         get => _isHeadingChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isHeadingChartPanelVisible, value);
+        set => SetProperty(ref _isHeadingChartPanelVisible, value);
     }
 
     public bool IsXTEChartPanelVisible
     {
         get => _isXTEChartPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isXTEChartPanelVisible, value);
+        set => SetProperty(ref _isXTEChartPanelVisible, value);
     }
 
     #endregion
@@ -114,7 +116,7 @@ public partial class MainViewModel
     public string CurrentTime
     {
         get => _currentTime;
-        private set => this.RaiseAndSetIfChanged(ref _currentTime, value);
+        private set => SetProperty(ref _currentTime, value);
     }
 
     private void InitializeClock()
@@ -137,10 +139,10 @@ public partial class MainViewModel
         set
         {
             var old = _cameraMode;
-            this.RaiseAndSetIfChanged(ref _cameraMode, value);
+            SetProperty(ref _cameraMode, value);
             if (old != value)
             {
-                this.RaisePropertyChanged(nameof(CameraModeLabel));
+                OnPropertyChanged(nameof(CameraModeLabel));
                 ApplyCameraMode();
             }
         }
@@ -202,7 +204,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsGridOn = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -212,7 +214,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsDayMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
             _mapService.SetDayMode(value);
             ApplyThemeVariant(value);
         }
@@ -226,9 +228,9 @@ public partial class MainViewModel
         set
         {
             _displaySettings.CameraPitch = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(Is2DMode));
-            this.RaisePropertyChanged(nameof(CameraPitchDisplay));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Is2DMode));
+            OnPropertyChanged(nameof(CameraPitchDisplay));
             // Remember last 3D pitch for restoring when toggling back from 2D
             if (value > -89.0)
                 _last3DPitch = value;
@@ -254,7 +256,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Is2DMode = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -264,7 +266,7 @@ public partial class MainViewModel
         set
         {
             _displaySettings.IsNorthUp = value;
-            this.RaisePropertyChanged();
+            OnPropertyChanged();
         }
     }
 
@@ -274,14 +276,23 @@ public partial class MainViewModel
         set
         {
             _displaySettings.Brightness = value;
-            this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(BrightnessDisplay));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(BrightnessDisplay));
         }
     }
 
     public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
         ? $"{_displaySettings.Brightness}%"
         : "??";
+
+    public string DisplayResolutionLabel => ConfigStore.Display.DisplayResolutionMultiplier switch
+    {
+        < 1.25 => "Ultra",
+        < 2.0  => "High",
+        < 3.25 => "Med",
+        < 5.0  => "Low",
+        _ => "Min",
+    };
 
     #endregion
 
@@ -352,7 +363,7 @@ public partial class MainViewModel
     /// </summary>
     private void RaiseUTurnButtonVisibleChanged()
     {
-        this.RaisePropertyChanged(nameof(IsUTurnButtonVisible));
+        OnPropertyChanged(nameof(IsUTurnButtonVisible));
     }
 
     #endregion

@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -42,10 +44,10 @@ public class SteerEnableStepViewModel : WizardStepViewModel
         get => _externalEnable;
         set
         {
-            this.RaiseAndSetIfChanged(ref _externalEnable, value);
-            this.RaisePropertyChanged(nameof(IsNoneSelected));
-            this.RaisePropertyChanged(nameof(IsSwitchSelected));
-            this.RaisePropertyChanged(nameof(IsButtonSelected));
+            SetProperty(ref _externalEnable, value);
+            OnPropertyChanged(nameof(IsNoneSelected));
+            OnPropertyChanged(nameof(IsSwitchSelected));
+            OnPropertyChanged(nameof(IsButtonSelected));
         }
     }
 

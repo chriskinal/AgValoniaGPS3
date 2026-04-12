@@ -21,7 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
-             xmlns:mapsui="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Avalonia;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.BoundaryMapDialogPanel"
              x:DataType="vm:MainViewModel"

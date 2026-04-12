@@ -18,12 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ReactiveUI;
+
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Track;
 using Microsoft.Extensions.Logging;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -53,14 +54,14 @@ public partial class MainViewModel
 
     private void InitializeTrackManagementCommands()
     {
-        ToggleRecordedPathsCommand = ReactiveCommand.Create(() =>
+        ToggleRecordedPathsCommand = new RelayCommand(() =>
         {
             ShowRecordedPaths = !ShowRecordedPaths;
             StatusMessage = ShowRecordedPaths ? "Recorded paths visible" : "Recorded paths hidden";
             UpdateRecordedPathsOnMap();
         });
 
-        StartRecordedPathCommand = ReactiveCommand.Create(() =>
+        StartRecordedPathCommand = new RelayCommand(() =>
         {
             if (!IsFieldOpen)
             {
@@ -73,7 +74,7 @@ public partial class MainViewModel
             StatusMessage = "Recording path...";
         });
 
-        StopRecordedPathCommand = ReactiveCommand.Create(() =>
+        StopRecordedPathCommand = new RelayCommand(() =>
         {
             if (!IsRecordingPath) return;
             IsRecordingPath = false;
@@ -122,7 +123,7 @@ public partial class MainViewModel
             _lastRecPathPoint = null;
         });
 
-        ImportTracksCommand = ReactiveCommand.Create(() =>
+        ImportTracksCommand = new RelayCommand(() =>
         {
             var activeField = _fieldService.ActiveField;
             if (activeField == null || string.IsNullOrEmpty(activeField.DirectoryPath))
@@ -160,7 +161,7 @@ public partial class MainViewModel
             State.UI.ShowDialog(DialogType.ImportTracks);
         });
 
-        ImportTracksFromFieldCommand = ReactiveCommand.Create<string>(fieldName =>
+        ImportTracksFromFieldCommand = new RelayCommand<string>(fieldName =>
         {
             if (string.IsNullOrEmpty(fieldName))
                 return;
@@ -205,12 +206,12 @@ public partial class MainViewModel
             }
         });
 
-        CloseImportTracksDialogCommand = ReactiveCommand.Create(() =>
+        CloseImportTracksDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });
 
-        DeleteContourTrackCommand = ReactiveCommand.Create(() =>
+        DeleteContourTrackCommand = new RelayCommand(() =>
         {
             if (SelectedTrack == null)
             {
@@ -228,7 +229,7 @@ public partial class MainViewModel
             StatusMessage = $"Deleted track '{trackName}'";
         });
 
-        StartContourRecordingCommand = ReactiveCommand.Create(() =>
+        StartContourRecordingCommand = new RelayCommand(() =>
         {
             if (!IsContourModeOn)
             {
@@ -252,7 +253,7 @@ public partial class MainViewModel
             StatusMessage = $"Contour recording started ({_contourRecordingPoints.Count} pts)";
         });
 
-        StopContourRecordingCommand = ReactiveCommand.Create(() =>
+        StopContourRecordingCommand = new RelayCommand(() =>
         {
             if (!IsRecordingContour)
                 return;

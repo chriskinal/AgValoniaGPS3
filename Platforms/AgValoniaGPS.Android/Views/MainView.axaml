@@ -45,7 +45,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Background="Transparent">
                 <controls:DrawingContextMapControl x:Name="MapControl" Margin="5"
                                                    IsGridVisible="{Binding IsGridOn}"/>
 

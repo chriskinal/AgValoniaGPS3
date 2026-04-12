@@ -20,7 +20,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
-             xmlns:gif="using:Avalonia.Labs.Gif"
              xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.Configuration.ToolSubTabs.ToolTimingSubTab"
@@ -40,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Look Ahead On -->
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
-                    <gif:GifImage Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionOnLookAhead.gif" Stretch="Uniform"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionOnLookAhead.gif" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Look Ahead On" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
@@ -55,7 +54,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Look Ahead Off -->
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
-                    <gif:GifImage Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionLookAheadOff.gif" Stretch="Uniform"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionLookAheadOff.gif" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Look Ahead Off" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
@@ -70,7 +69,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Turn Off Delay -->
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="4" Width="160" Height="120" Margin="0,0,12,0">
-                    <gif:GifImage Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionLookAheadDelay.gif" Stretch="Uniform"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/SectionLookAheadDelay.gif" Stretch="Uniform"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Turn Off Delay" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>

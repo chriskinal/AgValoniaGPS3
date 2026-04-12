@@ -64,6 +64,7 @@ public class MainViewModelBuilder
             audioService: Substitute.For<IAudioService>(),
             elevationLogService: Substitute.For<IElevationLogService>(),
             tramLineService: Substitute.For<ITramLineService>(),
+            gpsPipelineService: Substitute.For<IGpsPipelineService>(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }

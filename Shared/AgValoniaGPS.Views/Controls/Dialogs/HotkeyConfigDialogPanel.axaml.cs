@@ -63,14 +63,14 @@ public partial class HotkeyConfigDialogPanel : UserControl
         DataContextChanged += OnDataContextChanged;
 
         // Grab focus when the dialog becomes visible so KeyDown events fire
-        this.GetObservable(IsVisibleProperty).Subscribe(visible =>
+        PropertyChanged += (_, e) =>
         {
-            if (visible)
+            if (e.Property == IsVisibleProperty && IsVisible)
             {
                 Focus();
                 RefreshAllKeyLabels();
             }
-        });
+        };
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)

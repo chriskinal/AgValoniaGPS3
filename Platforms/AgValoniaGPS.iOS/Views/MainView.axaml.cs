@@ -74,23 +74,26 @@ public partial class MainView : UserControl
             display.GridVisible = _viewModel.IsGridOn;
         }
 
-        var configService = App.Services.GetRequiredService<IConfigurationService>();
-        configService.SaveAppSettings();
-
-        var fieldService = App.Services.GetRequiredService<IFieldService>();
-        var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
-        if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+        // Save on background thread — never block the UI thread on app close
+        Task.Run(() =>
         {
             try
             {
-                coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Saved coverage on app close to {fieldService.ActiveField.DirectoryPath}");
+                var configService = App.Services.GetRequiredService<IConfigurationService>();
+                configService.SaveAppSettings();
+
+                var fieldService = App.Services.GetRequiredService<IFieldService>();
+                var coverageService = App.Services.GetRequiredService<ICoverageMapService>();
+                if (fieldService.ActiveField != null && !string.IsNullOrEmpty(fieldService.ActiveField.DirectoryPath))
+                {
+                    coverageService.SaveToFile(fieldService.ActiveField.DirectoryPath);
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Coverage] Error saving coverage on close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Save] Error saving on close: {ex.Message}");
             }
-        }
+        });
     }
 
     private void MainView_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

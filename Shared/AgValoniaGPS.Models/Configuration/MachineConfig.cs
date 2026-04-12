@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -51,42 +51,42 @@ public enum PinFunction
 /// Machine module and relay configuration.
 /// Controls hydraulic lift timing and pin assignments.
 /// </summary>
-public class MachineConfig : ReactiveObject
+public class MachineConfig : ObservableObject
 {
     // Hydraulic Lift Settings
     private bool _hydraulicLiftEnabled;
     public bool HydraulicLiftEnabled
     {
         get => _hydraulicLiftEnabled;
-        set => this.RaiseAndSetIfChanged(ref _hydraulicLiftEnabled, value);
+        set => SetProperty(ref _hydraulicLiftEnabled, value);
     }
 
     private int _raiseTime = 4;
     public int RaiseTime
     {
         get => _raiseTime;
-        set => this.RaiseAndSetIfChanged(ref _raiseTime, value);
+        set => SetProperty(ref _raiseTime, value);
     }
 
     private double _lookAhead = 2.0;
     public double LookAhead
     {
         get => _lookAhead;
-        set => this.RaiseAndSetIfChanged(ref _lookAhead, value);
+        set => SetProperty(ref _lookAhead, value);
     }
 
     private int _lowerTime = 2;
     public int LowerTime
     {
         get => _lowerTime;
-        set => this.RaiseAndSetIfChanged(ref _lowerTime, value);
+        set => SetProperty(ref _lowerTime, value);
     }
 
     private bool _invertRelay;
     public bool InvertRelay
     {
         get => _invertRelay;
-        set => this.RaiseAndSetIfChanged(ref _invertRelay, value);
+        set => SetProperty(ref _invertRelay, value);
     }
 
     // User Custom Values (sent to machine module)
@@ -94,28 +94,28 @@ public class MachineConfig : ReactiveObject
     public int User1Value
     {
         get => _user1Value;
-        set => this.RaiseAndSetIfChanged(ref _user1Value, value);
+        set => SetProperty(ref _user1Value, value);
     }
 
     private int _user2Value = 2;
     public int User2Value
     {
         get => _user2Value;
-        set => this.RaiseAndSetIfChanged(ref _user2Value, value);
+        set => SetProperty(ref _user2Value, value);
     }
 
     private int _user3Value = 3;
     public int User3Value
     {
         get => _user3Value;
-        set => this.RaiseAndSetIfChanged(ref _user3Value, value);
+        set => SetProperty(ref _user3Value, value);
     }
 
     private int _user4Value = 4;
     public int User4Value
     {
         get => _user4Value;
-        set => this.RaiseAndSetIfChanged(ref _user4Value, value);
+        set => SetProperty(ref _user4Value, value);
     }
 
     // Pin Assignments (24 pins)
@@ -134,7 +134,7 @@ public class MachineConfig : ReactiveObject
     public PinFunction[] PinAssignments
     {
         get => _pinAssignments;
-        set => this.RaiseAndSetIfChanged(ref _pinAssignments, value);
+        set => SetProperty(ref _pinAssignments, value);
     }
 
     /// <summary>

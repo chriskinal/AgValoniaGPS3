@@ -170,7 +170,7 @@ public partial class AgShareDownloadDialogPanel : UserControl
         {
             var progress = new Progress<int>(percent =>
             {
-                Dispatcher.UIThread.Invoke(() =>
+                Dispatcher.UIThread.Post(() =>
                 {
                     var pct = (int)(percent * 100.0 / _fields.Count);
                     ProgressBar.Value = pct;

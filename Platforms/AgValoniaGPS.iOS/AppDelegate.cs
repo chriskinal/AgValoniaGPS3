@@ -17,7 +17,6 @@
 using System;
 using Avalonia;
 using Avalonia.iOS;
-using Avalonia.ReactiveUI;
 using Foundation;
 using UIKit;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +36,6 @@ public partial class AppDelegate : AvaloniaAppDelegate<App>
             // Explicitly configure for iOS - this ensures no desktop window chrome
             var result = base.CustomizeAppBuilder(builder)
                 .UseiOS()
-                .UseReactiveUI()
                 .LogToTrace();
             Console.WriteLine("[AppDelegate] CustomizeAppBuilder completed.");
             return result;
@@ -74,13 +72,9 @@ public partial class AppDelegate : AvaloniaAppDelegate<App>
         {
             if (App.Services == null) return;
 
-            // Save panel positions from MainView
-            if (App.MainView != null)
-            {
-                App.MainView.SavePanelPositions();
-            }
+            // Panels are now anchored — no position save needed
 
-            // Save configuration (includes panel positions)
+            // Save configuration
             var configService = App.Services.GetRequiredService<IConfigurationService>();
             configService.SaveAppSettings();
             Console.WriteLine("[AppDelegate] Saved configuration on app background/terminate");

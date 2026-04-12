@@ -19,6 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:local="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs;assembly=AgValoniaGPS.Views"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.AgShareDownloadDialogPanel"
              x:DataType="vm:MainViewModel"
              IsVisible="{Binding State.UI.IsAgShareDownloadDialogVisible}"
@@ -58,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                  Background="Transparent"
                                  SelectionChanged="FieldListBox_SelectionChanged">
                             <ListBox.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="local:DownloadFieldListItem">
                                     <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4" Padding="10" Margin="2">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Grid.Column="0">

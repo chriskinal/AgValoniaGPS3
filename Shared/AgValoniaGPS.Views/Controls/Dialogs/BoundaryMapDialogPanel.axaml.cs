@@ -75,32 +75,14 @@ public partial class BoundaryMapDialogPanel : UserControl
         // This ensures all layers use consistent coordinate system
         map.CRS = "EPSG:3857";
 
-        // Test with different tile providers to diagnose offset issue
-        // Set to false to use ESRI instead of Google
-        var useGoogle = false; // Testing ESRI to compare with Google
-
-        if (useGoogle)
-        {
-            // Google Satellite tiles (lyrs=s for satellite, y for hybrid with labels)
-            var googleSatelliteUrl = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
-            var googleTileSource = new HttpTileSource(
-                new GlobalSphericalMercator(),
-                googleSatelliteUrl,
-                name: "Google Satellite");
-            map.Layers.Add(new TileLayer(googleTileSource) { Name = "Satellite" });
-            Debug.WriteLine("[BoundaryMap] Using Google Satellite tiles");
-        }
-        else
-        {
-            // ESRI World Imagery (may have georeferencing offsets)
-            var esriSatelliteUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-            var esriTileSource = new HttpTileSource(
-                new GlobalSphericalMercator(),
-                esriSatelliteUrl,
-                name: "Esri World Imagery");
-            map.Layers.Add(new TileLayer(esriTileSource) { Name = "Satellite" });
-            Debug.WriteLine("[BoundaryMap] Using ESRI World Imagery tiles");
-        }
+        // Bing Maps aerial imagery via Virtual Earth tile servers
+        var bingSatelliteUrl = "https://ecn.t0.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=587";
+        var bingTileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            bingSatelliteUrl,
+            name: "Bing Satellite");
+        map.Layers.Add(new TileLayer(bingTileSource) { Name = "Satellite" });
+        Debug.WriteLine("[BoundaryMap] Using Bing Satellite tiles");
 
         // Create layer for polygon (drawn below points)
         _polygonLayer = new WritableLayer

@@ -19,13 +19,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Reactive;
 using System.Windows.Input;
-using ReactiveUI;
+
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Interfaces;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -33,7 +35,7 @@ namespace AgValoniaGPS.ViewModels;
 /// ViewModel for the AutoSteer Configuration Panel.
 /// Handles compact/full mode switching, test mode, and PGN communication.
 /// </summary>
-public partial class AutoSteerConfigViewModel : ReactiveObject
+public partial class AutoSteerConfigViewModel : ObservableObject
 {
     private readonly IConfigurationService _configService;
     private readonly IUdpCommunicationService? _udpService;
@@ -108,7 +110,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool HasUnsavedRightSideChanges
     {
         get => _hasUnsavedRightSideChanges;
-        set => this.RaiseAndSetIfChanged(ref _hasUnsavedRightSideChanges, value);
+        set => SetProperty(ref _hasUnsavedRightSideChanges, value);
     }
 
     private void OnAutoSteerPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -165,7 +167,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
         get => _isPanelVisible;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _isPanelVisible, value))
+            if (SetProperty(ref _isPanelVisible, value))
             {
                 if (value)
                 {
@@ -190,21 +192,21 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool IsFullMode
     {
         get => _isFullMode;
-        set => this.RaiseAndSetIfChanged(ref _isFullMode, value);
+        set => SetProperty(ref _isFullMode, value);
     }
 
     private int _selectedTabIndex;
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
+        set => SetProperty(ref _selectedTabIndex, value);
     }
 
     private int _selectedRightTabIndex;
     public int SelectedRightTabIndex
     {
         get => _selectedRightTabIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedRightTabIndex, value);
+        set => SetProperty(ref _selectedRightTabIndex, value);
     }
 
     public ICommand ToggleFullModeCommand { get; private set; } = null!;
@@ -218,28 +220,28 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool IsNumericInputVisible
     {
         get => _isNumericInputVisible;
-        set => this.RaiseAndSetIfChanged(ref _isNumericInputVisible, value);
+        set => SetProperty(ref _isNumericInputVisible, value);
     }
 
     private string _numericInputTitle = string.Empty;
     public string NumericInputTitle
     {
         get => _numericInputTitle;
-        set => this.RaiseAndSetIfChanged(ref _numericInputTitle, value);
+        set => SetProperty(ref _numericInputTitle, value);
     }
 
     private string _numericInputUnit = string.Empty;
     public string NumericInputUnit
     {
         get => _numericInputUnit;
-        set => this.RaiseAndSetIfChanged(ref _numericInputUnit, value);
+        set => SetProperty(ref _numericInputUnit, value);
     }
 
     private string _numericInputDisplayText = string.Empty;
     public string NumericInputDisplayText
     {
         get => _numericInputDisplayText;
-        set => this.RaiseAndSetIfChanged(ref _numericInputDisplayText, value);
+        set => SetProperty(ref _numericInputDisplayText, value);
     }
 
     private bool _numericInputIntegerOnly;
@@ -284,7 +286,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeNumericInputCommands()
     {
-        ConfirmNumericInputCommand = ReactiveCommand.Create(() =>
+        ConfirmNumericInputCommand = new RelayCommand(() =>
         {
             if (_numericInputCallback != null &&
                 decimal.TryParse(NumericInputDisplayText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
@@ -297,13 +299,13 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             _numericInputCallback = null;
         });
 
-        CancelNumericInputCommand = ReactiveCommand.Create(() =>
+        CancelNumericInputCommand = new RelayCommand(() =>
         {
             IsNumericInputVisible = false;
             _numericInputCallback = null;
         });
 
-        NumericInputDigitCommand = ReactiveCommand.Create<string>(digit =>
+        NumericInputDigitCommand = new RelayCommand<string>(digit =>
         {
             if (string.IsNullOrEmpty(digit)) return;
 
@@ -333,7 +335,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             }
         });
 
-        NumericInputBackspaceCommand = ReactiveCommand.Create(() =>
+        NumericInputBackspaceCommand = new RelayCommand(() =>
         {
             _isFirstDigitEntry = false;
             var current = NumericInputDisplayText;
@@ -349,13 +351,13 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             }
         });
 
-        NumericInputClearCommand = ReactiveCommand.Create(() =>
+        NumericInputClearCommand = new RelayCommand(() =>
         {
             NumericInputDisplayText = "0";
             _isFirstDigitEntry = false;
         });
 
-        NumericInputNegateCommand = ReactiveCommand.Create(() =>
+        NumericInputNegateCommand = new RelayCommand(() =>
         {
             if (!_numericInputAllowNegative) return;
             _isFirstDigitEntry = false;
@@ -366,8 +368,8 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
                 NumericInputDisplayText = "-" + NumericInputDisplayText;
         });
 
-        ToggleFullModeCommand = ReactiveCommand.Create(() => IsFullMode = !IsFullMode);
-        ClosePanelCommand = ReactiveCommand.Create(() => IsPanelVisible = false);
+        ToggleFullModeCommand = new RelayCommand(() => IsFullMode = !IsFullMode);
+        ClosePanelCommand = new RelayCommand(() => IsPanelVisible = false);
     }
 
     #endregion
@@ -387,34 +389,34 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     private void InitializeTab1Commands()
     {
         // Pure Pursuit commands
-        EditSteerResponseCommand = ReactiveCommand.Create(() =>
+        EditSteerResponseCommand = new RelayCommand(() =>
             ShowNumericInput("Steer Response (Hold)", AutoSteer.SteerResponseHold,
                 v => AutoSteer.SteerResponseHold = v,
                 "m", integerOnly: false, allowNegative: false, min: 1.0, max: 10.0));
 
-        EditIntegralGainCommand = ReactiveCommand.Create(() =>
+        EditIntegralGainCommand = new RelayCommand(() =>
             ShowNumericInput("Integral Gain", AutoSteer.IntegralGain * 100,
                 v => AutoSteer.IntegralGain = v / 100.0,
                 "%", integerOnly: true, allowNegative: false, min: 0, max: 100));
 
-        ToggleStanleyModeCommand = ReactiveCommand.Create(() =>
+        ToggleStanleyModeCommand = new RelayCommand(() =>
         {
             AutoSteer.IsStanleyMode = !AutoSteer.IsStanleyMode;
             Config.MarkChanged();
         });
 
         // Stanley commands
-        EditStanleyAggressivenessCommand = ReactiveCommand.Create(() =>
+        EditStanleyAggressivenessCommand = new RelayCommand(() =>
             ShowNumericInput("Aggressiveness", AutoSteer.StanleyAggressiveness,
                 v => AutoSteer.StanleyAggressiveness = v,
                 "", integerOnly: false, allowNegative: false, min: 0.0, max: 10.0));
 
-        EditStanleyOvershootCommand = ReactiveCommand.Create(() =>
+        EditStanleyOvershootCommand = new RelayCommand(() =>
             ShowNumericInput("Overshoot Reduction", AutoSteer.StanleyOvershootReduction,
                 v => AutoSteer.StanleyOvershootReduction = v,
                 "", integerOnly: false, allowNegative: false, min: 0.0, max: 10.0));
 
-        EditStanleyIntegralCommand = ReactiveCommand.Create(() =>
+        EditStanleyIntegralCommand = new RelayCommand(() =>
             ShowNumericInput("Integral", AutoSteer.IntegralGain * 100,
                 v => AutoSteer.IntegralGain = v / 100.0,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 100));
@@ -431,7 +433,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab2Commands()
     {
-        ZeroWasCommand = ReactiveCommand.Create(() =>
+        ZeroWasCommand = new RelayCommand(() =>
         {
             // Calculate new WAS offset to make current angle read zero.
             // Module formula: angle = (rawCounts - wasOffset) / countsPerDegree
@@ -444,17 +446,17 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             SendSteerSettingsPgn();
         });
 
-        EditCountsPerDegreeCommand = ReactiveCommand.Create(() =>
+        EditCountsPerDegreeCommand = new RelayCommand(() =>
             ShowNumericInput("Counts Per Degree", AutoSteer.CountsPerDegree,
                 v => AutoSteer.CountsPerDegree = v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 255));
 
-        EditAckermannCommand = ReactiveCommand.Create(() =>
+        EditAckermannCommand = new RelayCommand(() =>
             ShowNumericInput("Ackermann", AutoSteer.Ackermann,
                 v => AutoSteer.Ackermann = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 200));
 
-        EditMaxSteerAngleCommand = ReactiveCommand.Create(() =>
+        EditMaxSteerAngleCommand = new RelayCommand(() =>
             ShowNumericInput("Max Steer Angle", AutoSteer.MaxSteerAngle,
                 v => AutoSteer.MaxSteerAngle = (int)v,
                 "°", integerOnly: true, allowNegative: false, min: 10, max: 90));
@@ -471,22 +473,22 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab3Commands()
     {
-        EditDeadzoneHeadingCommand = ReactiveCommand.Create(() =>
+        EditDeadzoneHeadingCommand = new RelayCommand(() =>
             ShowNumericInput("Deadzone Heading", AutoSteer.DeadzoneHeading,
                 v => AutoSteer.DeadzoneHeading = v,
                 "°", integerOnly: false, allowNegative: false, min: 0.0, max: 5.0));
 
-        EditDeadzoneDelayCommand = ReactiveCommand.Create(() =>
+        EditDeadzoneDelayCommand = new RelayCommand(() =>
             ShowNumericInput("On-Delay", AutoSteer.DeadzoneDelay,
                 v => AutoSteer.DeadzoneDelay = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 0, max: 50));
 
-        EditSpeedFactorCommand = ReactiveCommand.Create(() =>
+        EditSpeedFactorCommand = new RelayCommand(() =>
             ShowNumericInput("Speed Factor", AutoSteer.SpeedFactor,
                 v => AutoSteer.SpeedFactor = v,
                 "", integerOnly: false, allowNegative: false, min: 0.5, max: 3.0));
 
-        EditAcquireFactorCommand = ReactiveCommand.Create(() =>
+        EditAcquireFactorCommand = new RelayCommand(() =>
             ShowNumericInput("Acquire Factor", AutoSteer.AcquireFactor,
                 v => AutoSteer.AcquireFactor = v,
                 "", integerOnly: false, allowNegative: false, min: 0.5, max: 1.0));
@@ -502,17 +504,17 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab4Commands()
     {
-        EditProportionalGainCommand = ReactiveCommand.Create(() =>
+        EditProportionalGainCommand = new RelayCommand(() =>
             ShowNumericInput("Proportional Gain", AutoSteer.ProportionalGain,
                 v => AutoSteer.ProportionalGain = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 100));
 
-        EditMaxPwmCommand = ReactiveCommand.Create(() =>
+        EditMaxPwmCommand = new RelayCommand(() =>
             ShowNumericInput("Max PWM", AutoSteer.MaxPwm,
                 v => AutoSteer.MaxPwm = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 50, max: 255));
 
-        EditMinPwmCommand = ReactiveCommand.Create(() =>
+        EditMinPwmCommand = new RelayCommand(() =>
             ShowNumericInput("Min PWM", AutoSteer.MinPwm,
                 v => AutoSteer.MinPwm = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 50));
@@ -528,19 +530,19 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab5Commands()
     {
-        ToggleTurnSensorCommand = ReactiveCommand.Create(() =>
+        ToggleTurnSensorCommand = new RelayCommand(() =>
         {
             AutoSteer.TurnSensorEnabled = !AutoSteer.TurnSensorEnabled;
             Config.MarkChanged();
         });
 
-        TogglePressureSensorCommand = ReactiveCommand.Create(() =>
+        TogglePressureSensorCommand = new RelayCommand(() =>
         {
             AutoSteer.PressureSensorEnabled = !AutoSteer.PressureSensorEnabled;
             Config.MarkChanged();
         });
 
-        ToggleCurrentSensorCommand = ReactiveCommand.Create(() =>
+        ToggleCurrentSensorCommand = new RelayCommand(() =>
         {
             AutoSteer.CurrentSensorEnabled = !AutoSteer.CurrentSensorEnabled;
             Config.MarkChanged();
@@ -562,49 +564,49 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab6Commands()
     {
-        ToggleDanfossCommand = ReactiveCommand.Create(() =>
+        ToggleDanfossCommand = new RelayCommand(() =>
         {
             AutoSteer.DanfossEnabled = !AutoSteer.DanfossEnabled;
             Config.MarkChanged();
         });
 
-        ToggleInvertWasCommand = ReactiveCommand.Create(() =>
+        ToggleInvertWasCommand = new RelayCommand(() =>
         {
             AutoSteer.InvertWas = !AutoSteer.InvertWas;
             Config.MarkChanged();
         });
 
-        ToggleInvertMotorCommand = ReactiveCommand.Create(() =>
+        ToggleInvertMotorCommand = new RelayCommand(() =>
         {
             AutoSteer.InvertMotor = !AutoSteer.InvertMotor;
             Config.MarkChanged();
         });
 
-        ToggleInvertRelaysCommand = ReactiveCommand.Create(() =>
+        ToggleInvertRelaysCommand = new RelayCommand(() =>
         {
             AutoSteer.InvertRelays = !AutoSteer.InvertRelays;
             Config.MarkChanged();
         });
 
-        SetMotorDriverCommand = ReactiveCommand.Create<int>(v =>
+        SetMotorDriverCommand = new RelayCommand<int>(v =>
         {
             AutoSteer.MotorDriver = v;
             Config.MarkChanged();
         });
 
-        SetAdConverterCommand = ReactiveCommand.Create<int>(v =>
+        SetAdConverterCommand = new RelayCommand<int>(v =>
         {
             AutoSteer.AdConverter = v;
             Config.MarkChanged();
         });
 
-        SetImuAxisCommand = ReactiveCommand.Create<int>(v =>
+        SetImuAxisCommand = new RelayCommand<int>(v =>
         {
             AutoSteer.ImuAxisSwap = v;
             Config.MarkChanged();
         });
 
-        SetExternalEnableCommand = ReactiveCommand.Create<int>(v =>
+        SetExternalEnableCommand = new RelayCommand<int>(v =>
         {
             AutoSteer.ExternalEnable = v;
             Config.MarkChanged();
@@ -621,17 +623,17 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab7Commands()
     {
-        EditUTurnCompensationCommand = ReactiveCommand.Create(() =>
+        EditUTurnCompensationCommand = new RelayCommand(() =>
             ShowNumericInput("U-Turn Compensation", AutoSteer.UTurnCompensation,
                 v => AutoSteer.UTurnCompensation = v,
                 "", integerOnly: true, allowNegative: true, min: -100, max: 100));
 
-        EditSideHillCompensationCommand = ReactiveCommand.Create(() =>
+        EditSideHillCompensationCommand = new RelayCommand(() =>
             ShowNumericInput("Side Hill Compensation", AutoSteer.SideHillCompensation,
                 v => AutoSteer.SideHillCompensation = v,
                 "", integerOnly: false, allowNegative: false, min: 0.0, max: 1.0));
 
-        ToggleSteerInReverseCommand = ReactiveCommand.Create(() =>
+        ToggleSteerInReverseCommand = new RelayCommand(() =>
         {
             AutoSteer.SteerInReverse = !AutoSteer.SteerInReverse;
             Config.MarkChanged();
@@ -649,23 +651,23 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab8Commands()
     {
-        ToggleManualTurnsCommand = ReactiveCommand.Create(() =>
+        ToggleManualTurnsCommand = new RelayCommand(() =>
         {
             AutoSteer.ManualTurnsEnabled = !AutoSteer.ManualTurnsEnabled;
             Config.MarkChanged();
         });
 
-        EditManualTurnsSpeedCommand = ReactiveCommand.Create(() =>
+        EditManualTurnsSpeedCommand = new RelayCommand(() =>
             ShowNumericInput("Manual Turns Speed", AutoSteer.ManualTurnsSpeed,
                 v => AutoSteer.ManualTurnsSpeed = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 0, max: 30));
 
-        EditMinSteerSpeedCommand = ReactiveCommand.Create(() =>
+        EditMinSteerSpeedCommand = new RelayCommand(() =>
             ShowNumericInput("Min Steer Speed", AutoSteer.MinSteerSpeed,
                 v => AutoSteer.MinSteerSpeed = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 0, max: 10));
 
-        EditMaxSteerSpeedCommand = ReactiveCommand.Create(() =>
+        EditMaxSteerSpeedCommand = new RelayCommand(() =>
             ShowNumericInput("Max Steer Speed", AutoSteer.MaxSteerSpeed,
                 v => AutoSteer.MaxSteerSpeed = v,
                 "km/h", integerOnly: false, allowNegative: false, min: 5, max: 50));
@@ -688,43 +690,43 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTab9Commands()
     {
-        EditLineWidthCommand = ReactiveCommand.Create(() =>
+        EditLineWidthCommand = new RelayCommand(() =>
             ShowNumericInput("Line Width", AutoSteer.LineWidth,
                 v => AutoSteer.LineWidth = (int)v,
                 "px", integerOnly: true, allowNegative: false, min: 1, max: 10));
 
-        EditNudgeDistanceCommand = ReactiveCommand.Create(() =>
+        EditNudgeDistanceCommand = new RelayCommand(() =>
             ShowNumericInput("Nudge Distance", AutoSteer.NudgeDistance,
                 v => AutoSteer.NudgeDistance = (int)v,
                 "cm", integerOnly: true, allowNegative: false, min: 1, max: 100));
 
-        EditNextGuidanceTimeCommand = ReactiveCommand.Create(() =>
+        EditNextGuidanceTimeCommand = new RelayCommand(() =>
             ShowNumericInput("Next Guidance Line", AutoSteer.NextGuidanceTime,
                 v => AutoSteer.NextGuidanceTime = v,
                 "sec", integerOnly: false, allowNegative: false, min: 0.5, max: 5.0));
 
-        EditCmPerPixelCommand = ReactiveCommand.Create(() =>
+        EditCmPerPixelCommand = new RelayCommand(() =>
             ShowNumericInput("Cm Per Pixel", AutoSteer.CmPerPixel,
                 v => AutoSteer.CmPerPixel = (int)v,
                 "", integerOnly: true, allowNegative: false, min: 1, max: 20));
 
-        ToggleLightbarCommand = ReactiveCommand.Create(() =>
+        ToggleLightbarCommand = new RelayCommand(() =>
         {
             AutoSteer.LightbarEnabled = !AutoSteer.LightbarEnabled;
             if (AutoSteer.LightbarEnabled) AutoSteer.SteerBarEnabled = false;
             Config.MarkChanged();
-            this.RaisePropertyChanged(nameof(IsBarEnabled));
+            OnPropertyChanged(nameof(IsBarEnabled));
         });
 
-        ToggleSteerBarCommand = ReactiveCommand.Create(() =>
+        ToggleSteerBarCommand = new RelayCommand(() =>
         {
             AutoSteer.SteerBarEnabled = !AutoSteer.SteerBarEnabled;
             if (AutoSteer.SteerBarEnabled) AutoSteer.LightbarEnabled = false;
             Config.MarkChanged();
-            this.RaisePropertyChanged(nameof(IsBarEnabled));
+            OnPropertyChanged(nameof(IsBarEnabled));
         });
 
-        ToggleGuidanceBarCommand = ReactiveCommand.Create(() =>
+        ToggleGuidanceBarCommand = new RelayCommand(() =>
         {
             // On/Off toggles the active bar mode (lightbar or steerbar)
             if (AutoSteer.LightbarEnabled)
@@ -734,7 +736,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             else
                 AutoSteer.LightbarEnabled = true; // Default to lightbar when turning on
             Config.MarkChanged();
-            this.RaisePropertyChanged(nameof(IsBarEnabled));
+            OnPropertyChanged(nameof(IsBarEnabled));
         });
     }
 
@@ -746,56 +748,56 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool IsFreeDriveMode
     {
         get => _isFreeDriveMode;
-        set => this.RaiseAndSetIfChanged(ref _isFreeDriveMode, value);
+        set => SetProperty(ref _isFreeDriveMode, value);
     }
 
     private double _freeDriveSteerAngle;
     public double FreeDriveSteerAngle
     {
         get => _freeDriveSteerAngle;
-        set => this.RaiseAndSetIfChanged(ref _freeDriveSteerAngle, Math.Clamp(value, -40, 40));
+        set => SetProperty(ref _freeDriveSteerAngle, Math.Clamp(value, -40, 40));
     }
 
     private int _pwmDisplay;
     public int PwmDisplay
     {
         get => _pwmDisplay;
-        set => this.RaiseAndSetIfChanged(ref _pwmDisplay, value);
+        set => SetProperty(ref _pwmDisplay, value);
     }
 
     private double _actualSteerAngle;
     public double ActualSteerAngle
     {
         get => _actualSteerAngle;
-        set => this.RaiseAndSetIfChanged(ref _actualSteerAngle, value);
+        set => SetProperty(ref _actualSteerAngle, value);
     }
 
     private double _steerError;
     public double SteerError
     {
         get => _steerError;
-        set => this.RaiseAndSetIfChanged(ref _steerError, value);
+        set => SetProperty(ref _steerError, value);
     }
 
     private double _setSteerAngle;
     public double SetSteerAngle
     {
         get => _setSteerAngle;
-        set => this.RaiseAndSetIfChanged(ref _setSteerAngle, value);
+        set => SetProperty(ref _setSteerAngle, value);
     }
 
     private double _actualPressurePercent;
     public double ActualPressurePercent
     {
         get => _actualPressurePercent;
-        set => this.RaiseAndSetIfChanged(ref _actualPressurePercent, value);
+        set => SetProperty(ref _actualPressurePercent, value);
     }
 
     private double _actualCurrentPercent;
     public double ActualCurrentPercent
     {
         get => _actualCurrentPercent;
-        set => this.RaiseAndSetIfChanged(ref _actualCurrentPercent, value);
+        set => SetProperty(ref _actualCurrentPercent, value);
     }
 
     // Switch status from module (PGN 253)
@@ -803,35 +805,35 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool SteerSwitchActive
     {
         get => _steerSwitchActive;
-        set => this.RaiseAndSetIfChanged(ref _steerSwitchActive, value);
+        set => SetProperty(ref _steerSwitchActive, value);
     }
 
     private bool _workSwitchActive;
     public bool WorkSwitchActive
     {
         get => _workSwitchActive;
-        set => this.RaiseAndSetIfChanged(ref _workSwitchActive, value);
+        set => SetProperty(ref _workSwitchActive, value);
     }
 
     private bool _remoteButtonPressed;
     public bool RemoteButtonPressed
     {
         get => _remoteButtonPressed;
-        set => this.RaiseAndSetIfChanged(ref _remoteButtonPressed, value);
+        set => SetProperty(ref _remoteButtonPressed, value);
     }
 
     private bool _vwasFusionActive;
     public bool VwasFusionActive
     {
         get => _vwasFusionActive;
-        set => this.RaiseAndSetIfChanged(ref _vwasFusionActive, value);
+        set => SetProperty(ref _vwasFusionActive, value);
     }
 
     private int _testSteerOffset;
     public int TestSteerOffset
     {
         get => _testSteerOffset;
-        set => this.RaiseAndSetIfChanged(ref _testSteerOffset, value);
+        set => SetProperty(ref _testSteerOffset, value);
     }
 
     public ICommand ToggleFreeDriveCommand { get; private set; } = null!;
@@ -844,7 +846,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeTestModeCommands()
     {
-        ToggleFreeDriveCommand = ReactiveCommand.Create(() =>
+        ToggleFreeDriveCommand = new RelayCommand(() =>
         {
             IsFreeDriveMode = !IsFreeDriveMode;
             if (IsFreeDriveMode)
@@ -860,7 +862,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             }
         });
 
-        SteerLeftCommand = ReactiveCommand.Create(() =>
+        SteerLeftCommand = new RelayCommand(() =>
         {
             if (IsFreeDriveMode)
             {
@@ -870,7 +872,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             }
         });
 
-        SteerRightCommand = ReactiveCommand.Create(() =>
+        SteerRightCommand = new RelayCommand(() =>
         {
             if (IsFreeDriveMode)
             {
@@ -880,21 +882,21 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             }
         });
 
-        SteerCenterCommand = ReactiveCommand.Create(() =>
+        SteerCenterCommand = new RelayCommand(() =>
         {
             FreeDriveSteerAngle = 0;
             _autoSteerService?.SetFreeDriveAngle(0);
             if (IsFreeDriveMode) SetSteerAngle = 0;
         });
 
-        SteerOffset5Command = ReactiveCommand.Create(() =>
+        SteerOffset5Command = new RelayCommand(() =>
         {
             FreeDriveSteerAngle = FreeDriveSteerAngle == 0 ? 5 : 0;
             _autoSteerService?.SetFreeDriveAngle(FreeDriveSteerAngle);
             if (IsFreeDriveMode) SetSteerAngle = FreeDriveSteerAngle;
         });
 
-        EditSteerOffsetCommand = ReactiveCommand.Create(() =>
+        EditSteerOffsetCommand = new RelayCommand(() =>
         {
             ShowNumericInput("Steer Offset", TestSteerOffset, value =>
             {
@@ -902,7 +904,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             });
         });
 
-        EditTurnSensorCountsCommand = ReactiveCommand.Create(() =>
+        EditTurnSensorCountsCommand = new RelayCommand(() =>
         {
             ShowNumericInput("Turn Sensor Counts", AutoSteer.TurnSensorCounts, value =>
             {
@@ -923,7 +925,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
     public bool IsResetConfirmVisible
     {
         get => _isResetConfirmVisible;
-        set => this.RaiseAndSetIfChanged(ref _isResetConfirmVisible, value);
+        set => SetProperty(ref _isResetConfirmVisible, value);
     }
 
     public ICommand ConfirmResetCommand { get; private set; } = null!;
@@ -931,7 +933,7 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
 
     private void InitializeActionCommands()
     {
-        SendAndSaveCommand = ReactiveCommand.Create(() =>
+        SendAndSaveCommand = new RelayCommand(() =>
         {
             // Build and send PGN 252 (Steer Settings)
             SendSteerSettingsPgn();
@@ -946,13 +948,13 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             HasUnsavedRightSideChanges = false;
         });
 
-        ResetToDefaultsCommand = ReactiveCommand.Create(() =>
+        ResetToDefaultsCommand = new RelayCommand(() =>
         {
             // Show confirmation before reset
             IsResetConfirmVisible = true;
         });
 
-        ConfirmResetCommand = ReactiveCommand.Create(() =>
+        ConfirmResetCommand = new RelayCommand(() =>
         {
             // Reset all settings to defaults
             AutoSteer.ResetToDefaults();
@@ -965,12 +967,12 @@ public partial class AutoSteerConfigViewModel : ReactiveObject
             IsResetConfirmVisible = false;
         });
 
-        CancelResetCommand = ReactiveCommand.Create(() =>
+        CancelResetCommand = new RelayCommand(() =>
         {
             IsResetConfirmVisible = false;
         });
 
-        WizardCommand = ReactiveCommand.Create(() =>
+        WizardCommand = new RelayCommand(() =>
         {
             // TODO: Launch setup wizard
         });

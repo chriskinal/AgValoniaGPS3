@@ -19,8 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:wiz="clr-namespace:AgValoniaGPS.ViewModels.Wizards;assembly=AgValoniaGPS.ViewModels"
              mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="400"
-             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.NumericStepView">
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.NumericStepView"
+             x:DataType="wiz:WizardStepViewModel"
+             x:CompileBindings="False">
 
     <!-- Generic view for numeric input steps like Wheelbase, TrackWidth, etc. -->
     <Grid RowDefinitions="Auto,Auto,*,Auto">

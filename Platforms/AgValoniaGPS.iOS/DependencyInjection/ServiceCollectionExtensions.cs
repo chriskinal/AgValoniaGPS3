@@ -26,6 +26,7 @@ using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.Services.Tool;
 using AgValoniaGPS.Services.Coverage;
+using AgValoniaGPS.Services.Pipeline;
 using AgValoniaGPS.Services.Section;
 using AgValoniaGPS.Services.Tram;
 using AgValoniaGPS.ViewModels;
@@ -126,6 +127,9 @@ public static class ServiceCollectionExtensions
 
         // Elevation log service (#120)
         services.AddSingleton<IElevationLogService, ElevationLogService>();
+
+        // GPS processing pipeline (background-thread orchestration)
+        services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // iOS-specific services
         services.AddSingleton<IMapService, MapService>();

@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -23,28 +23,28 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Display and UI configuration.
 /// Replaces: display parts of AppSettings, DisplaySettingsService state
 /// </summary>
-public class DisplayConfig : ReactiveObject
+public class DisplayConfig : ObservableObject
 {
     // Map display
     private bool _gridVisible = true;
     public bool GridVisible
     {
         get => _gridVisible;
-        set => this.RaiseAndSetIfChanged(ref _gridVisible, value);
+        set => SetProperty(ref _gridVisible, value);
     }
 
     private bool _compassVisible = true;
     public bool CompassVisible
     {
         get => _compassVisible;
-        set => this.RaiseAndSetIfChanged(ref _compassVisible, value);
+        set => SetProperty(ref _compassVisible, value);
     }
 
     private bool _speedVisible = true;
     public bool SpeedVisible
     {
         get => _speedVisible;
-        set => this.RaiseAndSetIfChanged(ref _speedVisible, value);
+        set => SetProperty(ref _speedVisible, value);
     }
 
     // Camera
@@ -52,35 +52,35 @@ public class DisplayConfig : ReactiveObject
     public double CameraZoom
     {
         get => _cameraZoom;
-        set => this.RaiseAndSetIfChanged(ref _cameraZoom, value);
+        set => SetProperty(ref _cameraZoom, value);
     }
 
     private double _cameraPitch = -60.0;
     public double CameraPitch
     {
         get => _cameraPitch;
-        set => this.RaiseAndSetIfChanged(ref _cameraPitch, Math.Clamp(value, -90, -20));
+        set => SetProperty(ref _cameraPitch, Math.Clamp(value, -90, -20));
     }
 
     private bool _is2DMode;
     public bool Is2DMode
     {
         get => _is2DMode;
-        set => this.RaiseAndSetIfChanged(ref _is2DMode, value);
+        set => SetProperty(ref _is2DMode, value);
     }
 
     private bool _isNorthUp = false;
     public bool IsNorthUp
     {
         get => _isNorthUp;
-        set => this.RaiseAndSetIfChanged(ref _isNorthUp, value);
+        set => SetProperty(ref _isNorthUp, value);
     }
 
     private bool _isDayMode = true;
     public bool IsDayMode
     {
         get => _isDayMode;
-        set => this.RaiseAndSetIfChanged(ref _isDayMode, value);
+        set => SetProperty(ref _isDayMode, value);
     }
 
     // Window (Desktop only, ignored on iOS)
@@ -88,35 +88,35 @@ public class DisplayConfig : ReactiveObject
     public double WindowWidth
     {
         get => _windowWidth;
-        set => this.RaiseAndSetIfChanged(ref _windowWidth, value);
+        set => SetProperty(ref _windowWidth, value);
     }
 
     private double _windowHeight = 800;
     public double WindowHeight
     {
         get => _windowHeight;
-        set => this.RaiseAndSetIfChanged(ref _windowHeight, value);
+        set => SetProperty(ref _windowHeight, value);
     }
 
     private double _windowX = 100;
     public double WindowX
     {
         get => _windowX;
-        set => this.RaiseAndSetIfChanged(ref _windowX, value);
+        set => SetProperty(ref _windowX, value);
     }
 
     private double _windowY = 100;
     public double WindowY
     {
         get => _windowY;
-        set => this.RaiseAndSetIfChanged(ref _windowY, value);
+        set => SetProperty(ref _windowY, value);
     }
 
     private bool _windowMaximized;
     public bool WindowMaximized
     {
         get => _windowMaximized;
-        set => this.RaiseAndSetIfChanged(ref _windowMaximized, value);
+        set => SetProperty(ref _windowMaximized, value);
     }
 
     // Panel positions
@@ -124,21 +124,21 @@ public class DisplayConfig : ReactiveObject
     public double SimulatorPanelX
     {
         get => _simulatorPanelX;
-        set => this.RaiseAndSetIfChanged(ref _simulatorPanelX, value);
+        set => SetProperty(ref _simulatorPanelX, value);
     }
 
     private double _simulatorPanelY = double.NaN;
     public double SimulatorPanelY
     {
         get => _simulatorPanelY;
-        set => this.RaiseAndSetIfChanged(ref _simulatorPanelY, value);
+        set => SetProperty(ref _simulatorPanelY, value);
     }
 
     private bool _simulatorPanelVisible;
     public bool SimulatorPanelVisible
     {
         get => _simulatorPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _simulatorPanelVisible, value);
+        set => SetProperty(ref _simulatorPanelVisible, value);
     }
 
     // Display Options (toggle buttons)
@@ -146,112 +146,112 @@ public class DisplayConfig : ReactiveObject
     public bool PolygonsVisible
     {
         get => _polygonsVisible;
-        set => this.RaiseAndSetIfChanged(ref _polygonsVisible, value);
+        set => SetProperty(ref _polygonsVisible, value);
     }
 
     private bool _speedometerVisible = true;
     public bool SpeedometerVisible
     {
         get => _speedometerVisible;
-        set => this.RaiseAndSetIfChanged(ref _speedometerVisible, value);
+        set => SetProperty(ref _speedometerVisible, value);
     }
 
     private bool _keyboardEnabled;
     public bool KeyboardEnabled
     {
         get => _keyboardEnabled;
-        set => this.RaiseAndSetIfChanged(ref _keyboardEnabled, value);
+        set => SetProperty(ref _keyboardEnabled, value);
     }
 
     private bool _headlandDistanceVisible = true;
     public bool HeadlandDistanceVisible
     {
         get => _headlandDistanceVisible;
-        set => this.RaiseAndSetIfChanged(ref _headlandDistanceVisible, value);
+        set => SetProperty(ref _headlandDistanceVisible, value);
     }
 
     private bool _autoDayNight = true;
     public bool AutoDayNight
     {
         get => _autoDayNight;
-        set => this.RaiseAndSetIfChanged(ref _autoDayNight, value);
+        set => SetProperty(ref _autoDayNight, value);
     }
 
     private int _dayStartHour = 6;
     public int DayStartHour
     {
         get => _dayStartHour;
-        set => this.RaiseAndSetIfChanged(ref _dayStartHour, Math.Clamp(value, 0, 23));
+        set => SetProperty(ref _dayStartHour, Math.Clamp(value, 0, 23));
     }
 
     private int _nightStartHour = 20;
     public int NightStartHour
     {
         get => _nightStartHour;
-        set => this.RaiseAndSetIfChanged(ref _nightStartHour, Math.Clamp(value, 0, 23));
+        set => SetProperty(ref _nightStartHour, Math.Clamp(value, 0, 23));
     }
 
     private bool _svennArrowVisible;
     public bool SvennArrowVisible
     {
         get => _svennArrowVisible;
-        set => this.RaiseAndSetIfChanged(ref _svennArrowVisible, value);
+        set => SetProperty(ref _svennArrowVisible, value);
     }
 
     private bool _startFullscreen;
     public bool StartFullscreen
     {
         get => _startFullscreen;
-        set => this.RaiseAndSetIfChanged(ref _startFullscreen, value);
+        set => SetProperty(ref _startFullscreen, value);
     }
 
     private bool _elevationLogEnabled;
     public bool ElevationLogEnabled
     {
         get => _elevationLogEnabled;
-        set => this.RaiseAndSetIfChanged(ref _elevationLogEnabled, value);
+        set => SetProperty(ref _elevationLogEnabled, value);
     }
 
     private bool _fieldTextureVisible = true;
     public bool FieldTextureVisible
     {
         get => _fieldTextureVisible;
-        set => this.RaiseAndSetIfChanged(ref _fieldTextureVisible, value);
+        set => SetProperty(ref _fieldTextureVisible, value);
     }
 
     private bool _extraGuidelines;
     public bool ExtraGuidelines
     {
         get => _extraGuidelines;
-        set => this.RaiseAndSetIfChanged(ref _extraGuidelines, value);
+        set => SetProperty(ref _extraGuidelines, value);
     }
 
     private int _extraGuidelinesCount = 10;
     public int ExtraGuidelinesCount
     {
         get => _extraGuidelinesCount;
-        set => this.RaiseAndSetIfChanged(ref _extraGuidelinesCount, Math.Clamp(value, 1, 50));
+        set => SetProperty(ref _extraGuidelinesCount, Math.Clamp(value, 1, 50));
     }
 
     private bool _lineSmoothEnabled = true;
     public bool LineSmoothEnabled
     {
         get => _lineSmoothEnabled;
-        set => this.RaiseAndSetIfChanged(ref _lineSmoothEnabled, value);
+        set => SetProperty(ref _lineSmoothEnabled, value);
     }
 
     private bool _directionMarkersVisible;
     public bool DirectionMarkersVisible
     {
         get => _directionMarkersVisible;
-        set => this.RaiseAndSetIfChanged(ref _directionMarkersVisible, value);
+        set => SetProperty(ref _directionMarkersVisible, value);
     }
 
     private bool _sectionLinesVisible = true;
     public bool SectionLinesVisible
     {
         get => _sectionLinesVisible;
-        set => this.RaiseAndSetIfChanged(ref _sectionLinesVisible, value);
+        set => SetProperty(ref _sectionLinesVisible, value);
     }
 
     // Screen Buttons (visibility of UI buttons)
@@ -259,14 +259,14 @@ public class DisplayConfig : ReactiveObject
     public bool UTurnButtonVisible
     {
         get => _uTurnButtonVisible;
-        set => this.RaiseAndSetIfChanged(ref _uTurnButtonVisible, value);
+        set => SetProperty(ref _uTurnButtonVisible, value);
     }
 
     private bool _lateralButtonVisible = true;
     public bool LateralButtonVisible
     {
         get => _lateralButtonVisible;
-        set => this.RaiseAndSetIfChanged(ref _lateralButtonVisible, value);
+        set => SetProperty(ref _lateralButtonVisible, value);
     }
 
     // Sounds
@@ -274,28 +274,28 @@ public class DisplayConfig : ReactiveObject
     public bool AutoSteerSound
     {
         get => _autoSteerSound;
-        set => this.RaiseAndSetIfChanged(ref _autoSteerSound, value);
+        set => SetProperty(ref _autoSteerSound, value);
     }
 
     private bool _uTurnSound = true;
     public bool UTurnSound
     {
         get => _uTurnSound;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSound, value);
+        set => SetProperty(ref _uTurnSound, value);
     }
 
     private bool _hydraulicSound = true;
     public bool HydraulicSound
     {
         get => _hydraulicSound;
-        set => this.RaiseAndSetIfChanged(ref _hydraulicSound, value);
+        set => SetProperty(ref _hydraulicSound, value);
     }
 
     private bool _sectionsSound = true;
     public bool SectionsSound
     {
         get => _sectionsSound;
-        set => this.RaiseAndSetIfChanged(ref _sectionsSound, value);
+        set => SetProperty(ref _sectionsSound, value);
     }
 
     // Hardware Messages
@@ -303,6 +303,16 @@ public class DisplayConfig : ReactiveObject
     public bool HardwareMessagesEnabled
     {
         get => _hardwareMessagesEnabled;
-        set => this.RaiseAndSetIfChanged(ref _hardwareMessagesEnabled, value);
+        set => SetProperty(ref _hardwareMessagesEnabled, value);
+    }
+
+    // Coverage display resolution multiplier
+    // 1.0 = Ultra, 1.5 = High, 2.5 = Medium, 4.0 = Low, 6.0 = Minimum
+    // Applied to coverage bitmap cell size — detection always stays at 0.1m
+    private double _displayResolutionMultiplier = 1.0;
+    public double DisplayResolutionMultiplier
+    {
+        get => _displayResolutionMultiplier;
+        set => SetProperty(ref _displayResolutionMultiplier, Math.Clamp(value, 1.0, 6.0));
     }
 }

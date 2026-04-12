@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.Dialogs.HelpDialogPanel"
+             x:DataType="vm:MainViewModel"
              IsVisible="{Binding State.UI.IsHelpDialogVisible}"
              IsHitTestVisible="{Binding State.UI.IsHelpDialogVisible}">
 

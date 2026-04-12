@@ -18,14 +18,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
 /// <summary>
 /// Active field state - boundaries, tracks, headlands.
 /// </summary>
-public class FieldState : ReactiveObject
+public class FieldState : ObservableObject
 {
     private Field? _activeField;
     public Field? ActiveField
@@ -33,9 +33,9 @@ public class FieldState : ReactiveObject
         get => _activeField;
         set
         {
-            this.RaiseAndSetIfChanged(ref _activeField, value);
-            this.RaisePropertyChanged(nameof(HasActiveField));
-            this.RaisePropertyChanged(nameof(FieldName));
+            SetProperty(ref _activeField, value);
+            OnPropertyChanged(nameof(HasActiveField));
+            OnPropertyChanged(nameof(FieldName));
         }
     }
 
@@ -47,7 +47,7 @@ public class FieldState : ReactiveObject
     public string FieldsRootDirectory
     {
         get => _fieldsRootDirectory;
-        set => this.RaiseAndSetIfChanged(ref _fieldsRootDirectory, value);
+        set => SetProperty(ref _fieldsRootDirectory, value);
     }
 
     // Boundaries
@@ -57,7 +57,7 @@ public class FieldState : ReactiveObject
     public Boundary? CurrentBoundary
     {
         get => _currentBoundary;
-        set => this.RaiseAndSetIfChanged(ref _currentBoundary, value);
+        set => SetProperty(ref _currentBoundary, value);
     }
 
     public bool HasBoundary => Boundaries.Count > 0;
@@ -69,14 +69,14 @@ public class FieldState : ReactiveObject
     public Track.Track? ActiveTrack
     {
         get => _activeTrack;
-        set => this.RaiseAndSetIfChanged(ref _activeTrack, value);
+        set => SetProperty(ref _activeTrack, value);
     }
 
     private Track.Track? _selectedTrack;
     public Track.Track? SelectedTrack
     {
         get => _selectedTrack;
-        set => this.RaiseAndSetIfChanged(ref _selectedTrack, value);
+        set => SetProperty(ref _selectedTrack, value);
     }
 
     public bool HasActiveTrack => ActiveTrack != null;
@@ -88,8 +88,8 @@ public class FieldState : ReactiveObject
         get => _headlandLine;
         set
         {
-            this.RaiseAndSetIfChanged(ref _headlandLine, value);
-            this.RaisePropertyChanged(nameof(HasHeadland));
+            SetProperty(ref _headlandLine, value);
+            OnPropertyChanged(nameof(HasHeadland));
         }
     }
 
@@ -97,7 +97,7 @@ public class FieldState : ReactiveObject
     public double HeadlandDistance
     {
         get => _headlandDistance;
-        set => this.RaiseAndSetIfChanged(ref _headlandDistance, value);
+        set => SetProperty(ref _headlandDistance, value);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class FieldState : ReactiveObject
     public double? HeadlandProximityDistance
     {
         get => _headlandProximityDistance;
-        set => this.RaiseAndSetIfChanged(ref _headlandProximityDistance, value);
+        set => SetProperty(ref _headlandProximityDistance, value);
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public class FieldState : ReactiveObject
     public bool HeadlandProximityWarning
     {
         get => _headlandProximityWarning;
-        set => this.RaiseAndSetIfChanged(ref _headlandProximityWarning, value);
+        set => SetProperty(ref _headlandProximityWarning, value);
     }
 
     public bool HasHeadland => HeadlandLine != null && HeadlandLine.Count > 0;
@@ -128,14 +128,14 @@ public class FieldState : ReactiveObject
     public double OriginLatitude
     {
         get => _originLatitude;
-        set => this.RaiseAndSetIfChanged(ref _originLatitude, value);
+        set => SetProperty(ref _originLatitude, value);
     }
 
     private double _originLongitude;
     public double OriginLongitude
     {
         get => _originLongitude;
-        set => this.RaiseAndSetIfChanged(ref _originLongitude, value);
+        set => SetProperty(ref _originLongitude, value);
     }
 
     // GPS drift compensation (offset fix)
@@ -143,14 +143,14 @@ public class FieldState : ReactiveObject
     public double DriftNorthing
     {
         get => _driftNorthing;
-        set => this.RaiseAndSetIfChanged(ref _driftNorthing, value);
+        set => SetProperty(ref _driftNorthing, value);
     }
 
     private double _driftEasting;
     public double DriftEasting
     {
         get => _driftEasting;
-        set => this.RaiseAndSetIfChanged(ref _driftEasting, value);
+        set => SetProperty(ref _driftEasting, value);
     }
 
     // Local plane for coordinate conversion
@@ -158,7 +158,7 @@ public class FieldState : ReactiveObject
     public LocalPlane? LocalPlane
     {
         get => _localPlane;
-        set => this.RaiseAndSetIfChanged(ref _localPlane, value);
+        set => SetProperty(ref _localPlane, value);
     }
 
     public void Reset()

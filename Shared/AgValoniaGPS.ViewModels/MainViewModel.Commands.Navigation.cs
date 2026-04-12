@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using System.Reactive;
 using AgValoniaGPS.Models.Configuration;
 using Avalonia;
 using Avalonia.Styling;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -30,49 +29,49 @@ public partial class MainViewModel
     private void InitializeNavigationCommands()
     {
         // Panel toggle commands
-        ToggleViewSettingsPanelCommand = ReactiveCommand.Create(() =>
+        ToggleViewSettingsPanelCommand = new RelayCommand(() =>
         {
             IsViewSettingsPanelVisible = !IsViewSettingsPanelVisible;
         });
 
-        ToggleFileMenuPanelCommand = ReactiveCommand.Create(() =>
+        ToggleFileMenuPanelCommand = new RelayCommand(() =>
         {
             IsFileMenuPanelVisible = !IsFileMenuPanelVisible;
         });
 
-        ToggleToolsPanelCommand = ReactiveCommand.Create(() =>
+        ToggleToolsPanelCommand = new RelayCommand(() =>
         {
             IsToolsPanelVisible = !IsToolsPanelVisible;
         });
 
-        ToggleConfigurationPanelCommand = ReactiveCommand.Create(() =>
+        ToggleConfigurationPanelCommand = new RelayCommand(() =>
         {
             IsConfigurationPanelVisible = !IsConfigurationPanelVisible;
         });
 
-        ToggleJobMenuPanelCommand = ReactiveCommand.Create(() =>
+        ToggleJobMenuPanelCommand = new RelayCommand(() =>
         {
             IsJobMenuPanelVisible = !IsJobMenuPanelVisible;
         });
 
-        ToggleFieldToolsPanelCommand = ReactiveCommand.Create(() =>
+        ToggleFieldToolsPanelCommand = new RelayCommand(() =>
         {
             IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
         });
 
-        ToggleAutoTrackCommand = ReactiveCommand.Create(() =>
+        ToggleAutoTrackCommand = new RelayCommand(() =>
         {
             IsAutoTrackEnabled = !IsAutoTrackEnabled;
             StatusMessage = IsAutoTrackEnabled ? "Auto track select ON" : "Auto track select OFF";
         });
 
         // View mode commands
-        ToggleGridCommand = ReactiveCommand.Create(() =>
+        ToggleGridCommand = new RelayCommand(() =>
         {
             IsGridOn = !IsGridOn;
         });
 
-        ToggleDayNightCommand = ReactiveCommand.Create(() =>
+        ToggleDayNightCommand = new RelayCommand(() =>
         {
             IsDayMode = !IsDayMode;
             _mapService.SetDayMode(IsDayMode);
@@ -81,7 +80,7 @@ public partial class MainViewModel
             ConfigurationStore.Instance.Display.AutoDayNight = false;
         });
 
-        Toggle2D3DCommand = ReactiveCommand.Create(() =>
+        Toggle2D3DCommand = new RelayCommand(() =>
         {
             if (Is2DMode)
             {
@@ -99,13 +98,13 @@ public partial class MainViewModel
             }
         });
 
-        ToggleNorthUpCommand = ReactiveCommand.Create(() =>
+        ToggleNorthUpCommand = new RelayCommand(() =>
         {
             IsNorthUp = !IsNorthUp;
             _mapService.SetNorthUp(IsNorthUp);
         });
 
-        ToggleCameraModeCommand = ReactiveCommand.Create(() =>
+        ToggleCameraModeCommand = new RelayCommand(() =>
         {
             var oldMode = CameraMode;
             CameraMode = CameraMode switch
@@ -121,7 +120,7 @@ public partial class MainViewModel
         // Camera controls - tilt transitions between 2D and 3D automatically
         // "Tilt Down" = look more toward horizon = more 3D (pitch increases toward -10)
         // "Tilt Up" = look more overhead = more 2D (pitch decreases toward -90)
-        IncreaseCameraPitchCommand = ReactiveCommand.Create(() =>
+        IncreaseCameraPitchCommand = new RelayCommand(() =>
         {
             double newPitch = CameraPitch - 5.0;
             if (newPitch <= -90.0)
@@ -136,7 +135,7 @@ public partial class MainViewModel
             }
         });
 
-        DecreaseCameraPitchCommand = ReactiveCommand.Create(() =>
+        DecreaseCameraPitchCommand = new RelayCommand(() =>
         {
             if (Is2DMode)
             {
@@ -151,28 +150,43 @@ public partial class MainViewModel
         });
 
         // Brightness controls
-        IncreaseBrightnessCommand = ReactiveCommand.Create(() =>
+        IncreaseBrightnessCommand = new RelayCommand(() =>
         {
             Brightness += 5;
         });
 
-        DecreaseBrightnessCommand = ReactiveCommand.Create(() =>
+        DecreaseBrightnessCommand = new RelayCommand(() =>
         {
             Brightness -= 5;
         });
 
+        // Display resolution: cycle Ultra → High → Medium → Low → Min → Ultra
+        CycleDisplayResolutionCommand = new RelayCommand(() =>
+        {
+            var display = ConfigStore.Display;
+            display.DisplayResolutionMultiplier = display.DisplayResolutionMultiplier switch
+            {
+                < 1.25 => 1.5,  // Ultra → High
+                < 2.0  => 2.5,  // High → Medium
+                < 3.25 => 4.0,  // Medium → Low
+                < 5.0  => 6.0,  // Low → Min
+                _ => 1.0,       // Min → Ultra
+            };
+            OnPropertyChanged(nameof(DisplayResolutionLabel));
+        });
+
         // iOS Sheet toggle commands
-        ToggleFileMenuCommand = ReactiveCommand.Create(() =>
+        ToggleFileMenuCommand = new RelayCommand(() =>
         {
             IsFileMenuVisible = !IsFileMenuVisible;
         });
 
-        ToggleFieldToolsCommand = ReactiveCommand.Create(() =>
+        ToggleFieldToolsCommand = new RelayCommand(() =>
         {
             IsFieldToolsVisible = !IsFieldToolsVisible;
         });
 
-        ToggleSettingsCommand = ReactiveCommand.Create(() =>
+        ToggleSettingsCommand = new RelayCommand(() =>
         {
             IsSettingsVisible = !IsSettingsVisible;
         });

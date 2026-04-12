@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -23,7 +23,7 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Guidance and steering algorithm configuration.
 /// Replaces: steering parts of VehicleConfiguration.cs + YouTurnConfiguration.cs
 /// </summary>
-public class GuidanceConfig : ReactiveObject
+public class GuidanceConfig : ObservableObject
 {
     // Algorithm selection
     private bool _isPurePursuit = true;
@@ -32,8 +32,8 @@ public class GuidanceConfig : ReactiveObject
         get => _isPurePursuit;
         set
         {
-            this.RaiseAndSetIfChanged(ref _isPurePursuit, value);
-            this.RaisePropertyChanged(nameof(IsStanley));
+            SetProperty(ref _isPurePursuit, value);
+            OnPropertyChanged(nameof(IsStanley));
         }
     }
 
@@ -44,28 +44,28 @@ public class GuidanceConfig : ReactiveObject
     public double GoalPointLookAheadHold
     {
         get => _goalPointLookAheadHold;
-        set => this.RaiseAndSetIfChanged(ref _goalPointLookAheadHold, value);
+        set => SetProperty(ref _goalPointLookAheadHold, value);
     }
 
     private double _goalPointLookAheadMult = 1.4;
     public double GoalPointLookAheadMult
     {
         get => _goalPointLookAheadMult;
-        set => this.RaiseAndSetIfChanged(ref _goalPointLookAheadMult, value);
+        set => SetProperty(ref _goalPointLookAheadMult, value);
     }
 
     private double _goalPointAcquireFactor = 1.5;
     public double GoalPointAcquireFactor
     {
         get => _goalPointAcquireFactor;
-        set => this.RaiseAndSetIfChanged(ref _goalPointAcquireFactor, value);
+        set => SetProperty(ref _goalPointAcquireFactor, value);
     }
 
     private double _minLookAheadDistance = 2.0;
     public double MinLookAheadDistance
     {
         get => _minLookAheadDistance;
-        set => this.RaiseAndSetIfChanged(ref _minLookAheadDistance, value);
+        set => SetProperty(ref _minLookAheadDistance, value);
     }
 
     // Pure Pursuit specific
@@ -73,7 +73,7 @@ public class GuidanceConfig : ReactiveObject
     public double PurePursuitIntegralGain
     {
         get => _purePursuitIntegralGain;
-        set => this.RaiseAndSetIfChanged(ref _purePursuitIntegralGain, value);
+        set => SetProperty(ref _purePursuitIntegralGain, value);
     }
 
     // Stanley specific
@@ -81,28 +81,28 @@ public class GuidanceConfig : ReactiveObject
     public double StanleyDistanceErrorGain
     {
         get => _stanleyDistanceErrorGain;
-        set => this.RaiseAndSetIfChanged(ref _stanleyDistanceErrorGain, value);
+        set => SetProperty(ref _stanleyDistanceErrorGain, value);
     }
 
     private double _stanleyHeadingErrorGain = 1.0;
     public double StanleyHeadingErrorGain
     {
         get => _stanleyHeadingErrorGain;
-        set => this.RaiseAndSetIfChanged(ref _stanleyHeadingErrorGain, value);
+        set => SetProperty(ref _stanleyHeadingErrorGain, value);
     }
 
     private double _stanleyIntegralGainAB = 0.0;
     public double StanleyIntegralGainAB
     {
         get => _stanleyIntegralGainAB;
-        set => this.RaiseAndSetIfChanged(ref _stanleyIntegralGainAB, value);
+        set => SetProperty(ref _stanleyIntegralGainAB, value);
     }
 
     private double _stanleyIntegralDistanceAwayTriggerAB = 0.3;
     public double StanleyIntegralDistanceAwayTriggerAB
     {
         get => _stanleyIntegralDistanceAwayTriggerAB;
-        set => this.RaiseAndSetIfChanged(ref _stanleyIntegralDistanceAwayTriggerAB, value);
+        set => SetProperty(ref _stanleyIntegralDistanceAwayTriggerAB, value);
     }
 
     // Dead zone
@@ -110,14 +110,14 @@ public class GuidanceConfig : ReactiveObject
     public double DeadZoneHeading
     {
         get => _deadZoneHeading;
-        set => this.RaiseAndSetIfChanged(ref _deadZoneHeading, value);
+        set => SetProperty(ref _deadZoneHeading, value);
     }
 
     private int _deadZoneDelay = 10;
     public int DeadZoneDelay
     {
         get => _deadZoneDelay;
-        set => this.RaiseAndSetIfChanged(ref _deadZoneDelay, value);
+        set => SetProperty(ref _deadZoneDelay, value);
     }
 
     // U-Turn settings (merged from YouTurnConfiguration)
@@ -125,49 +125,49 @@ public class GuidanceConfig : ReactiveObject
     public double UTurnRadius
     {
         get => _uTurnRadius;
-        set => this.RaiseAndSetIfChanged(ref _uTurnRadius, value);
+        set => SetProperty(ref _uTurnRadius, value);
     }
 
     private double _uTurnExtension = 20.0;
     public double UTurnExtension
     {
         get => _uTurnExtension;
-        set => this.RaiseAndSetIfChanged(ref _uTurnExtension, value);
+        set => SetProperty(ref _uTurnExtension, value);
     }
 
     private double _uTurnDistanceFromBoundary = 2.0;
     public double UTurnDistanceFromBoundary
     {
         get => _uTurnDistanceFromBoundary;
-        set => this.RaiseAndSetIfChanged(ref _uTurnDistanceFromBoundary, value);
+        set => SetProperty(ref _uTurnDistanceFromBoundary, value);
     }
 
     private int _uTurnSkipWidth = 1;
     public int UTurnSkipWidth
     {
         get => _uTurnSkipWidth;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSkipWidth, Math.Max(1, value));
+        set => SetProperty(ref _uTurnSkipWidth, Math.Max(1, value));
     }
 
     private int _uTurnStyle;
     public int UTurnStyle
     {
         get => _uTurnStyle;
-        set => this.RaiseAndSetIfChanged(ref _uTurnStyle, value);
+        set => SetProperty(ref _uTurnStyle, value);
     }
 
     private double _uTurnCompensation = 1.0;
     public double UTurnCompensation
     {
         get => _uTurnCompensation;
-        set => this.RaiseAndSetIfChanged(ref _uTurnCompensation, value);
+        set => SetProperty(ref _uTurnCompensation, value);
     }
 
     private int _uTurnSmoothing = 14;
     public int UTurnSmoothing
     {
         get => _uTurnSmoothing;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSmoothing, Math.Clamp(value, 1, 50));
+        set => SetProperty(ref _uTurnSmoothing, Math.Clamp(value, 1, 50));
     }
 
     // Tram Lines
@@ -175,21 +175,21 @@ public class GuidanceConfig : ReactiveObject
     public int TramPasses
     {
         get => _tramPasses;
-        set => this.RaiseAndSetIfChanged(ref _tramPasses, Math.Max(1, value));
+        set => SetProperty(ref _tramPasses, Math.Max(1, value));
     }
 
     private bool _tramDisplay = true;
     public bool TramDisplay
     {
         get => _tramDisplay;
-        set => this.RaiseAndSetIfChanged(ref _tramDisplay, value);
+        set => SetProperty(ref _tramDisplay, value);
     }
 
     private int _tramLine = 1;
     public int TramLine
     {
         get => _tramLine;
-        set => this.RaiseAndSetIfChanged(ref _tramLine, Math.Max(1, value));
+        set => SetProperty(ref _tramLine, Math.Max(1, value));
     }
 
     // Hydraulic lift look-ahead distances
@@ -197,13 +197,13 @@ public class GuidanceConfig : ReactiveObject
     public double HydLiftLookAheadDistanceLeft
     {
         get => _hydLiftLookAheadDistanceLeft;
-        set => this.RaiseAndSetIfChanged(ref _hydLiftLookAheadDistanceLeft, value);
+        set => SetProperty(ref _hydLiftLookAheadDistanceLeft, value);
     }
 
     private double _hydLiftLookAheadDistanceRight = 1.0;
     public double HydLiftLookAheadDistanceRight
     {
         get => _hydLiftLookAheadDistanceRight;
-        set => this.RaiseAndSetIfChanged(ref _hydLiftLookAheadDistanceRight, value);
+        set => SetProperty(ref _hydLiftLookAheadDistanceRight, value);
     }
 }

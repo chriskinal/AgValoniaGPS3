@@ -154,6 +154,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding IncreaseBrightnessCommand}"
                         ToolTip.Tip="Increase brightness"/>
             </Grid>
+
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
+
+            <!-- Display Quality -->
+            <Button Classes="ModernButton" Margin="2" ClickMode="Press"
+                    Command="{Binding CycleDisplayResolutionCommand}"
+                    ToolTip.Tip="Cycle coverage display quality (High/Medium/Low). Lower = less memory, better performance on constrained devices.">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                    <TextBlock Text="Quality:" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding DisplayResolutionLabel}" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
     </Border>
 </UserControl>

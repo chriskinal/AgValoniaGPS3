@@ -2,7 +2,6 @@ using System;
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Markup.Xaml;
-using Avalonia.ReactiveUI;
 using Avalonia.Skia;
 using Avalonia.Themes.Fluent;
 
@@ -28,6 +27,5 @@ public class TestApp : Application
             .UseHeadless(new AvaloniaHeadlessPlatformOptions
             {
                 UseHeadlessDrawing = false
-            })
-            .UseReactiveUI();
+            });
 }

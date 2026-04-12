@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -23,47 +23,47 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Simulator configuration - ONE place only.
 /// Replaces: simulator fields in both AppSettings and VehicleProfile
 /// </summary>
-public class SimulatorConfig : ReactiveObject
+public class SimulatorConfig : ObservableObject
 {
     private bool _enabled;
     public bool Enabled
     {
         get => _enabled;
-        set => this.RaiseAndSetIfChanged(ref _enabled, value);
+        set => SetProperty(ref _enabled, value);
     }
 
     private double _latitude = 40.7128;
     public double Latitude
     {
         get => _latitude;
-        set => this.RaiseAndSetIfChanged(ref _latitude, Math.Clamp(value, -90, 90));
+        set => SetProperty(ref _latitude, Math.Clamp(value, -90, 90));
     }
 
     private double _longitude = -74.0060;
     public double Longitude
     {
         get => _longitude;
-        set => this.RaiseAndSetIfChanged(ref _longitude, Math.Clamp(value, -180, 180));
+        set => SetProperty(ref _longitude, Math.Clamp(value, -180, 180));
     }
 
     private double _heading;
     public double Heading
     {
         get => _heading;
-        set => this.RaiseAndSetIfChanged(ref _heading, value);
+        set => SetProperty(ref _heading, value);
     }
 
     private double _speed;
     public double Speed
     {
         get => _speed;
-        set => this.RaiseAndSetIfChanged(ref _speed, value);
+        set => SetProperty(ref _speed, value);
     }
 
     private double _steerAngle;
     public double SteerAngle
     {
         get => _steerAngle;
-        set => this.RaiseAndSetIfChanged(ref _steerAngle, value);
+        set => SetProperty(ref _steerAngle, value);
     }
 }

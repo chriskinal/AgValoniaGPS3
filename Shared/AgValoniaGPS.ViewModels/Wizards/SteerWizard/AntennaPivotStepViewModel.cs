@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -38,14 +40,14 @@ public class AntennaPivotStepViewModel : WizardStepViewModel
     public double AntennaPivot
     {
         get => _antennaPivot;
-        set => this.RaiseAndSetIfChanged(ref _antennaPivot, value);
+        set => SetProperty(ref _antennaPivot, value);
     }
 
     private string _unit = "m";
     public string Unit
     {
         get => _unit;
-        set => this.RaiseAndSetIfChanged(ref _unit, value);
+        set => SetProperty(ref _unit, value);
     }
 
     public AntennaPivotStepViewModel(IConfigurationService configService)

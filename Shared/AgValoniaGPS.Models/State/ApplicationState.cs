@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -24,7 +24,7 @@ namespace AgValoniaGPS.Models.State;
 /// Single source of truth for ALL runtime state.
 /// Singleton, Observable, Injectable.
 /// </summary>
-public class ApplicationState : ReactiveObject
+public class ApplicationState : ObservableObject
 {
     private static ApplicationState? _instance;
 

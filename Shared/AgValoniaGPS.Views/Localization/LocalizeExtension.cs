@@ -35,7 +35,7 @@ public class LocalizeExtension : MarkupExtension
         // Return a binding to TranslationSource.CurrentCulture with a converter
         // that resolves the string key. When culture changes, PropertyChanged fires
         // and the binding re-evaluates, giving us live language switching.
-        var binding = new Binding
+        var binding = new ReflectionBinding
         {
             Source = TranslationSource.Instance,
             Path = nameof(TranslationSource.CurrentCulture),

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -22,7 +22,7 @@ namespace AgValoniaGPS.Models.Configuration;
 /// Tool/implement configuration.
 /// Consolidates tool-related settings from ToolConfiguration.
 /// </summary>
-public class ToolConfig : ReactiveObject
+public class ToolConfig : ObservableObject
 {
     // Tool dimensions
     private double _width = 6.0;
@@ -31,8 +31,8 @@ public class ToolConfig : ReactiveObject
         get => _width;
         set
         {
-            this.RaiseAndSetIfChanged(ref _width, value);
-            this.RaisePropertyChanged(nameof(HalfWidth));
+            SetProperty(ref _width, value);
+            OnPropertyChanged(nameof(HalfWidth));
         }
     }
 
@@ -42,14 +42,14 @@ public class ToolConfig : ReactiveObject
     public double Overlap
     {
         get => _overlap;
-        set => this.RaiseAndSetIfChanged(ref _overlap, value);
+        set => SetProperty(ref _overlap, value);
     }
 
     private double _offset;
     public double Offset
     {
         get => _offset;
-        set => this.RaiseAndSetIfChanged(ref _offset, value);
+        set => SetProperty(ref _offset, value);
     }
 
     // Hitch configuration
@@ -57,28 +57,28 @@ public class ToolConfig : ReactiveObject
     public double HitchLength
     {
         get => _hitchLength;
-        set => this.RaiseAndSetIfChanged(ref _hitchLength, Math.Max(0, value));
+        set => SetProperty(ref _hitchLength, Math.Max(0, value));
     }
 
     private double _trailingHitchLength = -2.5;
     public double TrailingHitchLength
     {
         get => _trailingHitchLength;
-        set => this.RaiseAndSetIfChanged(ref _trailingHitchLength, value);
+        set => SetProperty(ref _trailingHitchLength, value);
     }
 
     private double _tankTrailingHitchLength = 3.0;
     public double TankTrailingHitchLength
     {
         get => _tankTrailingHitchLength;
-        set => this.RaiseAndSetIfChanged(ref _tankTrailingHitchLength, value);
+        set => SetProperty(ref _tankTrailingHitchLength, value);
     }
 
     private double _trailingToolToPivotLength;
     public double TrailingToolToPivotLength
     {
         get => _trailingToolToPivotLength;
-        set => this.RaiseAndSetIfChanged(ref _trailingToolToPivotLength, value);
+        set => SetProperty(ref _trailingToolToPivotLength, value);
     }
 
     // Tool type flags
@@ -86,28 +86,28 @@ public class ToolConfig : ReactiveObject
     public bool IsToolTrailing
     {
         get => _isToolTrailing;
-        set => this.RaiseAndSetIfChanged(ref _isToolTrailing, value);
+        set => SetProperty(ref _isToolTrailing, value);
     }
 
     private bool _isToolTBT;
     public bool IsToolTBT
     {
         get => _isToolTBT;
-        set => this.RaiseAndSetIfChanged(ref _isToolTBT, value);
+        set => SetProperty(ref _isToolTBT, value);
     }
 
     private bool _isToolRearFixed = true;
     public bool IsToolRearFixed
     {
         get => _isToolRearFixed;
-        set => this.RaiseAndSetIfChanged(ref _isToolRearFixed, value);
+        set => SetProperty(ref _isToolRearFixed, value);
     }
 
     private bool _isToolFrontFixed;
     public bool IsToolFrontFixed
     {
         get => _isToolFrontFixed;
-        set => this.RaiseAndSetIfChanged(ref _isToolFrontFixed, value);
+        set => SetProperty(ref _isToolFrontFixed, value);
     }
 
     // Section lookahead settings
@@ -115,21 +115,21 @@ public class ToolConfig : ReactiveObject
     public double LookAheadOnSetting
     {
         get => _lookAheadOnSetting;
-        set => this.RaiseAndSetIfChanged(ref _lookAheadOnSetting, value);
+        set => SetProperty(ref _lookAheadOnSetting, value);
     }
 
     private double _lookAheadOffSetting = 0.5;
     public double LookAheadOffSetting
     {
         get => _lookAheadOffSetting;
-        set => this.RaiseAndSetIfChanged(ref _lookAheadOffSetting, value);
+        set => SetProperty(ref _lookAheadOffSetting, value);
     }
 
     private double _turnOffDelay;
     public double TurnOffDelay
     {
         get => _turnOffDelay;
-        set => this.RaiseAndSetIfChanged(ref _turnOffDelay, value);
+        set => SetProperty(ref _turnOffDelay, value);
     }
 
     // Section configuration
@@ -137,14 +137,14 @@ public class ToolConfig : ReactiveObject
     public int MinCoverage
     {
         get => _minCoverage;
-        set => this.RaiseAndSetIfChanged(ref _minCoverage, value);
+        set => SetProperty(ref _minCoverage, value);
     }
 
     private bool _isMultiColoredSections;
     public bool IsMultiColoredSections
     {
         get => _isMultiColoredSections;
-        set => this.RaiseAndSetIfChanged(ref _isMultiColoredSections, value);
+        set => SetProperty(ref _isMultiColoredSections, value);
     }
 
     // Section colors (RGB values stored as 0xRRGGBB)
@@ -175,7 +175,7 @@ public class ToolConfig : ReactiveObject
     public uint[] SectionColors
     {
         get => _sectionColors;
-        set => this.RaiseAndSetIfChanged(ref _sectionColors, value);
+        set => SetProperty(ref _sectionColors, value);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public class ToolConfig : ReactiveObject
     {
         if (index < 0 || index >= 16) return;
         _sectionColors[index] = color;
-        this.RaisePropertyChanged(nameof(SectionColors));
+        OnPropertyChanged(nameof(SectionColors));
     }
 
     /// <summary>
@@ -205,14 +205,14 @@ public class ToolConfig : ReactiveObject
     public uint SingleCoverageColor
     {
         get => _singleCoverageColor;
-        set => this.RaiseAndSetIfChanged(ref _singleCoverageColor, value);
+        set => SetProperty(ref _singleCoverageColor, value);
     }
 
     private bool _isSectionOffWhenOut;
     public bool IsSectionOffWhenOut
     {
         get => _isSectionOffWhenOut;
-        set => this.RaiseAndSetIfChanged(ref _isSectionOffWhenOut, value);
+        set => SetProperty(ref _isSectionOffWhenOut, value);
     }
 
     /// <summary>
@@ -222,28 +222,28 @@ public class ToolConfig : ReactiveObject
     public bool IsHeadlandSectionControl
     {
         get => _isHeadlandSectionControl;
-        set => this.RaiseAndSetIfChanged(ref _isHeadlandSectionControl, value);
+        set => SetProperty(ref _isHeadlandSectionControl, value);
     }
 
     private bool _isSectionsNotZones = true;
     public bool IsSectionsNotZones
     {
         get => _isSectionsNotZones;
-        set => this.RaiseAndSetIfChanged(ref _isSectionsNotZones, value);
+        set => SetProperty(ref _isSectionsNotZones, value);
     }
 
     private double _defaultSectionWidth = 100; // cm
     public double DefaultSectionWidth
     {
         get => _defaultSectionWidth;
-        set => this.RaiseAndSetIfChanged(ref _defaultSectionWidth, value);
+        set => SetProperty(ref _defaultSectionWidth, value);
     }
 
     private double _slowSpeedCutoff = 0.5;
     public double SlowSpeedCutoff
     {
         get => _slowSpeedCutoff;
-        set => this.RaiseAndSetIfChanged(ref _slowSpeedCutoff, value);
+        set => SetProperty(ref _slowSpeedCutoff, value);
     }
 
     /// <summary>
@@ -255,7 +255,7 @@ public class ToolConfig : ReactiveObject
     public double CoverageMargin
     {
         get => _coverageMargin;
-        set => this.RaiseAndSetIfChanged(ref _coverageMargin, value);
+        set => SetProperty(ref _coverageMargin, value);
     }
 
     /// <summary>
@@ -273,7 +273,7 @@ public class ToolConfig : ReactiveObject
     public double[] SectionWidths
     {
         get => _sectionWidths;
-        set => this.RaiseAndSetIfChanged(ref _sectionWidths, value);
+        set => SetProperty(ref _sectionWidths, value);
     }
 
     /// <summary>
@@ -292,8 +292,8 @@ public class ToolConfig : ReactiveObject
     {
         if (index < 0 || index >= 16) return;
         _sectionWidths[index] = value;
-        this.RaisePropertyChanged(nameof(SectionWidths));
-        this.RaisePropertyChanged(nameof(TotalSectionWidth));
+        OnPropertyChanged(nameof(SectionWidths));
+        OnPropertyChanged(nameof(TotalSectionWidth));
     }
 
     /// <summary>
@@ -317,7 +317,7 @@ public class ToolConfig : ReactiveObject
     public int Zones
     {
         get => _zones;
-        set => this.RaiseAndSetIfChanged(ref _zones, value);
+        set => SetProperty(ref _zones, value);
     }
 
     // Zone end sections - which section each zone ends at (up to 8 zones)
@@ -330,7 +330,7 @@ public class ToolConfig : ReactiveObject
     public int[] ZoneRanges
     {
         get => _zoneRanges;
-        set => this.RaiseAndSetIfChanged(ref _zoneRanges, value);
+        set => SetProperty(ref _zoneRanges, value);
     }
 
     /// <summary>
@@ -349,7 +349,7 @@ public class ToolConfig : ReactiveObject
     {
         if (zoneIndex < 1 || zoneIndex > 8) return;
         _zoneRanges[zoneIndex] = endSection;
-        this.RaisePropertyChanged(nameof(ZoneRanges));
+        OnPropertyChanged(nameof(ZoneRanges));
     }
 
     // Switch configuration
@@ -357,35 +357,35 @@ public class ToolConfig : ReactiveObject
     public bool IsWorkSwitchEnabled
     {
         get => _isWorkSwitchEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchEnabled, value);
+        set => SetProperty(ref _isWorkSwitchEnabled, value);
     }
 
     private bool _isWorkSwitchActiveLow;
     public bool IsWorkSwitchActiveLow
     {
         get => _isWorkSwitchActiveLow;
-        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchActiveLow, value);
+        set => SetProperty(ref _isWorkSwitchActiveLow, value);
     }
 
     private bool _isWorkSwitchManualSections;
     public bool IsWorkSwitchManualSections
     {
         get => _isWorkSwitchManualSections;
-        set => this.RaiseAndSetIfChanged(ref _isWorkSwitchManualSections, value);
+        set => SetProperty(ref _isWorkSwitchManualSections, value);
     }
 
     private bool _isSteerSwitchEnabled;
     public bool IsSteerSwitchEnabled
     {
         get => _isSteerSwitchEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isSteerSwitchEnabled, value);
+        set => SetProperty(ref _isSteerSwitchEnabled, value);
     }
 
     private bool _isSteerSwitchManualSections;
     public bool IsSteerSwitchManualSections
     {
         get => _isSteerSwitchManualSections;
-        set => this.RaiseAndSetIfChanged(ref _isSteerSwitchManualSections, value);
+        set => SetProperty(ref _isSteerSwitchManualSections, value);
     }
 
     /// <summary>
@@ -429,6 +429,6 @@ public class ToolConfig : ReactiveObject
                 break;
         }
 
-        this.RaisePropertyChanged(nameof(CurrentToolType));
+        OnPropertyChanged(nameof(CurrentToolType));
     }
 }

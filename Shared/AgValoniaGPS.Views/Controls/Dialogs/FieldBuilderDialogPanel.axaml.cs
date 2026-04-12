@@ -95,6 +95,9 @@ public partial class FieldBuilderDialogPanel : UserControl
             ShowMainTabs();
             ExitDrawMode();
             HideRenamePanel();
+            // Rebuild headland from segments (clears legacy headland if no segments)
+            if (DataContext is MainViewModel openVm)
+                openVm.BuildHeadlandFromSegments();
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
     }
@@ -1302,45 +1305,74 @@ public partial class FieldBuilderDialogPanel : UserControl
         };
         canvas.Children.Add(boundaryPoly);
 
-        // Draw output headland path (yellow, slightly different shade from boundary)
+        // Determine draw/headland tab state for highlighting
+        var mainTabs = this.FindControl<TabControl>("MainTabs");
+        bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
+        bool isDrawing = _drawMode != DrawMode.None || onHeadlandTab;
+
+        // Draw headland segments (offset lines with extensions)
+        foreach (var seg in vm.HeadlandSegments)
+        {
+            if (seg.OffsetPoints.Count < 2) continue;
+            bool segSelected = seg == vm.SelectedHeadlandSegment && !isDrawing;
+            var segColor = new SolidColorBrush(segSelected
+                ? (light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80))
+                : (light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50)));
+
+            // Build full line with extensions
+            var segPts = new List<Point>();
+            if (seg.StartExtension > 0 && seg.OffsetPoints.Count >= 2)
+            {
+                var s0 = seg.OffsetPoints[0]; var s1 = seg.OffsetPoints[1];
+                double sdx = s0.Easting - s1.Easting, sdy = s0.Northing - s1.Northing;
+                double slen = Math.Sqrt(sdx * sdx + sdy * sdy);
+                if (slen > 0.01)
+                    segPts.Add(ToCanvas(s0.Easting + sdx / slen * seg.StartExtension, s0.Northing + sdy / slen * seg.StartExtension));
+            }
+            segPts.AddRange(seg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)));
+            if (seg.EndExtension > 0 && seg.OffsetPoints.Count >= 2)
+            {
+                var e0 = seg.OffsetPoints[^2]; var e1 = seg.OffsetPoints[^1];
+                double edx = e1.Easting - e0.Easting, edy = e1.Northing - e0.Northing;
+                double elen = Math.Sqrt(edx * edx + edy * edy);
+                if (elen > 0.01)
+                    segPts.Add(ToCanvas(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension));
+            }
+
+            var segLine = new Polyline
+            {
+                Stroke = segColor,
+                StrokeThickness = segSelected ? 3 : 1.5,
+                Points = segPts
+            };
+            canvas.Children.Add(segLine);
+
+            // Endpoint markers for selected segment (only start/end, not all curve points)
+            if (segSelected)
+            {
+                AddMarker(canvas, segPts[0], new SolidColorBrush(Color.FromRgb(218, 165, 32)), null, light);
+                AddMarker(canvas, segPts[^1], new SolidColorBrush(Color.FromRgb(65, 105, 225)), null, light);
+            }
+        }
+
+        // Draw output headland path (bright yellow-orange, thicker, ON TOP of everything)
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
             if (headPts.Count >= 3)
             {
-                var headlandColor = light ? Color.FromRgb(200, 160, 0) : Color.FromRgb(255, 220, 50);
+                var headlandColor = light ? Color.FromRgb(220, 140, 0) : Color.FromRgb(255, 200, 30);
                 var headlandPoly = new Polygon
                 {
                     Stroke = new SolidColorBrush(headlandColor),
-                    StrokeThickness = 2.5,
+                    StrokeThickness = 3,
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);
             }
         }
 
-        // Draw headland segments (offset lines)
-        foreach (var seg in vm.HeadlandSegments)
-        {
-            if (seg.OffsetPoints.Count < 2) continue;
-            bool segSelected = seg == vm.SelectedHeadlandSegment;
-            var segColor = new SolidColorBrush(segSelected
-                ? (light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80))
-                : (light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50)));
-            var segLine = new Polyline
-            {
-                Stroke = segColor,
-                StrokeThickness = segSelected ? 3 : 1.5,
-                Points = seg.OffsetPoints.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
-            };
-            canvas.Children.Add(segLine);
-        }
-
         // Draw tracks
-        // Don't highlight tracks during drawing or when on headland tab
-        var mainTabs = this.FindControl<TabControl>("MainTabs");
-        bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
-        bool isDrawing = _drawMode != DrawMode.None || onHeadlandTab;
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;

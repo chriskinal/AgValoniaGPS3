@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ReactiveUI;
+
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.Guidance;
@@ -25,6 +25,8 @@ using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.Models.YouTurn;
 using AgValoniaGPS.Services.YouTurn;
 using Microsoft.Extensions.Logging;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -85,7 +87,7 @@ public partial class MainViewModel
     public bool IsYouTurnEnabled
     {
         get => _isYouTurnEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isYouTurnEnabled, value);
+        set => SetProperty(ref _isYouTurnEnabled, value);
     }
 
     private int _uTurnSkipRows;
@@ -96,7 +98,7 @@ public partial class MainViewModel
     public int UTurnSkipRows
     {
         get => _uTurnSkipRows;
-        set => this.RaiseAndSetIfChanged(ref _uTurnSkipRows, Math.Max(0, Math.Min(9, value)));
+        set => SetProperty(ref _uTurnSkipRows, Math.Max(0, Math.Min(9, value)));
     }
 
     private bool _isUTurnSkipRowsEnabled;
@@ -107,7 +109,7 @@ public partial class MainViewModel
     public bool IsUTurnSkipRowsEnabled
     {
         get => _isUTurnSkipRowsEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isUTurnSkipRowsEnabled, value);
+        set => SetProperty(ref _isUTurnSkipRowsEnabled, value);
     }
 
     private bool _isSkipWorkedMode;
@@ -118,7 +120,7 @@ public partial class MainViewModel
     public bool IsSkipWorkedMode
     {
         get => _isSkipWorkedMode;
-        set => this.RaiseAndSetIfChanged(ref _isSkipWorkedMode, value);
+        set => SetProperty(ref _isSkipWorkedMode, value);
     }
 
     #endregion
@@ -282,7 +284,8 @@ public partial class MainViewModel
             double abDx = trackPointB.Easting - trackPointA.Easting;
             double abDy = trackPointB.Northing - trackPointA.Northing;
             abHeading = Math.Atan2(abDx, abDy);
-            _logger.LogDebug($"[YouTurn] AB Line: abHeading={abHeading * 180 / Math.PI:F1}°");
+            if (_youTurnCounter % 30 == 0)
+                _logger.LogDebug($"[YouTurn] AB Line: abHeading={abHeading * 180 / Math.PI:F1}°");
         }
 
         // Determine if vehicle is heading the same way as the AB line
@@ -800,10 +803,13 @@ public partial class MainViewModel
         _trackGuidanceState = null;
 
         // Update map visualization - clear the old turn path and next line
-        // The active track will be updated by CalculateAutoSteerGuidance
+        // The display track will be updated by the pipeline via GpsCycleResult
         _mapService.SetYouTurnPath(null);
         _mapService.SetNextTrack(null);
         _mapService.SetIsInYouTurn(false);
+
+        // Sync updated pass number to pipeline so guidance targets the new track
+        SyncGuidanceStateToPipeline();
 
         StatusMessage = $"Following path {_howManyPathsAway} ({(ConfigStore.ActualToolWidth - Tool.Overlap) * Math.Abs(_howManyPathsAway):F1}m offset)";
     }
@@ -1784,58 +1790,6 @@ public partial class MainViewModel
         }
 
         return path;
-    }
-
-    #endregion
-
-    #region YouTurn Guidance
-
-    /// <summary>
-    /// Calculate steering guidance while following the YouTurn path.
-    /// </summary>
-    private void CalculateYouTurnGuidance(AgValoniaGPS.Models.Position currentPosition)
-    {
-        if (_youTurnPath == null || _youTurnPath.Count == 0) return;
-
-        double headingRadians = currentPosition.Heading * Math.PI / 180.0;
-        double speed = currentPosition.Speed * 3.6; // km/h
-
-        var input = new YouTurnGuidanceInput
-        {
-            TurnPath = _youTurnPath,
-            PivotPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            SteerPosition = new Vec3(currentPosition.Easting, currentPosition.Northing, headingRadians),
-            Wheelbase = Vehicle.Wheelbase,
-            MaxSteerAngle = Vehicle.MaxSteerAngle,
-            UseStanley = false, // Use Pure Pursuit for smoother turns
-            GoalPointDistance = Guidance.GoalPointLookAheadHold,
-            UTurnCompensation = Guidance.UTurnCompensation,
-            FixHeading = headingRadians,
-            AvgSpeed = speed,
-            IsReverse = false,
-            UTurnStyle = 0 // Albin style
-        };
-
-        var output = _youTurnGuidanceService.CalculateGuidance(input);
-
-        if (output.IsTurnComplete)
-        {
-            // Turn complete - switch to next line and reset state
-            _logger.LogDebug("[YouTurn] Guidance detected turn complete, calling CompleteYouTurn");
-            CompleteYouTurn();
-        }
-        else
-        {
-            // Apply steering from YouTurn guidance (service already applies UTurnCompensation)
-            SimulatorSteerAngle = output.SteerAngle;
-
-            // Update centralized guidance state
-            State.Guidance.CrossTrackError = output.DistanceFromCurrentLine;
-            State.Guidance.SteerAngle = output.SteerAngle;
-
-            // Legacy property (for existing bindings - display in cm)
-            CrossTrackError = output.DistanceFromCurrentLine * 100;
-        }
     }
 
     #endregion

@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading.Tasks;
-using ReactiveUI;
+
 using AgValoniaGPS.Services.Interfaces;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
@@ -39,14 +41,14 @@ public class AntennaHeightStepViewModel : WizardStepViewModel
     public double AntennaHeight
     {
         get => _antennaHeight;
-        set => this.RaiseAndSetIfChanged(ref _antennaHeight, value);
+        set => SetProperty(ref _antennaHeight, value);
     }
 
     private string _unit = "m";
     public string Unit
     {
         get => _unit;
-        set => this.RaiseAndSetIfChanged(ref _unit, value);
+        set => SetProperty(ref _unit, value);
     }
 
     public AntennaHeightStepViewModel(IConfigurationService configService)

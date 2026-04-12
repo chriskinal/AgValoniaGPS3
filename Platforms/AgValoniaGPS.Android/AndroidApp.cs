@@ -14,16 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using Android.App;
+using System;
 using Android.Runtime;
+using Avalonia;
+using Avalonia.Android;
 
 namespace AgValoniaGPS.Android;
 
-[Application]
-public class MainApplication : Application
+[global::Android.App.Application]
+public class AndroidApp : AvaloniaAndroidApplication<App>
 {
-    public MainApplication(IntPtr handle, JniHandleOwnership ownership)
-        : base(handle, ownership)
+    protected AndroidApp(IntPtr javaReference, JniHandleOwnership transfer)
+        : base(javaReference, transfer)
     {
+    }
+
+    protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
+    {
+        return base.CustomizeAppBuilder(builder)
+            .LogToTrace();
     }
 }

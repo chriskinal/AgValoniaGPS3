@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -14,7 +14,7 @@ namespace AgValoniaGPS.Models.State;
 /// State for recorded path recording and playback.
 /// Mirrors the legacy AgOpenGPS CRecordedPath state machine.
 /// </summary>
-public class RecordedPathState : ReactiveObject
+public class RecordedPathState : ObservableObject
 {
     /// <summary>Full recorded points with speed and section state.</summary>
     public List<RecPathPoint> RecordedPoints { get; set; } = new();
@@ -28,7 +28,7 @@ public class RecordedPathState : ReactiveObject
     public bool IsRecordingOn
     {
         get => _isRecordingOn;
-        set => this.RaiseAndSetIfChanged(ref _isRecordingOn, value);
+        set => SetProperty(ref _isRecordingOn, value);
     }
 
     // -- Playback state flags (mirrors legacy CRecordedPath) --
@@ -37,28 +37,28 @@ public class RecordedPathState : ReactiveObject
     public bool IsDrivingRecordedPath
     {
         get => _isDrivingRecordedPath;
-        set => this.RaiseAndSetIfChanged(ref _isDrivingRecordedPath, value);
+        set => SetProperty(ref _isDrivingRecordedPath, value);
     }
 
     private bool _isFollowingDubinsToPath;
     public bool IsFollowingDubinsToPath
     {
         get => _isFollowingDubinsToPath;
-        set => this.RaiseAndSetIfChanged(ref _isFollowingDubinsToPath, value);
+        set => SetProperty(ref _isFollowingDubinsToPath, value);
     }
 
     private bool _isFollowingRecPath;
     public bool IsFollowingRecPath
     {
         get => _isFollowingRecPath;
-        set => this.RaiseAndSetIfChanged(ref _isFollowingRecPath, value);
+        set => SetProperty(ref _isFollowingRecPath, value);
     }
 
     private bool _isEndOfLine;
     public bool IsEndOfLine
     {
         get => _isEndOfLine;
-        set => this.RaiseAndSetIfChanged(ref _isEndOfLine, value);
+        set => SetProperty(ref _isEndOfLine, value);
     }
 
     // -- Resume mode: 0=Start, 1=Last, 2=Closest --
@@ -67,7 +67,7 @@ public class RecordedPathState : ReactiveObject
     public int ResumeState
     {
         get => _resumeState;
-        set => this.RaiseAndSetIfChanged(ref _resumeState, value);
+        set => SetProperty(ref _resumeState, value);
     }
 
     // -- Position tracking --

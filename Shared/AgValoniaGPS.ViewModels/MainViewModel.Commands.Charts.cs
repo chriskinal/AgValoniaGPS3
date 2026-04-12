@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using ReactiveUI;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -30,17 +30,17 @@ public partial class MainViewModel
         // minimal (a few hundred data points in rolling buffers).
         _chartDataService.Start();
 
-        ToggleSteerChartPanelCommand = ReactiveCommand.Create(() =>
+        ToggleSteerChartPanelCommand = new RelayCommand(() =>
         {
             IsSteerChartPanelVisible = !IsSteerChartPanelVisible;
         });
 
-        ToggleHeadingChartPanelCommand = ReactiveCommand.Create(() =>
+        ToggleHeadingChartPanelCommand = new RelayCommand(() =>
         {
             IsHeadingChartPanelVisible = !IsHeadingChartPanelVisible;
         });
 
-        ToggleXTEChartPanelCommand = ReactiveCommand.Create(() =>
+        ToggleXTEChartPanelCommand = new RelayCommand(() =>
         {
             IsXTEChartPanelVisible = !IsXTEChartPanelVisible;
         });

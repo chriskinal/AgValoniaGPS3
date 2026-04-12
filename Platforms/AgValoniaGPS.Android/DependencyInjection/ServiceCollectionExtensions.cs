@@ -21,6 +21,7 @@ using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Coverage;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Services.Pipeline;
 using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Services.Headland;
 using AgValoniaGPS.Services.Track;
@@ -126,6 +127,9 @@ public static class ServiceCollectionExtensions
 
         // Elevation log service (#120)
         services.AddSingleton<IElevationLogService, ElevationLogService>();
+
+        // GPS processing pipeline (background-thread orchestration)
+        services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // Android-specific services
         services.AddSingleton<IMapService, MapService>();

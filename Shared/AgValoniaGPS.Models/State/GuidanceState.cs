@@ -16,7 +16,7 @@
 
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.State;
 
@@ -24,21 +24,21 @@ namespace AgValoniaGPS.Models.State;
 /// Guidance calculation state - cross-track error, steering, goal points.
 /// Updated by guidance service every frame when guidance is active.
 /// </summary>
-public class GuidanceState : ReactiveObject
+public class GuidanceState : ObservableObject
 {
     // Active track (unified Track model)
     private Track.Track? _activeTrack;
     public Track.Track? ActiveTrack
     {
         get => _activeTrack;
-        set => this.RaiseAndSetIfChanged(ref _activeTrack, value);
+        set => SetProperty(ref _activeTrack, value);
     }
 
     private bool _isGuidanceActive;
     public bool IsGuidanceActive
     {
         get => _isGuidanceActive;
-        set => this.RaiseAndSetIfChanged(ref _isGuidanceActive, value);
+        set => SetProperty(ref _isGuidanceActive, value);
     }
 
     // Cross-track error (meters, positive = right of line)
@@ -46,14 +46,14 @@ public class GuidanceState : ReactiveObject
     public double CrossTrackError
     {
         get => _crossTrackError;
-        set => this.RaiseAndSetIfChanged(ref _crossTrackError, value);
+        set => SetProperty(ref _crossTrackError, value);
     }
 
     private double _headingError;
     public double HeadingError
     {
         get => _headingError;
-        set => this.RaiseAndSetIfChanged(ref _headingError, value);
+        set => SetProperty(ref _headingError, value);
     }
 
     // Steering output (degrees)
@@ -61,7 +61,7 @@ public class GuidanceState : ReactiveObject
     public double SteerAngle
     {
         get => _steerAngle;
-        set => this.RaiseAndSetIfChanged(ref _steerAngle, value);
+        set => SetProperty(ref _steerAngle, value);
     }
 
     // Raw values for UDP transmission
@@ -69,14 +69,14 @@ public class GuidanceState : ReactiveObject
     public short SteerAngleRaw
     {
         get => _steerAngleRaw;
-        set => this.RaiseAndSetIfChanged(ref _steerAngleRaw, value);
+        set => SetProperty(ref _steerAngleRaw, value);
     }
 
     private short _distanceOffRaw; // mm
     public short DistanceOffRaw
     {
         get => _distanceOffRaw;
-        set => this.RaiseAndSetIfChanged(ref _distanceOffRaw, value);
+        set => SetProperty(ref _distanceOffRaw, value);
     }
 
     // Pure Pursuit state (persisted between frames)
@@ -84,28 +84,28 @@ public class GuidanceState : ReactiveObject
     public double PpIntegral
     {
         get => _ppIntegral;
-        set => this.RaiseAndSetIfChanged(ref _ppIntegral, value);
+        set => SetProperty(ref _ppIntegral, value);
     }
 
     private double _ppPivotDistanceError;
     public double PpPivotDistanceError
     {
         get => _ppPivotDistanceError;
-        set => this.RaiseAndSetIfChanged(ref _ppPivotDistanceError, value);
+        set => SetProperty(ref _ppPivotDistanceError, value);
     }
 
     private double _ppPivotDistanceErrorLast;
     public double PpPivotDistanceErrorLast
     {
         get => _ppPivotDistanceErrorLast;
-        set => this.RaiseAndSetIfChanged(ref _ppPivotDistanceErrorLast, value);
+        set => SetProperty(ref _ppPivotDistanceErrorLast, value);
     }
 
     private int _ppCounter;
     public int PpCounter
     {
         get => _ppCounter;
-        set => this.RaiseAndSetIfChanged(ref _ppCounter, value);
+        set => SetProperty(ref _ppCounter, value);
     }
 
     // Visualization points
@@ -113,21 +113,21 @@ public class GuidanceState : ReactiveObject
     public Vec2 GoalPoint
     {
         get => _goalPoint;
-        set => this.RaiseAndSetIfChanged(ref _goalPoint, value);
+        set => SetProperty(ref _goalPoint, value);
     }
 
     private Vec2 _radiusPoint;
     public Vec2 RadiusPoint
     {
         get => _radiusPoint;
-        set => this.RaiseAndSetIfChanged(ref _radiusPoint, value);
+        set => SetProperty(ref _radiusPoint, value);
     }
 
     private double _purePursuitRadius;
     public double PurePursuitRadius
     {
         get => _purePursuitRadius;
-        set => this.RaiseAndSetIfChanged(ref _purePursuitRadius, value);
+        set => SetProperty(ref _purePursuitRadius, value);
     }
 
     // Direction relative to track
@@ -135,14 +135,14 @@ public class GuidanceState : ReactiveObject
     public bool IsHeadingSameWay
     {
         get => _isHeadingSameWay;
-        set => this.RaiseAndSetIfChanged(ref _isHeadingSameWay, value);
+        set => SetProperty(ref _isHeadingSameWay, value);
     }
 
     private bool _isReverse;
     public bool IsReverse
     {
         get => _isReverse;
-        set => this.RaiseAndSetIfChanged(ref _isReverse, value);
+        set => SetProperty(ref _isReverse, value);
     }
 
     // Line offset (how many passes from original)
@@ -150,14 +150,14 @@ public class GuidanceState : ReactiveObject
     public int HowManyPathsAway
     {
         get => _howManyPathsAway;
-        set => this.RaiseAndSetIfChanged(ref _howManyPathsAway, value);
+        set => SetProperty(ref _howManyPathsAway, value);
     }
 
     private string _currentLineLabel = "1L";
     public string CurrentLineLabel
     {
         get => _currentLineLabel;
-        set => this.RaiseAndSetIfChanged(ref _currentLineLabel, value);
+        set => SetProperty(ref _currentLineLabel, value);
     }
 
     // Contour mode
@@ -165,7 +165,7 @@ public class GuidanceState : ReactiveObject
     public bool IsContourMode
     {
         get => _isContourMode;
-        set => this.RaiseAndSetIfChanged(ref _isContourMode, value);
+        set => SetProperty(ref _isContourMode, value);
     }
 
     public void Reset()

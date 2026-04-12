@@ -178,7 +178,7 @@ public partial class AgShareUploadDialogPanel : UserControl
     {
         if (e.PropertyName == nameof(UploadFieldListItem.IsSelected))
         {
-            Dispatcher.UIThread.Invoke(UpdateUploadButtonState);
+            Dispatcher.UIThread.Post(UpdateUploadButtonState);
         }
     }
 

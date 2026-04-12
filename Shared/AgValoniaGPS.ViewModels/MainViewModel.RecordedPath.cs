@@ -15,7 +15,9 @@ using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.Services.PathPlanning;
 using Microsoft.Extensions.Logging;
-using ReactiveUI;
+using CommunityToolkit.Mvvm.Input;
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.ViewModels;
 
@@ -44,14 +46,14 @@ public partial class MainViewModel
     public bool IsRecordedPathPanelVisible
     {
         get => _isRecordedPathPanelVisible;
-        set => this.RaiseAndSetIfChanged(ref _isRecordedPathPanelVisible, value);
+        set => SetProperty(ref _isRecordedPathPanelVisible, value);
     }
 
     private string _resumeModeLabel = "Start";
     public string ResumeModeLabel
     {
         get => _resumeModeLabel;
-        set => this.RaiseAndSetIfChanged(ref _resumeModeLabel, value);
+        set => SetProperty(ref _resumeModeLabel, value);
     }
 
     // Dialog tab state: 0 = Record, 1 = Playback
@@ -61,9 +63,9 @@ public partial class MainViewModel
         get => _recordedPathTabIndex;
         set
         {
-            this.RaiseAndSetIfChanged(ref _recordedPathTabIndex, value);
-            this.RaisePropertyChanged(nameof(IsRecordTabActive));
-            this.RaisePropertyChanged(nameof(IsPlaybackTabActive));
+            SetProperty(ref _recordedPathTabIndex, value);
+            OnPropertyChanged(nameof(IsRecordTabActive));
+            OnPropertyChanged(nameof(IsPlaybackTabActive));
         }
     }
     public bool IsRecordTabActive => RecordedPathTabIndex == 0;
@@ -74,7 +76,7 @@ public partial class MainViewModel
     public string RecordedPathName
     {
         get => _recordedPathName;
-        set => this.RaiseAndSetIfChanged(ref _recordedPathName, value);
+        set => SetProperty(ref _recordedPathName, value);
     }
 
     // True when a recording just finished and needs naming
@@ -82,7 +84,7 @@ public partial class MainViewModel
     public bool HasUnsavedRecordedPath
     {
         get => _hasUnsavedRecordedPath;
-        set => this.RaiseAndSetIfChanged(ref _hasUnsavedRecordedPath, value);
+        set => SetProperty(ref _hasUnsavedRecordedPath, value);
     }
 
     // Info text about loaded path
@@ -90,7 +92,7 @@ public partial class MainViewModel
     public string RecordedPathInfo
     {
         get => _recordedPathInfo;
-        set => this.RaiseAndSetIfChanged(ref _recordedPathInfo, value);
+        set => SetProperty(ref _recordedPathInfo, value);
     }
 
     // List of available .rec files for the picker
@@ -102,7 +104,7 @@ public partial class MainViewModel
         get => _selectedRecFile;
         set
         {
-            if (this.RaiseAndSetIfChanged(ref _selectedRecFile, value) != null && value != null)
+            if (SetProperty(ref _selectedRecFile, value) && value != null)
                 OnRecFileSelected(value);
         }
     }
@@ -133,15 +135,6 @@ public partial class MainViewModel
         }
     }
 
-    // Font weight converter for tab buttons (Bold for active tab)
-    public static Avalonia.Data.Converters.FuncValueConverter<int, Avalonia.Media.FontWeight> TabFontWeightConverter { get; }
-        = new(tabIndex =>
-        {
-            // ConverterParameter is passed as string, but this is the bound value
-            // We'll handle this differently in XAML
-            return Avalonia.Media.FontWeight.Normal;
-        });
-
     private void InitializeRecordedPathCommands()
     {
         // Refresh rec panel when a field is loaded
@@ -151,31 +144,31 @@ public partial class MainViewModel
                 LoadRecPathForPlayback();
         };
 
-        ToggleRecordedPathPanelCommand = ReactiveCommand.Create(() =>
+        ToggleRecordedPathPanelCommand = new RelayCommand(() =>
         {
             IsRecordedPathPanelVisible = !IsRecordedPathPanelVisible;
             if (IsRecordedPathPanelVisible)
                 LoadRecPathForPlayback();
         });
 
-        ShowRecordedPathDialogCommand = ReactiveCommand.Create(() =>
+        ShowRecordedPathDialogCommand = new RelayCommand(() =>
         {
             IsRecordedPathPanelVisible = true;
             LoadRecPathForPlayback();
         });
 
-        CloseRecordedPathDialogCommand = ReactiveCommand.Create(() =>
+        CloseRecordedPathDialogCommand = new RelayCommand(() =>
         {
             IsRecordedPathPanelVisible = false;
         });
 
-        SetRecordedPathTabCommand = ReactiveCommand.Create<string>(tab =>
+        SetRecordedPathTabCommand = new RelayCommand<string>(tab =>
         {
             if (int.TryParse(tab, out int idx))
                 RecordedPathTabIndex = idx;
         });
 
-        SaveNamedRecordedPathCommand = ReactiveCommand.Create(() =>
+        SaveNamedRecordedPathCommand = new RelayCommand(() =>
         {
             if (!HasUnsavedRecordedPath) return;
             var activeField = _fieldService.ActiveField;
@@ -203,7 +196,7 @@ public partial class MainViewModel
             }
         });
 
-        PlayRecordedPathCommand = ReactiveCommand.Create(() =>
+        PlayRecordedPathCommand = new RelayCommand(() =>
         {
             var recState = State.RecordedPath;
             if (recState.IsDrivingRecordedPath)
@@ -218,12 +211,12 @@ public partial class MainViewModel
             }
         });
 
-        StopPlaybackCommand = ReactiveCommand.Create(() =>
+        StopPlaybackCommand = new RelayCommand(() =>
         {
             StopDrivingRecordedPath();
         });
 
-        CycleResumeModeCommand = ReactiveCommand.Create(() =>
+        CycleResumeModeCommand = new RelayCommand(() =>
         {
             var recState = State.RecordedPath;
             recState.ResumeState = (recState.ResumeState + 1) % 3;
@@ -238,7 +231,7 @@ public partial class MainViewModel
             RecalculateDubinsPreview();
         });
 
-        ReverseRecordedPathCommand = ReactiveCommand.Create(() =>
+        ReverseRecordedPathCommand = new RelayCommand(() =>
         {
             var recState = State.RecordedPath;
             if (recState.RecordedPoints.Count < 2) return;
@@ -251,7 +244,7 @@ public partial class MainViewModel
             RecalculateDubinsPreview();
         });
 
-        PickRecordedPathCommand = ReactiveCommand.Create<string>(fileName =>
+        PickRecordedPathCommand = new RelayCommand<string>(fileName =>
         {
             if (string.IsNullOrEmpty(fileName)) return;
             var activeField = _fieldService.ActiveField;
@@ -273,7 +266,7 @@ public partial class MainViewModel
             }
         });
 
-        DeleteRecordedPathCommand = ReactiveCommand.Create<string>(fileName =>
+        DeleteRecordedPathCommand = new RelayCommand<string>(fileName =>
         {
             if (string.IsNullOrEmpty(fileName)) return;
             var activeField = _fieldService.ActiveField;
@@ -286,7 +279,7 @@ public partial class MainViewModel
             }
         });
 
-        TurnOffRecordedPathCommand = ReactiveCommand.Create(() =>
+        TurnOffRecordedPathCommand = new RelayCommand(() =>
         {
             StopDrivingRecordedPath();
             State.RecordedPath.RecordedPoints.Clear();

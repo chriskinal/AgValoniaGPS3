@@ -3,8 +3,9 @@
 // Licensed under GNU GPL v3. See LICENSE.md.
 
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using AgValoniaGPS.Models.Base;
-using ReactiveUI;
 
 namespace AgValoniaGPS.Models.Headland;
 
@@ -27,33 +28,33 @@ public enum HeadlandSegmentType
 /// A single headland segment - a line or curve along a boundary edge
 /// with an inward offset distance. Multiple segments form the headland.
 /// </summary>
-public class HeadlandSegment : ReactiveObject
+public class HeadlandSegment : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
     private string _name = "";
     public string Name
     {
         get => _name;
-        set => this.RaiseAndSetIfChanged(ref _name, value);
+        set { if (_name != value) { _name = value; OnPropertyChanged(); } }
     }
 
     private HeadlandSegmentType _type;
     public HeadlandSegmentType Type
     {
         get => _type;
-        set => this.RaiseAndSetIfChanged(ref _type, value);
+        set { if (_type != value) { _type = value; OnPropertyChanged(); } }
     }
 
     /// <summary>
     /// Points along the boundary edge that define this segment.
-    /// For Line: 2 points (start/end on boundary).
-    /// For Curve: N points extracted from boundary between start/end.
-    /// For Boundary: all points of the boundary polygon.
     /// </summary>
     public List<Vec3> BoundaryPoints { get; set; } = new();
 
     /// <summary>
     /// The resulting offset points (the actual headland line).
-    /// Computed from BoundaryPoints + Offset.
     /// </summary>
     public List<Vec3> OffsetPoints { get; set; } = new();
 
@@ -64,48 +65,31 @@ public class HeadlandSegment : ReactiveObject
     public double Offset
     {
         get => _offset;
-        set => this.RaiseAndSetIfChanged(ref _offset, value);
+        set { if (_offset != value) { _offset = value; OnPropertyChanged(); } }
     }
 
     private bool _isSelected;
     public bool IsSelected
     {
         get => _isSelected;
-        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+        set { if (_isSelected != value) { _isSelected = value; OnPropertyChanged(); } }
     }
 
-    /// <summary>
-    /// Index of first boundary point (for re-extraction after drag).
-    /// </summary>
     public int BoundaryStartIndex { get; set; } = -1;
-
-    /// <summary>
-    /// Index of last boundary point (for re-extraction after drag).
-    /// </summary>
     public int BoundaryEndIndex { get; set; } = -1;
-
-    /// <summary>
-    /// Which boundary polygon this segment is from (0 = outer, 1+ = inner).
-    /// </summary>
     public int BoundaryIndex { get; set; }
 
-    /// <summary>
-    /// Straight extension length beyond the start of the offset line (meters).
-    /// </summary>
     private double _startExtension = 50;
     public double StartExtension
     {
         get => _startExtension;
-        set => this.RaiseAndSetIfChanged(ref _startExtension, value);
+        set { if (_startExtension != value) { _startExtension = value; OnPropertyChanged(); } }
     }
 
-    /// <summary>
-    /// Straight extension length beyond the end of the offset line (meters).
-    /// </summary>
     private double _endExtension = 50;
     public double EndExtension
     {
         get => _endExtension;
-        set => this.RaiseAndSetIfChanged(ref _endExtension, value);
+        set { if (_endExtension != value) { _endExtension = value; OnPropertyChanged(); } }
     }
 }
