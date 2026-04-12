@@ -125,6 +125,7 @@ public class P1CommandTests
         vm.PlaceGreenFlagCommand!.Execute(null);
 
         vm.DeleteAllFlagsCommand!.Execute(null);
+        vm.ConfirmConfirmationDialogCommand!.Execute(null); // Confirm the deletion
 
         Assert.That(vm.StatusMessage, Does.Contain("Deleted 2 flags"));
     }
