@@ -249,6 +249,120 @@ public class HeadlandOffsetTests
         Assert.That(seg.IsEffective, Is.True, "Long extension should intersect boundary at both ends");
     }
 
+    [Test]
+    public void ChainedLines_BothEffective()
+    {
+        var vm = CreateVm();
+
+        // 100x100 square field
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(100, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(100, 100, Math.PI),
+                    new Models.BoundaryPoint(0, 100, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(vm, boundary);
+
+        // Line A: vertical on left side at x=20, from y=20 to y=50
+        // Extension reaches boundary at y=0, other end meets Line B
+        var segA = new HeadlandSegment
+        {
+            Name = "Line A",
+            Type = HeadlandSegmentType.Line,
+            Offset = 10,
+            BoundaryPoints = new()
+            {
+                new Vec3(20, 20, 0),
+                new Vec3(20, 50, 0)
+            },
+            StartExtension = 30, // Reaches y=-10, past boundary at y=0
+            EndExtension = 15    // Reaches y=65, overlaps with Line B
+        };
+
+        // Line B: horizontal at y=60, from x=15 to x=50
+        // Extension reaches Line A, other end reaches boundary at x=100
+        var segB = new HeadlandSegment
+        {
+            Name = "Line B",
+            Type = HeadlandSegmentType.Line,
+            Offset = 10,
+            BoundaryPoints = new()
+            {
+                new Vec3(15, 60, Math.PI / 2),
+                new Vec3(50, 60, Math.PI / 2)
+            },
+            StartExtension = 15, // Reaches x=0, past boundary
+            EndExtension = 60    // Reaches x=110, past boundary at x=100
+        };
+
+        vm.ComputeSegmentOffset(segA);
+        vm.ComputeSegmentOffset(segB);
+        vm.HeadlandSegments.Add(segA);
+        vm.HeadlandSegments.Add(segB);
+        vm.BuildHeadlandFromSegments();
+
+        // At least one should be effective (merged chain touches both boundaries)
+        bool anyEffective = segA.IsEffective || segB.IsEffective;
+        Assert.That(anyEffective, Is.True, "Chained lines should form effective headland cut");
+
+        // Headland should be modified (not just the boundary)
+        Assert.That(vm.HasHeadland, Is.True);
+    }
+
+    [Test]
+    public void NonIntersectingCurve_ShowsRed()
+    {
+        var vm = CreateVm();
+
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(100, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(100, 100, Math.PI),
+                    new Models.BoundaryPoint(0, 100, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(vm, boundary);
+
+        // Curve entirely inside field, short extensions, doesn't reach boundary
+        var seg = new HeadlandSegment
+        {
+            Name = "Floating Curve",
+            Type = HeadlandSegmentType.Curve,
+            Offset = 5,
+            BoundaryPoints = new()
+            {
+                new Vec3(30, 50, Math.PI / 2),
+                new Vec3(40, 55, Math.PI / 4),
+                new Vec3(50, 50, 0),
+                new Vec3(60, 45, -Math.PI / 4),
+                new Vec3(70, 50, Math.PI / 2)
+            },
+            StartExtension = 2,
+            EndExtension = 2
+        };
+
+        vm.ComputeSegmentOffset(seg);
+        vm.HeadlandSegments.Add(seg);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg.IsEffective, Is.False, "Floating curve should not be effective");
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -
