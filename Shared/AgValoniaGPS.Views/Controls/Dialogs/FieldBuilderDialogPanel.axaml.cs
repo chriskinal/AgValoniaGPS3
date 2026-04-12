@@ -1403,24 +1403,27 @@ public partial class FieldBuilderDialogPanel : UserControl
         bool onHeadlandTab = mainTabs is { IsVisible: true, SelectedIndex: 1 };
         bool isDrawing = _session.IsActive || onHeadlandTab;
 
-        // Draw output headland path (yellow dashed, distinct from boundary)
+        // Draw output headland path (reduced on non-headland tabs)
         if (vm.HasHeadland && vm.CurrentHeadlandLineForPreview != null)
         {
             var headPts = vm.CurrentHeadlandLineForPreview;
             if (headPts.Count >= 3)
             {
-                var headlandColor = light ? Color.FromRgb(200, 180, 0) : Color.FromRgb(255, 230, 50);
+                var headlandColor = onHeadlandTab
+                    ? (light ? Color.FromRgb(200, 180, 0) : Color.FromRgb(255, 230, 50))
+                    : (light ? Color.FromArgb(120, 180, 160, 0) : Color.FromArgb(120, 200, 180, 40));
                 var headlandPoly = new Polygon
                 {
                     Stroke = new SolidColorBrush(headlandColor),
-                    StrokeThickness = 4,
+                    StrokeThickness = onHeadlandTab ? 4 : 2,
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);
             }
         }
 
-        // Draw headland segments (offset lines with extensions, ON TOP of headland path)
+        // Draw headland segments (only on headland tab)
+        if (!onHeadlandTab) goto SkipSegments;
         foreach (var seg in vm.HeadlandSegments)
         {
             if (seg.OffsetPoints.Count < 2) continue;
@@ -1470,6 +1473,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
         }
 
+        SkipSegments:
         // Draw tracks
         foreach (var track in vm.SavedTracks)
         {
