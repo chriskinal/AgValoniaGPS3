@@ -441,6 +441,17 @@ public partial class FieldBuilderDialogPanel : UserControl
             // for proper snapping and endpoint-only display
             _session.Target = DrawTarget.TrackBoundaryCurve;
             _session.Phase = DrawPhase.Preview;
+
+            // Set up boundary info for drag snapping and re-extraction
+            var bndPoly2 = vm.CurrentBoundary?.OuterBoundary;
+            if (bndPoly2?.Points != null)
+            {
+                _session.BoundaryPoly = bndPoly2;
+                _session.BoundaryStartIndex = _session.FindNearestBoundaryPoint(
+                    track.Points[0].Easting, track.Points[0].Northing);
+                _session.BoundaryEndIndex = _session.FindNearestBoundaryPoint(
+                    track.Points[^1].Easting, track.Points[^1].Northing);
+            }
         }
 
         // Remove the track (will be re-added when Create is clicked)
