@@ -1568,6 +1568,15 @@ public partial class FieldBuilderDialogPanel : UserControl
                 // For curve previews, only show first and last markers
                 if (isCurvePreview && i > 0 && i < _session.Points.Count - 1) continue;
 
+                // For A+ preview (3 points: A_ext, origin, B_ext), only show origin marker
+                if (_session.Target == DrawTarget.TrackAPlus && _session.IsPreview && _session.Points.Count == 3)
+                {
+                    if (i != 1) continue; // Only show origin (middle point)
+                    var aPt = ToCanvas(_session.Points[1].Easting, _session.Points[1].Northing);
+                    AddMarker(canvas, aPt, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A+", light);
+                    continue;
+                }
+
                 var pt = ToCanvas(_session.Points[i].Easting, _session.Points[i].Northing);
                 string? label = null;
 
