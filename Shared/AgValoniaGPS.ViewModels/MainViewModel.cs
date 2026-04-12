@@ -3055,24 +3055,66 @@ public partial class MainViewModel : ObservableObject
 
         var result = new List<Vec3>();
 
-        for (int i = 0; i < segment.BoundaryPoints.Count; i++)
+        // Edge-based offset: shift each edge by offset distance, then intersect consecutive edges
+        // This handles curves correctly (constant distance from boundary)
+        var pts = segment.BoundaryPoints;
+        int ptCount = pts.Count;
+
+        if (ptCount == 2)
         {
-            var pt = segment.BoundaryPoints[i];
-
-            // Calculate normal from boundary direction
-            Vec3 prev = i > 0 ? segment.BoundaryPoints[i - 1] : segment.BoundaryPoints[i];
-            Vec3 next = i < segment.BoundaryPoints.Count - 1 ? segment.BoundaryPoints[i + 1] : segment.BoundaryPoints[i];
-
-            double dx = next.Easting - prev.Easting;
-            double dy = next.Northing - prev.Northing;
+            // Simple line: just shift both points by the perpendicular
+            double dx = pts[1].Easting - pts[0].Easting;
+            double dy = pts[1].Northing - pts[0].Northing;
             double len = System.Math.Sqrt(dx * dx + dy * dy);
             if (len < 0.001) len = 1;
+            double nx = sign * dy / len * offset;
+            double ny = sign * -dx / len * offset;
+            result.Add(new Vec3(pts[0].Easting + nx, pts[0].Northing + ny, pts[0].Heading));
+            result.Add(new Vec3(pts[1].Easting + nx, pts[1].Northing + ny, pts[1].Heading));
+        }
+        else
+        {
+            // Build offset edges (each edge shifted by offset along its normal)
+            var offEdges = new List<(double ax, double ay, double bx, double by)>();
+            for (int i = 0; i < ptCount - 1; i++)
+            {
+                double dx = pts[i + 1].Easting - pts[i].Easting;
+                double dy = pts[i + 1].Northing - pts[i].Northing;
+                double len = System.Math.Sqrt(dx * dx + dy * dy);
+                if (len < 0.001) continue;
+                double nx = sign * dy / len * offset;
+                double ny = sign * -dx / len * offset;
+                offEdges.Add((pts[i].Easting + nx, pts[i].Northing + ny,
+                              pts[i + 1].Easting + nx, pts[i + 1].Northing + ny));
+            }
 
-            // Perpendicular normal, adjusted for winding
-            double nx = sign * dy / len;
-            double ny = sign * -dx / len;
+            if (offEdges.Count == 0) { segment.OffsetPoints = result; return; }
 
-            result.Add(new Vec3(pt.Easting + nx * offset, pt.Northing + ny * offset, pt.Heading));
+            // First offset point
+            result.Add(new Vec3(offEdges[0].ax, offEdges[0].ay, pts[0].Heading));
+
+            // Intersect consecutive offset edges to find interior offset points
+            for (int i = 0; i < offEdges.Count - 1; i++)
+            {
+                var e1 = offEdges[i];
+                var e2 = offEdges[i + 1];
+
+                if (LineLineIntersection(e1.ax, e1.ay, e1.bx, e1.by,
+                                         e2.ax, e2.ay, e2.bx, e2.by,
+                                         out double ix, out double iy))
+                {
+                    result.Add(new Vec3(ix, iy, pts[i + 1].Heading));
+                }
+                else
+                {
+                    // Parallel edges - use endpoint of first edge
+                    result.Add(new Vec3(e1.bx, e1.by, pts[i + 1].Heading));
+                }
+            }
+
+            // Last offset point
+            var last = offEdges[^1];
+            result.Add(new Vec3(last.bx, last.by, pts[^1].Heading));
         }
 
         // Remove self-intersections only for closed polygons (Boundary type)
@@ -3307,6 +3349,13 @@ public partial class MainViewModel : ObservableObject
                 else if (bContains && !aContains) chosen = polyB;
                 else chosen = System.Math.Abs(CalculateSignedArea(polyA)) >= System.Math.Abs(CalculateSignedArea(polyB)) ? polyA : polyB;
                 if (chosen.Count > 0)
+                    // Remove consecutive duplicate points
+                    for (int d = chosen.Count - 1; d > 0; d--)
+                    {
+                        double ddx = chosen[d].Easting - chosen[d-1].Easting;
+                        double ddy = chosen[d].Northing - chosen[d-1].Northing;
+                        if (ddx * ddx + ddy * ddy < 0.01) chosen.RemoveAt(d);
+                    }
                     chosen.Add(chosen[0]); // close loop
 
                 headland = chosen;
@@ -3334,6 +3383,21 @@ public partial class MainViewModel : ObservableObject
             : $"Headland = boundary ({headland.Count} points, no offset lines intersect)";
 
         SaveHeadlandSegments();
+    }
+
+    /// <summary>Intersect two infinite lines. Returns false if parallel.</summary>
+    private static bool LineLineIntersection(
+        double ax, double ay, double bx, double by,
+        double cx, double cy, double dx, double dy,
+        out double ix, out double iy)
+    {
+        double denom = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+        ix = iy = 0;
+        if (System.Math.Abs(denom) < 1e-10) return false;
+        double t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / denom;
+        ix = ax + t * (bx - ax);
+        iy = ay + t * (by - ay);
+        return true;
     }
 
     private static bool IsPointInPolygon(double px, double py, List<Vec3> polygon)
