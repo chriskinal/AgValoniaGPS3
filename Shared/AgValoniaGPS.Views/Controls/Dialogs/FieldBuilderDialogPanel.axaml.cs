@@ -63,6 +63,31 @@ public partial class FieldBuilderDialogPanel : UserControl
         var headingInput = this.FindControl<TextBox>("HeadingInput");
         if (headingInput != null)
             headingInput.TextChanged += HeadingInput_TextChanged;
+
+        // Deselect tracks/headland segments when switching tabs
+        var mainTabs = this.FindControl<TabControl>("MainTabs");
+        if (mainTabs != null)
+            mainTabs.SelectionChanged += MainTabs_SelectionChanged;
+    }
+
+    private void MainTabs_SelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var mainTabs = this.FindControl<TabControl>("MainTabs");
+        if (mainTabs == null) return;
+
+        if (mainTabs.SelectedIndex == 1) // Headland tab
+        {
+            // Deselect headland segment if there's only one (allow re-select)
+            // Clear track visual highlight handled by isDrawing/onHeadlandTab
+        }
+        else // Tracks or Tram tab
+        {
+            // Deselect headland segments
+            vm.SelectedHeadlandSegment = null;
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
