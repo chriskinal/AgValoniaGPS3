@@ -3234,7 +3234,9 @@ public partial class MainViewModel : ObservableObject
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
 
-            if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
+            seg.IsEffective = startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx;
+
+            if (seg.IsEffective)
             {
                 // Both ends intersect - split the polygon into two halves
                 int count = headland.Count - 1; // exclude closing duplicate

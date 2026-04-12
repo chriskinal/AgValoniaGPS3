@@ -92,4 +92,10 @@ public class HeadlandSegment : INotifyPropertyChanged
         get => _endExtension;
         set { if (_endExtension != value) { _endExtension = value; OnPropertyChanged(); } }
     }
+
+    /// <summary>
+    /// Whether this segment intersects the headland at both ends, forming a loop.
+    /// Set by BuildHeadlandFromSegments. False = doesn't affect headland, shown as red.
+    /// </summary>
+    public bool IsEffective { get; set; }
 }

@@ -1425,9 +1425,13 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             if (seg.OffsetPoints.Count < 2) continue;
             bool segSelected = seg == vm.SelectedHeadlandSegment && !_session.IsActive;
-            var segColor = new SolidColorBrush(segSelected
-                ? (light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80))
-                : (light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50)));
+            IBrush segColor;
+            if (!seg.IsEffective)
+                segColor = new SolidColorBrush(light ? Color.FromRgb(200, 60, 60) : Color.FromRgb(255, 80, 80)); // Red = doesn't form loop
+            else if (segSelected)
+                segColor = new SolidColorBrush(light ? Color.FromRgb(0, 140, 0) : Color.FromRgb(80, 255, 80));
+            else
+                segColor = new SolidColorBrush(light ? Color.FromRgb(30, 160, 30) : Color.FromRgb(50, 200, 50));
 
             // Build full line with extensions
             var segPts = new List<Point>();
