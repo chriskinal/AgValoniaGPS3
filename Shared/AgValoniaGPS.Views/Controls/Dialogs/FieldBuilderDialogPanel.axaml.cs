@@ -1418,7 +1418,7 @@ public partial class FieldBuilderDialogPanel : UserControl
                 var headlandPoly = new Polygon
                 {
                     Stroke = new SolidColorBrush(headlandColor),
-                    StrokeThickness = 3,
+                    StrokeThickness = 4,
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);

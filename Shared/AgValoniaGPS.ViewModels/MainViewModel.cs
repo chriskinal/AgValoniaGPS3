@@ -3168,6 +3168,8 @@ public partial class MainViewModel : ObservableObject
             // Find intersection of offset line end with headland polygon
             int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland, out Vec3 endIntersectPt);
 
+            _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
+
             if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
             {
                 // Both ends intersect - build trimmed offset line (from intersection to intersection)
@@ -3274,7 +3276,7 @@ public partial class MainViewModel : ObservableObject
                 p1.Easting, p1.Northing, p2.Easting, p2.Northing,
                 out double t, out double u))
             {
-                if (t >= 0 && t <= 1)
+                if (t >= 0) // Ray from lineStart through lineDir
                 {
                     // Distance from lineStart to intersection
                     double dx = lineDir.Easting - lineStart.Easting;
