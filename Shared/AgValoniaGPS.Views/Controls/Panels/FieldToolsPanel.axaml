@@ -64,51 +64,46 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
 
-            <!-- Menu Items: 2-column layout (5 rows x 2 columns) -->
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4" Background="Transparent">
-                <!-- Row 0: Boundary, (Blank) -->
+            <!-- Menu Items: 2-column compact layout -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="4" Background="Transparent">
+                <!-- Row 0: Field Builder, Boundary -->
                 <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press" Command="{Binding ShowBoundaryDialogCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="28" Height="28"/>
-                        <TextBlock Text="{loc:Localize Boundary}" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <!-- Grid.Column="1" Grid.Row="0" is intentionally blank -->
-
-                <!-- Row 1: Field Builder -->
-                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ShowFieldBuilderCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Headache.png" Width="28" Height="28"/>
                         <TextBlock Text="Field Builder" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
+                <Button Grid.Column="1" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press" Command="{Binding ShowBoundaryDialogCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="28" Height="28"/>
+                        <TextBlock Text="{loc:Localize Boundary}" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
 
-                <!-- Row 2: Tram Lines toggle and builder moved to bottom panel and Field Builder -->
-
-                <!-- Row 3: Delete Applied Area, Flag By Lat Lon -->
-                <Button Grid.Column="0" Grid.Row="3" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                <!-- Row 1: Delete Applied Area, Import Tracks -->
+                <Button Grid.Column="0" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding DeleteAppliedAreaCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png" Width="28" Height="28"/>
                         <TextBlock Text="{loc:Localize DeleteAppliedArea}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
-
-                <!-- Row 4: Recorded Path, Import Tracks -->
-                <Button Grid.Column="0" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
-                        ClickMode="Press" Command="{Binding ToggleRecordedPathPanelCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPath.png" Width="28" Height="28"/>
-                        <TextBlock Text="{loc:Localize RecordedPath}" VerticalAlignment="Center" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="1" Grid.Row="4" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                <Button Grid.Column="1" Grid.Row="1" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
                         ClickMode="Press" Command="{Binding ImportTracksCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="28" Height="28"/>
                         <TextBlock Text="{loc:Localize ImportTracks}" VerticalAlignment="Center" FontSize="12"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Row 2: Recorded Path -->
+                <Button Grid.Column="0" Grid.Row="2" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44"
+                        ClickMode="Press" Command="{Binding ToggleRecordedPathPanelCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPath.png" Width="28" Height="28"/>
+                        <TextBlock Text="{loc:Localize RecordedPath}" VerticalAlignment="Center" FontSize="12"/>
                     </StackPanel>
                 </Button>
             </Grid>
