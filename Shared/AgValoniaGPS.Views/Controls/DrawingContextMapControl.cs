@@ -484,6 +484,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     // Only recreated when pixels actually change.
     private SKBitmap? _coverageSkBitmap;
     private SKBitmap? _previousCoverageSkBitmap; // Keeps old bitmap alive while render thread may still reference it
+    private SKBitmap? _retiredCoverageSkBitmap;  // Two-deep buffer: survives two recreation cycles before disposal
     private SKImage? _coverageSkImage;          // Cached GPU texture — recreated on pixel change
     private SKImage? _previousSkImage;          // Keeps previous image alive while render thread may use it
     private volatile bool _coverageSkImageDirty; // True when SKBitmap has new pixels not in SKImage
@@ -853,8 +854,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Dispose old bitmaps — keep SKBitmap alive until render thread moves on
         _coverageWriteableBitmap?.Dispose();
         _coverageDisplayBitmap?.Dispose();
-        _previousCoverageSkBitmap?.Dispose(); // Dispose the one from TWO recreations ago (render thread is done with it)
-        _previousCoverageSkBitmap = _coverageSkBitmap; // Keep current one alive for render thread
+        // Two-deep disposal buffer: retire -> previous -> current -> null
+        // Gives render thread two full recreation cycles before bitmap is disposed
+        _retiredCoverageSkBitmap?.Dispose();
+        _retiredCoverageSkBitmap = _previousCoverageSkBitmap;
+        _previousCoverageSkBitmap = _coverageSkBitmap;
         _coverageSkBitmap = null; // Clear so SendStateToHandler sends null until new one is ready
 
         // Data bitmap: Rgb565 for compact storage and pixel API
@@ -3436,14 +3440,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         private void DrawCoverageBitmap(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
         {
-            if (s.CoverageSkBitmap == null || s.BitmapWidth == 0 || s.BitmapHeight == 0)
+            // Capture to local to avoid race with UI thread disposal
+            var bitmap = s.CoverageSkBitmap;
+            if (bitmap == null || s.BitmapWidth == 0 || s.BitmapHeight == 0)
                 return;
             if (canvas == null) return;
+
+            // Guard against disposed native SKBitmap (race with CreateCoverageBitmap on UI thread)
+            if (bitmap.Handle == IntPtr.Zero) return;
 
             double worldWidth = s.BitmapMaxE - s.BitmapMinE;
             double worldHeight = s.BitmapMaxN - s.BitmapMinN;
 
-            var src = new SKRect(0, 0, s.CoverageSkBitmap.Width, s.CoverageSkBitmap.Height);
+            var src = new SKRect(0, 0, bitmap.Width, bitmap.Height);
             var dst = new SKRect(
                 (float)s.BitmapMinE, (float)s.BitmapMinN,
                 (float)(s.BitmapMinE + worldWidth), (float)(s.BitmapMinN + worldHeight));
@@ -3456,7 +3465,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // Draw SKBitmap directly — no SKImage.FromBitmap copy needed.
             // Pipeline writes pixels on bg thread, we read on render thread.
             // Atomic 4-byte pixel reads mean worst case is a partially-updated frame.
-            canvas.DrawBitmap(s.CoverageSkBitmap, src, dst, paint);
+            canvas.DrawBitmap(bitmap, src, dst, paint);
         }
 
         private void DrawBoundary(SKCanvas canvas, MapRenderState s)
