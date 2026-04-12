@@ -1419,7 +1419,6 @@ public partial class FieldBuilderDialogPanel : UserControl
                 {
                     Stroke = new SolidColorBrush(headlandColor),
                     StrokeThickness = 3,
-                    StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
                     Points = headPts.Select(p => ToCanvas(p.Easting, p.Northing)).ToList()
                 };
                 canvas.Children.Add(headlandPoly);
@@ -1459,6 +1458,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 Stroke = segColor,
                 StrokeThickness = segSelected ? 3 : 1.5,
+                StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 6, 3 },
                 Points = segPts
             };
             canvas.Children.Add(segLine);
