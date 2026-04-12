@@ -863,13 +863,24 @@ public partial class FieldBuilderDialogPanel : UserControl
         var a = _session.Points[0];
         var b = _session.Points[1];
 
-        var posA = new Position { Easting = a.Easting, Northing = a.Northing };
-        var posB = new Position { Easting = b.Easting, Northing = b.Northing };
+        double heading = Math.Atan2(b.Easting - a.Easting, b.Northing - a.Northing);
+        double headingDeg = heading * 180.0 / Math.PI;
+        if (headingDeg < 0) headingDeg += 360;
 
-        vm.CurrentABCreationMode = ABCreationMode.DrawAB;
-        vm.CurrentABPointStep = ABPointStep.SettingPointA;
-        vm.SetABPointCommand?.Execute(posA);
-        vm.SetABPointCommand?.Execute(posB);
+        // Store the actual clicked A/B points (not extended past boundary)
+        var track = new Models.Track.Track
+        {
+            Name = $"AB_{headingDeg:F1} {DateTime.Now:HH:mm:ss}",
+            Points = new List<Vec3> { new Vec3(a.Easting, a.Northing, heading), new Vec3(b.Easting, b.Northing, heading) },
+            Type = Models.Track.TrackType.ABLine,
+            IsVisible = true
+        };
+
+        foreach (var existing in vm.SavedTracks)
+            existing.IsActive = false;
+
+        vm.SavedTracks.Add(track);
+        vm.SelectedTrack = track;
 
         ExitDrawMode();
         ShowMainTabs();
