@@ -3442,7 +3442,7 @@ public partial class MainViewModel : ObservableObject
                 p1.Easting, p1.Northing, p2.Easting, p2.Northing,
                 out double t, out double u))
             {
-                if (t >= 0) // Ray from lineStart through lineDir
+                if (t >= 0 && t <= 1) // Segment from lineStart to lineDir (extension tip)
                 {
                     // Distance from lineStart to intersection
                     double dx = lineDir.Easting - lineStart.Easting;

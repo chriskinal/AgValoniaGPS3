@@ -161,6 +161,94 @@ public class HeadlandOffsetTests
         }
     }
 
+    [Test]
+    public void ShortExtension_DoesNotIntersect_NotEffective()
+    {
+        var vm = CreateVm();
+
+        // Create a 100x100 square boundary
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(100, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(100, 100, Math.PI),
+                    new Models.BoundaryPoint(0, 100, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+
+        // Set the boundary on the VM
+        typeof(MainViewModel).GetField("_currentBoundary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(vm, boundary);
+
+        // Create a headland line in the middle that is too short to reach the edges
+        var seg = new HeadlandSegment
+        {
+            Name = "Short Line",
+            Type = HeadlandSegmentType.Line,
+            Offset = 10,
+            BoundaryPoints = new()
+            {
+                new Vec3(40, 50, Math.PI / 2),
+                new Vec3(60, 50, Math.PI / 2)
+            },
+            StartExtension = 5, // Only 5m - won't reach boundary at x=0 (35m away)
+            EndExtension = 5    // Only 5m - won't reach boundary at x=100 (35m away)
+        };
+
+        vm.ComputeSegmentOffset(seg);
+        vm.HeadlandSegments.Add(seg);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg.IsEffective, Is.False, "Short extension should not intersect boundary");
+    }
+
+    [Test]
+    public void LongExtension_Intersects_IsEffective()
+    {
+        var vm = CreateVm();
+
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(100, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(100, 100, Math.PI),
+                    new Models.BoundaryPoint(0, 100, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(vm, boundary);
+
+        var seg = new HeadlandSegment
+        {
+            Name = "Long Line",
+            Type = HeadlandSegmentType.Line,
+            Offset = 10,
+            BoundaryPoints = new()
+            {
+                new Vec3(40, 50, Math.PI / 2),
+                new Vec3(60, 50, Math.PI / 2)
+            },
+            StartExtension = 50, // 50m - reaches boundary at x=0
+            EndExtension = 50    // 50m - reaches boundary at x=100
+        };
+
+        vm.ComputeSegmentOffset(seg);
+        vm.HeadlandSegments.Add(seg);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg.IsEffective, Is.True, "Long extension should intersect boundary at both ends");
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -
