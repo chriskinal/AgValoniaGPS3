@@ -3385,8 +3385,9 @@ public partial class MainViewModel : ObservableObject
 
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
-            for (int oi = offsetLine.Count - 1; oi > System.Math.Max(0, offsetLine.Count - 1 - halfCount) && endIntersectIdx < 0; oi--)
-                endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi - 1], headland, out endIntersectPt);
+            int endStart = System.Math.Max(1, offsetLine.Count - halfCount);
+            for (int oi = endStart; oi < offsetLine.Count && endIntersectIdx < 0; oi++)
+                endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi - 1], offsetLine[oi], headland, out endIntersectPt);
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
 
