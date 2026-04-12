@@ -3075,7 +3075,71 @@ public partial class MainViewModel : ObservableObject
             result.Add(new Vec3(pt.Easting + nx * offset, pt.Northing + ny * offset, pt.Heading));
         }
 
-        segment.OffsetPoints = result;
+        // Remove self-intersections (e.g. inverted fillets when offset > fillet radius)
+        segment.OffsetPoints = RemoveSelfIntersections(result);
+    }
+
+    /// <summary>
+    /// Remove self-intersecting loops from an offset polygon.
+    /// When the offset is larger than a convex feature (like a fillet), the offset
+    /// polygon inverts and crosses itself. This detects those crossings and removes
+    /// the inverted loops.
+    /// </summary>
+    private static List<Vec3> RemoveSelfIntersections(List<Vec3> points)
+    {
+        if (points.Count < 4) return points;
+
+        var clean = new List<Vec3> { points[0] };
+        int i = 0;
+
+        while (i < points.Count - 1)
+        {
+            // Check if any later edge crosses the current edge
+            var a1 = points[i];
+            var a2 = points[i + 1];
+
+            int skipTo = -1;
+            Vec3 intersectPt = default;
+
+            // Check against all non-adjacent edges ahead
+            for (int j = i + 2; j < points.Count - 1; j++)
+            {
+                var b1 = points[j];
+                var b2 = points[j + 1];
+
+                if (LineSegmentIntersection(
+                    a1.Easting, a1.Northing, a2.Easting, a2.Northing,
+                    b1.Easting, b1.Northing, b2.Easting, b2.Northing,
+                    out double t, out double u))
+                {
+                    if (t > 0.01 && t < 0.99 && u > 0.01 && u < 0.99)
+                    {
+                        // Self-intersection found - skip the loop
+                        double ix = a1.Easting + t * (a2.Easting - a1.Easting);
+                        double iy = a1.Northing + t * (a2.Northing - a1.Northing);
+                        intersectPt = new Vec3(ix, iy, a1.Heading);
+                        skipTo = j + 1;
+                        break; // Take first intersection
+                    }
+                }
+            }
+
+            if (skipTo >= 0)
+            {
+                // Add intersection point and skip the loop
+                clean.Add(intersectPt);
+                i = skipTo;
+            }
+            else
+            {
+                // No intersection, keep the next point
+                i++;
+                if (i < points.Count)
+                    clean.Add(points[i]);
+            }
+        }
+
+        return clean;
     }
 
     /// <summary>
