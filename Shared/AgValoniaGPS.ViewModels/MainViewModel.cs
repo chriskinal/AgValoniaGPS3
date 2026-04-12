@@ -3291,20 +3291,25 @@ public partial class MainViewModel : ObservableObject
 
                     if (found)
                     {
-                        // Merge: A's start to intersection point, then intersection point to B's end (or B's start)
-                        // Figure out which end of B is closer to the intersection
-                        double dStart = System.Math.Pow(lineB[0].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[0].Northing - intersectPt.Northing, 2);
-                        double dEnd = System.Math.Pow(lineB[^1].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[^1].Northing - intersectPt.Northing, 2);
+                        // Trim A at intersection: keep A[0..aSegIdx] + intersectPt
+                        // Then append B from the closest end
+                        var trimmedA = new List<Vec3>();
+                        for (int k = 0; k <= aSegIdx; k++)
+                            trimmedA.Add(lineA[k]);
+                        trimmedA.Add(intersectPt);
 
-                        var combined = new List<Vec3>(lineA);
-                        combined.Add(intersectPt);
-                        if (dStart < dEnd)
-                            combined.AddRange(lineB); // B goes start to end
+                        // Determine which end of B to connect from
+                        double dBStart = System.Math.Pow(lineB[0].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[0].Northing - intersectPt.Northing, 2);
+                        double dBEnd = System.Math.Pow(lineB[^1].Easting - intersectPt.Easting, 2) + System.Math.Pow(lineB[^1].Northing - intersectPt.Northing, 2);
+
+                        var combined = new List<Vec3>(trimmedA);
+                        if (dBStart < dBEnd)
+                            combined.AddRange(lineB);
                         else
                         {
                             var rev = new List<Vec3>(lineB);
                             rev.Reverse();
-                            combined.AddRange(rev); // B goes end to start
+                            combined.AddRange(rev);
                         }
 
                         offsetLines[a] = (offsetLines[a].seg, combined);
