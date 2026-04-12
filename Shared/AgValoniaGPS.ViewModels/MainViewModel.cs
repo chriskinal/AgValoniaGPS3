@@ -3156,17 +3156,25 @@ public partial class MainViewModel : ObservableObject
             }
 
             // Find intersection of offset line start with headland polygon
-            int startIntersectIdx = FindLineHeadlandIntersection(offsetLine[0], offsetLine[1], headland);
+            int startIntersectIdx = FindLineHeadlandIntersection(offsetLine[0], offsetLine[1], headland, out Vec3 startIntersectPt);
             // Find intersection of offset line end with headland polygon
-            int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland);
+            int endIntersectIdx = FindLineHeadlandIntersection(offsetLine[^1], offsetLine[^2], headland, out Vec3 endIntersectPt);
 
             if (startIntersectIdx >= 0 && endIntersectIdx >= 0 && startIntersectIdx != endIntersectIdx)
             {
-                // Both ends intersect - build two candidate polygons and keep the bigger one
+                // Both ends intersect - build trimmed offset line (from intersection to intersection)
+                // The trimmed line goes: startIntersectPt -> core offset points -> endIntersectPt
+                var trimmedOffset = new List<Vec3>();
+                trimmedOffset.Add(startIntersectPt);
+                trimmedOffset.AddRange(seg.OffsetPoints); // core offset (no extensions)
+                trimmedOffset.Add(endIntersectPt);
+
+                // Build two candidate polygons and keep the bigger one
                 int count = headland.Count - 1; // exclude closing duplicate
 
-                // Path A: walk from endIntersectIdx+1 to startIntersectIdx + offset line
+                // Path A: walk from endIntersectIdx+1 to startIntersectIdx + trimmed offset
                 var pathA = new List<Vec3>();
+                pathA.Add(endIntersectPt);
                 int idx = (endIntersectIdx + 1) % count;
                 while (idx != startIntersectIdx)
                 {
@@ -3175,10 +3183,14 @@ public partial class MainViewModel : ObservableObject
                     if (pathA.Count > count) break;
                 }
                 pathA.Add(headland[startIntersectIdx]);
-                pathA.AddRange(offsetLine);
+                pathA.Add(startIntersectPt);
+                // Add offset in reverse (start to end)
+                for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
+                    pathA.Add(seg.OffsetPoints[j]);
 
-                // Path B: walk from startIntersectIdx+1 to endIntersectIdx + reversed offset line
+                // Path B: walk from startIntersectIdx+1 to endIntersectIdx + trimmed offset
                 var pathB = new List<Vec3>();
+                pathB.Add(startIntersectPt);
                 idx = (startIntersectIdx + 1) % count;
                 while (idx != endIntersectIdx)
                 {
@@ -3187,9 +3199,9 @@ public partial class MainViewModel : ObservableObject
                     if (pathB.Count > count) break;
                 }
                 pathB.Add(headland[endIntersectIdx]);
-                var reversedOffset = new List<Vec3>(offsetLine);
-                reversedOffset.Reverse();
-                pathB.AddRange(reversedOffset);
+                pathB.Add(endIntersectPt);
+                for (int j = seg.OffsetPoints.Count - 1; j >= 0; j--)
+                    pathB.Add(seg.OffsetPoints[j]);
 
                 // Calculate signed areas to pick the larger polygon (= inside of field)
                 double areaA = CalculateSignedArea(pathA);
@@ -3238,10 +3250,11 @@ public partial class MainViewModel : ObservableObject
     /// Find where a line segment (from lineStart toward lineDir) intersects the headland polygon.
     /// Returns the index of the headland segment where intersection occurs, or -1 if no intersection.
     /// </summary>
-    private static int FindLineHeadlandIntersection(Vec3 lineStart, Vec3 lineDir, List<Vec3> headland)
+    private static int FindLineHeadlandIntersection(Vec3 lineStart, Vec3 lineDir, List<Vec3> headland, out Vec3 intersectionPoint)
     {
         double bestDist = double.MaxValue;
         int bestIdx = -1;
+        intersectionPoint = default;
 
         for (int i = 0; i < headland.Count - 1; i++)
         {
@@ -3251,7 +3264,7 @@ public partial class MainViewModel : ObservableObject
             if (LineSegmentIntersection(
                 lineStart.Easting, lineStart.Northing, lineDir.Easting, lineDir.Northing,
                 p1.Easting, p1.Northing, p2.Easting, p2.Northing,
-                out double t, out _))
+                out double t, out double u))
             {
                 if (t >= 0 && t <= 1)
                 {
@@ -3263,6 +3276,13 @@ public partial class MainViewModel : ObservableObject
                     {
                         bestDist = dist;
                         bestIdx = i;
+                        // Compute actual intersection point on the headland segment
+                        var hp1 = headland[i];
+                        var hp2 = headland[i + 1];
+                        intersectionPoint = new Vec3(
+                            hp1.Easting + u * (hp2.Easting - hp1.Easting),
+                            hp1.Northing + u * (hp2.Northing - hp1.Northing),
+                            hp1.Heading);
                     }
                 }
             }
