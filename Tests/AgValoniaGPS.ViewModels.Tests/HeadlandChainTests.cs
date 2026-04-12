@@ -1106,7 +1106,122 @@ public class HeadlandChainTests
     }
 
     // ---------------------------------------------------------------
-    // TEST GROUP 19: Extension save/load regression
+    // TEST GROUP 19: One-ended curve should not break other lines
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void OneEndedCurve_DoesNotBreakEffectiveLine()
+    {
+        // Regression: a curve that only reaches boundary on one end was being merged
+        // with a working line, breaking the line's effectiveness.
+        // The working line should still produce a valid headland cut.
+        var vm = CreateVmWithBoundary(200, 200);
+
+        // Working line: horizontal across the full field
+        var segLine = new HeadlandSegment
+        {
+            Name = "Full Line",
+            Type = HeadlandSegmentType.Line,
+            Offset = 20,
+            BoundaryPoints = new() { new Vec3(10, 100, Math.PI / 2), new Vec3(190, 100, Math.PI / 2) },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        // One-ended curve: only reaches boundary on one side, short extension on other
+        var curvePts = new List<Vec3>();
+        for (int i = 0; i <= 10; i++)
+        {
+            double angle = i * Math.PI / 2 / 10;
+            curvePts.Add(new Vec3(150 + 30 * Math.Sin(angle), 80 + 30 * (1 - Math.Cos(angle)), angle));
+        }
+        var segCurve = new HeadlandSegment
+        {
+            Name = "One-Ended Curve",
+            Type = HeadlandSegmentType.Curve,
+            Offset = 15,
+            BoundaryPoints = curvePts,
+            StartExtension = 5,   // Too short to reach boundary
+            EndExtension = 50     // Reaches top boundary
+        };
+
+        vm.ComputeSegmentOffset(segLine);
+        vm.ComputeSegmentOffset(segCurve);
+        vm.HeadlandSegments.Add(segLine);
+        vm.HeadlandSegments.Add(segCurve);
+        vm.BuildHeadlandFromSegments();
+
+        // The full line should still be effective regardless of the one-ended curve
+        Assert.That(segLine.IsEffective, Is.True,
+            "Working line should remain effective even when a one-ended curve is present");
+
+        // The one-ended curve should NOT be effective
+        Assert.That(segCurve.IsEffective, Is.False,
+            "One-ended curve should not be effective");
+
+        // Headland should reflect only the line's cut
+        var headland = GetHeadlandLine(vm);
+        Assert.That(headland, Is.Not.Null);
+        double headArea = Math.Abs(CalculateArea(headland!));
+        double fullArea = 200 * 200;
+        Assert.That(headArea, Is.LessThan(fullArea * 0.85).And.GreaterThan(fullArea * 0.3),
+            $"Only the line's cut should apply. Area: {headArea:F0}");
+    }
+
+    [Test]
+    public void MultipleLines_OneNonEffective_OthersStillWork()
+    {
+        // Multiple lines where one doesn't reach boundary - should not affect the others
+        var vm = CreateVmWithBoundary(200, 200);
+
+        // Working line 1: horizontal bottom
+        var seg1 = new HeadlandSegment
+        {
+            Name = "Bottom",
+            Type = HeadlandSegmentType.Line,
+            Offset = 25,
+            BoundaryPoints = new() { new Vec3(10, 15, Math.PI / 2), new Vec3(190, 15, Math.PI / 2) },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        // Non-effective line: in the middle, too short
+        var seg2 = new HeadlandSegment
+        {
+            Name = "Floating",
+            Type = HeadlandSegmentType.Line,
+            Offset = 10,
+            BoundaryPoints = new() { new Vec3(80, 100, Math.PI / 2), new Vec3(120, 100, Math.PI / 2) },
+            StartExtension = 5,
+            EndExtension = 5
+        };
+
+        // Working line 2: horizontal top
+        var seg3 = new HeadlandSegment
+        {
+            Name = "Top",
+            Type = HeadlandSegmentType.Line,
+            Offset = 25,
+            BoundaryPoints = new() { new Vec3(10, 185, Math.PI / 2), new Vec3(190, 185, Math.PI / 2) },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        vm.ComputeSegmentOffset(seg1);
+        vm.ComputeSegmentOffset(seg2);
+        vm.ComputeSegmentOffset(seg3);
+        vm.HeadlandSegments.Add(seg1);
+        vm.HeadlandSegments.Add(seg2);
+        vm.HeadlandSegments.Add(seg3);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg1.IsEffective, Is.True, "Bottom line should be effective");
+        Assert.That(seg2.IsEffective, Is.False, "Floating line should not be effective");
+        Assert.That(seg3.IsEffective, Is.True, "Top line should be effective");
+    }
+
+    // ---------------------------------------------------------------
+    // TEST GROUP 20: Extension save/load regression
     // ---------------------------------------------------------------
 
     [Test]

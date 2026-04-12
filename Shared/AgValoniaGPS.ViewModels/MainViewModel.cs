@@ -3254,17 +3254,40 @@ public partial class MainViewModel : ObservableObject
             offsetLines.Add((new List<Models.Headland.HeadlandSegment> { seg }, ol));
         }
 
+        // Pre-check: which offset lines already individually reach the boundary on both ends
+        // These should NOT be merged with other lines (merging could break them)
+        var reachesBothEnds = new HashSet<int>();
+        for (int i = 0; i < offsetLines.Count; i++)
+        {
+            var line = offsetLines[i].line;
+            if (line.Count < 2) continue;
+            int halfCk = System.Math.Max(2, line.Count / 2);
+
+            bool startReaches = false;
+            for (int oi = 0; oi < System.Math.Min(halfCk, line.Count - 1) && !startReaches; oi++)
+                startReaches = FindLineHeadlandIntersection(line[oi], line[oi + 1], headland, out _) >= 0;
+
+            bool endReaches = false;
+            for (int oi = line.Count - 1; oi >= System.Math.Max(1, line.Count - halfCk) && !endReaches; oi--)
+                endReaches = FindLineHeadlandIntersection(line[oi - 1], line[oi], headland, out _) >= 0;
+
+            if (startReaches && endReaches) reachesBothEnds.Add(i);
+        }
+
         // Try to merge chained offset lines that intersect each other
         // This handles the case where two lines each only touch boundary on one side
         // but connect to each other on the other side
+        // Skip lines that already reach both boundary ends
         bool merged = true;
         while (merged)
         {
             merged = false;
             for (int a = 0; a < offsetLines.Count && !merged; a++)
             {
+                if (reachesBothEnds.Contains(a)) continue;
                 for (int b = a + 1; b < offsetLines.Count && !merged; b++)
                 {
+                    if (reachesBothEnds.Contains(b)) continue;
                     // Check if end of A intersects any segment of B
                     var lineA = offsetLines[a].line;
                     var lineB = offsetLines[b].line;
