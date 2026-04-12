@@ -235,6 +235,63 @@ public class HeadlandRealFieldTests
             $"Line 3 offset ({line1.Count} pts) and Line 4 offset ({line2.Count} pts) should intersect each other");
     }
 
+    [Test]
+    public void LongCurve_EndIntersectsBoundary()
+    {
+        // Reproduces bug: long curve where end search went backward
+        // and couldn't find boundary intersection near the tip
+        var vm = new MainViewModelBuilder().Build();
+
+        // Simple 200x200 square
+        var boundary = new Boundary
+        {
+            OuterBoundary = new BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new BoundaryPoint(0, 0, 0),
+                    new BoundaryPoint(200, 0, Math.PI / 2),
+                    new BoundaryPoint(200, 200, Math.PI),
+                    new BoundaryPoint(0, 200, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, boundary);
+
+        // Long curve along the bottom + right edges (many points)
+        var curvePts = new List<Vec3>();
+        // Bottom edge: x from 10 to 190 (many points)
+        for (int i = 0; i <= 100; i++)
+            curvePts.Add(new Vec3(10 + i * 1.8, 0, Math.PI / 2));
+        // Right edge: y from 0 to 190
+        for (int i = 1; i <= 100; i++)
+            curvePts.Add(new Vec3(200, i * 1.9, 0));
+
+        var seg = new HeadlandSegment
+        {
+            Name = "Long L-Curve",
+            Type = HeadlandSegmentType.Curve,
+            Offset = 15,
+            BoundaryPoints = curvePts,
+            StartExtension = 50,
+            EndExtension = 50
+        };
+
+        vm.ComputeSegmentOffset(seg);
+        Assert.That(seg.OffsetPoints.Count, Is.GreaterThan(100),
+            "Should have many offset points");
+
+        vm.HeadlandSegments.Add(seg);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(seg.IsEffective, Is.True,
+            $"Long curve should be effective - ends near boundary edges. " +
+            $"OffsetPts: {seg.OffsetPoints.Count}");
+    }
+
     private static List<Vec3> BuildOffsetWithExt(HeadlandSegment seg)
     {
         var line = new List<Vec3>();
