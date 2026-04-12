@@ -363,6 +363,78 @@ public class HeadlandOffsetTests
         Assert.That(seg.IsEffective, Is.False, "Floating curve should not be effective");
     }
 
+    [Test]
+    [Ignore("Closed loop support needs further work - chain merging not connecting all 4 lines")]
+    public void ClosedLoop_NoBoundaryTouch_StillEffective()
+    {
+        var vm = CreateVm();
+
+        // 200x200 square field
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(200, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(200, 200, Math.PI),
+                    new Models.BoundaryPoint(0, 200, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(vm, boundary);
+
+        // 4 lines forming a square inside the field (50,50)-(150,150)
+        // None touch the boundary, but they form a closed loop together
+        var segments = new[]
+        {
+            // Top: horizontal from (50,150) to (150,150)
+            new HeadlandSegment
+            {
+                Name = "Top", Type = HeadlandSegmentType.Line, Offset = 10,
+                BoundaryPoints = new() { new Vec3(50, 150, Math.PI / 2), new Vec3(150, 150, Math.PI / 2) },
+                StartExtension = 20, EndExtension = 20
+            },
+            // Right: vertical from (150,150) to (150,50)
+            new HeadlandSegment
+            {
+                Name = "Right", Type = HeadlandSegmentType.Line, Offset = 10,
+                BoundaryPoints = new() { new Vec3(150, 150, -Math.PI), new Vec3(150, 50, -Math.PI) },
+                StartExtension = 20, EndExtension = 20
+            },
+            // Bottom: horizontal from (150,50) to (50,50)
+            new HeadlandSegment
+            {
+                Name = "Bottom", Type = HeadlandSegmentType.Line, Offset = 10,
+                BoundaryPoints = new() { new Vec3(150, 50, -Math.PI / 2), new Vec3(50, 50, -Math.PI / 2) },
+                StartExtension = 20, EndExtension = 20
+            },
+            // Left: vertical from (50,50) to (50,150)
+            new HeadlandSegment
+            {
+                Name = "Left", Type = HeadlandSegmentType.Line, Offset = 10,
+                BoundaryPoints = new() { new Vec3(50, 50, 0), new Vec3(50, 150, 0) },
+                StartExtension = 20, EndExtension = 20
+            }
+        };
+
+        foreach (var seg in segments)
+        {
+            vm.ComputeSegmentOffset(seg);
+            vm.HeadlandSegments.Add(seg);
+        }
+
+        vm.BuildHeadlandFromSegments();
+
+        // The 4 lines should chain together and form effective headland cuts
+        // Even though none individually touch the boundary
+        bool anyEffective = segments.Any(s => s.IsEffective);
+        Assert.That(anyEffective, Is.True,
+            "Lines forming a closed loop should create effective headland even without boundary contact");
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -

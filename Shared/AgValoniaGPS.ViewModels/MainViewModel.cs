@@ -3264,22 +3264,27 @@ public partial class MainViewModel : ObservableObject
                     var lineA = offsetLines[a].line;
                     var lineB = offsetLines[b].line;
 
-                    // Check A's end vs B
+                    // Check all segment pairs between A and B for intersection
                     Vec3 intersectPt = default;
                     bool found = false;
-                    for (int si = 0; si < lineB.Count - 1 && !found; si++)
+                    int aSegIdx = -1;
+                    for (int ai = 0; ai < lineA.Count - 1 && !found; ai++)
                     {
-                        if (LineSegmentIntersection(
-                            lineA[^1].Easting, lineA[^1].Northing, lineA[^2].Easting, lineA[^2].Northing,
-                            lineB[si].Easting, lineB[si].Northing, lineB[si + 1].Easting, lineB[si + 1].Northing,
-                            out double t, out double u))
+                        for (int bi = 0; bi < lineB.Count - 1 && !found; bi++)
                         {
-                            if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+                            if (LineSegmentIntersection(
+                                lineA[ai].Easting, lineA[ai].Northing, lineA[ai + 1].Easting, lineA[ai + 1].Northing,
+                                lineB[bi].Easting, lineB[bi].Northing, lineB[bi + 1].Easting, lineB[bi + 1].Northing,
+                                out double t, out double u))
                             {
-                                intersectPt = new Vec3(
-                                    lineB[si].Easting + u * (lineB[si + 1].Easting - lineB[si].Easting),
-                                    lineB[si].Northing + u * (lineB[si + 1].Northing - lineB[si].Northing), 0);
-                                found = true;
+                                if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+                                {
+                                    intersectPt = new Vec3(
+                                        lineB[bi].Easting + u * (lineB[bi + 1].Easting - lineB[bi].Easting),
+                                        lineB[bi].Northing + u * (lineB[bi + 1].Northing - lineB[bi].Northing), 0);
+                                    found = true;
+                                    aSegIdx = ai;
+                                }
                             }
                         }
                     }
@@ -3308,6 +3313,51 @@ public partial class MainViewModel : ObservableObject
                         _logger.LogDebug($"[Headland] Merged offset lines: {offsetLines[a].seg.Name} + removed segment");
                     }
                 }
+            }
+        }
+
+        // Check for closed loops: merged chains whose start and end meet
+        // These can divide the polygon without touching the boundary
+        for (int ci = 0; ci < offsetLines.Count; ci++)
+        {
+            var (closedSeg, closedLine) = offsetLines[ci];
+            if (closedLine.Count < 4) continue;
+            double loopDist = System.Math.Sqrt(
+                System.Math.Pow(closedLine[0].Easting - closedLine[^1].Easting, 2) +
+                System.Math.Pow(closedLine[0].Northing - closedLine[^1].Northing, 2));
+            if (loopDist < 5.0) // Close enough to form a loop
+            {
+                // This is a closed loop - use it directly as a divider
+                var loopPoly = new List<Vec3>(closedLine);
+                loopPoly.Add(loopPoly[0]); // close
+
+                // The headland is the boundary MINUS the loop area
+                // Keep the part containing the centroid
+                double cx = 0, cy = 0;
+                var bndPts = bnd.Points;
+                foreach (var bp in bndPts) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= bndPts.Count; cy /= bndPts.Count;
+
+                bool loopContainsCentroid = IsPointInPolygon(cx, cy, loopPoly);
+
+                if (!loopContainsCentroid)
+                {
+                    // Loop is outside the centroid - headland is unchanged
+                    // (the loop is in the headland area, not the working area)
+                    closedSeg.IsEffective = true;
+                    _logger.LogDebug($"[Headland] Closed loop found (outside centroid) - headland unchanged");
+                }
+                else
+                {
+                    // Loop contains centroid - the loop IS the headland
+                    headland = loopPoly;
+                    closedSeg.IsEffective = true;
+                    cutsApplied++;
+                    _logger.LogDebug($"[Headland] Closed loop contains centroid - used as headland");
+                }
+
+                offsetLines.RemoveAt(ci);
+                ci--;
             }
         }
 
