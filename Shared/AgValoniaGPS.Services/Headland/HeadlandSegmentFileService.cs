@@ -33,6 +33,8 @@ public static class HeadlandSegmentFileService
                 Name = seg.Name,
                 Type = seg.Type.ToString(),
                 Offset = seg.Offset,
+                StartExtension = seg.StartExtension,
+                EndExtension = seg.EndExtension,
                 BoundaryIndex = seg.BoundaryIndex,
                 BoundaryStartIndex = seg.BoundaryStartIndex,
                 BoundaryEndIndex = seg.BoundaryEndIndex,
@@ -65,6 +67,8 @@ public static class HeadlandSegmentFileService
                     Name = dto.Name ?? "",
                     Type = Enum.TryParse<HeadlandSegmentType>(dto.Type, out var t) ? t : HeadlandSegmentType.Line,
                     Offset = dto.Offset,
+                    StartExtension = dto.StartExtension,
+                    EndExtension = dto.EndExtension,
                     BoundaryIndex = dto.BoundaryIndex,
                     BoundaryStartIndex = dto.BoundaryStartIndex,
                     BoundaryEndIndex = dto.BoundaryEndIndex,
@@ -106,6 +110,8 @@ public static class HeadlandSegmentFileService
         public string? Name { get; set; }
         public string? Type { get; set; }
         public double Offset { get; set; }
+        public double StartExtension { get; set; } = 50;
+        public double EndExtension { get; set; } = 50;
         public int BoundaryIndex { get; set; }
         public int BoundaryStartIndex { get; set; }
         public int BoundaryEndIndex { get; set; }

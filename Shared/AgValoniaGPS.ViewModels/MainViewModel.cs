@@ -3414,15 +3414,23 @@ public partial class MainViewModel : ObservableObject
 
             int startIntersectIdx = -1;
             Vec3 startIntersectPt = default;
+            int startOffsetSegIdx = -1; // Which offset line segment the start intersection is on
             for (int oi = 0; oi < System.Math.Min(halfCount, offsetLine.Count - 1) && startIntersectIdx < 0; oi++)
+            {
                 startIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi], offsetLine[oi + 1], headland, out startIntersectPt);
+                if (startIntersectIdx >= 0) startOffsetSegIdx = oi;
+            }
 
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
+            int endOffsetSegIdx = -1; // Which offset line segment the end intersection is on
             int endStart = System.Math.Max(1, offsetLine.Count - halfCount);
             // Search from end backward to find the far-end intersection first
             for (int oi = offsetLine.Count - 1; oi >= endStart && endIntersectIdx < 0; oi--)
+            {
                 endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi - 1], offsetLine[oi], headland, out endIntersectPt);
+                if (endIntersectIdx >= 0) endOffsetSegIdx = oi - 1;
+            }
 
             _logger.LogDebug($"[Headland] Segment '{seg.Name}': start intersect={startIntersectIdx}, end intersect={endIntersectIdx}, offsetLine pts={offsetLine.Count}, headland pts={headland.Count}");
 
@@ -3450,13 +3458,14 @@ public partial class MainViewModel : ObservableObject
                 // Both ends intersect - split the polygon into two halves
                 int count = headland.Count - 1; // exclude closing duplicate
 
-                // The dividing line goes from startIntersectPt to endIntersectPt
-                // For curves, include interior offset points between the intersections
+                // The dividing line goes from startIntersectPt along the offset line to endIntersectPt
+                // Include all offset line interior points between the two intersection segments
                 var divLine = new List<Vec3> { startIntersectPt };
-                if (seg.OffsetPoints.Count > 2)
+                if (startOffsetSegIdx >= 0 && endOffsetSegIdx >= 0 && endOffsetSegIdx > startOffsetSegIdx)
                 {
-                    for (int j = 1; j < seg.OffsetPoints.Count - 1; j++)
-                        divLine.Add(seg.OffsetPoints[j]);
+                    // Add offset line points between the two intersection segments
+                    for (int j = startOffsetSegIdx + 1; j <= endOffsetSegIdx; j++)
+                        divLine.Add(offsetLine[j]);
                 }
                 divLine.Add(endIntersectPt);
 
