@@ -2968,9 +2968,17 @@ public partial class MainViewModel : ObservableObject
 
     public System.Collections.Generic.IReadOnlyList<Models.Base.Vec3>? CurrentHeadlandLineForPreview => _currentHeadlandLine;
 
-    public string HeadlandStatusText => HasHeadland
-        ? $"Headland built ({_currentHeadlandLine?.Count ?? 0} points)"
-        : "No headland built";
+    public string HeadlandStatusText
+    {
+        get
+        {
+            if (!HasHeadland || _currentHeadlandLine == null || _currentHeadlandLine.Count < 3)
+                return HeadlandSegments.Count > 0 ? $"{HeadlandSegments.Count} lines (no intersections)" : "No headland lines";
+
+            double area = System.Math.Abs(CalculateSignedArea(_currentHeadlandLine)) / 10000.0; // m2 -> hectares
+            return $"{area:F2} ha ({HeadlandSegments.Count} lines)";
+        }
+    }
 
     /// <summary>
     /// List of headland segments that form the headland polygon.
