@@ -1439,7 +1439,11 @@ public partial class MainViewModel : ObservableObject
             var segments = Services.Headland.HeadlandSegmentFileService.Load(field.DirectoryPath);
             HeadlandSegments.Clear();
             foreach (var seg in segments)
+            {
+                // Recompute offsets with current algorithm (may differ from saved)
+                ComputeSegmentOffset(seg);
                 HeadlandSegments.Add(seg);
+            }
             if (HeadlandSegments.Count > 0)
                 BuildHeadlandFromSegments();
         }
