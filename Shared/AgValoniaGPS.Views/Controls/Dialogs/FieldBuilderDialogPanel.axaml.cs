@@ -353,14 +353,12 @@ public partial class FieldBuilderDialogPanel : UserControl
         var finishPanel = this.FindControl<StackPanel>("FinishDrawBtnPanel");
         var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
         var headingInput = this.FindControl<TextBox>("HeadingInput");
-        var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
 
         if (drawPanel != null) drawPanel.IsVisible = true;
         if (instrText != null) instrText.Text = "Edit headland line - adjust offset and endpoints";
         if (pointCountText != null) pointCountText.Text = "";
         if (createPanel != null) createPanel.IsVisible = true;
         if (finishPanel != null) finishPanel.IsVisible = false;
-        if (extPanel != null) extPanel.IsVisible = true;
 
         if (headingPanel != null) headingPanel.IsVisible = true;
         if (headingInput != null)
@@ -440,60 +438,6 @@ public partial class FieldBuilderDialogPanel : UserControl
         vm.HeadlandSegments.Remove(vm.SelectedHeadlandSegment);
         vm.SelectedHeadlandSegment = null;
         vm.BuildHeadlandFromSegments();
-        UpdatePreview();
-    }
-
-    private void ExtendStart_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!_session.IsHeadland || !_session.IsPreview || _session.BoundaryPoly == null) return;
-        if (_session.BoundaryStartIndex < 0) return;
-
-        var pts = _session.BoundaryPoly.Points;
-        int count = pts.Count;
-        // Move start index one step backward along boundary
-        _session.BoundaryStartIndex = (_session.BoundaryStartIndex - 1 + count) % count;
-
-        var newPt = pts[_session.BoundaryStartIndex];
-        _session.Points.Insert(0, new Vec3(newPt.Easting, newPt.Northing, newPt.Heading));
-        UpdatePreview();
-    }
-
-    private void ShrinkStart_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!_session.IsHeadland || !_session.IsPreview || _session.Points.Count <= 2) return;
-        _session.Points.RemoveAt(0);
-        if (_session.BoundaryPoly != null)
-        {
-            int count = _session.BoundaryPoly.Points.Count;
-            _session.BoundaryStartIndex = (_session.BoundaryStartIndex + 1) % count;
-        }
-        UpdatePreview();
-    }
-
-    private void ExtendEnd_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!_session.IsHeadland || !_session.IsPreview || _session.BoundaryPoly == null) return;
-        if (_session.BoundaryEndIndex < 0) return;
-
-        var pts = _session.BoundaryPoly.Points;
-        int count = pts.Count;
-        // Move end index one step forward along boundary
-        _session.BoundaryEndIndex = (_session.BoundaryEndIndex + 1) % count;
-
-        var newPt = pts[_session.BoundaryEndIndex];
-        _session.Points.Add(new Vec3(newPt.Easting, newPt.Northing, newPt.Heading));
-        UpdatePreview();
-    }
-
-    private void ShrinkEnd_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!_session.IsHeadland || !_session.IsPreview || _session.Points.Count <= 2) return;
-        _session.Points.RemoveAt(_session.Points.Count - 1);
-        if (_session.BoundaryPoly != null)
-        {
-            int count = _session.BoundaryPoly.Points.Count;
-            _session.BoundaryEndIndex = (_session.BoundaryEndIndex - 1 + count) % count;
-        }
         UpdatePreview();
     }
 
@@ -716,8 +660,6 @@ public partial class FieldBuilderDialogPanel : UserControl
                 }
 
                 // Show extend/shrink for headland preview
-                var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
-                if (extPanel != null) extPanel.IsVisible = _session.IsHeadland && _session.IsPreview;
 
                 // Hide heading/offset input for non-headland, non-APlus modes
                 if (!_session.IsHeadland && _session.Target != DrawTarget.TrackAPlus)
@@ -975,8 +917,6 @@ public partial class FieldBuilderDialogPanel : UserControl
                 // Reset back to picking mode
                 _session.Phase = DrawPhase.PickingA;
                 if (createPanel != null) createPanel.IsVisible = false;
-                var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
-                if (extPanel != null) extPanel.IsVisible = false;
                 var headingPanel = this.FindControl<StackPanel>("HeadingInputPanel");
                 if (headingPanel != null) headingPanel.IsVisible = false;
                 SetCanvasStatus("Click point on boundary");
@@ -1237,8 +1177,6 @@ public partial class FieldBuilderDialogPanel : UserControl
         _session.Reset();
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
-        var extPanel = this.FindControl<StackPanel>("ExtendShrinkPanel");
-        if (extPanel != null) extPanel.IsVisible = false;
         SetCanvasStatus(null);
     }
 
