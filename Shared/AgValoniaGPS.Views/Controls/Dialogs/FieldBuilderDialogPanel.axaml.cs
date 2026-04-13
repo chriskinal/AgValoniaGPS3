@@ -815,15 +815,13 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
     }
 
-    private void TramWidthInput_TextChanged(object? sender, TextChangedEventArgs e)
+    private void TramWidthInput_LostFocus(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
-        var input = this.FindControl<TextBox>("TramWidthInput");
+        var input = sender as TextBox;
         if (input != null && double.TryParse(input.Text, out double width) && width > 0)
         {
             ConfigurationStore.Instance.Tram.TramWidth = width;
-            // Trigger rebuild so display updates
-            vm.BuildTramLinesCommand?.Execute(null);
         }
     }
 

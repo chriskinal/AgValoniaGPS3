@@ -318,7 +318,7 @@ Licensed under GNU GPL v3.
                                                VerticalAlignment="Center"/>
                                     <TextBox x:Name="TramWidthInput" Grid.Column="1" Width="80" FontSize="16"
                                              Text="{Binding TramWidth, StringFormat='{}{0:F1}'}"
-                                             TextChanged="TramWidthInput_TextChanged"/>
+                                             LostFocus="TramWidthInput_LostFocus"/>
                                 </Grid>
 
                                 <!-- Passes -->
