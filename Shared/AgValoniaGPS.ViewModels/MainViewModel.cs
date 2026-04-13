@@ -3819,6 +3819,14 @@ public partial class MainViewModel : ObservableObject
     public bool TramLeftManualOn => _tramLineService.IsLeftManualOn;
     public bool TramRightManualOn => _tramLineService.IsRightManualOn;
 
+    public string TramDisplayIcon => ConfigStore.Tram.DisplayMode switch
+    {
+        Models.Configuration.TramDisplayMode.All => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png",
+        Models.Configuration.TramDisplayMode.LinesOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramMulti.png",
+        Models.Configuration.TramDisplayMode.OuterOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png"
+    };
+
     /// <summary>
     /// Get tram line geometry for canvas preview rendering.
     /// </summary>
