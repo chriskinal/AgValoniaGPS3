@@ -3822,9 +3822,9 @@ public partial class MainViewModel : ObservableObject
     public string TramDisplayIcon => ConfigStore.Tram.DisplayMode switch
     {
         Models.Configuration.TramDisplayMode.All => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png",
-        Models.Configuration.TramDisplayMode.LinesOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramMulti.png",
-        Models.Configuration.TramDisplayMode.OuterOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png",
-        _ => "avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png"
+        Models.Configuration.TramDisplayMode.LinesOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramLines.png",
+        Models.Configuration.TramDisplayMode.OuterOnly => "avares://AgValoniaGPS.Views/Assets/Icons/TramOuter.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/TramOff.png"
     };
 
     /// <summary>
