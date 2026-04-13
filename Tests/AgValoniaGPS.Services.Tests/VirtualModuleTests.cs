@@ -421,6 +421,135 @@ public class VirtualModuleTests
         Assert.That(machine.TramState, Is.EqualTo(3));
     }
 
+    [Test]
+    public async Task VirtualMachine_TramDetection_RightWheel_SendsBit0()
+    {
+        // E2E: TramLineService detects right wheel on tram line
+        // -> sets TramState bit 0 -> PgnBuilder encodes in byte 8
+        // -> VirtualMachineModule receives it
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        // Set up tram detection service with a tram line at x=0.9 (right wheel position)
+        var offsetService = new AgValoniaGPS.Services.TramLineOffsetService();
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AgValoniaGPS.Services.Tram.TramLineService>.Instance;
+        var tramService = new AgValoniaGPS.Services.Tram.TramLineService(offsetService, logger);
+
+        // Vehicle at (0, 50), heading north, track width 1.8m
+        // Right wheel at (0.9, 50)
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        tramService.AddTramLine(new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec2>
+        {
+            new(0.9, 0), new(0.9, 100) // Right wheel track
+        });
+
+        // Detect tram state
+        byte tramState = tramService.DetectTramWheels(
+            new AgValoniaGPS.Models.Base.Vec3(0, 50, 0), 0, 0.5);
+
+        Assert.That(tramState & 1, Is.EqualTo(1), "Right wheel detected (bit 0)");
+
+        // Build PGN with detected tram state and send to virtual module
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.Speed = 8.0 / 3.6;
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(
+            ref state, tram: tramState);
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.TramState & 1, Is.EqualTo(1),
+            "Module should receive right wheel tram bit 0");
+        Assert.That(machine.TramState & 2, Is.EqualTo(0),
+            "Left wheel should not be set");
+    }
+
+    [Test]
+    public async Task VirtualMachine_TramDetection_BothWheels_SendsBits01()
+    {
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        var offsetService = new AgValoniaGPS.Services.TramLineOffsetService();
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AgValoniaGPS.Services.Tram.TramLineService>.Instance;
+        var tramService = new AgValoniaGPS.Services.Tram.TramLineService(offsetService, logger);
+
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        // Both wheel tracks
+        tramService.AddTramLine(new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec2>
+        {
+            new(0.9, 0), new(0.9, 100)  // Right
+        });
+        tramService.AddTramLine(new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec2>
+        {
+            new(-0.9, 0), new(-0.9, 100)  // Left
+        });
+
+        byte tramState = tramService.DetectTramWheels(
+            new AgValoniaGPS.Models.Base.Vec3(0, 50, 0), 0, 0.5);
+
+        Assert.That(tramState, Is.EqualTo(3), "Both wheels = 3");
+
+        var state = new AgValoniaGPS.Models.VehicleState();
+        state.Speed = 8.0 / 3.6;
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(
+            ref state, tram: tramState);
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.TramState, Is.EqualTo(3),
+            "Module should receive both wheel tram bits = 3");
+    }
+
+    [Test]
+    public async Task VirtualMachine_TramManualOverride_SendsBit()
+    {
+        int modulePort = GetEphemeralPort();
+        int hostPort = GetEphemeralPort();
+
+        using var machine = new VirtualMachineModule(listenPort: modulePort, hostPort: hostPort);
+        machine.Start();
+
+        var offsetService = new AgValoniaGPS.Services.TramLineOffsetService();
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AgValoniaGPS.Services.Tram.TramLineService>.Instance;
+        var tramService = new AgValoniaGPS.Services.Tram.TramLineService(offsetService, logger);
+
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        // No tram lines at all, but manual left override on
+        tramService.IsLeftManualOn = true;
+
+        byte tramState = tramService.DetectTramWheels(
+            new AgValoniaGPS.Models.Base.Vec3(0, 50, 0), 0, 0.5);
+
+        Assert.That(tramState, Is.EqualTo(2), "Manual left override = bit 1 = 2");
+
+        var state = new AgValoniaGPS.Models.VehicleState();
+        var pgnBytes = AgValoniaGPS.Services.AutoSteer.PgnBuilder.BuildMachinePgn(
+            ref state, tram: tramState);
+
+        using var host = new UdpClient(hostPort);
+        host.Send(pgnBytes, pgnBytes.Length, new IPEndPoint(IPAddress.Loopback, modulePort));
+
+        await Task.Delay(500);
+
+        Assert.That(machine.TramState, Is.EqualTo(2),
+            "Module should receive manual left override tram bit");
+    }
+
     #endregion
 
     #region Hub Integration Tests
