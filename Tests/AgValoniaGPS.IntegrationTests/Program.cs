@@ -244,6 +244,22 @@ sealed class Program
             IsActive = true
         };
         vm.SavedTracks.Add(track);
+
+        // Add a diagonal track for testing
+        double diagHeading = Math.Atan2(150.0, 180.0); // ~39.8 degrees
+        var diagTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "AB_Diagonal",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(25, 10, diagHeading),
+                new(175, 190, diagHeading)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true
+        };
+        vm.SavedTracks.Add(diagTrack);
+
         vm.SelectedTrack = track;
 
         // Configure tool width
