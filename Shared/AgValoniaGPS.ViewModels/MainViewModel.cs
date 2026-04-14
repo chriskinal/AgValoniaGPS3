@@ -1699,6 +1699,14 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Set boundary fence for clipping tram lines
+        if (_currentBoundary?.OuterBoundary?.Points != null && _currentBoundary.OuterBoundary.Points.Count >= 3)
+        {
+            var fencePts = _currentBoundary.OuterBoundary.Points
+                .Select(p => new Models.Base.Vec3(p.Easting, p.Northing, p.Heading)).ToList();
+            _tramLineService.SetBoundaryFence(fencePts);
+        }
+
         // Generate parallel tram lines from the track
         // Use a reasonable field width estimate (boundary size or default 500m)
         double fieldWidth = 500;

@@ -47,6 +47,11 @@ public interface ITramLineService
     bool HasTramLines { get; }
 
     /// <summary>
+    /// Set boundary fence for clipping parallel tram lines to the field area.
+    /// </summary>
+    void SetBoundaryFence(IReadOnlyList<Vec3>? fence);
+
+    /// <summary>
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>
