@@ -3820,6 +3820,10 @@ public partial class MainViewModel : ObservableObject
     public ICommand? ToggleTramRightManualCommand { get; private set; }
     public bool TramLeftManualOn => _tramLineService.IsLeftManualOn;
     public bool TramRightManualOn => _tramLineService.IsRightManualOn;
+    public double TramTrackWidthValue => ConfigStore.Vehicle.TrackWidth;
+    public int TramLineNumber => ConfigStore.Guidance.TramLine;
+    public ICommand? IncreaseTramLineCommand { get; private set; }
+    public ICommand? DecreaseTramLineCommand { get; private set; }
 
     public string TramDisplayIcon => ConfigStore.Tram.DisplayMode switch
     {

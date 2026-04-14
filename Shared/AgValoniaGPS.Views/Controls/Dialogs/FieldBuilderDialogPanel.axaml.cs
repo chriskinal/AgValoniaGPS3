@@ -825,6 +825,16 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
     }
 
+    private void WheelTrackInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var input = sender as TextBox;
+        if (input != null && double.TryParse(input.Text, out double width) && width > 0)
+        {
+            ConfigurationStore.Instance.Vehicle.TrackWidth = width;
+        }
+    }
+
     private void CreateAB_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm || _session.Points.Count < 2) return;

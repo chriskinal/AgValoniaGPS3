@@ -1125,6 +1125,18 @@ public partial class MainViewModel
                 });
         });
 
+        IncreaseTramLineCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Guidance.TramLine++;
+            OnPropertyChanged(nameof(TramLineNumber));
+        });
+
+        DecreaseTramLineCommand = new RelayCommand(() =>
+        {
+            ConfigStore.Guidance.TramLine = Math.Max(1, ConfigStore.Guidance.TramLine - 1);
+            OnPropertyChanged(nameof(TramLineNumber));
+        });
+
         ToggleTramLeftManualCommand = new RelayCommand(() =>
         {
             _tramLineService.IsLeftManualOn = !_tramLineService.IsLeftManualOn;
