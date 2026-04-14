@@ -123,34 +123,28 @@ public class TramLineService(
 
         _parallelTramLines.Clear();
 
-        // Calculate how many tram lines we need based on field width and passes
-        double passWidth = config.Tool.Width * passes;
-        int numLines = (int)(fieldWidth / passWidth) + 2;
-
-        // Fence line is set externally via SetBoundaryFence
+        // Tram line pairs spaced by tramWidth (sprayer boom width)
+        // Each pair offset: (tramWidth * 0.5) +/- halfWheelTrack + (tramWidth * i)
+        // First pair is near the reference line (at tramWidth/2 on each side)
+        int numLines = (int)(fieldWidth / tramWidth) + 2;
+        int startPass = config.Tram.StartPass;
         List<Vec3>? fenceLine = _boundaryFence;
 
-        int startPass = config.Tram.StartPass;
-
-        // Generate tram lines on both sides of the reference track
-        // Each pass gets two lines: outer wheel and inner wheel
-        for (int i = -numLines; i <= numLines; i++)
+        for (int i = startPass; i < numLines + startPass; i++)
         {
-            if (i == 0) continue; // Skip center line
+            double baseOffset = (tramWidth * 0.5) + (tramWidth * i);
 
-            double centerOffset = (i + startPass) * passWidth;
+            // Positive side: outer and inner wheel tracks
+            var outerPos = OffsetTrackLaterally(referenceTrack, baseOffset - halfWheelTrack, fenceLine);
+            if (outerPos.Count > 1) _parallelTramLines.Add(outerPos);
+            var innerPos = OffsetTrackLaterally(referenceTrack, baseOffset + halfWheelTrack, fenceLine);
+            if (innerPos.Count > 1) _parallelTramLines.Add(innerPos);
 
-            // Outer wheel track: center - halfWheelTrack
-            double outerOffset = centerOffset - halfWheelTrack;
-            var outerLine = OffsetTrackLaterally(referenceTrack, outerOffset, fenceLine);
-            if (outerLine.Count > 1)
-                _parallelTramLines.Add(outerLine);
-
-            // Inner wheel track: center + halfWheelTrack
-            double innerOffset = centerOffset + halfWheelTrack;
-            var innerLine = OffsetTrackLaterally(referenceTrack, innerOffset, fenceLine);
-            if (innerLine.Count > 1)
-                _parallelTramLines.Add(innerLine);
+            // Negative side (mirror)
+            var outerNeg = OffsetTrackLaterally(referenceTrack, -(baseOffset - halfWheelTrack), fenceLine);
+            if (outerNeg.Count > 1) _parallelTramLines.Add(outerNeg);
+            var innerNeg = OffsetTrackLaterally(referenceTrack, -(baseOffset + halfWheelTrack), fenceLine);
+            if (innerNeg.Count > 1) _parallelTramLines.Add(innerNeg);
         }
 
         TramLinesUpdated?.Invoke(this, EventArgs.Empty);
