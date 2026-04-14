@@ -1723,6 +1723,8 @@ public partial class MainViewModel : ObservableObject
             _tramLineService.OuterBoundaryTrack,
             _tramLineService.InnerBoundaryTrack,
             _tramLineService.ParallelTramLines);
+
+        OnPropertyChanged(nameof(TramLineCountDisplay));
     }
 
     // Flag markers
