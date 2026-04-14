@@ -288,16 +288,21 @@ Licensed under GNU GPL v3.
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="5" Margin="0,4">
-                                <!-- Info display -->
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                    <TextBlock Grid.Row="0" Text="Track:" FontSize="13"
+                                <!-- Reference track selector -->
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                                    <TextBlock Text="Track:" FontSize="13" VerticalAlignment="Center"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="13" FontWeight="Bold"
-                                               Text="{Binding SelectedTrack.Name, FallbackValue='None'}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    <TextBlock Grid.Row="1" Text="Lines:" FontSize="13"
+                                    <ComboBox Grid.Column="1" FontSize="13" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding SavedTracks}"
+                                              SelectedItem="{Binding SelectedTrack}"
+                                              DisplayMemberBinding="{Binding Name}"/>
+                                </Grid>
+
+                                <!-- Lines count -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Lines:" FontSize="13"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" FontSize="13" FontWeight="Bold"
+                                    <TextBlock Grid.Column="1" FontSize="13" FontWeight="Bold"
                                                Text="{Binding TramLineCountDisplay}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                 </Grid>
