@@ -205,6 +205,8 @@ public readonly struct VehicleStateSnapshot
     public ushort SectionStates { get; init; }
     public bool MasterSectionOn { get; init; }
 
+    public byte TramState { get; init; }
+
     public double TotalLatencyMs { get; init; }
     public double ParseLatencyMs { get; init; }
     public double GuidanceLatencyMs { get; init; }

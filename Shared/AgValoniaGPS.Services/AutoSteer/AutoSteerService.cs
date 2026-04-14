@@ -479,6 +479,7 @@ public class AutoSteerService : IAutoSteerService
             IsAutoSteerEngaged = _state.IsAutoSteerEngaged,
             SectionStates = _state.SectionStates,
             MasterSectionOn = _state.MasterSectionOn,
+            TramState = _state.TramState,
             TotalLatencyMs = _state.TotalLatencyMs,
             ParseLatencyMs = _state.ParseLatencyMs,
             GuidanceLatencyMs = _state.GuidanceLatencyMs,

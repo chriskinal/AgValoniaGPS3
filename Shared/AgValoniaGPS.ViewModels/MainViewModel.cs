@@ -3828,6 +3828,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? ToggleTramRightManualCommand { get; private set; }
     public bool TramLeftManualOn => _tramLineService.IsLeftManualOn;
     public bool TramRightManualOn => _tramLineService.IsRightManualOn;
+    /// <summary>Runtime tram detection byte: bit 0=right wheel, bit 1=left wheel.</summary>
+    public byte TramControlByte { get; set; }
     public double TramTrackWidthValue => ConfigStore.Vehicle.TrackWidth;
     public int TramLineNumber => ConfigStore.Guidance.TramLine;
     public ICommand? IncreaseTramLineCommand { get; private set; }

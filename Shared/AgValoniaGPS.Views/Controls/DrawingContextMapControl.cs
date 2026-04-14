@@ -281,6 +281,9 @@ internal class MapRenderState
     public IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? TramParallelLines;
     public AgValoniaGPS.Models.Configuration.TramDisplayMode TramDisplayMode;
     public float TramAlpha;
+    public byte TramControlByte; // bit 0=right wheel, bit 1=left wheel
+    public double HalfWheelTrack;
+    public bool IsDisplayTramControl;
 
     // Vehicle config
     public double AntennaPivot, AntennaOffset;
@@ -818,6 +821,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             TramParallelLines = _tramParallelLines,
             TramDisplayMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.DisplayMode,
             TramAlpha = (float)AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.Alpha,
+            TramControlByte = _vm?.TramControlByte ?? 0,
+            HalfWheelTrack = vehicleCfg.TrackWidth / 2.0,
+            IsDisplayTramControl = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.IsDisplayTramControl,
 
             AntennaPivot = vehicleCfg.AntennaPivot,
             AntennaOffset = vehicleCfg.AntennaOffset,
@@ -4264,6 +4270,31 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // Center line
             using var centerPaint = new SKPaint { Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 0.1f };
             canvas.DrawLine(0, -toolDepth / 2, 0, toolDepth / 2, centerPaint);
+
+            // Tram wheel indicators (colored dots at wheel track positions)
+            if (s.IsDisplayTramControl && s.TramDisplayMode != AgValoniaGPS.Models.Configuration.TramDisplayMode.Off)
+            {
+                float dotRadius = 0.8f;
+                float halfTrack = (float)s.HalfWheelTrack;
+
+                // Right wheel: bit 0
+                bool rightOn = (s.TramControlByte & 1) != 0;
+                using var rightPaint = new SKPaint
+                {
+                    Color = rightOn ? new SKColor(0, 230, 0) : new SKColor(40, 40, 40),
+                    Style = SKPaintStyle.Fill
+                };
+                canvas.DrawCircle(halfTrack, 0, dotRadius, rightPaint);
+
+                // Left wheel: bit 1
+                bool leftOn = (s.TramControlByte & 2) != 0;
+                using var leftPaint = new SKPaint
+                {
+                    Color = leftOn ? new SKColor(0, 230, 0) : new SKColor(40, 40, 40),
+                    Style = SKPaintStyle.Fill
+                };
+                canvas.DrawCircle(-halfTrack, 0, dotRadius, leftPaint);
+            }
 
             canvas.Restore();
         }
