@@ -53,10 +53,12 @@ public class TramLineOffsetService : ITramLineOffsetService
 
     /// <summary>
     /// Core algorithm to generate tramline offset from boundary fence line.
+    /// Uses edge normals (computed from consecutive points) instead of stored headings
+    /// for consistent offset direction, especially on sparse polygons.
     /// </summary>
     private List<Vec2> GenerateTramlineOffset(List<Vec3> fenceLine, double offset)
     {
-        if (fenceLine == null || fenceLine.Count == 0)
+        if (fenceLine == null || fenceLine.Count < 2)
         {
             return new List<Vec2>();
         }
@@ -68,11 +70,18 @@ public class TramLineOffsetService : ITramLineOffsetService
         // Process each fence point
         for (int i = 0; i < ptCount; i++)
         {
-            // Calculate perpendicular offset point
+            // Compute heading from consecutive points (edge normal) rather than stored heading
+            // This handles sparse polygons correctly
+            int prev = (i - 1 + ptCount) % ptCount;
+            int next = (i + 1) % ptCount;
+            double dx = fenceLine[next].Easting - fenceLine[prev].Easting;
+            double dy = fenceLine[next].Northing - fenceLine[prev].Northing;
+            double edgeHeading = Math.Atan2(dx, dy);
+
             Vec3 fencePoint = fenceLine[i];
             var offsetPoint = new Vec2(
-                fencePoint.Easting - (Math.Sin(PIBy2 + fencePoint.Heading) * offset),
-                fencePoint.Northing - (Math.Cos(PIBy2 + fencePoint.Heading) * offset)
+                fencePoint.Easting - (Math.Sin(PIBy2 + edgeHeading) * offset),
+                fencePoint.Northing - (Math.Cos(PIBy2 + edgeHeading) * offset)
             );
 
             // Check if offset point collides with fence line
