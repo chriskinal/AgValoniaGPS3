@@ -87,21 +87,27 @@ public class TramLineService(
         double tramWidth = config.Tram.TramWidth;
         double halfWheelTrack = config.Vehicle.TrackWidth / 2.0;
 
-        // Convert to List<Vec3> for the offset service
+        // Ensure fence line is closed (last point = first point)
         var fenceLineList = fenceLine.ToList();
-
-        // Determine if we should use outer or inner based on invert setting
-        bool isOuter = !config.Tram.IsOuterInverted;
+        double closeDist = Math.Pow(fenceLineList[0].Easting - fenceLineList[^1].Easting, 2) +
+                           Math.Pow(fenceLineList[0].Northing - fenceLineList[^1].Northing, 2);
+        if (closeDist > 1.0)
+            fenceLineList.Add(fenceLineList[0]);
 
         // Generate outer boundary track
         _outerBoundaryTrack.Clear();
         var outerPoints = offsetService.GenerateOuterTramline(fenceLineList, tramWidth, halfWheelTrack);
         _outerBoundaryTrack.AddRange(outerPoints);
+        // Close the loop
+        if (_outerBoundaryTrack.Count > 2)
+            _outerBoundaryTrack.Add(_outerBoundaryTrack[0]);
 
         // Generate inner boundary track
         _innerBoundaryTrack.Clear();
         var innerPoints = offsetService.GenerateInnerTramline(fenceLineList, tramWidth, halfWheelTrack);
         _innerBoundaryTrack.AddRange(innerPoints);
+        if (_innerBoundaryTrack.Count > 2)
+            _innerBoundaryTrack.Add(_innerBoundaryTrack[0]);
 
         TramLinesUpdated?.Invoke(this, EventArgs.Empty);
     }

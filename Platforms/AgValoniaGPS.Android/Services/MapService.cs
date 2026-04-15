@@ -231,6 +231,11 @@ public class MapService : IMapService
         _mapControl?.SetTramLines(outerTrack, innerTrack, parallelLines);
     }
 
+    public void SetTramControlByte(byte controlByte)
+    {
+        _mapControl?.SetTramControlByte(controlByte);
+    }
+
     // Track visualization for U-turns
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track)
     {

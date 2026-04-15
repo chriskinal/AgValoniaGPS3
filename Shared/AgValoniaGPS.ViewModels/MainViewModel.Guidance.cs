@@ -44,6 +44,7 @@ public partial class MainViewModel
         {
             GpsToPgnLatencyMs = state.TotalLatencyMs;
             TramControlByte = state.TramState;
+            _mapService.SetTramControlByte(state.TramState);
         }
         else
         {
@@ -51,6 +52,7 @@ public partial class MainViewModel
             {
                 GpsToPgnLatencyMs = state.TotalLatencyMs;
                 TramControlByte = state.TramState;
+                _mapService.SetTramControlByte(state.TramState);
             });
         }
     }

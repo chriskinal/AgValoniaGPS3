@@ -110,6 +110,7 @@ public interface ISharedMapControl
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
         IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines);
+    void SetTramControlByte(byte controlByte);
 
     // Recorded path / contour strip visualization
     void SetRecordedPaths(IReadOnlyList<AgValoniaGPS.Models.Track.Track> paths);
@@ -445,6 +446,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramOuterTrack;
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramInnerTrack;
     private IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? _tramParallelLines;
+    private byte _tramControlByte;
 
     // Coverage patches for worked area display
     private IReadOnlyList<CoveragePatch> _coveragePatches = Array.Empty<CoveragePatch>();
@@ -821,7 +823,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             TramParallelLines = _tramParallelLines,
             TramDisplayMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.DisplayMode,
             TramAlpha = (float)AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.Alpha,
-            TramControlByte = _vm?.TramControlByte ?? 0,
+            TramControlByte = _tramControlByte,
             HalfWheelTrack = vehicleCfg.TrackWidth / 2.0,
             IsDisplayTramControl = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.IsDisplayTramControl,
 
@@ -2551,6 +2553,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         _tramInnerTrack = innerTrack;
         _tramParallelLines = parallelLines;
         SendStateToHandler();
+    }
+
+    public void SetTramControlByte(byte controlByte)
+    {
+        _tramControlByte = controlByte;
     }
 
     public void SetClipLine(AgValoniaGPS.Models.Base.Vec2? start, AgValoniaGPS.Models.Base.Vec2? end)
