@@ -1028,7 +1028,9 @@ public partial class MainViewModel
 
         BuildTramLinesCommand = new RelayCommand(() =>
         {
-            if (SelectedTrack == null || SelectedTrack.Points.Count < 2)
+            // Systems resolve their own references; only require selected track for legacy mode
+            if (ConfigStore.Tram.Systems.Count == 0 &&
+                (SelectedTrack == null || SelectedTrack.Points.Count < 2))
             {
                 ShowErrorDialog("No Track Selected",
                     "Select an AB line or curve track before building tram lines.");
@@ -1038,7 +1040,11 @@ public partial class MainViewModel
             ConfigStore.Tram.DisplayMode = Models.Configuration.TramDisplayMode.All;
             ConfigStore.Guidance.TramDisplay = true;
             UpdateTramLines(SelectedTrack);
-            StatusMessage = $"Tram lines built from '{SelectedTrack.Name}'";
+            OnPropertyChanged(nameof(TramDisplayIcon));
+            OnPropertyChanged(nameof(TramDisplayLabel));
+            StatusMessage = ConfigStore.Tram.Systems.Count > 0
+                ? $"Tram lines built from {ConfigStore.Tram.Systems.Count} system(s)"
+                : $"Tram lines built from '{SelectedTrack!.Name}'";
         });
 
         ShowTramSettingsCommand = new RelayCommand(() =>
