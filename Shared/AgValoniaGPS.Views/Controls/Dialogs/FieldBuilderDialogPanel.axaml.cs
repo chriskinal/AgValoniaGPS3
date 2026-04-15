@@ -1445,6 +1445,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private AgValoniaGPS.Models.Tram.TramSystem? _editingTramSystem;
     private bool _isCreatingNewSystem;
+    private bool _isPopulatingTramEdit;
     private (string? RefTrack, int RefBndIdx, double Width, AgValoniaGPS.Models.Tram.TramSystemMode Mode,
              double Offset, AgValoniaGPS.Models.Tram.TramDirection Dir, int Passes, bool Enabled) _editSnapshot;
 
@@ -1485,9 +1486,11 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (title != null) title.Text = $"Edit: {sys.Name}";
 
         // Populate reference combo (exclude recorded paths and contours)
+        // Suppress SelectionChanged during population to prevent overwriting system values
         var combo = this.FindControl<ComboBox>("TramRefCombo");
         if (combo != null && DataContext is MainViewModel vm)
         {
+            _isPopulatingTramEdit = true;
             var items = new System.Collections.Generic.List<string> { "(Boundary)" };
             foreach (var t in vm.SavedTracks)
             {
@@ -1498,6 +1501,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             }
             combo.ItemsSource = items;
             combo.SelectedItem = sys.ReferenceTrackName ?? "(Boundary)";
+            _isPopulatingTramEdit = false;
         }
 
         // Populate fields
@@ -1531,6 +1535,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void TramRefCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (_isPopulatingTramEdit) return;
         if (_editingTramSystem == null || sender is not ComboBox combo) return;
         var sel = combo.SelectedItem as string;
         if (sel == "(Boundary)")
