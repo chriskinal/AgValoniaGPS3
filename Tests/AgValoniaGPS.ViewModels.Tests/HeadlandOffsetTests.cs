@@ -504,6 +504,81 @@ public class HeadlandOffsetTests
         Assert.That(vm.HasHeadland, Is.True);
     }
 
+    [Test]
+    public void BoundaryHeadland_PlusABLine_OnClipper2Polygon_4PointOffset()
+    {
+        // Exact reproduction: Clipper2 headland (many points) + AB line with 4 offset points.
+        // Use a dense circular boundary (260 pts) like the user's real field.
+        // The Clipper2 offset produces a polygon with many short edges.
+        // The AB line's 4-point offset must find 2 different intersection points.
+        var vm = CreateVm();
+
+        // Create a dense circular boundary (simulates GPS-recorded field)
+        var bndPts = new System.Collections.Generic.List<Models.BoundaryPoint>();
+        int n = 260;
+        for (int i = 0; i < n; i++)
+        {
+            double angle = 2 * Math.PI * i / n;
+            double radius = 200 + 30 * Math.Sin(3 * angle); // Slightly irregular
+            bndPts.Add(new Models.BoundaryPoint(
+                radius * Math.Cos(angle),
+                radius * Math.Sin(angle),
+                angle + Math.PI / 2));
+        }
+
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon { Points = bndPts }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, boundary);
+
+        // Segment 1: full boundary headland (closed curve, Clipper2 offset)
+        var bndVec3 = bndPts.Select(p => new Vec3(p.Easting, p.Northing, p.Heading)).ToList();
+        bndVec3.Add(bndVec3[0]); // close
+        var bndSeg = new HeadlandSegment
+        {
+            Name = "Boundary",
+            Type = HeadlandSegmentType.Curve,
+            Offset = 20,
+            BoundaryPoints = bndVec3
+        };
+        vm.ComputeSegmentOffset(bndSeg);
+        vm.HeadlandSegments.Add(bndSeg);
+
+        Assert.That(bndSeg.OffsetPoints.Count, Is.GreaterThan(50),
+            $"Clipper2 should produce many offset points, got {bndSeg.OffsetPoints.Count}");
+
+        // Segment 2: AB line cutting across the field (2 offset pts -> 4 with extensions)
+        var abSeg = new HeadlandSegment
+        {
+            Name = "AB Line",
+            Type = HeadlandSegmentType.Line,
+            Offset = 15,
+            BoundaryPoints = new()
+            {
+                new Vec3(-150, 0, Math.PI / 2),
+                new Vec3(150, 0, Math.PI / 2)
+            },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+        vm.ComputeSegmentOffset(abSeg);
+        vm.HeadlandSegments.Add(abSeg);
+
+        Assert.That(abSeg.OffsetPoints.Count, Is.EqualTo(2),
+            "AB line should have exactly 2 offset points");
+
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(bndSeg.IsEffective, Is.True, "Boundary headland effective");
+        Assert.That(abSeg.IsEffective, Is.True,
+            $"AB line must be effective on Clipper2 polygon ({bndSeg.OffsetPoints.Count} pts). " +
+            "4-point offset search must find 2 different intersections on the headland polygon.");
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -

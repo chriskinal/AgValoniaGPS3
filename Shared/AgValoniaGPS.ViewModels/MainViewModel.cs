@@ -3546,13 +3546,13 @@ public partial class MainViewModel : ObservableObject
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
             int endOffsetSegIdx = -1; // Which offset line segment the end intersection is on
-            // End search must not overlap with start search to avoid finding the same intersection
-            int startSearchEnd = System.Math.Min(halfCount, offsetLine.Count - 1);
-            int endStart = System.Math.Max(startSearchEnd, offsetLine.Count - halfCount);
-            // Search from end backward to find the far-end intersection first
+            int endStart = System.Math.Max(1, offsetLine.Count - halfCount);
+            // Search from end backward, finding the FARTHEST intersection from segment start
+            // (opposite of start search which finds closest). This ensures start and end
+            // find different intersections even when checking the same offset segment.
             for (int oi = offsetLine.Count - 1; oi >= endStart && endIntersectIdx < 0; oi--)
             {
-                endIntersectIdx = FindLineHeadlandIntersection(offsetLine[oi - 1], offsetLine[oi], headland, out endIntersectPt);
+                endIntersectIdx = FindLineHeadlandIntersectionFarthest(offsetLine[oi - 1], offsetLine[oi], headland, out endIntersectPt);
                 if (endIntersectIdx >= 0) endOffsetSegIdx = oi - 1;
             }
 
@@ -3805,6 +3805,44 @@ public partial class MainViewModel : ObservableObject
                             hp1.Easting + u * (hp2.Easting - hp1.Easting),
                             hp1.Northing + u * (hp2.Northing - hp1.Northing),
                             hp1.Heading);
+                    }
+                }
+            }
+        }
+
+        return bestIdx;
+    }
+
+    /// <summary>Same as FindLineHeadlandIntersection but returns the FARTHEST intersection from lineStart.</summary>
+    private static int FindLineHeadlandIntersectionFarthest(Vec3 lineStart, Vec3 lineDir, List<Vec3> headland, out Vec3 intersectionPoint)
+    {
+        double bestDist = -1;
+        int bestIdx = -1;
+        intersectionPoint = default;
+
+        for (int i = 0; i < headland.Count - 1; i++)
+        {
+            var p1 = headland[i];
+            var p2 = headland[i + 1];
+
+            if (LineSegmentIntersection(
+                lineStart.Easting, lineStart.Northing, lineDir.Easting, lineDir.Northing,
+                p1.Easting, p1.Northing, p2.Easting, p2.Northing,
+                out double t, out double u))
+            {
+                if (t >= 0 && t <= 1)
+                {
+                    double dx = lineDir.Easting - lineStart.Easting;
+                    double dy = lineDir.Northing - lineStart.Northing;
+                    double dist = System.Math.Sqrt(dx * dx + dy * dy) * t;
+                    if (dist > bestDist)
+                    {
+                        bestDist = dist;
+                        bestIdx = i;
+                        intersectionPoint = new Vec3(
+                            headland[i].Easting + u * (headland[i + 1].Easting - headland[i].Easting),
+                            headland[i].Northing + u * (headland[i + 1].Northing - headland[i].Northing),
+                            headland[i].Heading);
                     }
                 }
             }
