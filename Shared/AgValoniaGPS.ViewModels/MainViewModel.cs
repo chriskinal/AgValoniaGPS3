@@ -1777,13 +1777,9 @@ public partial class MainViewModel : ObservableObject
                     continue;
                 }
 
-                // Track reference system: resolve track and generate parallel lines
-                Track? refTrack = null;
-                if (sys.ReferenceTrackName != null)
-                    refTrack = SavedTracks.FirstOrDefault(t => t.Name == sys.ReferenceTrackName);
-                else
-                    refTrack = track; // fallback to selected track
-
+                // Track reference system: resolve by name only, skip if missing
+                if (string.IsNullOrEmpty(sys.ReferenceTrackName)) continue;
+                var refTrack = SavedTracks.FirstOrDefault(t => t.Name == sys.ReferenceTrackName);
                 if (refTrack == null || refTrack.Points.Count < 2) continue;
 
                 int startIdx = _tramLineService.ParallelTramLines.Count;
