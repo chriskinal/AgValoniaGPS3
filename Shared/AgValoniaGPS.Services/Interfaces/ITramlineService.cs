@@ -52,6 +52,14 @@ public interface ITramLineService
     void SetBoundaryFence(IReadOnlyList<Vec3>? fence);
 
     /// <summary>
+    /// Generate tram lines for a specific TramSystem with full options.
+    /// </summary>
+    List<List<Vec2>> GenerateForSystem(
+        Models.Tram.TramSystem system,
+        Models.Track.Track referenceTrack,
+        double fieldWidth);
+
+    /// <summary>
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>

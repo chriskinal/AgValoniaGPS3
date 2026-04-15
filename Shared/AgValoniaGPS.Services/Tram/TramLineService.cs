@@ -113,6 +113,73 @@ public class TramLineService(
     }
 
     /// <summary>
+    /// Generate tram lines for a TramSystem with full options:
+    /// direction (left/right/symmetric), mode (track line/edge), pass count.
+    /// </summary>
+    public List<List<Vec2>> GenerateForSystem(
+        Models.Tram.TramSystem system,
+        Models.Track.Track referenceTrack,
+        double fieldWidth)
+    {
+        if (referenceTrack == null || referenceTrack.Points.Count < 2)
+            return new List<List<Vec2>>();
+
+        var config = ConfigurationStore.Instance;
+        double tramWidth = system.TramWidth;
+        double halfWheelTrack = config.Vehicle.TrackWidth / 2.0;
+        double systemOffset = system.Offset;
+        var result = new List<List<Vec2>>();
+
+        int numLines = system.PassCount > 0
+            ? system.PassCount
+            : (int)(fieldWidth / tramWidth) + 2;
+
+        List<Vec3>? fenceLine = _boundaryFence;
+
+        for (int i = 0; i < numLines; i++)
+        {
+            double baseOffset = (tramWidth * 0.5) + (tramWidth * i) + systemOffset;
+
+            // Generate based on direction
+            bool doPositive = system.Direction is Models.Tram.TramDirection.Symmetric
+                or Models.Tram.TramDirection.Right;
+            bool doNegative = system.Direction is Models.Tram.TramDirection.Symmetric
+                or Models.Tram.TramDirection.Left;
+
+            if (doPositive)
+                AddPassLines(result, referenceTrack, baseOffset, halfWheelTrack, system.Mode, fenceLine);
+            if (doNegative)
+                AddPassLines(result, referenceTrack, -baseOffset, halfWheelTrack, system.Mode, fenceLine);
+        }
+
+        return result;
+    }
+
+    private void AddPassLines(
+        List<List<Vec2>> result,
+        Models.Track.Track track,
+        double centerOffset,
+        double halfWheelTrack,
+        Models.Tram.TramSystemMode mode,
+        List<Vec3>? fence)
+    {
+        if (mode == Models.Tram.TramSystemMode.TrackLine)
+        {
+            // Two lines: outer and inner wheel tracks
+            var outer = OffsetTrackLaterally(track, centerOffset - halfWheelTrack, fence);
+            if (outer.Count > 1) result.Add(outer);
+            var inner = OffsetTrackLaterally(track, centerOffset + halfWheelTrack, fence);
+            if (inner.Count > 1) result.Add(inner);
+        }
+        else
+        {
+            // Edge mode: single line at implement edge
+            var line = OffsetTrackLaterally(track, centerOffset, fence);
+            if (line.Count > 1) result.Add(line);
+        }
+    }
+
+    /// <summary>
     /// Generate parallel tram lines from a guidance track.
     /// Each tram pass produces two lines: inner and outer wheel tracks.
     /// Lines are clipped to the boundary fence.
