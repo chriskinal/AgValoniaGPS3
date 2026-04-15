@@ -3263,6 +3263,38 @@ public partial class MainViewModel : ObservableObject
         foreach (var seg in HeadlandSegments)
         {
             if (seg.OffsetPoints.Count < 2) continue;
+
+            // Detect closed-loop offset (boundary covers full polygon)
+            // If first and last boundary points are the same, the offset is a closed polygon
+            double bndCloseDist = seg.BoundaryPoints.Count >= 3
+                ? System.Math.Sqrt(
+                    System.Math.Pow(seg.BoundaryPoints[0].Easting - seg.BoundaryPoints[^1].Easting, 2) +
+                    System.Math.Pow(seg.BoundaryPoints[0].Northing - seg.BoundaryPoints[^1].Northing, 2))
+                : double.MaxValue;
+
+            if (bndCloseDist < 5.0 && seg.OffsetPoints.Count >= 4)
+            {
+                // Closed boundary segment - use offset directly as headland polygon
+                var closedPoly = new List<Vec3>(seg.OffsetPoints);
+                closedPoly.Add(closedPoly[0]); // close the loop
+
+                // Use centroid-based selection (same as closed loop handling)
+                double cx = 0, cy = 0;
+                var bndPts = bnd.Points;
+                foreach (var bp in bndPts) { cx += bp.Easting; cy += bp.Northing; }
+                cx /= bndPts.Count; cy /= bndPts.Count;
+
+                bool containsCentroid = IsPointInPolygon(cx, cy, closedPoly);
+                if (containsCentroid)
+                {
+                    headland = closedPoly;
+                    seg.IsEffective = true;
+                    cutsApplied++;
+                    _logger.LogDebug($"[Headland] Closed boundary offset '{seg.Name}' used as headland ({closedPoly.Count} pts)");
+                    continue;
+                }
+            }
+
             var ol = BuildOffsetLineWithExtensions(seg);
             offsetLines.Add((new List<Models.Headland.HeadlandSegment> { seg }, ol));
         }
