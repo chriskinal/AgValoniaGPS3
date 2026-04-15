@@ -4446,9 +4446,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 IsAntialias = true
             };
 
-            // Mode All or LinesOnly: draw parallel tram lines
-            if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
-                || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.LinesOnly) && hasLines)
+            // Draw parallel tram lines (All, LinesOnly, or OuterOnly for boundary extra passes)
+            if ((s.TramDisplayMode != AgValoniaGPS.Models.Configuration.TramDisplayMode.Off) && hasLines)
             {
                 foreach (var line in s.TramParallelLines!)
                 {
