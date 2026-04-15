@@ -187,6 +187,48 @@ sealed class Program
             }
         }
 
+        // Try loading "UserField" if it exists, otherwise create a new one
+        var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+        var userFieldDir = System.IO.Path.Combine(settingsService.Settings.FieldsDirectory, "UserField");
+        if (System.IO.Directory.Exists(userFieldDir) && System.IO.File.Exists(System.IO.Path.Combine(userFieldDir, "Boundary.txt")))
+        {
+            Console.Write("[TestField] Loading UserField... ");
+            try
+            {
+                await vm.OpenFieldAsync(userFieldDir, "UserField");
+                await PumpUI(500);
+
+                if (vm.IsFieldOpen)
+                {
+                    // Add an AB track if none exist
+                    if (vm.SavedTracks.Count == 0)
+                    {
+                        var bnd = vm.CurrentBoundary?.OuterBoundary?.Points;
+                        if (bnd != null && bnd.Count > 0)
+                        {
+                            double cx = bnd.Average(p => p.Easting);
+                            double cy = bnd.Average(p => p.Northing);
+                            var userTrack = new AgValoniaGPS.Models.Track.Track
+                            {
+                                Name = "AB_Test",
+                                Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+                                    { new(cx, cy - 200, 0), new(cx, cy + 200, 0) },
+                                Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+                                IsVisible = true, IsActive = true
+                            };
+                            vm.SavedTracks.Add(userTrack);
+                            vm.SelectedTrack = userTrack;
+                        }
+                    }
+                    ConfigurationStore.Instance.Tool.Width = 12.0;
+                    ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+                    Console.WriteLine($"boundary={vm.HasBoundary} headland={vm.HasHeadland} tracks={vm.SavedTracks.Count} OK");
+                    return;
+                }
+            }
+            catch (Exception ex) { Console.Write($"({ex.Message}) "); }
+        }
+
         // Create field
         vm.NewFieldName = "RemoteTestField";
         vm.NewFieldLatitude = 42.0308;
