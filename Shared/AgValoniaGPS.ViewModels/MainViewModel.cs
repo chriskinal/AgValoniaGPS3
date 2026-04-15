@@ -3546,7 +3546,9 @@ public partial class MainViewModel : ObservableObject
             int endIntersectIdx = -1;
             Vec3 endIntersectPt = default;
             int endOffsetSegIdx = -1; // Which offset line segment the end intersection is on
-            int endStart = System.Math.Max(1, offsetLine.Count - halfCount);
+            // End search must not overlap with start search to avoid finding the same intersection
+            int startSearchEnd = System.Math.Min(halfCount, offsetLine.Count - 1);
+            int endStart = System.Math.Max(startSearchEnd, offsetLine.Count - halfCount);
             // Search from end backward to find the far-end intersection first
             for (int oi = offsetLine.Count - 1; oi >= endStart && endIntersectIdx < 0; oi--)
             {
