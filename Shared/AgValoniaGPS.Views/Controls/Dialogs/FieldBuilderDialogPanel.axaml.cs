@@ -1371,6 +1371,56 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (renameOverlay != null) renameOverlay.IsVisible = false;
     }
 
+    // --- Tram System CRUD ---
+
+    private void AddTramSystem_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var sys = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = $"System {vm.TramSystems.Count + 1}",
+            TramWidth = 24.0,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            ReferenceTrackName = vm.SelectedTrack?.Name
+        };
+        vm.TramSystems.Add(sys);
+        // TODO: open edit panel for the new system
+    }
+
+    private void EditTramSystem_Click(object? sender, RoutedEventArgs e)
+    {
+        // TODO: open per-system settings panel
+        if (sender is Avalonia.Controls.Button btn && btn.DataContext is AgValoniaGPS.Models.Tram.TramSystem sys)
+        {
+            // For now, just select it
+            if (DataContext is MainViewModel vm)
+                vm.StatusMessage = $"Editing '{sys.Name}' - per-system panel TODO";
+        }
+    }
+
+    private void DeleteTramSystem_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Button btn && btn.DataContext is AgValoniaGPS.Models.Tram.TramSystem sys)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.TramSystems.Remove(sys);
+                vm.BuildTramLinesCommand?.Execute(null);
+            }
+        }
+    }
+
+    private void WheelTrackInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var input = sender as Avalonia.Controls.TextBox;
+        if (input != null && double.TryParse(input.Text, out double width) && width > 0)
+        {
+            Models.Configuration.ConfigurationStore.Instance.Vehicle.TrackWidth = width;
+        }
+    }
+
     // --- Preview Rendering ---
 
     private void UpdatePreview()

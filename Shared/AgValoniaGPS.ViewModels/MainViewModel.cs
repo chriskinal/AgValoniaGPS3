@@ -3022,6 +3022,7 @@ public partial class MainViewModel : ObservableObject
     public int TramPasses => ConfigStore.Tram.Passes;
     public int TramStartPass => ConfigStore.Tram.StartPass;
     public double TramWidth => ConfigStore.Tram.TramWidth;
+    public System.Collections.ObjectModel.ObservableCollection<Models.Tram.TramSystem> TramSystems => ConfigStore.Tram.Systems;
     public string TramToolWidthDisplay => $"{ConfigStore.ActualToolWidth:F2} m";
     public string TramWidthDisplay => $"{ConfigStore.Tram.TramWidth:F2} m";
     public string TramTrackWidthDisplay => $"{ConfigStore.Vehicle.TrackWidth:F2} m";
