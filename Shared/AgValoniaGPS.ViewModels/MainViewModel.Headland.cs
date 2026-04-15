@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AgValoniaGPS.Models.Base;
+using Microsoft.Extensions.Logging;
 
 namespace AgValoniaGPS.ViewModels;
 
