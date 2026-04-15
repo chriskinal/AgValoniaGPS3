@@ -53,73 +53,63 @@ public class TramLineOffsetService : ITramLineOffsetService
 
     /// <summary>
     /// Core algorithm to generate tramline offset from boundary fence line.
-    /// Uses edge normals (computed from consecutive points) instead of stored headings
-    /// for consistent offset direction, especially on sparse polygons.
+    /// Uses edge-based offset: shift each edge perpendicular, then intersect
+    /// consecutive offset edges. This avoids corner overshoot from per-point
+    /// normal averaging.
     /// </summary>
     private List<Vec2> GenerateTramlineOffset(List<Vec3> fenceLine, double offset)
     {
         if (fenceLine == null || fenceLine.Count < 2)
-        {
             return new List<Vec2>();
-        }
 
         var tramline = new List<Vec2>();
         int ptCount = fenceLine.Count;
-        double distSq = offset * offset * 0.999; // Distance threshold for collision detection
 
-        // Process each fence point
-        for (int i = 0; i < ptCount; i++)
+        // Build offset edges: shift each edge perpendicular by offset distance
+        var offEdges = new List<(double ax, double ay, double bx, double by)>();
+        for (int i = 0; i < ptCount - 1; i++)
         {
-            // Compute heading from consecutive points (edge normal) rather than stored heading
-            // This handles sparse polygons correctly
-            int prev = (i - 1 + ptCount) % ptCount;
-            int next = (i + 1) % ptCount;
-            double dx = fenceLine[next].Easting - fenceLine[prev].Easting;
-            double dy = fenceLine[next].Northing - fenceLine[prev].Northing;
-            double edgeHeading = Math.Atan2(dx, dy);
+            double dx = fenceLine[i + 1].Easting - fenceLine[i].Easting;
+            double dy = fenceLine[i + 1].Northing - fenceLine[i].Northing;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001) continue;
 
-            Vec3 fencePoint = fenceLine[i];
-            var offsetPoint = new Vec2(
-                fencePoint.Easting - (Math.Sin(PIBy2 + edgeHeading) * offset),
-                fencePoint.Northing - (Math.Cos(PIBy2 + edgeHeading) * offset)
-            );
+            // Perpendicular normal (inward)
+            double nx = -dy / len * offset;
+            double ny = dx / len * offset;
+            offEdges.Add((
+                fenceLine[i].Easting + nx, fenceLine[i].Northing + ny,
+                fenceLine[i + 1].Easting + nx, fenceLine[i + 1].Northing + ny));
+        }
 
-            // Check if offset point collides with fence line
-            bool shouldAdd = true;
-            for (int j = 0; j < ptCount; j++)
+        if (offEdges.Count == 0) return tramline;
+
+        // First offset point
+        tramline.Add(new Vec2(offEdges[0].ax, offEdges[0].ay));
+
+        // Intersect consecutive offset edges to find corner points
+        for (int i = 0; i < offEdges.Count - 1; i++)
+        {
+            var e1 = offEdges[i];
+            var e2 = offEdges[i + 1];
+            double denom = (e1.bx - e1.ax) * (e2.by - e2.ay) - (e1.by - e1.ay) * (e2.bx - e2.ax);
+            if (Math.Abs(denom) > 1e-10)
             {
-                double distanceSquared = GeometryMath.DistanceSquared(
-                    offsetPoint.Northing, offsetPoint.Easting,
-                    fenceLine[j].Northing, fenceLine[j].Easting);
-
-                if (distanceSquared < distSq)
-                {
-                    shouldAdd = false;
-                    break;
-                }
+                double t = ((e2.ax - e1.ax) * (e2.by - e2.ay) - (e2.ay - e1.ay) * (e2.bx - e2.ax)) / denom;
+                double ix = e1.ax + t * (e1.bx - e1.ax);
+                double iy = e1.ay + t * (e1.by - e1.ay);
+                tramline.Add(new Vec2(ix, iy));
             }
-
-            // If no collision, check spacing from last added point
-            if (shouldAdd)
+            else
             {
-                if (tramline.Count > 0)
-                {
-                    Vec2 lastPoint = tramline[tramline.Count - 1];
-                    double spacingSquared = GeometryMath.DistanceSquared(offsetPoint, lastPoint);
-
-                    // Only add if far enough from last point
-                    if (spacingSquared > MinSpacingSquared)
-                    {
-                        tramline.Add(offsetPoint);
-                    }
-                }
-                else
-                {
-                    // First point, always add
-                    tramline.Add(offsetPoint);
-                }
+                // Parallel edges - use endpoint
+                tramline.Add(new Vec2(e1.bx, e1.by));
             }
         }
+
+        // Last offset point
+        var last = offEdges[^1];
+        tramline.Add(new Vec2(last.bx, last.by));
 
         return tramline;
     }

@@ -223,9 +223,22 @@ sealed class Program
 
         Console.Write($"boundary={vm.HasBoundary} ");
 
-        // Build headland
+        // Build headland with a boundary offset segment (20m inset)
         vm.HeadlandDistance = 20;
-        vm.BuildHeadlandCommand?.Execute(null);
+        var headlandSeg = new AgValoniaGPS.Models.Headland.HeadlandSegment
+        {
+            Name = "Boundary",
+            Type = AgValoniaGPS.Models.Headland.HeadlandSegmentType.Boundary,
+            Offset = 20,
+            BoundaryPoints = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(0, 0, 0), new(200, 0, Math.PI / 2),
+                new(200, 200, Math.PI), new(0, 200, 3 * Math.PI / 2), new(0, 0, 0)
+            }
+        };
+        vm.ComputeSegmentOffset(headlandSeg);
+        vm.HeadlandSegments.Add(headlandSeg);
+        vm.BuildHeadlandFromSegments();
         await PumpUI(500);
 
         Console.Write($"headland={vm.HasHeadland} ");
