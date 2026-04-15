@@ -621,4 +621,716 @@ public class TramLineTests
             }
         }
     }
+
+    // ---------------------------------------------------------------
+    // TramSystemFileService save/load round-trip tests
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void TramSystemFileService_SaveAndLoad_PreservesAllProperties()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "tram_sys_test_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var systems = new List<AgValoniaGPS.Models.Tram.TramSystem>
+            {
+                new()
+                {
+                    Name = "Sprayer Tracks",
+                    ReferenceTrackName = "AB Line 1",
+                    ReferenceBoundaryIndex = -1,
+                    TramWidth = 36.0,
+                    Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+                    Offset = 2.5,
+                    Direction = AgValoniaGPS.Models.Tram.TramDirection.Left,
+                    PassCount = 5,
+                    IsEnabled = true
+                },
+                new()
+                {
+                    Name = "Fertilizer",
+                    ReferenceTrackName = "Curve 1",
+                    ReferenceBoundaryIndex = -1,
+                    TramWidth = 18.0,
+                    Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+                    Offset = -1.0,
+                    Direction = AgValoniaGPS.Models.Tram.TramDirection.Right,
+                    PassCount = 3,
+                    IsEnabled = false
+                }
+            };
+
+            TramSystemFileService.Save(tempDir, systems);
+            var loaded = TramSystemFileService.Load(tempDir);
+
+            Assert.That(loaded.Count, Is.EqualTo(2));
+
+            Assert.That(loaded[0].Name, Is.EqualTo("Sprayer Tracks"));
+            Assert.That(loaded[0].ReferenceTrackName, Is.EqualTo("AB Line 1"));
+            Assert.That(loaded[0].ReferenceBoundaryIndex, Is.EqualTo(-1));
+            Assert.That(loaded[0].TramWidth, Is.EqualTo(36.0).Within(0.001));
+            Assert.That(loaded[0].Mode, Is.EqualTo(AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine));
+            Assert.That(loaded[0].Offset, Is.EqualTo(2.5).Within(0.001));
+            Assert.That(loaded[0].Direction, Is.EqualTo(AgValoniaGPS.Models.Tram.TramDirection.Left));
+            Assert.That(loaded[0].PassCount, Is.EqualTo(5));
+            Assert.That(loaded[0].IsEnabled, Is.True);
+
+            Assert.That(loaded[1].Name, Is.EqualTo("Fertilizer"));
+            Assert.That(loaded[1].Mode, Is.EqualTo(AgValoniaGPS.Models.Tram.TramSystemMode.Edge));
+            Assert.That(loaded[1].Direction, Is.EqualTo(AgValoniaGPS.Models.Tram.TramDirection.Right));
+            Assert.That(loaded[1].IsEnabled, Is.False);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Test]
+    public void TramSystemFileService_SaveEmptyList_LoadReturnsEmpty()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "tram_sys_empty_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            TramSystemFileService.Save(tempDir, new List<AgValoniaGPS.Models.Tram.TramSystem>());
+            var loaded = TramSystemFileService.Load(tempDir);
+
+            Assert.That(loaded.Count, Is.EqualTo(0));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Test]
+    public void TramSystemFileService_LoadNonexistentFile_ReturnsEmpty()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "tram_sys_nofile_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var loaded = TramSystemFileService.Load(tempDir);
+            Assert.That(loaded.Count, Is.EqualTo(0));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Test]
+    public void TramSystemFileService_BoundarySystem_PreservesBoundaryIndex()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "tram_sys_bnd_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var systems = new List<AgValoniaGPS.Models.Tram.TramSystem>
+            {
+                new()
+                {
+                    Name = "Boundary Tram",
+                    ReferenceTrackName = null,
+                    ReferenceBoundaryIndex = 0,
+                    TramWidth = 24.0,
+                    Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+                    PassCount = 2,
+                    IsEnabled = true
+                }
+            };
+
+            TramSystemFileService.Save(tempDir, systems);
+            var loaded = TramSystemFileService.Load(tempDir);
+
+            Assert.That(loaded.Count, Is.EqualTo(1));
+            Assert.That(loaded[0].ReferenceBoundaryIndex, Is.EqualTo(0));
+            Assert.That(loaded[0].ReferenceTrackName, Is.Null);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Test]
+    public void TramSystemFileService_TrackLineVsEdgeMode_PersistsCorrectly()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "tram_sys_mode_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var systems = new List<AgValoniaGPS.Models.Tram.TramSystem>
+            {
+                new()
+                {
+                    Name = "TrackLineSystem",
+                    Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+                    TramWidth = 24.0
+                },
+                new()
+                {
+                    Name = "EdgeSystem",
+                    Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+                    TramWidth = 24.0
+                }
+            };
+
+            TramSystemFileService.Save(tempDir, systems);
+            var loaded = TramSystemFileService.Load(tempDir);
+
+            Assert.That(loaded[0].Mode, Is.EqualTo(AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine));
+            Assert.That(loaded[1].Mode, Is.EqualTo(AgValoniaGPS.Models.Tram.TramSystemMode.Edge));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // GenerateForSystem generation tests
+    // ---------------------------------------------------------------
+
+    private static Track MakeNorthSouthABLine()
+    {
+        return new Track
+        {
+            Name = "NS Line",
+            Points = new List<Vec3> { new Vec3(0, 0, 0), new Vec3(0, 200, 0) },
+            Type = TrackType.ABLine
+        };
+    }
+
+    [Test]
+    public void GenerateForSystem_TrackMode_Pass0AtOffset0_GeneratesLinesAtReference()
+    {
+        // Track mode pass 0 has baseOffset = tramWidth*0 + 0 = 0
+        // So wheel tracks are at +/- halfWheelTrack from the reference line (easting=0)
+        var track = MakeNorthSouthABLine();
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 1,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0), "Should generate lines for pass 0");
+
+        // Pass 0 in TrackLine mode: baseOffset = 0, wheel tracks at +/- 0.9
+        double halfWheelTrack = ConfigurationStore.Instance.Vehicle.TrackWidth / 2.0;
+        bool hasNearCenter = lines.Any(line =>
+            line.Count > 0 && Math.Abs(line[line.Count / 2].Easting) < halfWheelTrack + 1.0);
+        Assert.That(hasNearCenter, Is.True,
+            "Track mode pass 0 should have lines near the reference (within halfWheelTrack)");
+    }
+
+    [Test]
+    public void GenerateForSystem_EdgeMode_OffsetByHalfTramWidth()
+    {
+        // Edge mode pass 0 has baseOffset = tramWidth/2 = 12.0
+        var track = MakeNorthSouthABLine();
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 1,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0));
+
+        // Edge mode pass 0: baseOffset=12, wheel tracks at 12-0.9=11.1 and 12+0.9=12.9
+        double halfWheelTrack = ConfigurationStore.Instance.Vehicle.TrackWidth / 2.0;
+        double expectedCenter = 24.0 / 2.0;
+        bool hasAtExpectedOffset = lines.Any(line =>
+            line.Count > 0 &&
+            Math.Abs(Math.Abs(line[line.Count / 2].Easting) - (expectedCenter - halfWheelTrack)) < 2.0);
+        Assert.That(hasAtExpectedOffset, Is.True,
+            "Edge mode pass 0 should have lines near tramWidth/2 from reference");
+    }
+
+    [Test]
+    public void GenerateForSystem_LeftDirection_OnlyNegativeSideAndCenter()
+    {
+        var track = MakeNorthSouthABLine();
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Left Only",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Left,
+            PassCount = 3,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0));
+
+        // Left direction generates negative offsets. In TrackLine mode the reference
+        // line heading is 0 (north), so perpendicular is east. Negative offset = west (easting < 0).
+        // Pass 0 at offset 0 produces lines at +/- halfWheelTrack.
+        // Passes 1,2 at -24, -48 produce lines further negative.
+        // No line midpoint should be far positive.
+        double halfWheelTrack = ConfigurationStore.Instance.Vehicle.TrackWidth / 2.0;
+        foreach (var line in lines)
+        {
+            if (line.Count > 0)
+            {
+                double midEasting = line[line.Count / 2].Easting;
+                // Allow pass 0 center lines near 0 but no large positive offsets
+                Assert.That(midEasting, Is.LessThan(halfWheelTrack + 2.0),
+                    $"Left-only should not have lines at large positive offset, got easting={midEasting:F1}");
+            }
+        }
+    }
+
+    [Test]
+    public void GenerateForSystem_RightDirection_OnlyPositiveSide()
+    {
+        var track = MakeNorthSouthABLine();
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Right Only",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Right,
+            PassCount = 3,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0));
+
+        double halfWheelTrack = ConfigurationStore.Instance.Vehicle.TrackWidth / 2.0;
+        foreach (var line in lines)
+        {
+            if (line.Count > 0)
+            {
+                double midEasting = line[line.Count / 2].Easting;
+                Assert.That(midEasting, Is.GreaterThan(-halfWheelTrack - 2.0),
+                    $"Right-only should not have lines at large negative offset, got easting={midEasting:F1}");
+            }
+        }
+    }
+
+    [Test]
+    public void GenerateForSystem_Symmetric_GeneratesBothSides()
+    {
+        var track = MakeNorthSouthABLine();
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Symmetric",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 2,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0));
+
+        bool hasPositive = false, hasNegative = false;
+        foreach (var line in lines)
+        {
+            if (line.Count > 0)
+            {
+                double mid = line[line.Count / 2].Easting;
+                if (mid > 5.0) hasPositive = true;
+                if (mid < -5.0) hasNegative = true;
+            }
+        }
+        Assert.That(hasPositive, Is.True, "Symmetric should have lines on positive side");
+        Assert.That(hasNegative, Is.True, "Symmetric should have lines on negative side");
+    }
+
+    [Test]
+    public void GenerateForSystem_PassCount2_GeneratesMoreLinesThanPassCount1()
+    {
+        var track = MakeNorthSouthABLine();
+
+        var system1 = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "1 Pass",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 1,
+            IsEnabled = true
+        };
+
+        var system2 = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "2 Pass",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 2,
+            IsEnabled = true
+        };
+
+        var lines1 = _service.GenerateForSystem(system1, track, 200);
+        var lines2 = _service.GenerateForSystem(system2, track, 200);
+
+        Assert.That(lines2.Count, Is.GreaterThan(lines1.Count),
+            $"PassCount=2 ({lines2.Count} lines) should generate more lines than PassCount=1 ({lines1.Count} lines)");
+    }
+
+    [Test]
+    public void GenerateForSystem_DisabledSystem_IsNotUsedDirectly()
+    {
+        // GenerateForSystem itself does not check IsEnabled -- callers do.
+        // But we verify a disabled system object still has IsEnabled=false.
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Disabled",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 1,
+            IsEnabled = false
+        };
+
+        Assert.That(system.IsEnabled, Is.False,
+            "Disabled system should have IsEnabled=false for callers to filter on");
+
+        // If callers check IsEnabled before calling GenerateForSystem,
+        // no lines are produced. Simulate that pattern:
+        var lines = system.IsEnabled
+            ? _service.GenerateForSystem(system, MakeNorthSouthABLine(), 200)
+            : new List<List<Vec2>>();
+
+        Assert.That(lines.Count, Is.EqualTo(0),
+            "Disabled system should produce no lines when caller checks IsEnabled");
+    }
+
+    [Test]
+    public void GenerateForSystem_EmptyReferenceTrack_ProducesNoLines()
+    {
+        var emptyTrack = new Track
+        {
+            Name = "Empty",
+            Points = new List<Vec3>(),
+            Type = TrackType.ABLine
+        };
+
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 2,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, emptyTrack, 200);
+
+        Assert.That(lines.Count, Is.EqualTo(0),
+            "Empty reference track should produce no lines");
+    }
+
+    [Test]
+    public void GenerateForSystem_NullReferenceTrack_ProducesNoLines()
+    {
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            PassCount = 2,
+            IsEnabled = true
+        };
+
+        var lines = _service.GenerateForSystem(system, null!, 200);
+
+        Assert.That(lines.Count, Is.EqualTo(0),
+            "Null reference track should produce no lines");
+    }
+
+    // ---------------------------------------------------------------
+    // Boundary tram track mode and pass count tests
+    // ---------------------------------------------------------------
+
+    private static List<Vec3> MakeCircularBoundary(double radius = 100, int n = 60)
+    {
+        var fence = new List<Vec3>();
+        for (int i = 0; i < n; i++)
+        {
+            double angle = 2 * Math.PI * i / n;
+            fence.Add(new Vec3(radius * Math.Cos(angle), radius * Math.Sin(angle),
+                angle + Math.PI / 2));
+        }
+        fence.Add(fence[0]); // close
+        return fence;
+    }
+
+    [Test]
+    public void GenerateBoundaryTramTracks_TrackMode_OuterWheelAtBoundaryEdge()
+    {
+        // Track mode: pass center at halfWheelTrack from boundary,
+        // so outer wheel is at halfWheelTrack - halfWheelTrack = 0 (right at boundary).
+        // The outer track offset = passCenter - halfWheelTrack = 0, meaning it follows boundary.
+        var fence = MakeCircularBoundary(100);
+
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        _service.GenerateBoundaryTramTracks(fence, passCount: 1,
+            mode: AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine);
+
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0));
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0));
+
+        // Outer track should be very close to the original boundary (offset ~0)
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            double distFromCenter = Math.Sqrt(pt.Easting * pt.Easting + pt.Northing * pt.Northing);
+            // Outer track is on or very near boundary (radius 100), inset by ~0
+            Assert.That(distFromCenter, Is.LessThanOrEqualTo(101.0),
+                $"Outer track point should be near boundary, dist={distFromCenter:F1}");
+        }
+
+        // Inner track should be offset inward by the full wheel track width
+        foreach (var pt in _service.InnerBoundaryTrack)
+        {
+            double distFromCenter = Math.Sqrt(pt.Easting * pt.Easting + pt.Northing * pt.Northing);
+            // Inner wheel at halfWheelTrack + halfWheelTrack = 1.8m inward from boundary
+            Assert.That(distFromCenter, Is.LessThan(100.0),
+                $"Inner track should be inset from boundary, dist={distFromCenter:F1}");
+        }
+    }
+
+    [Test]
+    public void GenerateBoundaryTramTracks_EdgeMode_CenterAtHalfTramWidth()
+    {
+        // Edge mode: pass center at tramWidth/2 from boundary
+        var fence = MakeCircularBoundary(100);
+
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        _service.GenerateBoundaryTramTracks(fence, passCount: 1,
+            mode: AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
+
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0));
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0));
+
+        double halfTramWidth = 12.0;
+        double halfWheelTrack = 0.9;
+
+        // Outer track at passCenter - halfWheelTrack = 12 - 0.9 = 11.1 inward
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            double distFromCenter = Math.Sqrt(pt.Easting * pt.Easting + pt.Northing * pt.Northing);
+            double expectedDist = 100.0 - (halfTramWidth - halfWheelTrack);
+            Assert.That(distFromCenter, Is.EqualTo(expectedDist).Within(3.0),
+                $"Edge mode outer track should be ~{expectedDist:F1}m from center, got {distFromCenter:F1}");
+        }
+
+        // Inner track at passCenter + halfWheelTrack = 12 + 0.9 = 12.9 inward
+        foreach (var pt in _service.InnerBoundaryTrack)
+        {
+            double distFromCenter = Math.Sqrt(pt.Easting * pt.Easting + pt.Northing * pt.Northing);
+            double expectedDist = 100.0 - (halfTramWidth + halfWheelTrack);
+            Assert.That(distFromCenter, Is.EqualTo(expectedDist).Within(3.0),
+                $"Edge mode inner track should be ~{expectedDist:F1}m from center, got {distFromCenter:F1}");
+        }
+    }
+
+    [Test]
+    public void GenerateBoundaryTramTracks_PassCount1_ExactlyTwoTracks()
+    {
+        var fence = MakeCircularBoundary(100);
+
+        _service.GenerateBoundaryTramTracks(fence, passCount: 1,
+            mode: AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
+
+        // passCount=1: pass 0 goes to outer+inner boundary tracks
+        // No additional parallel lines added
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0),
+            "Should have outer boundary track");
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0),
+            "Should have inner boundary track");
+        Assert.That(_service.ParallelTramLines.Count, Is.EqualTo(0),
+            "PassCount=1 should have no additional parallel tram lines (only boundary tracks)");
+    }
+
+    [Test]
+    public void GenerateBoundaryTramTracks_PassCount2_FourTracksTotal()
+    {
+        _service.Clear();
+        var fence = MakeCircularBoundary(100);
+
+        _service.GenerateBoundaryTramTracks(fence, passCount: 2,
+            mode: AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
+
+        // passCount=2: pass 0 -> outer+inner boundary tracks, pass 1 -> 2 parallel lines
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0),
+            "Should have outer boundary track");
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0),
+            "Should have inner boundary track");
+        Assert.That(_service.ParallelTramLines.Count, Is.EqualTo(2),
+            "PassCount=2 should add 2 parallel tram lines for the second pass");
+    }
+
+    [Test]
+    public void GenerateBoundaryTramTracks_MultiPass_GeneratesConcentricTracks()
+    {
+        _service.Clear();
+        var fence = MakeCircularBoundary(100);
+
+        _service.GenerateBoundaryTramTracks(fence, passCount: 3,
+            mode: AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
+
+        // Pass 0: outer + inner boundary tracks
+        // Pass 1: 2 parallel lines
+        // Pass 2: 2 more parallel lines
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0));
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0));
+        Assert.That(_service.ParallelTramLines.Count, Is.EqualTo(4),
+            "PassCount=3 should add 4 parallel tram lines (2 per additional pass)");
+
+        // Verify concentric: later passes should be further inward (smaller radius)
+        if (_service.ParallelTramLines.Count >= 4)
+        {
+            double pass1Dist = Math.Sqrt(
+                _service.ParallelTramLines[0][0].Easting * _service.ParallelTramLines[0][0].Easting +
+                _service.ParallelTramLines[0][0].Northing * _service.ParallelTramLines[0][0].Northing);
+            double pass2Dist = Math.Sqrt(
+                _service.ParallelTramLines[2][0].Easting * _service.ParallelTramLines[2][0].Easting +
+                _service.ParallelTramLines[2][0].Northing * _service.ParallelTramLines[2][0].Northing);
+
+            Assert.That(pass2Dist, Is.LessThan(pass1Dist),
+                $"Pass 2 track ({pass2Dist:F1}m) should be more inward than pass 1 ({pass1Dist:F1}m)");
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Integration: missing reference and multiple systems
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void GenerateForSystem_MissingReferenceTrack_ProducesNoLines()
+    {
+        // When the system references a track by name but the caller passes
+        // null or an empty track because the name did not resolve,
+        // no lines should be produced.
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Missing Ref",
+            ReferenceTrackName = "Nonexistent Track",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 3,
+            IsEnabled = true
+        };
+
+        // Simulate: track lookup returned null
+        var lines = _service.GenerateForSystem(system, null!, 200);
+        Assert.That(lines.Count, Is.EqualTo(0),
+            "Null reference track (missing) should produce no lines");
+
+        // Simulate: track lookup returned empty track
+        var emptyTrack = new Track { Name = "Empty", Points = new List<Vec3>(), Type = TrackType.ABLine };
+        lines = _service.GenerateForSystem(system, emptyTrack, 200);
+        Assert.That(lines.Count, Is.EqualTo(0),
+            "Empty reference track (missing) should produce no lines");
+    }
+
+    [Test]
+    public void MultipleSystems_GenerateIndependentLineSets()
+    {
+        var track = MakeNorthSouthABLine();
+
+        var system1 = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Sprayer",
+            TramWidth = 24.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            PassCount = 2,
+            IsEnabled = true
+        };
+
+        var system2 = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Fertilizer",
+            TramWidth = 36.0,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Right,
+            PassCount = 3,
+            IsEnabled = true
+        };
+
+        var lines1 = _service.GenerateForSystem(system1, track, 200);
+        var lines2 = _service.GenerateForSystem(system2, track, 200);
+
+        Assert.That(lines1.Count, Is.GreaterThan(0), "System 1 should produce lines");
+        Assert.That(lines2.Count, Is.GreaterThan(0), "System 2 should produce lines");
+
+        // Different tram widths and modes should produce different line positions
+        // Collect midpoint eastings from each system
+        var eastings1 = lines1.Where(l => l.Count > 0)
+            .Select(l => Math.Round(l[l.Count / 2].Easting, 0)).OrderBy(e => e).ToList();
+        var eastings2 = lines2.Where(l => l.Count > 0)
+            .Select(l => Math.Round(l[l.Count / 2].Easting, 0)).OrderBy(e => e).ToList();
+
+        // They should not be identical sets (different widths, different modes, different directions)
+        Assert.That(eastings1, Is.Not.EqualTo(eastings2),
+            "Two different systems should produce different line positions");
+    }
+
+    [Test]
+    public void TramConfig_Systems_IsObservableCollection()
+    {
+        var config = new TramConfig();
+        Assert.That(config.Systems, Is.Not.Null);
+        Assert.That(config.Systems.Count, Is.EqualTo(0));
+
+        config.Systems.Add(new AgValoniaGPS.Models.Tram.TramSystem { Name = "Test" });
+        Assert.That(config.Systems.Count, Is.EqualTo(1));
+        Assert.That(config.Systems[0].Name, Is.EqualTo("Test"));
+    }
+
+    [Test]
+    public void TramSystem_DefaultValues_AreCorrect()
+    {
+        var system = new AgValoniaGPS.Models.Tram.TramSystem();
+
+        Assert.That(system.Name, Is.EqualTo(""));
+        Assert.That(system.ReferenceTrackName, Is.Null);
+        Assert.That(system.ReferenceBoundaryIndex, Is.EqualTo(-1));
+        Assert.That(system.TramWidth, Is.EqualTo(24.0));
+        Assert.That(system.Mode, Is.EqualTo(AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine));
+        Assert.That(system.Offset, Is.EqualTo(0.0));
+        Assert.That(system.Direction, Is.EqualTo(AgValoniaGPS.Models.Tram.TramDirection.Symmetric));
+        Assert.That(system.PassCount, Is.EqualTo(0));
+        Assert.That(system.IsEnabled, Is.True);
+    }
+
+    [Test]
+    public void TramSystem_PassCount_ClampsToZero()
+    {
+        var system = new AgValoniaGPS.Models.Tram.TramSystem();
+        system.PassCount = -5;
+
+        Assert.That(system.PassCount, Is.EqualTo(0),
+            "PassCount should clamp negative values to 0");
+    }
 }
