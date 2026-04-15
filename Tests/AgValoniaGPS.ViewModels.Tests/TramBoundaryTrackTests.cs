@@ -510,6 +510,76 @@ public class TramBoundaryTrackTests
     }
 
     // ---------------------------------------------------------------
+    // Offset must be inward (closer to centroid than boundary)
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void HeadlandOffset_NoPointFurtherFromCentroidThanBoundary()
+    {
+        // The offset should always be INWARD - every offset point should be
+        // closer to the field centroid than the nearest boundary point.
+        // This catches the "spike" bug where offset follows a narrow concavity
+        // deeper than the boundary edge (technically inside polygon but outward).
+        var vm = new MainViewModelBuilder().Build();
+        var bndModel = new Boundary
+        {
+            OuterBoundary = new BoundaryPolygon
+            {
+                Points = _boundary.Select(p => new BoundaryPoint(p.Easting, p.Northing, p.Heading)).ToList()
+            }
+        };
+        bndModel.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, bndModel);
+
+        var seg = new AgValoniaGPS.Models.Headland.HeadlandSegment
+        {
+            Name = "Test",
+            Type = AgValoniaGPS.Models.Headland.HeadlandSegmentType.Curve,
+            Offset = 12,
+            BoundaryPoints = new List<Vec3>(_boundary)
+        };
+        vm.ComputeSegmentOffset(seg);
+
+        // Compute centroid
+        double cx = _boundary.Average(p => p.Easting);
+        double cy = _boundary.Average(p => p.Northing);
+
+        int outward = 0;
+        var outwardPts = new List<string>();
+        foreach (var pt in seg.OffsetPoints)
+        {
+            double distToCentroid = Math.Sqrt(Math.Pow(pt.Easting - cx, 2) + Math.Pow(pt.Northing - cy, 2));
+
+            // Find nearest boundary point's distance to centroid
+            double nearestBndDistToCentroid = double.MaxValue;
+            double nearestBndDist = double.MaxValue;
+            foreach (var bp in _boundary)
+            {
+                double d = Math.Sqrt(Math.Pow(bp.Easting - pt.Easting, 2) + Math.Pow(bp.Northing - pt.Northing, 2));
+                if (d < nearestBndDist)
+                {
+                    nearestBndDist = d;
+                    nearestBndDistToCentroid = Math.Sqrt(Math.Pow(bp.Easting - cx, 2) + Math.Pow(bp.Northing - cy, 2));
+                }
+            }
+
+            // Offset point should be closer to centroid than its nearest boundary point
+            // Allow 2m tolerance for Clipper2 rounding at corners
+            if (distToCentroid > nearestBndDistToCentroid + 2.0)
+            {
+                outward++;
+                if (outwardPts.Count < 5)
+                    outwardPts.Add($"({pt.Easting:F0},{pt.Northing:F0}) d={distToCentroid:F0} > bnd={nearestBndDistToCentroid:F0}");
+            }
+        }
+
+        Assert.That(outward, Is.EqualTo(0),
+            $"{outward}/{seg.OffsetPoints.Count} offset points are further from centroid than boundary: {string.Join("; ", outwardPts)}");
+    }
+
+    // ---------------------------------------------------------------
     // Different tram widths
     // ---------------------------------------------------------------
 
