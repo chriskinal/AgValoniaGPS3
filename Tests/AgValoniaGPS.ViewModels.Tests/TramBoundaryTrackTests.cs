@@ -298,6 +298,79 @@ public class TramBoundaryTrackTests
     }
 
     // ---------------------------------------------------------------
+    // Segment-level boundary check (line segments, not just points)
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Check if a line segment from p1 to p2 goes outside the boundary.
+    /// Samples the segment at regular intervals and checks each sample point.
+    /// </summary>
+    private bool SegmentStaysInsideBoundary(Vec2 p1, Vec2 p2, List<Vec3> boundary, double sampleSpacing = 1.0)
+    {
+        double dx = p2.Easting - p1.Easting;
+        double dy = p2.Northing - p1.Northing;
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 0.1) return true;
+
+        int samples = Math.Max(2, (int)(len / sampleSpacing));
+        for (int i = 0; i <= samples; i++)
+        {
+            double t = (double)i / samples;
+            double px = p1.Easting + t * dx;
+            double py = p1.Northing + t * dy;
+            if (!IsPointInPolygon(px, py, boundary))
+                return false;
+        }
+        return true;
+    }
+
+    [Test]
+    public void OuterTrack_AllSegmentsInsideBoundary()
+    {
+        _service.GenerateBoundaryTramTracks(_boundary);
+        var track = _service.OuterBoundaryTrack;
+        if (track.Count < 2) return;
+
+        int badSegments = 0;
+        var badDetails = new List<string>();
+        for (int i = 0; i < track.Count - 1; i++)
+        {
+            if (!SegmentStaysInsideBoundary(track[i], track[i + 1], _boundary))
+            {
+                badSegments++;
+                if (badDetails.Count < 3)
+                    badDetails.Add($"seg[{i}] ({track[i].Easting:F0},{track[i].Northing:F0})->({track[i+1].Easting:F0},{track[i+1].Northing:F0})");
+            }
+        }
+
+        Assert.That(badSegments, Is.EqualTo(0),
+            $"Outer track has {badSegments} segments going outside boundary: {string.Join("; ", badDetails)}");
+    }
+
+    [Test]
+    public void InnerTrack_AllSegmentsInsideBoundary()
+    {
+        _service.GenerateBoundaryTramTracks(_boundary);
+        var track = _service.InnerBoundaryTrack;
+        if (track.Count < 2) return;
+
+        int badSegments = 0;
+        var badDetails = new List<string>();
+        for (int i = 0; i < track.Count - 1; i++)
+        {
+            if (!SegmentStaysInsideBoundary(track[i], track[i + 1], _boundary))
+            {
+                badSegments++;
+                if (badDetails.Count < 3)
+                    badDetails.Add($"seg[{i}] ({track[i].Easting:F0},{track[i].Northing:F0})->({track[i+1].Easting:F0},{track[i+1].Northing:F0})");
+            }
+        }
+
+        Assert.That(badSegments, Is.EqualTo(0),
+            $"Inner track has {badSegments} segments going outside boundary: {string.Join("; ", badDetails)}");
+    }
+
+    // ---------------------------------------------------------------
     // Different tram widths
     // ---------------------------------------------------------------
 
