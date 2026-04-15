@@ -81,13 +81,14 @@ public class TramLineService(
     /// Edge mode: first pass centered at tramWidth/2 from boundary.
     /// </summary>
     public void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1,
-        Models.Tram.TramSystemMode mode = Models.Tram.TramSystemMode.Edge)
+        Models.Tram.TramSystemMode mode = Models.Tram.TramSystemMode.Edge,
+        double tramWidthOverride = 0)
     {
         if (fenceLine == null || fenceLine.Count < 3)
             return;
 
         var config = ConfigurationStore.Instance;
-        double tramWidth = config.Tram.TramWidth;
+        double tramWidth = tramWidthOverride > 0 ? tramWidthOverride : config.Tram.TramWidth;
         double halfWheelTrack = config.Vehicle.TrackWidth / 2.0;
 
         // Ensure fence line is closed (last point = first point)

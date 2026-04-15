@@ -1431,6 +1431,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             Name = $"System {vm.TramSystems.Count + 1}",
             TramWidth = 24.0,
+            PassCount = 1,
             Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
             Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
             ReferenceTrackName = vm.SelectedTrack?.Name
@@ -1956,9 +1957,9 @@ public partial class FieldBuilderDialogPanel : UserControl
 
             // Highlight only the system being edited (not just selected in list)
             string? selName = _editingTramSystem?.Name;
-            var selRange = selName != null ? vm.GetTramSystemLineRange(selName) : (-1, 0);
+            var selRange = selName != null ? vm.GetTramSystemLineRange(selName) : (-1, 0, false);
             int selStart = selRange.Item1, selCount = selRange.Item2;
-            bool selIsBoundary = selStart == -1 && selName != null;
+            bool selIsBoundary = selRange.Item3;
 
             var tramDataN = vm.GetTramLineData();
             if (tramDataN != null)
@@ -1971,10 +1972,9 @@ public partial class FieldBuilderDialogPanel : UserControl
                 {
                     if (sys.ReferenceBoundaryIndex < 0) continue;
                     var range = vm.GetTramSystemLineRange(sys.Name);
-                    if (range.Item1 == -1 && range.Item2 > 0)
+                    if (range.Item3 && range.Item2 > 0) // isBoundary with extra passes
                     {
-                        int totalLines = tramData.parallel.Count;
-                        for (int bi = totalLines - range.Item2; bi < totalLines; bi++)
+                        for (int bi = range.Item1; bi < range.Item1 + range.Item2; bi++)
                             bndLineIndices.Add(bi);
                     }
                 }

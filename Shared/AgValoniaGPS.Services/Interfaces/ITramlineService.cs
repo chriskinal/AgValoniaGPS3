@@ -64,7 +64,8 @@ public interface ITramLineService
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>
     void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1,
-        AgValoniaGPS.Models.Tram.TramSystemMode mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
+        AgValoniaGPS.Models.Tram.TramSystemMode mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge,
+        double tramWidthOverride = 0);
 
     /// <summary>
     /// Generate parallel tram lines from a guidance track

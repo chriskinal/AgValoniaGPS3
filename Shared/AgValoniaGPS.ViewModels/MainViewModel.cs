@@ -75,7 +75,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IElevationLogService _elevationLogService;
     private readonly ITramLineService _tramLineService;
     private bool _hasTramSystemsEverUsed;
-    private readonly Dictionary<string, (int start, int count)> _tramSystemLineRanges = new();
+    private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
@@ -1768,12 +1768,10 @@ public partial class MainViewModel : ObservableObject
                     {
                         var bndPts = _currentBoundary.OuterBoundary.Points
                             .Select(p => new Models.Base.Vec3(p.Easting, p.Northing, p.Heading)).ToList();
-                        _tramLineService.GenerateBoundaryTramTracks(bndPts, passes, sys.Mode);
+                        _tramLineService.GenerateBoundaryTramTracks(bndPts, passes, sys.Mode, sys.TramWidth);
                     }
                     int bndLineCount = _tramLineService.ParallelTramLines.Count - bndStartIdx;
-                    // -1 start = boundary marker (first pass uses OuterBoundaryTrack/InnerBoundaryTrack)
-                    // additional passes stored in parallel lines at bndStartIdx
-                    _tramSystemLineRanges[sys.Name] = (-1, bndLineCount);
+                    _tramSystemLineRanges[sys.Name] = (bndStartIdx, bndLineCount, true);
                     continue;
                 }
 
@@ -1786,7 +1784,7 @@ public partial class MainViewModel : ObservableObject
                 var lines = _tramLineService.GenerateForSystem(sys, refTrack, fieldWidth);
                 foreach (var line in lines)
                     _tramLineService.AddTramLine(line);
-                _tramSystemLineRanges[sys.Name] = (startIdx, lines.Count);
+                _tramSystemLineRanges[sys.Name] = (startIdx, lines.Count, false);
             }
         }
         else if (!_hasTramSystemsEverUsed && track != null && track.Points.Count >= 2)
@@ -3143,9 +3141,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// Get the line index range for a named tram system. Returns (-1,0) for boundary systems.
     /// </summary>
-    public (int start, int count) GetTramSystemLineRange(string systemName)
+    public (int start, int count, bool isBoundary) GetTramSystemLineRange(string systemName)
     {
-        return _tramSystemLineRanges.TryGetValue(systemName, out var range) ? range : (-1, 0);
+        return _tramSystemLineRanges.TryGetValue(systemName, out var range) ? range : (-1, 0, false);
     }
     public ICommand? ToggleRecordedPathsCommand { get; private set; }
     public ICommand? StartRecordedPathCommand { get; private set; }
