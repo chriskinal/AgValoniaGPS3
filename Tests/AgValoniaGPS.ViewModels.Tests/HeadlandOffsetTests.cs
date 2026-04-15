@@ -579,6 +579,97 @@ public class HeadlandOffsetTests
             "4-point offset search must find 2 different intersections on the headland polygon.");
     }
 
+    [Test]
+    public void BoundaryHeadland_PlusABLine_UserFieldExactData()
+    {
+        // Uses actual headland polygon from user's field dump (350 pts).
+        // Regression: AB line (4 offset pts) found same intersection for both start/end
+        // on the Clipper2 headland polygon, making the line not effective.
+        var headlinePath = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "TestData", "Fields", "UserField", "Headlines.txt"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "TestData", "Fields", "UserField", "Headlines.txt"),
+        }.FirstOrDefault(System.IO.File.Exists);
+
+        if (headlinePath == null)
+        {
+            Assert.Pass("UserField Headlines.txt not found - skipping");
+            return;
+        }
+
+        // Load headland polygon
+        var headland = new System.Collections.Generic.List<Vec3>();
+        foreach (var line in System.IO.File.ReadAllLines(headlinePath))
+        {
+            var parts = line.Trim().Split(',');
+            if (parts.Length >= 3 && double.TryParse(parts[0], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double e))
+            {
+                double.TryParse(parts[1], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out double n);
+                double.TryParse(parts[2], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out double h);
+                headland.Add(new Vec3(e, n, h));
+            }
+        }
+
+        Assert.That(headland.Count, Is.GreaterThan(100), $"Need headland data, got {headland.Count} pts");
+
+        var vm = CreateVm();
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(-500, -200, 0),
+                    new Models.BoundaryPoint(50, -200, Math.PI / 2),
+                    new Models.BoundaryPoint(50, 500, Math.PI),
+                    new Models.BoundaryPoint(-500, 500, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, boundary);
+
+        // Boundary headland segment (closed, uses headland polygon directly)
+        var bndSeg = new HeadlandSegment
+        {
+            Name = "Boundary",
+            Type = HeadlandSegmentType.Curve,
+            Offset = 12,
+            BoundaryPoints = new(headland),
+            OffsetPoints = headland.GetRange(0, headland.Count - 1)
+        };
+
+        // AB line from user's dump
+        var abSeg = new HeadlandSegment
+        {
+            Name = "Line 2",
+            Type = HeadlandSegmentType.Line,
+            Offset = 12,
+            BoundaryPoints = new()
+            {
+                new Vec3(-313.505, 317.742, -1.726),
+                new Vec3(-469.237, 293.361, -1.726)
+            },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+        vm.ComputeSegmentOffset(abSeg);
+
+        vm.HeadlandSegments.Add(bndSeg);
+        vm.HeadlandSegments.Add(abSeg);
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(bndSeg.IsEffective, Is.True, "Boundary headland effective");
+        Assert.That(abSeg.IsEffective, Is.True,
+            "AB line must be effective on user's Clipper2 headland polygon " +
+            $"({headland.Count} pts). End search must find farthest intersection.");
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -
