@@ -1971,29 +1971,16 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 var tramData = tramDataN.Value;
 
-                // Collect all boundary system parallel line indices for coloring
-                var bndLineIndices = new HashSet<int>();
-                foreach (var sys in vm.TramSystems)
-                {
-                    if (sys.ReferenceBoundaryIndex < 0) continue;
-                    var range = vm.GetTramSystemLineRange(sys.Name);
-                    if (range.Item3 && range.Item2 > 0) // isBoundary with extra passes
-                    {
-                        for (int bi = range.Item1; bi < range.Item1 + range.Item2; bi++)
-                            bndLineIndices.Add(bi);
-                    }
-                }
-                // Draw parallel tram lines with highlight for selected system
+                // Draw parallel tram lines (track-referenced only) with highlight
                 for (int li = 0; li < tramData.parallel.Count; li++)
                 {
                     var tramLine = tramData.parallel[li];
                     if (tramLine.Count < 2) continue;
                     bool isHighlighted = selStart >= 0 && li >= selStart && li < selStart + selCount;
-                    bool isBndPass = bndLineIndices.Contains(li);
                     var tramPts = new List<Point>();
                     foreach (var p in tramLine)
                         tramPts.Add(ToCanvas(p.Easting, p.Northing));
-                    var lineColor = isBndPass ? bndColor : (isHighlighted ? tramHighlight : tramColor);
+                    var lineColor = isHighlighted ? tramHighlight : tramColor;
                     var lineWidth = isHighlighted ? 1.5 : 1.0;
                     canvas.Children.Add(new Polyline
                     {
@@ -2020,6 +2007,17 @@ public partial class FieldBuilderDialogPanel : UserControl
                     canvas.Children.Add(new Polyline
                     {
                         Stroke = bndStroke, StrokeThickness = bndWidth, Points = innerPts
+                    });
+                }
+
+                // Draw boundary extra passes
+                foreach (var line in tramData.boundaryExtra)
+                {
+                    if (line.Count < 2) continue;
+                    var bndExtraPts = line.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+                    canvas.Children.Add(new Polyline
+                    {
+                        Stroke = bndStroke, StrokeThickness = bndWidth, Points = bndExtraPts
                     });
                 }
             }

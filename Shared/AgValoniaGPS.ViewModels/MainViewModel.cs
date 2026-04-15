@@ -1802,8 +1802,10 @@ public partial class MainViewModel : ObservableObject
         var innerSnap = _tramLineService.InnerBoundaryTrack.ToList();
         var parallelSnap = _tramLineService.ParallelTramLines
             .Select(l => (IReadOnlyList<Models.Base.Vec2>)l.ToList()).ToList();
+        var bndExtraSnap = _tramLineService.BoundaryExtraLines
+            .Select(l => (IReadOnlyList<Models.Base.Vec2>)l.ToList()).ToList();
 
-        _mapService.SetTramLines(outerSnap, innerSnap, parallelSnap);
+        _mapService.SetTramLines(outerSnap, innerSnap, parallelSnap, bndExtraSnap);
 
         OnPropertyChanged(nameof(TramLineCountDisplay));
     }
@@ -3132,10 +3134,13 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// Get tram line geometry for canvas preview rendering.
     /// </summary>
-    public (IReadOnlyList<Models.Base.Vec2> outer, IReadOnlyList<Models.Base.Vec2> inner, IReadOnlyList<IReadOnlyList<Models.Base.Vec2>> parallel)? GetTramLineData()
+    public (IReadOnlyList<Models.Base.Vec2> outer, IReadOnlyList<Models.Base.Vec2> inner,
+            IReadOnlyList<IReadOnlyList<Models.Base.Vec2>> parallel,
+            IReadOnlyList<IReadOnlyList<Models.Base.Vec2>> boundaryExtra)? GetTramLineData()
     {
         if (!_tramLineService.HasTramLines) return null;
-        return (_tramLineService.OuterBoundaryTrack, _tramLineService.InnerBoundaryTrack, _tramLineService.ParallelTramLines);
+        return (_tramLineService.OuterBoundaryTrack, _tramLineService.InnerBoundaryTrack,
+                _tramLineService.ParallelTramLines, _tramLineService.BoundaryExtraLines);
     }
 
     /// <summary>

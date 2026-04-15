@@ -109,7 +109,8 @@ public interface ISharedMapControl
     void SetTramLines(
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
-        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines);
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? boundaryExtraLines = null);
     void SetTramControlByte(byte controlByte);
 
     // Recorded path / contour strip visualization
@@ -280,6 +281,7 @@ internal class MapRenderState
     public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? TramOuterTrack;
     public IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? TramInnerTrack;
     public IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? TramParallelLines;
+    public IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? TramBoundaryExtraLines;
     public AgValoniaGPS.Models.Configuration.TramDisplayMode TramDisplayMode;
     public float TramAlpha;
     public byte TramControlByte; // bit 0=right wheel, bit 1=left wheel
@@ -446,6 +448,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramOuterTrack;
     private IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? _tramInnerTrack;
     private IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? _tramParallelLines;
+    private IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? _tramBoundaryExtraLines;
     private byte _tramControlByte;
 
     // Coverage patches for worked area display
@@ -821,6 +824,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             TramOuterTrack = _tramOuterTrack,
             TramInnerTrack = _tramInnerTrack,
             TramParallelLines = _tramParallelLines,
+            TramBoundaryExtraLines = _tramBoundaryExtraLines,
             TramDisplayMode = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.DisplayMode,
             TramAlpha = (float)AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Tram.Alpha,
             TramControlByte = _tramControlByte,
@@ -2547,11 +2551,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
     public void SetTramLines(
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? outerTrack,
         IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>? innerTrack,
-        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines)
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines,
+        IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? boundaryExtraLines = null)
     {
         _tramOuterTrack = outerTrack;
         _tramInnerTrack = innerTrack;
         _tramParallelLines = parallelLines;
+        _tramBoundaryExtraLines = boundaryExtraLines;
         SendStateToHandler();
     }
 
@@ -4446,8 +4452,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 IsAntialias = true
             };
 
-            // Draw parallel tram lines (All, LinesOnly, or OuterOnly for boundary extra passes)
-            if ((s.TramDisplayMode != AgValoniaGPS.Models.Configuration.TramDisplayMode.Off) && hasLines)
+            bool hasBoundaryExtra = s.TramBoundaryExtraLines?.Count > 0;
+
+            // Mode All or LinesOnly: draw parallel tram lines (track-referenced only)
+            if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
+                || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.LinesOnly) && hasLines)
             {
                 foreach (var line in s.TramParallelLines!)
                 {
@@ -4476,6 +4485,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
                 if (s.TramOuterTrack != null) DrawTramTrack(s.TramOuterTrack);
                 if (s.TramInnerTrack != null) DrawTramTrack(s.TramInnerTrack);
+
+                // Additional boundary passes
+                if (hasBoundaryExtra)
+                {
+                    foreach (var line in s.TramBoundaryExtraLines!)
+                        DrawTramTrack(line);
+                }
             }
         }
 

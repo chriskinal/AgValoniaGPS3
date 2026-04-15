@@ -1184,8 +1184,8 @@ public class TramLineTests
             "Should have outer boundary track");
         Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0),
             "Should have inner boundary track");
-        Assert.That(_service.ParallelTramLines.Count, Is.EqualTo(2),
-            "PassCount=2 should add 2 parallel tram lines for the second pass");
+        Assert.That(_service.BoundaryExtraLines.Count, Is.EqualTo(2),
+            "PassCount=2 should add 2 boundary extra lines for the second pass");
     }
 
     [Test]
@@ -1202,18 +1202,18 @@ public class TramLineTests
         // Pass 2: 2 more parallel lines
         Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(0));
         Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(0));
-        Assert.That(_service.ParallelTramLines.Count, Is.EqualTo(4),
-            "PassCount=3 should add 4 parallel tram lines (2 per additional pass)");
+        Assert.That(_service.BoundaryExtraLines.Count, Is.EqualTo(4),
+            "PassCount=3 should add 4 boundary extra lines (2 per additional pass)");
 
         // Verify concentric: later passes should be further inward (smaller radius)
-        if (_service.ParallelTramLines.Count >= 4)
+        if (_service.BoundaryExtraLines.Count >= 4)
         {
             double pass1Dist = Math.Sqrt(
-                _service.ParallelTramLines[0][0].Easting * _service.ParallelTramLines[0][0].Easting +
-                _service.ParallelTramLines[0][0].Northing * _service.ParallelTramLines[0][0].Northing);
+                _service.BoundaryExtraLines[0][0].Easting * _service.BoundaryExtraLines[0][0].Easting +
+                _service.BoundaryExtraLines[0][0].Northing * _service.BoundaryExtraLines[0][0].Northing);
             double pass2Dist = Math.Sqrt(
-                _service.ParallelTramLines[2][0].Easting * _service.ParallelTramLines[2][0].Easting +
-                _service.ParallelTramLines[2][0].Northing * _service.ParallelTramLines[2][0].Northing);
+                _service.BoundaryExtraLines[2][0].Easting * _service.BoundaryExtraLines[2][0].Easting +
+                _service.BoundaryExtraLines[2][0].Northing * _service.BoundaryExtraLines[2][0].Northing);
 
             Assert.That(pass2Dist, Is.LessThan(pass1Dist),
                 $"Pass 2 track ({pass2Dist:F1}m) should be more inward than pass 1 ({pass1Dist:F1}m)");

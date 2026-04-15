@@ -42,6 +42,11 @@ public interface ITramLineService
     IReadOnlyList<IReadOnlyList<Vec2>> ParallelTramLines { get; }
 
     /// <summary>
+    /// Additional boundary tram passes (beyond pass 0 which is in OuterBoundaryTrack/InnerBoundaryTrack)
+    /// </summary>
+    IReadOnlyList<IReadOnlyList<Vec2>> BoundaryExtraLines { get; }
+
+    /// <summary>
     /// Whether any tram lines exist
     /// </summary>
     bool HasTramLines { get; }

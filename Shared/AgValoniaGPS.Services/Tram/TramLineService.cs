@@ -38,6 +38,7 @@ public class TramLineService(
     private readonly List<Vec2> _outerBoundaryTrack = new();
     private readonly List<Vec2> _innerBoundaryTrack = new();
     private readonly List<List<Vec2>> _parallelTramLines = new();
+    private readonly List<List<Vec2>> _boundaryExtraLines = new();
     private List<Vec3>? _boundaryFence;
 
     private bool _isLeftManualOn;
@@ -46,11 +47,13 @@ public class TramLineService(
     public IReadOnlyList<Vec2> OuterBoundaryTrack => _outerBoundaryTrack;
     public IReadOnlyList<Vec2> InnerBoundaryTrack => _innerBoundaryTrack;
     public IReadOnlyList<IReadOnlyList<Vec2>> ParallelTramLines => _parallelTramLines;
+    public IReadOnlyList<IReadOnlyList<Vec2>> BoundaryExtraLines => _boundaryExtraLines;
 
     public bool HasTramLines =>
         _outerBoundaryTrack.Count > 0 ||
         _innerBoundaryTrack.Count > 0 ||
-        _parallelTramLines.Count > 0;
+        _parallelTramLines.Count > 0 ||
+        _boundaryExtraLines.Count > 0;
 
     public bool IsLeftManualOn
     {
@@ -131,8 +134,9 @@ public class TramLineService(
             }
             else
             {
-                if (outerPoints.Count > 1) _parallelTramLines.Add(outerPoints);
-                if (innerPoints.Count > 1) _parallelTramLines.Add(innerPoints);
+                // Extra boundary passes separate from track parallel lines
+                if (outerPoints.Count > 1) _boundaryExtraLines.Add(outerPoints);
+                if (innerPoints.Count > 1) _boundaryExtraLines.Add(innerPoints);
             }
         }
 
@@ -464,6 +468,13 @@ public class TramLineService(
                 return true;
         }
 
+        // Check boundary extra passes
+        foreach (var tramLine in _boundaryExtraLines)
+        {
+            if (IsOnPolyline(tramLine, position, distSq))
+                return true;
+        }
+
         return false;
     }
 
@@ -505,6 +516,13 @@ public class TramLineService(
 
         // Check parallel tram lines
         foreach (var tramLine in _parallelTramLines)
+        {
+            distSq = DistanceToPolylineSquared(tramLine, position);
+            if (distSq < minDistSq) minDistSq = distSq;
+        }
+
+        // Check boundary extra passes
+        foreach (var tramLine in _boundaryExtraLines)
         {
             distSq = DistanceToPolylineSquared(tramLine, position);
             if (distSq < minDistSq) minDistSq = distSq;
@@ -613,6 +631,7 @@ public class TramLineService(
         _outerBoundaryTrack.Clear();
         _innerBoundaryTrack.Clear();
         _parallelTramLines.Clear();
+        _boundaryExtraLines.Clear();
         _isLeftManualOn = false;
         _isRightManualOn = false;
 
