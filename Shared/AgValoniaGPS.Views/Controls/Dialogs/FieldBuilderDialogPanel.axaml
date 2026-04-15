@@ -287,6 +287,7 @@ Licensed under GNU GPL v3.
                                 </StackPanel>
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <Panel>
                             <!-- Main panel: system list + buttons (hidden when editing) -->
                             <StackPanel x:Name="TramMainPanel" Spacing="6" Margin="0,6">
                                 <!-- System List header -->
@@ -509,6 +510,7 @@ Licensed under GNU GPL v3.
                                              LostFocus="TramSysPassInput_LostFocus"/>
                                 </Grid>
                             </StackPanel>
+                            </Panel>
                             </ScrollViewer>
                         </TabItem>
                     </TabControl>
