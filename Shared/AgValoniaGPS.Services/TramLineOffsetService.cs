@@ -16,20 +16,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AgValoniaGPS.Services.Interfaces;
+using AgValoniaGPS.Services.Geometry;
 using AgValoniaGPS.Models.Base;
 
 namespace AgValoniaGPS.Services;
 
 /// <summary>
 /// Core tramline offset generation service.
-/// Generates inner and outer tramline offset paths from boundary fence lines.
-/// Used internally by TramLineService.
+/// Uses Clipper2 (via PolygonOffsetService) for proper polygon inset
+/// that handles concave boundaries without self-intersections.
 /// </summary>
 public class TramLineOffsetService : ITramLineOffsetService
 {
-    private const double PIBy2 = Math.PI / 2.0;
-    private const double MinSpacingSquared = 2.0; // Minimum distance squared between consecutive points
+    private readonly PolygonOffsetService _clipperOffset = new();
 
     /// <summary>
     /// Generate inner tramline offset from boundary fence line.
@@ -38,7 +39,7 @@ public class TramLineOffsetService : ITramLineOffsetService
     public List<Vec2> GenerateInnerTramline(List<Vec3> fenceLine, double tramWidth, double halfWheelTrack)
     {
         double offset = (tramWidth * 0.5) + halfWheelTrack;
-        return GenerateTramlineOffset(fenceLine, offset);
+        return GenerateClipperOffset(fenceLine, offset);
     }
 
     /// <summary>
@@ -48,155 +49,19 @@ public class TramLineOffsetService : ITramLineOffsetService
     public List<Vec2> GenerateOuterTramline(List<Vec3> fenceLine, double tramWidth, double halfWheelTrack)
     {
         double offset = (tramWidth * 0.5) - halfWheelTrack;
-        return GenerateTramlineOffset(fenceLine, offset);
+        return GenerateClipperOffset(fenceLine, offset);
     }
 
     /// <summary>
-    /// Core algorithm to generate tramline offset from boundary fence line.
-    /// Uses edge-based offset: shift each edge perpendicular, then intersect
-    /// consecutive offset edges. This avoids corner overshoot from per-point
-    /// normal averaging.
+    /// Use Clipper2 for proper polygon inset that handles concave shapes.
     /// </summary>
-    private List<Vec2> GenerateTramlineOffset(List<Vec3> fenceLine, double offset)
+    private List<Vec2> GenerateClipperOffset(List<Vec3> fenceLine, double offset)
     {
-        if (fenceLine == null || fenceLine.Count < 2)
+        if (fenceLine == null || fenceLine.Count < 3)
             return new List<Vec2>();
 
-        var tramline = new List<Vec2>();
-        int ptCount = fenceLine.Count;
-
-        // Determine winding order via signed area
-        // CW (negative area) = left perpendicular is inward
-        // CCW (positive area) = right perpendicular is inward (negate normal)
-        double signedArea = 0;
-        for (int i = 0; i < ptCount; i++)
-        {
-            var p1 = fenceLine[i];
-            var p2 = fenceLine[(i + 1) % ptCount];
-            signedArea += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
-        }
-        double windingSign = signedArea < 0 ? 1.0 : -1.0; // CW (negative area) = 1, CCW = -1
-
-        // Build offset edges: shift each edge perpendicular by offset distance
-        var offEdges = new List<(double ax, double ay, double bx, double by)>();
-        for (int i = 0; i < ptCount - 1; i++)
-        {
-            double dx = fenceLine[i + 1].Easting - fenceLine[i].Easting;
-            double dy = fenceLine[i + 1].Northing - fenceLine[i].Northing;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            if (len < 0.001) continue;
-
-            // Perpendicular normal (inward, adjusted for winding)
-            double nx = -dy / len * offset * windingSign;
-            double ny = dx / len * offset * windingSign;
-            offEdges.Add((
-                fenceLine[i].Easting + nx, fenceLine[i].Northing + ny,
-                fenceLine[i + 1].Easting + nx, fenceLine[i + 1].Northing + ny));
-        }
-
-        if (offEdges.Count == 0) return tramline;
-
-        // For closed polygons, intersect consecutive offset edges including
-        // the wrap-around (last edge -> first edge) to close corners properly
-        bool isClosed = fenceLine.Count >= 3 &&
-            Math.Pow(fenceLine[0].Easting - fenceLine[^1].Easting, 2) +
-            Math.Pow(fenceLine[0].Northing - fenceLine[^1].Northing, 2) < 1.0;
-
-        int edgeCount = offEdges.Count;
-        for (int i = 0; i < edgeCount; i++)
-        {
-            int next = (i + 1) % edgeCount;
-            if (!isClosed && i == edgeCount - 1) break; // Open: don't wrap
-
-            var e1 = offEdges[i];
-            var e2 = offEdges[next];
-            double denom = (e1.bx - e1.ax) * (e2.by - e2.ay) - (e1.by - e1.ay) * (e2.bx - e2.ax);
-            if (Math.Abs(denom) > 1e-10)
-            {
-                double t = ((e2.ax - e1.ax) * (e2.by - e2.ay) - (e2.ay - e1.ay) * (e2.bx - e2.ax)) / denom;
-                double ix = e1.ax + t * (e1.bx - e1.ax);
-                double iy = e1.ay + t * (e1.by - e1.ay);
-                tramline.Add(new Vec2(ix, iy));
-            }
-            else
-            {
-                tramline.Add(new Vec2(e1.bx, e1.by));
-            }
-        }
-
-        if (!isClosed && offEdges.Count > 0)
-        {
-            // Open polygon: add start and end points
-            tramline.Insert(0, new Vec2(offEdges[0].ax, offEdges[0].ay));
-            var last = offEdges[^1];
-            tramline.Add(new Vec2(last.bx, last.by));
-        }
-
-        // Remove self-intersections caused by concave corners
-        if (isClosed && tramline.Count > 3)
-            tramline = RemoveSelfIntersections(tramline);
-
-        return tramline;
-    }
-
-    /// <summary>
-    /// Remove self-intersecting loops from an offset polygon.
-    /// At concave corners, the offset can cross itself creating inverted loops.
-    /// This detects crossings and skips the loop sections.
-    /// </summary>
-    private static List<Vec2> RemoveSelfIntersections(List<Vec2> poly)
-    {
-        var result = new List<Vec2>(poly.Count);
-        int n = poly.Count;
-        int i = 0;
-
-        while (i < n)
-        {
-            result.Add(poly[i]);
-
-            // Check if any future edge crosses the current edge
-            bool jumped = false;
-            for (int j = i + 2; j < n - 1; j++)
-            {
-                if (SegmentsIntersect(
-                    poly[i].Easting, poly[i].Northing,
-                    poly[(i + 1) % n].Easting, poly[(i + 1) % n].Northing,
-                    poly[j].Easting, poly[j].Northing,
-                    poly[j + 1].Easting, poly[j + 1].Northing,
-                    out double ix, out double iy))
-                {
-                    // Skip the loop: jump from current edge to the intersecting edge
-                    result.Add(new Vec2(ix, iy));
-                    i = j + 1;
-                    jumped = true;
-                    break;
-                }
-            }
-
-            if (!jumped) i++;
-        }
-
-        return result;
-    }
-
-    private static bool SegmentsIntersect(
-        double ax, double ay, double bx, double by,
-        double cx, double cy, double dx, double dy,
-        out double ix, out double iy)
-    {
-        ix = iy = 0;
-        double denom = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
-        if (Math.Abs(denom) < 1e-10) return false;
-
-        double t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / denom;
-        double u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / denom;
-
-        if (t > 0.01 && t < 0.99 && u > 0.01 && u < 0.99)
-        {
-            ix = ax + t * (bx - ax);
-            iy = ay + t * (by - ay);
-            return true;
-        }
-        return false;
+        var boundaryVec2 = fenceLine.Select(p => new Vec2(p.Easting, p.Northing)).ToList();
+        var result = _clipperOffset.CreateInwardOffset(boundaryVec2, offset);
+        return result ?? new List<Vec2>();
     }
 }

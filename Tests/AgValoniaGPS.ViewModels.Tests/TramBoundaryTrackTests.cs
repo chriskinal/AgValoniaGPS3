@@ -371,6 +371,48 @@ public class TramBoundaryTrackTests
     }
 
     // ---------------------------------------------------------------
+    // Offset distance from boundary (must be significantly inward)
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void OuterTrack_MinimumDistanceFromBoundary()
+    {
+        // The outer offset should be at (tramWidth/2 - halfWheelTrack) = 11.1m from boundary
+        // Every point should be at least 5m inside (allowing some tolerance for concave collapse)
+        double minExpectedDist = 5.0;
+
+        _service.GenerateBoundaryTramTracks(_boundary);
+
+        int tooClose = 0;
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            double minDist = double.MaxValue;
+            for (int i = 0; i < _boundary.Count - 1; i++)
+            {
+                double dist = DistToSegment(pt.Easting, pt.Northing,
+                    _boundary[i].Easting, _boundary[i].Northing,
+                    _boundary[i + 1].Easting, _boundary[i + 1].Northing);
+                if (dist < minDist) minDist = dist;
+            }
+            if (minDist < minExpectedDist) tooClose++;
+        }
+
+        double ratio = (double)tooClose / _service.OuterBoundaryTrack.Count;
+        Assert.That(ratio, Is.LessThan(0.05),
+            $"{tooClose}/{_service.OuterBoundaryTrack.Count} outer track points are < {minExpectedDist}m from boundary");
+    }
+
+    private static double DistToSegment(double px, double py, double ax, double ay, double bx, double by)
+    {
+        double dx = bx - ax, dy = by - ay;
+        double lenSq = dx * dx + dy * dy;
+        if (lenSq < 0.0001) return Math.Sqrt((px - ax) * (px - ax) + (py - ay) * (py - ay));
+        double t = Math.Max(0, Math.Min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+        double projX = ax + t * dx, projY = ay + t * dy;
+        return Math.Sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+    }
+
+    // ---------------------------------------------------------------
     // Different tram widths
     // ---------------------------------------------------------------
 
