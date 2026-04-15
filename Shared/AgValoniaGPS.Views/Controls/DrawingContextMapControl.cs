@@ -4436,20 +4436,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             bool hasLines = s.TramParallelLines?.Count > 0;
             if (!hasBoundary && !hasLines) return;
 
-            byte alpha = (byte)(s.TramAlpha * 255);
+            byte alpha = (byte)(s.TramAlpha * 160); // semi-transparent
 
-            using var outlinePaint = new SKPaint
+            using var tramPaint = new SKPaint
             {
-                Color = new SKColor(0, 0, 0, alpha),
+                Color = new SKColor(237, 140, 150, alpha),
                 Style = SKPaintStyle.Stroke,
-                StrokeWidth = 2.0f,
-                IsAntialias = true
-            };
-            using var fillPaint = new SKPaint
-            {
-                Color = new SKColor(237, 184, 187, alpha),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 1.0f,
+                StrokeWidth = 0.6f,
                 IsAntialias = true
             };
 
@@ -4464,12 +4457,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     path.MoveTo((float)line[0].Easting, (float)line[0].Northing);
                     for (int i = 1; i < line.Count; i++)
                         path.LineTo((float)line[i].Easting, (float)line[i].Northing);
-                    canvas.DrawPath(path, outlinePaint);
-                    canvas.DrawPath(path, fillPaint);
+                    canvas.DrawPath(path, tramPaint);
                 }
             }
 
-            // Mode All or OuterOnly: draw boundary tracks (same style as parallel)
+            // Mode All or OuterOnly: draw boundary tracks
             if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
                 || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.OuterOnly) && hasBoundary)
             {
@@ -4480,8 +4472,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     path.MoveTo((float)track[0].Easting, (float)track[0].Northing);
                     for (int i = 1; i < track.Count; i++)
                         path.LineTo((float)track[i].Easting, (float)track[i].Northing);
-                    canvas.DrawPath(path, outlinePaint);
-                    canvas.DrawPath(path, fillPaint);
+                    canvas.DrawPath(path, tramPaint);
                 }
 
                 if (s.TramOuterTrack != null) DrawTramTrack(s.TramOuterTrack);
