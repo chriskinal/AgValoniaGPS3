@@ -132,6 +132,71 @@ public class TramLineOffsetService : ITramLineOffsetService
             tramline.Add(new Vec2(last.bx, last.by));
         }
 
+        // Remove self-intersections caused by concave corners
+        if (isClosed && tramline.Count > 3)
+            tramline = RemoveSelfIntersections(tramline);
+
         return tramline;
+    }
+
+    /// <summary>
+    /// Remove self-intersecting loops from an offset polygon.
+    /// At concave corners, the offset can cross itself creating inverted loops.
+    /// This detects crossings and skips the loop sections.
+    /// </summary>
+    private static List<Vec2> RemoveSelfIntersections(List<Vec2> poly)
+    {
+        var result = new List<Vec2>(poly.Count);
+        int n = poly.Count;
+        int i = 0;
+
+        while (i < n)
+        {
+            result.Add(poly[i]);
+
+            // Check if any future edge crosses the current edge
+            bool jumped = false;
+            for (int j = i + 2; j < n - 1; j++)
+            {
+                if (SegmentsIntersect(
+                    poly[i].Easting, poly[i].Northing,
+                    poly[(i + 1) % n].Easting, poly[(i + 1) % n].Northing,
+                    poly[j].Easting, poly[j].Northing,
+                    poly[j + 1].Easting, poly[j + 1].Northing,
+                    out double ix, out double iy))
+                {
+                    // Skip the loop: jump from current edge to the intersecting edge
+                    result.Add(new Vec2(ix, iy));
+                    i = j + 1;
+                    jumped = true;
+                    break;
+                }
+            }
+
+            if (!jumped) i++;
+        }
+
+        return result;
+    }
+
+    private static bool SegmentsIntersect(
+        double ax, double ay, double bx, double by,
+        double cx, double cy, double dx, double dy,
+        out double ix, out double iy)
+    {
+        ix = iy = 0;
+        double denom = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+        if (Math.Abs(denom) < 1e-10) return false;
+
+        double t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / denom;
+        double u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / denom;
+
+        if (t > 0.01 && t < 0.99 && u > 0.01 && u < 0.99)
+        {
+            ix = ax + t * (bx - ax);
+            iy = ay + t * (by - ay);
+            return true;
+        }
+        return false;
     }
 }
