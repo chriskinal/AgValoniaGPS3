@@ -102,15 +102,16 @@ public class TramLineService(
 
         for (int pass = 0; pass < passCount; pass++)
         {
-            // Track mode: pass center at halfWheelTrack + tramWidth*pass (outer wheel at boundary)
+            // Track mode: vehicle center at boundary, wheels straddle it
             // Edge mode: pass center at tramWidth/2 + tramWidth*pass
             double passCenter = mode == Models.Tram.TramSystemMode.TrackLine
-                ? halfWheelTrack + tramWidth * pass
+                ? tramWidth * pass
                 : tramWidth * 0.5 + tramWidth * pass;
 
             double outerOffset = passCenter - halfWheelTrack;
             double innerOffset = passCenter + halfWheelTrack;
 
+            // If outer offset is at or outside boundary, use boundary polygon directly
             var outerPoints = outerOffset > 0.1
                 ? offsetService.GenerateClipperOffsetPublic(fenceLineList, outerOffset)
                 : fenceLineList.Select(p => new Vec2(p.Easting, p.Northing)).ToList();
