@@ -1954,9 +1954,8 @@ public partial class FieldBuilderDialogPanel : UserControl
             var tramHighlight = new SolidColorBrush(light ? Color.FromRgb(220, 60, 80) : Color.FromRgb(255, 130, 150));
             var bndColor = new SolidColorBrush(light ? Color.FromRgb(60, 150, 130) : Color.FromRgb(100, 200, 180));
 
-            // Determine selected system's line range
-            var selectedSys = this.FindControl<ListBox>("TramSystemList")?.SelectedItem as AgValoniaGPS.Models.Tram.TramSystem;
-            string? selName = _editingTramSystem?.Name ?? selectedSys?.Name;
+            // Highlight only the system being edited (not just selected in list)
+            string? selName = _editingTramSystem?.Name;
             var selRange = selName != null ? vm.GetTramSystemLineRange(selName) : (-1, 0);
             int selStart = selRange.Item1, selCount = selRange.Item2;
             bool selIsBoundary = selStart == -1 && selName != null;
