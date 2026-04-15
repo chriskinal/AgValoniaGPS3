@@ -1439,6 +1439,12 @@ public partial class FieldBuilderDialogPanel : UserControl
     private (string? RefTrack, int RefBndIdx, double Width, AgValoniaGPS.Models.Tram.TramSystemMode Mode,
              double Offset, AgValoniaGPS.Models.Tram.TramDirection Dir, int Passes, bool Enabled) _editSnapshot;
 
+    private void TramSystemList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // Refresh preview to highlight selected system's lines
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
+    }
+
     private void EditTramSystem_Click(object? sender, RoutedEventArgs e)
     {
         var list = this.FindControl<ListBox>("TramSystemList");
@@ -1857,14 +1863,28 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         SkipSegments:
         // Draw tracks
+        bool onTramTab = mainTabs is { IsVisible: true, SelectedIndex: 2 };
+        string? editingRefTrack = _editingTramSystem?.ReferenceTrackName;
+
         foreach (var track in vm.SavedTracks)
         {
             if (track.Points.Count < 2) continue;
 
-            bool isSelected = !isDrawing && track == vm.SelectedTrack;
-            var color = new SolidColorBrush(isSelected
-                ? (light ? Color.FromRgb(30, 60, 200) : Color.FromRgb(220, 220, 255))
-                : (light ? Color.FromRgb(140, 140, 160) : Color.FromRgb(120, 120, 140)));
+            bool isSelected;
+            if (onTramTab)
+            {
+                // On tram tab: only highlight the reference track of the system being edited
+                isSelected = _editingTramSystem != null && track.Name == editingRefTrack;
+            }
+            else
+            {
+                isSelected = !isDrawing && track == vm.SelectedTrack;
+            }
+
+            var dimColor = new SolidColorBrush(light ? Color.FromRgb(180, 180, 190) : Color.FromRgb(80, 80, 90));
+            var color = isSelected
+                ? new SolidColorBrush(light ? Color.FromRgb(30, 60, 200) : Color.FromRgb(220, 220, 255))
+                : (onTramTab ? dimColor : new SolidColorBrush(light ? Color.FromRgb(140, 140, 160) : Color.FromRgb(120, 120, 140)));
 
             List<Point> linePoints;
             if (track.Points.Count == 2)
@@ -1909,36 +1929,48 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
 
         // Draw tram lines on tram tab
-        bool onTramTab = mainTabs is { IsVisible: true, SelectedIndex: 2 };
         if (onTramTab && vm.TramLineCountDisplay != "0")
         {
             var tramColor = new SolidColorBrush(light ? Color.FromRgb(180, 100, 110) : Color.FromRgb(237, 184, 187));
+            var tramHighlight = new SolidColorBrush(light ? Color.FromRgb(220, 60, 80) : Color.FromRgb(255, 130, 150));
+            var bndColor = new SolidColorBrush(light ? Color.FromRgb(60, 150, 130) : Color.FromRgb(100, 200, 180));
 
-            // Get tram line data via map service (it caches the current state)
+            // Determine selected system's line range
+            var selectedSys = this.FindControl<ListBox>("TramSystemList")?.SelectedItem as AgValoniaGPS.Models.Tram.TramSystem;
+            string? selName = _editingTramSystem?.Name ?? selectedSys?.Name;
+            var selRange = selName != null ? vm.GetTramSystemLineRange(selName) : (-1, 0);
+            int selStart = selRange.Item1, selCount = selRange.Item2;
+            bool selIsBoundary = selStart == -1 && selCount == 0 && selName != null;
+
             var tramData = vm.GetTramLineData();
             if (tramData != null)
             {
-                // Draw parallel tram lines
-                foreach (var tramLine in tramData.Value.parallel)
+                // Draw parallel tram lines with highlight for selected system
+                for (int li = 0; li < tramData.Value.parallel.Count; li++)
                 {
+                    var tramLine = tramData.Value.parallel[li];
                     if (tramLine.Count < 2) continue;
+                    bool isHighlighted = selStart >= 0 && li >= selStart && li < selStart + selCount;
                     var tramPts = new List<Point>();
                     foreach (var p in tramLine)
                         tramPts.Add(ToCanvas(p.Easting, p.Northing));
                     canvas.Children.Add(new Polyline
                     {
-                        Stroke = tramColor, StrokeThickness = 1.5, Points = tramPts
+                        Stroke = isHighlighted ? tramHighlight : tramColor,
+                        StrokeThickness = isHighlighted ? 2.5 : 1.5,
+                        Points = tramPts
                     });
                 }
 
-                // Draw boundary tracks
+                // Draw boundary tracks (highlight if selected system is boundary)
+                var bndStroke = selIsBoundary ? tramHighlight : bndColor;
+                double bndWidth = selIsBoundary ? 2.5 : 1.5;
                 if (tramData.Value.outer.Count >= 2)
                 {
                     var outerPts = tramData.Value.outer.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
                     canvas.Children.Add(new Polyline
                     {
-                        Stroke = tramColor, StrokeThickness = 2, Points = outerPts,
-                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 2 }
+                        Stroke = bndStroke, StrokeThickness = bndWidth, Points = outerPts
                     });
                 }
                 if (tramData.Value.inner.Count >= 2)
@@ -1946,8 +1978,7 @@ public partial class FieldBuilderDialogPanel : UserControl
                     var innerPts = tramData.Value.inner.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
                     canvas.Children.Add(new Polyline
                     {
-                        Stroke = tramColor, StrokeThickness = 2, Points = innerPts,
-                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 2 }
+                        Stroke = bndStroke, StrokeThickness = bndWidth, Points = innerPts
                     });
                 }
             }
