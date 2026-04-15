@@ -91,15 +91,36 @@ public class PolygonOffsetService : IPolygonOffsetService
             }
         }
 
+        // Clip the offset result against the original boundary to ensure
+        // no points extend outside (can happen in narrow spikes)
+        var clipper = new Clipper64();
+        clipper.AddSubject(new Paths64 { largest });
+        clipper.AddClip(new Paths64 { path });
+        var clipped = new Paths64();
+        clipper.Execute(ClipType.Intersection, FillRule.NonZero, clipped);
+
+        Path64 finalPath = largest;
+        if (clipped.Count > 0)
+        {
+            // Use the largest clipped result
+            finalPath = clipped[0];
+            double clippedArea = System.Math.Abs(Clipper.Area(clipped[0]));
+            for (int i = 1; i < clipped.Count; i++)
+            {
+                double a = System.Math.Abs(Clipper.Area(clipped[i]));
+                if (a > clippedArea) { clippedArea = a; finalPath = clipped[i]; }
+            }
+        }
+
         // Convert back to Vec2
-        var result = new List<Vec2>(largest.Count);
-        foreach (var pt in largest)
+        var result = new List<Vec2>(finalPath.Count);
+        foreach (var pt in finalPath)
         {
             result.Add(new Vec2(pt.X / Scale, pt.Y / Scale));
         }
 
         System.Diagnostics.Debug.WriteLine(
-            $"[PolygonOffset] Clipper offset: {boundaryPoints.Count} input points -> {result.Count} output points");
+            $"[PolygonOffset] Clipper offset: {boundaryPoints.Count} input -> {result.Count} output (clipped from {largest.Count})");
 
         return result;
     }
