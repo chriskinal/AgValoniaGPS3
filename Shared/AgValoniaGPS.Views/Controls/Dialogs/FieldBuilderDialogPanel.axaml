@@ -358,34 +358,6 @@ Licensed under GNU GPL v3.
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- Display Mode -->
-                                <TextBlock Text="Display Mode" FontWeight="Bold" FontSize="14"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           Margin="0,6,0,0"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <StackPanel Spacing="2">
-                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
-                                                BorderThickness="0"
-                                                Command="{Binding ToggleTramDisplayCommand}"
-                                                ToolTip.Tip="Toggle display mode"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                                            <Image Source="{Binding TramDisplayIcon}"
-                                                   Width="36" Height="36" Stretch="Uniform"/>
-                                        </Button>
-                                        <TextBlock Text="{Binding TramDisplayLabel}" FontSize="12" HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <!-- Wheel Track -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Wheel Track (m):" FontSize="13"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <TextBox x:Name="WheelTrackInput" Grid.Column="1" Width="70" FontSize="14"
-                                             Text="{Binding TramTrackWidthValue, StringFormat='{}{0:F2}'}"
-                                             LostFocus="WheelTrackInput_LostFocus"/>
-                                </Grid>
                             </StackPanel>
 
                             <!-- Edit panel: replaces main panel when editing a system -->

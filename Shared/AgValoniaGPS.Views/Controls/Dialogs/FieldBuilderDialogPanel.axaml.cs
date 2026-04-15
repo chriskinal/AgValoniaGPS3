@@ -844,6 +844,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (input != null && double.TryParse(input.Text, out double width) && width > 0)
         {
             ConfigurationStore.Instance.Vehicle.TrackWidth = width;
+            RebuildTramLines(vm);
         }
     }
 
