@@ -1242,6 +1242,21 @@ public partial class MainViewModel : ObservableObject
                 _logger.LogWarning(ex, "Failed to load tram lines");
             }
 
+            // Load tram systems
+            try
+            {
+                var systems = Services.Tram.TramSystemFileService.Load(fieldPath);
+                ConfigStore.Tram.Systems.Clear();
+                foreach (var sys in systems)
+                    ConfigStore.Tram.Systems.Add(sys);
+                if (systems.Count > 0)
+                    _logger.LogDebug($"[Tram] Loaded {systems.Count} tram systems");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load tram systems");
+            }
+
             // Handle NTRIP profile
             _ = HandleNtripProfileForFieldAsync(fieldName);
 
@@ -1316,6 +1331,13 @@ public partial class MainViewModel : ObservableObject
             {
                 _tramLineService.SaveToFile(ActiveField.DirectoryPath);
                 _logger.LogDebug($"[Tram] Saved tram lines to {ActiveField.DirectoryPath}");
+            }
+
+            // Save tram systems
+            if (ConfigStore.Tram.Systems.Count > 0)
+            {
+                Services.Tram.TramSystemFileService.Save(ActiveField.DirectoryPath, ConfigStore.Tram.Systems);
+                _logger.LogDebug($"[Tram] Saved {ConfigStore.Tram.Systems.Count} tram systems");
             }
 
             // Flush elevation log
