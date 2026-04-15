@@ -1479,6 +1479,26 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (enabledCheck != null) enabledCheck.IsChecked = sys.IsEnabled;
 
         UpdateTramEditHighlights();
+        UpdateTramEditSectionVisibility();
+    }
+
+    private void UpdateTramEditSectionVisibility()
+    {
+        if (_editingTramSystem == null) return;
+        bool isBoundary = _editingTramSystem.ReferenceBoundaryIndex >= 0;
+
+        // Hide mode, direction, offset for boundary systems
+        var modeLabel = this.FindControl<TextBlock>("TramModeSectionLabel");
+        var modeSection = this.FindControl<StackPanel>("TramModeSection");
+        var dirLabel = this.FindControl<TextBlock>("TramDirSectionLabel");
+        var dirSection = this.FindControl<StackPanel>("TramDirSection");
+        var offsetSection = this.FindControl<Grid>("TramOffsetSection");
+
+        if (modeLabel != null) modeLabel.IsVisible = !isBoundary;
+        if (modeSection != null) modeSection.IsVisible = !isBoundary;
+        if (dirLabel != null) dirLabel.IsVisible = !isBoundary;
+        if (dirSection != null) dirSection.IsVisible = !isBoundary;
+        if (offsetSection != null) offsetSection.IsVisible = !isBoundary;
     }
 
     private void TramRefCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -1495,6 +1515,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             _editingTramSystem.ReferenceTrackName = sel;
             _editingTramSystem.ReferenceBoundaryIndex = -1;
         }
+        UpdateTramEditSectionVisibility();
         if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 

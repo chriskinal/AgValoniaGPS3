@@ -76,9 +76,10 @@ public class TramLineService(
     }
 
     /// <summary>
-    /// Generate boundary tram tracks from a fence line (headland or outer boundary)
+    /// Generate boundary tram tracks from a fence line (headland or outer boundary).
+    /// Supports multiple concentric passes (default 1).
     /// </summary>
-    public void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine)
+    public void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1)
     {
         if (fenceLine == null || fenceLine.Count < 3)
             return;
@@ -94,20 +95,39 @@ public class TramLineService(
         if (closeDist > 1.0)
             fenceLineList.Add(fenceLineList[0]);
 
-        // Generate outer boundary track
-        _outerBoundaryTrack.Clear();
-        var outerPoints = offsetService.GenerateOuterTramline(fenceLineList, tramWidth, halfWheelTrack);
-        _outerBoundaryTrack.AddRange(outerPoints);
-        // Close the loop
-        if (_outerBoundaryTrack.Count > 2)
-            _outerBoundaryTrack.Add(_outerBoundaryTrack[0]);
+        if (passCount < 1) passCount = 1;
 
-        // Generate inner boundary track
-        _innerBoundaryTrack.Clear();
-        var innerPoints = offsetService.GenerateInnerTramline(fenceLineList, tramWidth, halfWheelTrack);
-        _innerBoundaryTrack.AddRange(innerPoints);
-        if (_innerBoundaryTrack.Count > 2)
-            _innerBoundaryTrack.Add(_innerBoundaryTrack[0]);
+        for (int pass = 0; pass < passCount; pass++)
+        {
+            double extraOffset = tramWidth * pass;
+
+            // Outer wheel track for this pass
+            var outerPoints = offsetService.GenerateOuterTramline(
+                fenceLineList, tramWidth + extraOffset * 2, halfWheelTrack);
+            if (outerPoints.Count > 2)
+                outerPoints.Add(outerPoints[0]); // close loop
+
+            // Inner wheel track for this pass
+            var innerPoints = offsetService.GenerateInnerTramline(
+                fenceLineList, tramWidth + extraOffset * 2, halfWheelTrack);
+            if (innerPoints.Count > 2)
+                innerPoints.Add(innerPoints[0]); // close loop
+
+            if (pass == 0)
+            {
+                // First pass goes into dedicated boundary track collections
+                _outerBoundaryTrack.Clear();
+                _outerBoundaryTrack.AddRange(outerPoints);
+                _innerBoundaryTrack.Clear();
+                _innerBoundaryTrack.AddRange(innerPoints);
+            }
+            else
+            {
+                // Additional passes go into parallel tram lines
+                if (outerPoints.Count > 1) _parallelTramLines.Add(outerPoints);
+                if (innerPoints.Count > 1) _parallelTramLines.Add(innerPoints);
+            }
+        }
 
         TramLinesUpdated?.Invoke(this, EventArgs.Empty);
     }

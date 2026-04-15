@@ -399,10 +399,10 @@ Licensed under GNU GPL v3.
                                              LostFocus="TramSysWidthInput_LostFocus"/>
                                 </Grid>
 
-                                <!-- Mode: TrackLine / Edge -->
-                                <TextBlock Text="Mode" FontSize="13"
+                                <!-- Mode: TrackLine / Edge (hidden for boundary systems) -->
+                                <TextBlock x:Name="TramModeSectionLabel" Text="Mode" FontSize="13"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <StackPanel x:Name="TramModeSection" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                     <StackPanel Spacing="2">
                                         <Button x:Name="BtnModeTrackLine" Width="56" Height="56" CornerRadius="8"
                                                 Cursor="Hand" Padding="0" BorderThickness="0"
@@ -427,18 +427,18 @@ Licensed under GNU GPL v3.
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- Offset -->
-                                <Grid ColumnDefinitions="*,Auto">
+                                <!-- Offset (hidden for boundary systems) -->
+                                <Grid x:Name="TramOffsetSection" ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Offset (m):" FontSize="13" VerticalAlignment="Center"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                     <TextBox x:Name="TramSysOffsetInput" Grid.Column="1" Width="70" FontSize="14"
                                              LostFocus="TramSysOffsetInput_LostFocus"/>
                                 </Grid>
 
-                                <!-- Direction: Left / Symmetric / Right -->
-                                <TextBlock Text="Direction" FontSize="13"
+                                <!-- Direction: Left / Symmetric / Right (hidden for boundary systems) -->
+                                <TextBlock x:Name="TramDirSectionLabel" Text="Direction" FontSize="13"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <StackPanel x:Name="TramDirSection" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                     <StackPanel Spacing="2">
                                         <Button x:Name="BtnDirLeft" Width="56" Height="56" CornerRadius="8"
                                                 Cursor="Hand" Padding="0" BorderThickness="0"

@@ -63,7 +63,7 @@ public interface ITramLineService
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>
-    void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine);
+    void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1);
 
     /// <summary>
     /// Generate parallel tram lines from a guidance track
