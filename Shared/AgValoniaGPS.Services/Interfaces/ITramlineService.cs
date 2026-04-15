@@ -47,6 +47,11 @@ public interface ITramLineService
     bool HasTramLines { get; }
 
     /// <summary>
+    /// Set boundary fence for clipping parallel tram lines to the field area.
+    /// </summary>
+    void SetBoundaryFence(IReadOnlyList<Vec3>? fence);
+
+    /// <summary>
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>
@@ -79,6 +84,13 @@ public interface ITramLineService
     /// <param name="position">Position to check</param>
     /// <returns>Distance in meters, or double.MaxValue if no tram lines</returns>
     double DistanceToNearestTramLine(Vec3 position);
+
+    /// <summary>
+    /// Detect which wheels are on tram lines.
+    /// Returns a byte: bit 0 = right wheel, bit 1 = left wheel.
+    /// Includes manual override flags.
+    /// </summary>
+    byte DetectTramWheels(Vec3 vehiclePosition, double vehicleHeading, double tolerance);
 
     /// <summary>
     /// Left wheel manual override - force recording left wheel track

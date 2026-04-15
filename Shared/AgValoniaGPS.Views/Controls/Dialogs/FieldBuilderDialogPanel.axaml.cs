@@ -14,6 +14,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Models.Track;
 using AgValoniaGPS.ViewModels;
 
@@ -94,7 +95,8 @@ public partial class FieldBuilderDialogPanel : UserControl
             || e.PropertyName == nameof(MainViewModel.HasHeadland)
             || e.PropertyName == nameof(MainViewModel.CurrentHeadlandLineForPreview)
             || e.PropertyName == nameof(MainViewModel.HeadlandStatusText)
-            || e.PropertyName == nameof(MainViewModel.SelectedHeadlandSegment)))
+            || e.PropertyName == nameof(MainViewModel.SelectedHeadlandSegment)
+            || e.PropertyName == nameof(MainViewModel.TramLineCountDisplay)))
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
@@ -811,6 +813,26 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             // Offset changed - redraw preview
             UpdatePreview();
+        }
+    }
+
+    private void TramWidthInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var input = sender as TextBox;
+        if (input != null && double.TryParse(input.Text, out double width) && width > 0)
+        {
+            ConfigurationStore.Instance.Tram.TramWidth = width;
+        }
+    }
+
+    private void WheelTrackInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        var input = sender as TextBox;
+        if (input != null && double.TryParse(input.Text, out double width) && width > 0)
+        {
+            ConfigurationStore.Instance.Vehicle.TrackWidth = width;
         }
     }
 
@@ -1532,15 +1554,54 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (isSelected && track.Points.Count >= 2)
             {
                 var first = ToCanvas(track.Points[0].Easting, track.Points[0].Northing);
-                AddMarker(canvas, first, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A", light);
+                var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
 
-                // Only show B marker if track is not a closed loop
-                double closeDist = Math.Pow(track.Points[0].Easting - track.Points[^1].Easting, 2) +
-                                   Math.Pow(track.Points[0].Northing - track.Points[^1].Northing, 2);
-                if (closeDist > 1.0)
+                AddMarker(canvas, first, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A", light);
+                AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B", light);
+            }
+        }
+
+        // Draw tram lines on tram tab
+        bool onTramTab = mainTabs is { IsVisible: true, SelectedIndex: 2 };
+        if (onTramTab && vm.TramLineCountDisplay != "0")
+        {
+            var tramColor = new SolidColorBrush(light ? Color.FromRgb(180, 100, 110) : Color.FromRgb(237, 184, 187));
+
+            // Get tram line data via map service (it caches the current state)
+            var tramData = vm.GetTramLineData();
+            if (tramData != null)
+            {
+                // Draw parallel tram lines
+                foreach (var tramLine in tramData.Value.parallel)
                 {
-                    var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
-                    AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B", light);
+                    if (tramLine.Count < 2) continue;
+                    var tramPts = new List<Point>();
+                    foreach (var p in tramLine)
+                        tramPts.Add(ToCanvas(p.Easting, p.Northing));
+                    canvas.Children.Add(new Polyline
+                    {
+                        Stroke = tramColor, StrokeThickness = 1.5, Points = tramPts
+                    });
+                }
+
+                // Draw boundary tracks
+                if (tramData.Value.outer.Count >= 2)
+                {
+                    var outerPts = tramData.Value.outer.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+                    canvas.Children.Add(new Polyline
+                    {
+                        Stroke = tramColor, StrokeThickness = 2, Points = outerPts,
+                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 2 }
+                    });
+                }
+                if (tramData.Value.inner.Count >= 2)
+                {
+                    var innerPts = tramData.Value.inner.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+                    canvas.Children.Add(new Polyline
+                    {
+                        Stroke = tramColor, StrokeThickness = 2, Points = innerPts,
+                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 4, 2 }
+                    });
                 }
             }
         }

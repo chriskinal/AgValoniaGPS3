@@ -206,7 +206,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Tram Lines Display Mode"
                         Command="{Binding ToggleTramDisplayCommand}"
                         IsVisible="{Binding IsFieldOpen}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
+                    <Image Source="{Binding TramDisplayIcon}" Stretch="Uniform"/>
                 </Button>
 
                 <Separator Classes="BottomPanelSeparator"/>

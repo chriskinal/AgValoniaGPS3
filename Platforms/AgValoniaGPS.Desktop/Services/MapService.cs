@@ -167,6 +167,9 @@ public class MapService : IMapService
         IReadOnlyList<IReadOnlyList<AgValoniaGPS.Models.Base.Vec2>>? parallelLines) =>
         GetMapControl().SetTramLines(outerTrack, innerTrack, parallelLines);
 
+    public void SetTramControlByte(byte controlByte) =>
+        GetMapControl().SetTramControlByte(controlByte);
+
     // Track visualization for U-turns
     public void SetNextTrack(AgValoniaGPS.Models.Track.Track? track) =>
         GetMapControl().SetNextTrack(track);

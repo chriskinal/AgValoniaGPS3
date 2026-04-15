@@ -38,15 +38,22 @@ public partial class MainViewModel
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot state)
     {
-        // Update latency display from AutoSteer pipeline
+        // Update latency display and tram state from AutoSteer pipeline
         // This fires at 10Hz from the GPS receive path
         if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
         {
             GpsToPgnLatencyMs = state.TotalLatencyMs;
+            TramControlByte = state.TramState;
+            _mapService.SetTramControlByte(state.TramState);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => GpsToPgnLatencyMs = state.TotalLatencyMs);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                GpsToPgnLatencyMs = state.TotalLatencyMs;
+                TramControlByte = state.TramState;
+                _mapService.SetTramControlByte(state.TramState);
+            });
         }
     }
 
