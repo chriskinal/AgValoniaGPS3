@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using AgValoniaGPS.Models.Toolbar;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
@@ -51,6 +52,7 @@ public class ConfigurationStore : ObservableObject
     public TramConfig Tram { get; } = new();
     public AutoSteerConfig AutoSteer { get; } = new();
     public HotkeyConfig Hotkeys { get; } = new();
+    public ToolbarConfiguration Toolbar { get; } = new();
 
     // Profile management
     private string _activeProfileName = "Default";

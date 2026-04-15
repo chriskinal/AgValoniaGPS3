@@ -20,6 +20,7 @@ using System.IO;
 using System.Text.Json;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Models.Toolbar;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -337,6 +338,18 @@ public class ConfigurationService(
             store.Hotkeys.LoadFromDictionary(settings.HotkeyBindings);
         }
 
+        // Toolbar config
+        store.Toolbar.AutoHideToolbars = settings.AutoHideToolbars;
+        store.Toolbar.AutoHideSpeedThreshold = settings.AutoHideSpeedThreshold;
+        store.Toolbar.AutoHideOpacity = settings.AutoHideOpacity;
+        store.Toolbar.AutoHideTimeout = settings.AutoHideTimeout;
+        store.Toolbar.ActiveLayoutName = settings.ActiveShortcutLayoutName;
+        store.Toolbar.ShortcutLayouts = settings.ShortcutLayouts.Count > 0
+            ? settings.ShortcutLayouts
+            : new List<ShortcutLayout> { ToolbarConfiguration.CreateDefaultLayout() };
+        if (store.Toolbar.ActiveLayoutName == null && store.Toolbar.ShortcutLayouts.Count > 0)
+            store.Toolbar.ActiveLayoutName = store.Toolbar.ShortcutLayouts[0].Name;
+
         // Simulator config - always restore from settings
         store.Simulator.Enabled = settings.SimulatorEnabled;
         store.Simulator.Latitude = settings.SimulatorLatitude;
@@ -401,6 +414,14 @@ public class ConfigurationService(
 
         // Hotkey bindings
         settings.HotkeyBindings = store.Hotkeys.ToDictionary();
+
+        // Toolbar config
+        settings.ShortcutLayouts = store.Toolbar.ShortcutLayouts;
+        settings.ActiveShortcutLayoutName = store.Toolbar.ActiveLayoutName;
+        settings.AutoHideToolbars = store.Toolbar.AutoHideToolbars;
+        settings.AutoHideSpeedThreshold = store.Toolbar.AutoHideSpeedThreshold;
+        settings.AutoHideOpacity = store.Toolbar.AutoHideOpacity;
+        settings.AutoHideTimeout = store.Toolbar.AutoHideTimeout;
 
         // Active profile
         settings.LastUsedVehicleProfile = store.ActiveProfileName;

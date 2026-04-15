@@ -29,6 +29,7 @@ using AgValoniaGPS.Services.Coverage;
 using AgValoniaGPS.Services.Logging;
 using AgValoniaGPS.Services.Pipeline;
 using AgValoniaGPS.Services.Section;
+using AgValoniaGPS.Services.Toolbar;
 using AgValoniaGPS.Services.Tram;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Models;
@@ -132,6 +133,9 @@ public static class ServiceCollectionExtensions
 
         // GPS processing pipeline (background-thread orchestration)
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
+
+        // Toolbar button registry
+        services.AddSingleton<IButtonRegistryService, ButtonRegistryService>();
 
         // Platform-specific services (Desktop implementations)
         services.AddSingleton<MapService>();

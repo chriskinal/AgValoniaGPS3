@@ -65,6 +65,7 @@ public class MainViewModelBuilder
             elevationLogService: Substitute.For<IElevationLogService>(),
             tramLineService: Substitute.For<ITramLineService>(),
             gpsPipelineService: Substitute.For<IGpsPipelineService>(),
+            buttonRegistryService: new AgValoniaGPS.Services.Toolbar.ButtonRegistryService(),
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
     }

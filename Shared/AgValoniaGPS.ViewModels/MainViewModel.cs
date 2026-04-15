@@ -169,6 +169,7 @@ public partial class MainViewModel : ObservableObject
         IElevationLogService elevationLogService,
         ITramLineService tramLineService,
         IGpsPipelineService gpsPipelineService,
+        IButtonRegistryService buttonRegistryService,
         ILogger<MainViewModel> logger,
         ApplicationState appState)
     {
@@ -303,6 +304,7 @@ public partial class MainViewModel : ObservableObject
         InitializeSettingsCommands();
         InitializeHotkeyCommands();
         InitializeChartCommands();
+        InitializeToolbar(buttonRegistryService);
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings

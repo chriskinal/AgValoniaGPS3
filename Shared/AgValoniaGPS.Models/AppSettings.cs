@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using AgValoniaGPS.Models.Toolbar;
 
 namespace AgValoniaGPS.Models
 {
@@ -98,6 +99,14 @@ namespace AgValoniaGPS.Models
 
         // Hotkey bindings (empty = use defaults)
         public Dictionary<string, string> HotkeyBindings { get; set; } = new();
+
+        // Toolbar settings
+        public List<ShortcutLayout> ShortcutLayouts { get; set; } = new();
+        public string? ActiveShortcutLayoutName { get; set; }
+        public bool AutoHideToolbars { get; set; } = false;
+        public double AutoHideSpeedThreshold { get; set; } = 1.5;
+        public double AutoHideOpacity { get; set; } = 0.15;
+        public double AutoHideTimeout { get; set; } = 5.0;
 
         /// <summary>
         /// Validate and clamp all settings to valid ranges.

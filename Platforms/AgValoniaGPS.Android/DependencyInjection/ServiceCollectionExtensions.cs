@@ -28,6 +28,7 @@ using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.Services.Tool;
 using AgValoniaGPS.Services.Section;
+using AgValoniaGPS.Services.Toolbar;
 using AgValoniaGPS.Services.Tram;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Models;
@@ -130,6 +131,9 @@ public static class ServiceCollectionExtensions
 
         // GPS processing pipeline (background-thread orchestration)
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
+
+        // Toolbar button registry
+        services.AddSingleton<IButtonRegistryService, ButtonRegistryService>();
 
         // Android-specific services
         services.AddSingleton<IMapService, MapService>();

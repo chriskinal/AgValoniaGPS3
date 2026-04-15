@@ -595,6 +595,8 @@ public class ConfigurationServiceMappingTests
             "LastUsedVehicleProfile", // Mapped via ActiveProfileName (different name)
             "HotkeyBindings",       // Mapped via Hotkeys.LoadFromDictionary (special handling)
             "Language",              // Used directly from AppSettings for localization
+            "ShortcutLayouts",       // Mapped via Toolbar.ShortcutLayouts (list, special handling)
+            "ActiveShortcutLayoutName", // Mapped via Toolbar.ActiveLayoutName (different name)
         };
 
         // Set every non-excluded property to a non-default value
@@ -640,6 +642,10 @@ public class ConfigurationServiceMappingTests
         _settings.SimulatorSpeed = 9999;
         _settings.SimulatorSteerAngle = 9999;
         _settings.FieldTextureVisible = false; // default is true, set to non-default
+        _settings.AutoHideToolbars = true;
+        _settings.AutoHideSpeedThreshold = 9999;
+        _settings.AutoHideOpacity = 0.99;
+        _settings.AutoHideTimeout = 9999;
 
         _service.LoadAppSettings();
 

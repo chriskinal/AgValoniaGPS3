@@ -107,9 +107,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <panels:SectionControlPanel x:Name="SectionControlPanel"
                                         HorizontalAlignment="Center"
                                         DataContext="{Binding}"/>
-            <panels:BottomNavigationPanel x:Name="BottomNavPanel"
-                                          HorizontalAlignment="Center"
-                                          DataContext="{Binding}"/>
+            <panels:ShortcutBar x:Name="ShortcutBarPanel"
+                               HorizontalAlignment="Center"
+                               DataContext="{Binding}"/>
         </StackPanel>
 
         <!-- Floating/Draggable Panels (charts, recorded path) -->
