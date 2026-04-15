@@ -220,19 +220,14 @@ public class ScreenshotCaptureTests
         Canvas.SetLeft(rightNav, WindowWidth - 80);
         Canvas.SetTop(rightNav, 10);
 
-        var bottomNav = new BottomNavigationPanel { DataContext = vm };
-        Canvas.SetLeft(bottomNav, 150);
-        Canvas.SetTop(bottomNav, WindowHeight - 160);
-
-        var sectionCtrl = new SectionControlPanel { DataContext = vm };
-        Canvas.SetLeft(sectionCtrl, 150);
-        Canvas.SetTop(sectionCtrl, WindowHeight - 220);
+        var shortcutBar = new ShortcutBar { DataContext = vm };
+        Canvas.SetLeft(shortcutBar, 150);
+        Canvas.SetTop(shortcutBar, WindowHeight - 100);
 
         var canvas = new Canvas { ZIndex = 10 };
         canvas.Children.Add(leftNav);
         canvas.Children.Add(rightNav);
-        canvas.Children.Add(bottomNav);
-        canvas.Children.Add(sectionCtrl);
+        canvas.Children.Add(shortcutBar);
         return canvas;
     }
 

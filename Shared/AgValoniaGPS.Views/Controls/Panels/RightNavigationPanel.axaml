@@ -75,9 +75,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
+    <Panel ClipToBounds="False" Background="{x:Null}">
     <!-- Navigation Button Bar -->
     <Border x:Name="MainPanel" Classes="FloatingPanel">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="700">
         <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
+
+            <!-- === GUIDANCE === -->
+
             <!-- 1. Contour/Track Mode Toggle -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Contour Mode On/Off"
                     Command="{Binding ToggleContourModeCommand}">
@@ -144,13 +149,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     Command="{Binding ToggleAutoSteerCommand}"
                     IsEnabled="{Binding IsAutoSteerAvailable}">
                 <Panel>
-                    <!-- Gray when no track available -->
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerGray.png" Stretch="Uniform"
                            IsVisible="{Binding IsAutoSteerAvailable, Converter={StaticResource InverseBoolConverter}}"/>
-                    <!-- On when autosteer is engaged -->
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png" Stretch="Uniform"
                            IsVisible="{Binding IsAutoSteerEngaged}"/>
-                    <!-- Off when available but not engaged -->
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOff.png" Stretch="Uniform">
                         <Image.IsVisible>
                             <MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -162,6 +164,273 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
+            <Separator Classes="RightPanelSeparator"/>
+
+            <!-- === TRACK / HEADLAND === -->
+
+            <!-- Headland On/Off -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Toggle Headland"
+                    Command="{Binding ToggleHeadlandCommand}">
+                <Panel>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Stretch="Uniform"
+                           IsVisible="{Binding IsHeadlandOn}"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOff.png" Stretch="Uniform"
+                           IsVisible="{Binding IsHeadlandOn, Converter={StaticResource InverseBoolConverter}}"/>
+                </Panel>
+            </Button>
+
+            <!-- Section Control in Headland -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Section Control in Headland"
+                    Command="{Binding ToggleSectionInHeadlandCommand}">
+                <Panel>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOn.png" Stretch="Uniform"
+                           IsVisible="{Binding IsSectionControlInHeadland}"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOff.png" Stretch="Uniform"
+                           IsVisible="{Binding IsSectionControlInHeadland, Converter={StaticResource InverseBoolConverter}}"/>
+                </Panel>
+            </Button>
+
+            <!-- Snap Left -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Snap to Left Track"
+                    Command="{Binding SnapLeftCommand}"
+                    IsVisible="{Binding HasActiveTrack}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapLeft.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- Snap Right -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Snap to Right Track"
+                    Command="{Binding SnapRightCommand}"
+                    IsVisible="{Binding HasActiveTrack}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapRight.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- Snap to Pivot -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Snap to Pivot"
+                    Command="{Binding SnapToPivotCommand}"
+                    IsVisible="{Binding HasActiveTrack}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
+            </Button>
+
+            <Separator Classes="RightPanelSeparator"/>
+
+            <!-- === TOOLS === -->
+
+            <!-- Section Mapping Color -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Section Mapping Color"
+                    Command="{Binding ChangeMappingColorCommand}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMapping.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- Reset Tool Heading -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Reset Tool Heading"
+                    Command="{Binding ResetToolHeadingCommand}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ResetTool.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- Tram Display Mode -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Tram Lines Display Mode"
+                    Command="{Binding ToggleTramDisplayCommand}"
+                    IsVisible="{Binding IsFieldOpen}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- U-Turn Skip Rows (cycle 0-9) -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="U-Turn Skip Rows (tap to cycle 0-9)"
+                    Command="{Binding CycleUTurnSkipRowsCommand}"
+                    IsVisible="{Binding HasActiveTrack}">
+                <TextBlock Text="{Binding UTurnSkipRows}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           FontSize="22" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+
+            <Separator Classes="RightPanelSeparator"/>
+
+            <!-- === AB LINE MENU === -->
+
+            <!-- AB Line Menu (Tracks, Quick AB, Draw, etc.) -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="AB Line Options"
+                    Command="{Binding ToggleABLinePanelCommand}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png" Stretch="Uniform"/>
+            </Button>
+
+            <!-- === FLAGS === -->
+
+            <!-- Flags Menu -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Flags"
+                    Command="{Binding ToggleFlagsPanelCommand}">
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Stretch="Uniform"/>
+            </Button>
+
         </StackPanel>
+        </ScrollViewer>
     </Border>
+
+    <!-- Sub-panels anchored to the left of the right bar -->
+    <Canvas ClipToBounds="False">
+
+        <!-- AB Line Panel -->
+        <Border Classes="FloatingPanel" Canvas.Left="-280" Canvas.Top="0"
+                IsVisible="{Binding IsABLinePanelVisible}"
+                IsHitTestVisible="{Binding IsABLinePanelVisible}"
+                MinWidth="260">
+            <StackPanel Spacing="6">
+                <TextBlock Text="AB Line" FontSize="14" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           Margin="4,0,0,4"/>
+
+                <!-- Tracks Dialog -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Tracks - Manage AB Lines"
+                        Command="{Binding ShowTracksDialogCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Auto Track toggle -->
+                <Button Classes="RightPanelButton"
+                        ToolTip.Tip="Auto Track Select (closest track)"
+                        Command="{Binding ToggleAutoTrackCommand}"
+                        Classes.Active="{Binding IsAutoTrackEnabled}">
+                    <TextBlock Text="AT" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+
+                <!-- Quick AB -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Quick AB Line Creator"
+                        Command="{Binding ShowQuickABSelectorCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Create AB from Boundary Edge -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Create AB Line from Boundary Edge"
+                        Command="{Binding CreateTrackFromBoundaryCommand}">
+                    <TextBlock Text="BE" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+
+                <!-- Draw AB -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Draw AB Line on Map"
+                        Command="{Binding ShowDrawABDialogCommand}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png" Stretch="Uniform"/>
+                </Button>
+
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4"
+                           IsVisible="{Binding HasActiveTrack}"/>
+
+                <!-- Cycle Lines -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Cycle AB Lines"
+                        Command="{Binding CycleABLinesCommand}"
+                        IsVisible="{Binding HasActiveTrack}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Smooth -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Smooth AB Curve"
+                        Command="{Binding SmoothABLineCommand}"
+                        IsVisible="{Binding HasActiveTrack}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSmooth.png" Stretch="Uniform"/>
+                </Button>
+
+                <!-- Delete Contours -->
+                <Button Classes="RightPanelButton" ToolTip.Tip="Delete Contours"
+                        Command="{Binding DeleteContoursCommand}"
+                        IsVisible="{Binding HasActiveTrack}">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png" Stretch="Uniform"/>
+                </Button>
+
+                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4"
+                           IsVisible="{Binding HasActiveTrack}"/>
+
+                <!-- Nudge Controls -->
+                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Nudge Left (A+)"
+                            Command="{Binding NudgeLeftCommand}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusPlusA.png" Stretch="Uniform"/>
+                    </Button>
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Nudge Right (B+)"
+                            Command="{Binding NudgeRightCommand}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusPlusB.png" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Fine Nudge Left (A-)"
+                            Command="{Binding FineNudgeLeftCommand}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusMinusA.png" Stretch="Uniform"/>
+                    </Button>
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Fine Nudge Right (B-)"
+                            Command="{Binding FineNudgeRightCommand}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/APlusMinusB.png" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Nudge Left Half Tool Width"
+                            Command="{Binding HalfToolNudgeLeftCommand}">
+                        <TextBlock Text="&lt;&lt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Reset Nudge"
+                            Command="{Binding ResetNudgeCommand}">
+                        <TextBlock Text="0" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Classes="RightPanelButton" ToolTip.Tip="Nudge Right Half Tool Width"
+                            Command="{Binding HalfToolNudgeRightCommand}">
+                        <TextBlock Text="&gt;&gt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Flags Panel -->
+        <Border Classes="FloatingPanel" Canvas.Left="-190" Canvas.Top="0"
+                IsVisible="{Binding IsFlagsPanelVisible}"
+                IsHitTestVisible="{Binding IsFlagsPanelVisible}"
+                MinWidth="170">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Flags" FontSize="14" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           Margin="4,0,0,4"/>
+
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="Place flag at current position"
+                        Command="{Binding PlaceFlagHereCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Place Here" VerticalAlignment="Center" FontSize="13"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="Tap map to place flag"
+                        Command="{Binding PlaceFlagOnClickCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagGrn.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Place on Map" VerticalAlignment="Center" FontSize="13"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Width="160" Height="40" Padding="8,4" CornerRadius="6"
+                        HorizontalContentAlignment="Left"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip.Tip="View and manage all flags"
+                        Command="{Binding ShowFlagListCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagYel.png" Width="20" Height="20" Stretch="Uniform"/>
+                        <TextBlock Text="Flag List" VerticalAlignment="Center" FontSize="13"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+    </Canvas>
+    </Panel>
 </UserControl>

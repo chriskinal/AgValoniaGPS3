@@ -26,43 +26,84 @@ namespace AgValoniaGPS.ViewModels;
 /// </summary>
 public partial class MainViewModel
 {
+    /// <summary>
+    /// Closes all left-bar sub-panels except the one specified.
+    /// Pass null to close all.
+    /// </summary>
+    private void CloseLeftBarPanelsExcept(string? except)
+    {
+        if (except != nameof(IsViewSettingsPanelVisible)) IsViewSettingsPanelVisible = false;
+        if (except != nameof(IsFileMenuPanelVisible)) IsFileMenuPanelVisible = false;
+        if (except != nameof(IsToolsPanelVisible)) IsToolsPanelVisible = false;
+        if (except != nameof(IsConfigurationPanelVisible)) IsConfigurationPanelVisible = false;
+        if (except != nameof(IsJobMenuPanelVisible)) IsJobMenuPanelVisible = false;
+        if (except != nameof(IsFieldToolsPanelVisible)) IsFieldToolsPanelVisible = false;
+    }
+
     private void InitializeNavigationCommands()
     {
-        // Panel toggle commands
+        // Panel toggle commands (one-at-a-time: opening one closes all others)
         ToggleViewSettingsPanelCommand = new RelayCommand(() =>
         {
-            IsViewSettingsPanelVisible = !IsViewSettingsPanelVisible;
+            bool opening = !IsViewSettingsPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsViewSettingsPanelVisible) : null);
+            IsViewSettingsPanelVisible = opening;
         });
 
         ToggleFileMenuPanelCommand = new RelayCommand(() =>
         {
-            IsFileMenuPanelVisible = !IsFileMenuPanelVisible;
+            bool opening = !IsFileMenuPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsFileMenuPanelVisible) : null);
+            IsFileMenuPanelVisible = opening;
         });
 
         ToggleToolsPanelCommand = new RelayCommand(() =>
         {
-            IsToolsPanelVisible = !IsToolsPanelVisible;
+            bool opening = !IsToolsPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsToolsPanelVisible) : null);
+            IsToolsPanelVisible = opening;
         });
 
         ToggleConfigurationPanelCommand = new RelayCommand(() =>
         {
-            IsConfigurationPanelVisible = !IsConfigurationPanelVisible;
+            bool opening = !IsConfigurationPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsConfigurationPanelVisible) : null);
+            IsConfigurationPanelVisible = opening;
         });
 
         ToggleJobMenuPanelCommand = new RelayCommand(() =>
         {
-            IsJobMenuPanelVisible = !IsJobMenuPanelVisible;
+            bool opening = !IsJobMenuPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsJobMenuPanelVisible) : null);
+            IsJobMenuPanelVisible = opening;
         });
 
         ToggleFieldToolsPanelCommand = new RelayCommand(() =>
         {
-            IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
+            bool opening = !IsFieldToolsPanelVisible;
+            CloseLeftBarPanelsExcept(opening ? nameof(IsFieldToolsPanelVisible) : null);
+            IsFieldToolsPanelVisible = opening;
         });
 
         ToggleAutoTrackCommand = new RelayCommand(() =>
         {
             IsAutoTrackEnabled = !IsAutoTrackEnabled;
             StatusMessage = IsAutoTrackEnabled ? "Auto track select ON" : "Auto track select OFF";
+        });
+
+        // Right bar sub-panel toggle commands (mutually exclusive)
+        ToggleABLinePanelCommand = new RelayCommand(() =>
+        {
+            bool opening = !IsABLinePanelVisible;
+            if (opening) IsFlagsPanelVisible = false;
+            IsABLinePanelVisible = opening;
+        });
+
+        ToggleFlagsPanelCommand = new RelayCommand(() =>
+        {
+            bool opening = !IsFlagsPanelVisible;
+            if (opening) IsABLinePanelVisible = false;
+            IsFlagsPanelVisible = opening;
         });
 
         // View mode commands

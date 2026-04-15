@@ -43,6 +43,8 @@ public partial class MainViewModel
     private bool _isSteerChartPanelVisible;
     private bool _isHeadingChartPanelVisible;
     private bool _isXTEChartPanelVisible;
+    private bool _isABLinePanelVisible;
+    private bool _isFlagsPanelVisible;
 
     #endregion
 
@@ -106,6 +108,18 @@ public partial class MainViewModel
     {
         get => _isXTEChartPanelVisible;
         set => SetProperty(ref _isXTEChartPanelVisible, value);
+    }
+
+    public bool IsABLinePanelVisible
+    {
+        get => _isABLinePanelVisible;
+        set => SetProperty(ref _isABLinePanelVisible, value);
+    }
+
+    public bool IsFlagsPanelVisible
+    {
+        get => _isFlagsPanelVisible;
+        set => SetProperty(ref _isFlagsPanelVisible, value);
     }
 
     #endregion
