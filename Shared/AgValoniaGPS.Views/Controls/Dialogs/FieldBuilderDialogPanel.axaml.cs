@@ -1453,12 +1453,20 @@ public partial class FieldBuilderDialogPanel : UserControl
                          sys.Mode, sys.Offset, sys.Direction, sys.PassCount, sys.IsEnabled);
         var mainPanel = this.FindControl<StackPanel>("TramMainPanel");
         var editPanel = this.FindControl<StackPanel>("TramSystemEditPanel");
-        var title = this.FindControl<TextBlock>("TramEditTitle");
         if (editPanel == null) return;
 
-        // Swap panels
+        // Swap panels - must be visible before populating controls
         if (mainPanel != null) mainPanel.IsVisible = false;
         editPanel.IsVisible = true;
+
+        // Populate after visibility change takes effect
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => PopulateTramEditPanel(sys),
+            Avalonia.Threading.DispatcherPriority.Render);
+    }
+
+    private void PopulateTramEditPanel(AgValoniaGPS.Models.Tram.TramSystem sys)
+    {
+        var title = this.FindControl<TextBlock>("TramEditTitle");
         if (title != null) title.Text = $"Edit: {sys.Name}";
 
         // Populate reference combo

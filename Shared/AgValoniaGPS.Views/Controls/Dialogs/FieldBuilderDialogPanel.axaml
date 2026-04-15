@@ -295,6 +295,7 @@ Licensed under GNU GPL v3.
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
 
                                 <ListBox x:Name="TramSystemList" ItemsSource="{Binding TramSystems}"
+                                         SelectionMode="Single"
                                          MaxHeight="180" CornerRadius="4"
                                          Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                                     <ListBox.ItemTemplate>

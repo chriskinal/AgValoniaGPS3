@@ -4469,10 +4469,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 }
             }
 
-            // Mode All or OuterOnly: draw boundary tracks
+            // Mode All or OuterOnly: draw boundary tracks (different color)
             if ((s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.All
                 || s.TramDisplayMode == AgValoniaGPS.Models.Configuration.TramDisplayMode.OuterOnly) && hasBoundary)
             {
+                using var bndFillPaint = new SKPaint
+                {
+                    Color = new SKColor(100, 200, 180, alpha),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 1.0f,
+                    IsAntialias = true
+                };
+
                 void DrawTramTrack(IReadOnlyList<AgValoniaGPS.Models.Base.Vec2> track)
                 {
                     if (track.Count < 2) return;
@@ -4481,7 +4489,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     for (int i = 1; i < track.Count; i++)
                         path.LineTo((float)track[i].Easting, (float)track[i].Northing);
                     canvas.DrawPath(path, outlinePaint);
-                    canvas.DrawPath(path, fillPaint);
+                    canvas.DrawPath(path, bndFillPaint);
                 }
 
                 if (s.TramOuterTrack != null) DrawTramTrack(s.TramOuterTrack);
