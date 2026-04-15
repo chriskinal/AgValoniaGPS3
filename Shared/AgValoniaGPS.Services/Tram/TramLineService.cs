@@ -476,6 +476,16 @@ public class TramLineService(
     }
 
     /// <summary>
+    /// Add a single tram line to the parallel lines collection.
+    /// Used when generating per-system lines.
+    /// </summary>
+    public void AddTramLine(List<Vec2> points)
+    {
+        if (points != null && points.Count > 1)
+            _parallelTramLines.Add(points);
+    }
+
+    /// <summary>
     /// Clear all tram lines
     /// </summary>
     public void Clear()

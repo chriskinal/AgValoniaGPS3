@@ -1692,10 +1692,11 @@ public partial class MainViewModel : ObservableObject
     private void UpdateTramLines(Track? track)
     {
         var config = ConfigurationStore.Instance.Tram;
-        if (config.DisplayMode == Models.Configuration.TramDisplayMode.Off || track == null || track.Points.Count < 2)
+        if (config.DisplayMode == Models.Configuration.TramDisplayMode.Off)
         {
             _tramLineService.Clear();
             _mapService.SetTramLines(null, null, null);
+            OnPropertyChanged(nameof(TramLineCountDisplay));
             return;
         }
 
@@ -1707,8 +1708,6 @@ public partial class MainViewModel : ObservableObject
             _tramLineService.SetBoundaryFence(fencePts);
         }
 
-        // Generate parallel tram lines from the track
-        // Use a reasonable field width estimate (boundary size or default 500m)
         double fieldWidth = 500;
         if (_currentBoundary?.OuterBoundary?.Points != null && _currentBoundary.OuterBoundary.Points.Count > 0)
         {
@@ -1718,9 +1717,36 @@ public partial class MainViewModel : ObservableObject
             fieldWidth = Math.Max(maxE - minE, maxN - minN) * 1.2;
         }
 
-        _tramLineService.GenerateParallelTramLines(track, fieldWidth);
+        _tramLineService.Clear();
 
-        // Generate boundary tram tracks from headland (or boundary if no headland)
+        // If TramSystems exist, generate per-system; otherwise use legacy single-track mode
+        if (config.Systems.Count > 0)
+        {
+            foreach (var sys in config.Systems)
+            {
+                if (!sys.IsEnabled) continue;
+
+                // Resolve reference track
+                Track? refTrack = null;
+                if (sys.ReferenceTrackName != null)
+                    refTrack = SavedTracks.FirstOrDefault(t => t.Name == sys.ReferenceTrackName);
+                else
+                    refTrack = track; // fallback to selected track
+
+                if (refTrack == null || refTrack.Points.Count < 2) continue;
+
+                var lines = _tramLineService.GenerateForSystem(sys, refTrack, fieldWidth);
+                foreach (var line in lines)
+                    _tramLineService.AddTramLine(line);
+            }
+        }
+        else if (track != null && track.Points.Count >= 2)
+        {
+            // Legacy: single track mode
+            _tramLineService.GenerateParallelTramLines(track, fieldWidth);
+        }
+
+        // Generate boundary tram tracks from headland
         if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
         {
             _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
