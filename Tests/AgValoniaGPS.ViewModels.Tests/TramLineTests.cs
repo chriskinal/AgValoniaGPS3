@@ -490,4 +490,135 @@ public class TramLineTests
                 $"Inner track should be closed. Gap: {dist:F3}m");
         }
     }
+
+    // ---------------------------------------------------------------
+    // U-shaped field clipping tests
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void UShapedField_HorizontalTramLines_SplitAtBoundaryCrossings()
+    {
+        // U-shaped field: open at top, concave
+        //   (0,100)---(40,100)    (60,100)---(100,100)
+        //      |         |            |          |
+        //      |         |            |          |
+        //      |         (40,60)---(60,60)       |
+        //      |                                 |
+        //   (0,0)-----------------------------(100,0)
+        var boundary = new List<Vec3>
+        {
+            new Vec3(0, 0, 0),
+            new Vec3(100, 0, Math.PI / 2),
+            new Vec3(100, 100, Math.PI / 2),
+            new Vec3(60, 100, Math.PI),
+            new Vec3(60, 60, 3 * Math.PI / 2),
+            new Vec3(40, 60, Math.PI),
+            new Vec3(40, 100, Math.PI / 2),
+            new Vec3(0, 100, Math.PI),
+            new Vec3(0, 0, 3 * Math.PI / 2),
+        };
+
+        _service.SetBoundaryFence(boundary);
+
+        // Horizontal AB line through the middle (y-axis direction)
+        // heading = PI/2 means pointing east, so perpendicular offset goes north/south
+        var track = new Track
+        {
+            Name = "Horizontal",
+            Points = new List<Vec3>
+            {
+                new Vec3(0, 50, Math.PI / 2),
+                new Vec3(100, 50, Math.PI / 2)
+            },
+            Type = TrackType.ABLine
+        };
+
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+        ConfigurationStore.Instance.Tram.DisplayMode = TramDisplayMode.All;
+
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+            ReferenceTrackName = "Horizontal"
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        // Lines at y~80 would cross the U-gap (40-60 range at y>60)
+        // These should be split into separate segments, not a single line
+        // that crosses outside the boundary
+        foreach (var line in lines)
+        {
+            for (int i = 0; i < line.Count - 1; i++)
+            {
+                var p1 = line[i];
+                var p2 = line[i + 1];
+
+                // Check midpoint of each segment is inside boundary
+                var mid = new Vec2((p1.Easting + p2.Easting) / 2, (p1.Northing + p2.Northing) / 2);
+                bool midInside = IsPointInPolygon(mid.Easting, mid.Northing, boundary);
+
+                // Allow small tolerance: segments near boundary edge might have
+                // midpoints barely outside due to discretization
+                double segLen = Math.Sqrt(Math.Pow(p2.Easting - p1.Easting, 2) +
+                                          Math.Pow(p2.Northing - p1.Northing, 2));
+                if (segLen > 5.0) // Only check segments longer than 5m
+                {
+                    Assert.That(midInside, Is.True,
+                        $"Segment midpoint ({mid.Easting:F1}, {mid.Northing:F1}) should be inside " +
+                        $"U-shaped boundary (segment length: {segLen:F1}m)");
+                }
+            }
+        }
+
+        Assert.That(lines.Count, Is.GreaterThan(0), "Should produce tram lines");
+    }
+
+    [Test]
+    public void GenerateForSystem_WithBoundaryFence_AllPointsInsideFence()
+    {
+        // Square boundary
+        var boundary = new List<Vec3>
+        {
+            new Vec3(0, 0, 0), new Vec3(200, 0, Math.PI / 2),
+            new Vec3(200, 200, Math.PI), new Vec3(0, 200, 3 * Math.PI / 2),
+            new Vec3(0, 0, 0)
+        };
+
+        _service.SetBoundaryFence(boundary);
+
+        var track = new Track
+        {
+            Name = "Center",
+            Points = new List<Vec3> { new Vec3(100, 0, 0), new Vec3(100, 200, 0) },
+            Type = TrackType.ABLine
+        };
+
+        var system = new AgValoniaGPS.Models.Tram.TramSystem
+        {
+            Name = "Test",
+            TramWidth = 24.0,
+            Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
+            Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
+        };
+
+        var lines = _service.GenerateForSystem(system, track, 200);
+
+        Assert.That(lines.Count, Is.GreaterThan(0));
+
+        foreach (var line in lines)
+        {
+            foreach (var pt in line)
+            {
+                Assert.That(pt.Easting, Is.GreaterThanOrEqualTo(-0.5).And.LessThanOrEqualTo(200.5),
+                    $"Point ({pt.Easting:F1}, {pt.Northing:F1}) easting should be within boundary");
+                Assert.That(pt.Northing, Is.GreaterThanOrEqualTo(-0.5).And.LessThanOrEqualTo(200.5),
+                    $"Point ({pt.Easting:F1}, {pt.Northing:F1}) northing should be within boundary");
+            }
+        }
+    }
 }
