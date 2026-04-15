@@ -138,7 +138,11 @@ public class TramLineService(
 
         for (int i = 0; i < numLines; i++)
         {
-            double baseOffset = (tramWidth * 0.5) + (tramWidth * i) + systemOffset;
+            // Track mode: vehicle drives on reference, so pass 0 is at offset 0
+            // Edge mode: reference is between passes, so pass 0 is at tramWidth/2
+            double baseOffset = system.Mode == Models.Tram.TramSystemMode.TrackLine
+                ? (tramWidth * i) + systemOffset
+                : (tramWidth * 0.5) + (tramWidth * i) + systemOffset;
 
             // Generate based on direction
             bool doPositive = system.Direction is Models.Tram.TramDirection.Symmetric
@@ -148,7 +152,7 @@ public class TramLineService(
 
             if (doPositive)
                 AddPassLines(result, referenceTrack, baseOffset, halfWheelTrack, system.Mode, fenceLine);
-            if (doNegative)
+            if (doNegative && (i > 0 || system.Mode != Models.Tram.TramSystemMode.TrackLine))
                 AddPassLines(result, referenceTrack, -baseOffset, halfWheelTrack, system.Mode, fenceLine);
         }
 

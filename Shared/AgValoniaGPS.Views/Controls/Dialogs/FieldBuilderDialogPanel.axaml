@@ -509,6 +509,12 @@ Licensed under GNU GPL v3.
                                     <TextBox x:Name="TramSysPassInput" Grid.Column="1" Width="70" FontSize="14"
                                              LostFocus="TramSysPassInput_LostFocus"/>
                                 </Grid>
+
+                                <Button Content="Done" Height="36" FontSize="14"
+                                        HorizontalAlignment="Stretch" CornerRadius="4" Margin="0,6,0,0"
+                                        Click="TramSystemEditDone_Click"
+                                        Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                                        Foreground="White"/>
                             </StackPanel>
                             </Panel>
                             </ScrollViewer>

@@ -1753,8 +1753,18 @@ public partial class MainViewModel : ObservableObject
                 if (sys.ReferenceBoundaryIndex >= 0)
                 {
                     hasBoundarySystem = true;
+                    // Use headland if available, otherwise use outer boundary
                     if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+                    {
                         _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+                    }
+                    else if (_currentBoundary?.OuterBoundary?.Points != null &&
+                             _currentBoundary.OuterBoundary.Points.Count >= 3)
+                    {
+                        var bndPts = _currentBoundary.OuterBoundary.Points
+                            .Select(p => new Models.Base.Vec3(p.Easting, p.Northing, p.Heading)).ToList();
+                        _tramLineService.GenerateBoundaryTramTracks(bndPts);
+                    }
                     continue;
                 }
 
