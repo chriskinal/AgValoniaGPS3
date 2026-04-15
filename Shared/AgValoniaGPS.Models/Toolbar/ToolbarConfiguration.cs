@@ -52,7 +52,7 @@ public class ToolbarConfiguration : ObservableObject
         set => SetProperty(ref _autoHideOpacity, value);
     }
 
-    private double _autoHideTimeout = 5.0;
+    private double _autoHideTimeout = 10.0;
     public double AutoHideTimeout
     {
         get => _autoHideTimeout;

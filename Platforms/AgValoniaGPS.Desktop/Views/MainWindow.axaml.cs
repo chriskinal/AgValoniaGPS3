@@ -355,6 +355,18 @@ public partial class MainWindow : Window
     {
         if (ViewModel == null) return;
 
+        // If toolbars are faded, clicking on them should only reveal, not activate buttons
+        if (ViewModel.AreToolbarsFaded && e.Source is Avalonia.Visual fadedSource)
+        {
+            if ((LeftNavPanel != null && IsDescendantOf(fadedSource, LeftNavPanel)) ||
+                (RightNavPanel != null && IsDescendantOf(fadedSource, RightNavPanel)))
+            {
+                ViewModel.RevealToolbars();
+                e.Handled = true;
+                return;
+            }
+        }
+
         bool anyLeftOpen = ViewModel.IsViewSettingsPanelVisible || ViewModel.IsFileMenuPanelVisible ||
             ViewModel.IsToolsPanelVisible || ViewModel.IsConfigurationPanelVisible ||
             ViewModel.IsJobMenuPanelVisible || ViewModel.IsFieldToolsPanelVisible;
@@ -362,7 +374,7 @@ public partial class MainWindow : Window
 
         if (!anyLeftOpen && !anyRightOpen) return;
 
-        // Check if click originated inside either panel -- if so, let the button handle it
+        // Check if click originated inside either panel -- let the button handle it
         if (e.Source is Avalonia.Visual source)
         {
             if (LeftNavPanel != null && IsDescendantOf(source, LeftNavPanel)) return;

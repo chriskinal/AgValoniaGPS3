@@ -106,7 +106,7 @@ namespace AgValoniaGPS.Models
         public bool AutoHideToolbars { get; set; } = false;
         public double AutoHideSpeedThreshold { get; set; } = 1.5;
         public double AutoHideOpacity { get; set; } = 0.15;
-        public double AutoHideTimeout { get; set; } = 5.0;
+        public double AutoHideTimeout { get; set; } = 10.0;
 
         /// <summary>
         /// Validate and clamp all settings to valid ranges.

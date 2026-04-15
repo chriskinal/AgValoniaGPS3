@@ -166,6 +166,45 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <TextBlock Text="{Binding DisplayResolutionLabel}" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
+
+            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
+
+            <!-- Auto-Hide Toolbars -->
+            <CheckBox Content="Auto-Hide Toolbars"
+                      IsChecked="{Binding ToolbarConfig.AutoHideToolbars}"
+                      FontSize="13" Margin="2,0"/>
+            <StackPanel IsVisible="{Binding ToolbarConfig.AutoHideToolbars}" Spacing="4" Margin="8,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Speed:" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <Slider Minimum="0.5" Maximum="10" Width="100"
+                            Value="{Binding ToolbarConfig.AutoHideSpeedThreshold}"
+                            ToolTip.Tip="Speed threshold (km/h) above which toolbars fade"/>
+                    <TextBlock Text="{Binding ToolbarConfig.AutoHideSpeedThreshold, StringFormat='{}{0:F1} kph'}"
+                               FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Fade:" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <Slider Minimum="0.05" Maximum="0.5" Width="100"
+                            Value="{Binding ToolbarConfig.AutoHideOpacity}"
+                            ToolTip.Tip="How faded the toolbars become (lower = more transparent)"/>
+                    <TextBlock Text="{Binding ToolbarConfig.AutoHideOpacity, StringFormat='{}{0:P0}'}"
+                               FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Delay:" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <Slider Minimum="3" Maximum="30" Width="100"
+                            Value="{Binding ToolbarConfig.AutoHideTimeout}"
+                            ToolTip.Tip="Seconds to keep toolbars visible after reveal tap"/>
+                    <TextBlock Text="{Binding ToolbarConfig.AutoHideTimeout, StringFormat='{}{0:F0}s'}"
+                               FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>

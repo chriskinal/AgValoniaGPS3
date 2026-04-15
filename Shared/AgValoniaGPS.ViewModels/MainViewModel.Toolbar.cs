@@ -25,6 +25,7 @@ using AgValoniaGPS.Models.Toolbar;
 using AgValoniaGPS.Services.Interfaces;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels;
@@ -44,6 +45,37 @@ public partial class MainViewModel
 
     public ICommand? ToggleSectionOverlayCommand { get; private set; }
 
+    // Auto-hide state
+    private double _leftBarOpacity = 1.0;
+    private double _rightBarOpacity = 1.0;
+    private DispatcherTimer? _autoHideCheckTimer;
+    private DispatcherTimer? _revealTimeoutTimer;
+    private bool _isToolbarRevealed;
+
+    private bool _areToolbarsFaded;
+
+    public double LeftBarOpacity
+    {
+        get => _leftBarOpacity;
+        set => SetProperty(ref _leftBarOpacity, value);
+    }
+
+    public double RightBarOpacity
+    {
+        get => _rightBarOpacity;
+        set => SetProperty(ref _rightBarOpacity, value);
+    }
+
+    /// <summary>
+    /// True when toolbars are faded. Buttons should be disabled (not interactive)
+    /// until the user taps to reveal.
+    /// </summary>
+    public bool AreToolbarsFaded
+    {
+        get => _areToolbarsFaded;
+        set => SetProperty(ref _areToolbarsFaded, value);
+    }
+
     private void InitializeToolbarCommands()
     {
         ToggleSectionOverlayCommand = new RelayCommand(() =>
@@ -55,6 +87,79 @@ public partial class MainViewModel
         _buttonRegistry = buttonRegistry;
         InitializeToolbarCommands();
         RefreshShortcutBar();
+        StartAutoHideTimer();
+    }
+
+    private void StartAutoHideTimer()
+    {
+        _autoHideCheckTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _autoHideCheckTimer.Tick += (_, _) => UpdateAutoHideState();
+        _autoHideCheckTimer.Start();
+    }
+
+    private void UpdateAutoHideState()
+    {
+        var config = Models.Configuration.ConfigurationStore.Instance.Toolbar;
+        if (!config.AutoHideToolbars)
+        {
+            LeftBarOpacity = 1.0;
+            RightBarOpacity = 1.0;
+            AreToolbarsFaded = false;
+            return;
+        }
+
+        if (_isToolbarRevealed) return; // user tapped to reveal, wait for timeout
+
+        var speed = SpeedKmh;
+        var threshold = config.AutoHideSpeedThreshold;
+        var hysteresis = 0.5;
+
+        // Fade when above threshold, restore when below (with hysteresis)
+        if (speed > threshold + hysteresis)
+        {
+            LeftBarOpacity = config.AutoHideOpacity;
+            RightBarOpacity = config.AutoHideOpacity;
+            AreToolbarsFaded = true;
+        }
+        else if (speed < threshold - hysteresis)
+        {
+            LeftBarOpacity = 1.0;
+            RightBarOpacity = 1.0;
+            AreToolbarsFaded = false;
+        }
+        // Between threshold-hysteresis and threshold+hysteresis: no change (deadband)
+    }
+
+    /// <summary>
+    /// Called when user taps a faded toolbar to temporarily reveal it.
+    /// </summary>
+    public void RevealToolbars()
+    {
+        var config = Models.Configuration.ConfigurationStore.Instance.Toolbar;
+        if (!config.AutoHideToolbars) return;
+
+        _isToolbarRevealed = true;
+        LeftBarOpacity = 1.0;
+        RightBarOpacity = 1.0;
+        AreToolbarsFaded = false;
+
+        // Start re-fade timer
+        _revealTimeoutTimer?.Stop();
+        _revealTimeoutTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(config.AutoHideTimeout)
+        };
+        _revealTimeoutTimer.Tick += (_, _) =>
+        {
+            _revealTimeoutTimer.Stop();
+            _isToolbarRevealed = false;
+            // Next auto-hide check will fade if still moving
+            AreToolbarsFaded = true;
+        };
+        _revealTimeoutTimer.Start();
     }
 
     public void RefreshShortcutBar()

@@ -62,7 +62,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Top"
                                             Margin="8,10,0,0"
-                                            DataContext="{Binding}"/>
+                                            Opacity="{Binding LeftBarOpacity}"
+                                                                                        DataContext="{Binding}"/>
 
                 <!-- RIGHT SIDEBAR: Anchored to right edge, top-aligned -->
                 <panels:RightNavigationPanel x:Name="RightNavPanel"
@@ -70,7 +71,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                              HorizontalAlignment="Right"
                                              VerticalAlignment="Top"
                                              Margin="0,8,8,0"
-                                             DataContext="{Binding}"/>
+                                             Opacity="{Binding RightBarOpacity}"
+                                                                                          DataContext="{Binding}"/>
 
                 <!-- Zoom/Compass controls: right edge, bottom -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"

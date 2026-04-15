@@ -85,6 +85,7 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public ApplicationState State => _appState;
     public DisplayConfig Display => ConfigurationStore.Instance.Display;
+    public Models.Toolbar.ToolbarConfiguration ToolbarConfig => ConfigurationStore.Instance.Toolbar;
 
     // Convenience accessors for ConfigurationStore (replaces _vehicleConfig usage)
     private static ConfigurationStore ConfigStore => ConfigurationStore.Instance;
