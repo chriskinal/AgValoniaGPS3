@@ -1744,11 +1744,21 @@ public partial class MainViewModel : ObservableObject
         // If TramSystems exist, generate per-system; otherwise use legacy single-track mode
         if (config.Systems.Count > 0)
         {
+            bool hasBoundarySystem = false;
             foreach (var sys in config.Systems)
             {
                 if (!sys.IsEnabled) continue;
 
-                // Resolve reference track
+                // Boundary reference system: generate boundary tram tracks
+                if (sys.ReferenceBoundaryIndex >= 0)
+                {
+                    hasBoundarySystem = true;
+                    if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+                        _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+                    continue;
+                }
+
+                // Track reference system: resolve track and generate parallel lines
                 Track? refTrack = null;
                 if (sys.ReferenceTrackName != null)
                     refTrack = SavedTracks.FirstOrDefault(t => t.Name == sys.ReferenceTrackName);
@@ -1766,12 +1776,10 @@ public partial class MainViewModel : ObservableObject
         {
             // Legacy: single track mode
             _tramLineService.GenerateParallelTramLines(track, fieldWidth);
-        }
 
-        // Generate boundary tram tracks from headland
-        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
-        {
-            _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+            // Legacy: also generate boundary tram tracks from headland
+            if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+                _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
         }
 
         // Snapshot collections for thread-safe rendering

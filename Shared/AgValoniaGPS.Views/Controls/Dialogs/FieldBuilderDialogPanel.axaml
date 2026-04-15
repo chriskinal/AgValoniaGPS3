@@ -329,7 +329,10 @@ Licensed under GNU GPL v3.
                                          Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                                        Opacity="{Binding IsEnabled, Converter={x:Static converters:BoolToOpacityConverter.Instance}}">
+                                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                                         Fill="{Binding IsEnabled, Converter={x:Static converters:BoolToToggleBackgroundConverter.Instance}}"/>
                                                 <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                            VerticalAlignment="Center"/>
@@ -390,8 +393,14 @@ Licensed under GNU GPL v3.
                                         Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                                         CornerRadius="6" Padding="6" Margin="0,2">
                                     <StackPanel Spacing="4">
-                                        <TextBlock x:Name="TramEditTitle" Text="Edit System" FontSize="13" FontWeight="Bold"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock x:Name="TramEditTitle" Text="Edit System" FontSize="13" FontWeight="Bold"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="TramSysEnabledCheck" Grid.Column="1"
+                                                      Content="Enabled" FontSize="11"
+                                                      Click="TramSysEnabled_Click"/>
+                                        </Grid>
 
                                         <!-- Reference -->
                                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">

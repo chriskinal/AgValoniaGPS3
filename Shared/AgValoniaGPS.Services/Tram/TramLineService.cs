@@ -165,17 +165,17 @@ public class TramLineService(
     {
         if (mode == Models.Tram.TramSystemMode.TrackLine)
         {
-            // Two lines: outer and inner wheel tracks
-            var outer = OffsetTrackLaterally(track, centerOffset - halfWheelTrack, fence);
-            if (outer.Count > 1) result.Add(outer);
-            var inner = OffsetTrackLaterally(track, centerOffset + halfWheelTrack, fence);
-            if (inner.Count > 1) result.Add(inner);
+            // Two lines: outer and inner wheel tracks, split at boundary crossings
+            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset - halfWheelTrack, fence))
+                if (seg.Count > 1) result.Add(seg);
+            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset + halfWheelTrack, fence))
+                if (seg.Count > 1) result.Add(seg);
         }
         else
         {
             // Edge mode: single line at implement edge
-            var line = OffsetTrackLaterally(track, centerOffset, fence);
-            if (line.Count > 1) result.Add(line);
+            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset, fence))
+                if (seg.Count > 1) result.Add(seg);
         }
     }
 
@@ -207,29 +207,30 @@ public class TramLineService(
         {
             double baseOffset = (tramWidth * 0.5) + (tramWidth * i);
 
-            // Positive side: outer and inner wheel tracks
-            var outerPos = OffsetTrackLaterally(referenceTrack, baseOffset - halfWheelTrack, fenceLine);
-            if (outerPos.Count > 1) _parallelTramLines.Add(outerPos);
-            var innerPos = OffsetTrackLaterally(referenceTrack, baseOffset + halfWheelTrack, fenceLine);
-            if (innerPos.Count > 1) _parallelTramLines.Add(innerPos);
+            // Positive side: outer and inner wheel tracks (split at boundary crossings)
+            foreach (var seg in OffsetTrackLaterallySegmented(referenceTrack, baseOffset - halfWheelTrack, fenceLine))
+                if (seg.Count > 1) _parallelTramLines.Add(seg);
+            foreach (var seg in OffsetTrackLaterallySegmented(referenceTrack, baseOffset + halfWheelTrack, fenceLine))
+                if (seg.Count > 1) _parallelTramLines.Add(seg);
 
             // Negative side (mirror)
-            var outerNeg = OffsetTrackLaterally(referenceTrack, -(baseOffset - halfWheelTrack), fenceLine);
-            if (outerNeg.Count > 1) _parallelTramLines.Add(outerNeg);
-            var innerNeg = OffsetTrackLaterally(referenceTrack, -(baseOffset + halfWheelTrack), fenceLine);
-            if (innerNeg.Count > 1) _parallelTramLines.Add(innerNeg);
+            foreach (var seg in OffsetTrackLaterallySegmented(referenceTrack, -(baseOffset - halfWheelTrack), fenceLine))
+                if (seg.Count > 1) _parallelTramLines.Add(seg);
+            foreach (var seg in OffsetTrackLaterallySegmented(referenceTrack, -(baseOffset + halfWheelTrack), fenceLine))
+                if (seg.Count > 1) _parallelTramLines.Add(seg);
         }
 
         TramLinesUpdated?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
-    /// Offset a track laterally by a given distance, optionally clipping to boundary.
+    /// Offset a track laterally by a given distance, clipping to boundary.
     /// AB lines (2 points) are densified to 2m spacing before offsetting.
+    /// Returns multiple segments when the line exits and re-enters the boundary.
     /// </summary>
-    private List<Vec2> OffsetTrackLaterally(Models.Track.Track track, double offset, List<Vec3>? fence = null)
+    private List<List<Vec2>> OffsetTrackLaterallySegmented(Models.Track.Track track, double offset, List<Vec3>? fence)
     {
-        var result = new List<Vec2>();
+        var segments = new List<List<Vec2>>();
 
         // Densify AB lines: convert 2 points to many points along the line
         var points = track.Points;
@@ -238,26 +239,120 @@ public class TramLineService(
             points = DensifyLine(points[0], points[1], 2.0);
         }
 
+        // Build all offset points first
+        var allPoints = new List<(Vec2 point, bool inside)>(points.Count);
         for (int i = 0; i < points.Count; i++)
         {
             var point = points[i];
-            double heading = point.Heading;
-
-            // Offset perpendicular to heading
-            double perpHeading = heading + Math.PI / 2.0;
+            double perpHeading = point.Heading + Math.PI / 2.0;
             var offsetPoint = new Vec2(
                 point.Easting + Math.Sin(perpHeading) * offset,
                 point.Northing + Math.Cos(perpHeading) * offset
             );
-
-            // Clip to boundary if available
-            if (fence != null && !IsPointInFence(offsetPoint, fence))
-                continue;
-
-            result.Add(offsetPoint);
+            bool isInside = fence == null || IsPointInFence(offsetPoint, fence);
+            allPoints.Add((offsetPoint, isInside));
         }
 
-        return result;
+        // Split into segments at boundary crossings
+        var current = new List<Vec2>();
+        for (int i = 0; i < allPoints.Count; i++)
+        {
+            var (pt, inside) = allPoints[i];
+
+            if (inside)
+            {
+                // Add boundary intersection when entering from outside
+                if (current.Count == 0 && i > 0 && !allPoints[i - 1].inside && fence != null)
+                {
+                    var crossing = FindBoundaryCrossing(allPoints[i - 1].point, pt, fence);
+                    if (crossing.HasValue) current.Add(crossing.Value);
+                }
+                current.Add(pt);
+            }
+            else
+            {
+                // Add boundary intersection when exiting to outside
+                if (current.Count > 0 && fence != null)
+                {
+                    var crossing = FindBoundaryCrossing(current[^1], pt, fence);
+                    if (crossing.HasValue) current.Add(crossing.Value);
+
+                    if (current.Count > 1)
+                        segments.Add(current);
+                    current = new List<Vec2>();
+                }
+            }
+        }
+
+        if (current.Count > 1)
+            segments.Add(current);
+
+        return segments;
+    }
+
+    /// <summary>
+    /// Legacy single-segment version for backward compatibility.
+    /// </summary>
+    private List<Vec2> OffsetTrackLaterally(Models.Track.Track track, double offset, List<Vec3>? fence = null)
+    {
+        if (fence == null)
+        {
+            // No fence: return single line without segmentation
+            var points = track.Points;
+            if (points.Count == 2)
+                points = DensifyLine(points[0], points[1], 2.0);
+
+            var result = new List<Vec2>();
+            for (int i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                double perpHeading = point.Heading + Math.PI / 2.0;
+                result.Add(new Vec2(
+                    point.Easting + Math.Sin(perpHeading) * offset,
+                    point.Northing + Math.Cos(perpHeading) * offset));
+            }
+            return result;
+        }
+
+        // With fence: use segmented version, return longest segment
+        var segments = OffsetTrackLaterallySegmented(track, offset, fence);
+        if (segments.Count == 0) return new List<Vec2>();
+        return segments.OrderByDescending(s => s.Count).First();
+    }
+
+    /// <summary>
+    /// Find where a line segment crosses the boundary polygon.
+    /// Returns the intersection point closest to 'from'.
+    /// </summary>
+    private static Vec2? FindBoundaryCrossing(Vec2 from, Vec2 to, List<Vec3> fence)
+    {
+        double bestT = double.MaxValue;
+        Vec2? best = null;
+
+        double dx = to.Easting - from.Easting;
+        double dy = to.Northing - from.Northing;
+
+        for (int i = 0, j = fence.Count - 1; i < fence.Count; j = i++)
+        {
+            double ex = fence[i].Easting - fence[j].Easting;
+            double ey = fence[i].Northing - fence[j].Northing;
+            double fx = fence[j].Easting - from.Easting;
+            double fy = fence[j].Northing - from.Northing;
+
+            double denom = dx * ey - dy * ex;
+            if (Math.Abs(denom) < 1e-12) continue;
+
+            double t = (fx * ey - fy * ex) / denom;
+            double u = (fx * dy - fy * dx) / denom;
+
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && t < bestT)
+            {
+                bestT = t;
+                best = new Vec2(from.Easting + dx * t, from.Northing + dy * t);
+            }
+        }
+
+        return best;
     }
 
     /// <summary>

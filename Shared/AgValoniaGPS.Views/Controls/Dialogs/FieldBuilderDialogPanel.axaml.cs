@@ -1426,6 +1426,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (offsetInput != null) offsetInput.Text = sys.Offset.ToString("F1");
         var passInput = this.FindControl<TextBox>("TramSysPassInput");
         if (passInput != null) passInput.Text = sys.PassCount.ToString();
+        var enabledCheck = this.FindControl<CheckBox>("TramSysEnabledCheck");
+        if (enabledCheck != null) enabledCheck.IsChecked = sys.IsEnabled;
     }
 
     private void TramRefCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -1463,6 +1465,16 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (_editingTramSystem == null || sender is not TextBox tb) return;
         if (int.TryParse(tb.Text, out int v))
             _editingTramSystem.PassCount = Math.Max(0, v);
+    }
+
+    private void TramSysEnabled_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null && sender is CheckBox cb)
+        {
+            _editingTramSystem.IsEnabled = cb.IsChecked == true;
+            if (DataContext is MainViewModel vm)
+                RebuildTramLines(vm);
+        }
     }
 
     private void TramModeTrackLine_Click(object? sender, RoutedEventArgs e)
