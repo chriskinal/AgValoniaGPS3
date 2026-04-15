@@ -135,7 +135,7 @@ public class AlphabetFieldTests
         {
             Name = $"Letter_{letter}",
             Type = HeadlandSegmentType.Curve,
-            Offset = 8, // 8m offset to fit inside letters
+            Offset = 3, // 3m offset for letter-sized fields
             BoundaryPoints = new List<Vec3>(boundary)
         };
 
@@ -193,7 +193,7 @@ public class AlphabetFieldTests
         {
             Name = $"Letter_{letter}",
             Type = HeadlandSegmentType.Curve,
-            Offset = 8,
+            Offset = 3,
             BoundaryPoints = new List<Vec3>(boundary)
         };
 
@@ -276,7 +276,7 @@ public class AlphabetFieldTests
             {
                 Name = $"{letter}",
                 Type = HeadlandSegmentType.Curve,
-                Offset = 8,
+                Offset = 3,
                 BoundaryPoints = new List<Vec3>(boundary)
             };
             vm.ComputeSegmentOffset(seg);
