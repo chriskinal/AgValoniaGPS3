@@ -393,10 +393,18 @@ public sealed class GpsPipelineService : IGpsPipelineService
                 _autoSteerService.UpdateGuidanceResults(steerAngle, crossTrackError);
             }
         }
-        else if (hasTrack)
+        int? detectedNearestPass = null;
+        if (!autoSteerEngaged && hasTrack)
         {
-            // Display-only: update pass offset visualization without steering
-            UpdateDisplayTrack(pos, track!, passNumber, nudgeOffset, driftedEasting, driftedNorthing);
+            // Display-only: auto-detect nearest pass and update visualization
+            var (nearestPass, nearestDisplayTrack) = UpdateDisplayTrack(
+                pos, track!, passNumber, nudgeOffset, driftedEasting, driftedNorthing);
+            detectedNearestPass = nearestPass;
+            if (nearestDisplayTrack != null)
+            {
+                displayTrack = nearestDisplayTrack;
+                if (nearestPass != 0) baseTrack = track;
+            }
         }
 
         // ── (7) Section control ─────────────────────────────────────────
@@ -499,6 +507,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
             HasGuidance = hasGuidance,
             DisplayTrack = displayTrack,
             BaseTrack = baseTrack,
+            NearestPassNumber = detectedNearestPass,
 
             // Autosteer
             IsAutoSteerEngaged = autoSteerEngaged,
@@ -634,8 +643,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
 
     /// <summary>
     /// Display-only track update: finds nearest pass and updates map, without steering.
+    /// Returns the detected nearest pass number and the offset display track.
     /// </summary>
-    private void UpdateDisplayTrack(
+    private (int nearestPass, Models.Track.Track? displayTrack) UpdateDisplayTrack(
         Position pos, Models.Track.Track track, int passNumber, double nudgeOffset,
         double driftedEasting, double driftedNorthing)
     {
@@ -647,14 +657,16 @@ public sealed class GpsPipelineService : IGpsPipelineService
         int nearestPass = (int)Math.Round(perpDist / widthMinusOverlap);
         double distAway = widthMinusOverlap * nearestPass + nudgeOffset;
 
+        Models.Track.Track? resultTrack = null;
         if (Math.Abs(distAway) < 0.01)
         {
-            // Base track — no offset needed, map will use it directly
+            // On the base track — show reference directly
+            resultTrack = track;
         }
         else
         {
             var (offsetPoints, _) = CurveProcessing.CreateOffsetCurveWithInfo(track.Points, distAway);
-            var displayTrack = new Models.Track.Track
+            resultTrack = new Models.Track.Track
             {
                 Name = $"{track.Name} (pass {nearestPass})",
                 Points = offsetPoints,
@@ -678,6 +690,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
         }
 
         _autoSteerService.UpdateGuidanceResults(0, xte);
+        return (nearestPass, resultTrack);
     }
 
     /// <summary>

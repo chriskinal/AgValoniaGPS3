@@ -64,9 +64,14 @@ public partial class MainViewModel
         if (result.DisplayTrack != null)
         {
             _mapService.SetActiveTrack(result.DisplayTrack);
-            // Base track (original reference line) not shown during guidance —
-            // it looks like a leftover path and confuses the display
-            _mapService.SetBaseTrack(null);
+            _mapService.SetBaseTrack(result.BaseTrack);
+        }
+
+        // Auto-detect nearest pass when autosteer is not engaged
+        if (result.NearestPassNumber.HasValue && !_isAutoSteerEngaged)
+        {
+            _howManyPathsAway = result.NearestPassNumber.Value;
+            SyncGuidanceStateToPipeline();
         }
 
         // Autosteer state

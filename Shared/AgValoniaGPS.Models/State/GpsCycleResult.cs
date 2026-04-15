@@ -44,6 +44,9 @@ public record GpsCycleResult
     public Track.Track? DisplayTrack { get; init; }  // The offset track being followed
     public Track.Track? BaseTrack { get; init; }      // The reference track (when offset != 0)
 
+    // Pass detection (auto-detect nearest pass when autosteer not engaged)
+    public int? NearestPassNumber { get; init; }
+
     // Autosteer
     public bool IsAutoSteerEngaged { get; init; }
     public bool AutoSteerDisengagedThisCycle { get; init; }
