@@ -46,10 +46,12 @@ sealed class Program
     static bool _remoteTestMode = false;
     static int _remoteTestPort = 5123;
     static double _timeScale = 1.0;
+    static string[] _args = Array.Empty<string>();
 
     [STAThread]
     public static int Main(string[] args)
     {
+        _args = args;
         _headless = args.Contains("--headless");
         _catalogMode = args.Contains("--catalog");
         _fieldTestMode = args.Contains("--field-test");
@@ -148,6 +150,12 @@ sealed class Program
             ?? throw new Exception("MainWindow not found");
         var vm = (MainViewModel)window.DataContext!;
 
+        // Auto-create a test field with boundary + track if --test-field flag is present
+        if (_args.Contains("--test-field"))
+        {
+            await SetupTestField(vm);
+        }
+
         Console.WriteLine($"[Remote Test] Starting server on port {_remoteTestPort}...");
         using var server = new RemoteTestServer(window, vm, _remoteTestPort);
 
@@ -160,6 +168,160 @@ sealed class Program
         };
 
         await server.RunAsync();
+    }
+
+    /// <summary>
+    /// Create a test field with a 200x200m boundary, headland, and AB track.
+    /// Used by --test-field flag for remote test server.
+    /// </summary>
+    static async Task SetupTestField(MainViewModel vm)
+    {
+        Console.Write("[TestField] Creating field... ");
+
+        async Task PumpUI(int ms)
+        {
+            for (int i = 0; i < ms / 10; i++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                await Task.Delay(10);
+            }
+        }
+
+        // Try loading "UserField" if it exists, otherwise create a new one
+        var settingsService = App.Services!.GetRequiredService<ISettingsService>();
+        var userFieldDir = System.IO.Path.Combine(settingsService.Settings.FieldsDirectory, "UserField");
+        if (System.IO.Directory.Exists(userFieldDir) && System.IO.File.Exists(System.IO.Path.Combine(userFieldDir, "Boundary.txt")))
+        {
+            Console.Write("[TestField] Loading UserField... ");
+            try
+            {
+                await vm.OpenFieldAsync(userFieldDir, "UserField");
+                await PumpUI(500);
+
+                if (vm.IsFieldOpen)
+                {
+                    // Add an AB track if none exist
+                    if (vm.SavedTracks.Count == 0)
+                    {
+                        var bnd = vm.CurrentBoundary?.OuterBoundary?.Points;
+                        if (bnd != null && bnd.Count > 0)
+                        {
+                            double cx = bnd.Average(p => p.Easting);
+                            double cy = bnd.Average(p => p.Northing);
+                            var userTrack = new AgValoniaGPS.Models.Track.Track
+                            {
+                                Name = "AB_Test",
+                                Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+                                    { new(cx, cy - 200, 0), new(cx, cy + 200, 0) },
+                                Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+                                IsVisible = true, IsActive = true
+                            };
+                            vm.SavedTracks.Add(userTrack);
+                            vm.SelectedTrack = userTrack;
+                        }
+                    }
+                    ConfigurationStore.Instance.Tool.Width = 12.0;
+                    ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+                    Console.WriteLine($"boundary={vm.HasBoundary} headland={vm.HasHeadland} tracks={vm.SavedTracks.Count} OK");
+                    return;
+                }
+            }
+            catch (Exception ex) { Console.Write($"({ex.Message}) "); }
+        }
+
+        // Create field
+        vm.NewFieldName = "RemoteTestField";
+        vm.NewFieldLatitude = 42.0308;
+        vm.NewFieldLongitude = -93.6319;
+        vm.ConfirmNewFieldDialogCommand?.Execute(null);
+        await PumpUI(500);
+
+        if (!vm.IsFieldOpen)
+        {
+            Console.WriteLine("FAILED (field not open)");
+            return;
+        }
+
+        // Initialize local plane
+        var origin = new AgValoniaGPS.Models.Wgs84(42.0308, -93.6319);
+        AgValoniaGPS.Models.State.ApplicationState.Instance.Field.LocalPlane =
+            new AgValoniaGPS.Models.LocalPlane(origin, new AgValoniaGPS.Models.SharedFieldProperties());
+        AgValoniaGPS.Models.State.ApplicationState.Instance.Field.OriginLatitude = 42.0308;
+        AgValoniaGPS.Models.State.ApplicationState.Instance.Field.OriginLongitude = -93.6319;
+
+        // Create boundary via recording service (200x200m square)
+        vm.StartBoundaryRecordingCommand?.Execute(null);
+        await PumpUI(300);
+
+        var boundaryService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<IBoundaryRecordingService>(App.Services!);
+        boundaryService.AddPointManual(0, 0, 0);
+        boundaryService.AddPointManual(200, 0, Math.PI / 2);
+        boundaryService.AddPointManual(200, 200, Math.PI);
+        boundaryService.AddPointManual(0, 200, 3 * Math.PI / 2);
+
+        vm.StopBoundaryRecordingCommand?.Execute(null);
+        await PumpUI(500);
+
+        Console.Write($"boundary={vm.HasBoundary} ");
+
+        // Build headland with a boundary offset segment (20m inset)
+        vm.HeadlandDistance = 20;
+        var headlandSeg = new AgValoniaGPS.Models.Headland.HeadlandSegment
+        {
+            Name = "Boundary",
+            Type = AgValoniaGPS.Models.Headland.HeadlandSegmentType.Boundary,
+            Offset = 20,
+            BoundaryPoints = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(0, 0, 0), new(200, 0, Math.PI / 2),
+                new(200, 200, Math.PI), new(0, 200, 3 * Math.PI / 2), new(0, 0, 0)
+            }
+        };
+        vm.ComputeSegmentOffset(headlandSeg);
+        vm.HeadlandSegments.Add(headlandSeg);
+        vm.BuildHeadlandFromSegments();
+        await PumpUI(500);
+
+        Console.Write($"headland={vm.HasHeadland} ");
+
+        // Add an AB track (vertical line at x=100)
+        var track = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "AB_0.0 Test",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(100, 0, 0),
+                new(100, 200, 0)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true,
+            IsActive = true
+        };
+        vm.SavedTracks.Add(track);
+
+        // Add a diagonal track for testing
+        double diagHeading = Math.Atan2(150.0, 180.0); // ~39.8 degrees
+        var diagTrack = new AgValoniaGPS.Models.Track.Track
+        {
+            Name = "AB_Diagonal",
+            Points = new System.Collections.Generic.List<AgValoniaGPS.Models.Base.Vec3>
+            {
+                new(25, 10, diagHeading),
+                new(175, 190, diagHeading)
+            },
+            Type = AgValoniaGPS.Models.Track.TrackType.ABLine,
+            IsVisible = true
+        };
+        vm.SavedTracks.Add(diagTrack);
+
+        vm.SelectedTrack = track;
+
+        // Configure tool width
+        ConfigurationStore.Instance.Tool.Width = 12.0;
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+
+        Console.WriteLine($"tracks={vm.SavedTracks.Count} OK");
     }
 
     static async Task RunUTurnTest(IClassicDesktopStyleApplicationLifetime lifetime)

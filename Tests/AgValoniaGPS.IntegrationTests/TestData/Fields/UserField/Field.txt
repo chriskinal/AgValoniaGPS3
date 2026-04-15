@@ -1,0 +1,9 @@
+2026-maalisk.-27 10.12.22 ip.
+$FieldDir
+test2
+$Offsets
+0,0
+Convergence
+0
+StartFix
+40,71280000,-74,00600000
