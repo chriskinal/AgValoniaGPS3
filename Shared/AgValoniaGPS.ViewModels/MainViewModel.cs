@@ -3098,6 +3098,14 @@ public partial class MainViewModel : ObservableObject
         _ => "avares://AgValoniaGPS.Views/Assets/Icons/TramOff.png"
     };
 
+    public string TramDisplayLabel => ConfigStore.Tram.DisplayMode switch
+    {
+        Models.Configuration.TramDisplayMode.All => "All",
+        Models.Configuration.TramDisplayMode.LinesOnly => "Lines",
+        Models.Configuration.TramDisplayMode.OuterOnly => "Outer",
+        _ => "Off"
+    };
+
     /// <summary>
     /// Get tram line geometry for canvas preview rendering.
     /// </summary>

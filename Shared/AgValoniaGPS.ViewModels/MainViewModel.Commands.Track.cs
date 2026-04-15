@@ -1015,6 +1015,7 @@ public partial class MainViewModel
             ConfigStore.Guidance.TramDisplay = tram.DisplayMode != Models.Configuration.TramDisplayMode.Off;
             UpdateTramLines(SelectedTrack);
             OnPropertyChanged(nameof(TramDisplayIcon));
+            OnPropertyChanged(nameof(TramDisplayLabel));
             StatusMessage = tram.DisplayMode switch
             {
                 Models.Configuration.TramDisplayMode.Off => "Tram lines OFF",
@@ -1078,6 +1079,7 @@ public partial class MainViewModel
             ConfigStore.Guidance.TramDisplay = mode != Models.Configuration.TramDisplayMode.Off;
             UpdateTramLines(SelectedTrack);
             OnPropertyChanged(nameof(TramDisplayIcon));
+            OnPropertyChanged(nameof(TramDisplayLabel));
         }
 
         SetTramModeOffCommand = new RelayCommand(() => SetTramMode(Models.Configuration.TramDisplayMode.Off));

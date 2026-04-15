@@ -1385,6 +1385,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             ReferenceTrackName = vm.SelectedTrack?.Name
         };
         vm.TramSystems.Add(sys);
+        RebuildTramLines(vm);
         OpenTramSystemEditPanel(sys);
     }
 
@@ -1392,7 +1393,8 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void EditTramSystem_Click(object? sender, RoutedEventArgs e)
     {
-        if (sender is Avalonia.Controls.Button btn && btn.DataContext is AgValoniaGPS.Models.Tram.TramSystem sys)
+        var list = this.FindControl<ListBox>("TramSystemList");
+        if (list?.SelectedItem is AgValoniaGPS.Models.Tram.TramSystem sys)
             OpenTramSystemEditPanel(sys);
     }
 
@@ -1499,21 +1501,27 @@ public partial class FieldBuilderDialogPanel : UserControl
         var panel = this.FindControl<Border>("TramSystemEditPanel");
         if (panel != null) panel.IsVisible = false;
 
-        // Rebuild tram lines with updated system
+        // Auto-rebuild tram lines with updated system
         if (DataContext is MainViewModel vm)
-            vm.BuildTramLinesCommand?.Execute(null);
+            RebuildTramLines(vm);
     }
 
     private void DeleteTramSystem_Click(object? sender, RoutedEventArgs e)
     {
-        if (sender is Avalonia.Controls.Button btn && btn.DataContext is AgValoniaGPS.Models.Tram.TramSystem sys)
+        var list = this.FindControl<ListBox>("TramSystemList");
+        if (list?.SelectedItem is AgValoniaGPS.Models.Tram.TramSystem sys)
         {
             if (DataContext is MainViewModel vm)
             {
                 vm.TramSystems.Remove(sys);
-                vm.BuildTramLinesCommand?.Execute(null);
+                RebuildTramLines(vm);
             }
         }
+    }
+
+    private void RebuildTramLines(MainViewModel vm)
+    {
+        vm.BuildTramLinesCommand?.Execute(null);
     }
 
     // --- Preview Rendering ---

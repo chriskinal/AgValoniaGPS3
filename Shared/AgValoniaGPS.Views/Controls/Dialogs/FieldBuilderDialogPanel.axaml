@@ -298,71 +298,92 @@ Licensed under GNU GPL v3.
                                              LostFocus="WheelTrackInput_LostFocus"/>
                                 </Grid>
 
-                                <!-- Display mode -->
-                                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="2">
-                                    <Button Grid.Column="0" Content="Off" Command="{Binding SetTramModeOffCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                            HorizontalAlignment="Stretch" Height="28" FontSize="12"/>
-                                    <Button Grid.Column="1" Content="All" Command="{Binding SetTramModeAllCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                            HorizontalAlignment="Stretch" Height="28" FontSize="12"/>
-                                    <Button Grid.Column="2" Content="Lines" Command="{Binding SetTramModeLinesCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                            HorizontalAlignment="Stretch" Height="28" FontSize="12"/>
-                                    <Button Grid.Column="3" Content="Bnd" Command="{Binding SetTramModeOuterCommand}"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                            HorizontalAlignment="Stretch" Height="28" FontSize="12"/>
-                                </Grid>
+                                <!-- Display mode toggle -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                Command="{Binding ToggleTramDisplayCommand}"
+                                                ToolTip.Tip="Toggle display mode">
+                                            <Image Source="{Binding TramDisplayIcon}"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="{Binding TramDisplayLabel}" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Lines:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                        <TextBlock Text="{Binding TramLineCountDisplay}" FontSize="14" FontWeight="Bold"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
 
                                 <!-- Tram Systems list -->
                                 <TextBlock Text="Tram Systems" FontSize="14" FontWeight="Bold"
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                            Margin="0,4,0,0"/>
 
-                                <ItemsControl x:Name="TramSystemList" ItemsSource="{Binding TramSystems}">
-                                    <ItemsControl.ItemTemplate>
+                                <ListBox x:Name="TramSystemList" ItemsSource="{Binding TramSystems}"
+                                         MaxHeight="180" CornerRadius="4"
+                                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                                    <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                    CornerRadius="4" Padding="6,4" Margin="0,1">
-                                                <Grid ColumnDefinitions="*,Auto,Auto">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold"
-                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                                        <TextBlock FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
-                                                            <TextBlock.Text>
-                                                                <MultiBinding StringFormat="{}{0}m {1} {2}">
-                                                                    <Binding Path="TramWidth" StringFormat="{}{0:F0}"/>
-                                                                    <Binding Path="Direction"/>
-                                                                    <Binding Path="Mode"/>
-                                                                </MultiBinding>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </StackPanel>
-                                                    <Button Grid.Column="1" Content="Edit" Width="40" Height="26"
-                                                            FontSize="11" Margin="2,0"
-                                                            Click="EditTramSystem_Click"
-                                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                                    <Button Grid.Column="2" Content="Del" Width="36" Height="26"
-                                                            FontSize="11"
-                                                            Click="DeleteTramSystem_Click"
-                                                            Background="#C0392B" Foreground="White"/>
-                                                </Grid>
-                                            </Border>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock FontSize="11" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0:F0}m {1} {2}">
+                                                            <Binding Path="TramWidth"/>
+                                                            <Binding Path="Direction"/>
+                                                            <Binding Path="Mode"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </StackPanel>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="No tram systems" FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           IsVisible="{Binding !TramSystems.Count}"/>
 
-                                <!-- Add new system button -->
-                                <Button Content="+ New System" Height="28" FontSize="13"
-                                        HorizontalAlignment="Stretch" CornerRadius="4"
-                                        Click="AddTramSystem_Click"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <!-- Action buttons (matching tracks/headland style) -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Add System" Click="AddTramSystem_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AddNew.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Add" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                                ToolTip.Tip="Edit Selected" Click="EditTramSystem_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Edit" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="2">
+                                        <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                                Background="#C0392B" BorderThickness="0"
+                                                ToolTip.Tip="Delete Selected" Click="DeleteTramSystem_Click">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png"
+                                                   Width="36" Height="36" Stretch="Uniform"/>
+                                        </Button>
+                                        <TextBlock Text="Delete" FontSize="12" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
 
                                 <!-- Per-system edit panel (shown when editing) -->
                                 <Border x:Name="TramSystemEditPanel" IsVisible="False"
@@ -446,25 +467,6 @@ Licensed under GNU GPL v3.
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Build + Delete All -->
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
-                                    <Button Classes="ActionBtn" Content="Build All"
-                                            Command="{Binding BuildTramLinesCommand}"/>
-                                    <Button Grid.Column="1" Content="Clear" Width="50"
-                                            Command="{Binding ClearTramLinesCommand}"
-                                            Background="#C0392B" Foreground="White"
-                                            CornerRadius="8" Height="36" FontSize="13"/>
-                                </Grid>
-
-                                <!-- Lines count -->
-                                <TextBlock FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="Lines: {0}">
-                                            <Binding Path="TramLineCountDisplay"/>
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
                             </StackPanel>
                             </ScrollViewer>
                         </TabItem>
