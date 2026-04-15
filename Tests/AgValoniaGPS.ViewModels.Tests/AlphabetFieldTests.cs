@@ -165,11 +165,14 @@ public class AlphabetFieldTests
             $"Letter {letter}: {outside}/{seg.OffsetPoints.Count} offset points outside boundary: {string.Join(", ", outsidePts)}");
     }
 
-    // Centroid-distance test only works for convex/near-convex shapes.
-    // For highly concave letter shapes, the centroid can be far from some edges,
-    // making valid inward offset points appear "outward". Only test convex letters.
-    [TestCase('B')] [TestCase('D')] [TestCase('I')] [TestCase('O')]
-    public void Letter_HeadlandOffset_NoPointOutwardFromBoundary_ConvexOnly(char letter)
+    [TestCase('A')] [TestCase('B')] [TestCase('C')] [TestCase('D')]
+    [TestCase('E')] [TestCase('F')] [TestCase('G')] [TestCase('H')]
+    [TestCase('I')] [TestCase('J')] [TestCase('K')] [TestCase('L')]
+    [TestCase('M')] [TestCase('N')] [TestCase('O')] [TestCase('P')]
+    [TestCase('Q')] [TestCase('R')] [TestCase('S')] [TestCase('T')]
+    [TestCase('U')] [TestCase('V')] [TestCase('W')] [TestCase('X')]
+    [TestCase('Y')] [TestCase('Z')]
+    public void Letter_HeadlandOffset_AreaSmallerAndFullyContained(char letter)
     {
         var boundary = GenerateLetterField(letter);
 
@@ -202,33 +205,50 @@ public class AlphabetFieldTests
             return;
         }
 
-        // Centroid-distance check: offset must be inward
-        double cx = boundary.Average(p => p.Easting);
-        double cy = boundary.Average(p => p.Northing);
+        // 1. Area check: offset area must be strictly smaller than boundary
+        double bndArea = Math.Abs(SignedArea(boundary));
+        double offArea = Math.Abs(SignedArea(seg.OffsetPoints.ToList()));
+        Assert.That(offArea, Is.LessThan(bndArea),
+            $"Letter {letter}: offset area ({offArea:F0}) must be < boundary ({bndArea:F0})");
 
-        int outward = 0;
-        foreach (var pt in seg.OffsetPoints)
+        // 2. Clipper2 containment: intersect offset with boundary
+        //    If offset is fully inside, clipped area == offset area
+        double scale = 1000.0;
+        var bndPath = new Clipper2Lib.Path64(boundary.Count);
+        foreach (var p in boundary)
+            bndPath.Add(new Clipper2Lib.Point64((long)(p.Easting * scale), (long)(p.Northing * scale)));
+
+        var offPath = new Clipper2Lib.Path64(seg.OffsetPoints.Count);
+        foreach (var p in seg.OffsetPoints)
+            offPath.Add(new Clipper2Lib.Point64((long)(p.Easting * scale), (long)(p.Northing * scale)));
+
+        var clipper = new Clipper2Lib.Clipper64();
+        clipper.AddSubject(new Clipper2Lib.Paths64 { offPath });
+        clipper.AddClip(new Clipper2Lib.Paths64 { bndPath });
+        var clipped = new Clipper2Lib.Paths64();
+        clipper.Execute(Clipper2Lib.ClipType.Intersection, Clipper2Lib.FillRule.NonZero, clipped);
+
+        double clippedArea = 0;
+        foreach (var p in clipped)
+            clippedArea += Math.Abs(Clipper2Lib.Clipper.Area(p));
+        double offAreaScaled = Math.Abs(Clipper2Lib.Clipper.Area(offPath));
+
+        // Nothing should be clipped away (>99% retained)
+        double ratio = offAreaScaled > 0 ? clippedArea / offAreaScaled : 0;
+        Assert.That(ratio, Is.GreaterThan(0.99),
+            $"Letter {letter}: {(1-ratio)*100:F1}% of offset outside boundary (not fully contained)");
+    }
+
+    private static double SignedArea(List<Vec3> polygon)
+    {
+        double area = 0;
+        for (int i = 0; i < polygon.Count; i++)
         {
-            double distToCentroid = Math.Sqrt(Math.Pow(pt.Easting - cx, 2) + Math.Pow(pt.Northing - cy, 2));
-
-            double nearestBndDistToCentroid = double.MaxValue;
-            double nearestDist = double.MaxValue;
-            foreach (var bp in boundary)
-            {
-                double d = Math.Sqrt(Math.Pow(bp.Easting - pt.Easting, 2) + Math.Pow(bp.Northing - pt.Northing, 2));
-                if (d < nearestDist)
-                {
-                    nearestDist = d;
-                    nearestBndDistToCentroid = Math.Sqrt(Math.Pow(bp.Easting - cx, 2) + Math.Pow(bp.Northing - cy, 2));
-                }
-            }
-
-            if (distToCentroid > nearestBndDistToCentroid + 3.0)
-                outward++;
+            var p1 = polygon[i];
+            var p2 = polygon[(i + 1) % polygon.Count];
+            area += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
         }
-
-        Assert.That(outward, Is.EqualTo(0),
-            $"Letter {letter}: {outward}/{seg.OffsetPoints.Count} points are outward from boundary");
+        return area / 2.0;
     }
 
     /// <summary>
