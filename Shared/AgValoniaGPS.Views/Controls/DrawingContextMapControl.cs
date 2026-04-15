@@ -4281,7 +4281,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // Tram wheel indicators (colored dots at wheel track positions)
             if (s.IsDisplayTramControl && s.TramDisplayMode != AgValoniaGPS.Models.Configuration.TramDisplayMode.Off)
             {
-                float dotRadius = 0.8f;
+                float dotRadius = 0.3f;
                 float halfTrack = (float)s.HalfWheelTrack;
 
                 // Right wheel: bit 0

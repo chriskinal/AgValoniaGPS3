@@ -95,7 +95,8 @@ public partial class FieldBuilderDialogPanel : UserControl
             || e.PropertyName == nameof(MainViewModel.HasHeadland)
             || e.PropertyName == nameof(MainViewModel.CurrentHeadlandLineForPreview)
             || e.PropertyName == nameof(MainViewModel.HeadlandStatusText)
-            || e.PropertyName == nameof(MainViewModel.SelectedHeadlandSegment)))
+            || e.PropertyName == nameof(MainViewModel.SelectedHeadlandSegment)
+            || e.PropertyName == nameof(MainViewModel.TramLineCountDisplay)))
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(UpdatePreview, Avalonia.Threading.DispatcherPriority.Render);
         }
