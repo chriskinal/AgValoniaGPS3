@@ -1717,13 +1717,6 @@ public partial class MainViewModel : ObservableObject
     private void UpdateTramLines(Track? track)
     {
         var config = ConfigurationStore.Instance.Tram;
-        if (config.DisplayMode == Models.Configuration.TramDisplayMode.Off)
-        {
-            _tramLineService.Clear();
-            _mapService.SetTramLines(null, null, null);
-            OnPropertyChanged(nameof(TramLineCountDisplay));
-            return;
-        }
 
         // Set boundary fence for clipping tram lines
         if (_currentBoundary?.OuterBoundary?.Points != null && _currentBoundary.OuterBoundary.Points.Count >= 3)

@@ -1427,9 +1427,10 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void AddTramSystem_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm) return;
+        string refName = vm.SelectedTrack?.Name ?? "Boundary";
         var sys = new AgValoniaGPS.Models.Tram.TramSystem
         {
-            Name = $"System {vm.TramSystems.Count + 1}",
+            Name = $"Tram {vm.TramSystems.Count + 1} ({refName})",
             TramWidth = 24.0,
             PassCount = 1,
             Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric,
@@ -1548,6 +1549,15 @@ public partial class FieldBuilderDialogPanel : UserControl
             _editingTramSystem.ReferenceTrackName = sel;
             _editingTramSystem.ReferenceBoundaryIndex = -1;
         }
+
+        // Auto-update name to reflect reference
+        string refLabel = sel == "(Boundary)" ? "Boundary" : (sel ?? "");
+        int sysIdx = DataContext is MainViewModel vmIdx
+            ? vmIdx.TramSystems.IndexOf(_editingTramSystem) + 1 : 0;
+        _editingTramSystem.Name = $"Tram {sysIdx} ({refLabel})";
+        var title = this.FindControl<TextBlock>("TramEditTitle");
+        if (title != null) title.Text = $"Edit: {_editingTramSystem.Name}";
+
         UpdateTramEditSectionVisibility();
         if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
