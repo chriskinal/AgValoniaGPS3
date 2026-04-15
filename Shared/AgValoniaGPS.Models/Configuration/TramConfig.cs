@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using AgValoniaGPS.Models.Tram;
 
 namespace AgValoniaGPS.Models.Configuration;
 
@@ -114,6 +116,11 @@ public class TramConfig : ObservableObject
         get => _isDisplayTramControl;
         set => SetProperty(ref _isDisplayTramControl, value);
     }
+
+    /// <summary>
+    /// Collection of tram systems. Each system generates its own set of tram lines.
+    /// </summary>
+    public ObservableCollection<TramSystem> Systems { get; } = new();
 }
 
 /// <summary>
