@@ -251,6 +251,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         vm.SavedTracks.Add(track);
         vm.SelectedTrack = track;
+        vm.SaveTracksToFile();
         vm.StatusMessage = $"Created curve from {name} ({curvePoints.Count} points)";
 
         ExitDrawMode();
@@ -902,6 +903,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             };
             vm.SavedTracks.Add(track);
             vm.SelectedTrack = track;
+            vm.SaveTracksToFile();
             vm.StatusMessage = $"Created A+ line at {headingDeg:F1}";
 
             ExitDrawMode();
@@ -961,6 +963,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             };
             vm.SavedTracks.Add(track);
             vm.SelectedTrack = track;
+            vm.SaveTracksToFile();
             vm.StatusMessage = "Created boundary curve";
         }
         else
@@ -1000,6 +1003,7 @@ public partial class FieldBuilderDialogPanel : UserControl
 
         vm.SavedTracks.Add(track);
         vm.SelectedTrack = track;
+        vm.SaveTracksToFile();
 
         ExitDrawMode();
         ShowMainTabs();
@@ -1274,6 +1278,7 @@ public partial class FieldBuilderDialogPanel : UserControl
             {
                 vm.SavedTracks.Add(_session.BackupTrack);
                 vm.SelectedTrack = _session.BackupTrack;
+                vm.SaveTracksToFile();
             }
         }
 
@@ -1478,13 +1483,18 @@ public partial class FieldBuilderDialogPanel : UserControl
         var title = this.FindControl<TextBlock>("TramEditTitle");
         if (title != null) title.Text = $"Edit: {sys.Name}";
 
-        // Populate reference combo
+        // Populate reference combo (exclude recorded paths and contours)
         var combo = this.FindControl<ComboBox>("TramRefCombo");
         if (combo != null && DataContext is MainViewModel vm)
         {
             var items = new System.Collections.Generic.List<string> { "(Boundary)" };
             foreach (var t in vm.SavedTracks)
+            {
+                if (t.Type == AgValoniaGPS.Models.Track.TrackType.RecordedPath ||
+                    t.Type == AgValoniaGPS.Models.Track.TrackType.Contour)
+                    continue;
                 items.Add(t.Name);
+            }
             combo.ItemsSource = items;
             combo.SelectedItem = sys.ReferenceTrackName ?? "(Boundary)";
         }

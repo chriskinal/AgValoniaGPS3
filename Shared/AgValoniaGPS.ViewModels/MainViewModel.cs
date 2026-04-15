@@ -4673,7 +4673,7 @@ public partial class MainViewModel : ObservableObject
     /// Save tracks to TrackLines.txt in the active field directory.
     /// Uses WinForms-compatible format via TrackFilesService.
     /// </summary>
-    private void SaveTracksToFile()
+    public void SaveTracksToFile()
     {
         var activeField = _fieldService.ActiveField;
         if (activeField == null || string.IsNullOrEmpty(activeField.DirectoryPath))
