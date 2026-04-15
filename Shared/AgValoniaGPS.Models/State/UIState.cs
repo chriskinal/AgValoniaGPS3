@@ -72,6 +72,7 @@ public class UIState : ObservableObject
                 OnPropertyChanged(nameof(IsRecordedPathDialogVisible));
                 OnPropertyChanged(nameof(IsTramSettingsDialogVisible));
                 OnPropertyChanged(nameof(IsFieldBuilderDialogVisible));
+                OnPropertyChanged(nameof(IsShortcutEditorDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -114,6 +115,7 @@ public class UIState : ObservableObject
     public bool IsRecordedPathDialogVisible => ActiveDialog == DialogType.RecordedPath;
     public bool IsTramSettingsDialogVisible => ActiveDialog == DialogType.TramSettings;
     public bool IsFieldBuilderDialogVisible => ActiveDialog == DialogType.FieldBuilder;
+    public bool IsShortcutEditorDialogVisible => ActiveDialog == DialogType.ShortcutEditor;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -244,7 +246,8 @@ public enum DialogType
     Language,
     RecordedPath,
     TramSettings,
-    FieldBuilder
+    FieldBuilder,
+    ShortcutEditor
 }
 
 /// <summary>

@@ -64,23 +64,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </UserControl.Styles>
 
     <Border Classes="FloatingPanel">
-        <ItemsControl ItemsSource="{Binding ActiveShortcutButtons}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="4"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:ShortcutButtonViewModel">
-                    <Button Classes="ShortcutButton"
-                            Classes.Active="{Binding IsActive}"
-                            Command="{Binding Command}"
-                            ToolTip.Tip="{Binding Tooltip}"
-                            IsVisible="{Binding IsVisible}">
-                        <Image Source="{Binding CurrentIcon}" Stretch="Uniform"/>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="4">
+            <ItemsControl ItemsSource="{Binding ActiveShortcutButtons}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="4"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ShortcutButtonViewModel">
+                        <Button Classes="ShortcutButton"
+                                Classes.Active="{Binding IsActive}"
+                                Command="{Binding Command}"
+                                ToolTip.Tip="{Binding Tooltip}"
+                                IsVisible="{Binding IsVisible}">
+                            <Image Source="{Binding CurrentIcon}" Stretch="Uniform"/>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Gear icon to open shortcut editor -->
+            <Button Classes="ShortcutButton" Width="36" Height="36"
+                    ToolTip.Tip="Customize Shortcuts"
+                    Command="{Binding ShowShortcutEditorCommand}"
+                    Padding="6" Opacity="0.6">
+                <TextBlock Text="&#x2699;" FontSize="18"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            </Button>
+        </StackPanel>
     </Border>
 </UserControl>

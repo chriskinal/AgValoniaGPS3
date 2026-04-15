@@ -1,0 +1,150 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:toolbar="using:AgValoniaGPS.Models.Toolbar"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.ShortcutEditorDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsShortcutEditorDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsShortcutEditorDialogVisible}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.EditorButton">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.EditorButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Semi-transparent backdrop -->
+    <Panel>
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog content -->
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                CornerRadius="16" Padding="24"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                MinWidth="650" MaxWidth="800" MaxHeight="600"
+                BoxShadow="0 8 32 4 #60000000">
+            <Grid RowDefinitions="Auto,*,Auto">
+
+                <!-- Header -->
+                <TextBlock Grid.Row="0" Text="Customize Shortcut Bar"
+                           FontSize="20" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           Margin="0,0,0,16"/>
+
+                <!-- Two-column layout -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*" Margin="0,0,0,16">
+
+                    <!-- Left: Available Buttons -->
+                    <Grid Grid.Column="0" RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0" Text="Available Buttons"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   Margin="0,0,0,8"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding AvailableButtons}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="toolbar:ButtonDefinition">
+                                        <Button Classes="EditorButton" Margin="0,2"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Left"
+                                                Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).AddShortcutCommand}"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                                                <TextBlock Text="+" FontSize="16" FontWeight="Bold"
+                                                           Foreground="#2ECC71" VerticalAlignment="Center" Width="16"/>
+                                                <TextBlock Text="{Binding Tooltip}" FontSize="13"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Center spacer -->
+                    <Border Grid.Column="1" Width="16"/>
+
+                    <!-- Right: Current Shortcuts -->
+                    <Grid Grid.Column="2" RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0" Text="Shortcut Bar (drag order)"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   Margin="0,0,0,8"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding CurrentShortcuts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="toolbar:ButtonDefinition">
+                                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                CornerRadius="6" Padding="4" Margin="0,2">
+                                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Tooltip}" FontSize="13"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                           VerticalAlignment="Center" Margin="8,0"/>
+
+                                                <Button Grid.Column="1" Content="^" Width="28" Height="28"
+                                                        Padding="0" CornerRadius="4" FontSize="12"
+                                                        Background="Transparent" Cursor="Hand"
+                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).MoveShortcutUpCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Grid.Column="2" Content="v" Width="28" Height="28"
+                                                        Padding="0" CornerRadius="4" FontSize="12"
+                                                        Background="Transparent" Cursor="Hand"
+                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).MoveShortcutDownCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Grid.Column="3" Content="X" Width="28" Height="28"
+                                                        Padding="0" CornerRadius="4" FontSize="12"
+                                                        Background="Transparent" Cursor="Hand"
+                                                        Foreground="#E74C3C"
+                                                        Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).RemoveShortcutCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+
+                <!-- Footer: Done button -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="Done" Padding="24,8" CornerRadius="8"
+                            FontSize="14" FontWeight="Bold"
+                            Background="#2ECC71" Foreground="White"
+                            Command="{Binding CloseShortcutEditorCommand}"
+                            Cursor="Hand"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Panel>
+</UserControl>

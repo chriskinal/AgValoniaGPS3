@@ -26,6 +26,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Services;
@@ -101,6 +102,9 @@ public partial class MainWindow : Window
                     ViewModel.CurrentFps = fps;
             };
         }
+
+        // Close left bar panels on outside click
+        this.AddHandler(PointerPressedEvent, OnWindowPointerPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
         // Add keyboard shortcut for 3D mode toggle (F3)
         this.KeyDown += MainWindow_KeyDown;
@@ -345,6 +349,38 @@ public partial class MainWindow : Window
                 System.Diagnostics.Debug.WriteLine($"[Save] Error saving on close: {ex.Message}");
             }
         });
+    }
+
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ViewModel == null) return;
+
+        bool anyLeftOpen = ViewModel.IsViewSettingsPanelVisible || ViewModel.IsFileMenuPanelVisible ||
+            ViewModel.IsToolsPanelVisible || ViewModel.IsConfigurationPanelVisible ||
+            ViewModel.IsJobMenuPanelVisible || ViewModel.IsFieldToolsPanelVisible;
+        bool anyRightOpen = ViewModel.IsABLinePanelVisible || ViewModel.IsFlagsPanelVisible;
+
+        if (!anyLeftOpen && !anyRightOpen) return;
+
+        // Check if click originated inside either panel -- if so, let the button handle it
+        if (e.Source is Avalonia.Visual source)
+        {
+            if (LeftNavPanel != null && IsDescendantOf(source, LeftNavPanel)) return;
+            if (RightNavPanel != null && IsDescendantOf(source, RightNavPanel)) return;
+        }
+
+        ViewModel.CloseAllLeftBarPanels();
+    }
+
+    private static bool IsDescendantOf(Avalonia.Visual child, Avalonia.Visual ancestor)
+    {
+        Avalonia.Visual? current = child;
+        while (current != null)
+        {
+            if (current == ancestor) return true;
+            current = current.GetVisualParent();
+        }
+        return false;
     }
 
     private void MainWindow_KeyDown(object? sender, KeyEventArgs e)

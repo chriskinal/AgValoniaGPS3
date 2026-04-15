@@ -168,6 +168,46 @@ public partial class MainViewModel
         return vm;
     }
 
+    /// <summary>
+    /// Saves the current ActiveShortcutButtons order back to the active layout.
+    /// Called by ShortcutBar after drag reorder or remove.
+    /// </summary>
+    public void SaveShortcutLayoutFromBar()
+    {
+        var store = Models.Configuration.ConfigurationStore.Instance;
+        var layout = store.Toolbar.ShortcutLayouts
+            .FirstOrDefault(l => l.Name == store.Toolbar.ActiveLayoutName);
+
+        if (layout == null) return;
+
+        layout.Shortcuts = ActiveShortcutButtons
+            .Select(b => new ToolbarShortcut { ButtonId = b.ButtonId })
+            .ToList();
+
+        _configurationService.SaveAppSettings();
+    }
+
+    /// <summary>
+    /// Adds a button to the shortcut bar by its ButtonId.
+    /// Called by RightNavigationPanel long-press-to-add.
+    /// </summary>
+    public void AddButtonToShortcutBar(string buttonId)
+    {
+        // Check if already in the bar
+        if (ActiveShortcutButtons.Any(b => b.ButtonId == buttonId))
+            return;
+
+        var definition = _buttonRegistry.GetById(buttonId);
+        if (definition == null) return;
+
+        var vm = CreateShortcutButtonViewModel(definition);
+        if (vm != null)
+        {
+            ActiveShortcutButtons.Add(vm);
+            SaveShortcutLayoutFromBar();
+        }
+    }
+
     private static Bitmap? LoadBitmap(string avaresPath)
     {
         try

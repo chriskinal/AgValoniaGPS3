@@ -166,6 +166,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                        TextAlignment="Center"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
+            <Separator Width="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="2,4"/>
+
+            <!-- Close simulator bar -->
+            <Button Classes="SimButton" Width="32" Height="32" Padding="0"
+                    Command="{Binding ToggleSimulatorPanelCommand}"
+                    ToolTip.Tip="Close Simulator"
+                    Background="Transparent">
+                <TextBlock Text="X" FontSize="14" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsHitTestVisible="False"/>
+            </Button>
+
         </StackPanel>
     </Border>
 </UserControl>

@@ -27,6 +27,17 @@ namespace AgValoniaGPS.ViewModels;
 public partial class MainViewModel
 {
     /// <summary>
+    /// Closes all left-bar sub-panels and right-bar sub-panels.
+    /// Called when clicking outside any panel.
+    /// </summary>
+    public void CloseAllLeftBarPanels()
+    {
+        CloseLeftBarPanelsExcept(null);
+        IsABLinePanelVisible = false;
+        IsFlagsPanelVisible = false;
+    }
+
+    /// <summary>
     /// Closes all left-bar sub-panels except the one specified.
     /// Pass null to close all.
     /// </summary>

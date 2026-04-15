@@ -305,6 +305,7 @@ public partial class MainViewModel : ObservableObject
         InitializeHotkeyCommands();
         InitializeChartCommands();
         InitializeToolbar(buttonRegistryService);
+        InitializeToolbarEditorCommands();
 
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings

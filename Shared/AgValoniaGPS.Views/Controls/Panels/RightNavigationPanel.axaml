@@ -49,6 +49,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
             <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="2"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
@@ -76,14 +77,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </UserControl.Styles>
 
     <Panel ClipToBounds="False" Background="{x:Null}">
-    <!-- Navigation Button Bar -->
+    <!-- Navigation Button Bar - Two column grid -->
     <Border x:Name="MainPanel" Classes="FloatingPanel">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="700">
-        <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
+        <WrapPanel Orientation="Horizontal" MaxWidth="140">
 
-            <!-- === GUIDANCE === -->
-
-            <!-- 1. Contour/Track Mode Toggle -->
+            <!-- Contour Mode -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Contour Mode On/Off"
                     Command="{Binding ToggleContourModeCommand}">
                 <Panel>
@@ -94,7 +92,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
-            <!-- 2. Manual Mode Toggle - All sections Manual On/Off -->
+            <!-- Manual Mode -->
             <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Manual On/Off"
                     Command="{Binding ToggleManualModeCommand}">
                 <Panel>
@@ -105,7 +103,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
-            <!-- 3. Section Master Toggle - All sections Auto/Off -->
+            <!-- Section Master -->
             <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Auto/Off"
                     Command="{Binding ToggleSectionMasterCommand}">
                 <Panel>
@@ -116,35 +114,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
-            <!-- 4. YouTurn Toggle (visible when track active AND UTurn button enabled in config) -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="YouTurn Auto U-Turn"
-                    Command="{Binding ToggleYouTurnCommand}"
-                    IsVisible="{Binding IsUTurnButtonVisible}">
-                <Panel>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnYes.png" Stretch="Uniform"
-                           IsVisible="{Binding IsYouTurnEnabled}"/>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnNo.png" Stretch="Uniform"
-                           IsVisible="{Binding IsYouTurnEnabled, Converter={StaticResource InverseBoolConverter}}"/>
-                </Panel>
-            </Button>
-
-            <!-- 4b. Manual U-Turn Left/Right buttons (only visible when autosteer engaged) -->
-            <Grid ColumnDefinitions="*,*" IsVisible="{Binding IsAutoSteerEngaged}">
-                <Button Grid.Column="0" Classes="RightPanelButton" Width="30" Height="32"
-                        ToolTip.Tip="Manual U-Turn Left"
-                        Command="{Binding ManualYouTurnLeftCommand}"
-                        Margin="0,0,2,0">
-                    <TextBlock Text="↰" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-                <Button Grid.Column="1" Classes="RightPanelButton" Width="30" Height="32"
-                        ToolTip.Tip="Manual U-Turn Right"
-                        Command="{Binding ManualYouTurnRightCommand}"
-                        Margin="2,0,0,0">
-                    <TextBlock Text="↱" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-            </Grid>
-
-            <!-- 5. AutoSteer Toggle (3 states: Gray=disabled, Off=ready, On=active) -->
+            <!-- AutoSteer -->
             <Button Classes="RightPanelButton" ToolTip.Tip="AutoSteer"
                     Command="{Binding ToggleAutoSteerCommand}"
                     IsEnabled="{Binding IsAutoSteerAvailable}">
@@ -164,11 +134,33 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Panel>
             </Button>
 
-            <Separator Classes="RightPanelSeparator"/>
+            <!-- YouTurn -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="YouTurn Auto U-Turn"
+                    Command="{Binding ToggleYouTurnCommand}"
+                    IsVisible="{Binding IsUTurnButtonVisible}">
+                <Panel>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnYes.png" Stretch="Uniform"
+                           IsVisible="{Binding IsYouTurnEnabled}"/>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnNo.png" Stretch="Uniform"
+                           IsVisible="{Binding IsYouTurnEnabled, Converter={StaticResource InverseBoolConverter}}"/>
+                </Panel>
+            </Button>
 
-            <!-- === TRACK / HEADLAND === -->
+            <!-- Manual U-Turn Left -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Manual U-Turn Left"
+                    Command="{Binding ManualYouTurnLeftCommand}"
+                    IsVisible="{Binding IsAutoSteerEngaged}">
+                <TextBlock Text="&#x21B0;" FontSize="24" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
 
-            <!-- Headland On/Off -->
+            <!-- Manual U-Turn Right -->
+            <Button Classes="RightPanelButton" ToolTip.Tip="Manual U-Turn Right"
+                    Command="{Binding ManualYouTurnRightCommand}"
+                    IsVisible="{Binding IsAutoSteerEngaged}">
+                <TextBlock Text="&#x21B1;" FontSize="24" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+
+            <!-- Headland -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Toggle Headland"
                     Command="{Binding ToggleHeadlandCommand}">
                 <Panel>
@@ -211,10 +203,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
             </Button>
 
-            <Separator Classes="RightPanelSeparator"/>
-
-            <!-- === TOOLS === -->
-
             <!-- Section Mapping Color -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Section Mapping Color"
                     Command="{Binding ChangeMappingColorCommand}">
@@ -234,7 +222,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TramAll.png" Stretch="Uniform"/>
             </Button>
 
-            <!-- U-Turn Skip Rows (cycle 0-9) -->
+            <!-- U-Turn Skip Rows -->
             <Button Classes="RightPanelButton" ToolTip.Tip="U-Turn Skip Rows (tap to cycle 0-9)"
                     Command="{Binding CycleUTurnSkipRowsCommand}"
                     IsVisible="{Binding HasActiveTrack}">
@@ -244,17 +232,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Button>
 
-            <Separator Classes="RightPanelSeparator"/>
-
-            <!-- === AB LINE MENU === -->
-
-            <!-- AB Line Menu (Tracks, Quick AB, Draw, etc.) -->
+            <!-- AB Line Menu -->
             <Button Classes="RightPanelButton" ToolTip.Tip="AB Line Options"
                     Command="{Binding ToggleABLinePanelCommand}">
                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png" Stretch="Uniform"/>
             </Button>
-
-            <!-- === FLAGS === -->
 
             <!-- Flags Menu -->
             <Button Classes="RightPanelButton" ToolTip.Tip="Flags"
@@ -262,8 +244,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Stretch="Uniform"/>
             </Button>
 
-        </StackPanel>
-        </ScrollViewer>
+        </WrapPanel>
     </Border>
 
     <!-- Sub-panels anchored to the left of the right bar -->

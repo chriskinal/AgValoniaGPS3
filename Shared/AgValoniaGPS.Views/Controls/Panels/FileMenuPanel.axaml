@@ -81,6 +81,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     Command="{Binding ShowLogViewerDialogCommand}"/>
             <Button Classes="ModernButton" Content="{loc:Localize Hotkeys}" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
                     Command="{Binding ShowHotkeyConfigDialogCommand}"/>
+            <Button Classes="ModernButton" Content="Customize Shortcuts" HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press"
+                    Command="{Binding ShowShortcutEditorCommand}"/>
 
             <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
