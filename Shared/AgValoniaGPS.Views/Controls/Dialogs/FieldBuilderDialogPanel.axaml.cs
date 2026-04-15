@@ -1532,10 +1532,16 @@ public partial class FieldBuilderDialogPanel : UserControl
             if (isSelected && track.Points.Count >= 2)
             {
                 var first = ToCanvas(track.Points[0].Easting, track.Points[0].Northing);
-                var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
-
                 AddMarker(canvas, first, new SolidColorBrush(Color.FromRgb(218, 165, 32)), "A", light);
-                AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B", light);
+
+                // Only show B marker if track is not a closed loop
+                double closeDist = Math.Pow(track.Points[0].Easting - track.Points[^1].Easting, 2) +
+                                   Math.Pow(track.Points[0].Northing - track.Points[^1].Northing, 2);
+                if (closeDist > 1.0)
+                {
+                    var last = ToCanvas(track.Points[^1].Easting, track.Points[^1].Northing);
+                    AddMarker(canvas, last, new SolidColorBrush(Color.FromRgb(65, 105, 225)), "B", light);
+                }
             }
         }
 
@@ -1631,10 +1637,16 @@ public partial class FieldBuilderDialogPanel : UserControl
                 var pt = ToCanvas(_session.Points[i].Easting, _session.Points[i].Northing);
                 string? label = null;
 
+                // Skip last marker for closed curves (first == last point)
+                bool isClosedCurve = _session.Points.Count > 2 &&
+                    Math.Pow(_session.Points[0].Easting - _session.Points[^1].Easting, 2) +
+                    Math.Pow(_session.Points[0].Northing - _session.Points[^1].Northing, 2) < 1.0;
+                if (isClosedCurve && i == _session.Points.Count - 1) continue;
+
                 if (isLinearMode)
                     label = i == 0 ? "A" : "B";
                 else if (isCurvePreview)
-                    label = i == 0 ? "Start" : "End";
+                    label = i == 0 ? "A" : "B";
 
                 IBrush fill = i == 0
                     ? new SolidColorBrush(Color.FromRgb(218, 165, 32))   // Gold (A/Start)
