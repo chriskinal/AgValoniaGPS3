@@ -47,14 +47,10 @@ public class PolygonOffsetService : IPolygonOffsetService
         if (offsetDistance <= 0)
             return new List<Vec2>(boundaryPoints);
 
-        // For straight-edge boundaries, use simple Clipper offset with miter corners
-        if (IsStraightEdgeBoundary(boundaryPoints))
-        {
-            return CreateClipperInwardOffset(boundaryPoints, offsetDistance, JoinType.Miter);
-        }
-
-        // For curved boundaries, use point-by-point offset to preserve curve shape
-        return CreateCurvedInwardOffset(boundaryPoints, offsetDistance);
+        // Always use Clipper2 for polygon offset - handles concave shapes correctly
+        // Use Round join for curved boundaries, Miter for straight-edge
+        var clipperJoin = IsStraightEdgeBoundary(boundaryPoints) ? JoinType.Miter : JoinType.Round;
+        return CreateClipperInwardOffset(boundaryPoints, offsetDistance, clipperJoin);
     }
 
     /// <summary>
@@ -95,9 +91,30 @@ public class PolygonOffsetService : IPolygonOffsetService
             }
         }
 
+        // Clip the offset result against the original boundary to ensure
+        // no points extend outside (can happen in narrow spikes)
+        var clipper = new Clipper64();
+        clipper.AddSubject(new Paths64 { largest });
+        clipper.AddClip(new Paths64 { path });
+        var clipped = new Paths64();
+        clipper.Execute(ClipType.Intersection, FillRule.NonZero, clipped);
+
+        Path64 finalPath = largest;
+        if (clipped.Count > 0)
+        {
+            // Use the largest clipped result
+            finalPath = clipped[0];
+            double clippedArea = System.Math.Abs(Clipper.Area(clipped[0]));
+            for (int i = 1; i < clipped.Count; i++)
+            {
+                double a = System.Math.Abs(Clipper.Area(clipped[i]));
+                if (a > clippedArea) { clippedArea = a; finalPath = clipped[i]; }
+            }
+        }
+
         // Convert back to Vec2
-        var result = new List<Vec2>(largest.Count);
-        foreach (var pt in largest)
+        var result = new List<Vec2>(finalPath.Count);
+        foreach (var pt in finalPath)
         {
             result.Add(new Vec2(pt.X / Scale, pt.Y / Scale));
         }
