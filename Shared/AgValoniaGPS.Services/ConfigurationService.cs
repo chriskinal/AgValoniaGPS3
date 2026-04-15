@@ -308,6 +308,7 @@ public class ConfigurationService(
         store.Display.UTurnSound = settings.UTurnSound;
         store.Display.HydraulicSound = settings.HydraulicSound;
         store.Display.SectionsSound = settings.SectionsSound;
+
         store.Display.SimulatorPanelX = settings.SimulatorPanelX;
         store.Display.SimulatorPanelY = settings.SimulatorPanelY;
         store.Display.SimulatorPanelVisible = settings.SimulatorPanelVisible;
@@ -369,6 +370,7 @@ public class ConfigurationService(
         settings.UTurnSound = store.Display.UTurnSound;
         settings.HydraulicSound = store.Display.HydraulicSound;
         settings.SectionsSound = store.Display.SectionsSound;
+
         settings.SimulatorPanelX = store.Display.SimulatorPanelX;
         settings.SimulatorPanelY = store.Display.SimulatorPanelY;
         settings.SimulatorPanelVisible = store.Display.SimulatorPanelVisible;

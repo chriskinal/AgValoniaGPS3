@@ -42,6 +42,7 @@ namespace AgValoniaGPS.Models
         public bool HydraulicSound { get; set; } = true;
         public bool SectionsSound { get; set; } = true;
 
+
         // Panel positions
         public double SimulatorPanelX { get; set; } = double.NaN; // NaN means not set
         public double SimulatorPanelY { get; set; } = double.NaN;

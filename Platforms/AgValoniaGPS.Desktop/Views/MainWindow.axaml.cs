@@ -72,6 +72,10 @@ public partial class MainWindow : Window
             // Wire screenshot provider for debug dump (#127)
             ViewModel.ScreenshotProvider = CaptureScreenshotPng;
 
+            // Wire zoom commands to map control
+            ViewModel.ZoomInRequested += () => MapControl?.Zoom(1.2);
+            ViewModel.ZoomOutRequested += () => MapControl?.Zoom(1.0 / 1.2);
+
             // Wire fullscreen toggle for immediate effect (ConfigurationViewModel
             // is created lazily, so subscribe when it appears)
             ViewModel.PropertyChanged += (s, e) =>
