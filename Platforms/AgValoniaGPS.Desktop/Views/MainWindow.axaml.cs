@@ -673,7 +673,7 @@ public partial class MainWindow : Window
         var position = e.GetPosition(this);
 
         // Check anchored panels using their actual rendered bounds
-        Control[] panels = { LeftNavPanel, RightNavPanel, SectionControlPanel, ShortcutBarPanel };
+        Control[] panels = { LeftNavPanel, RightNavPanel, SectionControlPanel, ShortcutBarPanel, SimulatorBarPanel };
         foreach (var panel in panels)
         {
             if (panel?.IsVisible == true && panel.Bounds.Width > 0)

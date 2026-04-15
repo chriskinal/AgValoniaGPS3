@@ -96,6 +96,16 @@ public partial class MainViewModel
             StatusMessage = $"Steer: {SimulatorSteerAngle:F1}";
         });
 
+        SimulatorSpeedUpCommand = new RelayCommand(() =>
+        {
+            SimulatorSpeedKph += 1.0;
+        });
+
+        SimulatorSpeedDownCommand = new RelayCommand(() =>
+        {
+            SimulatorSpeedKph -= 1.0;
+        });
+
         // Simulator coordinates dialog commands
         ShowSimCoordsDialogCommand = new RelayCommand(() =>
         {

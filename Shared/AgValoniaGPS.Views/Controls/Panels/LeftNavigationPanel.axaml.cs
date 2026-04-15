@@ -27,7 +27,7 @@ public partial class LeftNavigationPanel : UserControl
         InitializeComponent();
 
         // Wire up sub-panel drag events
-        WireUpSubPanelDrag<SimulatorPanel>("SimulatorPanelControl");
+        // SimulatorPanel moved to bottom bar area (above ShortcutBar)
         WireUpSubPanelDrag<ViewSettingsPanel>("ViewSettingsPanelControl");
         WireUpSubPanelDrag<FileMenuPanel>("FileMenuPanelControl");
         WireUpSubPanelDrag<ToolsPanel>("ToolsPanelControl");

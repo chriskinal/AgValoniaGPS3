@@ -85,14 +85,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
 
                 <!-- BOTTOM: Section control stacked above bottom navigation -->
+                <!-- SECTION CONTROL: Floating centered overlay -->
+                <panels:SectionControlPanel x:Name="SectionControlPanel"
+                                            ZIndex="15"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            IsVisible="{Binding IsSectionOverlayVisible}"
+                                            IsHitTestVisible="{Binding IsSectionOverlayVisible}"
+                                            DataContext="{Binding}"/>
+
+                <!-- BOTTOM: Simulator bar (when active) + Shortcut bar (always visible) -->
                 <StackPanel ZIndex="10"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
                             Margin="0,0,0,8"
                             Spacing="4">
-                    <panels:SectionControlPanel x:Name="SectionControlPanel"
-                                                HorizontalAlignment="Center"
-                                                DataContext="{Binding}"/>
+                    <panels:SimulatorPanel x:Name="SimulatorBarPanel"
+                                           HorizontalAlignment="Center"
+                                           DataContext="{Binding}"/>
                     <panels:ShortcutBar x:Name="ShortcutBarPanel"
                                        HorizontalAlignment="Center"
                                        DataContext="{Binding}"/>

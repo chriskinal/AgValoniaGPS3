@@ -159,11 +159,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                   ZIndex="15"
                                   DataContext="{Binding}"/>
 
-        <!-- Simulator Panel -->
-        <controls:SimulatorPanel x:Name="SimulatorPanelControl"
-                                 Canvas.Left="90" Canvas.Top="150"
-                                 ZIndex="15"
-                                 DataContext="{Binding}"/>
+        <!-- Simulator Panel moved to bottom bar area (above ShortcutBar) -->
 
         <!-- Boundary Recording Panel -->
         <controls:BoundaryRecordingPanel x:Name="BoundaryRecordingPanelControl"

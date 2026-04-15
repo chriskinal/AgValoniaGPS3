@@ -2815,6 +2815,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? SimulatorReverseDirectionCommand { get; private set; }
     public ICommand? SimulatorSteerLeftCommand { get; private set; }
     public ICommand? SimulatorSteerRightCommand { get; private set; }
+    public ICommand? SimulatorSpeedUpCommand { get; private set; }
+    public ICommand? SimulatorSpeedDownCommand { get; private set; }
 
     // Dialog Commands
     public ICommand? ShowSimCoordsDialogCommand { get; private set; }
