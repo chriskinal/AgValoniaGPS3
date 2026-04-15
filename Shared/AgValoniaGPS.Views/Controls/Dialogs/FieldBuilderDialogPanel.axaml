@@ -643,6 +643,29 @@ Licensed under GNU GPL v3.
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                             </StackPanel>
 
+                            <!-- Tool width multiplier for boundary offset -->
+                            <StackPanel x:Name="ToolWidthMultiplierPanel" IsVisible="False" Spacing="4" Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                    <Button x:Name="ToolWidthMinusBtn" Width="44" Height="44" CornerRadius="8"
+                                            FontSize="22" FontWeight="Bold" Content="-" Cursor="Hand"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                            Click="ToolWidthMinus_Click"/>
+                                    <TextBlock x:Name="ToolWidthMultiplierText" Text="2" FontSize="28" FontWeight="Bold"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center" Width="36" TextAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <Button x:Name="ToolWidthPlusBtn" Width="44" Height="44" CornerRadius="8"
+                                            FontSize="22" FontWeight="Bold" Content="+" Cursor="Hand"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0"
+                                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                            Click="ToolWidthPlus_Click"/>
+                                    <TextBlock Text="x tool widths" FontSize="14" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                </StackPanel>
+                                <TextBlock x:Name="ToolWidthResultText" Text="" FontSize="14" HorizontalAlignment="Center"
+                                           Foreground="#1ABC9C"/>
+                            </StackPanel>
+
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,8,0,0">
                                 <StackPanel x:Name="CreateABBtnPanel" Spacing="2" IsVisible="False">
                                     <Button x:Name="CreateABBtn" Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"

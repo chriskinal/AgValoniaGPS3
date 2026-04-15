@@ -33,6 +33,9 @@ public partial class FieldBuilderDialogPanel : UserControl
     private Action? _inlineConfirmAction;
     private MainViewModel? _viewModel;
 
+    // Tool width multiplier for boundary offset
+    private int _toolWidthMultiplier = 2;
+
     // Theme detection
     private bool IsLightTheme => ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
 
@@ -311,18 +314,24 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (createPanel != null) createPanel.IsVisible = true;
         if (finishPanel != null) finishPanel.IsVisible = false;
 
-        if (headingPanel != null) headingPanel.IsVisible = true;
-        if (headingInput != null)
-        {
-            headingInput.Text = vm.HeadlandDistance.ToString("F1");
-            headingInput.Focus();
-        }
-        var headingLabel = headingPanel?.Children.OfType<TextBlock>().FirstOrDefault();
-        if (headingLabel != null) headingLabel.Text = "Offset:";
-        var degLabel = headingPanel?.Children.OfType<TextBlock>().LastOrDefault();
-        if (degLabel != null) degLabel.Text = "m";
+        // Hide raw offset input, show tool width multiplier instead
+        if (headingPanel != null) headingPanel.IsVisible = false;
+        var multiplierPanel = this.FindControl<StackPanel>("ToolWidthMultiplierPanel");
+        if (multiplierPanel != null) multiplierPanel.IsVisible = true;
 
-        SetCanvasStatus("Set offset distance, then Create");
+        // Default to 2x tool width (or compute from existing HeadlandDistance)
+        double toolWidth = Models.Configuration.ConfigurationStore.Instance.ActualToolWidth;
+        if (toolWidth > 0 && vm.HeadlandDistance > 0)
+            _toolWidthMultiplier = Math.Max(1, (int)Math.Round(vm.HeadlandDistance / toolWidth));
+        else
+            _toolWidthMultiplier = 2;
+
+        // Set HeadingInput (hidden but still used as offset source for Create/Preview)
+        if (headingInput != null)
+            headingInput.Text = (toolWidth * _toolWidthMultiplier).ToString("F1");
+        UpdateToolWidthMultiplierDisplay();
+
+        SetCanvasStatus("Set tool widths, then Create");
         UpdatePreview();
     }
 
@@ -554,6 +563,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (finishPanel != null) finishPanel.IsVisible = _session.Target == DrawTarget.TrackCurve;
         if (createPanel != null) createPanel.IsVisible = false;
         if (headingPanel != null) headingPanel.IsVisible = false;
+        var multiplierPanel = this.FindControl<StackPanel>("ToolWidthMultiplierPanel");
+        if (multiplierPanel != null) multiplierPanel.IsVisible = false;
 
         UpdatePreview();
     }
@@ -834,6 +845,38 @@ public partial class FieldBuilderDialogPanel : UserControl
         {
             ConfigurationStore.Instance.Vehicle.TrackWidth = width;
         }
+    }
+
+    private void ToolWidthMinus_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_toolWidthMultiplier > 1)
+        {
+            _toolWidthMultiplier--;
+            UpdateToolWidthMultiplierDisplay();
+        }
+    }
+
+    private void ToolWidthPlus_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_toolWidthMultiplier < 10)
+        {
+            _toolWidthMultiplier++;
+            UpdateToolWidthMultiplierDisplay();
+        }
+    }
+
+    private void UpdateToolWidthMultiplierDisplay()
+    {
+        double toolWidth = Models.Configuration.ConfigurationStore.Instance.ActualToolWidth;
+        double offset = toolWidth * _toolWidthMultiplier;
+
+        var multiplierText = this.FindControl<TextBlock>("ToolWidthMultiplierText");
+        var resultText = this.FindControl<TextBlock>("ToolWidthResultText");
+        var headingInput = this.FindControl<TextBox>("HeadingInput");
+
+        if (multiplierText != null) multiplierText.Text = _toolWidthMultiplier.ToString();
+        if (resultText != null) resultText.Text = $"= {offset:F1}m  ({toolWidth:F1}m tool width)";
+        if (headingInput != null) headingInput.Text = offset.ToString("F1");
     }
 
     private void CreateAB_Click(object? sender, RoutedEventArgs e)
@@ -1263,6 +1306,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         _session.Reset();
         var drawPanel = this.FindControl<Border>("DrawModePanel");
         if (drawPanel != null) drawPanel.IsVisible = false;
+        var multiplierPanel = this.FindControl<StackPanel>("ToolWidthMultiplierPanel");
+        if (multiplierPanel != null) multiplierPanel.IsVisible = false;
         SetCanvasStatus(null);
     }
 
