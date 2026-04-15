@@ -358,11 +358,93 @@ Licensed under GNU GPL v3.
                                 </ItemsControl>
 
                                 <!-- Add new system button -->
-                                <Button Content="+ New System" Height="30" FontSize="13"
+                                <Button Content="+ New System" Height="28" FontSize="13"
                                         HorizontalAlignment="Stretch" CornerRadius="4"
                                         Click="AddTramSystem_Click"
                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                                <!-- Per-system edit panel (shown when editing) -->
+                                <Border x:Name="TramSystemEditPanel" IsVisible="False"
+                                        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                                        CornerRadius="6" Padding="6" Margin="0,2">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="TramEditTitle" Text="Edit System" FontSize="13" FontWeight="Bold"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                                        <!-- Reference -->
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                                            <TextBlock Text="Ref:" FontSize="12" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                            <ComboBox x:Name="TramRefCombo" Grid.Column="1" FontSize="12"
+                                                      HorizontalAlignment="Stretch"
+                                                      SelectionChanged="TramRefCombo_SelectionChanged"/>
+                                        </Grid>
+
+                                        <!-- Tram Width -->
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="Tram Width (m):" FontSize="12" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                            <TextBox x:Name="TramSysWidthInput" Grid.Column="1" Width="60" FontSize="13"
+                                                     LostFocus="TramSysWidthInput_LostFocus"/>
+                                        </Grid>
+
+                                        <!-- Mode: TrackLine / Edge -->
+                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="2">
+                                            <Button x:Name="BtnModeTrackLine" Content="Track Line"
+                                                    HorizontalAlignment="Stretch" Height="26" FontSize="11"
+                                                    Click="TramModeTrackLine_Click"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            <Button x:Name="BtnModeEdge" Grid.Column="1" Content="Edge"
+                                                    HorizontalAlignment="Stretch" Height="26" FontSize="11"
+                                                    Click="TramModeEdge_Click"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        </Grid>
+
+                                        <!-- Offset -->
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="Offset (m):" FontSize="12" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                            <TextBox x:Name="TramSysOffsetInput" Grid.Column="1" Width="60" FontSize="13"
+                                                     LostFocus="TramSysOffsetInput_LostFocus"/>
+                                        </Grid>
+
+                                        <!-- Direction: Left / Right / Symmetric -->
+                                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="2">
+                                            <Button x:Name="BtnDirLeft" Content="Left"
+                                                    HorizontalAlignment="Stretch" Height="26" FontSize="11"
+                                                    Click="TramDirLeft_Click"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            <Button x:Name="BtnDirSymm" Grid.Column="1" Content="Symm"
+                                                    HorizontalAlignment="Stretch" Height="26" FontSize="11"
+                                                    Click="TramDirSymm_Click"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            <Button x:Name="BtnDirRight" Grid.Column="2" Content="Right"
+                                                    HorizontalAlignment="Stretch" Height="26" FontSize="11"
+                                                    Click="TramDirRight_Click"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                        </Grid>
+
+                                        <!-- Pass Count -->
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="Passes (0=all):" FontSize="12" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                            <TextBox x:Name="TramSysPassInput" Grid.Column="1" Width="60" FontSize="13"
+                                                     LostFocus="TramSysPassInput_LostFocus"/>
+                                        </Grid>
+
+                                        <Button Content="Done" Height="28" FontSize="13"
+                                                HorizontalAlignment="Stretch" CornerRadius="4"
+                                                Click="TramSystemEditDone_Click"
+                                                Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                                                Foreground="White"/>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Build + Delete All -->
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">

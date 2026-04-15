@@ -1385,18 +1385,123 @@ public partial class FieldBuilderDialogPanel : UserControl
             ReferenceTrackName = vm.SelectedTrack?.Name
         };
         vm.TramSystems.Add(sys);
-        // TODO: open edit panel for the new system
+        OpenTramSystemEditPanel(sys);
     }
+
+    private AgValoniaGPS.Models.Tram.TramSystem? _editingTramSystem;
 
     private void EditTramSystem_Click(object? sender, RoutedEventArgs e)
     {
-        // TODO: open per-system settings panel
         if (sender is Avalonia.Controls.Button btn && btn.DataContext is AgValoniaGPS.Models.Tram.TramSystem sys)
+            OpenTramSystemEditPanel(sys);
+    }
+
+    private void OpenTramSystemEditPanel(AgValoniaGPS.Models.Tram.TramSystem sys)
+    {
+        _editingTramSystem = sys;
+        var panel = this.FindControl<Border>("TramSystemEditPanel");
+        var title = this.FindControl<TextBlock>("TramEditTitle");
+        if (panel == null) return;
+
+        panel.IsVisible = true;
+        if (title != null) title.Text = $"Edit: {sys.Name}";
+
+        // Populate reference combo
+        var combo = this.FindControl<ComboBox>("TramRefCombo");
+        if (combo != null && DataContext is MainViewModel vm)
         {
-            // For now, just select it
-            if (DataContext is MainViewModel vm)
-                vm.StatusMessage = $"Editing '{sys.Name}' - per-system panel TODO";
+            var items = new System.Collections.Generic.List<string> { "(Boundary)" };
+            foreach (var t in vm.SavedTracks)
+                items.Add(t.Name);
+            combo.ItemsSource = items;
+            combo.SelectedItem = sys.ReferenceTrackName ?? "(Boundary)";
         }
+
+        // Populate fields
+        var widthInput = this.FindControl<TextBox>("TramSysWidthInput");
+        if (widthInput != null) widthInput.Text = sys.TramWidth.ToString("F1");
+        var offsetInput = this.FindControl<TextBox>("TramSysOffsetInput");
+        if (offsetInput != null) offsetInput.Text = sys.Offset.ToString("F1");
+        var passInput = this.FindControl<TextBox>("TramSysPassInput");
+        if (passInput != null) passInput.Text = sys.PassCount.ToString();
+    }
+
+    private void TramRefCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_editingTramSystem == null || sender is not ComboBox combo) return;
+        var sel = combo.SelectedItem as string;
+        if (sel == "(Boundary)")
+        {
+            _editingTramSystem.ReferenceTrackName = null;
+            _editingTramSystem.ReferenceBoundaryIndex = 0;
+        }
+        else
+        {
+            _editingTramSystem.ReferenceTrackName = sel;
+            _editingTramSystem.ReferenceBoundaryIndex = -1;
+        }
+    }
+
+    private void TramSysWidthInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem == null || sender is not TextBox tb) return;
+        if (double.TryParse(tb.Text, out double v) && v > 0)
+            _editingTramSystem.TramWidth = v;
+    }
+
+    private void TramSysOffsetInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem == null || sender is not TextBox tb) return;
+        if (double.TryParse(tb.Text, out double v))
+            _editingTramSystem.Offset = v;
+    }
+
+    private void TramSysPassInput_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem == null || sender is not TextBox tb) return;
+        if (int.TryParse(tb.Text, out int v))
+            _editingTramSystem.PassCount = Math.Max(0, v);
+    }
+
+    private void TramModeTrackLine_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null)
+            _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine;
+    }
+
+    private void TramModeEdge_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null)
+            _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge;
+    }
+
+    private void TramDirLeft_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null)
+            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Left;
+    }
+
+    private void TramDirSymm_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null)
+            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric;
+    }
+
+    private void TramDirRight_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_editingTramSystem != null)
+            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Right;
+    }
+
+    private void TramSystemEditDone_Click(object? sender, RoutedEventArgs e)
+    {
+        _editingTramSystem = null;
+        var panel = this.FindControl<Border>("TramSystemEditPanel");
+        if (panel != null) panel.IsVisible = false;
+
+        // Rebuild tram lines with updated system
+        if (DataContext is MainViewModel vm)
+            vm.BuildTramLinesCommand?.Execute(null);
     }
 
     private void DeleteTramSystem_Click(object? sender, RoutedEventArgs e)
