@@ -1720,17 +1720,39 @@ public partial class MainViewModel : ObservableObject
 
         _tramLineService.GenerateParallelTramLines(track, fieldWidth);
 
-        // Also generate boundary tram tracks if headland exists
-        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
+        // Generate boundary tram tracks if headland is a proper inset (not same as boundary)
+        // If headland == boundary (no effective segments), skip boundary tracks
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3 &&
+            _currentBoundary?.OuterBoundary?.Points != null)
         {
-            _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+            // Check if headland is different from boundary (at least one point differs significantly)
+            var bndPts = _currentBoundary.OuterBoundary.Points;
+            bool isInset = false;
+            if (_currentHeadlandLine.Count != bndPts.Count)
+            {
+                isInset = true;
+            }
+            else
+            {
+                for (int i = 0; i < Math.Min(_currentHeadlandLine.Count, bndPts.Count); i++)
+                {
+                    double dx = _currentHeadlandLine[i].Easting - bndPts[i].Easting;
+                    double dy = _currentHeadlandLine[i].Northing - bndPts[i].Northing;
+                    if (dx * dx + dy * dy > 1.0) { isInset = true; break; }
+                }
+            }
+
+            if (isInset)
+                _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
         }
 
-        // Update map
-        _mapService.SetTramLines(
-            _tramLineService.OuterBoundaryTrack,
-            _tramLineService.InnerBoundaryTrack,
-            _tramLineService.ParallelTramLines);
+        // Snapshot collections for thread-safe rendering
+        var outerSnap = _tramLineService.OuterBoundaryTrack.ToList();
+        var innerSnap = _tramLineService.InnerBoundaryTrack.ToList();
+        var parallelSnap = _tramLineService.ParallelTramLines
+            .Select(l => (IReadOnlyList<Models.Base.Vec2>)l.ToList()).ToList();
+
+        _mapService.SetTramLines(outerSnap, innerSnap, parallelSnap);
 
         OnPropertyChanged(nameof(TramLineCountDisplay));
     }
