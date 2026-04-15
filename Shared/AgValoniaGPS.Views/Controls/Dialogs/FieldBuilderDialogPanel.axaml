@@ -482,11 +482,16 @@ Licensed under GNU GPL v3.
                                              LostFocus="TramSysPassInput_LostFocus"/>
                                 </Grid>
 
-                                <Button Content="Done" Height="36" FontSize="14"
-                                        HorizontalAlignment="Stretch" CornerRadius="4" Margin="0,6,0,0"
-                                        Click="TramSystemEditDone_Click"
-                                        Background="{DynamicResource SystemControlHighlightAccentBrush}"
-                                        Foreground="White"/>
+                                <StackPanel Spacing="2" HorizontalAlignment="Center" Margin="0,6,0,0">
+                                    <Button Width="56" Height="56" CornerRadius="8" Cursor="Hand" Padding="0"
+                                            Background="#27AE60" BorderThickness="0"
+                                            Click="TramSystemEditDone_Click">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/OK64.png"
+                                               Width="36" Height="36" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Done" FontSize="12" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                </StackPanel>
                             </StackPanel>
                             </Panel>
                             </ScrollViewer>

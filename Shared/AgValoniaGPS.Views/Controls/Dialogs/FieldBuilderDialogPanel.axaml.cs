@@ -1661,6 +1661,17 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void RebuildTramLines(MainViewModel vm)
     {
         vm.BuildTramLinesCommand?.Execute(null);
+
+        // Auto-save tram systems to field directory
+        if (vm.ActiveField != null && vm.TramSystems.Count > 0)
+        {
+            try
+            {
+                AgValoniaGPS.Services.Tram.TramSystemFileService.Save(
+                    vm.ActiveField.DirectoryPath, vm.TramSystems);
+            }
+            catch { /* save failure is non-critical */ }
+        }
     }
 
     // --- Preview Rendering ---
