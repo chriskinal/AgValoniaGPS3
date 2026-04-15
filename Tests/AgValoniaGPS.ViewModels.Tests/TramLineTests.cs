@@ -358,4 +358,136 @@ public class TramLineTests
         Assert.That(hasPositive && hasNegative, Is.True,
             "Tram lines should exist on both sides of the reference track");
     }
+
+    // ---------------------------------------------------------------
+    // Boundary tram track tests
+    // ---------------------------------------------------------------
+
+    private static bool IsPointInPolygon(double px, double py, List<Vec3> polygon)
+    {
+        bool inside = false;
+        int count = polygon.Count;
+        for (int i = 0, j = count - 1; i < count; j = i++)
+        {
+            double yi = polygon[i].Northing, yj = polygon[j].Northing;
+            double xi = polygon[i].Easting, xj = polygon[j].Easting;
+            if (((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+                inside = !inside;
+        }
+        return inside;
+    }
+
+    [Test]
+    public void BoundaryTramTracks_AllPointsInsideBoundary()
+    {
+        // 200x200 square boundary
+        var boundary = new List<Vec3>
+        {
+            new Vec3(0, 0, 0), new Vec3(200, 0, Math.PI / 2),
+            new Vec3(200, 200, Math.PI), new Vec3(0, 200, 3 * Math.PI / 2),
+            new Vec3(0, 0, 0) // closed
+        };
+
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        _service.GenerateBoundaryTramTracks(boundary);
+
+        Assert.That(_service.OuterBoundaryTrack.Count, Is.GreaterThan(2),
+            "Should have outer boundary track");
+        Assert.That(_service.InnerBoundaryTrack.Count, Is.GreaterThan(2),
+            "Should have inner boundary track");
+
+        // ALL outer track points must be inside the boundary
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            Assert.That(IsPointInPolygon(pt.Easting, pt.Northing, boundary), Is.True,
+                $"Outer track point ({pt.Easting:F1}, {pt.Northing:F1}) should be inside boundary");
+        }
+
+        // ALL inner track points must be inside the boundary
+        foreach (var pt in _service.InnerBoundaryTrack)
+        {
+            Assert.That(IsPointInPolygon(pt.Easting, pt.Northing, boundary), Is.True,
+                $"Inner track point ({pt.Easting:F1}, {pt.Northing:F1}) should be inside boundary");
+        }
+    }
+
+    [Test]
+    public void BoundaryTramTracks_InsideHeadlandNotBoundary()
+    {
+        // Headland is 20m inside the 200x200 boundary
+        // Boundary tram tracks should be inside the headland, not the boundary edge
+        var headland = new List<Vec3>
+        {
+            new Vec3(20, 20, 0), new Vec3(180, 20, Math.PI / 2),
+            new Vec3(180, 180, Math.PI), new Vec3(20, 180, 3 * Math.PI / 2),
+            new Vec3(20, 20, 0)
+        };
+
+        ConfigurationStore.Instance.Tram.TramWidth = 24.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        _service.GenerateBoundaryTramTracks(headland);
+
+        // All points should be inside the headland polygon (not just boundary)
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            Assert.That(IsPointInPolygon(pt.Easting, pt.Northing, headland), Is.True,
+                $"Outer track ({pt.Easting:F1}, {pt.Northing:F1}) must be inside headland (20-180)");
+        }
+
+        foreach (var pt in _service.InnerBoundaryTrack)
+        {
+            Assert.That(IsPointInPolygon(pt.Easting, pt.Northing, headland), Is.True,
+                $"Inner track ({pt.Easting:F1}, {pt.Northing:F1}) must be inside headland (20-180)");
+        }
+
+        // Outer track should be at roughly (tramWidth/2 - halfWheelTrack) = 11.1m from headland
+        // So points should be within [31, 169] range approximately
+        foreach (var pt in _service.OuterBoundaryTrack)
+        {
+            Assert.That(pt.Easting, Is.GreaterThan(25).And.LessThan(175),
+                $"Outer track easting {pt.Easting:F1} should be well inside headland");
+            Assert.That(pt.Northing, Is.GreaterThan(25).And.LessThan(175),
+                $"Outer track northing {pt.Northing:F1} should be well inside headland");
+        }
+    }
+
+    [Test]
+    public void BoundaryTramTracks_FormClosedLoop()
+    {
+        var fence = new List<Vec3>
+        {
+            new Vec3(0, 0, 0), new Vec3(100, 0, Math.PI / 2),
+            new Vec3(100, 100, Math.PI), new Vec3(0, 100, 3 * Math.PI / 2),
+            new Vec3(0, 0, 0)
+        };
+
+        ConfigurationStore.Instance.Tram.TramWidth = 12.0;
+        ConfigurationStore.Instance.Vehicle.TrackWidth = 1.8;
+
+        _service.GenerateBoundaryTramTracks(fence);
+
+        // Both tracks should form closed loops (first point == last point)
+        if (_service.OuterBoundaryTrack.Count > 2)
+        {
+            var first = _service.OuterBoundaryTrack[0];
+            var last = _service.OuterBoundaryTrack[^1];
+            double dist = Math.Sqrt(Math.Pow(first.Easting - last.Easting, 2) +
+                                    Math.Pow(first.Northing - last.Northing, 2));
+            Assert.That(dist, Is.LessThan(0.1),
+                $"Outer track should be closed. Gap: {dist:F3}m");
+        }
+
+        if (_service.InnerBoundaryTrack.Count > 2)
+        {
+            var first = _service.InnerBoundaryTrack[0];
+            var last = _service.InnerBoundaryTrack[^1];
+            double dist = Math.Sqrt(Math.Pow(first.Easting - last.Easting, 2) +
+                                    Math.Pow(first.Northing - last.Northing, 2));
+            Assert.That(dist, Is.LessThan(0.1),
+                $"Inner track should be closed. Gap: {dist:F3}m");
+        }
+    }
 }

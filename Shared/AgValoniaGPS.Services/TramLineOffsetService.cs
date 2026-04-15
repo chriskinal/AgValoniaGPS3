@@ -84,14 +84,20 @@ public class TramLineOffsetService : ITramLineOffsetService
 
         if (offEdges.Count == 0) return tramline;
 
-        // First offset point
-        tramline.Add(new Vec2(offEdges[0].ax, offEdges[0].ay));
+        // For closed polygons, intersect consecutive offset edges including
+        // the wrap-around (last edge -> first edge) to close corners properly
+        bool isClosed = fenceLine.Count >= 3 &&
+            Math.Pow(fenceLine[0].Easting - fenceLine[^1].Easting, 2) +
+            Math.Pow(fenceLine[0].Northing - fenceLine[^1].Northing, 2) < 1.0;
 
-        // Intersect consecutive offset edges to find corner points
-        for (int i = 0; i < offEdges.Count - 1; i++)
+        int edgeCount = offEdges.Count;
+        for (int i = 0; i < edgeCount; i++)
         {
+            int next = (i + 1) % edgeCount;
+            if (!isClosed && i == edgeCount - 1) break; // Open: don't wrap
+
             var e1 = offEdges[i];
-            var e2 = offEdges[i + 1];
+            var e2 = offEdges[next];
             double denom = (e1.bx - e1.ax) * (e2.by - e2.ay) - (e1.by - e1.ay) * (e2.bx - e2.ax);
             if (Math.Abs(denom) > 1e-10)
             {
@@ -102,14 +108,17 @@ public class TramLineOffsetService : ITramLineOffsetService
             }
             else
             {
-                // Parallel edges - use endpoint
                 tramline.Add(new Vec2(e1.bx, e1.by));
             }
         }
 
-        // Last offset point
-        var last = offEdges[^1];
-        tramline.Add(new Vec2(last.bx, last.by));
+        if (!isClosed && offEdges.Count > 0)
+        {
+            // Open polygon: add start and end points
+            tramline.Insert(0, new Vec2(offEdges[0].ax, offEdges[0].ay));
+            var last = offEdges[^1];
+            tramline.Add(new Vec2(last.bx, last.by));
+        }
 
         return tramline;
     }
