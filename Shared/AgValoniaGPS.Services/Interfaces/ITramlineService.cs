@@ -63,7 +63,8 @@ public interface ITramLineService
     /// Generate boundary tram tracks from a fence line (headland or outer boundary)
     /// </summary>
     /// <param name="fenceLine">Boundary fence line points with headings</param>
-    void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1);
+    void GenerateBoundaryTramTracks(IReadOnlyList<Vec3> fenceLine, int passCount = 1,
+        AgValoniaGPS.Models.Tram.TramSystemMode mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge);
 
     /// <summary>
     /// Generate parallel tram lines from a guidance track
@@ -158,4 +159,9 @@ public interface ITramLineOffsetService
     /// <param name="halfWheelTrack">Half of vehicle wheel track width</param>
     /// <returns>List of outer tramline points</returns>
     List<Vec2> GenerateOuterTramline(List<Vec3> fenceLine, double tramWidth, double halfWheelTrack);
+
+    /// <summary>
+    /// Generate inward offset at a specific distance from fence line.
+    /// </summary>
+    List<Vec2> GenerateClipperOffsetPublic(List<Vec3> fenceLine, double offset);
 }

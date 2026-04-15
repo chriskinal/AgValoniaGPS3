@@ -53,6 +53,12 @@ public class TramLineOffsetService : ITramLineOffsetService
     }
 
     /// <summary>
+    /// Generate an inward offset at a specific distance from the fence line.
+    /// </summary>
+    public List<Vec2> GenerateClipperOffsetPublic(List<Vec3> fenceLine, double offset)
+        => GenerateClipperOffset(fenceLine, offset);
+
+    /// <summary>
     /// Use Clipper2 for proper polygon inset that handles concave shapes.
     /// </summary>
     private List<Vec2> GenerateClipperOffset(List<Vec3> fenceLine, double offset)

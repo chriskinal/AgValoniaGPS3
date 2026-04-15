@@ -1762,14 +1762,18 @@ public partial class MainViewModel : ObservableObject
                 {
                     hasBoundarySystem = true;
                     int passes = sys.PassCount > 0 ? sys.PassCount : 1;
+                    int bndStartIdx = _tramLineService.ParallelTramLines.Count;
                     if (_currentBoundary?.OuterBoundary?.Points != null &&
                         _currentBoundary.OuterBoundary.Points.Count >= 3)
                     {
                         var bndPts = _currentBoundary.OuterBoundary.Points
                             .Select(p => new Models.Base.Vec3(p.Easting, p.Northing, p.Heading)).ToList();
-                        _tramLineService.GenerateBoundaryTramTracks(bndPts, passes);
+                        _tramLineService.GenerateBoundaryTramTracks(bndPts, passes, sys.Mode);
                     }
-                    _tramSystemLineRanges[sys.Name] = (-1, 0); // boundary marker
+                    int bndLineCount = _tramLineService.ParallelTramLines.Count - bndStartIdx;
+                    // -1 start = boundary marker (first pass uses OuterBoundaryTrack/InnerBoundaryTrack)
+                    // additional passes stored in parallel lines at bndStartIdx
+                    _tramSystemLineRanges[sys.Name] = (-1, bndLineCount);
                     continue;
                 }
 

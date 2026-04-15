@@ -1949,42 +1949,60 @@ public partial class FieldBuilderDialogPanel : UserControl
             string? selName = _editingTramSystem?.Name ?? selectedSys?.Name;
             var selRange = selName != null ? vm.GetTramSystemLineRange(selName) : (-1, 0);
             int selStart = selRange.Item1, selCount = selRange.Item2;
-            bool selIsBoundary = selStart == -1 && selCount == 0 && selName != null;
+            bool selIsBoundary = selStart == -1 && selName != null;
 
-            var tramData = vm.GetTramLineData();
-            if (tramData != null)
+            var tramDataN = vm.GetTramLineData();
+            if (tramDataN != null)
             {
-                // Draw parallel tram lines with highlight for selected system
-                for (int li = 0; li < tramData.Value.parallel.Count; li++)
+                var tramData = tramDataN.Value;
+
+                // Collect all boundary system parallel line indices for coloring
+                var bndLineIndices = new HashSet<int>();
+                foreach (var sys in vm.TramSystems)
                 {
-                    var tramLine = tramData.Value.parallel[li];
+                    if (sys.ReferenceBoundaryIndex < 0) continue;
+                    var range = vm.GetTramSystemLineRange(sys.Name);
+                    if (range.Item1 == -1 && range.Item2 > 0)
+                    {
+                        int totalLines = tramData.parallel.Count;
+                        for (int bi = totalLines - range.Item2; bi < totalLines; bi++)
+                            bndLineIndices.Add(bi);
+                    }
+                }
+                // Draw parallel tram lines with highlight for selected system
+                for (int li = 0; li < tramData.parallel.Count; li++)
+                {
+                    var tramLine = tramData.parallel[li];
                     if (tramLine.Count < 2) continue;
                     bool isHighlighted = selStart >= 0 && li >= selStart && li < selStart + selCount;
+                    bool isBndPass = bndLineIndices.Contains(li);
                     var tramPts = new List<Point>();
                     foreach (var p in tramLine)
                         tramPts.Add(ToCanvas(p.Easting, p.Northing));
+                    var lineColor = isBndPass ? bndColor : (isHighlighted ? tramHighlight : tramColor);
+                    var lineWidth = isHighlighted ? 1.5 : 1.0;
                     canvas.Children.Add(new Polyline
                     {
-                        Stroke = isHighlighted ? tramHighlight : tramColor,
-                        StrokeThickness = isHighlighted ? 2 : 1.5,
+                        Stroke = lineColor,
+                        StrokeThickness = lineWidth,
                         Points = tramPts
                     });
                 }
 
-                // Draw boundary tracks (highlight if selected system is boundary)
+                // Draw boundary tracks (first pass)
                 var bndStroke = selIsBoundary ? tramHighlight : bndColor;
-                double bndWidth = selIsBoundary ? 2 : 1.5;
-                if (tramData.Value.outer.Count >= 2)
+                double bndWidth = selIsBoundary ? 1.5 : 1;
+                if (tramData.outer.Count >= 2)
                 {
-                    var outerPts = tramData.Value.outer.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+                    var outerPts = tramData.outer.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
                     canvas.Children.Add(new Polyline
                     {
                         Stroke = bndStroke, StrokeThickness = bndWidth, Points = outerPts
                     });
                 }
-                if (tramData.Value.inner.Count >= 2)
+                if (tramData.inner.Count >= 2)
                 {
-                    var innerPts = tramData.Value.inner.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
+                    var innerPts = tramData.inner.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
                     canvas.Children.Add(new Polyline
                     {
                         Stroke = bndStroke, StrokeThickness = bndWidth, Points = innerPts
