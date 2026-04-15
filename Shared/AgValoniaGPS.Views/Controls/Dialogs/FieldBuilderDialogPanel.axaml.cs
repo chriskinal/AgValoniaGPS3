@@ -1430,12 +1430,15 @@ public partial class FieldBuilderDialogPanel : UserControl
             Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine,
             ReferenceTrackName = vm.SelectedTrack?.Name
         };
+        // Add temporarily for preview; removed on Back, kept on Done
         vm.TramSystems.Add(sys);
+        _isCreatingNewSystem = true;
         RebuildTramLines(vm);
         OpenTramSystemEditPanel(sys);
     }
 
     private AgValoniaGPS.Models.Tram.TramSystem? _editingTramSystem;
+    private bool _isCreatingNewSystem;
     private (string? RefTrack, int RefBndIdx, double Width, AgValoniaGPS.Models.Tram.TramSystemMode Mode,
              double Offset, AgValoniaGPS.Models.Tram.TramDirection Dir, int Passes, bool Enabled) _editSnapshot;
 
@@ -1505,15 +1508,11 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (_editingTramSystem == null) return;
         bool isBoundary = _editingTramSystem.ReferenceBoundaryIndex >= 0;
 
-        // Hide mode, direction, offset for boundary systems
-        var modeLabel = this.FindControl<TextBlock>("TramModeSectionLabel");
-        var modeSection = this.FindControl<StackPanel>("TramModeSection");
+        // Hide direction and offset for boundary systems (mode still applies)
         var dirLabel = this.FindControl<TextBlock>("TramDirSectionLabel");
         var dirSection = this.FindControl<StackPanel>("TramDirSection");
         var offsetSection = this.FindControl<Grid>("TramOffsetSection");
 
-        if (modeLabel != null) modeLabel.IsVisible = !isBoundary;
-        if (modeSection != null) modeSection.IsVisible = !isBoundary;
         if (dirLabel != null) dirLabel.IsVisible = !isBoundary;
         if (dirSection != null) dirSection.IsVisible = !isBoundary;
         if (offsetSection != null) offsetSection.IsVisible = !isBoundary;
@@ -1652,23 +1651,33 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void TramSystemEditBack_Click(object? sender, RoutedEventArgs e)
     {
-        // Revert to snapshot
         if (_editingTramSystem != null)
         {
-            _editingTramSystem.ReferenceTrackName = _editSnapshot.RefTrack;
-            _editingTramSystem.ReferenceBoundaryIndex = _editSnapshot.RefBndIdx;
-            _editingTramSystem.TramWidth = _editSnapshot.Width;
-            _editingTramSystem.Mode = _editSnapshot.Mode;
-            _editingTramSystem.Offset = _editSnapshot.Offset;
-            _editingTramSystem.Direction = _editSnapshot.Dir;
-            _editingTramSystem.PassCount = _editSnapshot.Passes;
-            _editingTramSystem.IsEnabled = _editSnapshot.Enabled;
+            if (_isCreatingNewSystem && DataContext is MainViewModel vm)
+            {
+                // Remove the new system that was added temporarily
+                vm.TramSystems.Remove(_editingTramSystem);
+            }
+            else
+            {
+                // Revert existing system to snapshot
+                _editingTramSystem.ReferenceTrackName = _editSnapshot.RefTrack;
+                _editingTramSystem.ReferenceBoundaryIndex = _editSnapshot.RefBndIdx;
+                _editingTramSystem.TramWidth = _editSnapshot.Width;
+                _editingTramSystem.Mode = _editSnapshot.Mode;
+                _editingTramSystem.Offset = _editSnapshot.Offset;
+                _editingTramSystem.Direction = _editSnapshot.Dir;
+                _editingTramSystem.PassCount = _editSnapshot.Passes;
+                _editingTramSystem.IsEnabled = _editSnapshot.Enabled;
+            }
         }
+        _isCreatingNewSystem = false;
         CloseTramEditPanel();
     }
 
     private void TramSystemEditDone_Click(object? sender, RoutedEventArgs e)
     {
+        _isCreatingNewSystem = false;
         CloseTramEditPanel();
     }
 
@@ -1957,14 +1966,14 @@ public partial class FieldBuilderDialogPanel : UserControl
                     canvas.Children.Add(new Polyline
                     {
                         Stroke = isHighlighted ? tramHighlight : tramColor,
-                        StrokeThickness = isHighlighted ? 2.5 : 1.5,
+                        StrokeThickness = isHighlighted ? 2 : 1.5,
                         Points = tramPts
                     });
                 }
 
                 // Draw boundary tracks (highlight if selected system is boundary)
                 var bndStroke = selIsBoundary ? tramHighlight : bndColor;
-                double bndWidth = selIsBoundary ? 2.5 : 1.5;
+                double bndWidth = selIsBoundary ? 2 : 1.5;
                 if (tramData.Value.outer.Count >= 2)
                 {
                     var outerPts = tramData.Value.outer.Select(p => ToCanvas(p.Easting, p.Northing)).ToList();
