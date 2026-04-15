@@ -1,3 +1,4 @@
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services;
@@ -410,6 +411,102 @@ public class TramBoundaryTrackTests
         double t = Math.Max(0, Math.Min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
         double projX = ax + t * dx, projY = ay + t * dy;
         return Math.Sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+    }
+
+    // ---------------------------------------------------------------
+    // Headland offset (ComputeSegmentOffset) stays inside boundary
+    // ---------------------------------------------------------------
+
+    [Test]
+    public void HeadlandOffset_AllPointsInsideBoundary()
+    {
+        // Use ComputeSegmentOffset with Clipper2 on the real field
+        var vm = new MainViewModelBuilder().Build();
+        var bndModel = new Boundary
+        {
+            OuterBoundary = new BoundaryPolygon
+            {
+                Points = _boundary.Select(p => new BoundaryPoint(p.Easting, p.Northing, p.Heading)).ToList()
+            }
+        };
+        bndModel.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, bndModel);
+
+        var seg = new AgValoniaGPS.Models.Headland.HeadlandSegment
+        {
+            Name = "Test Boundary",
+            Type = AgValoniaGPS.Models.Headland.HeadlandSegmentType.Curve,
+            Offset = 12,
+            BoundaryPoints = new List<Vec3>(_boundary)
+        };
+
+        vm.ComputeSegmentOffset(seg);
+
+        Assert.That(seg.OffsetPoints.Count, Is.GreaterThan(10),
+            "Should produce offset points");
+
+        int outsideCount = 0;
+        var outsidePts = new List<string>();
+        foreach (var pt in seg.OffsetPoints)
+        {
+            if (!IsPointInPolygon(pt.Easting, pt.Northing, _boundary))
+            {
+                outsideCount++;
+                if (outsidePts.Count < 5)
+                    outsidePts.Add($"({pt.Easting:F1},{pt.Northing:F1})");
+            }
+        }
+
+        Assert.That(outsideCount, Is.EqualTo(0),
+            $"Headland offset has {outsideCount} points outside boundary: {string.Join(", ", outsidePts)}");
+    }
+
+    [Test]
+    public void HeadlandOffset_AllSegmentsInsideBoundary()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        var bndModel = new Boundary
+        {
+            OuterBoundary = new BoundaryPolygon
+            {
+                Points = _boundary.Select(p => new BoundaryPoint(p.Easting, p.Northing, p.Heading)).ToList()
+            }
+        };
+        bndModel.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, bndModel);
+
+        var seg = new AgValoniaGPS.Models.Headland.HeadlandSegment
+        {
+            Name = "Test Boundary",
+            Type = AgValoniaGPS.Models.Headland.HeadlandSegmentType.Curve,
+            Offset = 12,
+            BoundaryPoints = new List<Vec3>(_boundary)
+        };
+
+        vm.ComputeSegmentOffset(seg);
+        var pts = seg.OffsetPoints;
+
+        int badSegs = 0;
+        var badDetails = new List<string>();
+        for (int i = 0; i < pts.Count - 1; i++)
+        {
+            if (!SegmentStaysInsideBoundary(
+                new Vec2(pts[i].Easting, pts[i].Northing),
+                new Vec2(pts[i + 1].Easting, pts[i + 1].Northing),
+                _boundary, 0.5))
+            {
+                badSegs++;
+                if (badDetails.Count < 3)
+                    badDetails.Add($"seg[{i}] ({pts[i].Easting:F0},{pts[i].Northing:F0})->({pts[i+1].Easting:F0},{pts[i+1].Northing:F0})");
+            }
+        }
+
+        Assert.That(badSegs, Is.EqualTo(0),
+            $"Headland offset has {badSegs} segments going outside boundary: {string.Join("; ", badDetails)}");
     }
 
     // ---------------------------------------------------------------

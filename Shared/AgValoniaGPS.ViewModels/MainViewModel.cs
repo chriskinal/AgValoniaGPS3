@@ -3032,10 +3032,10 @@ public partial class MainViewModel : ObservableObject
         {
             var clipperOffset = new Services.Geometry.PolygonOffsetService();
             var vec2Pts = segment.BoundaryPoints.Select(p => new Vec2(p.Easting, p.Northing)).ToList();
-            var result = clipperOffset.CreateInwardOffset(vec2Pts, offset);
-            if (result != null && result.Count >= 3)
+            var clipperResult = clipperOffset.CreateInwardOffset(vec2Pts, offset);
+            if (clipperResult != null && clipperResult.Count >= 3)
             {
-                segment.OffsetPoints = result.Select(p => new Vec3(p.Easting, p.Northing, 0)).ToList();
+                segment.OffsetPoints = clipperResult.Select(p => new Vec3(p.Easting, p.Northing, 0)).ToList();
                 return;
             }
         }
