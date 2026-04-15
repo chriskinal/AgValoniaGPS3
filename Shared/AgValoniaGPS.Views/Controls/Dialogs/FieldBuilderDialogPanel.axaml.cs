@@ -1401,11 +1401,14 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void OpenTramSystemEditPanel(AgValoniaGPS.Models.Tram.TramSystem sys)
     {
         _editingTramSystem = sys;
-        var panel = this.FindControl<Border>("TramSystemEditPanel");
+        var mainPanel = this.FindControl<StackPanel>("TramMainPanel");
+        var editPanel = this.FindControl<StackPanel>("TramSystemEditPanel");
         var title = this.FindControl<TextBlock>("TramEditTitle");
-        if (panel == null) return;
+        if (editPanel == null) return;
 
-        panel.IsVisible = true;
+        // Swap panels
+        if (mainPanel != null) mainPanel.IsVisible = false;
+        editPanel.IsVisible = true;
         if (title != null) title.Text = $"Edit: {sys.Name}";
 
         // Populate reference combo
@@ -1428,6 +1431,8 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (passInput != null) passInput.Text = sys.PassCount.ToString();
         var enabledCheck = this.FindControl<CheckBox>("TramSysEnabledCheck");
         if (enabledCheck != null) enabledCheck.IsChecked = sys.IsEnabled;
+
+        UpdateTramEditHighlights();
     }
 
     private void TramRefCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -1444,27 +1449,37 @@ public partial class FieldBuilderDialogPanel : UserControl
             _editingTramSystem.ReferenceTrackName = sel;
             _editingTramSystem.ReferenceBoundaryIndex = -1;
         }
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 
     private void TramSysWidthInput_LostFocus(object? sender, RoutedEventArgs e)
     {
         if (_editingTramSystem == null || sender is not TextBox tb) return;
         if (double.TryParse(tb.Text, out double v) && v > 0)
+        {
             _editingTramSystem.TramWidth = v;
+            if (DataContext is MainViewModel vm) RebuildTramLines(vm);
+        }
     }
 
     private void TramSysOffsetInput_LostFocus(object? sender, RoutedEventArgs e)
     {
         if (_editingTramSystem == null || sender is not TextBox tb) return;
         if (double.TryParse(tb.Text, out double v))
+        {
             _editingTramSystem.Offset = v;
+            if (DataContext is MainViewModel vm) RebuildTramLines(vm);
+        }
     }
 
     private void TramSysPassInput_LostFocus(object? sender, RoutedEventArgs e)
     {
         if (_editingTramSystem == null || sender is not TextBox tb) return;
         if (int.TryParse(tb.Text, out int v))
+        {
             _editingTramSystem.PassCount = Math.Max(0, v);
+            if (DataContext is MainViewModel vm) RebuildTramLines(vm);
+        }
     }
 
     private void TramSysEnabled_Click(object? sender, RoutedEventArgs e)
@@ -1479,39 +1494,84 @@ public partial class FieldBuilderDialogPanel : UserControl
 
     private void TramModeTrackLine_Click(object? sender, RoutedEventArgs e)
     {
-        if (_editingTramSystem != null)
-            _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine;
+        if (_editingTramSystem == null) return;
+        _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine;
+        UpdateTramEditHighlights();
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 
     private void TramModeEdge_Click(object? sender, RoutedEventArgs e)
     {
-        if (_editingTramSystem != null)
-            _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge;
+        if (_editingTramSystem == null) return;
+        _editingTramSystem.Mode = AgValoniaGPS.Models.Tram.TramSystemMode.Edge;
+        UpdateTramEditHighlights();
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 
     private void TramDirLeft_Click(object? sender, RoutedEventArgs e)
     {
-        if (_editingTramSystem != null)
-            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Left;
+        if (_editingTramSystem == null) return;
+        _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Left;
+        UpdateTramEditHighlights();
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 
     private void TramDirSymm_Click(object? sender, RoutedEventArgs e)
     {
-        if (_editingTramSystem != null)
-            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric;
+        if (_editingTramSystem == null) return;
+        _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Symmetric;
+        UpdateTramEditHighlights();
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
     }
 
     private void TramDirRight_Click(object? sender, RoutedEventArgs e)
     {
-        if (_editingTramSystem != null)
-            _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Right;
+        if (_editingTramSystem == null) return;
+        _editingTramSystem.Direction = AgValoniaGPS.Models.Tram.TramDirection.Right;
+        UpdateTramEditHighlights();
+        if (DataContext is MainViewModel vm) RebuildTramLines(vm);
+    }
+
+    private void UpdateTramEditHighlights()
+    {
+        if (_editingTramSystem == null) return;
+
+        var accentBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0, 120, 215));
+        var normalBrush = Avalonia.Application.Current?.FindResource("SystemControlBackgroundBaseLowBrush") as Avalonia.Media.IBrush
+            ?? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(80, 80, 80));
+
+        // Mode highlights
+        var btnTrackLine = this.FindControl<Avalonia.Controls.Button>("BtnModeTrackLine");
+        var btnEdge = this.FindControl<Avalonia.Controls.Button>("BtnModeEdge");
+        if (btnTrackLine != null)
+            btnTrackLine.Background = _editingTramSystem.Mode == AgValoniaGPS.Models.Tram.TramSystemMode.TrackLine
+                ? accentBrush : normalBrush;
+        if (btnEdge != null)
+            btnEdge.Background = _editingTramSystem.Mode == AgValoniaGPS.Models.Tram.TramSystemMode.Edge
+                ? accentBrush : normalBrush;
+
+        // Direction highlights
+        var btnLeft = this.FindControl<Avalonia.Controls.Button>("BtnDirLeft");
+        var btnSymm = this.FindControl<Avalonia.Controls.Button>("BtnDirSymm");
+        var btnRight = this.FindControl<Avalonia.Controls.Button>("BtnDirRight");
+        if (btnLeft != null)
+            btnLeft.Background = _editingTramSystem.Direction == AgValoniaGPS.Models.Tram.TramDirection.Left
+                ? accentBrush : normalBrush;
+        if (btnSymm != null)
+            btnSymm.Background = _editingTramSystem.Direction == AgValoniaGPS.Models.Tram.TramDirection.Symmetric
+                ? accentBrush : normalBrush;
+        if (btnRight != null)
+            btnRight.Background = _editingTramSystem.Direction == AgValoniaGPS.Models.Tram.TramDirection.Right
+                ? accentBrush : normalBrush;
     }
 
     private void TramSystemEditDone_Click(object? sender, RoutedEventArgs e)
     {
         _editingTramSystem = null;
-        var panel = this.FindControl<Border>("TramSystemEditPanel");
-        if (panel != null) panel.IsVisible = false;
+        var mainPanel = this.FindControl<StackPanel>("TramMainPanel");
+        var editPanel = this.FindControl<StackPanel>("TramSystemEditPanel");
+        if (editPanel != null) editPanel.IsVisible = false;
+        if (mainPanel != null) mainPanel.IsVisible = true;
 
         // Auto-rebuild tram lines with updated system
         if (DataContext is MainViewModel vm)
