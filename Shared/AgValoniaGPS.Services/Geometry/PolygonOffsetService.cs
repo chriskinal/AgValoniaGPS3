@@ -47,14 +47,10 @@ public class PolygonOffsetService : IPolygonOffsetService
         if (offsetDistance <= 0)
             return new List<Vec2>(boundaryPoints);
 
-        // For straight-edge boundaries, use simple Clipper offset with miter corners
-        if (IsStraightEdgeBoundary(boundaryPoints))
-        {
-            return CreateClipperInwardOffset(boundaryPoints, offsetDistance, JoinType.Miter);
-        }
-
-        // For curved boundaries, use point-by-point offset to preserve curve shape
-        return CreateCurvedInwardOffset(boundaryPoints, offsetDistance);
+        // Always use Clipper2 for polygon offset - handles concave shapes correctly
+        // Use Round join for curved boundaries, Miter for straight-edge
+        var clipperJoin = IsStraightEdgeBoundary(boundaryPoints) ? JoinType.Miter : JoinType.Round;
+        return CreateClipperInwardOffset(boundaryPoints, offsetDistance, clipperJoin);
     }
 
     /// <summary>

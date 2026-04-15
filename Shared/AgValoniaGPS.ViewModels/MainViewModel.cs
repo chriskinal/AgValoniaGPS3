@@ -3022,6 +3022,24 @@ public partial class MainViewModel : ObservableObject
 
         double offset = segment.Offset;
 
+        // For closed polygons (Boundary type or closed curves), use Clipper2 for proper
+        // concave handling instead of edge-based offset
+        bool isClosed = segment.BoundaryPoints.Count >= 3 &&
+            System.Math.Pow(segment.BoundaryPoints[0].Easting - segment.BoundaryPoints[^1].Easting, 2) +
+            System.Math.Pow(segment.BoundaryPoints[0].Northing - segment.BoundaryPoints[^1].Northing, 2) < 25.0;
+
+        if ((segment.Type == Models.Headland.HeadlandSegmentType.Boundary || isClosed) && segment.BoundaryPoints.Count >= 3)
+        {
+            var clipperOffset = new Services.Geometry.PolygonOffsetService();
+            var vec2Pts = segment.BoundaryPoints.Select(p => new Vec2(p.Easting, p.Northing)).ToList();
+            var result = clipperOffset.CreateInwardOffset(vec2Pts, offset);
+            if (result != null && result.Count >= 3)
+            {
+                segment.OffsetPoints = result.Select(p => new Vec3(p.Easting, p.Northing, 0)).ToList();
+                return;
+            }
+        }
+
         // Determine offset direction (inward toward field center)
         double sign = 1.0;
         if (segment.Type == Models.Headland.HeadlandSegmentType.Boundary && segment.BoundaryPoints.Count >= 3)
