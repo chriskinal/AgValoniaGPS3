@@ -1697,12 +1697,22 @@ public partial class FieldBuilderDialogPanel : UserControl
         vm.BuildTramLinesCommand?.Execute(null);
 
         // Auto-save tram systems to field directory
-        if (vm.ActiveField != null && vm.TramSystems.Count > 0)
+        if (vm.ActiveField != null)
         {
             try
             {
-                AgValoniaGPS.Services.Tram.TramSystemFileService.Save(
-                    vm.ActiveField.DirectoryPath, vm.TramSystems);
+                if (vm.TramSystems.Count > 0)
+                {
+                    AgValoniaGPS.Services.Tram.TramSystemFileService.Save(
+                        vm.ActiveField.DirectoryPath, vm.TramSystems);
+                }
+                else
+                {
+                    // Clean up file when all systems deleted
+                    var path = System.IO.Path.Combine(vm.ActiveField.DirectoryPath, "TramSystems.json");
+                    if (System.IO.File.Exists(path))
+                        System.IO.File.Delete(path);
+                }
             }
             catch { /* save failure is non-critical */ }
         }

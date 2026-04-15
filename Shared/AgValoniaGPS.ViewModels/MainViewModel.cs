@@ -74,6 +74,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IAudioService _audioService;
     private readonly IElevationLogService _elevationLogService;
     private readonly ITramLineService _tramLineService;
+    private bool _hasTramSystemsEverUsed;
     private readonly IGpsPipelineService _gpsPipelineService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
@@ -1249,6 +1250,7 @@ public partial class MainViewModel : ObservableObject
                 ConfigStore.Tram.Systems.Clear();
                 foreach (var sys in systems)
                     ConfigStore.Tram.Systems.Add(sys);
+                _hasTramSystemsEverUsed = systems.Count > 0;
                 if (systems.Count > 0)
                     _logger.LogDebug($"[Tram] Loaded {systems.Count} tram systems");
             }
@@ -1741,6 +1743,10 @@ public partial class MainViewModel : ObservableObject
 
         _tramLineService.Clear();
 
+        // Track if systems have ever been used (disables legacy fallback)
+        if (config.Systems.Count > 0)
+            _hasTramSystemsEverUsed = true;
+
         // If TramSystems exist, generate per-system; otherwise use legacy single-track mode
         if (config.Systems.Count > 0)
         {
@@ -1778,9 +1784,9 @@ public partial class MainViewModel : ObservableObject
                     _tramLineService.AddTramLine(line);
             }
         }
-        else if (track != null && track.Points.Count >= 2)
+        else if (!_hasTramSystemsEverUsed && track != null && track.Points.Count >= 2)
         {
-            // Legacy: single track mode
+            // Legacy: single track mode (only if systems have never been used in this field)
             _tramLineService.GenerateParallelTramLines(track, fieldWidth);
 
             // Legacy: also generate boundary tram tracks from headland
