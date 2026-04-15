@@ -1749,18 +1749,13 @@ public partial class MainViewModel : ObservableObject
             {
                 if (!sys.IsEnabled) continue;
 
-                // Boundary reference system: generate boundary tram tracks
+                // Boundary reference system: generate boundary tram tracks from field boundary
                 if (sys.ReferenceBoundaryIndex >= 0)
                 {
                     hasBoundarySystem = true;
                     int passes = sys.PassCount > 0 ? sys.PassCount : 1;
-                    // Use headland if available, otherwise use outer boundary
-                    if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
-                    {
-                        _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine, passes);
-                    }
-                    else if (_currentBoundary?.OuterBoundary?.Points != null &&
-                             _currentBoundary.OuterBoundary.Points.Count >= 3)
+                    if (_currentBoundary?.OuterBoundary?.Points != null &&
+                        _currentBoundary.OuterBoundary.Points.Count >= 3)
                     {
                         var bndPts = _currentBoundary.OuterBoundary.Points
                             .Select(p => new Models.Base.Vec3(p.Easting, p.Northing, p.Heading)).ToList();

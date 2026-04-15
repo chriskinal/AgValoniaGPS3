@@ -367,7 +367,7 @@ Licensed under GNU GPL v3.
                                     <Button Grid.Column="0" Padding="8,4" FontSize="14" CornerRadius="4" Cursor="Hand"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                            Click="TramSystemEditDone_Click">
+                                            Click="TramSystemEditBack_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock Text="&lt;" FontWeight="Bold"/>
                                             <TextBlock Text="Back"/>

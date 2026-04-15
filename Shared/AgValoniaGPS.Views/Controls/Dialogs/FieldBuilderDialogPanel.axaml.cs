@@ -1436,6 +1436,8 @@ public partial class FieldBuilderDialogPanel : UserControl
     }
 
     private AgValoniaGPS.Models.Tram.TramSystem? _editingTramSystem;
+    private (string? RefTrack, int RefBndIdx, double Width, AgValoniaGPS.Models.Tram.TramSystemMode Mode,
+             double Offset, AgValoniaGPS.Models.Tram.TramDirection Dir, int Passes, bool Enabled) _editSnapshot;
 
     private void EditTramSystem_Click(object? sender, RoutedEventArgs e)
     {
@@ -1447,6 +1449,8 @@ public partial class FieldBuilderDialogPanel : UserControl
     private void OpenTramSystemEditPanel(AgValoniaGPS.Models.Tram.TramSystem sys)
     {
         _editingTramSystem = sys;
+        _editSnapshot = (sys.ReferenceTrackName, sys.ReferenceBoundaryIndex, sys.TramWidth,
+                         sys.Mode, sys.Offset, sys.Direction, sys.PassCount, sys.IsEnabled);
         var mainPanel = this.FindControl<StackPanel>("TramMainPanel");
         var editPanel = this.FindControl<StackPanel>("TramSystemEditPanel");
         var title = this.FindControl<TextBlock>("TramEditTitle");
@@ -1632,7 +1636,29 @@ public partial class FieldBuilderDialogPanel : UserControl
                 ? accentBrush : normalBrush;
     }
 
+    private void TramSystemEditBack_Click(object? sender, RoutedEventArgs e)
+    {
+        // Revert to snapshot
+        if (_editingTramSystem != null)
+        {
+            _editingTramSystem.ReferenceTrackName = _editSnapshot.RefTrack;
+            _editingTramSystem.ReferenceBoundaryIndex = _editSnapshot.RefBndIdx;
+            _editingTramSystem.TramWidth = _editSnapshot.Width;
+            _editingTramSystem.Mode = _editSnapshot.Mode;
+            _editingTramSystem.Offset = _editSnapshot.Offset;
+            _editingTramSystem.Direction = _editSnapshot.Dir;
+            _editingTramSystem.PassCount = _editSnapshot.Passes;
+            _editingTramSystem.IsEnabled = _editSnapshot.Enabled;
+        }
+        CloseTramEditPanel();
+    }
+
     private void TramSystemEditDone_Click(object? sender, RoutedEventArgs e)
+    {
+        CloseTramEditPanel();
+    }
+
+    private void CloseTramEditPanel()
     {
         _editingTramSystem = null;
         var mainPanel = this.FindControl<StackPanel>("TramMainPanel");
@@ -1640,7 +1666,7 @@ public partial class FieldBuilderDialogPanel : UserControl
         if (editPanel != null) editPanel.IsVisible = false;
         if (mainPanel != null) mainPanel.IsVisible = true;
 
-        // Auto-rebuild tram lines with updated system
+        // Rebuild tram lines with final state
         if (DataContext is MainViewModel vm)
             RebuildTramLines(vm);
     }

@@ -171,9 +171,13 @@ public class TramLineService(
                 or Models.Tram.TramDirection.Left;
 
             if (doPositive)
-                AddPassLines(result, referenceTrack, baseOffset, halfWheelTrack, system.Mode, fenceLine);
-            if (doNegative && (i > 0 || system.Mode != Models.Tram.TramSystemMode.TrackLine))
-                AddPassLines(result, referenceTrack, -baseOffset, halfWheelTrack, system.Mode, fenceLine);
+                AddPassLines(result, referenceTrack, baseOffset, halfWheelTrack, fenceLine);
+            // Skip negative i=0 only for Symmetric Track mode (would duplicate at 0/-0)
+            bool skipNegZero = i == 0
+                && system.Mode == Models.Tram.TramSystemMode.TrackLine
+                && system.Direction == Models.Tram.TramDirection.Symmetric;
+            if (doNegative && !skipNegZero)
+                AddPassLines(result, referenceTrack, -baseOffset, halfWheelTrack, fenceLine);
         }
 
         return result;
@@ -184,23 +188,13 @@ public class TramLineService(
         Models.Track.Track track,
         double centerOffset,
         double halfWheelTrack,
-        Models.Tram.TramSystemMode mode,
         List<Vec3>? fence)
     {
-        if (mode == Models.Tram.TramSystemMode.TrackLine)
-        {
-            // Two lines: outer and inner wheel tracks, split at boundary crossings
-            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset - halfWheelTrack, fence))
-                if (seg.Count > 1) result.Add(seg);
-            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset + halfWheelTrack, fence))
-                if (seg.Count > 1) result.Add(seg);
-        }
-        else
-        {
-            // Edge mode: single line at implement edge
-            foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset, fence))
-                if (seg.Count > 1) result.Add(seg);
-        }
+        // Both Track and Edge modes generate two wheel tracks per pass
+        foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset - halfWheelTrack, fence))
+            if (seg.Count > 1) result.Add(seg);
+        foreach (var seg in OffsetTrackLaterallySegmented(track, centerOffset + halfWheelTrack, fence))
+            if (seg.Count > 1) result.Add(seg);
     }
 
     /// <summary>
