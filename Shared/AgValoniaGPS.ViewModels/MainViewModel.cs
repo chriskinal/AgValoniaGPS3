@@ -1720,30 +1720,10 @@ public partial class MainViewModel : ObservableObject
 
         _tramLineService.GenerateParallelTramLines(track, fieldWidth);
 
-        // Generate boundary tram tracks if headland is a proper inset (not same as boundary)
-        // If headland == boundary (no effective segments), skip boundary tracks
-        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3 &&
-            _currentBoundary?.OuterBoundary?.Points != null)
+        // Generate boundary tram tracks from headland (or boundary if no headland)
+        if (_currentHeadlandLine != null && _currentHeadlandLine.Count >= 3)
         {
-            // Check if headland is different from boundary (at least one point differs significantly)
-            var bndPts = _currentBoundary.OuterBoundary.Points;
-            bool isInset = false;
-            if (_currentHeadlandLine.Count != bndPts.Count)
-            {
-                isInset = true;
-            }
-            else
-            {
-                for (int i = 0; i < Math.Min(_currentHeadlandLine.Count, bndPts.Count); i++)
-                {
-                    double dx = _currentHeadlandLine[i].Easting - bndPts[i].Easting;
-                    double dy = _currentHeadlandLine[i].Northing - bndPts[i].Northing;
-                    if (dx * dx + dy * dy > 1.0) { isInset = true; break; }
-                }
-            }
-
-            if (isInset)
-                _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
+            _tramLineService.GenerateBoundaryTramTracks(_currentHeadlandLine);
         }
 
         // Snapshot collections for thread-safe rendering

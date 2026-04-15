@@ -65,6 +65,18 @@ public class TramLineOffsetService : ITramLineOffsetService
         var tramline = new List<Vec2>();
         int ptCount = fenceLine.Count;
 
+        // Determine winding order via signed area
+        // CW (negative area) = left perpendicular is inward
+        // CCW (positive area) = right perpendicular is inward (negate normal)
+        double signedArea = 0;
+        for (int i = 0; i < ptCount; i++)
+        {
+            var p1 = fenceLine[i];
+            var p2 = fenceLine[(i + 1) % ptCount];
+            signedArea += (p2.Easting - p1.Easting) * (p2.Northing + p1.Northing);
+        }
+        double windingSign = signedArea < 0 ? 1.0 : -1.0; // CW (negative area) = 1, CCW = -1
+
         // Build offset edges: shift each edge perpendicular by offset distance
         var offEdges = new List<(double ax, double ay, double bx, double by)>();
         for (int i = 0; i < ptCount - 1; i++)
@@ -74,9 +86,9 @@ public class TramLineOffsetService : ITramLineOffsetService
             double len = Math.Sqrt(dx * dx + dy * dy);
             if (len < 0.001) continue;
 
-            // Perpendicular normal (inward)
-            double nx = -dy / len * offset;
-            double ny = dx / len * offset;
+            // Perpendicular normal (inward, adjusted for winding)
+            double nx = -dy / len * offset * windingSign;
+            double ny = dx / len * offset * windingSign;
             offEdges.Add((
                 fenceLine[i].Easting + nx, fenceLine[i].Northing + ny,
                 fenceLine[i + 1].Easting + nx, fenceLine[i + 1].Northing + ny));
