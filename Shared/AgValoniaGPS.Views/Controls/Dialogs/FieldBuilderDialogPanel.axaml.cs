@@ -1516,16 +1516,6 @@ public partial class FieldBuilderDialogPanel : UserControl
         }
     }
 
-    private void WheelTrackInput_LostFocus(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is not MainViewModel vm) return;
-        var input = sender as Avalonia.Controls.TextBox;
-        if (input != null && double.TryParse(input.Text, out double width) && width > 0)
-        {
-            Models.Configuration.ConfigurationStore.Instance.Vehicle.TrackWidth = width;
-        }
-    }
-
     // --- Preview Rendering ---
 
     private void UpdatePreview()
