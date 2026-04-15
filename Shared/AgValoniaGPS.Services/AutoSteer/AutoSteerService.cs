@@ -394,8 +394,14 @@ public class AutoSteerService : IAutoSteerService
         if (_tramLineService != null && _tramLineService.HasTramLines &&
             ConfigurationStore.Instance.Tram.DisplayMode != Models.Configuration.TramDisplayMode.Off)
         {
+            // Use approximate tool position so detection matches implement indicators
+            var config = ConfigurationStore.Instance;
+            double hitchLen = config.Tool.HitchLength + config.Tool.TrailingHitchLength;
+            double toolE = _state.Easting + Math.Sin(_state.HeadingRadians) * hitchLen;
+            double toolN = _state.Northing + Math.Cos(_state.HeadingRadians) * hitchLen;
+
             _state.TramState = _tramLineService.DetectTramWheels(
-                new Models.Base.Vec3(_state.Easting, _state.Northing, _state.Heading),
+                new Models.Base.Vec3(toolE, toolN, _state.Heading),
                 _state.HeadingRadians, 0.5);
         }
         else
