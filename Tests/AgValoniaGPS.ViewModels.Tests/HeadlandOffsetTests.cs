@@ -434,6 +434,76 @@ public class HeadlandOffsetTests
             "Lines forming a closed loop should create effective headland even without boundary contact");
     }
 
+    [Test]
+    public void BoundaryHeadland_PlusABLine_BothEffective()
+    {
+        // Regression: boundary headland + AB line should both work.
+        // The boundary headland becomes the working area, then the AB line
+        // should further cut it.
+        var vm = CreateVm();
+
+        var boundary = new Models.Boundary
+        {
+            OuterBoundary = new Models.BoundaryPolygon
+            {
+                Points = new()
+                {
+                    new Models.BoundaryPoint(0, 0, 0),
+                    new Models.BoundaryPoint(200, 0, Math.PI / 2),
+                    new Models.BoundaryPoint(200, 200, Math.PI),
+                    new Models.BoundaryPoint(0, 200, -Math.PI / 2)
+                }
+            }
+        };
+        boundary.OuterBoundary.UpdateBounds();
+        typeof(MainViewModel).GetField("_currentBoundary",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(vm, boundary);
+
+        // Segment 1: full boundary headland at 20m offset
+        var bndSeg = new HeadlandSegment
+        {
+            Name = "Boundary",
+            Type = HeadlandSegmentType.Boundary,
+            Offset = 20,
+            BoundaryPoints = new()
+            {
+                new Vec3(0, 0, 0), new Vec3(200, 0, Math.PI / 2),
+                new Vec3(200, 200, Math.PI), new Vec3(0, 200, -Math.PI / 2),
+                new Vec3(0, 0, 0)
+            }
+        };
+        vm.ComputeSegmentOffset(bndSeg);
+        vm.HeadlandSegments.Add(bndSeg);
+
+        // Segment 2: AB line across the middle
+        var abSeg = new HeadlandSegment
+        {
+            Name = "AB Line",
+            Type = HeadlandSegmentType.Line,
+            Offset = 15,
+            BoundaryPoints = new()
+            {
+                new Vec3(20, 100, Math.PI / 2),
+                new Vec3(180, 100, Math.PI / 2)
+            },
+            StartExtension = 50,
+            EndExtension = 50
+        };
+        vm.ComputeSegmentOffset(abSeg);
+        vm.HeadlandSegments.Add(abSeg);
+
+        vm.BuildHeadlandFromSegments();
+
+        Assert.That(bndSeg.IsEffective, Is.True,
+            "Boundary headland should be effective");
+        Assert.That(abSeg.IsEffective, Is.True,
+            $"AB line should be effective after boundary headland. " +
+            $"Headland has {vm.HasHeadland} with headland segments: " +
+            $"bnd={bndSeg.IsEffective}, ab={abSeg.IsEffective}");
+        Assert.That(vm.HasHeadland, Is.True);
+    }
+
     private static bool SegmentsIntersect(Vec3 a1, Vec3 a2, Vec3 b1, Vec3 b2)
     {
         double d = (a2.Easting - a1.Easting) * (b2.Northing - b1.Northing) -
