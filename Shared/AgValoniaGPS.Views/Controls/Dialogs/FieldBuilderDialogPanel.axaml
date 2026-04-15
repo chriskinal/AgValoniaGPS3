@@ -327,27 +327,6 @@ Licensed under GNU GPL v3.
                                              LostFocus="WheelTrackInput_LostFocus"/>
                                 </Grid>
 
-                                <!-- Passes -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Passes:" FontSize="13"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                        <Button Content="-" Width="32" Height="32" FontSize="16" FontWeight="Bold"
-                                                Command="{Binding DecreaseTramPassesCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                        <TextBlock Text="{Binding TramPasses}" FontSize="16" FontWeight="Bold"
-                                                   Width="30" TextAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <Button Content="+" Width="32" Height="32" FontSize="16" FontWeight="Bold"
-                                                Command="{Binding IncreaseTramPassesCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Grid>
-
                                 <!-- Start Pass -->
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Start Pass:" FontSize="13"
@@ -364,27 +343,6 @@ Licensed under GNU GPL v3.
                                                    VerticalAlignment="Center"/>
                                         <Button Content="+" Width="32" Height="32" FontSize="16" FontWeight="Bold"
                                                 Command="{Binding IncreaseTramStartPassCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Tram Line selector -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Tram Line:" FontSize="13"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                        <Button Content="-" Width="32" Height="32" FontSize="16" FontWeight="Bold"
-                                                Command="{Binding DecreaseTramLineCommand}"
-                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                        <TextBlock Text="{Binding TramLineNumber}" FontSize="16" FontWeight="Bold"
-                                                   Width="30" TextAlignment="Center"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <Button Content="+" Width="32" Height="32" FontSize="16" FontWeight="Bold"
-                                                Command="{Binding IncreaseTramLineCommand}"
                                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     </StackPanel>
