@@ -23,8 +23,6 @@ using System.Reflection;
 using System.Windows.Input;
 using AgValoniaGPS.Models.Toolbar;
 using AgValoniaGPS.Services.Interfaces;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 
@@ -213,25 +211,13 @@ public partial class MainViewModel
             return null;
         }
 
-        // Load icons
-        var defaultIcon = LoadBitmap(definition.IconResource);
-        if (defaultIcon == null)
-        {
-            Debug.WriteLine($"[Toolbar] Failed to load icon: {definition.IconResource}");
-            return null;
-        }
-
-        Bitmap? activeIcon = null;
-        if (definition.ActiveIconResource != null)
-            activeIcon = LoadBitmap(definition.ActiveIconResource);
-
         var vm = new ShortcutButtonViewModel
         {
             ButtonId = definition.Id,
             Tooltip = definition.Tooltip,
             Command = command,
-            DefaultIcon = defaultIcon,
-            ActiveIcon = activeIcon,
+            DefaultIconResource = definition.IconResource,
+            ActiveIconResource = definition.ActiveIconResource,
         };
 
         // Bind IsActive to the source property on this MainViewModel
@@ -270,7 +256,41 @@ public partial class MainViewModel
             }
         }
 
+        // Special handling for section control button
+        if (definition.Id == "ToggleSectionOverlay")
+        {
+            SetupSectionControlButton(vm);
+        }
+
         return vm;
+    }
+
+    private void SetupSectionControlButton(ShortcutButtonViewModel vm)
+    {
+        // Show section count as overlay text
+        vm.OverlayText = _numSections.ToString();
+
+        // Set initial background color based on section mode
+        UpdateSectionButtonColor(vm);
+
+        // Subscribe to changes
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(NumSections))
+                vm.OverlayText = _numSections.ToString();
+            if (e.PropertyName is nameof(IsSectionMasterOn) or nameof(IsManualSectionMode))
+                UpdateSectionButtonColor(vm);
+        };
+    }
+
+    private void UpdateSectionButtonColor(ShortcutButtonViewModel vm)
+    {
+        if (IsSectionMasterOn)
+            vm.BackgroundColorHex = "#DD2ECC71"; // green = auto
+        else if (IsManualSectionMode)
+            vm.BackgroundColorHex = "#DDF39C12"; // yellow = manual
+        else
+            vm.BackgroundColorHex = "#DDE74C3C"; // red = off
     }
 
     /// <summary>
@@ -313,18 +333,11 @@ public partial class MainViewModel
         }
     }
 
-    private static Bitmap? LoadBitmap(string avaresPath)
+    /// <summary>
+    /// Finds a ButtonDefinition by tooltip text. Used by views for long-press-to-add.
+    /// </summary>
+    public ButtonDefinition? GetButtonDefinitionByTooltip(string tooltip)
     {
-        try
-        {
-            var uri = new Uri(avaresPath);
-            using var stream = AssetLoader.Open(uri);
-            return new Bitmap(stream);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[Toolbar] Failed to load bitmap {avaresPath}: {ex.Message}");
-            return null;
-        }
+        return _buttonRegistry.GetAll().FirstOrDefault(b => b.Tooltip == tooltip);
     }
 }

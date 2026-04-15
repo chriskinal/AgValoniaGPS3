@@ -27,6 +27,31 @@ public partial class MainViewModel
 {
     public ObservableCollection<ButtonDefinition> AvailableButtons { get; } = new();
     public ObservableCollection<ButtonDefinition> CurrentShortcuts { get; } = new();
+    public ObservableCollection<string> LayoutNames { get; } = new();
+
+    private string _selectedLayoutName = "Default";
+    public string SelectedLayoutName
+    {
+        get => _selectedLayoutName;
+        set
+        {
+            if (SetProperty(ref _selectedLayoutName, value) && value != null)
+            {
+                var store = Models.Configuration.ConfigurationStore.Instance;
+                store.Toolbar.ActiveLayoutName = value;
+                RefreshEditorLists();
+                RefreshShortcutBar();
+                _configurationService.SaveAppSettings();
+            }
+        }
+    }
+
+    private string _newLayoutName = string.Empty;
+    public string NewLayoutName
+    {
+        get => _newLayoutName;
+        set => SetProperty(ref _newLayoutName, value);
+    }
 
     public ICommand? ShowShortcutEditorCommand { get; private set; }
     public ICommand? CloseShortcutEditorCommand { get; private set; }
@@ -34,11 +59,14 @@ public partial class MainViewModel
     public ICommand? RemoveShortcutCommand { get; private set; }
     public ICommand? MoveShortcutUpCommand { get; private set; }
     public ICommand? MoveShortcutDownCommand { get; private set; }
+    public ICommand? CreateLayoutCommand { get; private set; }
+    public ICommand? DeleteLayoutCommand { get; private set; }
 
     private void InitializeToolbarEditorCommands()
     {
         ShowShortcutEditorCommand = new RelayCommand(() =>
         {
+            RefreshLayoutNames();
             RefreshEditorLists();
             State.UI.ShowDialog(DialogType.ShortcutEditor);
         });
@@ -78,6 +106,75 @@ public partial class MainViewModel
             if (index >= 0 && index < CurrentShortcuts.Count - 1)
                 CurrentShortcuts.Move(index, index + 1);
         });
+
+        CreateLayoutCommand = new RelayCommand(() =>
+        {
+            var name = NewLayoutName?.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+
+            var store = Models.Configuration.ConfigurationStore.Instance;
+
+            // Don't allow duplicate names
+            if (store.Toolbar.ShortcutLayouts.Any(l => l.Name == name))
+            {
+                StatusMessage = $"Layout '{name}' already exists";
+                return;
+            }
+
+            // Save current layout first
+            SaveShortcutLayout();
+
+            // Create new layout as a copy of current
+            var newLayout = new ShortcutLayout
+            {
+                Name = name,
+                Shortcuts = CurrentShortcuts
+                    .Select(b => new ToolbarShortcut { ButtonId = b.Id })
+                    .ToList()
+            };
+            store.Toolbar.ShortcutLayouts.Add(newLayout);
+            store.Toolbar.ActiveLayoutName = name;
+
+            NewLayoutName = string.Empty;
+            RefreshLayoutNames();
+            _selectedLayoutName = name;
+            OnPropertyChanged(nameof(SelectedLayoutName));
+            _configurationService.SaveAppSettings();
+        });
+
+        DeleteLayoutCommand = new RelayCommand(() =>
+        {
+            var store = Models.Configuration.ConfigurationStore.Instance;
+            if (store.Toolbar.ShortcutLayouts.Count <= 1)
+            {
+                StatusMessage = "Cannot delete the last layout";
+                return;
+            }
+
+            var layout = store.Toolbar.ShortcutLayouts
+                .FirstOrDefault(l => l.Name == SelectedLayoutName);
+            if (layout != null)
+            {
+                store.Toolbar.ShortcutLayouts.Remove(layout);
+                store.Toolbar.ActiveLayoutName = store.Toolbar.ShortcutLayouts[0].Name;
+                RefreshLayoutNames();
+                _selectedLayoutName = store.Toolbar.ActiveLayoutName;
+                OnPropertyChanged(nameof(SelectedLayoutName));
+                RefreshEditorLists();
+                _configurationService.SaveAppSettings();
+                RefreshShortcutBar();
+            }
+        });
+    }
+
+    private void RefreshLayoutNames()
+    {
+        LayoutNames.Clear();
+        var store = Models.Configuration.ConfigurationStore.Instance;
+        foreach (var layout in store.Toolbar.ShortcutLayouts)
+            LayoutNames.Add(layout.Name);
+        _selectedLayoutName = store.Toolbar.ActiveLayoutName ?? "Default";
+        OnPropertyChanged(nameof(SelectedLayoutName));
     }
 
     private void RefreshEditorLists()
@@ -90,7 +187,6 @@ public partial class MainViewModel
             .FirstOrDefault(l => l.Name == store.Toolbar.ActiveLayoutName)
             ?? store.Toolbar.ShortcutLayouts.FirstOrDefault();
 
-        // Populate current shortcuts
         if (layout != null)
         {
             foreach (var shortcut in layout.Shortcuts)
@@ -101,7 +197,6 @@ public partial class MainViewModel
             }
         }
 
-        // Populate available (all buttons not currently in shortcuts)
         var currentIds = CurrentShortcuts.Select(b => b.Id).ToHashSet();
         foreach (var button in _buttonRegistry.GetAll())
         {
@@ -127,8 +222,6 @@ public partial class MainViewModel
             .ToList();
 
         RefreshShortcutBar();
-
-        // Persist
         _configurationService.SaveAppSettings();
     }
 }

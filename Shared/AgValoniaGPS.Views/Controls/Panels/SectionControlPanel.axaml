@@ -68,11 +68,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <!-- Floating panel with section indicators -->
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="12"
+    <!-- Floating draggable panel with section indicators -->
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="12" Padding="0"
             BoxShadow="0 4 16 2 #40000000">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-            <!-- Section buttons - 2 rows of up to 8 each -->
+        <StackPanel Spacing="0">
+            <!-- Drag handle -->
+            <Border x:Name="DragHandle" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="12,12,0,0" Height="20" Cursor="Hand"
+                    ToolTip.Tip="Drag to move">
+                <TextBlock Text="&#x2501;&#x2501;&#x2501;" FontSize="10"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                           IsHitTestVisible="False"/>
+            </Border>
+
+            <!-- Section buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,8,12,12">
             <StackPanel Orientation="Vertical" Spacing="4">
                 <!-- Row 1: Sections 1-8 -->
                 <StackPanel Orientation="Horizontal" Spacing="3">
@@ -179,6 +190,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Button>
                 </StackPanel>
             </StackPanel>
+        </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>

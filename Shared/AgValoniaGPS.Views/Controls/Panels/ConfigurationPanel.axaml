@@ -52,19 +52,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Grid>
     <Border Classes="FloatingPanel" MinWidth="360" IsVisible="{Binding IsConfigurationPanelVisible}">
         <StackPanel Spacing="4">
-            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,8"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="20" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="8,0,8,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="{loc:Localize VehicleConfiguration}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="16" FontWeight="Bold"
-                           VerticalAlignment="Center" IsHitTestVisible="False"/>
-                <Button Grid.Column="2" Content="X" Width="24" Height="24" Padding="0" BorderThickness="0"
-                        Background="Transparent" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="16" Cursor="Hand"
-                        Command="{Binding ToggleConfigurationPanelCommand}" Margin="8,0,8,0"/>
-            </Grid>
-
-            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
-
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4">
                 <!-- Row 0: Profile Management -->
                 <Button Grid.Column="0" Grid.Row="0" Classes="ModernButton" HorizontalAlignment="Stretch" Margin="0,2" Height="44" ClickMode="Press"

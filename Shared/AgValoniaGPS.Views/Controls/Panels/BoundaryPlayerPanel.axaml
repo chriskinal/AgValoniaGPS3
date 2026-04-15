@@ -50,15 +50,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Border Classes="FloatingPanel" MinWidth="250" IsVisible="{Binding IsBoundaryPlayerPanelVisible}" IsHitTestVisible="True">
         <StackPanel Spacing="4" Background="Transparent">
-            <!-- Header: Drag handle + Title -->
-            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*" Height="32" Margin="0,0,0,4"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
-                           Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="Stop Record Pause Boundary" FontSize="12" FontWeight="SemiBold"
-                           Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
-            </Grid>
-
             <!-- Offset Distance Input (clickable to open numeric keypad) -->
             <Grid ColumnDefinitions="Auto,*" Margin="8,4">
                 <Button Grid.Column="0" Background="AliceBlue" CornerRadius="4" Padding="8,4" MinWidth="100"

@@ -56,19 +56,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Border Classes="FloatingPanel" MinWidth="420" IsVisible="{Binding IsBoundaryPanelVisible}" IsHitTestVisible="True">
         <StackPanel Spacing="4" Background="Transparent">
-            <!-- Header: Drag handle + Title + Close button -->
-            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Height="32" Margin="0,0,0,4"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Cursor="Hand" ToolTip.Tip="Drag to move">
-                <TextBlock Grid.Column="0" Text="=" FontSize="18" FontWeight="Bold"
-                           Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
-                <TextBlock Grid.Column="1" Text="{loc:Localize StartOrDeleteBoundary}" FontSize="14" FontWeight="SemiBold"
-                           Foreground="#1ABC9C" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
-                <Button Grid.Column="2" Content="X" Width="28" Height="28" Margin="0,0,4,0"
-                        Background="Transparent" BorderThickness="0" Foreground="#FFFFFF"
-                        Command="{Binding ToggleBoundaryPanelCommand}" Cursor="Hand"
-                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-            </Grid>
-
             <!-- Toolbar Row: Delete, KML Import, Bing, Build From Tracks, Drive Around, Accept -->
             <Grid ColumnDefinitions="*,*,*,*,*,*" Margin="4,4,4,8" Background="Transparent">
                 <Button Grid.Column="0" Classes="ModernButton" Margin="2" Height="50"

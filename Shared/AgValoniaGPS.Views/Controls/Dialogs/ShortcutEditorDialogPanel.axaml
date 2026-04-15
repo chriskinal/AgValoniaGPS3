@@ -53,11 +53,40 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 BoxShadow="0 8 32 4 #60000000">
             <Grid RowDefinitions="Auto,*,Auto">
 
-                <!-- Header -->
-                <TextBlock Grid.Row="0" Text="Customize Shortcut Bar"
-                           FontSize="20" FontWeight="Bold"
-                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                           Margin="0,0,0,16"/>
+                <!-- Header with layout management -->
+                <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,16">
+                    <TextBlock Text="Customize Shortcut Bar"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                    <!-- Layout selector -->
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4,0,0">
+                        <TextBlock Grid.Column="0" Text="Layout:" FontSize="13"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding LayoutNames}"
+                                  SelectedItem="{Binding SelectedLayoutName}"
+                                  MinWidth="150" FontSize="13"/>
+                        <Button Grid.Column="2" Content="Delete" Padding="8,4" CornerRadius="4"
+                                FontSize="12" Margin="8,0,0,0" Cursor="Hand"
+                                Background="#44E74C3C"
+                                Command="{Binding DeleteLayoutCommand}"/>
+                    </Grid>
+
+                    <!-- Create new layout -->
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="New:" FontSize="13"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                        <TextBox Grid.Column="1" Text="{Binding NewLayoutName}"
+                                 FontSize="13" Padding="6,4"
+                                 PlaceholderText="Layout name..."/>
+                        <Button Grid.Column="2" Content="Create" Padding="8,4" CornerRadius="4"
+                                FontSize="12" Margin="8,0,0,0" Cursor="Hand"
+                                Background="#442ECC71"
+                                Command="{Binding CreateLayoutCommand}"/>
+                    </Grid>
+                </StackPanel>
 
                 <!-- Two-column layout -->
                 <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*" Margin="0,0,0,16">

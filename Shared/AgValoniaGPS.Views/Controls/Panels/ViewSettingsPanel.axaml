@@ -57,47 +57,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <Border Classes="FloatingPanel" MinWidth="200" IsVisible="{Binding IsViewSettingsPanelVisible}" IsHitTestVisible="True">
         <StackPanel Spacing="4" Background="Transparent">
-            <!-- Header with drag handle and close button -->
-            <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto"
-                  Height="32"
-                  Margin="0,0,0,8"
-                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                  Cursor="Hand"
-                  ToolTip.Tip="Drag to move">
-                <!-- Drag Handle Icon -->
-                <TextBlock Grid.Column="0"
-                           Text="="
-                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                           FontSize="20"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           Margin="8,0,8,0"
-                           IsHitTestVisible="False"/>
-                <!-- Title -->
-                <TextBlock Grid.Column="1"
-                           Text="{loc:Localize ViewSettings}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                           FontSize="16"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False"/>
-                <!-- Close Button -->
-                <Button Grid.Column="2"
-                        Content="X"
-                        Width="24" Height="24"
-                        Padding="0"
-                        BorderThickness="0"
-                        Background="Transparent"
-                        Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                        FontSize="16"
-                        Cursor="Hand"
-                        Command="{Binding ToggleViewSettingsPanelCommand}"
-                        ToolTip.Tip="Close"
-                        Margin="8,0,8,0"/>
-            </Grid>
-
-            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,4"/>
-
             <!-- Camera Controls -->
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" Background="Transparent">
                 <Button Grid.Row="0" Grid.Column="0" Classes="ModernButton"

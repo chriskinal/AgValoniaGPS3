@@ -20,12 +20,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="using:AgValoniaGPS.Views.Converters"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.ShortcutBar"
              x:DataType="vm:MainViewModel"
              ClipToBounds="False"
              Background="{x:Null}"
              IsHitTestVisible="True">
+
+    <UserControl.Resources>
+        <converters:AvaresImageConverter x:Key="AvaresImageConverter"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <!-- Floating Panel Style -->
@@ -73,23 +79,36 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ShortcutButtonViewModel">
-                        <Button Classes="ShortcutButton"
-                                Classes.Active="{Binding IsActive}"
-                                Command="{Binding Command}"
-                                ToolTip.Tip="{Binding Tooltip}"
-                                IsVisible="{Binding IsVisible}">
-                            <Image Source="{Binding CurrentIcon}" Stretch="Uniform"/>
-                        </Button>
+                        <Panel>
+                            <!-- Standard icon button (no overlay text) -->
+                            <Button Classes="ShortcutButton"
+                                    Classes.Active="{Binding IsActive}"
+                                    Command="{Binding Command}"
+                                    ToolTip.Tip="{Binding Tooltip}"
+                                    IsVisible="{Binding HasOverlayText, Converter={StaticResource InverseBoolConverter}}">
+                                <Image Source="{Binding CurrentIconResource, Converter={StaticResource AvaresImageConverter}}" Stretch="Uniform"/>
+                            </Button>
+                            <!-- Section-style button with overlay text and dynamic background -->
+                            <Button Classes="ShortcutButton"
+                                    Command="{Binding Command}"
+                                    ToolTip.Tip="{Binding Tooltip}"
+                                    IsVisible="{Binding HasOverlayText}"
+                                    Background="{Binding BackgroundColorHex}">
+                                <TextBlock Text="{Binding OverlayText}"
+                                           FontSize="24" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                        </Panel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <!-- Gear icon to open shortcut editor -->
-            <Button Classes="ShortcutButton" Width="36" Height="36"
+            <Button Classes="ShortcutButton"
                     ToolTip.Tip="Customize Shortcuts"
-                    Command="{Binding ShowShortcutEditorCommand}"
-                    Padding="6" Opacity="0.6">
-                <TextBlock Text="&#x2699;" FontSize="18"
+                    Command="{Binding ShowShortcutEditorCommand}">
+                <TextBlock Text="&#x2699;" FontSize="28"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             </Button>

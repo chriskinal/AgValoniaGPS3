@@ -101,9 +101,8 @@ public partial class RightNavigationPanel : UserControl
         var tooltip = ToolTip.GetTip(button)?.ToString();
         if (string.IsNullOrEmpty(tooltip)) return;
 
-        // Find the matching ButtonDefinition by tooltip
-        var registry = new Services.Toolbar.ButtonRegistryService();
-        var match = registry.GetAll().FirstOrDefault(b => b.Tooltip == tooltip);
+        // Find the matching ButtonDefinition by tooltip (delegated to ViewModel)
+        var match = vm.GetButtonDefinitionByTooltip(tooltip);
         if (match == null)
         {
             vm.ShowErrorDialog("Menu Button",
