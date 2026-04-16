@@ -59,6 +59,7 @@ public class VehicleProfileService : IVehicleProfileService
         var xmlProfiles = Directory.GetFiles(VehiclesDirectory, "*.XML")
             .Select(f => Path.GetFileNameWithoutExtension(f));
         var jsonProfiles = Directory.GetFiles(VehiclesDirectory, "*.json")
+            .Where(f => !f.EndsWith(".AutoSteer.json", StringComparison.OrdinalIgnoreCase))
             .Select(f => Path.GetFileNameWithoutExtension(f));
 
         return xmlProfiles.Concat(jsonProfiles)
@@ -111,31 +112,11 @@ public class VehicleProfileService : IVehicleProfileService
 
     public void Save(VehicleProfile profile)
     {
-        // Always save JSON (new canonical format)
+        // Save JSON only (new canonical format)
         ProfileJsonService.Save(VehiclesDirectory, profile);
 
-        // Also save legacy XML for backwards compatibility
-        var filePath = string.IsNullOrEmpty(profile.FilePath)
-            ? Path.Combine(VehiclesDirectory, $"{profile.Name}.XML")
-            : profile.FilePath;
-
-        var doc = new XDocument(
-            new XDeclaration("1.0", "utf-8", null),
-            new XElement("configuration",
-                new XElement("userSettings",
-                    new XElement("AgOpenGPS.Properties.Settings",
-                        CreateVehicleSettings(profile),
-                        CreateToolSettings(profile),
-                        CreateYouTurnSettings(profile),
-                        CreateSectionSettings(profile),
-                        CreateGeneralSettings(profile)
-                    )
-                )
-            )
-        );
-
-        doc.Save(filePath);
-        profile.FilePath = filePath;
+        // Set FilePath to the JSON location
+        profile.FilePath = Path.Combine(VehiclesDirectory, $"{profile.Name}.json");
     }
 
     public bool SetActiveProfile(string profileName)
@@ -154,7 +135,7 @@ public class VehicleProfileService : IVehicleProfileService
         var profile = new VehicleProfile
         {
             Name = profileName,
-            FilePath = Path.Combine(VehiclesDirectory, $"{profileName}.XML"),
+            FilePath = Path.Combine(VehiclesDirectory, $"{profileName}.json"),
             Vehicle = new VehicleConfiguration(),
             Tool = new ToolConfiguration
             {

@@ -84,19 +84,25 @@ public class ConfigurationService(
 
     public bool DeleteProfile(string name)
     {
-        var filePath = Path.Combine(ProfilesDirectory, $"{name}.XML");
-        if (!File.Exists(filePath))
-            return false;
-
+        bool deleted = false;
         try
         {
-            File.Delete(filePath);
-            return true;
+            // Delete JSON profile (primary format)
+            var jsonPath = Path.Combine(ProfilesDirectory, $"{name}.json");
+            if (File.Exists(jsonPath)) { File.Delete(jsonPath); deleted = true; }
+
+            // Also clean up legacy XML and AutoSteer JSON if they exist
+            var xmlPath = Path.Combine(ProfilesDirectory, $"{name}.XML");
+            if (File.Exists(xmlPath)) { File.Delete(xmlPath); deleted = true; }
+
+            var autoSteerPath = Path.Combine(ProfilesDirectory, $"{name}.AutoSteer.json");
+            if (File.Exists(autoSteerPath)) File.Delete(autoSteerPath);
         }
         catch
         {
             return false;
         }
+        return deleted;
     }
 
     public void ReloadCurrentProfile()
