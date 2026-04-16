@@ -1,19 +1,23 @@
 using AgValoniaGPS.Models;
-using AgValoniaGPS.Models.Tool;
+using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Profile;
 
 namespace AgValoniaGPS.Services.Tests;
 
 [TestFixture]
+[NonParallelizable] // Modifies ConfigurationStore.Instance
 public class ProfileJsonServiceTests
 {
     private string _tempDir = null!;
+    private ConfigurationStore _store = null!;
 
     [SetUp]
     public void SetUp()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"agvalonia_profile_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
+        _store = new ConfigurationStore();
+        ConfigurationStore.SetInstance(_store);
     }
 
     [TearDown]
@@ -23,164 +27,166 @@ public class ProfileJsonServiceTests
             Directory.Delete(_tempDir, recursive: true);
     }
 
-#pragma warning disable CS0612 // Type or member is obsolete (VehicleProfile/VehicleConfiguration/ToolConfiguration/YouTurnConfiguration)
-
     [Test]
     public void SaveAndLoad_DefaultProfile_RoundTrip()
     {
-        var profile = CreateTestProfile("TestTractor");
+        SetupTestStore("TestTractor");
 
-        ProfileJsonService.Save(_tempDir, profile);
+        ProfileJsonService.Save(_tempDir, "TestTractor", _store);
 
         Assert.That(File.Exists(Path.Combine(_tempDir, "TestTractor.json")), Is.True);
 
-        var loaded = ProfileJsonService.Load(_tempDir, "TestTractor");
+        var loadStore = new ConfigurationStore();
+        var loaded = ProfileJsonService.Load(_tempDir, "TestTractor", loadStore);
 
-        Assert.That(loaded, Is.Not.Null);
-        Assert.That(loaded!.Name, Is.EqualTo("TestTractor"));
+        Assert.That(loaded, Is.True);
+        Assert.That(loadStore.ActiveProfileName, Is.EqualTo("TestTractor"));
     }
 
     [Test]
     public void SaveAndLoad_VehicleConfig_AllProperties()
     {
-        var profile = CreateTestProfile("VehicleTest");
-        profile.Vehicle.AntennaHeight = 4.2;
-        profile.Vehicle.AntennaPivot = 1.1;
-        profile.Vehicle.AntennaOffset = -0.3;
-        profile.Vehicle.Wheelbase = 3.5;
-        profile.Vehicle.TrackWidth = 2.1;
-        profile.Vehicle.MaxSteerAngle = 40.0;
-        profile.Vehicle.MaxAngularVelocity = 30.0;
+        SetupTestStore("VehicleTest");
+        _store.Vehicle.AntennaHeight = 4.2;
+        _store.Vehicle.AntennaPivot = 1.1;
+        _store.Vehicle.AntennaOffset = -0.3;
+        _store.Vehicle.Wheelbase = 3.5;
+        _store.Vehicle.TrackWidth = 2.1;
+        _store.Vehicle.MaxSteerAngle = 40.0;
+        _store.Vehicle.MaxAngularVelocity = 30.0;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "VehicleTest")!;
+        ProfileJsonService.Save(_tempDir, "VehicleTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "VehicleTest", loadStore);
 
-        Assert.That(loaded.Vehicle.AntennaHeight, Is.EqualTo(4.2).Within(1e-6));
-        Assert.That(loaded.Vehicle.AntennaPivot, Is.EqualTo(1.1).Within(1e-6));
-        Assert.That(loaded.Vehicle.AntennaOffset, Is.EqualTo(-0.3).Within(1e-6));
-        Assert.That(loaded.Vehicle.Wheelbase, Is.EqualTo(3.5).Within(1e-6));
-        Assert.That(loaded.Vehicle.TrackWidth, Is.EqualTo(2.1).Within(1e-6));
-        Assert.That(loaded.Vehicle.MaxSteerAngle, Is.EqualTo(40.0).Within(1e-6));
-        Assert.That(loaded.Vehicle.MaxAngularVelocity, Is.EqualTo(30.0).Within(1e-6));
+        Assert.That(loadStore.Vehicle.AntennaHeight, Is.EqualTo(4.2).Within(1e-6));
+        Assert.That(loadStore.Vehicle.AntennaPivot, Is.EqualTo(1.1).Within(1e-6));
+        Assert.That(loadStore.Vehicle.AntennaOffset, Is.EqualTo(-0.3).Within(1e-6));
+        Assert.That(loadStore.Vehicle.Wheelbase, Is.EqualTo(3.5).Within(1e-6));
+        Assert.That(loadStore.Vehicle.TrackWidth, Is.EqualTo(2.1).Within(1e-6));
+        Assert.That(loadStore.Vehicle.MaxSteerAngle, Is.EqualTo(40.0).Within(1e-6));
+        Assert.That(loadStore.Vehicle.MaxAngularVelocity, Is.EqualTo(30.0).Within(1e-6));
     }
 
     [Test]
     public void SaveAndLoad_ToolConfig_AllProperties()
     {
-        var profile = CreateTestProfile("ToolTest");
-        profile.Tool.Width = 12.0;
-        profile.Tool.Overlap = 0.15;
-        profile.Tool.Offset = -0.5;
-        profile.Tool.HitchLength = -2.5;
-        profile.Tool.IsToolTrailing = true;
-        profile.Tool.IsToolTBT = false;
-        profile.Tool.NumOfSections = 4;
-        profile.NumSections = 4;
-        profile.Tool.MinCoverage = 80;
-        profile.Tool.IsHeadlandSectionControl = true;
+        SetupTestStore("ToolTest");
+        _store.Tool.Width = 12.0;
+        _store.Tool.Overlap = 0.15;
+        _store.Tool.Offset = -0.5;
+        _store.Tool.HitchLength = 2.5;
+        _store.Tool.IsToolTrailing = true;
+        _store.Tool.IsToolTBT = false;
+        _store.NumSections = 4;
+        _store.Tool.MinCoverage = 80;
+        _store.Tool.IsHeadlandSectionControl = true;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "ToolTest")!;
+        ProfileJsonService.Save(_tempDir, "ToolTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "ToolTest", loadStore);
 
-        Assert.That(loaded.Tool.Width, Is.EqualTo(12.0).Within(1e-6));
-        Assert.That(loaded.Tool.Overlap, Is.EqualTo(0.15).Within(1e-6));
-        Assert.That(loaded.Tool.Offset, Is.EqualTo(-0.5).Within(1e-6));
-        Assert.That(loaded.Tool.HitchLength, Is.EqualTo(-2.5).Within(1e-6));
-        Assert.That(loaded.Tool.IsToolTrailing, Is.True);
-        Assert.That(loaded.Tool.IsToolTBT, Is.False);
-        Assert.That(loaded.Tool.NumOfSections, Is.EqualTo(4));
-        Assert.That(loaded.Tool.MinCoverage, Is.EqualTo(80));
-        Assert.That(loaded.Tool.IsHeadlandSectionControl, Is.True);
+        Assert.That(loadStore.Tool.Width, Is.EqualTo(12.0).Within(1e-6));
+        Assert.That(loadStore.Tool.Overlap, Is.EqualTo(0.15).Within(1e-6));
+        Assert.That(loadStore.Tool.Offset, Is.EqualTo(-0.5).Within(1e-6));
+        Assert.That(loadStore.Tool.HitchLength, Is.EqualTo(2.5).Within(1e-6));
+        Assert.That(loadStore.Tool.IsToolTrailing, Is.True);
+        Assert.That(loadStore.Tool.IsToolTBT, Is.False);
+        Assert.That(loadStore.NumSections, Is.EqualTo(4));
+        Assert.That(loadStore.Tool.MinCoverage, Is.EqualTo(80));
+        Assert.That(loadStore.Tool.IsHeadlandSectionControl, Is.True);
     }
 
     [Test]
     public void SaveAndLoad_GuidanceConfig_RoundTrip()
     {
-        var profile = CreateTestProfile("GuidanceTest");
-        profile.Vehicle.GoalPointLookAheadHold = 5.0;
-        profile.Vehicle.StanleyDistanceErrorGain = 1.2;
-        profile.Vehicle.StanleyHeadingErrorGain = 0.9;
-        profile.Vehicle.PurePursuitIntegralGain = 0.05;
-        profile.IsPurePursuit = false;
+        SetupTestStore("GuidanceTest");
+        _store.Guidance.GoalPointLookAheadHold = 5.0;
+        _store.Guidance.StanleyDistanceErrorGain = 1.2;
+        _store.Guidance.StanleyHeadingErrorGain = 0.9;
+        _store.Guidance.PurePursuitIntegralGain = 0.05;
+        _store.Guidance.IsPurePursuit = false;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "GuidanceTest")!;
+        ProfileJsonService.Save(_tempDir, "GuidanceTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "GuidanceTest", loadStore);
 
-        Assert.That(loaded.Vehicle.GoalPointLookAheadHold, Is.EqualTo(5.0).Within(1e-6));
-        Assert.That(loaded.Vehicle.StanleyDistanceErrorGain, Is.EqualTo(1.2).Within(1e-6));
-        Assert.That(loaded.Vehicle.StanleyHeadingErrorGain, Is.EqualTo(0.9).Within(1e-6));
-        Assert.That(loaded.Vehicle.PurePursuitIntegralGain, Is.EqualTo(0.05).Within(1e-6));
-        Assert.That(loaded.IsPurePursuit, Is.False);
+        Assert.That(loadStore.Guidance.GoalPointLookAheadHold, Is.EqualTo(5.0).Within(1e-6));
+        Assert.That(loadStore.Guidance.StanleyDistanceErrorGain, Is.EqualTo(1.2).Within(1e-6));
+        Assert.That(loadStore.Guidance.StanleyHeadingErrorGain, Is.EqualTo(0.9).Within(1e-6));
+        Assert.That(loadStore.Guidance.PurePursuitIntegralGain, Is.EqualTo(0.05).Within(1e-6));
+        Assert.That(loadStore.Guidance.IsPurePursuit, Is.False);
     }
 
     [Test]
     public void SaveAndLoad_SectionPositions_DynamicArray()
     {
-        var profile = CreateTestProfile("SectionTest");
-        profile.NumSections = 4;
-        profile.SectionPositions = new double[17];
-        profile.SectionPositions[0] = -6.0;
-        profile.SectionPositions[1] = -3.0;
-        profile.SectionPositions[2] = 0.0;
-        profile.SectionPositions[3] = 3.0;
-        profile.SectionPositions[4] = 6.0;
+        SetupTestStore("SectionTest");
+        _store.NumSections = 4;
+        _store.SectionPositions = new double[17];
+        _store.SectionPositions[0] = -6.0;
+        _store.SectionPositions[1] = -3.0;
+        _store.SectionPositions[2] = 0.0;
+        _store.SectionPositions[3] = 3.0;
+        _store.SectionPositions[4] = 6.0;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "SectionTest")!;
+        ProfileJsonService.Save(_tempDir, "SectionTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "SectionTest", loadStore);
 
-        Assert.That(loaded.NumSections, Is.EqualTo(4));
-        Assert.That(loaded.SectionPositions[0], Is.EqualTo(-6.0).Within(1e-6));
-        Assert.That(loaded.SectionPositions[1], Is.EqualTo(-3.0).Within(1e-6));
-        Assert.That(loaded.SectionPositions[2], Is.EqualTo(0.0).Within(1e-6));
-        Assert.That(loaded.SectionPositions[3], Is.EqualTo(3.0).Within(1e-6));
-        Assert.That(loaded.SectionPositions[4], Is.EqualTo(6.0).Within(1e-6));
+        Assert.That(loadStore.NumSections, Is.EqualTo(4));
+        Assert.That(loadStore.SectionPositions[0], Is.EqualTo(-6.0).Within(1e-6));
+        Assert.That(loadStore.SectionPositions[1], Is.EqualTo(-3.0).Within(1e-6));
+        Assert.That(loadStore.SectionPositions[2], Is.EqualTo(0.0).Within(1e-6));
+        Assert.That(loadStore.SectionPositions[3], Is.EqualTo(3.0).Within(1e-6));
+        Assert.That(loadStore.SectionPositions[4], Is.EqualTo(6.0).Within(1e-6));
     }
 
     [Test]
     public void SaveAndLoad_YouTurnConfig_RoundTrip()
     {
-        var profile = CreateTestProfile("UTurnTest");
-        profile.YouTurn.TurnRadius = 10.0;
-        profile.YouTurn.ExtensionLength = 25.0;
-        profile.YouTurn.DistanceFromBoundary = 3.0;
-        profile.YouTurn.SkipWidth = 2;
-        profile.YouTurn.Style = 1;
-        profile.YouTurn.Smoothing = 20;
+        SetupTestStore("UTurnTest");
+        _store.Guidance.UTurnRadius = 10.0;
+        _store.Guidance.UTurnExtension = 25.0;
+        _store.Guidance.UTurnDistanceFromBoundary = 3.0;
+        _store.Guidance.UTurnSkipWidth = 2;
+        _store.Guidance.UTurnStyle = 1;
+        _store.Guidance.UTurnSmoothing = 20;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "UTurnTest")!;
+        ProfileJsonService.Save(_tempDir, "UTurnTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "UTurnTest", loadStore);
 
-        Assert.That(loaded.YouTurn.TurnRadius, Is.EqualTo(10.0).Within(1e-6));
-        Assert.That(loaded.YouTurn.ExtensionLength, Is.EqualTo(25.0).Within(1e-6));
-        Assert.That(loaded.YouTurn.DistanceFromBoundary, Is.EqualTo(3.0).Within(1e-6));
-        Assert.That(loaded.YouTurn.SkipWidth, Is.EqualTo(2));
-        Assert.That(loaded.YouTurn.Style, Is.EqualTo(1));
-        Assert.That(loaded.YouTurn.Smoothing, Is.EqualTo(20));
+        Assert.That(loadStore.Guidance.UTurnRadius, Is.EqualTo(10.0).Within(1e-6));
+        Assert.That(loadStore.Guidance.UTurnExtension, Is.EqualTo(25.0).Within(1e-6));
+        Assert.That(loadStore.Guidance.UTurnDistanceFromBoundary, Is.EqualTo(3.0).Within(1e-6));
+        Assert.That(loadStore.Guidance.UTurnSkipWidth, Is.EqualTo(2));
+        Assert.That(loadStore.Guidance.UTurnStyle, Is.EqualTo(1));
+        Assert.That(loadStore.Guidance.UTurnSmoothing, Is.EqualTo(20));
     }
 
     [Test]
     public void SaveAndLoad_GeneralSettings_RoundTrip()
     {
-        var profile = CreateTestProfile("GeneralTest");
-        profile.IsMetric = true;
-        profile.IsSimulatorOn = false;
-        profile.SimLatitude = 48.8566;
-        profile.SimLongitude = 2.3522;
+        SetupTestStore("GeneralTest");
+        _store.IsMetric = true;
+        _store.Simulator.Enabled = false;
+        _store.Simulator.Latitude = 48.8566;
+        _store.Simulator.Longitude = 2.3522;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "GeneralTest")!;
+        ProfileJsonService.Save(_tempDir, "GeneralTest", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "GeneralTest", loadStore);
 
-        Assert.That(loaded.IsMetric, Is.True);
-        Assert.That(loaded.IsSimulatorOn, Is.False);
-        Assert.That(loaded.SimLatitude, Is.EqualTo(48.8566).Within(1e-6));
-        Assert.That(loaded.SimLongitude, Is.EqualTo(2.3522).Within(1e-6));
+        Assert.That(loadStore.IsMetric, Is.True);
     }
 
     [Test]
-    public void Load_MissingFile_ReturnsNull()
+    public void Load_MissingFile_ReturnsFalse()
     {
-        var loaded = ProfileJsonService.Load(_tempDir, "NonExistent");
-        Assert.That(loaded, Is.Null);
+        var loadStore = new ConfigurationStore();
+        var result = ProfileJsonService.Load(_tempDir, "NonExistent", loadStore);
+        Assert.That(result, Is.False);
     }
 
     [Test]
@@ -192,14 +198,16 @@ public class ProfileJsonServiceTests
     [Test]
     public void Exists_ReturnsTrue_AfterSave()
     {
-        ProfileJsonService.Save(_tempDir, CreateTestProfile("ExistsTest"));
+        SetupTestStore("ExistsTest");
+        ProfileJsonService.Save(_tempDir, "ExistsTest", _store);
         Assert.That(ProfileJsonService.Exists(_tempDir, "ExistsTest"), Is.True);
     }
 
     [Test]
     public void JsonOutput_IsValidAndReadable()
     {
-        ProfileJsonService.Save(_tempDir, CreateTestProfile("JsonCheck"));
+        SetupTestStore("JsonCheck");
+        ProfileJsonService.Save(_tempDir, "JsonCheck", _store);
         var json = File.ReadAllText(Path.Combine(_tempDir, "JsonCheck.json"));
 
         var doc = System.Text.Json.JsonDocument.Parse(json);
@@ -215,38 +223,31 @@ public class ProfileJsonServiceTests
     }
 
     [Test]
-    public void UTurnCompensation_RoundTrips_ToBothLocations()
+    public void UTurnCompensation_RoundTrips()
     {
-        var profile = CreateTestProfile("UTurnComp");
-        profile.Vehicle.UTurnCompensation = 1.75;
-        profile.YouTurn.UTurnCompensation = 1.75;
+        SetupTestStore("UTurnComp");
+        _store.Guidance.UTurnCompensation = 1.75;
 
-        ProfileJsonService.Save(_tempDir, profile);
-        var loaded = ProfileJsonService.Load(_tempDir, "UTurnComp")!;
+        ProfileJsonService.Save(_tempDir, "UTurnComp", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "UTurnComp", loadStore);
 
-        Assert.That(loaded.Vehicle.UTurnCompensation, Is.EqualTo(1.75).Within(1e-6));
-        Assert.That(loaded.YouTurn.UTurnCompensation, Is.EqualTo(1.75).Within(1e-6));
+        Assert.That(loadStore.Guidance.UTurnCompensation, Is.EqualTo(1.75).Within(1e-6));
     }
-
-#pragma warning restore CS0612
 
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
 
-    private static VehicleProfile CreateTestProfile(string name)
+    private void SetupTestStore(string name)
     {
-        return new VehicleProfile
-        {
-            Name = name,
-            Vehicle = new VehicleConfiguration(),
-            Tool = new ToolConfiguration { Width = 6.0, NumOfSections = 1 },
-            YouTurn = new YouTurnConfiguration(),
-            SectionPositions = new double[17] { -3.0, 3.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            NumSections = 1,
-            IsMetric = false,
-            IsPurePursuit = true,
-            IsSimulatorOn = true,
-        };
+        _store.ActiveProfileName = name;
+        _store.Vehicle.Name = name;
+        _store.Tool.Width = 6.0;
+        _store.NumSections = 1;
+        _store.SectionPositions = new double[17] { -3.0, 3.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        _store.IsMetric = false;
+        _store.Guidance.IsPurePursuit = true;
+        _store.Simulator.Enabled = true;
     }
 }

@@ -26,8 +26,8 @@ namespace AgValoniaGPS.Services;
 
 /// <summary>
 /// Service for managing the unified configuration store.
-/// Bridges between ConfigurationStore and existing persistence services
-/// to maintain AgOpenGPS XML compatibility.
+/// Bridges between ConfigurationStore and persistence services.
+/// VehicleProfileService loads/saves directly to/from ConfigurationStore.
 /// </summary>
 public class ConfigurationService(
     IVehicleProfileService profileService,
@@ -49,14 +49,10 @@ public class ConfigurationService(
 
     public bool LoadProfile(string name)
     {
-        var profile = profileService.Load(name);
-        if (profile == null)
+        if (!profileService.Load(name, Store))
             return false;
 
-        ApplyProfileToStore(profile);
         LoadAutoSteerConfig(name);
-        Store.ActiveProfileName = name;
-        Store.ActiveProfilePath = profile.FilePath;
         Store.HasUnsavedChanges = false;
         Store.OnProfileLoaded();
         ProfileLoaded?.Invoke(this, name);
@@ -65,8 +61,7 @@ public class ConfigurationService(
 
     public void SaveProfile(string name)
     {
-        var profile = CreateProfileFromStore(name);
-        profileService.Save(profile);
+        profileService.Save(name, Store);
         SaveAutoSteerConfig(name);
         Store.HasUnsavedChanges = false;
         Store.OnProfileSaved();
@@ -75,10 +70,7 @@ public class ConfigurationService(
 
     public void CreateProfile(string name)
     {
-        var profile = profileService.CreateDefaultProfile(name);
-        ApplyProfileToStore(profile);
-        Store.ActiveProfileName = name;
-        Store.ActiveProfilePath = profile.FilePath;
+        profileService.CreateDefaultProfile(name, Store);
         Store.HasUnsavedChanges = false;
     }
 
@@ -127,163 +119,6 @@ public class ConfigurationService(
     {
         ApplyStoreToAppSettings(settingsService.Settings);
         settingsService.Save();
-    }
-
-    #endregion
-
-    #region Profile <-> Store Mapping
-
-    /// <summary>
-    /// Applies a VehicleProfile to the ConfigurationStore
-    /// </summary>
-    private void ApplyProfileToStore(VehicleProfile profile)
-    {
-        var store = Store;
-
-        // Vehicle config
-        store.Vehicle.Name = profile.Name;
-        store.Vehicle.Type = profile.Vehicle.Type;
-        store.Vehicle.AntennaHeight = profile.Vehicle.AntennaHeight;
-        store.Vehicle.AntennaPivot = profile.Vehicle.AntennaPivot;
-        store.Vehicle.AntennaOffset = profile.Vehicle.AntennaOffset;
-        store.Vehicle.Wheelbase = profile.Vehicle.Wheelbase;
-        store.Vehicle.TrackWidth = profile.Vehicle.TrackWidth;
-        store.Vehicle.MaxSteerAngle = profile.Vehicle.MaxSteerAngle;
-        store.Vehicle.MaxAngularVelocity = profile.Vehicle.MaxAngularVelocity;
-
-        // Guidance config
-        store.Guidance.IsPurePursuit = profile.IsPurePursuit;
-        store.Guidance.GoalPointLookAheadHold = profile.Vehicle.GoalPointLookAheadHold;
-        store.Guidance.GoalPointLookAheadMult = profile.Vehicle.GoalPointLookAheadMult;
-        store.Guidance.GoalPointAcquireFactor = profile.Vehicle.GoalPointAcquireFactor;
-        store.Guidance.MinLookAheadDistance = profile.Vehicle.MinLookAheadDistance;
-        store.Guidance.StanleyDistanceErrorGain = profile.Vehicle.StanleyDistanceErrorGain;
-        store.Guidance.StanleyHeadingErrorGain = profile.Vehicle.StanleyHeadingErrorGain;
-        store.Guidance.StanleyIntegralGainAB = profile.Vehicle.StanleyIntegralGainAB;
-        store.Guidance.StanleyIntegralDistanceAwayTriggerAB = profile.Vehicle.StanleyIntegralDistanceAwayTriggerAB;
-        store.Guidance.PurePursuitIntegralGain = profile.Vehicle.PurePursuitIntegralGain;
-        store.Guidance.DeadZoneHeading = profile.Vehicle.DeadZoneHeading;
-        store.Guidance.DeadZoneDelay = profile.Vehicle.DeadZoneDelay;
-        store.Guidance.HydLiftLookAheadDistanceLeft = profile.Vehicle.HydLiftLookAheadDistanceLeft;
-        store.Guidance.HydLiftLookAheadDistanceRight = profile.Vehicle.HydLiftLookAheadDistanceRight;
-
-        // U-Turn settings
-        store.Guidance.UTurnRadius = profile.YouTurn.TurnRadius;
-        store.Guidance.UTurnExtension = profile.YouTurn.ExtensionLength;
-        store.Guidance.UTurnDistanceFromBoundary = profile.YouTurn.DistanceFromBoundary;
-        store.Guidance.UTurnSkipWidth = profile.YouTurn.SkipWidth;
-        store.Guidance.UTurnStyle = profile.YouTurn.Style;
-        store.Guidance.UTurnSmoothing = profile.YouTurn.Smoothing;
-        store.Guidance.UTurnCompensation = profile.Vehicle.UTurnCompensation;
-
-        // Tool config
-        store.Tool.Width = profile.Tool.Width;
-        store.Tool.Overlap = profile.Tool.Overlap;
-        store.Tool.Offset = profile.Tool.Offset;
-        store.Tool.HitchLength = profile.Tool.HitchLength;
-        store.Tool.TrailingHitchLength = profile.Tool.TrailingHitchLength;
-        store.Tool.TankTrailingHitchLength = profile.Tool.TankTrailingHitchLength;
-        store.Tool.TrailingToolToPivotLength = profile.Tool.TrailingToolToPivotLength;
-        store.Tool.IsToolTrailing = profile.Tool.IsToolTrailing;
-        store.Tool.IsToolTBT = profile.Tool.IsToolTBT;
-        store.Tool.IsToolRearFixed = profile.Tool.IsToolRearFixed;
-        store.Tool.IsToolFrontFixed = profile.Tool.IsToolFrontFixed;
-        store.Tool.LookAheadOnSetting = profile.Tool.LookAheadOnSetting;
-        store.Tool.LookAheadOffSetting = profile.Tool.LookAheadOffSetting;
-        store.Tool.TurnOffDelay = profile.Tool.TurnOffDelay;
-        store.Tool.MinCoverage = profile.Tool.MinCoverage;
-        store.Tool.IsMultiColoredSections = profile.Tool.IsMultiColoredSections;
-        store.Tool.IsSectionOffWhenOut = profile.Tool.IsSectionOffWhenOut;
-        store.Tool.IsHeadlandSectionControl = profile.Tool.IsHeadlandSectionControl;
-
-        // Section config
-        store.NumSections = profile.NumSections;
-        store.SectionPositions = (double[])profile.SectionPositions.Clone();
-
-        // NOTE: Simulator coords are NOT loaded from profile - they are app-level settings
-        // stored in AppSettings, not vehicle-specific. Only Enabled state could come from
-        // profile for legacy compatibility, but we skip it too to avoid confusion.
-
-        // Display config
-        store.IsMetric = profile.IsMetric;
-    }
-
-    /// <summary>
-    /// Creates a VehicleProfile from the current ConfigurationStore state
-    /// </summary>
-    private VehicleProfile CreateProfileFromStore(string name)
-    {
-        var store = Store;
-
-        var profile = new VehicleProfile
-        {
-            Name = name,
-            FilePath = Path.Combine(ProfilesDirectory, $"{name}.XML"),
-            IsMetric = store.IsMetric,
-            IsPurePursuit = store.Guidance.IsPurePursuit,
-            IsSimulatorOn = store.Simulator.Enabled,
-            SimLatitude = store.Simulator.Latitude,
-            SimLongitude = store.Simulator.Longitude,
-            NumSections = store.NumSections,
-            SectionPositions = (double[])store.SectionPositions.Clone()
-        };
-
-        // Vehicle configuration
-        profile.Vehicle.Type = store.Vehicle.Type;
-        profile.Vehicle.AntennaHeight = store.Vehicle.AntennaHeight;
-        profile.Vehicle.AntennaPivot = store.Vehicle.AntennaPivot;
-        profile.Vehicle.AntennaOffset = store.Vehicle.AntennaOffset;
-        profile.Vehicle.Wheelbase = store.Vehicle.Wheelbase;
-        profile.Vehicle.TrackWidth = store.Vehicle.TrackWidth;
-        profile.Vehicle.MaxSteerAngle = store.Vehicle.MaxSteerAngle;
-        profile.Vehicle.MaxAngularVelocity = store.Vehicle.MaxAngularVelocity;
-        profile.Vehicle.GoalPointLookAheadHold = store.Guidance.GoalPointLookAheadHold;
-        profile.Vehicle.GoalPointLookAheadMult = store.Guidance.GoalPointLookAheadMult;
-        profile.Vehicle.GoalPointAcquireFactor = store.Guidance.GoalPointAcquireFactor;
-        profile.Vehicle.MinLookAheadDistance = store.Guidance.MinLookAheadDistance;
-        profile.Vehicle.StanleyDistanceErrorGain = store.Guidance.StanleyDistanceErrorGain;
-        profile.Vehicle.StanleyHeadingErrorGain = store.Guidance.StanleyHeadingErrorGain;
-        profile.Vehicle.StanleyIntegralGainAB = store.Guidance.StanleyIntegralGainAB;
-        profile.Vehicle.StanleyIntegralDistanceAwayTriggerAB = store.Guidance.StanleyIntegralDistanceAwayTriggerAB;
-        profile.Vehicle.PurePursuitIntegralGain = store.Guidance.PurePursuitIntegralGain;
-        profile.Vehicle.DeadZoneHeading = store.Guidance.DeadZoneHeading;
-        profile.Vehicle.DeadZoneDelay = store.Guidance.DeadZoneDelay;
-        profile.Vehicle.UTurnCompensation = store.Guidance.UTurnCompensation;
-        profile.Vehicle.HydLiftLookAheadDistanceLeft = store.Guidance.HydLiftLookAheadDistanceLeft;
-        profile.Vehicle.HydLiftLookAheadDistanceRight = store.Guidance.HydLiftLookAheadDistanceRight;
-
-        // Tool configuration
-        profile.Tool.Width = store.Tool.Width;
-        profile.Tool.HalfWidth = store.Tool.Width / 2.0;
-        profile.Tool.Overlap = store.Tool.Overlap;
-        profile.Tool.Offset = store.Tool.Offset;
-        profile.Tool.HitchLength = store.Tool.HitchLength;
-        profile.Tool.TrailingHitchLength = store.Tool.TrailingHitchLength;
-        profile.Tool.TankTrailingHitchLength = store.Tool.TankTrailingHitchLength;
-        profile.Tool.TrailingToolToPivotLength = store.Tool.TrailingToolToPivotLength;
-        profile.Tool.IsToolTrailing = store.Tool.IsToolTrailing;
-        profile.Tool.IsToolTBT = store.Tool.IsToolTBT;
-        profile.Tool.IsToolRearFixed = store.Tool.IsToolRearFixed;
-        profile.Tool.IsToolFrontFixed = store.Tool.IsToolFrontFixed;
-        profile.Tool.LookAheadOnSetting = store.Tool.LookAheadOnSetting;
-        profile.Tool.LookAheadOffSetting = store.Tool.LookAheadOffSetting;
-        profile.Tool.TurnOffDelay = store.Tool.TurnOffDelay;
-        profile.Tool.NumOfSections = store.NumSections;
-        profile.Tool.MinCoverage = store.Tool.MinCoverage;
-        profile.Tool.IsMultiColoredSections = store.Tool.IsMultiColoredSections;
-        profile.Tool.IsSectionOffWhenOut = store.Tool.IsSectionOffWhenOut;
-        profile.Tool.IsHeadlandSectionControl = store.Tool.IsHeadlandSectionControl;
-
-        // YouTurn configuration
-        profile.YouTurn.TurnRadius = store.Guidance.UTurnRadius;
-        profile.YouTurn.ExtensionLength = store.Guidance.UTurnExtension;
-        profile.YouTurn.DistanceFromBoundary = store.Guidance.UTurnDistanceFromBoundary;
-        profile.YouTurn.SkipWidth = store.Guidance.UTurnSkipWidth;
-        profile.YouTurn.Style = store.Guidance.UTurnStyle;
-        profile.YouTurn.Smoothing = store.Guidance.UTurnSmoothing;
-        profile.YouTurn.UTurnCompensation = store.Guidance.UTurnCompensation;
-
-        return profile;
     }
 
     #endregion
@@ -423,7 +258,7 @@ public class ConfigurationService(
 
     /// <summary>
     /// Gets the path to the AutoSteer config JSON file for a profile.
-    /// Stored as ProfileName.AutoSteer.json alongside the XML profile.
+    /// Stored as ProfileName.AutoSteer.json alongside the profile.
     /// </summary>
     private string GetAutoSteerConfigPath(string profileName)
     {

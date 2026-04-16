@@ -21,7 +21,7 @@ namespace AgValoniaGPS.Models.Configuration;
 
 /// <summary>
 /// Simulator configuration - ONE place only.
-/// Replaces: simulator fields in both AppSettings and VehicleProfile
+/// Replaces: simulator fields previously scattered across AppSettings and profile DTOs
 /// </summary>
 public class SimulatorConfig : ObservableObject
 {

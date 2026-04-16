@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Configuration;
 
 namespace AgValoniaGPS.Services.Interfaces;
 
 /// <summary>
-/// Service for managing vehicle profiles (tractor + implement configurations)
-/// Compatible with AgOpenGPS vehicle XML format
+/// Service for managing vehicle profiles (tractor + implement configurations).
+/// Loads/saves directly to/from ConfigurationStore, bypassing intermediate DTOs.
+/// Supports both JSON (primary) and legacy AgOpenGPS XML (import only) formats.
 /// </summary>
 public interface IVehicleProfileService
 {
@@ -30,45 +31,31 @@ public interface IVehicleProfileService
     string VehiclesDirectory { get; }
 
     /// <summary>
-    /// Gets the currently active vehicle profile
+    /// Gets a list of available vehicle profile names
     /// </summary>
-    VehicleProfile? ActiveProfile { get; }
-
-    /// <summary>
-    /// Gets a list of available vehicle profile names (filenames without .XML extension)
-    /// </summary>
-    /// <returns>List of profile names</returns>
     List<string> GetAvailableProfiles();
 
     /// <summary>
-    /// Loads a vehicle profile by name
+    /// Loads a vehicle profile by name directly into the ConfigurationStore.
+    /// Tries JSON first, falls back to legacy XML.
     /// </summary>
-    /// <param name="profileName">Profile name (filename without .XML extension)</param>
-    /// <returns>The loaded vehicle profile, or null if not found</returns>
-    VehicleProfile? Load(string profileName);
+    /// <param name="profileName">Profile name (filename without extension)</param>
+    /// <param name="store">ConfigurationStore to populate</param>
+    /// <returns>True if loaded successfully</returns>
+    bool Load(string profileName, ConfigurationStore store);
 
     /// <summary>
-    /// Saves a vehicle profile to disk
+    /// Saves the current ConfigurationStore state as a JSON profile.
     /// </summary>
-    /// <param name="profile">The profile to save</param>
-    void Save(VehicleProfile profile);
+    /// <param name="profileName">Profile name</param>
+    /// <param name="store">ConfigurationStore to save from</param>
+    void Save(string profileName, ConfigurationStore store);
 
     /// <summary>
-    /// Sets the active profile by name
-    /// </summary>
-    /// <param name="profileName">Profile name to activate</param>
-    /// <returns>True if profile was loaded and activated successfully</returns>
-    bool SetActiveProfile(string profileName);
-
-    /// <summary>
-    /// Creates a new default profile with the given name
+    /// Creates a new profile with default values and saves it.
+    /// Resets the given ConfigurationStore to defaults.
     /// </summary>
     /// <param name="profileName">Name for the new profile</param>
-    /// <returns>The newly created profile</returns>
-    VehicleProfile CreateDefaultProfile(string profileName);
-
-    /// <summary>
-    /// Event fired when the active profile changes
-    /// </summary>
-    event EventHandler<VehicleProfile?>? ActiveProfileChanged;
+    /// <param name="store">ConfigurationStore to reset to defaults</param>
+    void CreateDefaultProfile(string profileName, ConfigurationStore store);
 }

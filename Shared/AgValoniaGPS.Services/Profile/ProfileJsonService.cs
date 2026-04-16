@@ -19,12 +19,13 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AgValoniaGPS.Models;
-using AgValoniaGPS.Models.Tool;
+using AgValoniaGPS.Models.Configuration;
 
 namespace AgValoniaGPS.Services.Profile;
 
 /// <summary>
 /// Saves and loads vehicle profiles as structured JSON, replacing the flat AgOpenGPS XML format.
+/// Serializes directly from/to ConfigurationStore sub-configs.
 /// Key improvement: dynamic section array (no 17-section hard limit).
 /// </summary>
 public static class ProfileJsonService
@@ -47,33 +48,35 @@ public static class ProfileJsonService
     }
 
     /// <summary>
-    /// Save a VehicleProfile as JSON.
+    /// Save the current ConfigurationStore state as a JSON profile.
     /// </summary>
-    public static void Save(string vehiclesDirectory, VehicleProfile profile)
+    public static void Save(string vehiclesDirectory, string profileName, ConfigurationStore store)
     {
         if (!Directory.Exists(vehiclesDirectory))
             Directory.CreateDirectory(vehiclesDirectory);
 
-        var dto = ToDto(profile);
+        var dto = ToDto(profileName, store);
         var json = JsonSerializer.Serialize(dto, Options);
-        File.WriteAllText(GetJsonPath(vehiclesDirectory, profile.Name), json);
+        File.WriteAllText(GetJsonPath(vehiclesDirectory, profileName), json);
     }
 
     /// <summary>
-    /// Load a VehicleProfile from a JSON file. Returns null if the file does not exist.
+    /// Load a JSON profile directly into a ConfigurationStore.
+    /// Returns true if the file was found and loaded successfully.
     /// </summary>
-    public static VehicleProfile? Load(string vehiclesDirectory, string profileName)
+    public static bool Load(string vehiclesDirectory, string profileName, ConfigurationStore store)
     {
         var path = GetJsonPath(vehiclesDirectory, profileName);
         if (!File.Exists(path))
-            return null;
+            return false;
 
         var json = File.ReadAllText(path);
         var dto = JsonSerializer.Deserialize<ProfileDto>(json, Options);
         if (dto == null)
-            return null;
+            return false;
 
-        return FromDto(dto, profileName, path);
+        ApplyDtoToStore(dto, profileName, path, store);
+        return true;
     }
 
     private static string GetJsonPath(string vehiclesDirectory, string profileName)
@@ -82,161 +85,158 @@ public static class ProfileJsonService
     }
 
     // ---------------------------------------------------------------
-    // DTO <-> VehicleProfile mapping
+    // ConfigurationStore -> DTO mapping
     // ---------------------------------------------------------------
 
-    private static ProfileDto ToDto(VehicleProfile p)
+    private static ProfileDto ToDto(string profileName, ConfigurationStore store)
     {
         // Trim trailing zeros from section positions
-        int usedPositions = p.NumSections + 1;
+        int usedPositions = store.NumSections + 1;
         var sectionPositions = new double[usedPositions];
-        Array.Copy(p.SectionPositions, sectionPositions, Math.Min(usedPositions, p.SectionPositions.Length));
+        Array.Copy(store.SectionPositions, sectionPositions, Math.Min(usedPositions, store.SectionPositions.Length));
 
         return new ProfileDto
         {
             FormatVersion = 1,
             Vehicle = new VehicleDto
             {
-                AntennaHeight = p.Vehicle.AntennaHeight,
-                AntennaPivot = p.Vehicle.AntennaPivot,
-                AntennaOffset = p.Vehicle.AntennaOffset,
-                Wheelbase = p.Vehicle.Wheelbase,
-                TrackWidth = p.Vehicle.TrackWidth,
-                Type = (int)p.Vehicle.Type,
-                MaxSteerAngle = p.Vehicle.MaxSteerAngle,
-                MaxAngularVelocity = p.Vehicle.MaxAngularVelocity,
+                AntennaHeight = store.Vehicle.AntennaHeight,
+                AntennaPivot = store.Vehicle.AntennaPivot,
+                AntennaOffset = store.Vehicle.AntennaOffset,
+                Wheelbase = store.Vehicle.Wheelbase,
+                TrackWidth = store.Vehicle.TrackWidth,
+                Type = (int)store.Vehicle.Type,
+                MaxSteerAngle = store.Vehicle.MaxSteerAngle,
+                MaxAngularVelocity = store.Vehicle.MaxAngularVelocity,
             },
             Guidance = new GuidanceDto
             {
-                GoalPointLookAheadHold = p.Vehicle.GoalPointLookAheadHold,
-                GoalPointLookAheadMult = p.Vehicle.GoalPointLookAheadMult,
-                GoalPointAcquireFactor = p.Vehicle.GoalPointAcquireFactor,
-                StanleyDistanceErrorGain = p.Vehicle.StanleyDistanceErrorGain,
-                StanleyHeadingErrorGain = p.Vehicle.StanleyHeadingErrorGain,
-                StanleyIntegralGainAB = p.Vehicle.StanleyIntegralGainAB,
-                PurePursuitIntegralGain = p.Vehicle.PurePursuitIntegralGain,
-                IsPurePursuit = p.IsPurePursuit,
-                UTurnCompensation = p.Vehicle.UTurnCompensation,
+                GoalPointLookAheadHold = store.Guidance.GoalPointLookAheadHold,
+                GoalPointLookAheadMult = store.Guidance.GoalPointLookAheadMult,
+                GoalPointAcquireFactor = store.Guidance.GoalPointAcquireFactor,
+                StanleyDistanceErrorGain = store.Guidance.StanleyDistanceErrorGain,
+                StanleyHeadingErrorGain = store.Guidance.StanleyHeadingErrorGain,
+                StanleyIntegralGainAB = store.Guidance.StanleyIntegralGainAB,
+                PurePursuitIntegralGain = store.Guidance.PurePursuitIntegralGain,
+                IsPurePursuit = store.Guidance.IsPurePursuit,
+                UTurnCompensation = store.Guidance.UTurnCompensation,
             },
             Tool = new ToolDto
             {
-                Width = p.Tool.Width,
-                Overlap = p.Tool.Overlap,
-                Offset = p.Tool.Offset,
-                HitchLength = p.Tool.HitchLength,
-                TrailingHitchLength = p.Tool.TrailingHitchLength,
-                TankTrailingHitchLength = p.Tool.TankTrailingHitchLength,
-                TrailingToolToPivotLength = p.Tool.TrailingToolToPivotLength,
-                IsToolTrailing = p.Tool.IsToolTrailing,
-                IsToolTBT = p.Tool.IsToolTBT,
-                IsToolRearFixed = p.Tool.IsToolRearFixed,
-                IsToolFrontFixed = p.Tool.IsToolFrontFixed,
-                MinCoverage = p.Tool.MinCoverage,
-                IsMultiColoredSections = p.Tool.IsMultiColoredSections,
-                IsSectionsNotZones = p.Tool.IsSectionsNotZones,
-                IsSectionOffWhenOut = p.Tool.IsSectionOffWhenOut,
-                IsHeadlandSectionControl = p.Tool.IsHeadlandSectionControl,
-                LookAheadOn = p.Tool.LookAheadOnSetting,
-                LookAheadOff = p.Tool.LookAheadOffSetting,
-                TurnOffDelay = p.Tool.TurnOffDelay,
+                Width = store.Tool.Width,
+                Overlap = store.Tool.Overlap,
+                Offset = store.Tool.Offset,
+                HitchLength = store.Tool.HitchLength,
+                TrailingHitchLength = store.Tool.TrailingHitchLength,
+                TankTrailingHitchLength = store.Tool.TankTrailingHitchLength,
+                TrailingToolToPivotLength = store.Tool.TrailingToolToPivotLength,
+                IsToolTrailing = store.Tool.IsToolTrailing,
+                IsToolTBT = store.Tool.IsToolTBT,
+                IsToolRearFixed = store.Tool.IsToolRearFixed,
+                IsToolFrontFixed = store.Tool.IsToolFrontFixed,
+                MinCoverage = store.Tool.MinCoverage,
+                IsMultiColoredSections = store.Tool.IsMultiColoredSections,
+                IsSectionsNotZones = store.Tool.IsSectionsNotZones,
+                IsSectionOffWhenOut = store.Tool.IsSectionOffWhenOut,
+                IsHeadlandSectionControl = store.Tool.IsHeadlandSectionControl,
+                LookAheadOn = store.Tool.LookAheadOnSetting,
+                LookAheadOff = store.Tool.LookAheadOffSetting,
+                TurnOffDelay = store.Tool.TurnOffDelay,
             },
             Sections = new SectionsDto
             {
-                Count = p.NumSections,
+                Count = store.NumSections,
                 Positions = sectionPositions,
             },
             YouTurn = new YouTurnDto
             {
-                TurnRadius = p.YouTurn.TurnRadius,
-                ExtensionLength = p.YouTurn.ExtensionLength,
-                DistanceFromBoundary = p.YouTurn.DistanceFromBoundary,
-                SkipWidth = p.YouTurn.SkipWidth,
-                Style = p.YouTurn.Style,
-                Smoothing = p.YouTurn.Smoothing,
+                TurnRadius = store.Guidance.UTurnRadius,
+                ExtensionLength = store.Guidance.UTurnExtension,
+                DistanceFromBoundary = store.Guidance.UTurnDistanceFromBoundary,
+                SkipWidth = store.Guidance.UTurnSkipWidth,
+                Style = store.Guidance.UTurnStyle,
+                Smoothing = store.Guidance.UTurnSmoothing,
             },
             General = new GeneralDto
             {
-                IsMetric = p.IsMetric,
-                IsSimulatorOn = p.IsSimulatorOn,
-                SimLatitude = p.SimLatitude,
-                SimLongitude = p.SimLongitude,
+                IsMetric = store.IsMetric,
+                IsSimulatorOn = store.Simulator.Enabled,
+                SimLatitude = store.Simulator.Latitude,
+                SimLongitude = store.Simulator.Longitude,
             },
         };
     }
 
-#pragma warning disable CS0612 // Type or member is obsolete (VehicleProfile/VehicleConfiguration/ToolConfiguration/YouTurnConfiguration)
-    private static VehicleProfile FromDto(ProfileDto dto, string profileName, string filePath)
+    // ---------------------------------------------------------------
+    // DTO -> ConfigurationStore mapping
+    // ---------------------------------------------------------------
+
+    private static void ApplyDtoToStore(ProfileDto dto, string profileName, string filePath, ConfigurationStore store)
     {
+        // Vehicle config
+        store.Vehicle.Name = profileName;
+        store.Vehicle.AntennaHeight = dto.Vehicle?.AntennaHeight ?? 3.0;
+        store.Vehicle.AntennaPivot = dto.Vehicle?.AntennaPivot ?? 0.0;
+        store.Vehicle.AntennaOffset = dto.Vehicle?.AntennaOffset ?? 0.0;
+        store.Vehicle.Wheelbase = dto.Vehicle?.Wheelbase ?? 2.5;
+        store.Vehicle.TrackWidth = dto.Vehicle?.TrackWidth ?? 1.8;
+        store.Vehicle.Type = (VehicleType)(dto.Vehicle?.Type ?? 0);
+        store.Vehicle.MaxSteerAngle = dto.Vehicle?.MaxSteerAngle ?? 35.0;
+        store.Vehicle.MaxAngularVelocity = dto.Vehicle?.MaxAngularVelocity ?? 35.0;
+
+        // Guidance config
+        store.Guidance.IsPurePursuit = dto.Guidance?.IsPurePursuit ?? true;
+        store.Guidance.GoalPointLookAheadHold = dto.Guidance?.GoalPointLookAheadHold ?? 4.0;
+        store.Guidance.GoalPointLookAheadMult = dto.Guidance?.GoalPointLookAheadMult ?? 1.4;
+        store.Guidance.GoalPointAcquireFactor = dto.Guidance?.GoalPointAcquireFactor ?? 1.5;
+        store.Guidance.StanleyDistanceErrorGain = dto.Guidance?.StanleyDistanceErrorGain ?? 0.8;
+        store.Guidance.StanleyHeadingErrorGain = dto.Guidance?.StanleyHeadingErrorGain ?? 1.0;
+        store.Guidance.StanleyIntegralGainAB = dto.Guidance?.StanleyIntegralGainAB ?? 0.0;
+        store.Guidance.PurePursuitIntegralGain = dto.Guidance?.PurePursuitIntegralGain ?? 0.0;
+        store.Guidance.UTurnCompensation = dto.Guidance?.UTurnCompensation ?? 1.0;
+
+        // U-Turn settings
+        store.Guidance.UTurnRadius = dto.YouTurn?.TurnRadius ?? 8.0;
+        store.Guidance.UTurnExtension = dto.YouTurn?.ExtensionLength ?? 20.0;
+        store.Guidance.UTurnDistanceFromBoundary = dto.YouTurn?.DistanceFromBoundary ?? 2.0;
+        store.Guidance.UTurnSkipWidth = dto.YouTurn?.SkipWidth ?? 1;
+        store.Guidance.UTurnStyle = dto.YouTurn?.Style ?? 0;
+        store.Guidance.UTurnSmoothing = dto.YouTurn?.Smoothing ?? 14;
+
+        // Tool config
+        store.Tool.Width = dto.Tool?.Width ?? 6.0;
+        store.Tool.Overlap = dto.Tool?.Overlap ?? 0.0;
+        store.Tool.Offset = dto.Tool?.Offset ?? 0.0;
+        store.Tool.HitchLength = dto.Tool?.HitchLength ?? 1.8;
+        store.Tool.TrailingHitchLength = dto.Tool?.TrailingHitchLength ?? -2.5;
+        store.Tool.TankTrailingHitchLength = dto.Tool?.TankTrailingHitchLength ?? 3.0;
+        store.Tool.TrailingToolToPivotLength = dto.Tool?.TrailingToolToPivotLength ?? 0.0;
+        store.Tool.IsToolTrailing = dto.Tool?.IsToolTrailing ?? false;
+        store.Tool.IsToolTBT = dto.Tool?.IsToolTBT ?? false;
+        store.Tool.IsToolRearFixed = dto.Tool?.IsToolRearFixed ?? true;
+        store.Tool.IsToolFrontFixed = dto.Tool?.IsToolFrontFixed ?? false;
+        store.Tool.LookAheadOnSetting = dto.Tool?.LookAheadOn ?? 1.0;
+        store.Tool.LookAheadOffSetting = dto.Tool?.LookAheadOff ?? 0.5;
+        store.Tool.TurnOffDelay = dto.Tool?.TurnOffDelay ?? 0.0;
+        store.Tool.MinCoverage = dto.Tool?.MinCoverage ?? 100;
+        store.Tool.IsMultiColoredSections = dto.Tool?.IsMultiColoredSections ?? false;
+        store.Tool.IsSectionOffWhenOut = dto.Tool?.IsSectionOffWhenOut ?? true;
+        store.Tool.IsHeadlandSectionControl = dto.Tool?.IsHeadlandSectionControl ?? true;
+
+        // Section config
+        store.NumSections = dto.Sections?.Count ?? 1;
         var sectionPositions = new double[17];
         if (dto.Sections?.Positions != null)
             Array.Copy(dto.Sections.Positions, sectionPositions, Math.Min(dto.Sections.Positions.Length, 17));
+        store.SectionPositions = sectionPositions;
 
-        return new VehicleProfile
-        {
-            Name = profileName,
-            FilePath = filePath,
-            Vehicle = new VehicleConfiguration
-            {
-                AntennaHeight = dto.Vehicle?.AntennaHeight ?? 3.0,
-                AntennaPivot = dto.Vehicle?.AntennaPivot ?? 0.0,
-                AntennaOffset = dto.Vehicle?.AntennaOffset ?? 0.0,
-                Wheelbase = dto.Vehicle?.Wheelbase ?? 2.5,
-                TrackWidth = dto.Vehicle?.TrackWidth ?? 1.8,
-                Type = (VehicleType)(dto.Vehicle?.Type ?? 0),
-                MaxSteerAngle = dto.Vehicle?.MaxSteerAngle ?? 35.0,
-                MaxAngularVelocity = dto.Vehicle?.MaxAngularVelocity ?? 35.0,
-                GoalPointLookAheadHold = dto.Guidance?.GoalPointLookAheadHold ?? 4.0,
-                GoalPointLookAheadMult = dto.Guidance?.GoalPointLookAheadMult ?? 1.4,
-                GoalPointAcquireFactor = dto.Guidance?.GoalPointAcquireFactor ?? 1.5,
-                StanleyDistanceErrorGain = dto.Guidance?.StanleyDistanceErrorGain ?? 0.8,
-                StanleyHeadingErrorGain = dto.Guidance?.StanleyHeadingErrorGain ?? 1.0,
-                StanleyIntegralGainAB = dto.Guidance?.StanleyIntegralGainAB ?? 0.0,
-                PurePursuitIntegralGain = dto.Guidance?.PurePursuitIntegralGain ?? 0.0,
-                UTurnCompensation = dto.Guidance?.UTurnCompensation ?? 1.0,
-            },
-            Tool = new ToolConfiguration
-            {
-                Width = dto.Tool?.Width ?? 6.0,
-                Overlap = dto.Tool?.Overlap ?? 0.0,
-                Offset = dto.Tool?.Offset ?? 0.0,
-                HitchLength = dto.Tool?.HitchLength ?? -1.8,
-                TrailingHitchLength = dto.Tool?.TrailingHitchLength ?? -2.5,
-                TankTrailingHitchLength = dto.Tool?.TankTrailingHitchLength ?? 3.0,
-                TrailingToolToPivotLength = dto.Tool?.TrailingToolToPivotLength ?? 0.0,
-                IsToolTrailing = dto.Tool?.IsToolTrailing ?? false,
-                IsToolTBT = dto.Tool?.IsToolTBT ?? false,
-                IsToolRearFixed = dto.Tool?.IsToolRearFixed ?? true,
-                IsToolFrontFixed = dto.Tool?.IsToolFrontFixed ?? false,
-                NumOfSections = dto.Sections?.Count ?? 1,
-                MinCoverage = dto.Tool?.MinCoverage ?? 100,
-                IsMultiColoredSections = dto.Tool?.IsMultiColoredSections ?? false,
-                IsSectionsNotZones = dto.Tool?.IsSectionsNotZones ?? true,
-                IsSectionOffWhenOut = dto.Tool?.IsSectionOffWhenOut ?? true,
-                IsHeadlandSectionControl = dto.Tool?.IsHeadlandSectionControl ?? true,
-                LookAheadOnSetting = dto.Tool?.LookAheadOn ?? 1.0,
-                LookAheadOffSetting = dto.Tool?.LookAheadOff ?? 0.5,
-                TurnOffDelay = dto.Tool?.TurnOffDelay ?? 0.0,
-            },
-            YouTurn = new YouTurnConfiguration
-            {
-                TurnRadius = dto.YouTurn?.TurnRadius ?? 8.0,
-                ExtensionLength = dto.YouTurn?.ExtensionLength ?? 20.0,
-                DistanceFromBoundary = dto.YouTurn?.DistanceFromBoundary ?? 2.0,
-                SkipWidth = dto.YouTurn?.SkipWidth ?? 1,
-                Style = dto.YouTurn?.Style ?? 0,
-                Smoothing = dto.YouTurn?.Smoothing ?? 14,
-                UTurnCompensation = dto.Guidance?.UTurnCompensation ?? 1.0,
-            },
-            SectionPositions = sectionPositions,
-            NumSections = dto.Sections?.Count ?? 1,
-            IsMetric = dto.General?.IsMetric ?? false,
-            IsPurePursuit = dto.Guidance?.IsPurePursuit ?? true,
-            IsSimulatorOn = dto.General?.IsSimulatorOn ?? true,
-            SimLatitude = dto.General?.SimLatitude ?? 32.5904315166667,
-            SimLongitude = dto.General?.SimLongitude ?? -87.1804217333333,
-        };
+        // Display config
+        store.IsMetric = dto.General?.IsMetric ?? false;
+
+        // Profile metadata
+        store.ActiveProfileName = profileName;
+        store.ActiveProfilePath = filePath;
     }
-#pragma warning restore CS0612
 
     // ---------------------------------------------------------------
     // DTOs -- structured JSON representation
