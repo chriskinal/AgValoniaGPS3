@@ -55,10 +55,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                Fill="{DynamicResource SystemControlBackgroundBaseLowBrush}" RadiusX="8" RadiusY="8"/>
                     <!-- Front wheel -->
                     <Ellipse Canvas.Left="180" Canvas.Top="50" Width="30" Height="30"
-                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                             Fill="{DynamicResource SystemControlHighlightAccentBrush}" Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <!-- Rear wheel -->
                     <Ellipse Canvas.Left="70" Canvas.Top="50" Width="30" Height="30"
-                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                             Fill="{DynamicResource SystemControlHighlightAccentBrush}" Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <!-- Wheelbase arrow line -->
                     <Line StartPoint="0,0" EndPoint="110,0"
                           Canvas.Left="85" Canvas.Top="90"
@@ -87,7 +87,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="Bold"
                                    Width="180"
                                    HorizontalContentAlignment="Center"
-                                   Background="#1E2A35"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"
