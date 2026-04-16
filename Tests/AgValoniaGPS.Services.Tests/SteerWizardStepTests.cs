@@ -1,3 +1,4 @@
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.ViewModels.Wizards;
@@ -88,6 +89,84 @@ public class SteerWizardStepTests
     {
         var step = new WelcomeStepViewModel();
         Assert.That(await step.ValidateAsync(), Is.True);
+    }
+
+    // =========================================================================
+    // VehicleTypeStepViewModel
+    // =========================================================================
+
+    [Test]
+    public void VehicleTypeStep_HasCorrectTitle()
+    {
+        var step = new VehicleTypeStepViewModel(_configService);
+        Assert.That(step.Title, Is.EqualTo("Vehicle Type"));
+    }
+
+    [Test]
+    public void VehicleTypeStep_OnEntering_LoadsFromConfig()
+    {
+        _store.Vehicle.Type = VehicleType.Harvester;
+        var testable = new TestableStep<VehicleTypeStepViewModel>(
+            new VehicleTypeStepViewModel(_configService));
+
+        testable.Enter();
+
+        Assert.That(testable.Step.VehicleType, Is.EqualTo(VehicleType.Harvester));
+    }
+
+    [Test]
+    public void VehicleTypeStep_OnLeaving_SavesToConfig()
+    {
+        var testable = new TestableStep<VehicleTypeStepViewModel>(
+            new VehicleTypeStepViewModel(_configService));
+        testable.Enter();
+        testable.Step.VehicleType = VehicleType.FourWD;
+
+        testable.Leave();
+
+        Assert.That(_store.Vehicle.Type, Is.EqualTo(VehicleType.FourWD));
+    }
+
+    [Test]
+    public async Task VehicleTypeStep_Validation_AlwaysPasses()
+    {
+        var step = new VehicleTypeStepViewModel(_configService);
+        step.VehicleType = VehicleType.Tractor;
+        Assert.That(await step.ValidateAsync(), Is.True);
+
+        step.VehicleType = VehicleType.Harvester;
+        Assert.That(await step.ValidateAsync(), Is.True);
+
+        step.VehicleType = VehicleType.FourWD;
+        Assert.That(await step.ValidateAsync(), Is.True);
+    }
+
+    [Test]
+    public void VehicleTypeStep_SelectionHelpers()
+    {
+        var step = new VehicleTypeStepViewModel(_configService);
+
+        step.SelectTractor();
+        Assert.That(step.IsTractorSelected, Is.True);
+        Assert.That(step.IsHarvesterSelected, Is.False);
+        Assert.That(step.IsFourWDSelected, Is.False);
+
+        step.SelectHarvester();
+        Assert.That(step.IsHarvesterSelected, Is.True);
+        Assert.That(step.IsTractorSelected, Is.False);
+        Assert.That(step.IsFourWDSelected, Is.False);
+
+        step.SelectFourWD();
+        Assert.That(step.IsFourWDSelected, Is.True);
+        Assert.That(step.IsTractorSelected, Is.False);
+        Assert.That(step.IsHarvesterSelected, Is.False);
+    }
+
+    [Test]
+    public void VehicleTypeStep_CanSkip_IsFalse()
+    {
+        var step = new VehicleTypeStepViewModel(_configService);
+        Assert.That(step.CanSkip, Is.False);
     }
 
     // =========================================================================

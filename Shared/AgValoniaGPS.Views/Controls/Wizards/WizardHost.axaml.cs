@@ -74,6 +74,7 @@ public partial class WizardHost : UserControl
         {
             // Group A: Introduction
             WelcomeStepViewModel => new WelcomeStepView(),
+            VehicleTypeStepViewModel => new VehicleTypeStepView(),
 
             // Group B: Vehicle Dimensions
             WheelbaseStepViewModel => new WheelbaseStepView(),
