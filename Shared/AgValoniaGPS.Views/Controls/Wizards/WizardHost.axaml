@@ -39,7 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Height" Value="14"/>
         </Style>
         <Style Selector="Ellipse.step-dot.completed">
-            <Setter Property="Fill" Value="#1ABC9C"/>
+            <Setter Property="Fill" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Opacity" Value="0.8"/>
         </Style>
 
@@ -54,7 +54,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         <Style Selector="Button.wizard-nav.primary">
-            <Setter Property="Background" Value="#1ABC9C"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
         <Style Selector="Button.wizard-nav.secondary">
@@ -76,7 +76,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="{Binding WizardTitle}"
                            FontSize="22" FontWeight="Bold"
-                           Foreground="#1ABC9C"
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                            VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding StepDisplay}"
@@ -92,10 +92,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                      Value="{Binding ProgressPercent}"
                      Height="6"
                      Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                     Foreground="#1ABC9C"/>
+                     Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
 
         <!-- Step content area -->
-        <Border Grid.Row="2" Background="#1E2A35" Padding="20">
+        <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="20">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ContentControl Content="{Binding CurrentStep}"

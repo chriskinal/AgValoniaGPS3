@@ -74,10 +74,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                              Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" Stroke="#6C7A89" StrokeThickness="2"/>
                     <!-- GPS Antenna on roof -->
                     <Ellipse Canvas.Left="132" Canvas.Top="35" Width="16" Height="16"
-                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                             Fill="{DynamicResource SystemControlHighlightAccentBrush}" Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <Line StartPoint="0,0" EndPoint="0,5"
                           Canvas.Left="140" Canvas.Top="51"
-                          Stroke="#1ABC9C" StrokeThickness="2"/>
+                          Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <!-- Height arrow (vertical) -->
                     <Line StartPoint="0,0" EndPoint="0,57"
                           Canvas.Left="230" Canvas.Top="43"
@@ -109,7 +109,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="Bold"
                                    Width="180"
                                    HorizontalContentAlignment="Center"
-                                   Background="#1E2A35"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"

@@ -33,7 +33,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Border Background="#C0000000" PointerPressed="Backdrop_PointerPressed"/>
 
         <!-- Wizard container - centered, responsive size -->
-        <Border Background="#1E2A35"
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                 CornerRadius="12"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
