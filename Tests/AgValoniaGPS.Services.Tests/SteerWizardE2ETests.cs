@@ -58,7 +58,7 @@ public class SteerWizardE2ETests
     public async Task FullWizardCompletion_NavigatesAllSteps_AndFiresCompleted()
     {
         var wizard = CreateWizard();
-        Assert.That(wizard.Steps.Count, Is.EqualTo(18), "Wizard should have 18 steps");
+        Assert.That(wizard.Steps.Count, Is.EqualTo(19), "Wizard should have 19 steps");
 
         // Set valid values for steps that require validation
         _store.Vehicle.Wheelbase = 2.5;
@@ -75,21 +75,21 @@ public class SteerWizardE2ETests
         visitedTitles.Add(wizard.CurrentStep!.Title);
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Welcome to AutoSteer Setup"));
 
-        // Navigate through steps 0..16 (all except last) via NextCommand
-        for (var i = 0; i < 17; i++)
+        // Navigate through steps 0..17 (all except last) via NextCommand
+        for (var i = 0; i < 18; i++)
         {
             await ExecuteNextAsync(wizard);
             visitedTitles.Add(wizard.CurrentStep!.Title);
         }
 
-        // Should be on last step (index 17)
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(17));
+        // Should be on last step (index 18)
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(18));
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Setup Complete"));
         Assert.That(wizard.IsOnLastStep, Is.True);
 
-        // All 18 step titles should be unique
-        Assert.That(visitedTitles.Count, Is.EqualTo(18));
-        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(18),
+        // All 19 step titles should be unique
+        Assert.That(visitedTitles.Count, Is.EqualTo(19));
+        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(19),
             "All step titles should be unique");
 
         // Finish the wizard
@@ -112,13 +112,13 @@ public class SteerWizardE2ETests
 
         var wizard = CreateWizard();
 
-        // Navigate to wheelbase step (index 1) and modify
-        wizard.GoToStep(1);
+        // Navigate to wheelbase step (index 2) and modify
+        wizard.GoToStep(2);
         var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
         wheelbaseStep.Wheelbase = 9.9;
 
-        // Navigate to track width step (index 2) and modify
-        wizard.GoToStep(2);
+        // Navigate to track width step (index 3) and modify
+        wizard.GoToStep(3);
         var trackWidthStep = (TrackWidthStepViewModel)wizard.CurrentStep!;
         trackWidthStep.TrackWidth = 5.5;
 
@@ -156,9 +156,9 @@ public class SteerWizardE2ETests
     public void NavigationState_LastStep_CorrectFlags()
     {
         var wizard = CreateWizard();
-        wizard.GoToStep(17);
+        wizard.GoToStep(18);
 
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(17));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(18));
         Assert.That(wizard.IsOnLastStep, Is.True);
         Assert.That(wizard.IsOnFirstStep, Is.False);
         Assert.That(wizard.CanGoNext, Is.False);
@@ -170,7 +170,7 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Navigate to step 5 (AntennaOffset - a middle step)
+        // Navigate to step 5 (AntennaHeight - a middle step)
         _store.Vehicle.Wheelbase = 2.5;
         _store.Vehicle.TrackWidth = 1.8;
         _store.Vehicle.AntennaPivot = 1.0;
@@ -195,8 +195,8 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Step 4 (AntennaHeight) has CanSkip=true
-        wizard.GoToStep(4);
+        // Step 5 (AntennaHeight) has CanSkip=true
+        wizard.GoToStep(5);
         Assert.That(wizard.CurrentStep!.CanSkip, Is.True,
             "AntennaHeight step should be skippable");
         Assert.That(wizard.CanSkip, Is.True);
@@ -213,10 +213,10 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Step 1 (Wheelbase) has CanSkip=false
+        // Step 1 (VehicleType) has CanSkip=false
         wizard.GoToStep(1);
         Assert.That(wizard.CurrentStep!.CanSkip, Is.False,
-            "Wheelbase step should not be skippable");
+            "VehicleType step should not be skippable");
         Assert.That(wizard.CanSkip, Is.False);
 
         var indexBefore = wizard.CurrentStepIndex;
@@ -237,9 +237,10 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step
+        // Go to wheelbase step (index 2, after Welcome and VehicleType)
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1));
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Set a value
         var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
@@ -247,11 +248,11 @@ public class SteerWizardE2ETests
 
         // Go next (triggers OnLeaving which saves to config)
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(3));
 
         // Go back (triggers OnEntering which loads from config)
         wizard.BackCommand.Execute(null);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         var sameStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
         Assert.That(sameStep.Wheelbase, Is.EqualTo(4.2),
@@ -267,9 +268,10 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step
+        // Go to wheelbase step (index 2, after Welcome and VehicleType)
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1));
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Set invalid value (too small)
         var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
@@ -277,7 +279,7 @@ public class SteerWizardE2ETests
 
         // Try to go next - should stay on same step
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1),
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2),
             "Should stay on step when validation fails");
         Assert.That(wheelbaseStep.ValidationMessage, Is.Not.Null.And.Not.Empty,
             "Validation message should be set");
@@ -288,9 +290,10 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step
+        // Go to wheelbase step (index 2, after Welcome and VehicleType)
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1));
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Set valid value
         var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
@@ -298,7 +301,7 @@ public class SteerWizardE2ETests
 
         // Try to go next - should advance
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2),
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(3),
             "Should advance when validation passes");
     }
 
@@ -313,20 +316,20 @@ public class SteerWizardE2ETests
         _store.Vehicle.Wheelbase = 2.5;
 
         var initialProgress = wizard.Progress;
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 18"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 19"));
         Assert.That(initialProgress, Is.GreaterThan(0));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 18"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 19"));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 18"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 19"));
 
         // Jump to last step
-        wizard.GoToStep(17);
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 18 of 18"));
+        wizard.GoToStep(18);
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 19 of 19"));
         Assert.That(wizard.Progress, Is.EqualTo(1.0).Within(0.001));
     }
 
@@ -366,7 +369,7 @@ public class SteerWizardE2ETests
     public async Task CompletedEvent_FiresOnFinish()
     {
         var wizard = CreateWizard();
-        wizard.GoToStep(17);
+        wizard.GoToStep(18);
 
         var completedFired = false;
         wizard.Completed += (_, _) => completedFired = true;
@@ -394,7 +397,7 @@ public class SteerWizardE2ETests
     {
         // Test finish path
         var wizard1 = CreateWizard();
-        wizard1.GoToStep(17);
+        wizard1.GoToStep(18);
         var closeOnFinish = false;
         wizard1.CloseRequested += (_, _) => closeOnFinish = true;
         await ExecuteFinishAsync(wizard1);
@@ -419,9 +422,10 @@ public class SteerWizardE2ETests
 
         var wizard = CreateWizard();
 
-        // Navigate to wheelbase step
+        // Navigate to wheelbase step (index 2, after Welcome and VehicleType)
         await ExecuteNextAsync(wizard);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1));
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Modify wheelbase value
         var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
@@ -431,7 +435,7 @@ public class SteerWizardE2ETests
         await ExecuteNextAsync(wizard);
 
         // Jump to finish and complete
-        wizard.GoToStep(17);
+        wizard.GoToStep(18);
         await ExecuteFinishAsync(wizard);
 
         // Verify the config store has the new value

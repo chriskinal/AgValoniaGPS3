@@ -36,6 +36,7 @@ public class SteerWizardViewModel : WizardViewModel
 
         // Group A: Introduction
         AddStep(new WelcomeStepViewModel());
+        AddStep(new VehicleTypeStepViewModel(configService));
 
         // Group B: Vehicle Dimensions
         AddStep(new WheelbaseStepViewModel(configService));
