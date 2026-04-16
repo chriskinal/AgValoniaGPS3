@@ -50,6 +50,18 @@ public class SteerWizardViewModel : WizardViewModel
         AddStep(new InvertSettingsStepViewModel(configService));
         AddStep(new DanfossStepViewModel(configService));
 
+        // Group D: Sensor Calibration
+        AddStep(new WasCalibrationStepViewModel(configService));
+
+        // Group E: Steering Tuning
+        AddStep(new SteeringGainsStepViewModel(configService));
+        AddStep(new PwmCalibrationStepViewModel(configService));
+        AddStep(new AlgorithmSelectionStepViewModel(configService));
+
+        // Group F: Operating Limits
+        AddStep(new SpeedLimitsStepViewModel(configService));
+        AddStep(new SensorsStepViewModel(configService));
+
         // Group G: Completion
         AddStep(new FinishStepViewModel());
 
