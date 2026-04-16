@@ -40,6 +40,7 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     private readonly IConfigurationService _configService;
     private readonly IUdpCommunicationService? _udpService;
     private readonly IAutoSteerService? _autoSteerService;
+    private readonly Action? _launchWizard;
 
     // Debounce timer for auto-sending slider changes
     private readonly System.Timers.Timer _sliderDebounceTimer;
@@ -65,11 +66,13 @@ public partial class AutoSteerConfigViewModel : ObservableObject
     public AutoSteerConfigViewModel(
         IConfigurationService configService,
         IUdpCommunicationService? udpService = null,
-        IAutoSteerService? autoSteerService = null)
+        IAutoSteerService? autoSteerService = null,
+        Action? launchWizard = null)
     {
         _configService = configService;
         _udpService = udpService;
         _autoSteerService = autoSteerService;
+        _launchWizard = launchWizard;
 
         // Set up debounce timer for slider changes
         _sliderDebounceTimer = new System.Timers.Timer(SliderDebounceDelayMs);
@@ -974,7 +977,9 @@ public partial class AutoSteerConfigViewModel : ObservableObject
 
         WizardCommand = new RelayCommand(() =>
         {
-            // TODO: Launch setup wizard
+            // Close the config panel before launching the wizard
+            IsPanelVisible = false;
+            _launchWizard?.Invoke();
         });
     }
 
