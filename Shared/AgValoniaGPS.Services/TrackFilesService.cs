@@ -18,10 +18,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
+using TrackModel = AgValoniaGPS.Models.Track.Track;
 
 namespace AgValoniaGPS.Services
 {
@@ -35,16 +35,48 @@ namespace AgValoniaGPS.Services
         private const string Header = "$TrackLines";
 
         /// <summary>
-        /// Load tracks from TrackLines.txt file.
+        /// Map legacy TrackMode (file format) to TrackType (runtime model).
+        /// </summary>
+        private static TrackType MapTrackMode(TrackMode mode) => mode switch
+        {
+            TrackMode.AB => TrackType.ABLine,
+            TrackMode.Curve => TrackType.Curve,
+            TrackMode.BndTrackOuter => TrackType.BoundaryOuter,
+            TrackMode.BndTrackInner => TrackType.BoundaryInner,
+            TrackMode.BndCurve => TrackType.BoundaryCurve,
+            TrackMode.WaterPivot => TrackType.WaterPivot,
+            TrackMode.RecordedPath => TrackType.RecordedPath,
+            TrackMode.Contour => TrackType.Contour,
+            _ => TrackType.ABLine
+        };
+
+        /// <summary>
+        /// Map TrackType (runtime model) to legacy TrackMode (file format).
+        /// </summary>
+        private static TrackMode MapTrackType(TrackType type) => type switch
+        {
+            TrackType.ABLine => TrackMode.AB,
+            TrackType.Curve => TrackMode.Curve,
+            TrackType.BoundaryOuter => TrackMode.BndTrackOuter,
+            TrackType.BoundaryInner => TrackMode.BndTrackInner,
+            TrackType.BoundaryCurve => TrackMode.BndCurve,
+            TrackType.WaterPivot => TrackMode.WaterPivot,
+            TrackType.RecordedPath => TrackMode.RecordedPath,
+            TrackType.Contour => TrackMode.Contour,
+            _ => TrackMode.AB
+        };
+
+        /// <summary>
+        /// Load tracks from TrackLines.txt file as unified Track objects.
         /// </summary>
         /// <param name="fieldDirectory">Path to the field directory</param>
-        /// <returns>List of ABLine objects</returns>
-        public static List<ABLine> Load(string fieldDirectory)
+        /// <returns>List of Track objects</returns>
+        public static List<TrackModel> Load(string fieldDirectory)
         {
             if (string.IsNullOrWhiteSpace(fieldDirectory))
                 throw new ArgumentNullException(nameof(fieldDirectory));
 
-            var result = new List<ABLine>();
+            var result = new List<TrackModel>();
             var path = Path.Combine(fieldDirectory, FileName);
 
             if (!File.Exists(path))
@@ -118,18 +150,29 @@ namespace AgValoniaGPS.Services
                         curvePoints.Add(new Vec3(easting, northing, pointHeading));
                     }
 
-                    // Build ABLine - convert heading from radians to degrees
-                    var track = new ABLine
+                    // Build Track directly from file fields
+                    var track = new TrackModel
                     {
                         Name = name,
-                        Heading = headingRadians * 180.0 / Math.PI,  // Convert to degrees
-                        PointA = new Position { Easting = aEasting, Northing = aNorthing },
-                        PointB = new Position { Easting = bEasting, Northing = bNorthing },
-                        NudgeDistance = nudgeDistance,
-                        Mode = mode,
+                        Type = MapTrackMode(mode),
                         IsVisible = isVisible,
-                        CurvePoints = curvePoints
+                        NudgeDistance = nudgeDistance,
+                        IsClosed = mode == TrackMode.WaterPivot
                     };
+
+                    // Use curve points if available, otherwise use A/B points
+                    if (curvePoints.Count > 0)
+                    {
+                        track.Points = new List<Vec3>(curvePoints);
+                    }
+                    else
+                    {
+                        track.Points = new List<Vec3>
+                        {
+                            new Vec3(aEasting, aNorthing, headingRadians),
+                            new Vec3(bEasting, bNorthing, headingRadians)
+                        };
+                    }
 
                     result.Add(track);
                 }
@@ -142,8 +185,8 @@ namespace AgValoniaGPS.Services
         /// Save tracks to TrackLines.txt file. Overwrites existing file.
         /// </summary>
         /// <param name="fieldDirectory">Path to the field directory</param>
-        /// <param name="tracks">List of ABLine objects to save</param>
-        public static void Save(string fieldDirectory, IReadOnlyList<ABLine> tracks)
+        /// <param name="tracks">List of Track objects to save</param>
+        public static void Save(string fieldDirectory, IReadOnlyList<TrackModel> tracks)
         {
             if (string.IsNullOrWhiteSpace(fieldDirectory))
                 throw new ArgumentNullException(nameof(fieldDirectory));
@@ -162,32 +205,42 @@ namespace AgValoniaGPS.Services
                     // Name
                     writer.WriteLine(track.Name ?? string.Empty);
 
-                    // Heading (convert from degrees to radians for file)
-                    var headingRadians = track.Heading * Math.PI / 180.0;
-                    writer.WriteLine(headingRadians.ToString(CultureInfo.InvariantCulture));
+                    // Heading in radians (Track.Heading already returns radians)
+                    writer.WriteLine(track.Heading.ToString(CultureInfo.InvariantCulture));
 
-                    // Point A (easting,northing)
-                    writer.WriteLine($"{FormatDouble(track.PointA.Easting, 3)},{FormatDouble(track.PointA.Northing, 3)}");
-
-                    // Point B (easting,northing)
-                    writer.WriteLine($"{FormatDouble(track.PointB.Easting, 3)},{FormatDouble(track.PointB.Northing, 3)}");
+                    // Point A (easting,northing) - first point
+                    if (track.Points.Count >= 2)
+                    {
+                        writer.WriteLine($"{FormatDouble(track.Points[0].Easting, 3)},{FormatDouble(track.Points[0].Northing, 3)}");
+                        writer.WriteLine($"{FormatDouble(track.Points[^1].Easting, 3)},{FormatDouble(track.Points[^1].Northing, 3)}");
+                    }
+                    else
+                    {
+                        writer.WriteLine("0.000,0.000");
+                        writer.WriteLine("0.000,0.000");
+                    }
 
                     // Nudge distance
                     writer.WriteLine(track.NudgeDistance.ToString(CultureInfo.InvariantCulture));
 
-                    // Mode (as integer)
-                    writer.WriteLine(((int)track.Mode).ToString(CultureInfo.InvariantCulture));
+                    // Mode (as integer, mapped from TrackType)
+                    writer.WriteLine(((int)MapTrackType(track.Type)).ToString(CultureInfo.InvariantCulture));
 
                     // Visibility
                     writer.WriteLine(track.IsVisible.ToString());
 
-                    // Curve points
-                    var pts = track.CurvePoints ?? new List<Vec3>();
-                    writer.WriteLine(pts.Count.ToString(CultureInfo.InvariantCulture));
-
-                    foreach (var p in pts)
+                    // Curve points - for non-AB-line tracks, store all points
+                    if (track.Points.Count > 2 || track.Type != TrackType.ABLine)
                     {
-                        writer.WriteLine($"{FormatDouble(p.Easting, 3)},{FormatDouble(p.Northing, 3)},{FormatDouble(p.Heading, 5)}");
+                        writer.WriteLine(track.Points.Count.ToString(CultureInfo.InvariantCulture));
+                        foreach (var p in track.Points)
+                        {
+                            writer.WriteLine($"{FormatDouble(p.Easting, 3)},{FormatDouble(p.Northing, 3)},{FormatDouble(p.Heading, 5)}");
+                        }
+                    }
+                    else
+                    {
+                        writer.WriteLine("0");
                     }
                 }
             }
@@ -202,34 +255,6 @@ namespace AgValoniaGPS.Services
                 return false;
 
             return File.Exists(Path.Combine(fieldDirectory, FileName));
-        }
-
-        /// <summary>
-        /// Load tracks from TrackLines.txt file as unified Track objects.
-        /// </summary>
-        /// <param name="fieldDirectory">Path to the field directory</param>
-        /// <returns>List of Track objects</returns>
-        public static List<Models.Track.Track> LoadTracks(string fieldDirectory)
-        {
-            var abLines = Load(fieldDirectory);
-            return abLines.Select(Models.Track.Track.FromABLine).ToList();
-        }
-
-        /// <summary>
-        /// Save unified Track objects to TrackLines.txt file.
-        /// </summary>
-        /// <param name="fieldDirectory">Path to the field directory</param>
-        /// <param name="tracks">List of Track objects to save</param>
-        public static void SaveTracks(string fieldDirectory, IReadOnlyList<Models.Track.Track> tracks)
-        {
-            if (tracks == null || tracks.Count == 0)
-            {
-                Save(fieldDirectory, Array.Empty<ABLine>());
-                return;
-            }
-
-            var abLines = tracks.Select(t => t.ToABLine()).ToList();
-            Save(fieldDirectory, abLines);
         }
 
         private static string FormatDouble(double value, int decimalPlaces)

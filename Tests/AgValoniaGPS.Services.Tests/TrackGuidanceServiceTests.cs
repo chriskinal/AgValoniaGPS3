@@ -167,27 +167,26 @@ public class TrackGuidanceServiceTests
 
     #endregion
 
-    #region Track Conversion Round-Trip
+    #region Track Property Verification
 
     [Test]
-    public void ABLine_TrackConversion_RoundTrip_PreservesProperties()
+    public void ABLine_TrackProperties_ComputedCorrectly()
     {
-        var original = TrackModel.FromABLine(
-            "Conversion Test",
+        var track = TrackModel.FromABLine(
+            "Property Test",
             new Vec3(10, 20, 0.5),
             new Vec3(30, 40, 0.5));
-        original.NudgeDistance = 1.5;
-        original.IsVisible = true;
+        track.NudgeDistance = 1.5;
+        track.IsVisible = true;
 
-        var abLine = original.ToABLine();
-        var roundTrip = TrackModel.FromABLine(abLine);
-
-        Assert.That(roundTrip.Name, Is.EqualTo(original.Name));
-        Assert.That(roundTrip.Points, Has.Count.EqualTo(original.Points.Count));
-        Assert.That(roundTrip.NudgeDistance, Is.EqualTo(original.NudgeDistance).Within(0.001));
-        Assert.That(roundTrip.IsVisible, Is.EqualTo(original.IsVisible));
-        Assert.That(roundTrip.Points[0].Easting, Is.EqualTo(original.Points[0].Easting).Within(0.001));
-        Assert.That(roundTrip.Points[0].Northing, Is.EqualTo(original.Points[0].Northing).Within(0.001));
+        Assert.That(track.Name, Is.EqualTo("Property Test"));
+        Assert.That(track.Points, Has.Count.EqualTo(2));
+        Assert.That(track.IsABLine, Is.True);
+        Assert.That(track.IsCurve, Is.False);
+        Assert.That(track.NudgeDistance, Is.EqualTo(1.5).Within(0.001));
+        Assert.That(track.IsVisible, Is.True);
+        Assert.That(track.Points[0].Easting, Is.EqualTo(10).Within(0.001));
+        Assert.That(track.Points[0].Northing, Is.EqualTo(20).Within(0.001));
     }
 
     #endregion

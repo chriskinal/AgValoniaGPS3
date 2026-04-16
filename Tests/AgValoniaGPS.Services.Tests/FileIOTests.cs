@@ -49,8 +49,8 @@ public class FileIOTests
             NudgeDistance = 1.5
         };
 
-        TrackFilesService.SaveTracks(_tempDir, new[] { track });
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, new[] { track });
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(1));
         var result = loaded[0];
@@ -81,8 +81,8 @@ public class FileIOTests
             NudgeDistance = -0.25
         };
 
-        TrackFilesService.SaveTracks(_tempDir, new[] { track });
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, new[] { track });
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(1));
         var result = loaded[0];
@@ -121,8 +121,8 @@ public class FileIOTests
             }
         };
 
-        TrackFilesService.SaveTracks(_tempDir, tracks);
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, tracks);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(2));
         Assert.That(loaded[0].Name, Is.EqualTo("AB Line 1"));
@@ -135,8 +135,8 @@ public class FileIOTests
     [Test]
     public void TrackFiles_SaveAndLoad_EmptyList()
     {
-        TrackFilesService.SaveTracks(_tempDir, Array.Empty<MTrack>());
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, Array.Empty<MTrack>());
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Is.Empty);
     }
@@ -144,7 +144,7 @@ public class FileIOTests
     [Test]
     public void TrackFiles_Load_MissingFile_ReturnsEmpty()
     {
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Is.Empty);
     }
@@ -166,8 +166,8 @@ public class FileIOTests
             IsVisible = true
         };
 
-        TrackFilesService.SaveTracks(_tempDir, new[] { track });
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, new[] { track });
+        var loaded = TrackFilesService.Load(_tempDir);
 
         // The track heading (stored as AB line heading) should survive the conversion
         Assert.That(loaded[0].Points, Has.Count.EqualTo(2));
@@ -398,7 +398,7 @@ True
 
         File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
 
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(1));
         Assert.That(loaded[0].Name, Is.EqualTo("My AB Line"));
@@ -431,7 +431,7 @@ True
 
         File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
 
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(1));
         Assert.That(loaded[0].Name, Is.EqualTo("My Curve"));
@@ -467,7 +467,7 @@ False
 
         File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), content);
 
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(2));
         Assert.That(loaded[0].Name, Is.EqualTo("AB Line 1"));
@@ -508,8 +508,8 @@ False
             }
         };
 
-        TrackFilesService.SaveTracks(_tempDir, tracks);
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, tracks);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(3));
         Assert.That(loaded[0].NudgeDistance, Is.EqualTo(12.75).Within(0.001));
@@ -538,8 +538,8 @@ False
             }
         };
 
-        TrackFilesService.SaveTracks(_tempDir, tracks);
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, tracks);
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded, Has.Count.EqualTo(2));
         Assert.That(loaded[0].IsVisible, Is.True);
@@ -558,8 +558,8 @@ False
             IsVisible = true
         };
 
-        TrackFilesService.SaveTracks(_tempDir, new[] { track });
-        var loaded = TrackFilesService.LoadTracks(_tempDir);
+        TrackFilesService.Save(_tempDir, new[] { track });
+        var loaded = TrackFilesService.Load(_tempDir);
 
         Assert.That(loaded[0].NudgeDistance, Is.EqualTo(999.999).Within(0.01));
     }
@@ -570,7 +570,7 @@ False
         File.WriteAllText(Path.Combine(_tempDir, "TrackLines.txt"), "garbage\nnot valid\ndata");
 
         // Corrupt files throw - caller is expected to catch
-        Assert.Throws<InvalidDataException>(() => TrackFilesService.LoadTracks(_tempDir));
+        Assert.Throws<InvalidDataException>(() => TrackFilesService.Load(_tempDir));
     }
 
     #endregion

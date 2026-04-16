@@ -4873,7 +4873,7 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            Services.TrackFilesService.SaveTracks(activeField.DirectoryPath, SavedTracks.ToList());
+            Services.TrackFilesService.Save(activeField.DirectoryPath, SavedTracks.ToList());
             _logger.LogDebug("[NUDGE] SaveTracksToFile: Saved {TrackCount} tracks", SavedTracks.Count);
         }
         catch (System.Exception ex)
@@ -4933,7 +4933,7 @@ public partial class MainViewModel : ObservableObject
             // Try TrackLines.txt first (WinForms format)
             if (Services.TrackFilesService.Exists(field.DirectoryPath))
             {
-                var tracks = Services.TrackFilesService.LoadTracks(field.DirectoryPath);
+                var tracks = Services.TrackFilesService.Load(field.DirectoryPath);
                 int loadedCount = 0;
                 Track? firstTrack = null;
 

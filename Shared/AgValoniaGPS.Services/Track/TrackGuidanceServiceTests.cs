@@ -97,17 +97,17 @@ public static class TrackGuidanceServiceTests
             allPassed = false;
         }
 
-        // Test 5: Track conversion round-trip
+        // Test 5: Track properties
         try
         {
-            var (passed, msg) = TestTrackConversion();
-            results.AppendLine($"Test 5 - Track Conversion: {(passed ? "PASS" : "FAIL")}");
+            var (passed, msg) = TestTrackProperties();
+            results.AppendLine($"Test 5 - Track Properties: {(passed ? "PASS" : "FAIL")}");
             results.AppendLine($"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 5 - Track Conversion: FAIL (Exception)");
+            results.AppendLine($"Test 5 - Track Properties: FAIL (Exception)");
             results.AppendLine($"  {ex.Message}\n");
             allPassed = false;
         }
@@ -293,36 +293,32 @@ public static class TrackGuidanceServiceTests
     }
 
     /// <summary>
-    /// Test Track <-> ABLine conversion round-trip.
+    /// Test Track property computations.
     /// </summary>
-    private static (bool passed, string message) TestTrackConversion()
+    private static (bool passed, string message) TestTrackProperties()
     {
         // Create an AB line track
-        var originalTrack = Models.Track.Track.FromABLine(
-            "Conversion Test",
+        var track = Models.Track.Track.FromABLine(
+            "Property Test",
             new Vec3(10, 20, 0.5),
             new Vec3(30, 40, 0.5));
-        originalTrack.NudgeDistance = 1.5;
-        originalTrack.IsVisible = true;
+        track.NudgeDistance = 1.5;
+        track.IsVisible = true;
 
-        // Convert to ABLine
-        var abLine = originalTrack.ToABLine();
+        // Verify computed properties
+        bool isAB = track.IsABLine;
+        bool notCurve = !track.IsCurve;
+        bool nameOk = track.Name == "Property Test";
+        bool nudgeOk = Math.Abs(track.NudgeDistance - 1.5) < 0.001;
+        bool visOk = track.IsVisible;
+        bool pointsOk = track.Points.Count == 2;
 
-        // Convert back to Track
-        var roundTrip = Models.Track.Track.FromABLine(abLine);
+        bool pt0Match = Math.Abs(track.Points[0].Easting - 10) < 0.001 &&
+                        Math.Abs(track.Points[0].Northing - 20) < 0.001;
 
-        // Verify key properties preserved
-        bool nameMatch = roundTrip.Name == originalTrack.Name;
-        bool pointsMatch = roundTrip.Points.Count == originalTrack.Points.Count;
-        bool nudgeMatch = Math.Abs(roundTrip.NudgeDistance - originalTrack.NudgeDistance) < 0.001;
-        bool visMatch = roundTrip.IsVisible == originalTrack.IsVisible;
+        string msg = $"IsAB={isAB}, NotCurve={notCurve}, Name={nameOk}, Nudge={nudgeOk}, " +
+                     $"Visible={visOk}, Points={pointsOk}, Coords={pt0Match}";
 
-        bool pt0Match = Math.Abs(roundTrip.Points[0].Easting - originalTrack.Points[0].Easting) < 0.001 &&
-                        Math.Abs(roundTrip.Points[0].Northing - originalTrack.Points[0].Northing) < 0.001;
-
-        string msg = $"Name={nameMatch}, Points={pointsMatch}, Nudge={nudgeMatch}, " +
-                     $"Visible={visMatch}, Coords={pt0Match}";
-
-        return (nameMatch && pointsMatch && nudgeMatch && visMatch && pt0Match, msg);
+        return (isAB && notCurve && nameOk && nudgeOk && visOk && pointsOk && pt0Match, msg);
     }
 }

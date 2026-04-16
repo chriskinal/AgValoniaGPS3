@@ -171,7 +171,7 @@ public partial class MainViewModel
 
             try
             {
-                var importedTracks = Services.TrackFilesService.LoadTracks(sourceDir);
+                var importedTracks = Services.TrackFilesService.Load(sourceDir);
                 if (importedTracks.Count == 0)
                 {
                     StatusMessage = "No tracks found in selected field";
