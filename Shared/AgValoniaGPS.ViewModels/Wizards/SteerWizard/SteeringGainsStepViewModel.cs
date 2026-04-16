@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Threading.Tasks;
 
 using AgValoniaGPS.Services.Interfaces;
@@ -23,11 +24,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
 /// <summary>
-/// Step for configuring steering PID gains.
+/// Step for configuring steering PID gains with live angle feedback.
 /// </summary>
 public class SteeringGainsStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
+    private readonly IAutoSteerService? _autoSteerService;
 
     public override string Title => "Steering Gains";
 
@@ -51,9 +53,27 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         set => SetProperty(ref _integralGain, value);
     }
 
-    public SteeringGainsStepViewModel(IConfigurationService configService)
+    private double _liveSteerAngle;
+    /// <summary>Live actual steer angle from PGN 253.</summary>
+    public double LiveSteerAngle
+    {
+        get => _liveSteerAngle;
+        set => SetProperty(ref _liveSteerAngle, value);
+    }
+
+    private double _liveSteerError;
+    /// <summary>Difference between commanded and actual angle.</summary>
+    public double LiveSteerError
+    {
+        get => _liveSteerError;
+        set => SetProperty(ref _liveSteerError, value);
+    }
+
+    public SteeringGainsStepViewModel(IConfigurationService configService,
+        IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
+        _autoSteerService = autoSteerService;
     }
 
     protected override void OnEntering()
@@ -61,13 +81,26 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         var autoSteer = _configService.Store.AutoSteer;
         ProportionalGain = autoSteer.ProportionalGain;
         IntegralGain = autoSteer.IntegralGain;
+
+        if (_autoSteerService != null)
+            _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
     }
 
     protected override void OnLeaving()
     {
+        if (_autoSteerService != null)
+            _autoSteerService.StateUpdated -= OnAutoSteerStateUpdated;
+
         var autoSteer = _configService.Store.AutoSteer;
         autoSteer.ProportionalGain = ProportionalGain;
         autoSteer.IntegralGain = IntegralGain;
+    }
+
+    private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
+    {
+        double actual = _autoSteerService!.LastSteerData.ActualSteerAngle;
+        LiveSteerAngle = Math.Round(actual, 1);
+        LiveSteerError = Math.Round(Math.Abs(snapshot.SteerAngle - actual), 1);
     }
 
     public override Task<bool> ValidateAsync()

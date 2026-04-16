@@ -14,29 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 using AgValoniaGPS.Services.Interfaces;
 
-using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
 /// <summary>
-/// Step for WAS (Wheel Angle Sensor) calibration settings.
+/// Step for WAS (Wheel Angle Sensor) calibration with live sensor reading.
 /// </summary>
 public class WasCalibrationStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
+    private readonly IAutoSteerService? _autoSteerService;
 
     public override string Title => "Wheel Angle Sensor";
 
     public override string Description =>
-        "Configure your Wheel Angle Sensor (WAS). The WAS Offset zeros the sensor when the " +
-        "wheels are pointed straight ahead. Counts Per Degree (CPD) defines how many sensor " +
-        "counts equal one degree of steering angle - measure this by turning the wheels a known " +
-        "angle and dividing the count change by the degrees turned. Max Steer Angle limits " +
-        "the commanded steering range for safety.";
+        "Calibrate your Wheel Angle Sensor (WAS). Point the wheels straight ahead and press " +
+        "'Zero WAS' to capture the current sensor reading as the zero offset. " +
+        "Counts Per Degree (CPD) defines sensor sensitivity. " +
+        "Max Steer Angle limits the commanded steering range for safety.";
 
     private int _wasOffset;
     public int WasOffset
@@ -59,9 +61,44 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _maxSteerAngle, value);
     }
 
-    public WasCalibrationStepViewModel(IConfigurationService configService)
+    private double _liveSteerAngle;
+    /// <summary>Live steer angle from PGN 253 (degrees).</summary>
+    public double LiveSteerAngle
+    {
+        get => _liveSteerAngle;
+        set => SetProperty(ref _liveSteerAngle, value);
+    }
+
+    private bool _hasLiveData;
+    /// <summary>True if live sensor data is being received.</summary>
+    public bool HasLiveData
+    {
+        get => _hasLiveData;
+        set => SetProperty(ref _hasLiveData, value);
+    }
+
+    public ICommand ZeroWasCommand { get; }
+
+    public WasCalibrationStepViewModel(IConfigurationService configService,
+        IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
+        _autoSteerService = autoSteerService;
+
+        ZeroWasCommand = new RelayCommand(ZeroWas);
+    }
+
+    private void ZeroWas()
+    {
+        // Capture the current live angle as the new zero offset
+        // The WAS offset is applied so that the current reading becomes 0
+        if (_autoSteerService != null)
+        {
+            // Use actual WAS angle from PGN 253 (hardware sensor reading)
+            double actualAngle = _autoSteerService.LastSteerData.ActualSteerAngle;
+            // The actual angle * CPD gives approximate raw counts to zero
+            WasOffset = (int)(actualAngle * CountsPerDegree);
+        }
     }
 
     protected override void OnEntering()
@@ -70,14 +107,29 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         WasOffset = autoSteer.WasOffset;
         CountsPerDegree = autoSteer.CountsPerDegree;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
+
+        // Start listening for live data
+        if (_autoSteerService != null)
+            _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
     }
 
     protected override void OnLeaving()
     {
+        // Stop listening
+        if (_autoSteerService != null)
+            _autoSteerService.StateUpdated -= OnAutoSteerStateUpdated;
+
         var autoSteer = _configService.Store.AutoSteer;
         autoSteer.WasOffset = WasOffset;
         autoSteer.CountsPerDegree = CountsPerDegree;
         autoSteer.MaxSteerAngle = MaxSteerAngle;
+    }
+
+    private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
+    {
+        // Show actual WAS angle from hardware (PGN 253), not commanded angle
+        LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        HasLiveData = true;
     }
 
     public override Task<bool> ValidateAsync()
