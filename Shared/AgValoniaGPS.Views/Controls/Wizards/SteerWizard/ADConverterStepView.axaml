@@ -145,13 +145,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.option-button:pointerover">
-            <Setter Property="Background" Value="#3D566E"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
         <Style Selector="Button.option-button.selected">
-            <Setter Property="Background" Value="#1ABC9C"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
         <Style Selector="Button.option-button.selected:pointerover">
-            <Setter Property="Background" Value="#16A085"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
     </UserControl.Styles>
 </UserControl>
