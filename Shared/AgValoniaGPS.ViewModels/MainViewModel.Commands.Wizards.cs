@@ -48,7 +48,7 @@ public partial class MainViewModel
     private void ShowSteerWizard()
     {
         // Create a new instance of the wizard
-        SteerWizardViewModel = new SteerWizardViewModel(_configurationService);
+        SteerWizardViewModel = new SteerWizardViewModel(_configurationService, _autoSteerService);
 
         // Handle wizard close
         SteerWizardViewModel.CloseRequested += (s, e) =>

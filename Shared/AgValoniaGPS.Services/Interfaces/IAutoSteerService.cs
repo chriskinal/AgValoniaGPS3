@@ -168,6 +168,12 @@ public interface IAutoSteerService
     /// Derived from LastSensorData.SensorValue.
     /// </summary>
     double SensorPercent { get; }
+
+    /// <summary>
+    /// Latest vehicle state snapshot for UI/wizard consumption.
+    /// Null if no state has been produced yet.
+    /// </summary>
+    VehicleStateSnapshot? LatestSnapshot { get; }
 }
 
 /// <summary>

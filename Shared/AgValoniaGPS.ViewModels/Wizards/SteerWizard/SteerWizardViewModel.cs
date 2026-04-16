@@ -29,7 +29,8 @@ public class SteerWizardViewModel : WizardViewModel
 
     public override string WizardTitle => "AutoSteer Configuration Wizard";
 
-    public SteerWizardViewModel(IConfigurationService configService)
+    public SteerWizardViewModel(IConfigurationService configService,
+        IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
 
@@ -50,12 +51,12 @@ public class SteerWizardViewModel : WizardViewModel
         AddStep(new InvertSettingsStepViewModel(configService));
         AddStep(new DanfossStepViewModel(configService));
 
-        // Group D: Sensor Calibration
-        AddStep(new WasCalibrationStepViewModel(configService));
+        // Group D: Sensor Calibration (with live hardware access)
+        AddStep(new WasCalibrationStepViewModel(configService, autoSteerService));
 
-        // Group E: Steering Tuning
-        AddStep(new SteeringGainsStepViewModel(configService));
-        AddStep(new PwmCalibrationStepViewModel(configService));
+        // Group E: Steering Tuning (with live hardware access)
+        AddStep(new SteeringGainsStepViewModel(configService, autoSteerService));
+        AddStep(new PwmCalibrationStepViewModel(configService, autoSteerService));
         AddStep(new AlgorithmSelectionStepViewModel(configService));
 
         // Group F: Operating Limits

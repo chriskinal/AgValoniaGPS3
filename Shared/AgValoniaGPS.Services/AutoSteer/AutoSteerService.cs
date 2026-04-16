@@ -122,6 +122,10 @@ public class AutoSteerService : IAutoSteerService
     /// <summary>Sensor reading as percentage (0-100).</summary>
     public double SensorPercent => _sensorPercent;
 
+    /// <inheritdoc/>
+    public VehicleStateSnapshot? LatestSnapshot => _latestSnapshot;
+    private VehicleStateSnapshot? _latestSnapshot;
+
     /// <summary>
     /// Handle incoming UDP data from steering module.
     /// </summary>
@@ -456,7 +460,9 @@ public class AutoSteerService : IAutoSteerService
 
     private void NotifyStateUpdated()
     {
-        StateUpdated?.Invoke(this, CreateSnapshot());
+        var snapshot = CreateSnapshot();
+        _latestSnapshot = snapshot;
+        StateUpdated?.Invoke(this, snapshot);
     }
 
     private VehicleStateSnapshot CreateSnapshot()
