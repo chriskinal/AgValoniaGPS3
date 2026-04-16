@@ -61,6 +61,28 @@ public partial class MainViewModel
             var fieldPath = Path.Combine(_fieldSelectionDirectory, SelectedFieldInfo.Name);
             var fieldName = SelectedFieldInfo.Name;
 
+            // Check if this is a legacy field that will be auto-converted
+            bool isLegacy = !File.Exists(Path.Combine(fieldPath, "field.geojson")) &&
+                            File.Exists(Path.Combine(fieldPath, "Field.txt"));
+
+            if (isLegacy)
+            {
+                State.UI.CloseDialog();
+                ShowConfirmationDialog(
+                    "Import Legacy Field",
+                    $"'{fieldName}' uses the legacy AgOpenGPS format. " +
+                    "It will be imported and converted to the new format. " +
+                    "The original files will be kept. Continue?",
+                    () =>
+                    {
+                        SelectedFieldInfo = null;
+                        _ = OpenFieldAsync(fieldPath, fieldName).ContinueWith(_ =>
+                            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                                IsJobMenuPanelVisible = false));
+                    });
+                return;
+            }
+
             State.UI.CloseDialog();
             SelectedFieldInfo = null;
 
