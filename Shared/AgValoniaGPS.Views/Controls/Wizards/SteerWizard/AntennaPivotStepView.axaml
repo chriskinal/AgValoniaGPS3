@@ -61,10 +61,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                              Fill="#E74C3C" Stroke="#C0392B" StrokeThickness="2"/>
                     <!-- GPS Antenna -->
                     <Ellipse Canvas.Left="155" Canvas.Top="20" Width="16" Height="16"
-                             Fill="#1ABC9C" Stroke="#16A085" StrokeThickness="2"/>
+                             Fill="{DynamicResource SystemControlHighlightAccentBrush}" Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <Line StartPoint="0,0" EndPoint="0,10"
                           Canvas.Left="163" Canvas.Top="36"
-                          Stroke="#1ABC9C" StrokeThickness="2"/>
+                          Stroke="{DynamicResource SystemControlHighlightAccentBrush}" StrokeThickness="2"/>
                     <!-- Pivot arrow line -->
                     <Line StartPoint="0,0" EndPoint="78,0"
                           Canvas.Left="85" Canvas.Top="100"
@@ -78,7 +78,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <TextBlock Canvas.Left="62" Canvas.Top="78" Text="Pivot"
                                Foreground="#E74C3C" FontSize="9"/>
                     <TextBlock Canvas.Left="150" Canvas.Top="5" Text="GPS"
-                               Foreground="#1ABC9C" FontSize="9"/>
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="9"/>
                 </Canvas>
             </Border>
 
@@ -97,7 +97,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="Bold"
                                    Width="180"
                                    HorizontalContentAlignment="Center"
-                                   Background="#1E2A35"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                    BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                    BorderThickness="2"

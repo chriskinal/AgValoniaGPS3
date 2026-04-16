@@ -89,6 +89,18 @@ public partial class WizardHost : UserControl
             InvertSettingsStepViewModel => new InvertSettingsStepView(),
             DanfossStepViewModel => new DanfossStepView(),
 
+            // Group D: Sensor Calibration
+            WasCalibrationStepViewModel => new NumericStepView(),
+
+            // Group E: Steering Tuning
+            SteeringGainsStepViewModel => new NumericStepView(),
+            PwmCalibrationStepViewModel => new NumericStepView(),
+            AlgorithmSelectionStepViewModel => new NumericStepView(),
+
+            // Group F: Operating Limits
+            SpeedLimitsStepViewModel => new NumericStepView(),
+            SensorsStepViewModel => new NumericStepView(),
+
             // Group G: Completion
             FinishStepViewModel => new FinishStepView(),
             _ => null

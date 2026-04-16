@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Title}"
                    FontSize="24"
                    FontWeight="Bold"
-                   Foreground="#1ABC9C"
+                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                    Margin="0,0,0,16"/>
 
         <!-- Description -->
@@ -51,7 +51,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 VerticalAlignment="Center">
             <StackPanel Spacing="16" HorizontalAlignment="Center">
                 <!-- Checkmark icon (text representation) -->
-                <Border Background="#1ABC9C"
+                <Border Background="{DynamicResource SystemControlHighlightAccentBrush}"
                         CornerRadius="30"
                         Width="60" Height="60"
                         HorizontalAlignment="Center">

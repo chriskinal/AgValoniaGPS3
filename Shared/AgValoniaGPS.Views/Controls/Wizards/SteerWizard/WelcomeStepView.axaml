@@ -53,7 +53,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="AutoSteer"
                            FontSize="32"
                            FontWeight="Bold"
-                           Foreground="#1ABC9C"
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Configuration Wizard"
                            FontSize="18"
