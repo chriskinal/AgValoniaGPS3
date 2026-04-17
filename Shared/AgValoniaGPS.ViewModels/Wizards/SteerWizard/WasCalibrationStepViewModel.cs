@@ -40,6 +40,14 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         "Counts Per Degree (CPD) defines sensor sensitivity. " +
         "Max Steer Angle limits the commanded steering range for safety.";
 
+    private bool _invertWas;
+    /// <summary>Invert WAS direction if steering reads backwards.</summary>
+    public bool InvertWas
+    {
+        get => _invertWas;
+        set => SetProperty(ref _invertWas, value);
+    }
+
     private int _wasOffset;
     public int WasOffset
     {
@@ -104,6 +112,7 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
     protected override void OnEntering()
     {
         var autoSteer = _configService.Store.AutoSteer;
+        InvertWas = autoSteer.InvertWas;
         WasOffset = autoSteer.WasOffset;
         CountsPerDegree = autoSteer.CountsPerDegree;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
@@ -120,6 +129,7 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
             _autoSteerService.StateUpdated -= OnAutoSteerStateUpdated;
 
         var autoSteer = _configService.Store.AutoSteer;
+        autoSteer.InvertWas = InvertWas;
         autoSteer.WasOffset = WasOffset;
         autoSteer.CountsPerDegree = CountsPerDegree;
         autoSteer.MaxSteerAngle = MaxSteerAngle;

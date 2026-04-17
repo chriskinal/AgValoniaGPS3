@@ -32,21 +32,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Semi-transparent backdrop -->
         <Border Background="#C0000000" PointerPressed="Backdrop_PointerPressed"/>
 
-        <!-- Wizard container - centered, responsive size -->
+        <!-- Wizard container - full screen -->
         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                CornerRadius="12"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MinWidth="400"
-                MaxWidth="600"
-                MinHeight="400"
-                MaxHeight="700"
-                Margin="20"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
                 ClipToBounds="True">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="20" Opacity="0.5" OffsetX="0" OffsetY="4"/>
-            </Border.Effect>
-
             <!-- Wizard host control -->
             <wizards:WizardHost x:Name="WizardHostControl"/>
         </Border>

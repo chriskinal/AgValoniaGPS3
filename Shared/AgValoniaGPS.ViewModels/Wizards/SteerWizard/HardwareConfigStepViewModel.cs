@@ -99,13 +99,6 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
 
     // --- Invert Settings ---
 
-    private bool _invertWas;
-    public bool InvertWas
-    {
-        get => _invertWas;
-        set => SetProperty(ref _invertWas, value);
-    }
-
     private bool _invertMotor;
     public bool InvertMotor
     {
@@ -140,7 +133,6 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
         ExternalEnable = autoSteer.ExternalEnable;
         MotorDriver = autoSteer.MotorDriver;
         AdConverter = autoSteer.AdConverter;
-        InvertWas = autoSteer.InvertWas;
         InvertMotor = autoSteer.InvertMotor;
         InvertRelays = autoSteer.InvertRelays;
         DanfossEnabled = autoSteer.DanfossEnabled;
@@ -152,7 +144,6 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
         autoSteer.ExternalEnable = ExternalEnable;
         autoSteer.MotorDriver = MotorDriver;
         autoSteer.AdConverter = AdConverter;
-        autoSteer.InvertWas = InvertWas;
         autoSteer.InvertMotor = InvertMotor;
         autoSteer.InvertRelays = InvertRelays;
         autoSteer.DanfossEnabled = DanfossEnabled;
