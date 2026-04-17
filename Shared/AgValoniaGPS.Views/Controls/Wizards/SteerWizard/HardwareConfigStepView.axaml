@@ -128,17 +128,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <!-- Invert Motor -->
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Invert Motor"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       VerticalAlignment="Center"/>
-                            <ToggleSwitch Grid.Column="1"
-                                          IsChecked="{Binding InvertMotor}"
-                                          OnContent="ON" OffContent="OFF"
-                                          VerticalAlignment="Center"/>
-                        </Grid>
                         <!-- Invert Relays -->
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Grid.Column="0" Text="Invert Relays"

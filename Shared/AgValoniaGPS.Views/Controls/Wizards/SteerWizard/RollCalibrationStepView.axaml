@@ -7,57 +7,72 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="Bold"
                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,0,0,12"/>
-        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap" LineHeight="22"
+        <TextBlock Grid.Row="1"
+                   Text="The roll sensor measures vehicle tilt. If the indicator moves in the wrong direction when tilting, enable Invert Roll."
+                   FontSize="14" TextWrapping="Wrap" LineHeight="22"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
 
-        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
-            <!-- Live roll display -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="20" HorizontalAlignment="Center">
-                <StackPanel Spacing="8" HorizontalAlignment="Center">
-                    <TextBlock Text="Current Roll" FontSize="14"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding LiveRoll, StringFormat='{}{0:F2}'}" FontSize="36" FontWeight="Bold"
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel VerticalAlignment="Top" Spacing="16">
+                <!-- Roll icon -->
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConS_SourcesRoll.png"
+                       Width="80" Height="80"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"/>
+
+                <!-- Analog roll gauge -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="16" HorizontalAlignment="Center"
+                        MinWidth="320">
+                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+                        <Canvas Width="280" Height="160" HorizontalAlignment="Center"
+                                x:Name="GaugeCanvas"/>
+
+                        <!-- Numeric readout below gauge -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                            <TextBlock Text="{Binding LiveRoll, StringFormat='{}{0:F2}'}"
+                                       FontSize="28" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="deg" FontSize="16"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="(no live data)" FontSize="12" FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Center"
+                                   IsVisible="{Binding !HasLiveData}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Zero Roll button -->
+                <Button Content="Zero Roll" Height="48" MinWidth="200" FontSize="16" FontWeight="SemiBold"
+                        HorizontalAlignment="Center" CornerRadius="8" Cursor="Hand"
+                        Command="{Binding ZeroRollCommand}"
+                        Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                <!-- Roll Zero offset display -->
+                <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Center" MinWidth="250">
+                    <TextBlock Text="Roll Zero Offset:" FontSize="14" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding RollZero, StringFormat='{}{0:F2}'}" FontSize="16" FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="degrees" FontSize="14"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="(no live data)" FontSize="12" FontStyle="Italic"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               HorizontalAlignment="Center"
-                               IsVisible="{Binding !HasLiveData}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Zero Roll button -->
-            <Button Content="Zero Roll" Height="48" MinWidth="200" FontSize="16" FontWeight="SemiBold"
-                    HorizontalAlignment="Center" CornerRadius="8" Cursor="Hand"
-                    Command="{Binding ZeroRollCommand}"
-                    Background="{DynamicResource SystemControlHighlightAccentBrush}"
-                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-
-            <!-- Roll Zero offset display -->
-            <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Center" MinWidth="250">
-                <TextBlock Text="Roll Zero Offset:" FontSize="14" VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                <TextBlock Grid.Column="1" Text="{Binding RollZero, StringFormat='{}{0:F2}'}" FontSize="16" FontWeight="Bold"
-                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                           VerticalAlignment="Center" Margin="12,0,0,0"/>
-            </Grid>
-
-            <!-- Invert Roll toggle -->
-            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                    CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="250">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Invert Roll" FontSize="16" VerticalAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRollInvert}"
-                                  OnContent="ON" OffContent="OFF"/>
+                               VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </Grid>
-            </Border>
-        </StackPanel>
+
+                <!-- Invert Roll toggle -->
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="250">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Invert Roll" FontSize="16" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRollInvert}"
+                                      OnContent="ON" OffContent="OFF"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
         <Border Grid.Row="3" Background="#C0392B" CornerRadius="8" Padding="12" Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">

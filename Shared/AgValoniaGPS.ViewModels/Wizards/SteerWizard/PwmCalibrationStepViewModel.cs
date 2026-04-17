@@ -56,6 +56,13 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _minPwm, value);
     }
 
+    private bool _invertMotor;
+    public bool InvertMotor
+    {
+        get => _invertMotor;
+        set => SetProperty(ref _invertMotor, value);
+    }
+
     private bool _isFreeDriveActive;
     /// <summary>Whether free-drive motor test mode is active.</summary>
     public bool IsFreeDriveActive
@@ -127,6 +134,7 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
         var autoSteer = _configService.Store.AutoSteer;
         MaxPwm = autoSteer.MaxPwm;
         MinPwm = autoSteer.MinPwm;
+        InvertMotor = autoSteer.InvertMotor;
         FreeDriveAngle = 0;
         IsFreeDriveActive = false;
 
@@ -149,6 +157,7 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
         var autoSteer = _configService.Store.AutoSteer;
         autoSteer.MaxPwm = MaxPwm;
         autoSteer.MinPwm = MinPwm;
+        autoSteer.InvertMotor = InvertMotor;
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)

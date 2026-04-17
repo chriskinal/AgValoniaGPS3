@@ -104,16 +104,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        FontSize="13"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
-                        <NumericUpDown Grid.Column="1"
-                                       Value="{Binding ProportionalGain}"
-                                       Minimum="1" Maximum="100" Increment="1"
-                                       FormatString="F0"
-                                       FontSize="20" FontWeight="Bold" Width="130"
-                                       HorizontalContentAlignment="Center"
-                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                       BorderThickness="2" CornerRadius="8"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding ProportionalGain, StringFormat='{}{0:F0}'}"
+                                 FontSize="20" FontWeight="Bold" Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
                     </Grid>
                 </Border>
 
@@ -129,16 +128,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        FontSize="13"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
-                        <NumericUpDown Grid.Column="1"
-                                       Value="{Binding IntegralGain}"
-                                       Minimum="0" Maximum="1" Increment="0.05"
-                                       FormatString="F2"
-                                       FontSize="20" FontWeight="Bold" Width="130"
-                                       HorizontalContentAlignment="Center"
-                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                       BorderThickness="2" CornerRadius="8"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding IntegralGain, StringFormat='{}{0:F2}'}"
+                                 FontSize="20" FontWeight="Bold" Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
                     </Grid>
                 </Border>
 
@@ -154,16 +152,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        FontSize="13"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
-                        <NumericUpDown Grid.Column="1"
-                                       Value="{Binding SteerResponseHold}"
-                                       Minimum="1" Maximum="10" Increment="0.5"
-                                       FormatString="F1"
-                                       FontSize="20" FontWeight="Bold" Width="130"
-                                       HorizontalContentAlignment="Center"
-                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                       BorderThickness="2" CornerRadius="8"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding SteerResponseHold, StringFormat='{}{0:F1}'}"
+                                 FontSize="20" FontWeight="Bold" Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
                     </Grid>
                 </Border>
 
@@ -180,16 +177,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        FontSize="13"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
-                        <NumericUpDown Grid.Column="1"
-                                       Value="{Binding StanleyAggressiveness}"
-                                       Minimum="0" Maximum="10" Increment="0.5"
-                                       FormatString="F1"
-                                       FontSize="20" FontWeight="Bold" Width="130"
-                                       HorizontalContentAlignment="Center"
-                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                       BorderThickness="2" CornerRadius="8"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding StanleyAggressiveness, StringFormat='{}{0:F1}'}"
+                                 FontSize="20" FontWeight="Bold" Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
                     </Grid>
                 </Border>
             </StackPanel>

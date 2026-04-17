@@ -42,95 +42,99 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    LineHeight="22"
                    Margin="0,0,0,24"/>
 
-        <!-- Options -->
-        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+        <!-- Options - horizontal layout with big icons -->
+        <UniformGrid Grid.Row="2" Columns="3" VerticalAlignment="Center"
+                     HorizontalAlignment="Center" Margin="0,0,0,0">
             <!-- Tractor -->
             <Button Classes="option-button"
                     Command="{Binding SelectTractor}"
-                    Classes.selected="{Binding IsTractorSelected}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0"
-                            Width="80" Height="60"
+                    Classes.selected="{Binding IsTractorSelected}"
+                    Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="8"
-                            Margin="0,0,16,0">
+                            CornerRadius="12"
+                            HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
-                               Width="50" Height="50"
+                               Width="90" Height="90"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Tractor"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Standard tractor with front axle steering"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Tractor"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Front axle steering"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </StackPanel>
             </Button>
 
             <!-- Harvester -->
             <Button Classes="option-button"
                     Command="{Binding SelectHarvester}"
-                    Classes.selected="{Binding IsHarvesterSelected}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0"
-                            Width="80" Height="60"
+                    Classes.selected="{Binding IsHarvesterSelected}"
+                    Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="8"
-                            Margin="0,0,16,0">
+                            CornerRadius="12"
+                            HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
-                               Width="50" Height="50"
+                               Width="90" Height="90"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Harvester"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Combine harvester with rear axle steering"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Harvester"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Rear axle steering"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </StackPanel>
             </Button>
 
             <!-- Articulated 4WD -->
             <Button Classes="option-button"
                     Command="{Binding SelectFourWD}"
-                    Classes.selected="{Binding IsFourWDSelected}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0"
-                            Width="80" Height="60"
+                    Classes.selected="{Binding IsFourWDSelected}"
+                    Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="8"
-                            Margin="0,0,16,0">
+                            CornerRadius="12"
+                            HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
-                               Width="50" Height="50"
+                               Width="90" Height="90"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Articulated 4WD"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Articulated vehicle with center pivot steering"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Articulated 4WD"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Center pivot steering"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </StackPanel>
             </Button>
-        </StackPanel>
+        </UniformGrid>
 
         <!-- Validation message -->
         <Border Grid.Row="3"
@@ -152,7 +156,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Padding" Value="16"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.option-button:pointerover">
