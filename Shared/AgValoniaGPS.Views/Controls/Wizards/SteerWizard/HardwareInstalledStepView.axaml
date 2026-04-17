@@ -10,64 +10,71 @@
         <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap" LineHeight="22"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
 
-        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+        <UniformGrid Grid.Row="2" Columns="3" VerticalAlignment="Center"
+                     HorizontalAlignment="Center">
             <!-- GPS Only -->
             <Button Classes="option-button" Command="{Binding SelectGpsOnlyCommand}"
-                    Classes.selected="{Binding IsGpsOnly}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
-                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    Classes.selected="{Binding IsGpsOnly}" Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GPSQuality.png"
-                               Width="50" Height="50" Stretch="Uniform"/>
+                               Width="90" Height="90" Stretch="Uniform"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="GPS Only" FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Light bar guidance display only - no autosteer hardware"
-                                   FontSize="13" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="GPS Only" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Light bar guidance only"
+                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
             </Button>
 
             <!-- GPS + AutoSteer -->
             <Button Classes="option-button" Command="{Binding SelectAutoSteerCommand}"
-                    Classes.selected="{Binding IsAutoSteer}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
-                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    Classes.selected="{Binding IsAutoSteer}" Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png"
-                               Width="50" Height="50" Stretch="Uniform"/>
+                               Width="90" Height="90" Stretch="Uniform"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="GPS + AutoSteer" FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Automatic steering with motor/valve, WAS sensor, and IMU"
-                                   FontSize="13" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="AutoSteer" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Motor/valve, WAS, IMU"
+                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
             </Button>
 
             <!-- GPS + AutoSteer + Sections -->
             <Button Classes="option-button" Command="{Binding SelectFullSetupCommand}"
-                    Classes.selected="{Binding IsFullSetup}">
-                <Grid ColumnDefinitions="Auto,*">
-                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
-                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                    Classes.selected="{Binding IsFullSetup}" Margin="8">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="120" Height="120"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOn.png"
-                               Width="50" Height="50" Stretch="Uniform"/>
+                               Width="90" Height="90" Stretch="Uniform"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="GPS + AutoSteer + Sections" FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Full setup with steering control and automatic section on/off"
-                                   FontSize="13" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Full Setup" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Steering + section control"
+                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
             </Button>
-        </StackPanel>
+        </UniformGrid>
 
         <Border Grid.Row="3" Background="#C0392B" CornerRadius="8" Padding="12" Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
@@ -79,9 +86,12 @@
     <UserControl.Styles>
         <Style Selector="Button.option-button">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Padding" Value="16"/> <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/> <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.option-button:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>

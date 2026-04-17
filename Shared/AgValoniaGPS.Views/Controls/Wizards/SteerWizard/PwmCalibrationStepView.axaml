@@ -80,16 +80,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                VerticalAlignment="Center"/>
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding MaxPwm}"
-                                   Minimum="50" Maximum="255" Increment="5"
-                                   FormatString="F0"
-                                   FontSize="20" FontWeight="Bold" Width="130"
-                                   HorizontalContentAlignment="Center"
-                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   BorderThickness="2" CornerRadius="8"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding MaxPwm, StringFormat='{}{0:F0}'}"
+                             FontSize="20" FontWeight="Bold" Width="110"
+                             TextAlignment="Center"
+                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                             BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                             BorderThickness="2" CornerRadius="8"
+                             Padding="8,6"/>
                 </Grid>
             </Border>
 
@@ -100,16 +99,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                VerticalAlignment="Center"/>
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding MinPwm}"
-                                   Minimum="1" Maximum="50" Increment="1"
-                                   FormatString="F0"
-                                   FontSize="20" FontWeight="Bold" Width="130"
-                                   HorizontalContentAlignment="Center"
-                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   BorderThickness="2" CornerRadius="8"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding MinPwm, StringFormat='{}{0:F0}'}"
+                             FontSize="20" FontWeight="Bold" Width="110"
+                             TextAlignment="Center"
+                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                             BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                             BorderThickness="2" CornerRadius="8"
+                             Padding="8,6"/>
+                </Grid>
+            </Border>
+
+            <!-- Invert Motor -->
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="8" Padding="16,12" HorizontalAlignment="Stretch">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Invert Motor" FontSize="16"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Enable if motor drives in wrong direction" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding InvertMotor}"
+                                  OnContent="ON" OffContent="OFF"/>
                 </Grid>
             </Border>
 

@@ -102,19 +102,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                VerticalAlignment="Center"/>
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding WasOffset}"
-                                   Minimum="-32768"
-                                   Maximum="32767"
-                                   Increment="1"
-                                   FormatString="F0"
-                                   FontSize="20" FontWeight="Bold"
-                                   Width="130"
-                                   HorizontalContentAlignment="Center"
-                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   BorderThickness="2" CornerRadius="8"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding WasOffset, StringFormat='{}{0:F0}'}"
+                             FontSize="20" FontWeight="Bold"
+                             Width="110"
+                             TextAlignment="Center"
+                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                             BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                             BorderThickness="2" CornerRadius="8"
+                             Padding="8,6"/>
                 </Grid>
             </Border>
 
@@ -126,19 +123,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                VerticalAlignment="Center"/>
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding CountsPerDegree}"
-                                   Minimum="1"
-                                   Maximum="255"
-                                   Increment="1"
-                                   FormatString="F0"
-                                   FontSize="20" FontWeight="Bold"
-                                   Width="130"
-                                   HorizontalContentAlignment="Center"
-                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   BorderThickness="2" CornerRadius="8"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding CountsPerDegree, StringFormat='{}{0:F0}'}"
+                             FontSize="20" FontWeight="Bold"
+                             Width="110"
+                             TextAlignment="Center"
+                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                             BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                             BorderThickness="2" CornerRadius="8"
+                             Padding="8,6"/>
                 </Grid>
             </Border>
 
@@ -154,19 +148,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontSize="13"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
-                    <NumericUpDown Grid.Column="1"
-                                   Value="{Binding MaxSteerAngle}"
-                                   Minimum="10"
-                                   Maximum="90"
-                                   Increment="1"
-                                   FormatString="F0"
-                                   FontSize="20" FontWeight="Bold"
-                                   Width="130"
-                                   HorizontalContentAlignment="Center"
-                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   BorderThickness="2" CornerRadius="8"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBox Text="{Binding MaxSteerAngle, StringFormat='{}{0:F0}'}"
+                                 FontSize="20" FontWeight="Bold"
+                                 Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
+                        <TextBlock Text="deg"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Grid>
             </Border>
         </StackPanel>
