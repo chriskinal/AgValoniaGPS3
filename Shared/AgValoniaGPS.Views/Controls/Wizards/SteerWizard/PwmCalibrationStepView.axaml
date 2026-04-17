@@ -1,0 +1,183 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="550"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.PwmCalibrationStepView"
+             x:DataType="steer:PwmCalibrationStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title with skip indicator -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding CanSkip}">
+                <TextBlock Text="Optional"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Content -->
+        <StackPanel Grid.Row="2" Spacing="16">
+            <!-- Live angle display -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12"
+                    Padding="20"
+                    HorizontalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock Text="Live Steer Angle"
+                               FontSize="13"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
+                               FontSize="36"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Max/Min PWM inputs -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Max PWM"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               VerticalAlignment="Center"/>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding MaxPwm}"
+                                   Minimum="50" Maximum="255" Increment="5"
+                                   FormatString="F0"
+                                   FontSize="20" FontWeight="Bold" Width="130"
+                                   HorizontalContentAlignment="Center"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   BorderThickness="2" CornerRadius="8"/>
+                </Grid>
+            </Border>
+
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Min PWM"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               VerticalAlignment="Center"/>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding MinPwm}"
+                                   Minimum="1" Maximum="50" Increment="1"
+                                   FormatString="F0"
+                                   FontSize="20" FontWeight="Bold" Width="130"
+                                   HorizontalContentAlignment="Center"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   BorderThickness="2" CornerRadius="8"/>
+                </Grid>
+            </Border>
+
+            <!-- Free Drive controls -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Free Drive Test"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                    <Button Command="{Binding ToggleFreeDriveCommand}"
+                            HorizontalAlignment="Center"
+                            Width="160" Height="40"
+                            CornerRadius="8"
+                            HorizontalContentAlignment="Center"
+                            IsVisible="{Binding HasHardware}">
+                        <Button.Styles>
+                            <Style Selector="Button">
+                                <Setter Property="Content" Value="Enable Free Drive"/>
+                                <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8"
+                                IsVisible="{Binding IsFreeDriveActive}">
+                        <Button Content="Left"
+                                Command="{Binding FreeDriveLeftCommand}"
+                                Width="80" Height="36"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="6" HorizontalContentAlignment="Center"/>
+                        <Button Content="Center"
+                                Command="{Binding FreeDriveCenterCommand}"
+                                Width="80" Height="36"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="6" HorizontalContentAlignment="Center"/>
+                        <Button Content="Right"
+                                Command="{Binding FreeDriveRightCommand}"
+                                Width="80" Height="36"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="6" HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="No hardware connected"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               IsVisible="{Binding !HasHardware}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>

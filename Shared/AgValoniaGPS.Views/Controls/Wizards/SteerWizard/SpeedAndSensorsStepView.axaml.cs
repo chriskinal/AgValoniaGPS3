@@ -18,9 +18,9 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Wizards.SteerWizard;
 
-public partial class WheelbaseStepView : UserControl
+public partial class SpeedAndSensorsStepView : UserControl
 {
-    public WheelbaseStepView()
+    public SpeedAndSensorsStepView()
     {
         InitializeComponent();
     }

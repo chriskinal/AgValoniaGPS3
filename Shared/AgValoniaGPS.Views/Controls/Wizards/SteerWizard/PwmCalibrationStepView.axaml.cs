@@ -18,9 +18,9 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Wizards.SteerWizard;
 
-public partial class DanfossStepView : UserControl
+public partial class PwmCalibrationStepView : UserControl
 {
-    public DanfossStepView()
+    public PwmCalibrationStepView()
     {
         InitializeComponent();
     }

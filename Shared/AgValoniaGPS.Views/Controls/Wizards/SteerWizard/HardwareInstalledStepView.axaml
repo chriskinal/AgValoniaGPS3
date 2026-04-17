@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.HardwareInstalledStepView"
+             x:DataType="steer:HardwareInstalledStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap" LineHeight="22"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
+
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="16">
+            <!-- GPS Only -->
+            <Button Classes="option-button" Command="{Binding SelectGpsOnlyCommand}"
+                    Classes.selected="{Binding IsGpsOnly}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GPSQuality.png"
+                               Width="50" Height="50" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="GPS Only" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Light bar guidance display only - no autosteer hardware"
+                                   FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- GPS + AutoSteer -->
+            <Button Classes="option-button" Command="{Binding SelectAutoSteerCommand}"
+                    Classes.selected="{Binding IsAutoSteer}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png"
+                               Width="50" Height="50" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="GPS + AutoSteer" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Automatic steering with motor/valve, WAS sensor, and IMU"
+                                   FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- GPS + AutoSteer + Sections -->
+            <Button Classes="option-button" Command="{Binding SelectFullSetupCommand}"
+                    Classes.selected="{Binding IsFullSetup}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0" Width="80" Height="60" CornerRadius="8" Margin="0,0,16,0"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOn.png"
+                               Width="50" Height="50" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="GPS + AutoSteer + Sections" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Full setup with steering control and automatic section on/off"
+                                   FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </StackPanel>
+
+        <Border Grid.Row="3" Background="#C0392B" CornerRadius="8" Padding="12" Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}" FontSize="14" TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Border>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="Button.option-button">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Padding" Value="16"/> <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/> <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.option-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="Button.option-button.selected">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
+        <Style Selector="Button.option-button.selected:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

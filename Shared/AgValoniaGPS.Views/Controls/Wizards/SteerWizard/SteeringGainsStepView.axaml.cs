@@ -18,9 +18,9 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Wizards.SteerWizard;
 
-public partial class MotorDriverStepView : UserControl
+public partial class SteeringGainsStepView : UserControl
 {
-    public MotorDriverStepView()
+    public SteeringGainsStepView()
     {
         InitializeComponent();
     }

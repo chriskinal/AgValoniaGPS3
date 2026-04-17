@@ -18,26 +18,40 @@ using System.Threading.Tasks;
 
 using AgValoniaGPS.Services.Interfaces;
 
-using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
 /// <summary>
-/// Step for configuring optional turn, pressure, and current sensors.
+/// Combined step for speed limits and optional sensor configuration.
 /// </summary>
-public class SensorsStepViewModel : WizardStepViewModel
+public class SpeedAndSensorsStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
-    public override string Title => "Optional Sensors";
+    public override string Title => "Speed and Sensors";
 
     public override string Description =>
-        "Enable optional sensors if your hardware supports them. The Turn Sensor detects " +
-        "steering wheel movement via an encoder. The Pressure Sensor monitors hydraulic " +
-        "pressure for stall detection. The Current Sensor monitors motor current draw " +
-        "to detect obstructions. Leave all disabled if your setup does not have these sensors.";
+        "Set the steering speed range and enable optional sensors. " +
+        "Min speed prevents engagement while stationary, max speed is a safety cutoff.";
 
     public override bool CanSkip => true;
+
+    // --- Speed Limits ---
+
+    private double _minSteerSpeed;
+    public double MinSteerSpeed
+    {
+        get => _minSteerSpeed;
+        set => SetProperty(ref _minSteerSpeed, value);
+    }
+
+    private double _maxSteerSpeed;
+    public double MaxSteerSpeed
+    {
+        get => _maxSteerSpeed;
+        set => SetProperty(ref _maxSteerSpeed, value);
+    }
+
+    // --- Sensors ---
 
     private bool _turnSensorEnabled;
     public bool TurnSensorEnabled
@@ -60,7 +74,7 @@ public class SensorsStepViewModel : WizardStepViewModel
         set => SetProperty(ref _currentSensorEnabled, value);
     }
 
-    public SensorsStepViewModel(IConfigurationService configService)
+    public SpeedAndSensorsStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
     }
@@ -68,6 +82,8 @@ public class SensorsStepViewModel : WizardStepViewModel
     protected override void OnEntering()
     {
         var autoSteer = _configService.Store.AutoSteer;
+        MinSteerSpeed = autoSteer.MinSteerSpeed;
+        MaxSteerSpeed = autoSteer.MaxSteerSpeed;
         TurnSensorEnabled = autoSteer.TurnSensorEnabled;
         PressureSensorEnabled = autoSteer.PressureSensorEnabled;
         CurrentSensorEnabled = autoSteer.CurrentSensorEnabled;
@@ -76,6 +92,8 @@ public class SensorsStepViewModel : WizardStepViewModel
     protected override void OnLeaving()
     {
         var autoSteer = _configService.Store.AutoSteer;
+        autoSteer.MinSteerSpeed = MinSteerSpeed;
+        autoSteer.MaxSteerSpeed = MaxSteerSpeed;
         autoSteer.TurnSensorEnabled = TurnSensorEnabled;
         autoSteer.PressureSensorEnabled = PressureSensorEnabled;
         autoSteer.CurrentSensorEnabled = CurrentSensorEnabled;
@@ -83,6 +101,24 @@ public class SensorsStepViewModel : WizardStepViewModel
 
     public override Task<bool> ValidateAsync()
     {
+        if (MinSteerSpeed < 0)
+        {
+            SetValidationError("Min Steer Speed must be 0 or greater");
+            return Task.FromResult(false);
+        }
+
+        if (MaxSteerSpeed <= 0)
+        {
+            SetValidationError("Max Steer Speed must be greater than 0");
+            return Task.FromResult(false);
+        }
+
+        if (MaxSteerSpeed <= MinSteerSpeed)
+        {
+            SetValidationError("Max Steer Speed must be greater than Min Steer Speed");
+            return Task.FromResult(false);
+        }
+
         ClearValidation();
         return Task.FromResult(true);
     }

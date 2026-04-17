@@ -18,9 +18,9 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Wizards.SteerWizard;
 
-public partial class ADConverterStepView : UserControl
+public partial class HardwareConfigStepView : UserControl
 {
-    public ADConverterStepView()
+    public HardwareConfigStepView()
     {
         InitializeComponent();
     }

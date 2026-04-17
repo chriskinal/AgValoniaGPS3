@@ -18,9 +18,9 @@ using Avalonia.Controls;
 
 namespace AgValoniaGPS.Views.Controls.Wizards.SteerWizard;
 
-public partial class TrackWidthStepView : UserControl
+public partial class VehicleDimensionsStepView : UserControl
 {
-    public TrackWidthStepView()
+    public VehicleDimensionsStepView()
     {
         InitializeComponent();
     }

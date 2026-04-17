@@ -1,0 +1,172 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="550"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.WasCalibrationStepView"
+             x:DataType="steer:WasCalibrationStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Content -->
+        <StackPanel Grid.Row="2" Spacing="16">
+            <!-- Live angle display -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12"
+                    Padding="20"
+                    HorizontalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock Text="Live Steer Angle"
+                               FontSize="13"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
+                               FontSize="36"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="No hardware connected"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               IsVisible="{Binding !HasLiveData}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Zero WAS button -->
+            <Button Content="Zero WAS"
+                    Command="{Binding ZeroWasCommand}"
+                    HorizontalAlignment="Center"
+                    Width="160" Height="44"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                    CornerRadius="8"
+                    HorizontalContentAlignment="Center"/>
+
+            <!-- WAS Offset -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="WAS Offset"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               VerticalAlignment="Center"/>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding WasOffset}"
+                                   Minimum="-32768"
+                                   Maximum="32767"
+                                   Increment="1"
+                                   FormatString="F0"
+                                   FontSize="20" FontWeight="Bold"
+                                   Width="130"
+                                   HorizontalContentAlignment="Center"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   BorderThickness="2" CornerRadius="8"/>
+                </Grid>
+            </Border>
+
+            <!-- Counts Per Degree -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Counts Per Degree"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               VerticalAlignment="Center"/>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding CountsPerDegree}"
+                                   Minimum="1"
+                                   Maximum="255"
+                                   Increment="1"
+                                   FormatString="F0"
+                                   FontSize="20" FontWeight="Bold"
+                                   Width="130"
+                                   HorizontalContentAlignment="Center"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   BorderThickness="2" CornerRadius="8"/>
+                </Grid>
+            </Border>
+
+            <!-- Max Steer Angle -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Max Steer Angle"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Safety limit (degrees)"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <NumericUpDown Grid.Column="1"
+                                   Value="{Binding MaxSteerAngle}"
+                                   Minimum="10"
+                                   Maximum="90"
+                                   Increment="1"
+                                   FormatString="F0"
+                                   FontSize="20" FontWeight="Bold"
+                                   Width="130"
+                                   HorizontalContentAlignment="Center"
+                                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   BorderThickness="2" CornerRadius="8"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
