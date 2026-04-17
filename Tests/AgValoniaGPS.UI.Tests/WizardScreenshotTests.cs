@@ -105,21 +105,60 @@ public class WizardScreenshotTests
     /// Captures a screenshot for a specific wizard step by navigating to it via GoToStep.
     /// Uses the WizardHost to render the actual step view.
     /// </summary>
+    /// <summary>
+    /// Creates the correct view for a step ViewModel, matching WizardHost.UpdateStepView logic.
+    /// </summary>
+    private static Control CreateStepView(WizardStepViewModel step)
+    {
+        Control? view = step switch
+        {
+            WelcomeStepViewModel => new Views.Controls.Wizards.SteerWizard.WelcomeStepView(),
+            VehicleTypeStepViewModel => new Views.Controls.Wizards.SteerWizard.VehicleTypeStepView(),
+            WheelbaseStepViewModel => new Views.Controls.Wizards.SteerWizard.WheelbaseStepView(),
+            TrackWidthStepViewModel => new Views.Controls.Wizards.SteerWizard.TrackWidthStepView(),
+            AntennaPivotStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaPivotStepView(),
+            AntennaHeightStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaHeightStepView(),
+            AntennaOffsetStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaOffsetStepView(),
+            SteerEnableStepViewModel => new Views.Controls.Wizards.SteerWizard.SteerEnableStepView(),
+            MotorDriverStepViewModel => new Views.Controls.Wizards.SteerWizard.MotorDriverStepView(),
+            ADConverterStepViewModel => new Views.Controls.Wizards.SteerWizard.ADConverterStepView(),
+            InvertSettingsStepViewModel => new Views.Controls.Wizards.SteerWizard.InvertSettingsStepView(),
+            DanfossStepViewModel => new Views.Controls.Wizards.SteerWizard.DanfossStepView(),
+            FinishStepViewModel => new Views.Controls.Wizards.SteerWizard.FinishStepView(),
+            _ => new Views.Controls.Wizards.SteerWizard.NumericStepView(),
+        };
+        view.DataContext = step;
+        return view;
+    }
+
     private void CaptureStepScreenshot(int stepIndex, string stepName)
     {
         var wizard = CreateWizard();
         wizard.GoToStep(stepIndex);
 
-        var wizardHost = new WizardHost
+        // Render step view directly (WizardHost.FindControl doesn't work in headless)
+        var stepView = CreateStepView(wizard.CurrentStep!);
+
+        // Build a layout matching the wizard structure
+        var header = new TextBlock
         {
-            DataContext = wizard,
-            Width = WizardWidth,
-            Height = WizardHeight
+            Text = $"{wizard.WizardTitle}  -  Step {stepIndex + 1} of {wizard.TotalSteps}: {wizard.CurrentStep!.Title}",
+            FontSize = 16, FontWeight = Avalonia.Media.FontWeight.Bold,
+            Margin = new Thickness(16, 12)
         };
+        var content = new Border
+        {
+            Padding = new Thickness(20),
+            Child = stepView
+        };
+        var layout = new DockPanel();
+        DockPanel.SetDock(header, Dock.Top);
+        layout.Children.Add(header);
+        layout.Children.Add(content);
 
         var window = new Window
         {
-            Content = wizardHost,
+            Content = layout,
             Width = WizardWidth,
             Height = WizardHeight,
             SizeToContent = SizeToContent.Manual
