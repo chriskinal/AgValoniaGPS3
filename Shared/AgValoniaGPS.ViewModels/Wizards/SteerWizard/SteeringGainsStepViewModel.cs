@@ -34,10 +34,30 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
     public override string Title => "Steering Gains";
 
     public override string Description =>
-        "Configure the steering controller gains. Proportional Gain (P) controls how aggressively " +
-        "the system corrects steering error - a good starting value is 10. Integral Gain (I) " +
-        "accumulates small persistent errors over time - start at 0 and only increase if the " +
-        "system consistently drifts to one side. Too much I gain causes oscillation.";
+        "Choose your guidance algorithm and configure steering gains. Pure Pursuit is a good " +
+        "default; Stanley is more responsive at low speeds. Proportional Gain (P) controls " +
+        "correction aggressiveness. Integral Gain (I) corrects persistent drift.";
+
+    private bool _isStanleyMode;
+    public bool IsStanleyMode
+    {
+        get => _isStanleyMode;
+        set => SetProperty(ref _isStanleyMode, value);
+    }
+
+    private double _steerResponseHold;
+    public double SteerResponseHold
+    {
+        get => _steerResponseHold;
+        set => SetProperty(ref _steerResponseHold, value);
+    }
+
+    private double _stanleyAggressiveness;
+    public double StanleyAggressiveness
+    {
+        get => _stanleyAggressiveness;
+        set => SetProperty(ref _stanleyAggressiveness, value);
+    }
 
     private int _proportionalGain;
     public int ProportionalGain
@@ -79,6 +99,9 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
     protected override void OnEntering()
     {
         var autoSteer = _configService.Store.AutoSteer;
+        IsStanleyMode = autoSteer.IsStanleyMode;
+        SteerResponseHold = autoSteer.SteerResponseHold;
+        StanleyAggressiveness = autoSteer.StanleyAggressiveness;
         ProportionalGain = autoSteer.ProportionalGain;
         IntegralGain = autoSteer.IntegralGain;
 
@@ -92,6 +115,9 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
             _autoSteerService.StateUpdated -= OnAutoSteerStateUpdated;
 
         var autoSteer = _configService.Store.AutoSteer;
+        autoSteer.IsStanleyMode = IsStanleyMode;
+        autoSteer.SteerResponseHold = SteerResponseHold;
+        autoSteer.StanleyAggressiveness = StanleyAggressiveness;
         autoSteer.ProportionalGain = ProportionalGain;
         autoSteer.IntegralGain = IntegralGain;
     }
@@ -114,6 +140,18 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         if (IntegralGain < 0 || IntegralGain > 1.0)
         {
             SetValidationError("Integral Gain must be between 0 and 1.0");
+            return Task.FromResult(false);
+        }
+
+        if (SteerResponseHold < 1 || SteerResponseHold > 10)
+        {
+            SetValidationError("Steer Response Hold must be between 1 and 10");
+            return Task.FromResult(false);
+        }
+
+        if (StanleyAggressiveness < 0 || StanleyAggressiveness > 10)
+        {
+            SetValidationError("Stanley Aggressiveness must be between 0 and 10");
             return Task.FromResult(false);
         }
 

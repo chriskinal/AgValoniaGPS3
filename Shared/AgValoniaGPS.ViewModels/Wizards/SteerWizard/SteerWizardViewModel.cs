@@ -21,7 +21,7 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
 /// <summary>
 /// ViewModel for the Steer Configuration Wizard.
-/// Guides users through AutoSteer setup step by step.
+/// Guides users through AutoSteer setup in 10 combined steps.
 /// </summary>
 public class SteerWizardViewModel : WizardViewModel
 {
@@ -34,37 +34,40 @@ public class SteerWizardViewModel : WizardViewModel
     {
         _configService = configService;
 
-        // Group A: Introduction
+        // Step 1: Welcome
         AddStep(new WelcomeStepViewModel());
+
+        // Step 2: Vehicle Type
         AddStep(new VehicleTypeStepViewModel(configService));
 
-        // Group B: Vehicle Dimensions
-        AddStep(new WheelbaseStepViewModel(configService));
-        AddStep(new TrackWidthStepViewModel(configService));
-        AddStep(new AntennaPivotStepViewModel(configService));
-        AddStep(new AntennaHeightStepViewModel(configService));
-        AddStep(new AntennaOffsetStepViewModel(configService));
+        // Step 3: Hardware Installed (GPS only / AutoSteer / Full)
+        AddStep(new HardwareInstalledStepViewModel());
 
-        // Group C: Hardware Configuration
-        AddStep(new SteerEnableStepViewModel(configService));
-        AddStep(new MotorDriverStepViewModel(configService));
-        AddStep(new ADConverterStepViewModel(configService));
-        AddStep(new InvertSettingsStepViewModel(configService));
-        AddStep(new DanfossStepViewModel(configService));
+        // Step 4: Vehicle Dimensions (wheelbase + track width)
+        AddStep(new VehicleDimensionsStepViewModel(configService));
 
-        // Group D: Sensor Calibration (with live hardware access)
+        // Step 5: Antenna Position (pivot + height + offset)
+        AddStep(new AntennaSetupStepViewModel(configService));
+
+        // Step 6: Hardware Configuration (enable + motor + ADC + inversions + Danfoss)
+        AddStep(new HardwareConfigStepViewModel(configService));
+
+        // Step 7: Roll Calibration (IMU roll invert + zero)
+        AddStep(new RollCalibrationStepViewModel(configService, autoSteerService));
+
+        // Step 8: WAS Calibration (with live hardware access)
         AddStep(new WasCalibrationStepViewModel(configService, autoSteerService));
 
-        // Group E: Steering Tuning (with live hardware access)
-        AddStep(new SteeringGainsStepViewModel(configService, autoSteerService));
+        // Step 9: Motor PWM Test (with live hardware access)
         AddStep(new PwmCalibrationStepViewModel(configService, autoSteerService));
-        AddStep(new AlgorithmSelectionStepViewModel(configService));
 
-        // Group F: Operating Limits
-        AddStep(new SpeedLimitsStepViewModel(configService));
-        AddStep(new SensorsStepViewModel(configService));
+        // Step 10: Steering Gains + Algorithm (with live hardware access)
+        AddStep(new SteeringGainsStepViewModel(configService, autoSteerService));
 
-        // Group G: Completion
+        // Step 11: Speed Limits + Sensors
+        AddStep(new SpeedAndSensorsStepViewModel(configService));
+
+        // Step 12: Finish
         AddStep(new FinishStepViewModel());
 
         // Initialize navigation

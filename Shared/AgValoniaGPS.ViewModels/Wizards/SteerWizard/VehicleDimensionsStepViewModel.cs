@@ -18,22 +18,28 @@ using System.Threading.Tasks;
 
 using AgValoniaGPS.Services.Interfaces;
 
-using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 
 /// <summary>
-/// Step for configuring vehicle track width.
+/// Combined step for vehicle wheelbase and track width.
+/// Shows a vehicle-type-dependent diagram with both input fields.
 /// </summary>
-public class TrackWidthStepViewModel : WizardStepViewModel
+public class VehicleDimensionsStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
 
-    public override string Title => "Vehicle Track Width";
+    public override string Title => "Vehicle Dimensions";
 
     public override string Description =>
-        "Enter the track width of your vehicle - the distance between the centers of the " +
-        "left and right wheels (or tracks).";
+        "Enter the wheelbase (front to rear axle) and track width " +
+        "(left to right wheel center) of your vehicle.";
+
+    private double _wheelbase;
+    public double Wheelbase
+    {
+        get => _wheelbase;
+        set => SetProperty(ref _wheelbase, value);
+    }
 
     private double _trackWidth;
     public double TrackWidth
@@ -42,30 +48,44 @@ public class TrackWidthStepViewModel : WizardStepViewModel
         set => SetProperty(ref _trackWidth, value);
     }
 
-    private string _unit = "m";
-    public string Unit
-    {
-        get => _unit;
-        set => SetProperty(ref _unit, value);
-    }
+    /// <summary>
+    /// Wheelbase diagram image path matching the current vehicle type.
+    /// </summary>
+    public string WheelbaseImageSource => _configService.Store.Vehicle.WheelbaseImageSource;
 
-    public TrackWidthStepViewModel(IConfigurationService configService)
+    public VehicleDimensionsStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
     }
 
     protected override void OnEntering()
     {
-        TrackWidth = _configService.Store.Vehicle.TrackWidth;
+        var vehicle = _configService.Store.Vehicle;
+        Wheelbase = vehicle.Wheelbase;
+        TrackWidth = vehicle.TrackWidth;
+        OnPropertyChanged(nameof(WheelbaseImageSource));
     }
 
     protected override void OnLeaving()
     {
-        _configService.Store.Vehicle.TrackWidth = TrackWidth;
+        var vehicle = _configService.Store.Vehicle;
+        vehicle.Wheelbase = Wheelbase;
+        vehicle.TrackWidth = TrackWidth;
     }
 
     public override Task<bool> ValidateAsync()
     {
+        if (Wheelbase < 0.5)
+        {
+            SetValidationError("Wheelbase must be at least 0.5 meters");
+            return Task.FromResult(false);
+        }
+        if (Wheelbase > 15)
+        {
+            SetValidationError("Wheelbase seems too large. Please check the value.");
+            return Task.FromResult(false);
+        }
+
         if (TrackWidth < 0.5)
         {
             SetValidationError("Track width must be at least 0.5 meters");

@@ -58,7 +58,7 @@ public class SteerWizardE2ETests
     public async Task FullWizardCompletion_NavigatesAllSteps_AndFiresCompleted()
     {
         var wizard = CreateWizard();
-        Assert.That(wizard.Steps.Count, Is.EqualTo(19), "Wizard should have 19 steps");
+        Assert.That(wizard.Steps.Count, Is.EqualTo(10), "Wizard should have 10 steps");
 
         // Set valid values for steps that require validation
         _store.Vehicle.Wheelbase = 2.5;
@@ -66,6 +66,8 @@ public class SteerWizardE2ETests
         _store.Vehicle.AntennaPivot = 1.0;
         _store.Vehicle.AntennaHeight = 2.0;
         _store.Vehicle.AntennaOffset = 0.0;
+        _store.AutoSteer.SteerResponseHold = 3.0;
+        _store.AutoSteer.StanleyAggressiveness = 1.0;
 
         var completedFired = false;
         wizard.Completed += (_, _) => completedFired = true;
@@ -75,21 +77,21 @@ public class SteerWizardE2ETests
         visitedTitles.Add(wizard.CurrentStep!.Title);
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Welcome to AutoSteer Setup"));
 
-        // Navigate through steps 0..17 (all except last) via NextCommand
-        for (var i = 0; i < 18; i++)
+        // Navigate through steps 0..8 (all except last) via NextCommand
+        for (var i = 0; i < 9; i++)
         {
             await ExecuteNextAsync(wizard);
             visitedTitles.Add(wizard.CurrentStep!.Title);
         }
 
-        // Should be on last step (index 18)
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(18));
+        // Should be on last step (index 9)
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(9));
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Setup Complete"));
         Assert.That(wizard.IsOnLastStep, Is.True);
 
-        // All 19 step titles should be unique
-        Assert.That(visitedTitles.Count, Is.EqualTo(19));
-        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(19),
+        // All 10 step titles should be unique
+        Assert.That(visitedTitles.Count, Is.EqualTo(10));
+        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(10),
             "All step titles should be unique");
 
         // Finish the wizard
@@ -112,15 +114,11 @@ public class SteerWizardE2ETests
 
         var wizard = CreateWizard();
 
-        // Navigate to wheelbase step (index 2) and modify
+        // Navigate to vehicle dimensions step (index 2) and modify
         wizard.GoToStep(2);
-        var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
-        wheelbaseStep.Wheelbase = 9.9;
-
-        // Navigate to track width step (index 3) and modify
-        wizard.GoToStep(3);
-        var trackWidthStep = (TrackWidthStepViewModel)wizard.CurrentStep!;
-        trackWidthStep.TrackWidth = 5.5;
+        var dimStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
+        dimStep.Wheelbase = 9.9;
+        dimStep.TrackWidth = 5.5;
 
         // Cancel the wizard
         var cancelledFired = false;
@@ -129,10 +127,7 @@ public class SteerWizardE2ETests
 
         Assert.That(cancelledFired, Is.True);
 
-        // Config values should be unchanged because OnLeaving for the final
-        // step was not explicitly triggered by Cancel, and the wheelbase step
-        // value was overwritten when GoToStep(2) triggered OnLeaving.
-        // The key point: SaveProfile was never called.
+        // SaveProfile was never called.
         _configService.DidNotReceive().SaveProfile(Arg.Any<string>());
     }
 
@@ -156,9 +151,9 @@ public class SteerWizardE2ETests
     public void NavigationState_LastStep_CorrectFlags()
     {
         var wizard = CreateWizard();
-        wizard.GoToStep(18);
+        wizard.GoToStep(9);
 
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(18));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(9));
         Assert.That(wizard.IsOnLastStep, Is.True);
         Assert.That(wizard.IsOnFirstStep, Is.False);
         Assert.That(wizard.CanGoNext, Is.False);
@@ -170,16 +165,16 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Navigate to step 5 (AntennaHeight - a middle step)
+        // Navigate to step 4 (Hardware Config - a middle step)
         _store.Vehicle.Wheelbase = 2.5;
         _store.Vehicle.TrackWidth = 1.8;
         _store.Vehicle.AntennaPivot = 1.0;
         _store.Vehicle.AntennaHeight = 2.0;
 
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 4; i++)
             await ExecuteNextAsync(wizard);
 
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(5));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(4));
         Assert.That(wizard.CanGoBack, Is.True);
         Assert.That(wizard.CanGoNext, Is.True);
         Assert.That(wizard.IsOnFirstStep, Is.False);
@@ -195,10 +190,10 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Step 5 (AntennaHeight) has CanSkip=true
-        wizard.GoToStep(5);
+        // Step 8 (SpeedAndSensors) has CanSkip=true
+        wizard.GoToStep(8);
         Assert.That(wizard.CurrentStep!.CanSkip, Is.True,
-            "AntennaHeight step should be skippable");
+            "SpeedAndSensors step should be skippable");
         Assert.That(wizard.CanSkip, Is.True);
 
         var indexBefore = wizard.CurrentStepIndex;
@@ -237,14 +232,15 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step (index 2, after Welcome and VehicleType)
+        // Go to vehicle dimensions step (index 2, after Welcome and VehicleType)
         await ExecuteNextAsync(wizard);
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Set a value
-        var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
-        wheelbaseStep.Wheelbase = 4.2;
+        var dimStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
+        dimStep.Wheelbase = 4.2;
+        dimStep.TrackWidth = 2.0;
 
         // Go next (triggers OnLeaving which saves to config)
         await ExecuteNextAsync(wizard);
@@ -254,9 +250,11 @@ public class SteerWizardE2ETests
         wizard.BackCommand.Execute(null);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
-        var sameStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
+        var sameStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
         Assert.That(sameStep.Wheelbase, Is.EqualTo(4.2),
-            "Value should persist after going back");
+            "Wheelbase value should persist after going back");
+        Assert.That(sameStep.TrackWidth, Is.EqualTo(2.0),
+            "TrackWidth value should persist after going back");
     }
 
     // =========================================================================
@@ -268,20 +266,20 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step (index 2, after Welcome and VehicleType)
+        // Go to vehicle dimensions step (index 2)
         await ExecuteNextAsync(wizard);
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
         // Set invalid value (too small)
-        var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
-        wheelbaseStep.Wheelbase = 0.1;
+        var dimStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
+        dimStep.Wheelbase = 0.1;
 
         // Try to go next - should stay on same step
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2),
             "Should stay on step when validation fails");
-        Assert.That(wheelbaseStep.ValidationMessage, Is.Not.Null.And.Not.Empty,
+        Assert.That(dimStep.ValidationMessage, Is.Not.Null.And.Not.Empty,
             "Validation message should be set");
     }
 
@@ -290,14 +288,15 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        // Go to wheelbase step (index 2, after Welcome and VehicleType)
+        // Go to vehicle dimensions step (index 2)
         await ExecuteNextAsync(wizard);
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
-        // Set valid value
-        var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
-        wheelbaseStep.Wheelbase = 2.5;
+        // Set valid values
+        var dimStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
+        dimStep.Wheelbase = 2.5;
+        dimStep.TrackWidth = 1.8;
 
         // Try to go next - should advance
         await ExecuteNextAsync(wizard);
@@ -314,22 +313,23 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
         _store.Vehicle.Wheelbase = 2.5;
+        _store.Vehicle.TrackWidth = 1.8;
 
         var initialProgress = wizard.Progress;
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 19"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 10"));
         Assert.That(initialProgress, Is.GreaterThan(0));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 19"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 10"));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 19"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 10"));
 
         // Jump to last step
-        wizard.GoToStep(18);
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 19 of 19"));
+        wizard.GoToStep(9);
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 10 of 10"));
         Assert.That(wizard.Progress, Is.EqualTo(1.0).Within(0.001));
     }
 
@@ -342,9 +342,9 @@ public class SteerWizardE2ETests
     {
         var wizard = CreateWizard();
 
-        wizard.GoToStep(10);
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(10));
-        Assert.That(wizard.CurrentStep, Is.EqualTo(wizard.Steps[10]));
+        wizard.GoToStep(5);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(5));
+        Assert.That(wizard.CurrentStep, Is.EqualTo(wizard.Steps[5]));
     }
 
     [Test]
@@ -369,7 +369,7 @@ public class SteerWizardE2ETests
     public async Task CompletedEvent_FiresOnFinish()
     {
         var wizard = CreateWizard();
-        wizard.GoToStep(18);
+        wizard.GoToStep(9);
 
         var completedFired = false;
         wizard.Completed += (_, _) => completedFired = true;
@@ -397,7 +397,7 @@ public class SteerWizardE2ETests
     {
         // Test finish path
         var wizard1 = CreateWizard();
-        wizard1.GoToStep(18);
+        wizard1.GoToStep(9);
         var closeOnFinish = false;
         wizard1.CloseRequested += (_, _) => closeOnFinish = true;
         await ExecuteFinishAsync(wizard1);
@@ -416,31 +416,35 @@ public class SteerWizardE2ETests
     // =========================================================================
 
     [Test]
-    public async Task ConfigPersistence_WheelbaseModified_SavedOnCompletion()
+    public async Task ConfigPersistence_DimensionsModified_SavedOnCompletion()
     {
         _store.Vehicle.Wheelbase = 2.0;
+        _store.Vehicle.TrackWidth = 1.5;
 
         var wizard = CreateWizard();
 
-        // Navigate to wheelbase step (index 2, after Welcome and VehicleType)
+        // Navigate to vehicle dimensions step (index 2)
         await ExecuteNextAsync(wizard);
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
 
-        // Modify wheelbase value
-        var wheelbaseStep = (WheelbaseStepViewModel)wizard.CurrentStep!;
-        wheelbaseStep.Wheelbase = 3.7;
+        // Modify values
+        var dimStep = (VehicleDimensionsStepViewModel)wizard.CurrentStep!;
+        dimStep.Wheelbase = 3.7;
+        dimStep.TrackWidth = 2.1;
 
         // Navigate forward (OnLeaving saves to store)
         await ExecuteNextAsync(wizard);
 
         // Jump to finish and complete
-        wizard.GoToStep(18);
+        wizard.GoToStep(9);
         await ExecuteFinishAsync(wizard);
 
-        // Verify the config store has the new value
+        // Verify the config store has the new values
         Assert.That(_store.Vehicle.Wheelbase, Is.EqualTo(3.7),
             "Wheelbase should be updated in config store after leaving the step");
+        Assert.That(_store.Vehicle.TrackWidth, Is.EqualTo(2.1),
+            "TrackWidth should be updated in config store after leaving the step");
 
         // Verify SaveProfile was called
         _configService.Received(1).SaveProfile(Arg.Any<string>());

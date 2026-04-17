@@ -1,0 +1,211 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="650"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.SteeringGainsStepView"
+             x:DataType="steer:SteeringGainsStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,16"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+                <!-- Live angle/error display -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="20">
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="4">
+                            <TextBlock Text="Steer Angle"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
+                                       FontSize="28" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center" Spacing="4">
+                            <TextBlock Text="Error"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding LiveSteerError, StringFormat='{}{0:F1}'}"
+                                       FontSize="28" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Algorithm toggle -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Guidance Algorithm"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Pure Pursuit (default) or Stanley"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding IsStanleyMode}"
+                                      OnContent="Stanley"
+                                      OffContent="PP"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Proportional Gain -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Proportional Gain (Kp)"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Start at 10, increase for faster correction"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding ProportionalGain}"
+                                       Minimum="1" Maximum="100" Increment="1"
+                                       FormatString="F0"
+                                       FontSize="20" FontWeight="Bold" Width="130"
+                                       HorizontalContentAlignment="Center"
+                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       BorderThickness="2" CornerRadius="8"/>
+                    </Grid>
+                </Border>
+
+                <!-- Integral Gain -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Integral Gain (Ki)"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Start at 0, only increase for drift"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding IntegralGain}"
+                                       Minimum="0" Maximum="1" Increment="0.05"
+                                       FormatString="F2"
+                                       FontSize="20" FontWeight="Bold" Width="130"
+                                       HorizontalContentAlignment="Center"
+                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       BorderThickness="2" CornerRadius="8"/>
+                    </Grid>
+                </Border>
+
+                <!-- Steer Response Hold -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Steer Response Hold"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Look-ahead (higher = smoother)"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding SteerResponseHold}"
+                                       Minimum="1" Maximum="10" Increment="0.5"
+                                       FormatString="F1"
+                                       FontSize="20" FontWeight="Bold" Width="130"
+                                       HorizontalContentAlignment="Center"
+                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       BorderThickness="2" CornerRadius="8"/>
+                    </Grid>
+                </Border>
+
+                <!-- Stanley Aggressiveness -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16"
+                        IsVisible="{Binding IsStanleyMode}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Stanley Aggressiveness"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Cross-track correction strength"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding StanleyAggressiveness}"
+                                       Minimum="0" Maximum="10" Increment="0.5"
+                                       FormatString="F1"
+                                       FontSize="20" FontWeight="Bold" Width="130"
+                                       HorizontalContentAlignment="Center"
+                                       Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       BorderThickness="2" CornerRadius="8"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
