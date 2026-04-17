@@ -178,6 +178,42 @@ public static class UIScreenshotCatalog
             vm.State.UI.IsViewSettingsPanelVisible = false;
 
             await Pump(100);
+
+            // 6. AutoSteer Wizard - each step
+            try
+            {
+                vm.State.UI.CloseDialog();
+                await Pump(100);
+
+                // Launch the wizard
+                vm.ShowSteerWizardCommand?.Execute(null);
+                await Pump(300);
+
+                if (vm.SteerWizardViewModel != null)
+                {
+                    var wizard = vm.SteerWizardViewModel;
+                    for (int i = 0; i < wizard.TotalSteps; i++)
+                    {
+                        wizard.GoToStep(i);
+                        await Pump(200);
+                        var stepTitle = wizard.CurrentStep?.Title?.Replace(" ", "_").Replace("/", "_") ?? $"step_{i}";
+                        Capture(window, themeDir, $"wizard_{i:D2}_{stepTitle}");
+                    }
+
+                    // Close wizard
+                    wizard.IsDialogVisible = false;
+                    await Pump(100);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  [SKIP] wizard: {ex.Message}");
+                if (vm.SteerWizardViewModel != null)
+                    vm.SteerWizardViewModel.IsDialogVisible = false;
+                await Pump(100);
+            }
+
+            await Pump(100);
         }
 
         // Count screenshots
