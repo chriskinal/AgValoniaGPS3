@@ -79,6 +79,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     CornerRadius="8"
                     HorizontalContentAlignment="Center"/>
 
+            <!-- Invert WAS -->
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="300">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Invert WAS" FontSize="16"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Enable if steering reads backwards" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding InvertWas}"
+                                  OnContent="ON" OffContent="OFF"/>
+                </Grid>
+            </Border>
+
             <!-- WAS Offset -->
             <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="12" Padding="24,16">
