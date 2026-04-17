@@ -54,7 +54,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractor.png"
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
                                Width="50" Height="50"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
@@ -83,7 +83,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaHarvester.png"
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
                                Width="50" Height="50"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
@@ -112,7 +112,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="8"
                             Margin="0,0,16,0">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulated.png"
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
                                Width="50" Height="50"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
