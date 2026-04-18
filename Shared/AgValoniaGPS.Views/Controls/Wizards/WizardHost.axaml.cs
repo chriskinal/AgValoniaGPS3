@@ -105,7 +105,10 @@ public partial class WizardHost : UserControl
             // Step 9: CPD Circle Test
             CpdCircleTestStepViewModel => new CpdCircleTestStepView(),
 
-            // Step 10: Steering Gains + Algorithm
+            // Step 10: Ackermann Calibration
+            AckermannTestStepViewModel => new AckermannTestStepView(),
+
+            // Step 11: Steering Gains + Algorithm
             SteeringGainsStepViewModel => new SteeringGainsStepView(),
 
             // Step 9: Speed and Sensors

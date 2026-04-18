@@ -1281,6 +1281,82 @@ public class SteerWizardStepTests
     }
 
     // =========================================================================
+    // AckermannTestStepViewModel
+    // =========================================================================
+
+    [Test]
+    public void AckermannTest_Title_IsCorrect()
+    {
+        var step = new AckermannTestStepViewModel(_configService);
+        Assert.That(step.Title, Is.EqualTo("Ackermann Calibration"));
+    }
+
+    [Test]
+    public void AckermannTest_CanSkip_IsTrue()
+    {
+        var step = new AckermannTestStepViewModel(_configService);
+        Assert.That(step.CanSkip, Is.True);
+    }
+
+    [Test]
+    public void AckermannTest_ShouldSkip_WhenGpsOnly()
+    {
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        hardwareStep.HardwareLevel = 0; // GPS Only
+
+        var step = new AckermannTestStepViewModel(_configService);
+        step.SetHardwareStep(hardwareStep);
+
+        Assert.That(step.ShouldSkip, Is.True);
+    }
+
+    [Test]
+    public void AckermannTest_OnEntering_LoadsAckermann()
+    {
+        _store.AutoSteer.Ackermann = 80;
+        var step = new AckermannTestStepViewModel(_configService);
+        var testable = new TestableStep<AckermannTestStepViewModel>(step);
+
+        testable.Enter();
+
+        Assert.That(step.Ackermann, Is.EqualTo(80));
+    }
+
+    [Test]
+    public void AckermannTest_OnLeaving_SavesAckermann()
+    {
+        _store.AutoSteer.Ackermann = 100;
+        var step = new AckermannTestStepViewModel(_configService);
+        var testable = new TestableStep<AckermannTestStepViewModel>(step);
+
+        testable.Enter();
+        step.Ackermann = 120;
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.Ackermann, Is.EqualTo(120));
+    }
+
+    [Test]
+    public void AckermannTest_CalculateAckermann_KnownValues()
+    {
+        // Given: wheelbase=2.5, trackWidth=1.8, diameter=20m, startAngle=-15
+        // leftAngle = atan(2.5 / ((20 - 1.8*0.5) / 2)) * 180/PI
+        //           = atan(2.5 / 9.55) * 180/PI ~ 14.67 deg
+        // ackermann = (14.67 / abs(-15)) * 100 ~ 97.8 -> 97
+        int result = AckermannTestStepViewModel.CalculateAckermann(
+            wheelbase: 2.5, trackWidth: 1.8, diameter: 20.0, startAngle: -15.0);
+
+        // Should be near 100 (neutral), clamped 0-200
+        Assert.That(result, Is.InRange(80, 120));
+
+        // More precise check
+        double leftAngle = Math.Atan(2.5 / ((20 - 1.8 * 0.5) / 2)) * 180.0 / Math.PI;
+        int expected = (int)((leftAngle / Math.Abs(-15.0)) * 100);
+        expected = Math.Clamp(expected, 0, 200);
+        Assert.That(result, Is.EqualTo(expected));
+    }
+
+    // =========================================================================
     // Cross-cutting: Validation clears previous errors
     // =========================================================================
 

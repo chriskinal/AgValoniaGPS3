@@ -1,0 +1,251 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="650"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.AckermannTestStepView"
+             x:DataType="steer:AckermannTestStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding Description}"
+                   FontSize="14"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="14">
+
+                <!-- Prerequisites: GPS + Speed -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Prerequisites"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                        <!-- GPS Status -->
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Ellipse Grid.Column="0" Width="12" Height="12"
+                                     VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush Color="{DynamicResource SystemAccentColor}"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="GPS: " FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Text="RTK Fixed" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                           IsVisible="{Binding IsRtkFixed}"/>
+                                <TextBlock Text="No RTK Fix" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           IsVisible="{Binding !IsRtkFixed}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Speed -->
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Ellipse Grid.Column="0" Width="12" Height="12"
+                                     VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush Color="{DynamicResource SystemAccentColor}"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
+                                <Run Text="Speed: "/><Run Text="{Binding Speed, StringFormat='{}{0:F1}'}"/><Run Text=" km/h"/>
+                            </TextBlock>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Live steer angle + captured start angle -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="16">
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="4">
+                            <TextBlock Text="Live Steer Angle"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
+                                       FontSize="32"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center" Spacing="4"
+                                    IsVisible="{Binding IsRecording}">
+                            <TextBlock Text="Start Angle"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding CapturedStartAngle, StringFormat='{}{0:F1}'}"
+                                       FontSize="32"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Record / Stop buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                    <Button Command="{Binding StartRecordingCommand}"
+                            Width="160" Height="52"
+                            Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            CornerRadius="8"
+                            HorizontalContentAlignment="Center"
+                            IsVisible="{Binding !IsRecording}"
+                            IsEnabled="{Binding CanRecord}">
+                        <TextBlock Text="Record" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Command="{Binding StopRecordingCommand}"
+                            Width="160" Height="52"
+                            Background="#C0392B"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            CornerRadius="8"
+                            HorizontalContentAlignment="Center"
+                            IsVisible="{Binding IsRecording}">
+                        <TextBlock Text="Stop" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Recording status -->
+                <TextBlock Text="Recording... drive in a steady LEFT circle"
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                           HorizontalAlignment="Center"
+                           IsVisible="{Binding IsRecording}"/>
+
+                <!-- Results section -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="16"
+                        IsVisible="{Binding TestResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Results"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="{Binding TestResult}"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   TextWrapping="Wrap"/>
+
+                        <!-- Diameter display -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Measured Diameter"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Diameter, StringFormat='{}{0:F1} m'}"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Calculated angle display -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Calculated Steer Angle"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding CalculatedSteerAngle, StringFormat='{}{0:F1} deg'}"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Manual Ackermann entry with slider -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Ackermann"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding Ackermann, StringFormat='{}{0}'}"
+                                     FontSize="20" FontWeight="Bold"
+                                     Width="110"
+                                     TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2" CornerRadius="8"
+                                     Padding="8,6"/>
+                        </Grid>
+                        <Slider Minimum="0" Maximum="200"
+                                Value="{Binding Ackermann}"
+                                TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <Grid ColumnDefinitions="*,Auto,*">
+                            <TextBlock Grid.Column="0" Text="0"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Grid.Column="1" Text="100 = neutral"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="200"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
