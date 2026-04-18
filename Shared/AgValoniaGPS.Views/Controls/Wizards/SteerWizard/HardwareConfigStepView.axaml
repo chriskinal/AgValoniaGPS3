@@ -55,26 +55,40 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="None"
-                                    Command="{Binding SelectNone}"
+                            <Button Command="{Binding SelectNone}"
                                     Classes="hw-option"
-                                    Classes.selected="{Binding IsNoneSelected}"
-                                    Width="90"/>
-                            <Button Content="Switch"
-                                    Command="{Binding SelectSwitch}"
+                                    Classes.selected="{Binding IsNoneSelected}">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="None" FontSize="14" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="No external enable - autosteer always available"
+                                               FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SelectSwitch}"
                                     Classes="hw-option"
-                                    Classes.selected="{Binding IsSwitchSelected}"
-                                    Width="90"/>
-                            <Button Content="Button"
-                                    Command="{Binding SelectButton}"
+                                    Classes.selected="{Binding IsSwitchSelected}">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Switch" FontSize="14" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Toggle switch enables/disables"
+                                               FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SelectButton}"
                                     Classes="hw-option"
-                                    Classes.selected="{Binding IsButtonSelected}"
-                                    Width="90"/>
+                                    Classes.selected="{Binding IsButtonSelected}">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Button" FontSize="14" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Momentary button to engage"
+                                               FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                        <TextBlock Text="{Binding SteerEnableDescription}"
-                                   FontSize="12" FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -193,7 +207,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Height" Value="36"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.hw-option:pointerover">
