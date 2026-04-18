@@ -188,6 +188,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                  Padding="8,6"/>
                     </Grid>
                 </Border>
+
+                <!-- Side Hill Compensation -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Side Hill Compensation"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Degrees per degree of roll (0-1.0)"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding SideHillCompensation, StringFormat='{}{0:F2}'}"
+                                 FontSize="20" FontWeight="Bold" Width="110"
+                                 TextAlignment="Center"
+                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                 BorderThickness="2" CornerRadius="8"
+                                 Padding="8,6"/>
+                    </Grid>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

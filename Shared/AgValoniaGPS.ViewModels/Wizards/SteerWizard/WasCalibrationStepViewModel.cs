@@ -76,6 +76,14 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _maxSteerAngle, value);
     }
 
+    private int _ackermann;
+    /// <summary>Ackermann steering geometry correction (0-200, 100=neutral).</summary>
+    public int Ackermann
+    {
+        get => _ackermann;
+        set => SetProperty(ref _ackermann, value);
+    }
+
     private double _liveSteerAngle;
     /// <summary>Live steer angle from PGN 253 (degrees).</summary>
     public double LiveSteerAngle
@@ -123,6 +131,7 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         WasOffset = autoSteer.WasOffset;
         CountsPerDegree = autoSteer.CountsPerDegree;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
+        Ackermann = autoSteer.Ackermann;
 
         // Start listening for live data
         if (_autoSteerService != null)
@@ -140,6 +149,7 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         autoSteer.WasOffset = WasOffset;
         autoSteer.CountsPerDegree = CountsPerDegree;
         autoSteer.MaxSteerAngle = MaxSteerAngle;
+        autoSteer.Ackermann = Ackermann;
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
@@ -160,6 +170,12 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         if (MaxSteerAngle < 10 || MaxSteerAngle > 90)
         {
             SetValidationError("Max Steer Angle must be between 10 and 90 degrees");
+            return Task.FromResult(false);
+        }
+
+        if (Ackermann < 0 || Ackermann > 200)
+        {
+            SetValidationError("Ackermann must be between 0 and 200");
             return Task.FromResult(false);
         }
 

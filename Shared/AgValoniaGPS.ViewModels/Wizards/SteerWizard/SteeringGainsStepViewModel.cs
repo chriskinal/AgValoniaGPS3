@@ -78,6 +78,14 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         set => SetProperty(ref _integralGain, value);
     }
 
+    private double _sideHillCompensation;
+    /// <summary>Degrees per degree of roll (0-1.0).</summary>
+    public double SideHillCompensation
+    {
+        get => _sideHillCompensation;
+        set => SetProperty(ref _sideHillCompensation, value);
+    }
+
     private double _liveSteerAngle;
     /// <summary>Live actual steer angle from PGN 253.</summary>
     public double LiveSteerAngle
@@ -109,6 +117,7 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         StanleyAggressiveness = autoSteer.StanleyAggressiveness;
         ProportionalGain = autoSteer.ProportionalGain;
         IntegralGain = autoSteer.IntegralGain;
+        SideHillCompensation = autoSteer.SideHillCompensation;
 
         if (_autoSteerService != null)
             _autoSteerService.StateUpdated += OnAutoSteerStateUpdated;
@@ -125,6 +134,7 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         autoSteer.StanleyAggressiveness = StanleyAggressiveness;
         autoSteer.ProportionalGain = ProportionalGain;
         autoSteer.IntegralGain = IntegralGain;
+        autoSteer.SideHillCompensation = SideHillCompensation;
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
@@ -157,6 +167,12 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
         if (StanleyAggressiveness < 0 || StanleyAggressiveness > 10)
         {
             SetValidationError("Stanley Aggressiveness must be between 0 and 10");
+            return Task.FromResult(false);
+        }
+
+        if (SideHillCompensation < 0 || SideHillCompensation > 1.0)
+        {
+            SetValidationError("Side Hill Compensation must be between 0 and 1.0");
             return Task.FromResult(false);
         }
 
