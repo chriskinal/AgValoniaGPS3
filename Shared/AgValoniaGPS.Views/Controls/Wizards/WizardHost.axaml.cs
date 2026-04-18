@@ -96,13 +96,10 @@ public partial class WizardHost : UserControl
             // Step 8: WAS Calibration
             WasCalibrationStepViewModel => new WasCalibrationStepView(),
 
-            // Step 7: Motor PWM Test
-            PwmCalibrationStepViewModel => new PwmCalibrationStepView(),
+            // Step 9: Auto Motor Calibration
+            AutoMotorCalibrationStepViewModel => new AutoMotorCalibrationStepView(),
 
-            // Step 8: Motor Direction Test
-            MotorDirectionTestStepViewModel => new MotorDirectionTestStepView(),
-
-            // Step 9: CPD Circle Test
+            // Step 10: CPD Circle Test
             CpdCircleTestStepViewModel => new CpdCircleTestStepView(),
 
             // Step 10: Ackermann Calibration

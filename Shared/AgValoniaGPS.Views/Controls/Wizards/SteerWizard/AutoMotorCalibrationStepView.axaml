@@ -1,0 +1,280 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="650"
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.AutoMotorCalibrationStepView"
+             x:DataType="steer:AutoMotorCalibrationStepViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="{Binding Title}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Phase Description -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding PhaseDescription}"
+                   FontSize="16"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                   TextWrapping="Wrap"
+                   LineHeight="22"
+                   Margin="0,0,0,24"/>
+
+        <!-- Content area - changes per phase -->
+        <ScrollViewer Grid.Row="2">
+            <StackPanel Spacing="16">
+
+                <!-- Live WAS angle display (shown during active phases) -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12"
+                        Padding="20"
+                        HorizontalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+                        <TextBlock Text="Live Steer Angle"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
+                                   FontSize="36"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Phase A0: Start button ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseA0}" Spacing="16">
+                    <Button Command="{Binding StartTestCommand}"
+                            Content="Start Motor Test"
+                            HorizontalAlignment="Center"
+                            Padding="24,12"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            CornerRadius="8"
+                            Cursor="Hand"
+                            IsVisible="{Binding HasHardware}"/>
+                    <TextBlock Text="No hardware connected - connect AutoSteer module to run calibration."
+                               FontSize="14"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding !HasHardware}"/>
+                </StackPanel>
+
+                <!-- ===== Phase A1: Progress ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseA1}" Spacing="12">
+                    <ProgressBar Value="{Binding Progress}"
+                                 Minimum="0" Maximum="1"
+                                 Height="8"
+                                 CornerRadius="4"
+                                 Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                        <StackPanel>
+                            <TextBlock Text="Current PWM"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding CurrentPwm}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ===== Phase A Result ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseAResult}" Spacing="16">
+                    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="8" Padding="16">
+                        <TextBlock Text="{Binding PhaseResult}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+                        <Button Command="{Binding RedoPhaseACommand}"
+                                Content="Redo"
+                                Padding="16,8"
+                                FontSize="14"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="8"
+                                Cursor="Hand"/>
+                        <Button Command="{Binding ContinueToMaxAngleCommand}"
+                                Content="Continue"
+                                Padding="16,8"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="8"
+                                Cursor="Hand"
+                                IsVisible="{Binding !NoMovementDetected}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ===== Phase B0: Explanation + Start (shown via ContinueToMaxAngleCommand transitioning) ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseB0}" Spacing="16">
+                    <Button Command="{Binding ContinueToMaxAngleCommand}"
+                            Content="Start Max Angle Test"
+                            HorizontalAlignment="Center"
+                            Padding="24,12"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                            CornerRadius="8"
+                            Cursor="Hand"/>
+                </StackPanel>
+
+                <!-- ===== Phase B1: Measuring ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseB1}" Spacing="12">
+                    <ProgressBar Value="{Binding Progress}"
+                                 Minimum="0" Maximum="1"
+                                 Height="8"
+                                 CornerRadius="4"
+                                 Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerLeft.png"
+                               Width="40" Height="40" Stretch="Uniform"
+                               IsVisible="{Binding IsPhaseB1}"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerRight.png"
+                               Width="40" Height="40" Stretch="Uniform"
+                               IsVisible="{Binding IsPhaseB1}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ===== Complete: All results ===== -->
+                <StackPanel IsVisible="{Binding IsComplete}" Spacing="16">
+                    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Calibration Results"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                            <!-- Motor direction -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Motor Direction"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedInvertMotor, StringFormat='{}Inverted: {0}'}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <!-- Min PWM -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Minimum PWM"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMinPwm}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <!-- Right max -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Right Max Angle"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMaxAngleRight, StringFormat='{}{0:F1}'}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <!-- Left max -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Left Max Angle"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMaxAngleLeft, StringFormat='{}{0:F1}'}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <!-- Max steer angle -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Max Steer Angle (raw WAS)"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding MaxSteerAngle}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+                        <Button Command="{Binding RedoPhaseBCommand}"
+                                Content="Redo Max Angle"
+                                Padding="16,8"
+                                FontSize="14"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="8"
+                                Cursor="Hand"/>
+                        <Button Command="{Binding RedoPhaseACommand}"
+                                Content="Redo All"
+                                Padding="16,8"
+                                FontSize="14"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                CornerRadius="8"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Validation message -->
+        <Border Grid.Row="3"
+                Background="#C0392B"
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,16,0,0"
+                IsVisible="{Binding HasValidationError}">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"/>
+        </Border>
+    </Grid>
+</UserControl>
