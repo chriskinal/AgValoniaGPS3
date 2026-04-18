@@ -29,10 +29,16 @@ public class SteerWizardViewModel : WizardViewModel
 
     public override string WizardTitle => "AutoSteer Configuration Wizard";
 
+    /// <summary>
+    /// Persistent status bar showing live hardware data across all wizard steps.
+    /// </summary>
+    public override WizardStatusBarViewModel? StatusBar { get; }
+
     public SteerWizardViewModel(IConfigurationService configService,
         IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
+        StatusBar = new WizardStatusBarViewModel(autoSteerService);
 
         // Step 1: Welcome
         AddStep(new WelcomeStepViewModel());

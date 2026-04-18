@@ -70,7 +70,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
         <!-- Header with title and progress -->
         <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
             <Grid ColumnDefinitions="*,Auto">
@@ -124,8 +124,40 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </ItemsControl>
         </Border>
 
+        <!-- Hardware Status Bar -->
+        <Border Grid.Row="4" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="8,4"
+                IsVisible="{Binding StatusBar, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="WAS:" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding StatusBar.WasAngle, StringFormat='{}{0:F1} deg'}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Roll:" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding StatusBar.RollAngle, StringFormat='{}{0:F1} deg'}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="GPS:" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding StatusBar.GpsStatus}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Speed:" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding StatusBar.SpeedKmh, StringFormat='{}{0:F1} km/h'}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="PWM:" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding StatusBar.PwmOutput}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <!-- Navigation buttons -->
-        <Border Grid.Row="4" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
+        <Border Grid.Row="5" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                 <!-- Cancel button (left) -->
                 <Button Grid.Column="0"

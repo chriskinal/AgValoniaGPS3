@@ -102,6 +102,11 @@ public abstract class WizardViewModel : ObservableObject
     /// </summary>
     public abstract string WizardTitle { get; }
 
+    /// <summary>
+    /// Optional status bar showing live hardware data. Null if not applicable.
+    /// </summary>
+    public virtual WizardStatusBarViewModel? StatusBar => null;
+
     private bool _isDialogVisible;
     /// <summary>
     /// Whether the wizard dialog is visible.
