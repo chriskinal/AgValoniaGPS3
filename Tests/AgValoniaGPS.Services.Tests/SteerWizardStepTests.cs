@@ -411,8 +411,6 @@ public class SteerWizardStepTests
         _store.AutoSteer.ExternalEnable = 2;
         _store.AutoSteer.MotorDriver = 1;
         _store.AutoSteer.AdConverter = 1;
-        _store.AutoSteer.InvertWas = true;
-        _store.AutoSteer.InvertMotor = true;
         _store.AutoSteer.InvertRelays = false;
         _store.AutoSteer.DanfossEnabled = true;
         var testable = new TestableStep<HardwareConfigStepViewModel>(
@@ -423,8 +421,6 @@ public class SteerWizardStepTests
         Assert.That(testable.Step.ExternalEnable, Is.EqualTo(2));
         Assert.That(testable.Step.MotorDriver, Is.EqualTo(1));
         Assert.That(testable.Step.AdConverter, Is.EqualTo(1));
-        Assert.That(testable.Step.InvertWas, Is.True);
-        Assert.That(testable.Step.InvertMotor, Is.True);
         Assert.That(testable.Step.InvertRelays, Is.False);
         Assert.That(testable.Step.DanfossEnabled, Is.True);
     }
@@ -438,8 +434,6 @@ public class SteerWizardStepTests
         testable.Step.ExternalEnable = 1;
         testable.Step.MotorDriver = 1;
         testable.Step.AdConverter = 1;
-        testable.Step.InvertWas = true;
-        testable.Step.InvertMotor = false;
         testable.Step.InvertRelays = true;
         testable.Step.DanfossEnabled = true;
 
@@ -448,8 +442,6 @@ public class SteerWizardStepTests
         Assert.That(_store.AutoSteer.ExternalEnable, Is.EqualTo(1));
         Assert.That(_store.AutoSteer.MotorDriver, Is.EqualTo(1));
         Assert.That(_store.AutoSteer.AdConverter, Is.EqualTo(1));
-        Assert.That(_store.AutoSteer.InvertWas, Is.True);
-        Assert.That(_store.AutoSteer.InvertMotor, Is.False);
         Assert.That(_store.AutoSteer.InvertRelays, Is.True);
         Assert.That(_store.AutoSteer.DanfossEnabled, Is.True);
     }
