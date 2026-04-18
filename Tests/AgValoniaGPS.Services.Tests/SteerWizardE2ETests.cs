@@ -58,7 +58,7 @@ public class SteerWizardE2ETests
     public async Task FullWizardCompletion_NavigatesAllSteps_AndFiresCompleted()
     {
         var wizard = CreateWizard();
-        Assert.That(wizard.Steps.Count, Is.EqualTo(12), "Wizard should have 12 steps");
+        Assert.That(wizard.Steps.Count, Is.EqualTo(13), "Wizard should have 13 steps");
 
         // Set valid values for steps that require validation
         _store.Vehicle.Wheelbase = 2.5;
@@ -77,21 +77,21 @@ public class SteerWizardE2ETests
         visitedTitles.Add(wizard.CurrentStep!.Title);
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Welcome to AutoSteer Setup"));
 
-        // Navigate through steps 0..10 (all except last) via NextCommand
-        for (var i = 0; i < 11; i++)
+        // Navigate through steps 0..11 (all except last) via NextCommand
+        for (var i = 0; i < 12; i++)
         {
             await ExecuteNextAsync(wizard);
             visitedTitles.Add(wizard.CurrentStep!.Title);
         }
 
-        // Should be on last step (index 11)
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(11));
+        // Should be on last step (index 12)
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(12));
         Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Setup Complete"));
         Assert.That(wizard.IsOnLastStep, Is.True);
 
-        // All 12 step titles should be unique
-        Assert.That(visitedTitles.Count, Is.EqualTo(12));
-        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(12),
+        // All 13 step titles should be unique
+        Assert.That(visitedTitles.Count, Is.EqualTo(13));
+        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(13),
             "All step titles should be unique");
 
         // Finish the wizard
@@ -151,9 +151,9 @@ public class SteerWizardE2ETests
     public void NavigationState_LastStep_CorrectFlags()
     {
         var wizard = CreateWizard();
-        wizard.GoToStep(11);
+        wizard.GoToStep(12);
 
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(11));
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(12));
         Assert.That(wizard.IsOnLastStep, Is.True);
         Assert.That(wizard.IsOnFirstStep, Is.False);
         Assert.That(wizard.CanGoNext, Is.False);
@@ -319,20 +319,20 @@ public class SteerWizardE2ETests
         _store.Vehicle.TrackWidth = 1.8;
 
         var initialProgress = wizard.Progress;
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 12"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 1 of 13"));
         Assert.That(initialProgress, Is.GreaterThan(0));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 12"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 2 of 13"));
 
         await ExecuteNextAsync(wizard);
         Assert.That(wizard.Progress, Is.GreaterThan(initialProgress));
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 12"));
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 3 of 13"));
 
         // Jump to last step
-        wizard.GoToStep(11);
-        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 12 of 12"));
+        wizard.GoToStep(12);
+        Assert.That(wizard.StepDisplay, Is.EqualTo("Step 13 of 13"));
         Assert.That(wizard.Progress, Is.EqualTo(1.0).Within(0.001));
     }
 
@@ -595,12 +595,12 @@ public class SteerWizardE2ETests
             "Should be on Antenna step (index 4)");
         Assert.That(wizard.CurrentStep, Is.InstanceOf<AntennaSetupStepViewModel>());
 
-        // Next from Antenna should skip steps 5-9 (HardwareConfig, Roll, WAS, PWM, SteeringGains)
-        // and land on step 10 (SpeedAndSensors)
+        // Next from Antenna should skip steps 5-10 (HardwareConfig, Roll, WAS, PWM, MotorDirection, SteeringGains)
+        // and land on step 11 (SpeedAndSensors)
         await ExecuteNextAsync(wizard);
 
-        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(10),
-            "GPS Only should skip autosteer steps 5-9 and land on SpeedAndSensors (index 10)");
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(11),
+            "GPS Only should skip autosteer steps 5-10 and land on SpeedAndSensors (index 11)");
         Assert.That(wizard.CurrentStep, Is.InstanceOf<SpeedAndSensorsStepViewModel>());
 
         // Going back from SpeedAndSensors should skip back to Antenna
@@ -630,20 +630,20 @@ public class SteerWizardE2ETests
         _store.AutoSteer.SteerResponseHold = 3.0;
         _store.AutoSteer.StanleyAggressiveness = 1.0;
 
-        // Navigate through all 12 steps collecting titles
+        // Navigate through all 13 steps collecting titles
         var visitedTitles = new List<string>();
         visitedTitles.Add(wizard.CurrentStep!.Title);
 
-        for (var i = 0; i < 11; i++)
+        for (var i = 0; i < 12; i++)
         {
             await ExecuteNextAsync(wizard);
             visitedTitles.Add(wizard.CurrentStep!.Title);
         }
 
-        // Should have visited all 12 steps sequentially
-        Assert.That(visitedTitles.Count, Is.EqualTo(12),
-            "AutoSteer path should visit all 12 steps");
-        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(12),
+        // Should have visited all 13 steps sequentially
+        Assert.That(visitedTitles.Count, Is.EqualTo(13),
+            "AutoSteer path should visit all 13 steps");
+        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(13),
             "All step titles should be unique - no steps were skipped");
 
         // Verify autosteer steps were visited
@@ -651,6 +651,7 @@ public class SteerWizardE2ETests
         Assert.That(visitedTitles, Does.Contain("Roll Calibration"));
         Assert.That(visitedTitles, Does.Contain("Wheel Angle Sensor"));
         Assert.That(visitedTitles, Does.Contain("Motor PWM Settings"));
+        Assert.That(visitedTitles, Does.Contain("Motor Direction Test"));
         Assert.That(visitedTitles, Does.Contain("Steering Gains"));
     }
 }

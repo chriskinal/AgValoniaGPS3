@@ -73,6 +73,10 @@ public class SteerWizardViewModel : WizardViewModel
         pwmCal.SetHardwareStep(hardwareStep);
         AddStep(pwmCal);
 
+        var motorDir = new MotorDirectionTestStepViewModel(configService, autoSteerService);
+        motorDir.SetHardwareStep(hardwareStep);
+        AddStep(motorDir);
+
         var steerGains = new SteeringGainsStepViewModel(configService, autoSteerService);
         steerGains.SetHardwareStep(hardwareStep);
         AddStep(steerGains);

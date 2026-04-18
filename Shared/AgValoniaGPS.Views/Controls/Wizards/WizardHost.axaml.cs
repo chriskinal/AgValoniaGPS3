@@ -99,7 +99,10 @@ public partial class WizardHost : UserControl
             // Step 7: Motor PWM Test
             PwmCalibrationStepViewModel => new PwmCalibrationStepView(),
 
-            // Step 8: Steering Gains + Algorithm
+            // Step 8: Motor Direction Test
+            MotorDirectionTestStepViewModel => new MotorDirectionTestStepView(),
+
+            // Step 9: Steering Gains + Algorithm
             SteeringGainsStepViewModel => new SteeringGainsStepView(),
 
             // Step 9: Speed and Sensors
