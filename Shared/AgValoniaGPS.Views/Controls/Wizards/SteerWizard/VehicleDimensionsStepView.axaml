@@ -43,90 +43,60 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    LineHeight="22"
                    Margin="0,0,0,24"/>
 
-        <!-- Content: large diagram with overlaid input fields -->
-        <Grid Grid.Row="2">
-            <!-- Vehicle diagram fills the step area -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12"
-                    Padding="12"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch">
-                <Image Source="{Binding WheelbaseImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
-                       Stretch="Uniform"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"/>
+        <!-- Content: image left, fields right -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" VerticalAlignment="Center">
+            <!-- Cropped vehicle diagram -->
+            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="8" Margin="0,0,12,0">
+                <Image Source="{Binding WheelbaseCropImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                       Stretch="Uniform" MaxHeight="360"
+                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Border>
 
-            <!-- Overlaid input fields positioned at bottom -->
-            <StackPanel VerticalAlignment="Bottom" Spacing="8" Margin="16,0,16,16">
+            <!-- Input fields -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="16">
                 <!-- Wheelbase input -->
-                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                        CornerRadius="10"
-                        Padding="16,10"
-                        Opacity="0.95">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="Wheelbase"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="Front to rear axle distance"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="16,12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Wheelbase" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Front to rear axle distance" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBox Text="{Binding Wheelbase, StringFormat='{}{0:F2}'}"
-                                     FontSize="18"
-                                     FontWeight="Bold"
-                                     Width="100"
-                                     TextAlignment="Center"
+                                     FontSize="22" FontWeight="Bold" Width="120" TextAlignment="Center"
                                      Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                      BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                     BorderThickness="2"
-                                     CornerRadius="8"
-                                     Padding="6,4"/>
-                            <TextBlock Text="m"
-                                       FontSize="16"
+                                     BorderThickness="2" CornerRadius="8" Padding="8,6"/>
+                            <TextBlock Text="m" FontSize="18"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Grid>
+                    </StackPanel>
                 </Border>
 
                 <!-- Track width input -->
-                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                        CornerRadius="10"
-                        Padding="16,10"
-                        Opacity="0.95">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="Track Width"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="Left to right wheel center"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="16,12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Track Width" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Left to right wheel center" FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBox Text="{Binding TrackWidth, StringFormat='{}{0:F2}'}"
-                                     FontSize="18"
-                                     FontWeight="Bold"
-                                     Width="100"
-                                     TextAlignment="Center"
+                                     FontSize="22" FontWeight="Bold" Width="120" TextAlignment="Center"
                                      Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                      BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                     BorderThickness="2"
-                                     CornerRadius="8"
-                                     Padding="6,4"/>
-                            <TextBlock Text="m"
-                                       FontSize="16"
+                                     BorderThickness="2" CornerRadius="8" Padding="8,6"/>
+                            <TextBlock Text="m" FontSize="18"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Grid>
+                    </StackPanel>
                 </Border>
             </StackPanel>
         </Grid>

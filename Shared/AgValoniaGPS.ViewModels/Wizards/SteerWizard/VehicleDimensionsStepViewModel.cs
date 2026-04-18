@@ -53,6 +53,16 @@ public class VehicleDimensionsStepViewModel : WizardStepViewModel
     /// </summary>
     public string WheelbaseImageSource => _configService.Store.Vehicle.WheelbaseImageSource;
 
+    /// <summary>
+    /// Cropped wheelbase diagram focused on the wheel area.
+    /// </summary>
+    public string WheelbaseCropImageSource => _configService.Store.Vehicle.Type switch
+    {
+        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBaseHarvester.png",
+        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBaseArticulated.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBase.png"
+    };
+
     public VehicleDimensionsStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
