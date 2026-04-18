@@ -13,12 +13,15 @@
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel VerticalAlignment="Top" Spacing="16">
-                <!-- Roll icon -->
-                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConS_SourcesRoll.png"
-                       Width="80" Height="80"
-                       Stretch="Uniform"
-                       HorizontalAlignment="Center"/>
+            <StackPanel VerticalAlignment="Top" Spacing="14">
+                <!-- Roll helper diagram -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="8" Padding="8" HorizontalAlignment="Center">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConD_RollHelper.png"
+                           Width="200" Height="120"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"/>
+                </Border>
 
                 <!-- Analog roll gauge -->
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
@@ -45,12 +48,27 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Zero Roll button -->
-                <Button Content="Zero Roll" Height="48" MinWidth="200" FontSize="16" FontWeight="SemiBold"
+                <!-- Instruction text -->
+                <TextBlock Text="Tilt your vehicle slightly to the right. The roll reading should go POSITIVE. If it goes negative, enable Invert Roll."
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           TextWrapping="Wrap" TextAlignment="Center"
+                           Margin="8,0"/>
+
+                <!-- Zero Roll button with icon -->
+                <Button Height="48" MinWidth="200"
                         HorizontalAlignment="Center" CornerRadius="8" Cursor="Hand"
                         Command="{Binding ZeroRollCommand}"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}"
-                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConDa_RollSetZero.png"
+                               Width="28" Height="28" Stretch="Uniform"/>
+                        <TextBlock Text="Zero Roll" FontSize="16" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </StackPanel>
+                </Button>
 
                 <!-- Roll Zero offset display -->
                 <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Center" MinWidth="250">
@@ -61,13 +79,17 @@
                                VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </Grid>
 
-                <!-- Invert Roll toggle -->
+                <!-- Invert Roll toggle with icon -->
                 <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="250">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="Invert Roll" FontSize="16" VerticalAlignment="Center"
+                        CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="300">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Image Grid.Column="0"
+                               Source="avares://AgValoniaGPS.Views/Assets/Icons/ConDa_InvertRoll.png"
+                               Width="32" Height="32" Stretch="Uniform"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="Invert Roll" FontSize="16" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRollInvert}"
+                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsRollInvert}"
                                       OnContent="ON" OffContent="OFF"/>
                     </Grid>
                 </Border>

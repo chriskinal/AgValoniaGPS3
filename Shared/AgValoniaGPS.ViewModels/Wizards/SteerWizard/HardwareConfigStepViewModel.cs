@@ -46,6 +46,7 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
             OnPropertyChanged(nameof(IsNoneSelected));
             OnPropertyChanged(nameof(IsSwitchSelected));
             OnPropertyChanged(nameof(IsButtonSelected));
+            OnPropertyChanged(nameof(SteerEnableDescription));
         }
     }
 
@@ -53,13 +54,21 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
     public bool IsSwitchSelected => ExternalEnable == 1;
     public bool IsButtonSelected => ExternalEnable == 2;
 
+    public string SteerEnableDescription => ExternalEnable switch
+    {
+        0 => "No external enable - autosteer always available",
+        1 => "Toggle switch enables/disables autosteer",
+        2 => "Momentary button to engage autosteer",
+        _ => string.Empty
+    };
+
     public void SelectNone() => ExternalEnable = 0;
     public void SelectSwitch() => ExternalEnable = 1;
     public void SelectButton() => ExternalEnable = 2;
 
     // --- Motor Driver ---
 
-    private int _motorDriver;
+    private int _motorDriver = 1;
     public int MotorDriver
     {
         get => _motorDriver;
@@ -79,7 +88,7 @@ public class HardwareConfigStepViewModel : WizardStepViewModel
 
     // --- A/D Converter ---
 
-    private int _adConverter;
+    private int _adConverter = 1;
     public int AdConverter
     {
         get => _adConverter;

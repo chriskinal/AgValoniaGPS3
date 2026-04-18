@@ -43,19 +43,47 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    Margin="0,0,0,24"/>
 
         <!-- Content -->
-        <StackPanel Grid.Row="2" Spacing="16">
-            <!-- Live angle display -->
+        <StackPanel Grid.Row="2" Spacing="14">
+            <!-- WAS angle display with text -->
             <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     CornerRadius="12"
-                    Padding="20"
-                    HorizontalAlignment="Center">
-                <StackPanel HorizontalAlignment="Center" Spacing="4">
-                    <TextBlock Text="Live Steer Angle"
-                               FontSize="13"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               HorizontalAlignment="Center"/>
+                    Padding="16"
+                    HorizontalAlignment="Stretch">
+                <StackPanel Spacing="8">
+                    <!-- WAS: X.X deg label -->
+                    <TextBlock HorizontalAlignment="Center" FontSize="14"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+                        <Run Text="WAS: "/><Run Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"/><Run Text=" deg"/>
+                    </TextBlock>
+
+                    <!-- Horizontal bar indicator -->
+                    <Grid Height="32" Margin="8,0">
+                        <!-- Labels -->
+                        <TextBlock Text="Left" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <TextBlock Text="Right" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                    <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="4" Height="12" Margin="32,0">
+                        <Grid>
+                            <!-- Center tick mark -->
+                            <Border Width="2" Height="12"
+                                    Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <!-- Angle indicator - positioned via RenderTransform -->
+                            <Border Width="8" Height="18" CornerRadius="3"
+                                    Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    x:Name="WasIndicator"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Numeric readout -->
                     <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}'}"
-                               FontSize="36"
+                               FontSize="32"
                                FontWeight="Bold"
                                Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                                HorizontalAlignment="Center"/>
@@ -67,29 +95,45 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
             </Border>
 
-            <!-- Zero WAS button -->
-            <Button Content="Zero WAS"
-                    Command="{Binding ZeroWasCommand}"
+            <!-- Instruction text -->
+            <TextBlock Text="Steer Angle must be POSITIVE when turning to the RIGHT. If not, select Invert WAS."
+                       FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                       TextWrapping="Wrap" TextAlignment="Center"
+                       Margin="8,0"/>
+
+            <!-- Zero WAS button with icon -->
+            <Button Command="{Binding ZeroWasCommand}"
                     HorizontalAlignment="Center"
-                    Width="160" Height="44"
-                    FontSize="16"
-                    FontWeight="SemiBold"
+                    Width="180" Height="48"
                     Background="{DynamicResource SystemControlHighlightAccentBrush}"
                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     CornerRadius="8"
-                    HorizontalContentAlignment="Center"/>
+                    HorizontalContentAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerZero.png"
+                           Width="28" Height="28" Stretch="Uniform"/>
+                    <TextBlock Text="Zero WAS" FontSize="16" FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </StackPanel>
+            </Button>
 
-            <!-- Invert WAS -->
+            <!-- Invert WAS with icon -->
             <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="8" Padding="16,12" HorizontalAlignment="Center" MinWidth="300">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Image Grid.Column="0"
+                           Source="avares://AgValoniaGPS.Views/Assets/Icons/ConSt_InvertWAS.png"
+                           Width="32" Height="32" Stretch="Uniform"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Invert WAS" FontSize="16"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable if steering reads backwards" FontSize="12"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding InvertWas}"
+                    <ToggleSwitch Grid.Column="2" IsChecked="{Binding InvertWas}"
                                   OnContent="ON" OffContent="OFF"/>
                 </Grid>
             </Border>

@@ -111,17 +111,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Grid>
             </Border>
 
-            <!-- Invert Motor -->
+            <!-- Invert Motor with icon -->
             <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="8" Padding="16,12" HorizontalAlignment="Stretch">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel VerticalAlignment="Center">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Image Grid.Column="0"
+                           Source="avares://AgValoniaGPS.Views/Assets/Icons/ConSt_InvertDirection.png"
+                           Width="32" Height="32" Stretch="Uniform"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Invert Motor" FontSize="16"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Enable if motor drives in wrong direction" FontSize="12"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
-                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding InvertMotor}"
+                    <ToggleSwitch Grid.Column="2" IsChecked="{Binding InvertMotor}"
                                   OnContent="ON" OffContent="OFF"/>
                 </Grid>
             </Border>
@@ -149,26 +153,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </Button.Styles>
                     </Button>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8"
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12"
                                 IsVisible="{Binding IsFreeDriveActive}">
-                        <Button Content="Left"
-                                Command="{Binding FreeDriveLeftCommand}"
-                                Width="80" Height="36"
+                        <Button Command="{Binding FreeDriveLeftCommand}"
+                                Width="64" Height="56"
                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                CornerRadius="6" HorizontalContentAlignment="Center"/>
-                        <Button Content="Center"
-                                Command="{Binding FreeDriveCenterCommand}"
-                                Width="80" Height="36"
+                                CornerRadius="8" HorizontalContentAlignment="Center"
+                                Cursor="Hand" ToolTip.Tip="Steer Left">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerLeft.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                        </Button>
+                        <Button Command="{Binding FreeDriveCenterCommand}"
+                                Width="64" Height="56"
                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                CornerRadius="6" HorizontalContentAlignment="Center"/>
-                        <Button Content="Right"
-                                Command="{Binding FreeDriveRightCommand}"
-                                Width="80" Height="36"
+                                CornerRadius="8" HorizontalContentAlignment="Center"
+                                Cursor="Hand" ToolTip.Tip="Center">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerZero.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                        </Button>
+                        <Button Command="{Binding FreeDriveRightCommand}"
+                                Width="64" Height="56"
                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                CornerRadius="6" HorizontalContentAlignment="Center"/>
+                                CornerRadius="8" HorizontalContentAlignment="Center"
+                                Cursor="Hand" ToolTip.Tip="Steer Right">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerRight.png"
+                                   Width="40" Height="40" Stretch="Uniform"/>
+                        </Button>
                     </StackPanel>
 
                     <TextBlock Text="No hardware connected"
