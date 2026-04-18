@@ -68,7 +68,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Front axle steering"
                                FontSize="14"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center"/>
@@ -98,7 +98,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Rear axle steering"
                                FontSize="14"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center"/>
@@ -128,7 +128,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Center pivot steering"
                                FontSize="14"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center"/>
@@ -168,6 +168,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.option-button.selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.option-desc">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
+        <Style Selector="Button.option-button.selected TextBlock.option-desc">
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.option-button.selected:pointerover">

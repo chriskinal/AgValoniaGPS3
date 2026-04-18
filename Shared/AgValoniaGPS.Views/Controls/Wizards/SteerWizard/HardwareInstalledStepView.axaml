@@ -28,7 +28,7 @@
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Light bar guidance only"
                                FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -49,7 +49,7 @@
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Motor/valve, WAS, IMU"
                                FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -70,7 +70,7 @@
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Steering + section control"
                                FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Classes="option-desc"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -100,7 +100,13 @@
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+        <Style Selector="TextBlock.option-desc">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
         <Style Selector="Button.option-button.selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.option-button.selected TextBlock.option-desc">
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.option-button.selected:pointerover">
