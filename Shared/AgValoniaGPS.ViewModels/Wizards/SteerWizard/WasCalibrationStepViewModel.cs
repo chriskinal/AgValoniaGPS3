@@ -43,9 +43,7 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         "1. Point wheels straight ahead\n" +
         "2. Press 'Zero WAS' to set the zero position\n" +
         "3. Turn wheels RIGHT - the angle should read POSITIVE\n" +
-        "4. If it reads negative, enable 'Invert WAS'\n" +
-        "5. Adjust Counts Per Degree (typical: 80-120)\n" +
-        "6. Set Max Steer Angle to your vehicle's physical limit";
+        "4. If it reads negative, enable 'Invert WAS'";
 
     private bool _invertWas;
     /// <summary>Invert WAS direction if steering reads backwards.</summary>
@@ -60,28 +58,6 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
     {
         get => _wasOffset;
         set => SetProperty(ref _wasOffset, value);
-    }
-
-    private double _countsPerDegree;
-    public double CountsPerDegree
-    {
-        get => _countsPerDegree;
-        set => SetProperty(ref _countsPerDegree, value);
-    }
-
-    private int _maxSteerAngle;
-    public int MaxSteerAngle
-    {
-        get => _maxSteerAngle;
-        set => SetProperty(ref _maxSteerAngle, value);
-    }
-
-    private int _ackermann;
-    /// <summary>Ackermann steering geometry correction (0-200, 100=neutral).</summary>
-    public int Ackermann
-    {
-        get => _ackermann;
-        set => SetProperty(ref _ackermann, value);
     }
 
     private double _liveSteerAngle;
@@ -120,7 +96,8 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
             // Use actual WAS angle from PGN 253 (hardware sensor reading)
             double actualAngle = _autoSteerService.LastSteerData.ActualSteerAngle;
             // The actual angle * CPD gives approximate raw counts to zero
-            WasOffset = (int)(actualAngle * CountsPerDegree);
+            double cpd = _configService.Store.AutoSteer.CountsPerDegree;
+            WasOffset = (int)(actualAngle * cpd);
         }
     }
 
@@ -129,9 +106,6 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         var autoSteer = _configService.Store.AutoSteer;
         InvertWas = autoSteer.InvertWas;
         WasOffset = autoSteer.WasOffset;
-        CountsPerDegree = autoSteer.CountsPerDegree;
-        MaxSteerAngle = autoSteer.MaxSteerAngle;
-        Ackermann = autoSteer.Ackermann;
 
         // Start listening for live data
         if (_autoSteerService != null)
@@ -147,9 +121,6 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
         var autoSteer = _configService.Store.AutoSteer;
         autoSteer.InvertWas = InvertWas;
         autoSteer.WasOffset = WasOffset;
-        autoSteer.CountsPerDegree = CountsPerDegree;
-        autoSteer.MaxSteerAngle = MaxSteerAngle;
-        autoSteer.Ackermann = Ackermann;
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
@@ -161,24 +132,6 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
 
     public override Task<bool> ValidateAsync()
     {
-        if (CountsPerDegree < 1 || CountsPerDegree > 255)
-        {
-            SetValidationError("Counts Per Degree must be between 1 and 255");
-            return Task.FromResult(false);
-        }
-
-        if (MaxSteerAngle < 10 || MaxSteerAngle > 90)
-        {
-            SetValidationError("Max Steer Angle must be between 10 and 90 degrees");
-            return Task.FromResult(false);
-        }
-
-        if (Ackermann < 0 || Ackermann > 200)
-        {
-            SetValidationError("Ackermann must be between 0 and 200");
-            return Task.FromResult(false);
-        }
-
         ClearValidation();
         return Task.FromResult(true);
     }

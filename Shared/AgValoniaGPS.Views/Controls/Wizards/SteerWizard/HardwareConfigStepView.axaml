@@ -146,16 +146,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <!-- Invert Relays -->
+                        <!-- Invert Steer Enable Relay -->
                         <Grid ColumnDefinitions="Auto,*,Auto">
                             <Image Grid.Column="0"
                                    Source="avares://AgValoniaGPS.Views/Assets/Icons/ConSt_InvertRelay.png"
                                    Width="32" Height="32" Stretch="Uniform"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Grid.Column="1" Text="Invert Relays"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Invert Steer Enable Relay"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                <TextBlock Text="Inverts the relay that enables/disables the steering motor"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            </StackPanel>
                             <ToggleSwitch Grid.Column="2"
                                           IsChecked="{Binding InvertRelays}"
                                           OnContent="ON" OffContent="OFF"

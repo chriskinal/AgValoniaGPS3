@@ -67,7 +67,7 @@
                 <Button Height="48" MinWidth="200"
                         HorizontalAlignment="Center" CornerRadius="8" Cursor="Hand"
                         Command="{Binding ZeroRollCommand}"
-                        Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ConDa_RollSetZero.png"
