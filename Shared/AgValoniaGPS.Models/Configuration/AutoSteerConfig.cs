@@ -329,7 +329,7 @@ public class AutoSteerConfig : ObservableObject
         set => SetProperty(ref _invertRelays, value);
     }
 
-    private int _motorDriver = 0;
+    private int _motorDriver = 1;
     /// <summary>
     /// Motor driver type: 0 = IBT2, 1 = Cytron
     /// </summary>
@@ -339,7 +339,7 @@ public class AutoSteerConfig : ObservableObject
         set => SetProperty(ref _motorDriver, value);
     }
 
-    private int _adConverter = 0;
+    private int _adConverter = 1;
     /// <summary>
     /// A/D converter type: 0 = Differential, 1 = Single
     /// </summary>
