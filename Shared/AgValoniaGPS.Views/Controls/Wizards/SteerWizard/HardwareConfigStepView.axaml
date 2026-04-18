@@ -71,6 +71,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     Classes.selected="{Binding IsButtonSelected}"
                                     Width="90"/>
                         </StackPanel>
+                        <TextBlock Text="{Binding SteerEnableDescription}"
+                                   FontSize="12" FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -83,15 +87,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="IBT2"
-                                    Command="{Binding SelectIBT2}"
-                                    Classes="hw-option"
-                                    Classes.selected="{Binding IsIBT2Selected}"
-                                    Width="130"/>
                             <Button Content="Cytron"
                                     Command="{Binding SelectCytron}"
                                     Classes="hw-option"
                                     Classes.selected="{Binding IsCytronSelected}"
+                                    Width="130"/>
+                            <Button Content="IBT2"
+                                    Command="{Binding SelectIBT2}"
+                                    Classes="hw-option"
+                                    Classes.selected="{Binding IsIBT2Selected}"
                                     Width="130"/>
                         </StackPanel>
                     </StackPanel>
@@ -106,15 +110,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Differential"
-                                    Command="{Binding SelectDifferential}"
-                                    Classes="hw-option"
-                                    Classes.selected="{Binding IsDifferentialSelected}"
-                                    Width="130"/>
                             <Button Content="Single"
                                     Command="{Binding SelectSingle}"
                                     Classes="hw-option"
                                     Classes.selected="{Binding IsSingleSelected}"
+                                    Width="130"/>
+                            <Button Content="Differential"
+                                    Command="{Binding SelectDifferential}"
+                                    Classes="hw-option"
+                                    Classes.selected="{Binding IsDifferentialSelected}"
                                     Width="130"/>
                         </StackPanel>
                     </StackPanel>
@@ -129,12 +133,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <!-- Invert Relays -->
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Invert Relays"
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Image Grid.Column="0"
+                                   Source="avares://AgValoniaGPS.Views/Assets/Icons/ConSt_InvertRelay.png"
+                                   Width="32" Height="32" Stretch="Uniform"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1" Text="Invert Relays"
                                        FontSize="14"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                        VerticalAlignment="Center"/>
-                            <ToggleSwitch Grid.Column="1"
+                            <ToggleSwitch Grid.Column="2"
                                           IsChecked="{Binding InvertRelays}"
                                           OnContent="ON" OffContent="OFF"
                                           VerticalAlignment="Center"/>

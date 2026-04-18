@@ -43,88 +43,93 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    LineHeight="22"
                    Margin="0,0,0,24"/>
 
-        <!-- Content -->
-        <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="20">
-            <!-- Vehicle diagram - bigger -->
+        <!-- Content: large diagram with overlaid input fields -->
+        <Grid Grid.Row="2">
+            <!-- Vehicle diagram fills the step area -->
             <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="8"
-                    Padding="20"
-                    HorizontalAlignment="Center">
+                    CornerRadius="12"
+                    Padding="12"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
                 <Image Source="{Binding WheelbaseImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
-                       Width="320" Height="200"
-                       Stretch="Uniform"/>
+                       Stretch="Uniform"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"/>
             </Border>
 
-            <!-- Wheelbase input -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12"
-                    Padding="24,16"
-                    HorizontalAlignment="Stretch">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Wheelbase"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Front to rear axle distance"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox Text="{Binding Wheelbase, StringFormat='{}{0:F2}'}"
-                                 FontSize="20"
-                                 FontWeight="Bold"
-                                 Width="110"
-                                 TextAlignment="Center"
-                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                 BorderThickness="2"
-                                 CornerRadius="8"
-                                 Padding="8,6"/>
-                        <TextBlock Text="m"
-                                   FontSize="18"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
+            <!-- Overlaid input fields positioned at bottom -->
+            <StackPanel VerticalAlignment="Bottom" Spacing="8" Margin="16,0,16,16">
+                <!-- Wheelbase input -->
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                        CornerRadius="10"
+                        Padding="16,10"
+                        Opacity="0.95">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Wheelbase"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Front to rear axle distance"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBox Text="{Binding Wheelbase, StringFormat='{}{0:F2}'}"
+                                     FontSize="18"
+                                     FontWeight="Bold"
+                                     Width="100"
+                                     TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2"
+                                     CornerRadius="8"
+                                     Padding="6,4"/>
+                            <TextBlock Text="m"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-            <!-- Track width input -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12"
-                    Padding="24,16"
-                    HorizontalAlignment="Stretch">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Track Width"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Left to right wheel center"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox Text="{Binding TrackWidth, StringFormat='{}{0:F2}'}"
-                                 FontSize="20"
-                                 FontWeight="Bold"
-                                 Width="110"
-                                 TextAlignment="Center"
-                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                 BorderThickness="2"
-                                 CornerRadius="8"
-                                 Padding="8,6"/>
-                        <TextBlock Text="m"
-                                   FontSize="18"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </StackPanel>
+                <!-- Track width input -->
+                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                        CornerRadius="10"
+                        Padding="16,10"
+                        Opacity="0.95">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Track Width"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Left to right wheel center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBox Text="{Binding TrackWidth, StringFormat='{}{0:F2}'}"
+                                     FontSize="18"
+                                     FontWeight="Bold"
+                                     Width="100"
+                                     TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2"
+                                     CornerRadius="8"
+                                     Padding="6,4"/>
+                            <TextBlock Text="m"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Grid>
 
         <!-- Validation message -->
         <Border Grid.Row="3"
