@@ -77,6 +77,10 @@ public class SteerWizardViewModel : WizardViewModel
         motorDir.SetHardwareStep(hardwareStep);
         AddStep(motorDir);
 
+        var cpdCircle = new CpdCircleTestStepViewModel(configService, autoSteerService);
+        cpdCircle.SetHardwareStep(hardwareStep);
+        AddStep(cpdCircle);
+
         var steerGains = new SteeringGainsStepViewModel(configService, autoSteerService);
         steerGains.SetHardwareStep(hardwareStep);
         AddStep(steerGains);
