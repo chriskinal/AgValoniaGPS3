@@ -41,7 +41,8 @@ public class SteerWizardViewModel : WizardViewModel
         AddStep(new VehicleTypeStepViewModel(configService));
 
         // Step 3: Hardware Installed (GPS only / AutoSteer / Full)
-        AddStep(new HardwareInstalledStepViewModel());
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        AddStep(hardwareStep);
 
         // Step 4: Vehicle Dimensions (wheelbase + track width)
         AddStep(new VehicleDimensionsStepViewModel(configService));
@@ -49,20 +50,26 @@ public class SteerWizardViewModel : WizardViewModel
         // Step 5: Antenna Position (pivot + height + offset)
         AddStep(new AntennaSetupStepViewModel(configService));
 
-        // Step 6: Hardware Configuration (enable + motor + ADC + inversions + Danfoss)
-        AddStep(new HardwareConfigStepViewModel(configService));
+        // Steps 6-10: AutoSteer-only steps (skipped when GPS Only)
+        var hwConfig = new HardwareConfigStepViewModel(configService);
+        hwConfig.SetHardwareStep(hardwareStep);
+        AddStep(hwConfig);
 
-        // Step 7: Roll Calibration (IMU roll invert + zero)
-        AddStep(new RollCalibrationStepViewModel(configService, autoSteerService));
+        var rollCal = new RollCalibrationStepViewModel(configService, autoSteerService);
+        rollCal.SetHardwareStep(hardwareStep);
+        AddStep(rollCal);
 
-        // Step 8: WAS Calibration (with live hardware access)
-        AddStep(new WasCalibrationStepViewModel(configService, autoSteerService));
+        var wasCal = new WasCalibrationStepViewModel(configService, autoSteerService);
+        wasCal.SetHardwareStep(hardwareStep);
+        AddStep(wasCal);
 
-        // Step 9: Motor PWM Test (with live hardware access)
-        AddStep(new PwmCalibrationStepViewModel(configService, autoSteerService));
+        var pwmCal = new PwmCalibrationStepViewModel(configService, autoSteerService);
+        pwmCal.SetHardwareStep(hardwareStep);
+        AddStep(pwmCal);
 
-        // Step 10: Steering Gains + Algorithm (with live hardware access)
-        AddStep(new SteeringGainsStepViewModel(configService, autoSteerService));
+        var steerGains = new SteeringGainsStepViewModel(configService, autoSteerService);
+        steerGains.SetHardwareStep(hardwareStep);
+        AddStep(steerGains);
 
         // Step 11: Speed Limits + Sensors
         AddStep(new SpeedAndSensorsStepViewModel(configService));

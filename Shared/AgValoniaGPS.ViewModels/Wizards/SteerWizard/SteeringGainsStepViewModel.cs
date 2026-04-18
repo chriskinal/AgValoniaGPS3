@@ -30,8 +30,13 @@ public class SteeringGainsStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
     private readonly IAutoSteerService? _autoSteerService;
+    private HardwareInstalledStepViewModel? _hardwareStep;
 
     public override string Title => "Steering Gains";
+
+    public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
+
+    public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
         "Choose your guidance algorithm and configure steering gains. Pure Pursuit is a good " +

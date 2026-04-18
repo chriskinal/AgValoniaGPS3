@@ -32,8 +32,13 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
     private readonly IAutoSteerService? _autoSteerService;
+    private HardwareInstalledStepViewModel? _hardwareStep;
 
     public override string Title => "Motor PWM Settings";
+
+    public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
+
+    public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
         "Configure PWM limits for your steering motor or valve. " +

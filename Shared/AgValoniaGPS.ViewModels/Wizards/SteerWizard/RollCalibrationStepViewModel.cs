@@ -21,8 +21,13 @@ public class RollCalibrationStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
     private readonly IAutoSteerService? _autoSteerService;
+    private HardwareInstalledStepViewModel? _hardwareStep;
 
     public override string Title => "Roll Calibration";
+
+    public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
+
+    public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
         "Calibrate your IMU roll sensor. Park the vehicle on level ground, then press " +
