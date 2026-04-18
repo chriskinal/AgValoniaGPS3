@@ -30,9 +30,11 @@ public class RollCalibrationStepViewModel : WizardStepViewModel
     public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
-        "Calibrate your IMU roll sensor. Park the vehicle on level ground, then press " +
-        "'Zero Roll' to capture the current reading as the zero offset. " +
-        "Enable 'Invert Roll' if the roll reads backwards.";
+        "1. Tilt your vehicle slightly to the RIGHT\n" +
+        "2. The gauge should move to the RIGHT (positive)\n" +
+        "3. If it moves LEFT (negative), enable 'Invert Roll'\n" +
+        "4. Park on LEVEL GROUND\n" +
+        "5. Press 'Zero Roll' to calibrate the zero position";
 
     public override bool CanSkip => true;
 

@@ -36,7 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
-                   FontSize="14"
+                   FontSize="16"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"

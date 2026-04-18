@@ -40,10 +40,12 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
     public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
-        "Calibrate your Wheel Angle Sensor (WAS). Point the wheels straight ahead and press " +
-        "'Zero WAS' to capture the current sensor reading as the zero offset. " +
-        "Counts Per Degree (CPD) defines sensor sensitivity. " +
-        "Max Steer Angle limits the commanded steering range for safety.";
+        "1. Point wheels straight ahead\n" +
+        "2. Press 'Zero WAS' to set the zero position\n" +
+        "3. Turn wheels RIGHT - the angle should read POSITIVE\n" +
+        "4. If it reads negative, enable 'Invert WAS'\n" +
+        "5. Adjust Counts Per Degree (typical: 80-120)\n" +
+        "6. Set Max Steer Angle to your vehicle's physical limit";
 
     private bool _invertWas;
     /// <summary>Invert WAS direction if steering reads backwards.</summary>

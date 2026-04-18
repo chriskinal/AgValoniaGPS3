@@ -13,7 +13,7 @@ Licensed under GNU GPL v3.
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="Bold"
                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,0,0,8"/>
-        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap"
+        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="16" TextWrapping="Wrap"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,12"/>
 
         <!-- Two columns: Left = Pivot + Height, Right = Lateral Offset -->
