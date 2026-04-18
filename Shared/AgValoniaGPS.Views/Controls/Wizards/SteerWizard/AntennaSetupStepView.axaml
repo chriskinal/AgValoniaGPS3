@@ -43,25 +43,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    LineHeight="22"
                    Margin="0,0,0,24"/>
 
-        <!-- Content: large antenna diagram with overlaid fields -->
-        <Grid Grid.Row="2">
-            <!-- Antenna diagram fills the step area -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12"
-                    Padding="12"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch">
+        <!-- Content: image left, fields right -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" VerticalAlignment="Center">
+            <!-- Antenna diagram -->
+            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="8" Margin="0,0,12,0">
                 <Image Source="{Binding AntennaIconSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
                        Stretch="Uniform"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"/>
             </Border>
 
-            <!-- Overlaid input fields at bottom -->
-            <ScrollViewer VerticalAlignment="Bottom" VerticalScrollBarVisibility="Auto" MaxHeight="340">
-                <StackPanel Spacing="6" Margin="12,0,12,12">
+            <!-- Input fields in right column -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
                     <!-- Pivot Distance -->
-                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="10" Padding="14,8" Opacity="0.95">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -85,7 +81,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </Border>
 
                     <!-- Height -->
-                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="10" Padding="14,8" Opacity="0.95">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -161,9 +157,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
 
                     <!-- Lateral Offset value input -->
-                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                            CornerRadius="10" Padding="14,8" Opacity="0.95"
-                            HorizontalAlignment="Center" MinWidth="300">
+                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            CornerRadius="10" Padding="14,8"                             HorizontalAlignment="Center" MinWidth="300">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                 <TextBlock Text="Lateral Offset" FontSize="14" FontWeight="SemiBold"
@@ -185,7 +180,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         </Grid>
                     </Border>
                 </StackPanel>
-            </ScrollViewer>
         </Grid>
 
         <!-- Validation message -->
