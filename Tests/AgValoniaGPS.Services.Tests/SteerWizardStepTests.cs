@@ -504,16 +504,14 @@ public class SteerWizardStepTests
     public void WasCalibrationStep_OnEntering_LoadsFromConfig()
     {
         _store.AutoSteer.WasOffset = 123;
-        _store.AutoSteer.CountsPerDegree = 80;
-        _store.AutoSteer.MaxSteerAngle = 40;
+        _store.AutoSteer.InvertWas = true;
         var testable = new TestableStep<WasCalibrationStepViewModel>(
             new WasCalibrationStepViewModel(_configService));
 
         testable.Enter();
 
         Assert.That(testable.Step.WasOffset, Is.EqualTo(123));
-        Assert.That(testable.Step.CountsPerDegree, Is.EqualTo(80));
-        Assert.That(testable.Step.MaxSteerAngle, Is.EqualTo(40));
+        Assert.That(testable.Step.InvertWas, Is.True);
     }
 
     [Test]
@@ -523,96 +521,18 @@ public class SteerWizardStepTests
             new WasCalibrationStepViewModel(_configService));
         testable.Enter();
         testable.Step.WasOffset = 50;
-        testable.Step.CountsPerDegree = 120;
-        testable.Step.MaxSteerAngle = 60;
+        testable.Step.InvertWas = true;
 
         testable.Leave();
 
         Assert.That(_store.AutoSteer.WasOffset, Is.EqualTo(50));
-        Assert.That(_store.AutoSteer.CountsPerDegree, Is.EqualTo(120));
-        Assert.That(_store.AutoSteer.MaxSteerAngle, Is.EqualTo(60));
+        Assert.That(_store.AutoSteer.InvertWas, Is.True);
     }
 
     [Test]
-    public async Task WasCalibrationStep_Validation_ValidValues()
+    public async Task WasCalibrationStep_Validation_AlwaysPasses()
     {
         var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 100;
-        step.MaxSteerAngle = 45;
-        Assert.That(await step.ValidateAsync(), Is.True);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_CpdTooLow()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 0;
-        step.MaxSteerAngle = 45;
-        Assert.That(await step.ValidateAsync(), Is.False);
-        Assert.That(step.ValidationMessage, Does.Contain("Counts Per Degree"));
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_CpdTooHigh()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 256;
-        step.MaxSteerAngle = 45;
-        Assert.That(await step.ValidateAsync(), Is.False);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_CpdBoundaryLow()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 1;
-        step.MaxSteerAngle = 45;
-        Assert.That(await step.ValidateAsync(), Is.True);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_CpdBoundaryHigh()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 255;
-        step.MaxSteerAngle = 45;
-        Assert.That(await step.ValidateAsync(), Is.True);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_MaxSteerTooLow()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 100;
-        step.MaxSteerAngle = 9;
-        Assert.That(await step.ValidateAsync(), Is.False);
-        Assert.That(step.ValidationMessage, Does.Contain("Max Steer Angle"));
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_MaxSteerTooHigh()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 100;
-        step.MaxSteerAngle = 91;
-        Assert.That(await step.ValidateAsync(), Is.False);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_MaxSteerBoundaryLow()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 100;
-        step.MaxSteerAngle = 10;
-        Assert.That(await step.ValidateAsync(), Is.True);
-    }
-
-    [Test]
-    public async Task WasCalibrationStep_Validation_MaxSteerBoundaryHigh()
-    {
-        var step = new WasCalibrationStepViewModel(_configService);
-        step.CountsPerDegree = 100;
-        step.MaxSteerAngle = 90;
         Assert.That(await step.ValidateAsync(), Is.True);
     }
 
@@ -1354,35 +1274,6 @@ public class SteerWizardStepTests
         int expected = (int)((leftAngle / Math.Abs(-15.0)) * 100);
         expected = Math.Clamp(expected, 0, 200);
         Assert.That(result, Is.EqualTo(expected));
-    }
-
-    // =========================================================================
-    // WasCalibration: Ackermann
-    // =========================================================================
-
-    [Test]
-    public void WasCalibration_OnEntering_LoadsAckermann()
-    {
-        _store.AutoSteer.Ackermann = 150;
-        var testable = new TestableStep<WasCalibrationStepViewModel>(
-            new WasCalibrationStepViewModel(_configService));
-
-        testable.Enter();
-
-        Assert.That(testable.Step.Ackermann, Is.EqualTo(150));
-    }
-
-    [Test]
-    public void WasCalibration_OnLeaving_SavesAckermann()
-    {
-        var testable = new TestableStep<WasCalibrationStepViewModel>(
-            new WasCalibrationStepViewModel(_configService));
-        testable.Enter();
-        testable.Step.Ackermann = 75;
-
-        testable.Leave();
-
-        Assert.That(_store.AutoSteer.Ackermann, Is.EqualTo(75));
     }
 
     // =========================================================================

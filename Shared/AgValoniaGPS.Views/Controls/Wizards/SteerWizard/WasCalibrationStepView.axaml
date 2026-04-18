@@ -106,7 +106,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Button Command="{Binding ZeroWasCommand}"
                     HorizontalAlignment="Center"
                     Width="180" Height="48"
-                    Background="{DynamicResource SystemControlHighlightAccentBrush}"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                     CornerRadius="8"
                     HorizontalContentAlignment="Center">
@@ -164,99 +164,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Grid>
             </Border>
 
-            <!-- Counts Per Degree -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="24,16">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Grid.Column="0" Text="Counts Per Degree"
-                                   FontSize="16" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding CountsPerDegree, StringFormat='{}{0:F0} counts/deg'}"
-                                   FontSize="18" FontWeight="Bold"
-                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   VerticalAlignment="Center"/>
-                    </Grid>
-                    <Slider Value="{Binding CountsPerDegree}" Minimum="1" Maximum="255"
-                            TickFrequency="1" IsSnapToTickEnabled="True"
-                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
-                    <Grid ColumnDefinitions="*,*">
-                        <TextBlock Grid.Column="0" Text="1"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        <TextBlock Grid.Column="1" Text="255"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   HorizontalAlignment="Right"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Max Steer Angle -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="24,16">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Max Steer Angle"
-                                   FontSize="16" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Safety limit (degrees)"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox Text="{Binding MaxSteerAngle, StringFormat='{}{0:F0}'}"
-                                 FontSize="20" FontWeight="Bold"
-                                 Width="110"
-                                 TextAlignment="Center"
-                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                 BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                 BorderThickness="2" CornerRadius="8"
-                                 Padding="8,6"/>
-                        <TextBlock Text="deg"
-                                   FontSize="14"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Ackermann -->
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="24,16">
-                <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="Ackermann"
-                                       FontSize="16" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="100 = neutral"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        </StackPanel>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding Ackermann, StringFormat='{}{0}'}"
-                                   FontSize="18" FontWeight="Bold"
-                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
-                                   VerticalAlignment="Center"/>
-                    </Grid>
-                    <Slider Value="{Binding Ackermann}" Minimum="0" Maximum="200"
-                            TickFrequency="1" IsSnapToTickEnabled="True"
-                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
-                    <Grid ColumnDefinitions="*,*">
-                        <TextBlock Grid.Column="0" Text="0"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        <TextBlock Grid.Column="1" Text="200"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   HorizontalAlignment="Right"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
         </StackPanel>
 
         <!-- Validation message -->
