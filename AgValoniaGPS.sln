@@ -31,6 +31,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.UI.Tests", "Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.ViewModels.Tests", "Tests\AgValoniaGPS.ViewModels.Tests\AgValoniaGPS.ViewModels.Tests.csproj", "{6FDD0F8C-981C-4F77-BCFE-0CD17ED91D7A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Simulators", "Simulators", "{F41F6DDB-AB3C-76ED-EA37-439EFA4D513D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgValoniaGPS.VehicleSimulator", "Simulators\AgValoniaGPS.VehicleSimulator\AgValoniaGPS.VehicleSimulator.csproj", "{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,6 +177,18 @@ Global
 		{6FDD0F8C-981C-4F77-BCFE-0CD17ED91D7A}.Release|x64.Build.0 = Release|Any CPU
 		{6FDD0F8C-981C-4F77-BCFE-0CD17ED91D7A}.Release|x86.ActiveCfg = Release|Any CPU
 		{6FDD0F8C-981C-4F77-BCFE-0CD17ED91D7A}.Release|x86.Build.0 = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|x64.Build.0 = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Debug|x86.Build.0 = Debug|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|x64.ActiveCfg = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|x64.Build.0 = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|x86.ActiveCfg = Release|Any CPU
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -184,5 +200,6 @@ Global
 		{36B31CF8-F762-4767-8A87-32AB5BC72E26} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{84DCD742-8E48-4579-90C1-4FF9D1820FDA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{6FDD0F8C-981C-4F77-BCFE-0CD17ED91D7A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{6EFCAF65-34FF-4AA8-B9E5-8CCB3DC67B2A} = {F41F6DDB-AB3C-76ED-EA37-439EFA4D513D}
 	EndGlobalSection
 EndGlobal
