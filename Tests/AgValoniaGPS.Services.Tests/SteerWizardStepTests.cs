@@ -3,6 +3,7 @@ using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.ViewModels.Wizards;
 using AgValoniaGPS.ViewModels.Wizards.SteerWizard;
+using CommunityToolkit.Mvvm.Input;
 using NSubstitute;
 
 namespace AgValoniaGPS.Services.Tests;
@@ -959,6 +960,67 @@ public class SteerWizardStepTests
     {
         var step = new PwmCalibrationStepViewModel(_configService);
         Assert.That(step.CanSkip, Is.True);
+    }
+
+    // =========================================================================
+    // MotorDirectionTestStepViewModel
+    // =========================================================================
+
+    [Test]
+    public void MotorDirectionTest_Title_IsCorrect()
+    {
+        var step = new MotorDirectionTestStepViewModel(_configService);
+        Assert.That(step.Title, Is.EqualTo("Motor Direction Test"));
+    }
+
+    [Test]
+    public void MotorDirectionTest_OnEntering_LoadsInvertMotor()
+    {
+        _store.AutoSteer.InvertMotor = true;
+        var testable = new TestableStep<MotorDirectionTestStepViewModel>(
+            new MotorDirectionTestStepViewModel(_configService));
+
+        testable.Enter();
+
+        Assert.That(testable.Step.InvertMotor, Is.True);
+    }
+
+    [Test]
+    public void MotorDirectionTest_OnLeaving_SavesInvertMotor()
+    {
+        var testable = new TestableStep<MotorDirectionTestStepViewModel>(
+            new MotorDirectionTestStepViewModel(_configService));
+        testable.Enter();
+        testable.Step.InvertMotor = true;
+
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.InvertMotor, Is.True);
+    }
+
+    [Test]
+    public async Task MotorDirectionTest_PulseLeft_CallsFreeDrive()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = new MotorDirectionTestStepViewModel(_configService, autoSteerService);
+
+        await ((AsyncRelayCommand)step.PulseLeftCommand).ExecuteAsync(null);
+
+        autoSteerService.Received(1).EnableFreeDrive();
+        autoSteerService.Received(1).SetFreeDriveAngle(-20);
+        autoSteerService.Received(1).SetFreeDriveAngle(0);
+        autoSteerService.Received(1).DisableFreeDrive();
+    }
+
+    [Test]
+    public void MotorDirectionTest_ShouldSkip_WhenGpsOnly()
+    {
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        hardwareStep.HardwareLevel = 0;
+        var step = new MotorDirectionTestStepViewModel(_configService);
+        step.SetHardwareStep(hardwareStep);
+
+        Assert.That(step.ShouldSkip, Is.True);
     }
 
     // =========================================================================
