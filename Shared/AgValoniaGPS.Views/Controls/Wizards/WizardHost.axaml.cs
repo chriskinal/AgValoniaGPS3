@@ -102,7 +102,10 @@ public partial class WizardHost : UserControl
             // Step 8: Motor Direction Test
             MotorDirectionTestStepViewModel => new MotorDirectionTestStepView(),
 
-            // Step 9: Steering Gains + Algorithm
+            // Step 9: CPD Circle Test
+            CpdCircleTestStepViewModel => new CpdCircleTestStepView(),
+
+            // Step 10: Steering Gains + Algorithm
             SteeringGainsStepViewModel => new SteeringGainsStepView(),
 
             // Step 9: Speed and Sensors

@@ -1158,6 +1158,129 @@ public class SteerWizardStepTests
     }
 
     // =========================================================================
+    // CpdCircleTestStepViewModel
+    // =========================================================================
+
+    [Test]
+    public void CpdCircleTest_Title_IsCorrect()
+    {
+        var step = new CpdCircleTestStepViewModel(_configService);
+        Assert.That(step.Title, Is.EqualTo("CPD Circle Test"));
+    }
+
+    [Test]
+    public void CpdCircleTest_CanSkip_IsTrue()
+    {
+        var step = new CpdCircleTestStepViewModel(_configService);
+        Assert.That(step.CanSkip, Is.True);
+    }
+
+    [Test]
+    public void CpdCircleTest_ShouldSkip_WhenGpsOnly()
+    {
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        hardwareStep.HardwareLevel = 0; // GPS Only
+
+        var step = new CpdCircleTestStepViewModel(_configService);
+        step.SetHardwareStep(hardwareStep);
+
+        Assert.That(step.ShouldSkip, Is.True);
+    }
+
+    [Test]
+    public void CpdCircleTest_OnEntering_LoadsCountsPerDegree()
+    {
+        _store.AutoSteer.CountsPerDegree = 42;
+        var step = new CpdCircleTestStepViewModel(_configService);
+        var testable = new TestableStep<CpdCircleTestStepViewModel>(step);
+
+        testable.Enter();
+
+        Assert.That(step.CountsPerDegree, Is.EqualTo(42));
+    }
+
+    [Test]
+    public void CpdCircleTest_OnLeaving_SavesCountsPerDegree()
+    {
+        _store.AutoSteer.CountsPerDegree = 100;
+        var step = new CpdCircleTestStepViewModel(_configService);
+        var testable = new TestableStep<CpdCircleTestStepViewModel>(step);
+
+        testable.Enter();
+        step.CountsPerDegree = 75;
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.CountsPerDegree, Is.EqualTo(75));
+    }
+
+    [Test]
+    public void CpdCircleTest_CalculateCpd_KnownCircle()
+    {
+        // Given: wheelbase=2.5, trackWidth=1.8, diameter=20m, actualAngle=7.0, currentCpd=100
+        // calcAngle = atan(2.5 / ((20 - 1.8*0.5) / 2)) = atan(2.5 / 9.55) = atan(0.2618) ~ 14.67 deg
+        // newCpd = (7.0 / 14.67) * 100 * 0.9 ~ 42.9
+        double result = CpdCircleTestStepViewModel.CalculateCpdFromCircle(
+            wheelbase: 2.5, trackWidth: 1.8, diameter: 20.0,
+            actualAngle: 7.0, currentCpd: 100);
+
+        // The result should be clamped to int range 1-255 and use the 0.9 conservative factor
+        Assert.That(result, Is.InRange(30, 55));
+
+        // More precise check:
+        // calcAngle = Math.Atan(2.5 / ((20 - 0.9) / 2)) * 180 / Math.PI
+        //           = Math.Atan(2.5 / 9.55) * 180 / PI ~ 14.67
+        // newCpd = (7.0 / 14.67) * 100 * 0.9 ~ 42.9
+        double calcAngle = Math.Atan(2.5 / ((20 - 1.8 * 0.5) / 2)) * 180.0 / Math.PI;
+        double expected = (7.0 / calcAngle) * 100 * 0.9;
+        Assert.That(result, Is.EqualTo(Math.Clamp((int)expected, 1, 255)));
+    }
+
+    [Test]
+    public void CpdCircleTest_DiameterTracking_FindsMaxDistance()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        autoSteerService.LastSteerData.Returns(new SteerModuleData(
+            ActualSteerAngle: 15.0, ImuHeading: 0, ImuRoll: 0,
+            WorkSwitchActive: false, SteerSwitchActive: false,
+            RemoteButtonPressed: false, VwasFusionActive: false, PwmDisplay: 0));
+
+        _store.Vehicle.Wheelbase = 2.5;
+        _store.Vehicle.TrackWidth = 1.8;
+        _store.AutoSteer.CountsPerDegree = 100;
+
+        var step = new CpdCircleTestStepViewModel(_configService, autoSteerService);
+        var testable = new TestableStep<CpdCircleTestStepViewModel>(step);
+        testable.Enter();
+
+        // Start recording at position (100, 200)
+        step.StartRecordingAt(100, 200);
+        Assert.That(step.IsRecording, Is.True);
+
+        // Feed increasing distances (positions moving away from start)
+        // Distance = sqrt((easting-100)^2 + (northing-200)^2)
+        step.ProcessGpsUpdate(110, 200); // dist = 10
+        Assert.That(step.Diameter, Is.EqualTo(10).Within(0.1));
+
+        step.ProcessGpsUpdate(115, 200); // dist = 15
+        Assert.That(step.Diameter, Is.EqualTo(15).Within(0.1));
+
+        step.ProcessGpsUpdate(120, 200); // dist = 20 (max)
+        Assert.That(step.Diameter, Is.EqualTo(20).Within(0.1));
+
+        // Now feed stable distances (no increase) 10 times to trigger stabilization
+        for (int i = 0; i < 10; i++)
+        {
+            step.ProcessGpsUpdate(115, 200); // dist = 15, less than max 20
+        }
+
+        // After 10 stable updates, recording should stop and CPD should be calculated
+        Assert.That(step.IsRecording, Is.False);
+        Assert.That(step.Diameter, Is.EqualTo(20).Within(0.1));
+        Assert.That(step.TestResult, Does.Contain("Diameter"));
+        Assert.That(step.CountsPerDegree, Is.GreaterThan(0));
+    }
+
+    // =========================================================================
     // Cross-cutting: Validation clears previous errors
     // =========================================================================
 
