@@ -27,8 +27,13 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 public class HardwareConfigStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
+    private HardwareInstalledStepViewModel? _hardwareStep;
 
     public override string Title => "Hardware Configuration";
+
+    public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
+
+    public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
         "Configure your steering hardware settings: enable method, motor driver type, " +

@@ -31,8 +31,13 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
 {
     private readonly IConfigurationService _configService;
     private readonly IAutoSteerService? _autoSteerService;
+    private HardwareInstalledStepViewModel? _hardwareStep;
 
     public override string Title => "Wheel Angle Sensor";
+
+    public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
+
+    public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public override string Description =>
         "Calibrate your Wheel Angle Sensor (WAS). Point the wheels straight ahead and press " +

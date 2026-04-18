@@ -564,4 +564,93 @@ public class SteerWizardE2ETests
         Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1),
             "With no skips, GoBack should go to adjacent step");
     }
+
+    // =========================================================================
+    // 12. GPS Only skips autosteer steps
+    // =========================================================================
+
+    [Test]
+    public async Task GpsOnly_SkipsAutoSteerSteps()
+    {
+        var wizard = CreateWizard();
+
+        // Set HardwareLevel to GPS Only (0) on the HardwareInstalled step
+        var hardwareStep = (HardwareInstalledStepViewModel)wizard.Steps[2];
+        hardwareStep.HardwareLevel = 0;
+        Assert.That(hardwareStep.HasAutoSteer, Is.False);
+
+        // Set valid values for dimension/antenna steps
+        _store.Vehicle.Wheelbase = 2.5;
+        _store.Vehicle.TrackWidth = 1.8;
+        _store.Vehicle.AntennaPivot = 1.0;
+        _store.Vehicle.AntennaHeight = 2.0;
+        _store.Vehicle.AntennaOffset = 0.0;
+
+        // Navigate to Antenna step (index 4)
+        // Steps: 0=Welcome, 1=VehicleType, 2=HardwareInstalled, 3=VehicleDimensions, 4=Antenna
+        for (var i = 0; i < 4; i++)
+            await ExecuteNextAsync(wizard);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(4),
+            "Should be on Antenna step (index 4)");
+        Assert.That(wizard.CurrentStep, Is.InstanceOf<AntennaSetupStepViewModel>());
+
+        // Next from Antenna should skip steps 5-9 (HardwareConfig, Roll, WAS, PWM, SteeringGains)
+        // and land on step 10 (SpeedAndSensors)
+        await ExecuteNextAsync(wizard);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(10),
+            "GPS Only should skip autosteer steps 5-9 and land on SpeedAndSensors (index 10)");
+        Assert.That(wizard.CurrentStep, Is.InstanceOf<SpeedAndSensorsStepViewModel>());
+
+        // Going back from SpeedAndSensors should skip back to Antenna
+        wizard.BackCommand.Execute(null);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(4),
+            "Going back should skip autosteer steps and return to Antenna (index 4)");
+        Assert.That(wizard.CurrentStep, Is.InstanceOf<AntennaSetupStepViewModel>());
+    }
+
+    [Test]
+    public async Task AutoSteer_ShowsAllSteps()
+    {
+        var wizard = CreateWizard();
+
+        // Set HardwareLevel to AutoSteer (1)
+        var hardwareStep = (HardwareInstalledStepViewModel)wizard.Steps[2];
+        hardwareStep.HardwareLevel = 1;
+        Assert.That(hardwareStep.HasAutoSteer, Is.True);
+
+        // Set valid values for all steps
+        _store.Vehicle.Wheelbase = 2.5;
+        _store.Vehicle.TrackWidth = 1.8;
+        _store.Vehicle.AntennaPivot = 1.0;
+        _store.Vehicle.AntennaHeight = 2.0;
+        _store.Vehicle.AntennaOffset = 0.0;
+        _store.AutoSteer.SteerResponseHold = 3.0;
+        _store.AutoSteer.StanleyAggressiveness = 1.0;
+
+        // Navigate through all 12 steps collecting titles
+        var visitedTitles = new List<string>();
+        visitedTitles.Add(wizard.CurrentStep!.Title);
+
+        for (var i = 0; i < 11; i++)
+        {
+            await ExecuteNextAsync(wizard);
+            visitedTitles.Add(wizard.CurrentStep!.Title);
+        }
+
+        // Should have visited all 12 steps sequentially
+        Assert.That(visitedTitles.Count, Is.EqualTo(12),
+            "AutoSteer path should visit all 12 steps");
+        Assert.That(visitedTitles.Distinct().Count(), Is.EqualTo(12),
+            "All step titles should be unique - no steps were skipped");
+
+        // Verify autosteer steps were visited
+        Assert.That(visitedTitles, Does.Contain("Hardware Configuration"));
+        Assert.That(visitedTitles, Does.Contain("Roll Calibration"));
+        Assert.That(visitedTitles, Does.Contain("Wheel Angle Sensor"));
+        Assert.That(visitedTitles, Does.Contain("Motor PWM Settings"));
+        Assert.That(visitedTitles, Does.Contain("Steering Gains"));
+    }
 }
