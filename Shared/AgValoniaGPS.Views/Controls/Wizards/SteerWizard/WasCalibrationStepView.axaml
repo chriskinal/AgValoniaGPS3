@@ -223,6 +223,40 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- Ackermann -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="12" Padding="24,16">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Ackermann"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="100 = neutral"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Ackermann, StringFormat='{}{0}'}"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                    <Slider Value="{Binding Ackermann}" Minimum="0" Maximum="200"
+                            TickFrequency="1" IsSnapToTickEnabled="True"
+                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                    <Grid ColumnDefinitions="*,*">
+                        <TextBlock Grid.Column="0" Text="0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Grid.Column="1" Text="200"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <!-- Validation message -->

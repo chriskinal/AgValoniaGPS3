@@ -74,6 +74,29 @@ public class SpeedAndSensorsStepViewModel : WizardStepViewModel
         set => SetProperty(ref _currentSensorEnabled, value);
     }
 
+    // --- Safety ---
+
+    private bool _steerInReverse;
+    public bool SteerInReverse
+    {
+        get => _steerInReverse;
+        set => SetProperty(ref _steerInReverse, value);
+    }
+
+    private double _deadzoneHeading;
+    public double DeadzoneHeading
+    {
+        get => _deadzoneHeading;
+        set => SetProperty(ref _deadzoneHeading, value);
+    }
+
+    private bool _manualTurnsEnabled;
+    public bool ManualTurnsEnabled
+    {
+        get => _manualTurnsEnabled;
+        set => SetProperty(ref _manualTurnsEnabled, value);
+    }
+
     public SpeedAndSensorsStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
@@ -87,6 +110,9 @@ public class SpeedAndSensorsStepViewModel : WizardStepViewModel
         TurnSensorEnabled = autoSteer.TurnSensorEnabled;
         PressureSensorEnabled = autoSteer.PressureSensorEnabled;
         CurrentSensorEnabled = autoSteer.CurrentSensorEnabled;
+        SteerInReverse = autoSteer.SteerInReverse;
+        DeadzoneHeading = autoSteer.DeadzoneHeading;
+        ManualTurnsEnabled = autoSteer.ManualTurnsEnabled;
     }
 
     protected override void OnLeaving()
@@ -97,6 +123,9 @@ public class SpeedAndSensorsStepViewModel : WizardStepViewModel
         autoSteer.TurnSensorEnabled = TurnSensorEnabled;
         autoSteer.PressureSensorEnabled = PressureSensorEnabled;
         autoSteer.CurrentSensorEnabled = CurrentSensorEnabled;
+        autoSteer.SteerInReverse = SteerInReverse;
+        autoSteer.DeadzoneHeading = DeadzoneHeading;
+        autoSteer.ManualTurnsEnabled = ManualTurnsEnabled;
     }
 
     public override Task<bool> ValidateAsync()

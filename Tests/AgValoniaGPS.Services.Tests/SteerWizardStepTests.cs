@@ -1357,6 +1357,101 @@ public class SteerWizardStepTests
     }
 
     // =========================================================================
+    // WasCalibration: Ackermann
+    // =========================================================================
+
+    [Test]
+    public void WasCalibration_OnEntering_LoadsAckermann()
+    {
+        _store.AutoSteer.Ackermann = 150;
+        var testable = new TestableStep<WasCalibrationStepViewModel>(
+            new WasCalibrationStepViewModel(_configService));
+
+        testable.Enter();
+
+        Assert.That(testable.Step.Ackermann, Is.EqualTo(150));
+    }
+
+    [Test]
+    public void WasCalibration_OnLeaving_SavesAckermann()
+    {
+        var testable = new TestableStep<WasCalibrationStepViewModel>(
+            new WasCalibrationStepViewModel(_configService));
+        testable.Enter();
+        testable.Step.Ackermann = 75;
+
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.Ackermann, Is.EqualTo(75));
+    }
+
+    // =========================================================================
+    // SteeringGains: SideHillCompensation
+    // =========================================================================
+
+    [Test]
+    public void SteeringGains_OnEntering_LoadsSideHillComp()
+    {
+        _store.AutoSteer.SideHillCompensation = 0.65;
+        var testable = new TestableStep<SteeringGainsStepViewModel>(
+            new SteeringGainsStepViewModel(_configService));
+
+        testable.Enter();
+
+        Assert.That(testable.Step.SideHillCompensation, Is.EqualTo(0.65));
+    }
+
+    [Test]
+    public void SteeringGains_OnLeaving_SavesSideHillComp()
+    {
+        var testable = new TestableStep<SteeringGainsStepViewModel>(
+            new SteeringGainsStepViewModel(_configService));
+        testable.Enter();
+        testable.Step.SideHillCompensation = 0.8;
+
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.SideHillCompensation, Is.EqualTo(0.8));
+    }
+
+    // =========================================================================
+    // SpeedAndSensors: Safety settings
+    // =========================================================================
+
+    [Test]
+    public void SpeedAndSensors_OnEntering_LoadsSafetySettings()
+    {
+        _store.AutoSteer.SteerInReverse = true;
+        _store.AutoSteer.DeadzoneHeading = 2.5;
+        _store.AutoSteer.ManualTurnsEnabled = true;
+        var testable = new TestableStep<SpeedAndSensorsStepViewModel>(
+            new SpeedAndSensorsStepViewModel(_configService));
+
+        testable.Enter();
+
+        Assert.That(testable.Step.SteerInReverse, Is.True);
+        Assert.That(testable.Step.DeadzoneHeading, Is.EqualTo(2.5));
+        Assert.That(testable.Step.ManualTurnsEnabled, Is.True);
+    }
+
+    [Test]
+    public void SpeedAndSensors_OnLeaving_SavesSafetySettings()
+    {
+        var testable = new TestableStep<SpeedAndSensorsStepViewModel>(
+            new SpeedAndSensorsStepViewModel(_configService));
+        testable.Enter();
+        testable.Step.SteerInReverse = true;
+        testable.Step.DeadzoneHeading = 1.5;
+        testable.Step.ManualTurnsEnabled = true;
+
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.SteerInReverse, Is.True);
+        Assert.That(_store.AutoSteer.DeadzoneHeading, Is.EqualTo(1.5));
+        Assert.That(_store.AutoSteer.ManualTurnsEnabled, Is.True);
+    }
+
+    // =========================================================================
     // Cross-cutting: Validation clears previous errors
     // =========================================================================
 

@@ -172,6 +172,77 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
+
+                <!-- Safety section -->
+                <TextBlock Text="Safety"
+                           FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           Margin="0,8,0,0"/>
+
+                <!-- Steer In Reverse -->
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Steer In Reverse"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Allow steering while reversing"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding SteerInReverse}"
+                                      OnContent="ON" OffContent="OFF"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Deadzone Heading -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="24,16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Deadzone Heading"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Heading error tolerance"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBox Text="{Binding DeadzoneHeading, StringFormat='{}{0:F2}'}"
+                                     FontSize="20" FontWeight="Bold" Width="110"
+                                     TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2" CornerRadius="8"
+                                     Padding="8,6"/>
+                            <TextBlock Text="deg"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Manual Turns -->
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" CornerRadius="12" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Manual Turns"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            <TextBlock Text="Enable manual turn control"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding ManualTurnsEnabled}"
+                                      OnContent="ON" OffContent="OFF"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 
