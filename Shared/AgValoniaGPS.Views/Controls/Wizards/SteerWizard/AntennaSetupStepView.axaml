@@ -139,5 +139,11 @@ Licensed under GNU GPL v3.
         <Style Selector="Button.selected">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
         </Style>
+        <Style Selector="Button.selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.selected:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
     </UserControl.Styles>
 </UserControl>

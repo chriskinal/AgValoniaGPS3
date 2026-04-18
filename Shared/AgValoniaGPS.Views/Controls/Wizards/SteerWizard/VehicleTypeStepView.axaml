@@ -44,30 +44,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Options - horizontal layout with big icons -->
         <UniformGrid Grid.Row="2" Columns="3" VerticalAlignment="Center"
-                     HorizontalAlignment="Center" Margin="0,0,0,0">
+                     Margin="0,0,0,0">
             <!-- Tractor -->
             <Button Classes="option-button"
                     Command="{Binding SelectTractor}"
                     Classes.selected="{Binding IsTractorSelected}"
                     Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12"
                             HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
-                               Width="90" Height="90"
+                               Width="140" Height="140"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock Text="Tractor"
-                               FontSize="16"
+                               FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Front axle steering"
-                               FontSize="12"
+                               FontSize="14"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
@@ -81,23 +81,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     Classes.selected="{Binding IsHarvesterSelected}"
                     Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12"
                             HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
-                               Width="90" Height="90"
+                               Width="140" Height="140"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock Text="Harvester"
-                               FontSize="16"
+                               FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Rear axle steering"
-                               FontSize="12"
+                               FontSize="14"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
@@ -111,23 +111,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     Classes.selected="{Binding IsFourWDSelected}"
                     Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12"
                             HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
-                               Width="90" Height="90"
+                               Width="140" Height="140"
                                Stretch="Uniform"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock Text="Articulated 4WD"
-                               FontSize="16"
+                               FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Center pivot steering"
-                               FontSize="12"
+                               FontSize="14"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"

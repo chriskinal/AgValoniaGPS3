@@ -11,23 +11,23 @@
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
 
         <UniformGrid Grid.Row="2" Columns="3" VerticalAlignment="Center"
-                     HorizontalAlignment="Center">
+                     Margin="0,0,0,0">
             <!-- GPS Only -->
             <Button Classes="option-button" Command="{Binding SelectGpsOnlyCommand}"
                     Classes.selected="{Binding IsGpsOnly}" Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GPSQuality.png"
-                               Width="90" Height="90" Stretch="Uniform"
+                               Width="140" Height="140" Stretch="Uniform"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="GPS Only" FontSize="16" FontWeight="SemiBold"
+                    <TextBlock Text="GPS Only" FontSize="20" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Light bar guidance only"
-                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
@@ -37,18 +37,18 @@
             <Button Classes="option-button" Command="{Binding SelectAutoSteerCommand}"
                     Classes.selected="{Binding IsAutoSteer}" Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png"
-                               Width="90" Height="90" Stretch="Uniform"
+                               Width="140" Height="140" Stretch="Uniform"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="AutoSteer" FontSize="16" FontWeight="SemiBold"
+                    <TextBlock Text="AutoSteer" FontSize="20" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Motor/valve, WAS, IMU"
-                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
@@ -58,18 +58,18 @@
             <Button Classes="option-button" Command="{Binding SelectFullSetupCommand}"
                     Classes.selected="{Binding IsFullSetup}" Margin="8">
                 <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <Border Width="120" Height="120"
+                    <Border Width="180" Height="180"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                             CornerRadius="12" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOn.png"
-                               Width="90" Height="90" Stretch="Uniform"
+                               Width="140" Height="140" Stretch="Uniform"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="Full Setup" FontSize="16" FontWeight="SemiBold"
+                    <TextBlock Text="Full Setup" FontSize="20" FontWeight="SemiBold"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Steering + section control"
-                               FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                               FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
