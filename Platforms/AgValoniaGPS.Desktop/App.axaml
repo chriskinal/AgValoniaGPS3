@@ -35,7 +35,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     </Application.DataTemplates>
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <!-- Lighter accent for better contrast on colored buttons in light mode -->
+                <ColorPaletteResources x:Key="Light" Accent="#2B88D8"/>
+                <ColorPaletteResources x:Key="Dark" Accent="#0078D7"/>
+            </FluentTheme.Palettes>
+        </FluentTheme>
         <!-- Include shared styles -->
         <StyleInclude Source="avares://AgValoniaGPS.Views/Styles/SharedStyles.axaml"/>
     </Application.Styles>
