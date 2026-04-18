@@ -96,6 +96,14 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _liveSteerAngle, value);
     }
 
+    private bool _isPulsing;
+    /// <summary>True while a pulse command is active.</summary>
+    public bool IsPulsing
+    {
+        get => _isPulsing;
+        set => SetProperty(ref _isPulsing, value);
+    }
+
     /// <summary>True when hardware is connected and sending data.</summary>
     public bool HasHardware => _autoSteerService != null;
 
@@ -111,9 +119,33 @@ public class PwmCalibrationStepViewModel : WizardStepViewModel
         _autoSteerService = autoSteerService;
 
         ToggleFreeDriveCommand = new RelayCommand(ToggleFreeDrive);
-        FreeDriveLeftCommand = new RelayCommand(() => FreeDriveAngle = Math.Max(-40, FreeDriveAngle - 5));
-        FreeDriveRightCommand = new RelayCommand(() => FreeDriveAngle = Math.Min(40, FreeDriveAngle + 5));
+        FreeDriveLeftCommand = new AsyncRelayCommand(PulseLeftAsync);
+        FreeDriveRightCommand = new AsyncRelayCommand(PulseRightAsync);
         FreeDriveCenterCommand = new RelayCommand(() => FreeDriveAngle = 0);
+    }
+
+    private async Task PulseLeftAsync()
+    {
+        if (_autoSteerService == null || IsPulsing) return;
+        IsPulsing = true;
+        _autoSteerService.EnableFreeDrive();
+        FreeDriveAngle = -20;
+        await Task.Delay(500);
+        FreeDriveAngle = 0;
+        _autoSteerService.DisableFreeDrive();
+        IsPulsing = false;
+    }
+
+    private async Task PulseRightAsync()
+    {
+        if (_autoSteerService == null || IsPulsing) return;
+        IsPulsing = true;
+        _autoSteerService.EnableFreeDrive();
+        FreeDriveAngle = 20;
+        await Task.Delay(500);
+        FreeDriveAngle = 0;
+        _autoSteerService.DisableFreeDrive();
+        IsPulsing = false;
     }
 
     private void ToggleFreeDrive()

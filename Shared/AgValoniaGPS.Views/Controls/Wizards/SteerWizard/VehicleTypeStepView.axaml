@@ -36,7 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Description -->
         <TextBlock Grid.Row="1"
                    Text="{Binding Description}"
-                   FontSize="14"
+                   FontSize="16"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                    TextWrapping="Wrap"
                    LineHeight="22"
@@ -165,6 +165,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </Style>
         <Style Selector="Button.option-button.selected">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.option-button.selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.option-button.selected:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>

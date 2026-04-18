@@ -7,7 +7,7 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="Bold"
                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,0,0,12"/>
-        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap" LineHeight="22"
+        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="16" TextWrapping="Wrap" LineHeight="22"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,24"/>
 
         <UniformGrid Grid.Row="2" Columns="3" VerticalAlignment="Center"
@@ -98,6 +98,10 @@
         </Style>
         <Style Selector="Button.option-button.selected">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.option-button.selected TextBlock">
+            <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.option-button.selected:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
