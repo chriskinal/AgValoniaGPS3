@@ -453,4 +453,115 @@ public class SteerWizardE2ETests
         // Verify SaveProfile was called
         _configService.Received(1).SaveProfile(Arg.Any<string>());
     }
+
+    // =========================================================================
+    // 11. Conditional step skipping (ShouldSkip)
+    // =========================================================================
+
+    /// <summary>
+    /// A test step that can toggle ShouldSkip at runtime.
+    /// </summary>
+    private class SkippableTestStep : WizardStepViewModel
+    {
+        public override string Title { get; }
+        public override string Description => "Test step";
+        public bool Skip { get; set; }
+        public override bool ShouldSkip => Skip;
+
+        public SkippableTestStep(string title = "Test")
+        {
+            Title = title;
+        }
+    }
+
+    /// <summary>
+    /// A minimal wizard for testing step skip logic in isolation.
+    /// </summary>
+    private class TestWizard : WizardViewModel
+    {
+        public override string WizardTitle => "Test";
+
+        public TestWizard(params WizardStepViewModel[] steps)
+        {
+            foreach (var s in steps)
+                AddStep(s);
+            Initialize();
+        }
+    }
+
+    [Test]
+    public async Task ConditionalSkip_GoNext_SkipsStepsWithShouldSkipTrue()
+    {
+        var step0 = new SkippableTestStep("Step0");
+        var step1 = new SkippableTestStep("Step1") { Skip = true };
+        var step2 = new SkippableTestStep("Step2");
+
+        var wizard = new TestWizard(step0, step1, step2);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(0));
+
+        await ExecuteNextAsync(wizard);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2),
+            "GoNext should skip step1 (ShouldSkip=true) and land on step2");
+        Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Step2"));
+    }
+
+    [Test]
+    public async Task ConditionalSkip_GoBack_SkipsStepsWithShouldSkipTrue()
+    {
+        var step0 = new SkippableTestStep("Step0");
+        var step1 = new SkippableTestStep("Step1") { Skip = true };
+        var step2 = new SkippableTestStep("Step2");
+
+        var wizard = new TestWizard(step0, step1, step2);
+        wizard.GoToStep(2);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
+
+        wizard.BackCommand.Execute(null);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(0),
+            "GoBack should skip step1 (ShouldSkip=true) and land on step0");
+        Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Step0"));
+    }
+
+    [Test]
+    public async Task ConditionalSkip_AllMiddleStepsSkipped_JumpsToLast()
+    {
+        var step0 = new SkippableTestStep("First");
+        var step1 = new SkippableTestStep("Mid1") { Skip = true };
+        var step2 = new SkippableTestStep("Mid2") { Skip = true };
+        var step3 = new SkippableTestStep("Mid3") { Skip = true };
+        var step4 = new SkippableTestStep("Last");
+
+        var wizard = new TestWizard(step0, step1, step2, step3, step4);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(0));
+
+        await ExecuteNextAsync(wizard);
+
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(4),
+            "GoNext should skip all middle steps and land on Last");
+        Assert.That(wizard.CurrentStep!.Title, Is.EqualTo("Last"));
+    }
+
+    [Test]
+    public async Task ConditionalSkip_NoSkippedSteps_NormalNavigation()
+    {
+        var step0 = new SkippableTestStep("Step0");
+        var step1 = new SkippableTestStep("Step1");
+        var step2 = new SkippableTestStep("Step2");
+
+        var wizard = new TestWizard(step0, step1, step2);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(0));
+
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1),
+            "With no skips, GoNext should go to adjacent step");
+
+        await ExecuteNextAsync(wizard);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(2));
+
+        wizard.BackCommand.Execute(null);
+        Assert.That(wizard.CurrentStepIndex, Is.EqualTo(1),
+            "With no skips, GoBack should go to adjacent step");
+    }
 }

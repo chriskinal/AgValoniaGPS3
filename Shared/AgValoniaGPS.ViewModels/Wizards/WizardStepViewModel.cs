@@ -57,6 +57,13 @@ public abstract class WizardStepViewModel : ObservableObject
     public virtual bool CanSkip => false;
 
     /// <summary>
+    /// Whether this step should be automatically skipped during navigation.
+    /// When true, GoNext and GoBack will skip over this step entirely.
+    /// Override in derived classes to conditionally hide steps based on user selections.
+    /// </summary>
+    public virtual bool ShouldSkip => false;
+
+    /// <summary>
     /// Short label for step indicator (e.g., "1", "2", or icon name).
     /// </summary>
     public virtual string StepLabel => string.Empty;
