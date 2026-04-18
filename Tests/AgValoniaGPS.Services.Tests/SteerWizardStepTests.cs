@@ -1363,4 +1363,359 @@ public class SteerWizardStepTests
         Assert.That(step.HasValidationError, Is.False);
         Assert.That(step.ValidationMessage, Is.Null);
     }
+
+    // =========================================================================
+    // AutoMotorCalibrationStepViewModel
+    // =========================================================================
+
+    private AutoMotorCalibrationStepViewModel CreateAutoCalStep(
+        IAutoSteerService? autoSteerService = null)
+    {
+        var step = new AutoMotorCalibrationStepViewModel(_configService, autoSteerService);
+        // Use instant delays for testing
+        step.DelayFunc = (_, _) => Task.CompletedTask;
+        return step;
+    }
+
+    [Test]
+    public void AutoCalibration_Title_IsCorrect()
+    {
+        var step = CreateAutoCalStep();
+        Assert.That(step.Title, Is.EqualTo("Auto Motor Calibration"));
+    }
+
+    [Test]
+    public void AutoCalibration_ShouldSkip_WhenGpsOnly()
+    {
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        hardwareStep.HardwareLevel = 0;
+        var step = CreateAutoCalStep();
+        step.SetHardwareStep(hardwareStep);
+
+        Assert.That(step.ShouldSkip, Is.True);
+    }
+
+    [Test]
+    public void AutoCalibration_ShouldNotSkip_WhenAutoSteer()
+    {
+        var hardwareStep = new HardwareInstalledStepViewModel();
+        hardwareStep.HardwareLevel = 1;
+        var step = CreateAutoCalStep();
+        step.SetHardwareStep(hardwareStep);
+
+        Assert.That(step.ShouldSkip, Is.False);
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_DetectsNormalMotorDirection()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Simulate: WAS starts at 0, then after some PWM ramp, reads +15 (positive = normal)
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            // Return 0 for first few calls (no movement), then 15.0 (movement detected)
+            return callCount <= 5 ? 0.0 : 15.0;
+        };
+
+        await step.RunPwmRampAsync();
+
+        Assert.That(step.DetectedInvertMotor, Is.False, "Positive WAS movement = normal direction");
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.RampResult));
+        Assert.That(step.PhaseResult, Does.Contain("Normal"));
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_DetectsInvertedMotor()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Simulate: WAS starts at 0, then reads -15 (negative = inverted)
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount <= 5 ? 0.0 : -15.0;
+        };
+
+        await step.RunPwmRampAsync();
+
+        Assert.That(step.DetectedInvertMotor, Is.True, "Negative WAS movement = inverted direction");
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.RampResult));
+        Assert.That(step.PhaseResult, Does.Contain("Inverted"));
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_CalculatesMinPwm()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Movement detected at PWM=25 (call 6: pwm=0,5,10,15,20,25 -> index 5 is pwm 25)
+        // startAngle read at call 0 (before loop)
+        // Loop: call 1 (pwm=0), call 2 (pwm=5), call 3 (pwm=10), call 4 (pwm=15), call 5 (pwm=20), call 6 (pwm=25)
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            // First call is startAngle (0). Calls 2-6 still 0. Call 7 (pwm=25) returns 12.0
+            return callCount <= 6 ? 0.0 : 12.0;
+        };
+
+        await step.RunPwmRampAsync();
+
+        // Movement detected at PWM=25 -> MinPwm = 25 * 1.1 = 27
+        Assert.That(step.DetectedMinPwm, Is.EqualTo((int)(25 * 1.1)));
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_NoMovement_WarnsUser()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // WAS always returns 0 - no movement
+        step.ReadWasAngle = () => 0.0;
+
+        await step.RunPwmRampAsync();
+
+        Assert.That(step.NoMovementDetected, Is.True);
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.RampResult));
+        Assert.That(step.PhaseResult, Does.Contain("No wheel movement detected"));
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseB_MeasuresMaxAngles()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Simulate: right lock = 30.0, center = 0, left lock = -25.0, center = 0
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount switch
+            {
+                1 => 30.0,   // right full lock reading
+                2 => -25.0,  // left full lock reading
+                _ => 0.0
+            };
+        };
+
+        await step.RunMaxAngleMeasurementAsync();
+
+        Assert.That(step.DetectedMaxAngleRight, Is.EqualTo(30.0));
+        Assert.That(step.DetectedMaxAngleLeft, Is.EqualTo(25.0));
+        // MaxSteerAngle = min(30, 25) * 0.9 = 22.5 -> (int)22
+        Assert.That(step.MaxSteerAngle, Is.EqualTo((int)(25.0 * 0.9)));
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.Complete));
+        Assert.That(step.CalibrationCompleted, Is.True);
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseB_MaxSteerAngleIsRawWasValue()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Simulate large raw WAS values (not degrees)
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount switch
+            {
+                1 => 420.0,  // right
+                2 => -380.0, // left
+                _ => 0.0
+            };
+        };
+
+        await step.RunMaxAngleMeasurementAsync();
+
+        // MaxSteerAngle = min(420, 380) * 0.9 = 342
+        Assert.That(step.MaxSteerAngle, Is.EqualTo((int)(380.0 * 0.9)));
+    }
+
+    [Test]
+    public async Task AutoCalibration_OnLeaving_SavesResults_WhenCompleted()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+        var testable = new TestableStep<AutoMotorCalibrationStepViewModel>(step);
+        testable.Enter();
+
+        // Set calibration results
+        step.DetectedInvertMotor = true;
+        step.DetectedMinPwm = 28;
+        step.MaxSteerAngle = 22;
+        step.CalibrationCompleted = true;
+
+        testable.Leave();
+
+        Assert.That(_store.AutoSteer.InvertMotor, Is.True);
+        Assert.That(_store.AutoSteer.MinPwm, Is.EqualTo(28));
+        Assert.That(_store.AutoSteer.MaxSteerAngle, Is.EqualTo(22));
+    }
+
+    [Test]
+    public void AutoCalibration_OnLeaving_DoesNotSave_WhenNotCompleted()
+    {
+        var step = CreateAutoCalStep();
+        var testable = new TestableStep<AutoMotorCalibrationStepViewModel>(step);
+
+        _store.AutoSteer.InvertMotor = false;
+        _store.AutoSteer.MinPwm = 5;
+        _store.AutoSteer.MaxSteerAngle = 45;
+
+        testable.Enter();
+
+        // Modify but don't complete calibration
+        step.DetectedInvertMotor = true;
+        step.DetectedMinPwm = 28;
+        step.MaxSteerAngle = 22;
+        // CalibrationCompleted remains false
+
+        testable.Leave();
+
+        // Original values preserved
+        Assert.That(_store.AutoSteer.InvertMotor, Is.False);
+        Assert.That(_store.AutoSteer.MinPwm, Is.EqualTo(5));
+        Assert.That(_store.AutoSteer.MaxSteerAngle, Is.EqualTo(45));
+    }
+
+    [Test]
+    public void AutoCalibration_OnEntering_LoadsCurrentConfig()
+    {
+        _store.AutoSteer.MinPwm = 15;
+        _store.AutoSteer.InvertMotor = true;
+        _store.AutoSteer.MaxSteerAngle = 35;
+
+        var step = CreateAutoCalStep();
+        var testable = new TestableStep<AutoMotorCalibrationStepViewModel>(step);
+
+        testable.Enter();
+
+        Assert.That(step.DetectedMinPwm, Is.EqualTo(15));
+        Assert.That(step.DetectedInvertMotor, Is.True);
+        Assert.That(step.MaxSteerAngle, Is.EqualTo(35));
+    }
+
+    [Test]
+    public async Task AutoCalibration_RedoPhaseA_ResetsState()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Complete phase A first
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount <= 5 ? 0.0 : 15.0;
+        };
+        await step.RunPwmRampAsync();
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.RampResult));
+
+        // Redo
+        await ((AsyncRelayCommand)step.RedoPhaseACommand).ExecuteAsync(null);
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.WaitingToStart));
+        Assert.That(step.PhaseResult, Is.EqualTo(""));
+        Assert.That(step.Progress, Is.EqualTo(0));
+        Assert.That(step.DetectedMinPwm, Is.EqualTo(0));
+        Assert.That(step.DetectedInvertMotor, Is.False);
+    }
+
+    [Test]
+    public async Task AutoCalibration_RedoPhaseB_ResetsState()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Complete phase B
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount switch
+            {
+                1 => 30.0,
+                2 => -25.0,
+                _ => 0.0
+            };
+        };
+        await step.RunMaxAngleMeasurementAsync();
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.Complete));
+
+        // Redo
+        await ((AsyncRelayCommand)step.RedoPhaseBCommand).ExecuteAsync(null);
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.WaitingForMaxAngle));
+        Assert.That(step.DetectedMaxAngleRight, Is.EqualTo(0));
+        Assert.That(step.DetectedMaxAngleLeft, Is.EqualTo(0));
+        Assert.That(step.MaxSteerAngle, Is.EqualTo(0));
+        Assert.That(step.CalibrationCompleted, Is.False);
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_EnablesAndDisablesFreeDrive()
+    {
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        var step = CreateAutoCalStep(autoSteerService);
+
+        // Quick movement detection
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount <= 1 ? 0.0 : 15.0;
+        };
+
+        await step.RunPwmRampAsync();
+
+        autoSteerService.Received(1).EnableFreeDrive();
+        autoSteerService.Received(1).DisableFreeDrive();
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseA_TransitionsToRampResult()
+    {
+        var step = CreateAutoCalStep();
+        step.ReadWasAngle = () => 0.0;
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.WaitingToStart));
+
+        await step.RunPwmRampAsync();
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.RampResult));
+    }
+
+    [Test]
+    public async Task AutoCalibration_PhaseB_TransitionsToComplete()
+    {
+        var step = CreateAutoCalStep();
+        int callCount = 0;
+        step.ReadWasAngle = () =>
+        {
+            callCount++;
+            return callCount switch
+            {
+                1 => 20.0,
+                2 => -18.0,
+                _ => 0.0
+            };
+        };
+
+        await step.RunMaxAngleMeasurementAsync();
+
+        Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.Complete));
+    }
 }

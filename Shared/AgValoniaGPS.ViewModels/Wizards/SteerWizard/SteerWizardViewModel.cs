@@ -69,13 +69,9 @@ public class SteerWizardViewModel : WizardViewModel
         wasCal.SetHardwareStep(hardwareStep);
         AddStep(wasCal);
 
-        var pwmCal = new PwmCalibrationStepViewModel(configService, autoSteerService);
-        pwmCal.SetHardwareStep(hardwareStep);
-        AddStep(pwmCal);
-
-        var motorDir = new MotorDirectionTestStepViewModel(configService, autoSteerService);
-        motorDir.SetHardwareStep(hardwareStep);
-        AddStep(motorDir);
+        var autoCal = new AutoMotorCalibrationStepViewModel(configService, autoSteerService);
+        autoCal.SetHardwareStep(hardwareStep);
+        AddStep(autoCal);
 
         var cpdCircle = new CpdCircleTestStepViewModel(configService, autoSteerService);
         cpdCircle.SetHardwareStep(hardwareStep);
