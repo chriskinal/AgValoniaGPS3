@@ -1,198 +1,137 @@
 <!--
 AgValoniaGPS
 Copyright (C) 2024-2025 AgValoniaGPS Contributors
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
+Licensed under GNU GPL v3.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
              xmlns:conv="using:AgValoniaGPS.Views.Converters"
-             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
              x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.AntennaSetupStepView"
              x:DataType="steer:AntennaSetupStepViewModel">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
-        <!-- Title -->
-        <TextBlock Grid.Row="0"
-                   Text="{Binding Title}"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                   Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="24" FontWeight="Bold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="14" TextWrapping="Wrap"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" Margin="0,0,0,12"/>
 
-        <!-- Description -->
-        <TextBlock Grid.Row="1"
-                   Text="{Binding Description}"
-                   FontSize="14"
-                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                   TextWrapping="Wrap"
-                   LineHeight="22"
-                   Margin="0,0,0,24"/>
-
-        <!-- Content: image left, fields right -->
+        <!-- Two columns: Left = Pivot + Height, Right = Lateral Offset -->
         <Grid Grid.Row="2" ColumnDefinitions="*,*" VerticalAlignment="Center">
-            <!-- Antenna diagram -->
-            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="8" Margin="0,0,12,0">
-                <Image Source="{Binding AntennaIconSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
-                       Stretch="Uniform"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"/>
-            </Border>
-
-            <!-- Input fields in right column -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
-                    <!-- Pivot Distance -->
-                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="10" Padding="14,8" Opacity="0.95">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Pivot Distance" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <TextBlock Text="Antenna to rear axle (+ = ahead)" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBox Text="{Binding AntennaPivot, StringFormat='{}{0:F2}'}"
-                                         FontSize="16" FontWeight="Bold" Width="90" TextAlignment="Center"
-                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                         BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                         BorderThickness="2" CornerRadius="8" Padding="6,4"/>
-                                <TextBlock Text="m" FontSize="14"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Height -->
-                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="10" Padding="14,8" Opacity="0.95">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Height" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <TextBlock Text="Antenna above ground" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBox Text="{Binding AntennaHeight, StringFormat='{}{0:F2}'}"
-                                         FontSize="16" FontWeight="Bold" Width="90" TextAlignment="Center"
-                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                         BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                         BorderThickness="2" CornerRadius="8" Padding="6,4"/>
-                                <TextBlock Text="m" FontSize="14"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Offset direction icon buttons (L/C/R) -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12" Margin="0,4">
-                        <Button Command="{Binding SetLeftCommand}"
-                                Width="100" Height="80"
-                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                CornerRadius="8"
-                                HorizontalContentAlignment="Center"
-                                Cursor="Hand"
-                                Classes.selected="{Binding IsLeft}">
-                            <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png"
-                                       Width="48" Height="48" Stretch="Uniform"
-                                       HorizontalAlignment="Center"/>
-                                <TextBlock Text="Left" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding SetCenterCommand}"
-                                Width="100" Height="80"
-                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                CornerRadius="8"
-                                HorizontalContentAlignment="Center"
-                                Cursor="Hand"
-                                Classes.selected="{Binding IsCenter}">
-                            <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png"
-                                       Width="48" Height="48" Stretch="Uniform"
-                                       HorizontalAlignment="Center"/>
-                                <TextBlock Text="Center" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding SetRightCommand}"
-                                Width="100" Height="80"
-                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                CornerRadius="8"
-                                HorizontalContentAlignment="Center"
-                                Cursor="Hand"
-                                Classes.selected="{Binding IsRight}">
-                            <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png"
-                                       Width="48" Height="48" Stretch="Uniform"
-                                       HorizontalAlignment="Center"/>
-                                <TextBlock Text="Right" FontSize="12"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
+            <!-- Left column: Pivot + Height with top-crop image -->
+            <StackPanel Grid.Column="0" Spacing="8" Margin="0,0,8,0">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="4">
+                    <Image Source="{Binding AntennaTopImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                           Stretch="Uniform" MaxHeight="180" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="12,8">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Pivot Distance" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Antenna to rear axle (+ = ahead)" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBox Text="{Binding AntennaPivot, StringFormat='{}{0:F2}'}"
+                                     FontSize="18" FontWeight="Bold" Width="100" TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2" CornerRadius="8" Padding="6,4"/>
+                            <TextBlock Text="m" FontSize="16" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
                     </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="12,8">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Antenna Height" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="Above ground level" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBox Text="{Binding AntennaHeight, StringFormat='{}{0:F2}'}"
+                                     FontSize="18" FontWeight="Bold" Width="100" TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2" CornerRadius="8" Padding="6,4"/>
+                            <TextBlock Text="m" FontSize="16" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
-                    <!-- Lateral Offset value input -->
-                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            CornerRadius="10" Padding="14,8"                             HorizontalAlignment="Center" MinWidth="300">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="Lateral Offset" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                <TextBlock Text="From centerline (+ = right)" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <TextBox Text="{Binding AntennaOffset, StringFormat='{}{0:F2}'}"
-                                         FontSize="16" FontWeight="Bold" Width="90" TextAlignment="Center"
-                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                         BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
-                                         BorderThickness="2" CornerRadius="8" Padding="6,4"/>
-                                <TextBlock Text="m" FontSize="14"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
+            <!-- Right column: Lateral Offset with offset-crop image -->
+            <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="12" Padding="4">
+                    <Image Source="{Binding AntennaOffsetImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                           Stretch="Uniform" MaxHeight="180" HorizontalAlignment="Center"/>
+                </Border>
+                <!-- L/C/R buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                    <Button Command="{Binding SetLeftCommand}" Width="76" Height="60"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="8" Cursor="Hand" Padding="0" Classes.selected="{Binding IsLeft}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png"
+                                   Width="32" Height="32" Stretch="Uniform"/>
+                            <TextBlock Text="Left" FontSize="11" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SetCenterCommand}" Width="76" Height="60"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="8" Cursor="Hand" Padding="0" Classes.selected="{Binding IsCenter}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png"
+                                   Width="32" Height="32" Stretch="Uniform"/>
+                            <TextBlock Text="Center" FontSize="11" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SetRightCommand}" Width="76" Height="60"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                            CornerRadius="8" Cursor="Hand" Padding="0" Classes.selected="{Binding IsRight}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png"
+                                   Width="32" Height="32" Stretch="Uniform"/>
+                            <TextBlock Text="Right" FontSize="11" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
+                <!-- Offset value -->
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="12,8">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Lateral Offset" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="From centerline (+ = right)" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBox Text="{Binding AntennaOffset, StringFormat='{}{0:F2}'}"
+                                     FontSize="18" FontWeight="Bold" Width="100" TextAlignment="Center"
+                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                     BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                                     BorderThickness="2" CornerRadius="8" Padding="6,4"/>
+                            <TextBlock Text="m" FontSize="16" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Grid>
 
-        <!-- Validation message -->
-        <Border Grid.Row="3"
-                Background="#C0392B"
-                CornerRadius="8"
-                Padding="12"
-                Margin="0,16,0,0"
+        <Border Grid.Row="3" Background="#C0392B" CornerRadius="8" Padding="12" Margin="0,16,0,0"
                 IsVisible="{Binding HasValidationError}">
-            <TextBlock Text="{Binding ValidationMessage}"
-                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                       FontSize="14"
-                       TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding ValidationMessage}" FontSize="14" TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Border>
     </Grid>
 

@@ -71,6 +71,22 @@ public class AntennaSetupStepViewModel : WizardStepViewModel
     /// <summary>Antenna icon path matching the current vehicle type.</summary>
     public string AntennaIconSource => _configService.Store.Vehicle.AntennaImageSource;
 
+    /// <summary>Top crop: pivot distance + height view.</summary>
+    public string AntennaTopImageSource => _configService.Store.Vehicle.Type switch
+    {
+        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaHarvesterTop.png",
+        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulatedTop.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractorTop.png"
+    };
+
+    /// <summary>Bottom-left crop: lateral offset view.</summary>
+    public string AntennaOffsetImageSource => _configService.Store.Vehicle.Type switch
+    {
+        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaHarvesterOffset.png",
+        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulatedOffset.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractorOffset.png"
+    };
+
     public AntennaSetupStepViewModel(IConfigurationService configService)
     {
         _configService = configService;
