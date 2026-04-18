@@ -238,8 +238,16 @@ public abstract class WizardViewModel : ObservableObject
         if (!isValid)
             return;
 
-        CurrentStepIndex++;
-        CurrentStep = Steps[CurrentStepIndex];
+        // Find next non-skipped step
+        int nextIndex = CurrentStepIndex + 1;
+        while (nextIndex < Steps.Count && Steps[nextIndex].ShouldSkip)
+            nextIndex++;
+
+        if (nextIndex < Steps.Count)
+        {
+            CurrentStepIndex = nextIndex;
+            CurrentStep = Steps[CurrentStepIndex];
+        }
     }
 
     /// <summary>
@@ -250,7 +258,12 @@ public abstract class WizardViewModel : ObservableObject
         if (CurrentStepIndex <= 0)
             return;
 
-        CurrentStepIndex--;
+        // Find previous non-skipped step
+        int prevIndex = CurrentStepIndex - 1;
+        while (prevIndex > 0 && Steps[prevIndex].ShouldSkip)
+            prevIndex--;
+
+        CurrentStepIndex = prevIndex;
         CurrentStep = Steps[CurrentStepIndex];
     }
 
