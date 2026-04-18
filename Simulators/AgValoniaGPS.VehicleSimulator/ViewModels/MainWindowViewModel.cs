@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia.Threading;
+using AgValoniaGPS.VehicleSimulator.Models;
 using AgValoniaGPS.VehicleSimulator.Modules;
 
 namespace AgValoniaGPS.VehicleSimulator.ViewModels;
@@ -20,6 +21,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private VirtualModuleHub? _hub;
     private DispatcherTimer? _simTimer;
     private long _packetCount;
+    private readonly VehiclePhysicsModel _vehicle = new();
 
     // Vehicle
     private double _speed; // km/h
@@ -38,6 +40,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private double _commandedAngle;
     private byte _pwmDisplay;
     private bool _steerSwitchOn = true;
+    private bool _autoSteerActive;
     private string _statusText = "Stopped";
 
     public double Speed
@@ -112,6 +115,12 @@ public class MainWindowViewModel : INotifyPropertyChanged
         set { _steerSwitchOn = value; OnPropertyChanged(); }
     }
 
+    public bool AutoSteerActive
+    {
+        get => _autoSteerActive;
+        set { _autoSteerActive = value; OnPropertyChanged(); }
+    }
+
     public string StatusText
     {
         get => _statusText;
@@ -139,6 +148,13 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         try
         {
+            // Initialize physics model with current UI values
+            _vehicle.Latitude = Latitude;
+            _vehicle.Longitude = Longitude;
+            _vehicle.HeadingDeg = Heading;
+            _vehicle.SpeedKmh = Speed;
+            _vehicle.SteerAngleDeg = WasAngle;
+
             _hub = new VirtualModuleHub(hostReceivePort: 9999, moduleListenPort: 8888);
             _hub.Gps.Latitude = Latitude;
             _hub.Gps.Longitude = Longitude;
@@ -186,26 +202,40 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         if (_hub == null) return;
 
-        // Push current UI values to modules
-        _hub.Gps.SpeedKnots = Speed / 1.852; // km/h to knots
+        // When autosteer is active, WAS follows the commanded angle with response lag
+        if (_autoSteerActive)
+        {
+            double commanded = _hub.Steer.CommandedSteerAngleDeg;
+            double responseRate = 0.3; // lag factor per tick
+            WasAngle += (commanded - WasAngle) * responseRate;
+        }
+
+        // Feed current values into the physics model
+        _vehicle.SpeedKmh = Speed;
+        _vehicle.SteerAngleDeg = WasAngle;
+
+        // Step the bicycle model (10 Hz = 0.1s per tick)
+        _vehicle.Step(0.1);
+
+        // Read back physics results
+        Heading = _vehicle.HeadingDeg;
+        Latitude = _vehicle.Latitude;
+        Longitude = _vehicle.Longitude;
+
+        // Push updated values to GPS module
+        _hub.Gps.Latitude = Latitude;
+        _hub.Gps.Longitude = Longitude;
         _hub.Gps.HeadingDegrees = Heading;
+        _hub.Gps.SpeedKnots = Speed / 1.852; // km/h to knots
         _hub.Gps.FixQuality = FixQuality;
         _hub.Gps.Satellites = SatelliteCount;
         _hub.Gps.RollDegrees = RollAngle;
         _hub.Steer.ActualSteerAngleDeg = WasAngle;
         _hub.Steer.SteerSwitchActive = SteerSwitchOn;
 
-        // Update position using simple movement model
-        double stepTime = 0.1; // 100ms
-        _hub.Gps.Step(stepTime);
-
         // Send GPS data
         _hub.Gps.SendOnce();
         _packetCount++;
-
-        // Read back position (may have moved)
-        Latitude = _hub.Gps.Latitude;
-        Longitude = _hub.Gps.Longitude;
 
         // Read back commanded angle from steer module
         CommandedAngle = _hub.Steer.CommandedSteerAngleDeg;

@@ -76,6 +76,8 @@
                                    Minimum="0" Maximum="30" />
 
                     <CheckBox Content="Steer Switch ON" IsChecked="{Binding SteerSwitchOn}" />
+                    <CheckBox Content="AutoSteer Active" IsChecked="{Binding AutoSteerActive}"
+                              ToolTip.Tip="When enabled, WAS follows the commanded steer angle from the main app" />
                 </StackPanel>
             </Border>
 
