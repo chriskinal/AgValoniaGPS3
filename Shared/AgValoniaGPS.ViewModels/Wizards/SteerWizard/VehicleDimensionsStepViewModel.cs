@@ -58,9 +58,16 @@ public class VehicleDimensionsStepViewModel : WizardStepViewModel
     /// </summary>
     public string WheelbaseCropImageSource => _configService.Store.Vehicle.Type switch
     {
-        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBaseHarvester.png",
-        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBaseArticulated.png",
-        _ => "avares://AgValoniaGPS.Views/Assets/Icons/WheelBase.png"
+        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/WheelbaseHarvester.png",
+        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/WheelbaseArticulated.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/WheelbaseTractor.png"
+    };
+
+    public string TrackWidthImageSource => _configService.Store.Vehicle.Type switch
+    {
+        Models.VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/TrackWidthHarvester.png",
+        Models.VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/TrackWidthArticulated.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/TrackWidthTractor.png"
     };
 
     public VehicleDimensionsStepViewModel(IConfigurationService configService)

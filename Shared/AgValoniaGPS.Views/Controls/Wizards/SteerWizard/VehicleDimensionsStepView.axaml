@@ -43,22 +43,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                    LineHeight="22"
                    Margin="0,0,0,24"/>
 
-        <!-- Content: image left, fields right -->
+        <!-- Two columns: Left = Wheelbase, Right = Track Width -->
         <Grid Grid.Row="2" ColumnDefinitions="*,*" VerticalAlignment="Center">
-            <!-- Cropped vehicle diagram -->
-            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="12" Padding="8" Margin="0,0,12,0">
-                <Image Source="{Binding WheelbaseCropImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
-                       Stretch="Uniform" MaxHeight="360"
-                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            </Border>
-
-            <!-- Input fields -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="16">
-                <!-- Wheelbase input -->
+            <!-- Left column: Wheelbase -->
+            <StackPanel Grid.Column="0" Spacing="8" Margin="0,0,8,0">
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                        CornerRadius="10" Padding="16,12">
-                    <StackPanel Spacing="6">
+                        CornerRadius="12" Padding="4">
+                    <Image Source="{Binding WheelbaseCropImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                           Stretch="Uniform" MaxHeight="220" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="12,8">
+                    <StackPanel Spacing="4">
                         <TextBlock Text="Wheelbase" FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Front to rear axle distance" FontSize="12"
@@ -70,17 +66,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                      BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                      BorderThickness="2" CornerRadius="8" Padding="8,6"/>
-                            <TextBlock Text="m" FontSize="18"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="m" FontSize="18" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
+            </StackPanel>
 
-                <!-- Track width input -->
+            <!-- Right column: Track Width -->
+            <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                        CornerRadius="10" Padding="16,12">
-                    <StackPanel Spacing="6">
+                        CornerRadius="12" Padding="4">
+                    <Image Source="{Binding TrackWidthImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                           Stretch="Uniform" MaxHeight="220" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="10" Padding="12,8">
+                    <StackPanel Spacing="4">
                         <TextBlock Text="Track Width" FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         <TextBlock Text="Left to right wheel center" FontSize="12"
@@ -92,9 +94,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                      BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
                                      BorderThickness="2" CornerRadius="8" Padding="8,6"/>
-                            <TextBlock Text="m" FontSize="18"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="m" FontSize="18" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
