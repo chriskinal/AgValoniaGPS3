@@ -28,9 +28,8 @@ public partial class MainViewModel
     public void ApplyGpsCycleResult(GpsCycleResult result)
     {
         _applyResultCount++;
-        if (_applyResultCount % 10 == 0)
-            System.Diagnostics.Debug.WriteLine(
-                $"[ApplyResult] count={_applyResultCount} E={result.Easting:F2} N={result.Northing:F2} tool=({result.ToolEasting:F2},{result.ToolNorthing:F2})");
+        System.Diagnostics.Debug.WriteLine(
+            $"[ApplyResult] #{_applyResultCount} E={result.Easting:F2} N={result.Northing:F2} tool=({result.ToolEasting:F2},{result.ToolNorthing:F2})");
 
         // Mark GPS as received (updates timeout tracking for connection status)
         if (result.GpsValid)
