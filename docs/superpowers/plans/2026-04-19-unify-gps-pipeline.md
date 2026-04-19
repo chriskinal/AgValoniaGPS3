@@ -52,59 +52,70 @@ UdpCommunicationService.ReceiveCallback
 
 ## Target Architecture
 
+**Threading principle (from Chris):** Receive threads parse only and return
+immediately. All heavy per-cycle work runs on a dedicated background worker
+with single-cycle-in-flight back-pressure. UI thread only applies result
+snapshots.
+
 ```
 UDP Port 9999
     |
     v
-UdpCommunicationService.ReceiveCallback
+UdpCommunicationService.ReceiveCallback        [I/O thread - fast return]
     |
     v
-AutoSteerService.ProcessGpsBuffer (single entry point)
-    -> NmeaParserServiceFast.ParseIntoState (only parser)
-    -> VehicleState
+NmeaParserServiceFast.ParseIntoState (~0.2ms)  [I/O thread - parse only]
+    -> Parsed GPS struct (lat/lon/heading/speed/roll)
+    |
+    v
+Hand off to background worker                  [Task.Run, one-in-flight]
+    |
+    v
+GpsCycleWorker.ProcessCycle                     [Background thread]
     -> Auto-create LocalPlane (single instance, shared)
     -> ConvertWgs84ToGeoCoord (once)
-    -> CalculateGuidance + SendPgns
-    -> Tool position calculation (moved from pipeline)
-    -> Section control update (moved from pipeline)
-    -> Coverage painting (moved from pipeline)
+    -> CalculateGuidance + SendPgns (PGN 254)
+    -> Tool position calculation
+    -> Section control update
+    -> Coverage painting
     -> Emit unified GpsCycleResult
-      -> UI thread: ApplyGpsCycleResult -> all UI updates
+      |
+      v
+    UI thread: ApplyGpsCycleResult -> all UI updates
 ```
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Move tool/section/coverage into AutoSteerService
-- Move ToolPositionService calls from GpsPipelineService into AutoSteerService
-- Move SectionControlService.Update from GpsPipelineService into AutoSteerService
-- Move coverage painting trigger from GpsPipelineService into AutoSteerService
+### Phase 1: Split AutoSteerService receive from processing
+- Extract NMEA parsing out of ProcessGpsBuffer into a thin receive handler
+- Receive handler: parse NMEA (~0.2ms), hand off parsed struct, return
+- ProcessCycle: runs on Task.Run with Interlocked back-pressure (same pattern as current GpsPipelineService)
+- ProcessCycle does: coordinate conversion, guidance, PGN send
+- This fixes the current violation where guidance runs on the receive thread
+
+### Phase 2: Merge pipeline work into AutoSteerService.ProcessCycle
+- Move ToolPositionService calls from GpsPipelineService into AutoSteerService.ProcessCycle
+- Move SectionControlService.Update from GpsPipelineService into AutoSteerService.ProcessCycle
+- Move coverage painting trigger from GpsPipelineService into AutoSteerService.ProcessCycle
 - AutoSteerService now emits a complete GpsCycleResult (not just StateUpdated)
 - GpsPipelineService becomes a thin wrapper that just forwards
 
-### Phase 2: Remove GpsPipelineService
+### Phase 3: Remove GpsPipelineService and old parser path
 - MainViewModel subscribes directly to AutoSteerService.CycleCompleted
 - Remove GpsPipelineService class entirely
-- Remove _gpsPipelineService from MainViewModel constructor
-
-### Phase 3: Remove old parser path
 - Remove NmeaParserService (old string-based parser)
 - Remove GpsService.UpdateGpsData (no longer called)
 - Remove DataReceived -> OnUdpDataReceived -> ParseSentence chain
 - GpsService becomes just timeout/connection tracking
 - UdpCommunicationService only routes NMEA to AutoSteerService
 
-### Phase 4: Clean up GpsService
+### Phase 4: Clean up GpsService + single LocalPlane
 - Move timeout tracking into AutoSteerService
 - GpsService either removed or kept as pure status query interface
-- Remove _lastGpsDataReceived, MarkGpsReceived (no longer needed)
-
-### Phase 5: Single LocalPlane
-- Remove auto-create from both AutoSteerService and GpsPipelineService
-- Add auto-create to the unified pipeline (one place)
+- Remove auto-create from both services, add to unified pipeline (one place)
 - LocalPlane shared via ApplicationState.Field.LocalPlane
-- Field open replaces it, field close removes it
 
 ---
 
@@ -133,7 +144,8 @@ AutoSteerService.ProcessGpsBuffer (single entry point)
 ## Risks
 
 - AutoSteerService becomes larger (mitigate: keep tool/section as separate services called from AutoSteerService)
-- Thread safety: everything runs on the UDP receive thread (currently works, just more code there)
+- Thread safety: ProcessCycle runs on background thread, must not touch UI-bound state directly
+- Back-pressure: if ProcessCycle > 100ms, GPS updates will be dropped (same as current GpsPipelineService behavior, but now also affects PGN 254 timing)
 - Test coverage: need to verify all UI properties still update correctly
 - Breaking change for any code subscribing to GpsPipelineService events
 
