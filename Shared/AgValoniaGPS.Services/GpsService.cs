@@ -151,6 +151,12 @@ public class GpsService : IGpsService
     /// <summary>
     /// Check if GPS data is flowing (10Hz expected)
     /// </summary>
+    public void MarkGpsReceived()
+    {
+        _lastGpsDataReceived = Clock.Current.Now;
+        IsConnected = true;
+    }
+
     public bool IsGpsDataOk()
     {
         bool ok = (Clock.Current.Now - _lastGpsDataReceived).TotalMilliseconds < GPS_TIMEOUT_MS;

@@ -60,6 +60,12 @@ public interface IGpsService
     void UpdateGpsData(GpsData newData);
 
     /// <summary>
+    /// Mark that GPS data was received (updates timeout tracking).
+    /// Called by the zero-copy pipeline path which bypasses UpdateGpsData.
+    /// </summary>
+    void MarkGpsReceived();
+
+    /// <summary>
     /// Update IMU data timestamp (called when IMU data received)
     /// </summary>
     void UpdateImuData();

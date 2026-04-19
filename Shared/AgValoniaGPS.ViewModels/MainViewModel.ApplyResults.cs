@@ -25,6 +25,10 @@ public partial class MainViewModel
     /// </summary>
     public void ApplyGpsCycleResult(GpsCycleResult result)
     {
+        // Mark GPS as received (updates timeout tracking for connection status)
+        if (result.GpsValid)
+            _gpsService.MarkGpsReceived();
+
         // GPS position
         Latitude = result.Latitude;
         Longitude = result.Longitude;
