@@ -732,4 +732,167 @@ public class PipelineThroughputTests
         realAutoSteer.Stop();
         realGpsService.Stop();
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Test 7: Real UDP sockets (VirtualGpsReceiver -> UdpCommunicationService)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Test]
+    public async Task RealUdp_VirtualGpsToUdpService_MeasureThroughput()
+    {
+        // Stop the test-level pipeline
+        _pipeline.Stop();
+
+        var appState = new ApplicationState();
+
+        // Real services
+        var realGpsService = new GpsService();
+        realGpsService.Start();
+        var realNmeaParser = new NmeaParserService(realGpsService);
+
+        var realToolPosition = new AgValoniaGPS.Services.Tool.ToolPositionService();
+        var realGuidance = new TrackGuidanceService();
+        var realCoverage = new CoverageMapService();
+        var realSectionControl = new SectionControlService(
+            realToolPosition, realCoverage, appState);
+
+        // Real UdpCommunicationService
+        var udpService = new UdpCommunicationService();
+
+        // Real AutoSteerService wired to the UDP service
+        var realAutoSteer = new AutoSteerService(realGuidance, udpService);
+
+        // Wire AutoSteer into UDP service for zero-copy path
+        udpService.SetAutoSteerService(realAutoSteer);
+
+        var realPipeline = new GpsPipelineService(
+            realGpsService, realToolPosition, realGuidance,
+            realSectionControl, realCoverage, realAutoSteer,
+            new YouTurnGuidanceService(),
+            Substitute.For<IAudioService>(),
+            NullLogger<GpsPipelineService>.Instance, appState);
+
+        // Wire the old parser path: UDP DataReceived -> NmeaParser -> GpsService
+        udpService.DataReceived += (_, e) =>
+        {
+            if (e.PGN == 0) // NMEA text
+            {
+                string sentence = Encoding.ASCII.GetString(e.Data);
+                realNmeaParser.ParseSentence(sentence);
+            }
+        };
+
+        // Counters
+        long autoSteerCycles = 0;
+        long pipelineCycles = 0;
+        var pipelineResults = new List<GpsCycleResult>();
+
+        realAutoSteer.StateUpdated += (_, _) =>
+            Interlocked.Increment(ref autoSteerCycles);
+
+        realPipeline.CycleCompleted += result =>
+        {
+            Interlocked.Increment(ref pipelineCycles);
+            lock (pipelineResults) pipelineResults.Add(result);
+        };
+
+        // Start everything
+        realAutoSteer.Start();
+        realPipeline.Start();
+
+        try
+        {
+            await udpService.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Assert.Ignore($"Cannot bind to port 9999: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // VirtualGpsReceiver sending to localhost:9999
+            using var gps = new VirtualGpsReceiver(targetPort: 9999, targetIp: "127.0.0.1");
+            gps.Latitude = 42.0;
+            gps.Longitude = -93.0;
+            gps.HeadingDegrees = 0;
+            gps.SpeedKnots = 5;
+            gps.FixQuality = 4;
+            gps.Satellites = 12;
+
+            // Send 50 GPS updates at 10Hz
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 50; i++)
+            {
+                gps.Latitude = 42.0 + i * 0.00001;
+                gps.SendOnce();
+                if (i < 49)
+                    await Task.Delay(100);
+            }
+            sw.Stop();
+
+            // Wait for pipeline to process
+            await Task.Delay(1000);
+
+            long asCycles = Interlocked.Read(ref autoSteerCycles);
+            long plCycles = Interlocked.Read(ref pipelineCycles);
+
+            List<GpsCycleResult> results;
+            lock (pipelineResults) results = new List<GpsCycleResult>(pipelineResults);
+
+            TestContext.Out.WriteLine($"=== REAL UDP: VirtualGpsReceiver -> UdpCommunicationService ===");
+            TestContext.Out.WriteLine($"GPS packets sent:    50");
+            TestContext.Out.WriteLine($"AutoSteer cycles:    {asCycles}");
+            TestContext.Out.WriteLine($"Pipeline cycles:     {plCycles}");
+            TestContext.Out.WriteLine($"Pipeline drops:      {asCycles - plCycles}");
+            TestContext.Out.WriteLine($"AutoSteer rate:      {asCycles / sw.Elapsed.TotalSeconds:F1} Hz");
+            TestContext.Out.WriteLine($"Pipeline rate:       {plCycles / sw.Elapsed.TotalSeconds:F1} Hz");
+            TestContext.Out.WriteLine($"Wall time:           {sw.Elapsed.TotalSeconds:F1}s");
+
+            if (results.Count >= 2)
+            {
+                TestContext.Out.WriteLine($"\nPositions received: {results.Count}");
+                TestContext.Out.WriteLine($"  First: lat={results[0].Latitude:F6} E={results[0].Easting:F2} N={results[0].Northing:F2}");
+                TestContext.Out.WriteLine($"  Last:  lat={results[^1].Latitude:F6} E={results[^1].Easting:F2} N={results[^1].Northing:F2}");
+
+                var dists = new List<double>();
+                for (int i = 1; i < results.Count; i++)
+                {
+                    double dE = results[i].Easting - results[i - 1].Easting;
+                    double dN = results[i].Northing - results[i - 1].Northing;
+                    dists.Add(Math.Sqrt(dE * dE + dN * dN));
+                }
+                if (dists.Count > 0)
+                {
+                    dists.Sort();
+                    TestContext.Out.WriteLine($"  Steps: min={dists[0]:F3}m avg={dists.Average():F3}m max={dists[^1]:F3}m");
+                }
+            }
+
+            TestContext.Out.WriteLine();
+            if (plCycles < asCycles * 0.8)
+            {
+                TestContext.Out.WriteLine($">>> PIPELINE DROPS: {asCycles - plCycles} updates lost between AutoSteer and Pipeline");
+            }
+            else if (asCycles < 40)
+            {
+                TestContext.Out.WriteLine($">>> UDP RECEIVE DROPS: Only {asCycles}/50 reached AutoSteer");
+            }
+            else
+            {
+                TestContext.Out.WriteLine($">>> Full UDP stack delivers {plCycles}/50 at {plCycles / sw.Elapsed.TotalSeconds:F1}Hz");
+            }
+
+            Assert.That(asCycles, Is.GreaterThan(0), "AutoSteer should receive GPS data via UDP");
+        }
+        finally
+        {
+            await udpService.StopAsync();
+            realPipeline.Stop();
+            realAutoSteer.Stop();
+            realGpsService.Stop();
+            udpService.Dispose();
+        }
+    }
 }
