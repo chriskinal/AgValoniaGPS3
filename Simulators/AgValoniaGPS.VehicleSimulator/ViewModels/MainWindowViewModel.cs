@@ -40,7 +40,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private double _commandedAngle;
     private byte _pwmDisplay;
     private bool _steerSwitchOn = true;
-    private bool _autoSteerActive;
+    private bool _autoSteerEngaged;
     private string _statusText = "Stopped";
 
     public double Speed
@@ -115,10 +115,10 @@ public class MainWindowViewModel : INotifyPropertyChanged
         set { _steerSwitchOn = value; OnPropertyChanged(); }
     }
 
-    public bool AutoSteerActive
+    public bool AutoSteerEngaged
     {
-        get => _autoSteerActive;
-        set { _autoSteerActive = value; OnPropertyChanged(); }
+        get => _autoSteerEngaged;
+        private set { _autoSteerEngaged = value; OnPropertyChanged(); }
     }
 
     public string StatusText
@@ -202,8 +202,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         if (_hub == null) return;
 
-        // When autosteer is active, WAS follows the commanded angle with response lag
-        if (_autoSteerActive)
+        // Read autosteer engaged state from PGN 254 Status byte (set by the main app)
+        AutoSteerEngaged = _hub.Steer.LastCommand?.IsEngaged ?? false;
+
+        // When autosteer is engaged by the app, WAS follows the commanded angle with response lag
+        if (_autoSteerEngaged)
         {
             double commanded = _hub.Steer.CommandedSteerAngleDeg;
             double responseRate = 0.3; // lag factor per tick
