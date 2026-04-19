@@ -1,11 +1,12 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:AgValoniaGPS.VehicleSimulator.ViewModels"
+        xmlns:views="using:AgValoniaGPS.VehicleSimulator.Views"
         x:Class="AgValoniaGPS.VehicleSimulator.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="AgValoniaGPS Vehicle Simulator"
-        Width="750" Height="480"
-        MinWidth="650" MinHeight="400">
+        Width="750" Height="520"
+        MinWidth="650" MinHeight="440">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -97,7 +98,16 @@
 
                     <TextBlock Text="{Binding SteerSwitchOn, StringFormat='Steer Switch: {0}'}" />
 
-                    <Separator Margin="0,8" />
+                    <Separator Margin="0,4" />
+
+                    <!-- Top-down vehicle with steered front wheels -->
+                    <views:VehicleTopView
+                        WheelAngle="{Binding WasAngle}"
+                        CommandedAngle="{Binding CommandedAngle}"
+                        AutoSteerEngaged="{Binding AutoSteerEngaged}"
+                        Height="140" Margin="0,4" />
+
+                    <Separator Margin="0,4" />
 
                     <TextBlock Text="UDP Ports" FontWeight="SemiBold" />
                     <TextBlock Text="GPS out: 127.0.0.1:9999" FontSize="12"
