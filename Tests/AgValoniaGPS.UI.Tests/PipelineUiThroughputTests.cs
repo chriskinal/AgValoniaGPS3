@@ -221,4 +221,125 @@ public class PipelineUiThroughputTests
         autoSteer.Stop();
         gpsService.Stop();
     }
+
+    [AvaloniaTest]
+    [TestCase(0, TestName = "RenderContention_0ms_NoLoad")]
+    [TestCase(10, TestName = "RenderContention_10ms_LightRender")]
+    [TestCase(20, TestName = "RenderContention_20ms_MediumRender")]
+    [TestCase(30, TestName = "RenderContention_30ms_HeavyRender")]
+    [TestCase(50, TestName = "RenderContention_50ms_OverbudgetRender")]
+    public async Task DispatcherThroughput_WithSimulatedRenderLoad(int renderMs)
+    {
+        // Same pipeline setup as above
+        var configStore = new ConfigurationStore();
+        ConfigurationStore.SetInstance(configStore);
+        var appState = new ApplicationState();
+
+        var gpsService = new GpsService();
+        gpsService.Start();
+        var nmeaParser = new NmeaParserService(gpsService);
+
+        var toolPosition = new ToolPositionService();
+        var guidance = new TrackGuidanceService();
+        var coverage = new CoverageMapService();
+        var sectionControl = new SectionControlService(toolPosition, coverage, appState);
+        var autoSteer = new AutoSteerService(guidance, Substitute.For<IUdpCommunicationService>());
+
+        var pipeline = new GpsPipelineService(
+            gpsService, toolPosition, guidance, sectionControl, coverage,
+            autoSteer, new YouTurnGuidanceService(),
+            Substitute.For<IAudioService>(),
+            NullLogger<GpsPipelineService>.Instance, appState);
+
+        autoSteer.Start();
+        pipeline.Start();
+
+        long cycleCompletedCount = 0;
+        long uiThreadApplyCount = 0;
+
+        pipeline.CycleCompleted += result =>
+        {
+            Interlocked.Increment(ref cycleCompletedCount);
+            Dispatcher.UIThread.Post(() =>
+            {
+                Interlocked.Increment(ref uiThreadApplyCount);
+            });
+        };
+
+        // Pre-build sentences
+        var sentences = new string[50];
+        for (int i = 0; i < 50; i++)
+        {
+            sentences[i] = BuildPandaString(
+                lat: 42.0 + i * 0.00001,
+                lon: -93.0, heading: 0, speedKnots: 5);
+        }
+
+        // Send at 10Hz from background thread
+        var sendTask = Task.Run(async () =>
+        {
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                var bytes = Encoding.ASCII.GetBytes(sentences[i]);
+                autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+                nmeaParser.ParseSentence(sentences[i]);
+
+                if (i < sentences.Length - 1)
+                    await Task.Delay(100);
+            }
+        });
+
+        // Simulate render loop with contention
+        // At 30 FPS, each frame is ~33ms. If rendering takes renderMs,
+        // only (33 - renderMs)ms is left for Dispatcher.RunJobs.
+        var pumpStart = Stopwatch.StartNew();
+        while (!sendTask.IsCompleted || pumpStart.Elapsed.TotalSeconds < 6)
+        {
+            // Simulate render work (burns CPU on UI thread)
+            if (renderMs > 0)
+            {
+                var renderStart = Stopwatch.StartNew();
+                while (renderStart.ElapsedMilliseconds < renderMs)
+                {
+                    // Busy-wait simulating GPU/draw work
+                    Thread.SpinWait(1000);
+                }
+            }
+
+            // Process queued dispatcher work in remaining frame time
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(33); // 30 FPS frame boundary
+
+            if (pumpStart.Elapsed.TotalSeconds > 7) break;
+        }
+
+        await Task.Delay(200);
+        Dispatcher.UIThread.RunJobs();
+
+        long cycles = Interlocked.Read(ref cycleCompletedCount);
+        long uiApplied = Interlocked.Read(ref uiThreadApplyCount);
+        long uiDropped = cycles - uiApplied;
+
+        TestContext.Out.WriteLine($"=== Render Contention Test: {renderMs}ms render load ===");
+        TestContext.Out.WriteLine($"CycleCompleted:      {cycles}");
+        TestContext.Out.WriteLine($"UI thread applied:   {uiApplied}");
+        TestContext.Out.WriteLine($"UI thread missed:    {uiDropped}");
+        TestContext.Out.WriteLine($"UI drop rate:        {(cycles > 0 ? (double)uiDropped / cycles * 100 : 0):F1}%");
+        TestContext.Out.WriteLine($"Effective UI Hz:     {uiApplied / 5.0:F1}");
+
+        if (uiDropped > cycles * 0.1)
+        {
+            TestContext.Out.WriteLine($">>> {renderMs}ms render: UI starved, {uiDropped}/{cycles} updates lost");
+        }
+        else
+        {
+            TestContext.Out.WriteLine($">>> {renderMs}ms render: UI keeps up ({uiApplied}/{cycles})");
+        }
+
+        Assert.That(cycles, Is.GreaterThan(0));
+
+        pipeline.Stop();
+        autoSteer.Stop();
+        gpsService.Stop();
+    }
 }
