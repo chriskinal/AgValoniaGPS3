@@ -114,16 +114,6 @@ public class WizardScreenshotTests
         {
             WelcomeStepViewModel => new Views.Controls.Wizards.SteerWizard.WelcomeStepView(),
             VehicleTypeStepViewModel => new Views.Controls.Wizards.SteerWizard.VehicleTypeStepView(),
-            WheelbaseStepViewModel => new Views.Controls.Wizards.SteerWizard.WheelbaseStepView(),
-            TrackWidthStepViewModel => new Views.Controls.Wizards.SteerWizard.TrackWidthStepView(),
-            AntennaPivotStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaPivotStepView(),
-            AntennaHeightStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaHeightStepView(),
-            AntennaOffsetStepViewModel => new Views.Controls.Wizards.SteerWizard.AntennaOffsetStepView(),
-            SteerEnableStepViewModel => new Views.Controls.Wizards.SteerWizard.SteerEnableStepView(),
-            MotorDriverStepViewModel => new Views.Controls.Wizards.SteerWizard.MotorDriverStepView(),
-            ADConverterStepViewModel => new Views.Controls.Wizards.SteerWizard.ADConverterStepView(),
-            InvertSettingsStepViewModel => new Views.Controls.Wizards.SteerWizard.InvertSettingsStepView(),
-            DanfossStepViewModel => new Views.Controls.Wizards.SteerWizard.DanfossStepView(),
             FinishStepViewModel => new Views.Controls.Wizards.SteerWizard.FinishStepView(),
             _ => new Views.Controls.Wizards.SteerWizard.NumericStepView(),
         };
