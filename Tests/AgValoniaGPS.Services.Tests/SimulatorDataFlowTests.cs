@@ -443,4 +443,61 @@ public class SimulatorDataFlowTests
         using var tmp = new UdpClient(0);
         return ((IPEndPoint)tmp.Client.LocalEndPoint!).Port;
     }
+
+    [Test]
+    public void TractorMoves_AtEquator_LatZeroLonZero()
+    {
+        // First GPS fix at lat=0, lon=0 (equator) -- must not be skipped
+        var bytes1 = BuildPandaBytes(lat: 0.0, lon: 0.0, heading: 90, speedKnots: 5);
+
+        VehicleStateSnapshot? snap1 = null;
+        EventHandler<VehicleStateSnapshot> h1 = (_, s) => snap1 = s;
+        _autoSteer.StateUpdated += h1;
+        _autoSteer.ProcessGpsBuffer(bytes1, bytes1.Length);
+        _autoSteer.StateUpdated -= h1;
+
+        Assert.That(snap1, Is.Not.Null, "Should produce snapshot at lat=0");
+        Assert.That(snap1!.Value.GpsValid, Is.True, "GPS should be valid at lat=0");
+        Assert.That(Math.Abs(snap1.Value.Easting), Is.LessThan(1.0),
+            "First fix Easting should be near origin at lat=0");
+        Assert.That(Math.Abs(snap1.Value.Northing), Is.LessThan(1.0),
+            "First fix Northing should be near origin at lat=0");
+
+        // Second fix moved east (0.001 deg longitude at equator ~ 111m)
+        var bytes2 = BuildPandaBytes(lat: 0.0, lon: 0.001, heading: 90, speedKnots: 5);
+
+        VehicleStateSnapshot? snap2 = null;
+        EventHandler<VehicleStateSnapshot> h2 = (_, s) => snap2 = s;
+        _autoSteer.StateUpdated += h2;
+        _autoSteer.ProcessGpsBuffer(bytes2, bytes2.Length);
+        _autoSteer.StateUpdated -= h2;
+
+        Assert.That(snap2, Is.Not.Null, "Should produce snapshot for second fix at lat=0");
+        Assert.That(Math.Abs(snap2!.Value.Easting), Is.GreaterThan(50),
+            "Easting should change when longitude changes at equator");
+        Assert.That(Math.Abs(snap2.Value.Northing), Is.LessThan(5),
+            "Northing should stay near 0 when only longitude changed");
+    }
+
+    [Test]
+    public void TractorMoves_AtEquator_WithField()
+    {
+        // Set field origin at equator
+        var fieldOrigin = new Wgs84(0.0, 0.0);
+        var sharedProps = new SharedFieldProperties();
+        _autoSteer.SetLocalPlane(new LocalPlane(fieldOrigin, sharedProps), sharedProps);
+
+        // GPS fix slightly north of equator
+        var bytes = BuildPandaBytes(lat: 0.001, lon: 0.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap = null;
+        EventHandler<VehicleStateSnapshot> h = (_, s) => snap = s;
+        _autoSteer.StateUpdated += h;
+        _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+        _autoSteer.StateUpdated -= h;
+
+        Assert.That(snap, Is.Not.Null, "Should produce snapshot at equator with field");
+        Assert.That(snap!.Value.Northing, Is.GreaterThan(50).And.LessThan(200),
+            $"Northing should be ~111m for 0.001 deg at equator, got {snap.Value.Northing:F1}");
+    }
 }
