@@ -308,6 +308,40 @@ public sealed class GpsPipelineService : IGpsPipelineService
             }
         }
 
+        // ── (1b) Apply antenna-to-pivot transforms (roll, antenna offset) ──
+        // These operate in local coordinates and were previously in
+        // GpsService.TransformAntennaToPivot, but that runs BEFORE local
+        // plane conversion (E/N still 0), so they had no effect.
+        {
+            var vehicle = ConfigurationStore.Instance.Vehicle;
+            double hdgRad = pos.Heading * Math.PI / 180.0;
+
+            // Fore/aft offset (AntennaPivot)
+            if (Math.Abs(vehicle.AntennaPivot) > 0.001)
+            {
+                posEasting -= Math.Sin(hdgRad) * vehicle.AntennaPivot;
+                posNorthing -= Math.Cos(hdgRad) * vehicle.AntennaPivot;
+            }
+
+            // Lateral offset (AntennaOffset)
+            if (Math.Abs(vehicle.AntennaOffset) > 0.001)
+            {
+                double perpHeading = hdgRad + Math.PI / 2.0;
+                posEasting -= Math.Sin(perpHeading) * vehicle.AntennaOffset;
+                posNorthing -= Math.Cos(perpHeading) * vehicle.AntennaOffset;
+            }
+
+            // Roll correction
+            double imuRoll = SensorState.Instance.ImuRoll;
+            if (Math.Abs(imuRoll) > 0.01 && Math.Abs(vehicle.AntennaHeight) > 0.01)
+            {
+                double rollRadians = imuRoll * Math.PI / 180.0;
+                double rollCorrectionDistance = Math.Sin(rollRadians) * -vehicle.AntennaHeight;
+                posEasting += Math.Cos(-hdgRad) * rollCorrectionDistance;
+                posNorthing += Math.Sin(-hdgRad) * rollCorrectionDistance;
+            }
+        }
+
         // ── (2) Apply drift compensation ────────────────────────────────
         double driftedEasting = posEasting + driftE;
         double driftedNorthing = posNorthing + driftN;
