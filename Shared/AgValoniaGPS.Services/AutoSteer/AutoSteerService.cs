@@ -348,7 +348,7 @@ public class AutoSteerService : IAutoSteerService
         NotifyStateUpdated();
 
         _cycleCount++;
-        Debug.WriteLine($"[AutoSteer] cycle={_cycleCount} E={_state.Easting:F2} N={_state.Northing:F2} H={_state.Heading:F1}");
+        Console.WriteLine($"[AutoSteer] cycle={_cycleCount} E={_state.Easting:F2} N={_state.Northing:F2} H={_state.Heading:F1}");
     }
 
     /// <summary>

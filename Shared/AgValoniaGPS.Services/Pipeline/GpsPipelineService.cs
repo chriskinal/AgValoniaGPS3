@@ -215,7 +215,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
         if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0)
         {
             _gpsDroppedCount++;
-            System.Diagnostics.Debug.WriteLine($"[Pipeline] DROPPED #{_gpsReceivedCount} (total dropped: {_gpsDroppedCount})");
+            Console.WriteLine($"[Pipeline] DROPPED #{_gpsReceivedCount} (total dropped: {_gpsDroppedCount})");
             return;
         }
 
@@ -234,7 +234,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
             {
                 Volatile.Write(ref _processing, 0);
                 sw.Stop();
-                System.Diagnostics.Debug.WriteLine(
+                Console.WriteLine(
                     $"[Pipeline] received={_gpsReceivedCount} dropped={_gpsDroppedCount} cycleMs={sw.ElapsedMilliseconds}");
             }
         });
