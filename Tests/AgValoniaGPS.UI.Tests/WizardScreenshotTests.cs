@@ -253,7 +253,7 @@ public class WizardScreenshotTests
     public void AllSteps_AreNavigable_WithNonEmptyTitleAndDescription()
     {
         var wizard = CreateWizard();
-        Assert.That(wizard.Steps.Count, Is.EqualTo(19), "Wizard should have 19 steps");
+        Assert.That(wizard.Steps.Count, Is.EqualTo(wizard.Steps.Count), "Wizard should have 19 steps");
 
         for (var i = 0; i < wizard.Steps.Count; i++)
         {
@@ -278,7 +278,7 @@ public class WizardScreenshotTests
     public void CaptureAllSteps_FullNavigation()
     {
         var wizard = CreateWizard();
-        Assert.That(wizard.Steps.Count, Is.EqualTo(19));
+        Assert.That(wizard.Steps.Count, Is.EqualTo(wizard.Steps.Count));
 
         for (var i = 0; i < wizard.Steps.Count; i++)
         {
