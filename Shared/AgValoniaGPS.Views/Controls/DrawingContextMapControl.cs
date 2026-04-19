@@ -3300,15 +3300,6 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
             try
             {
-                // Background fill (screen space) — ImmediateDrawingContext only, no SKCanvas lease
-                var bgColor = s.IsDayMode
-                    ? Color.FromRgb(69, 102, 179)
-                    : Color.FromRgb(10, 10, 10);
-                drawingContext.FillRectangle(
-                    new ImmutableSolidColorBrush(bgColor),
-                    new Rect(0, 0, s.BoundsWidth, s.BoundsHeight));
-
-
                 // Calculate view transform
                 double aspect = s.BoundsWidth / s.BoundsHeight;
                 double viewWidth = 200.0 * aspect / s.Zoom;
@@ -3316,6 +3307,19 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
                 var cameraMatrix = GetCameraTransform(s, viewWidth, viewHeight);
                 using var cameraScope = drawingContext.PushPreTransform(cameraMatrix);
+
+                // Background fill drawn in camera space so it rotates with the grid
+                // in HeadingUp mode. Uses a large rect centered on camera to always
+                // cover the viewport regardless of rotation.
+                {
+                    var bgColor = s.IsDayMode
+                        ? Color.FromRgb(69, 102, 179)
+                        : Color.FromRgb(10, 10, 10);
+                    double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
+                    drawingContext.FillRectangle(
+                        new ImmutableSolidColorBrush(bgColor),
+                        new Rect(s.CameraX - diagonal, -(s.CameraY + diagonal), diagonal * 2, diagonal * 2));
+                }
 
                 t0 = rt ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
                 // Ground texture
