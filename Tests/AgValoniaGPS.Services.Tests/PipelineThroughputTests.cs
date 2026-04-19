@@ -20,6 +20,9 @@ using AgValoniaGPS.Services;
 using AgValoniaGPS.Services.AutoSteer;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.Pipeline;
+using AgValoniaGPS.Services.Coverage;
+using AgValoniaGPS.Services.Section;
+using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -530,5 +533,203 @@ public class PipelineThroughputTests
         }
 
         Assert.That(completed, Is.GreaterThan(0), "At least some cycles should complete");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Test 6: Full stack via real UDP (closest to production)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Test]
+    public async Task FullStack_RealUdp_RealServices_MeasureThroughput()
+    {
+        // This test wires the FULL production stack minus the UI:
+        // VirtualGpsReceiver -> UDP -> UdpCommunicationService
+        //   -> AutoSteerService.ProcessGpsBuffer (real, with real guidance)
+        //   -> NmeaParserService -> GpsService -> GpsPipelineService (real services)
+        //
+        // Uses real: ToolPositionService, TrackGuidanceService, CoverageMapService,
+        //            SectionControlService, AutoSteerService
+
+        // Stop the test-level pipeline (we'll build our own full stack)
+        _pipeline.Stop();
+
+        // --- Build real services ---
+        var realGpsService = new GpsService();
+        realGpsService.Start();
+        var realNmeaParser = new NmeaParserService(realGpsService);
+
+        var realToolPosition = new AgValoniaGPS.Services.Tool.ToolPositionService();
+        var realGuidance = new TrackGuidanceService();
+        var realCoverage = new CoverageMapService();
+        var realSectionControl = new SectionControlService(
+            realToolPosition, realCoverage, _appState);
+        var realAutoSteer = new AutoSteerService(realGuidance,
+            Substitute.For<IUdpCommunicationService>());
+
+        var realPipeline = new GpsPipelineService(
+            realGpsService,
+            realToolPosition,
+            realGuidance,
+            realSectionControl,
+            realCoverage,
+            realAutoSteer,
+            new YouTurnGuidanceService(),
+            Substitute.For<IAudioService>(),
+            NullLogger<GpsPipelineService>.Instance,
+            _appState);
+
+        // Wire up UdpCommunicationService on ephemeral ports
+        var udpService = new UdpCommunicationService();
+
+        // We can't easily bind UdpCommunicationService to a custom port,
+        // so instead simulate its receive callback behavior directly.
+        // This is what happens inside ReceiveCallback:
+        realAutoSteer.Start();
+        realPipeline.Start();
+
+        long fullStackCompleted = 0;
+        var fullStackResults = new List<GpsCycleResult>();
+        realPipeline.CycleCompleted += result =>
+        {
+            Interlocked.Increment(ref fullStackCompleted);
+            lock (fullStackResults) fullStackResults.Add(result);
+        };
+
+        // Pre-build GPS data
+        var gpsPairs = new (byte[] bytes, string sentence)[50];
+        for (int i = 0; i < 50; i++)
+        {
+            using var listener = new UdpClient(0);
+            int port = ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
+            listener.Client.ReceiveTimeout = 2000;
+
+            using var gps = new VirtualGpsReceiver(targetPort: port);
+            gps.Latitude = 42.0 + i * 0.00001;
+            gps.Longitude = -93.0;
+            gps.HeadingDegrees = i * 7.2; // Vary heading
+            gps.SpeedKnots = 5;
+            gps.FixQuality = 4;
+            gps.Satellites = 12;
+
+            gps.SendOnce();
+            IPEndPoint? remote = null;
+            var bytes = listener.Receive(ref remote);
+            gpsPairs[i] = (bytes, Encoding.ASCII.GetString(bytes));
+        }
+
+        // Simulate the receive callback at 10Hz with REAL services
+        var autoSteerTimes = new List<double>();
+        var parseTimes = new List<double>();
+        var totalCallbackTimes = new List<double>();
+
+        var sw = Stopwatch.StartNew();
+        for (int i = 0; i < gpsPairs.Length; i++)
+        {
+            var (bytes, sentence) = gpsPairs[i];
+
+            var tCallback = Stopwatch.GetTimestamp();
+
+            // Step 1: AutoSteerService (real guidance, real PGN build)
+            var t1 = Stopwatch.GetTimestamp();
+            realAutoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+            var t2 = Stopwatch.GetTimestamp();
+
+            // Step 2: Old parser path
+            realNmeaParser.ParseSentence(sentence);
+            var t3 = Stopwatch.GetTimestamp();
+
+            autoSteerTimes.Add((t2 - t1) * 1000.0 / Stopwatch.Frequency);
+            parseTimes.Add((t3 - t2) * 1000.0 / Stopwatch.Frequency);
+            totalCallbackTimes.Add((t3 - tCallback) * 1000.0 / Stopwatch.Frequency);
+
+            if (i < gpsPairs.Length - 1)
+                await Task.Delay(100);
+        }
+        sw.Stop();
+
+        // Wait for pipeline to drain
+        await Task.Delay(1000);
+
+        long completed = Interlocked.Read(ref fullStackCompleted);
+        long dropped = gpsPairs.Length - completed;
+
+        // Sort for percentiles
+        autoSteerTimes.Sort();
+        parseTimes.Sort();
+        totalCallbackTimes.Sort();
+
+        TestContext.Out.WriteLine($"=== FULL STACK: Real Services, Simulated UDP @ 10Hz ===");
+        TestContext.Out.WriteLine($"Sentences sent:      {gpsPairs.Length}");
+        TestContext.Out.WriteLine($"CycleCompleted:      {completed}");
+        TestContext.Out.WriteLine($"Dropped:             {dropped} ({(double)dropped / gpsPairs.Length * 100:F1}%)");
+        TestContext.Out.WriteLine($"Effective Hz:        {completed / sw.Elapsed.TotalSeconds:F1}");
+        TestContext.Out.WriteLine($"Wall time:           {sw.Elapsed.TotalSeconds:F1}s");
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"AutoSteerService.ProcessGpsBuffer (REAL guidance):");
+        TestContext.Out.WriteLine($"  Min:    {autoSteerTimes[0]:F2}ms");
+        TestContext.Out.WriteLine($"  Avg:    {autoSteerTimes.Average():F2}ms");
+        TestContext.Out.WriteLine($"  Median: {autoSteerTimes[autoSteerTimes.Count / 2]:F2}ms");
+        TestContext.Out.WriteLine($"  P95:    {autoSteerTimes[(int)(autoSteerTimes.Count * 0.95)]:F2}ms");
+        TestContext.Out.WriteLine($"  Max:    {autoSteerTimes[^1]:F2}ms");
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"NmeaParser + GpsService (old path):");
+        TestContext.Out.WriteLine($"  Avg:    {parseTimes.Average():F2}ms");
+        TestContext.Out.WriteLine($"  Median: {parseTimes[parseTimes.Count / 2]:F2}ms");
+        TestContext.Out.WriteLine($"  Max:    {parseTimes[^1]:F2}ms");
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"Total callback blocking:");
+        TestContext.Out.WriteLine($"  Avg:    {totalCallbackTimes.Average():F2}ms");
+        TestContext.Out.WriteLine($"  Median: {totalCallbackTimes[totalCallbackTimes.Count / 2]:F2}ms");
+        TestContext.Out.WriteLine($"  P95:    {totalCallbackTimes[(int)(totalCallbackTimes.Count * 0.95)]:F2}ms");
+        TestContext.Out.WriteLine($"  Max:    {totalCallbackTimes[^1]:F2}ms");
+        TestContext.Out.WriteLine($"  Budget: 100ms at 10Hz");
+        TestContext.Out.WriteLine($"  Headroom: {100 - totalCallbackTimes.Average():F1}ms");
+
+        // Position analysis
+        List<GpsCycleResult> results;
+        lock (fullStackResults) results = new List<GpsCycleResult>(fullStackResults);
+
+        if (results.Count >= 2)
+        {
+            TestContext.Out.WriteLine();
+            TestContext.Out.WriteLine($"Position verification ({results.Count} cycles):");
+            TestContext.Out.WriteLine($"  First: E={results[0].Easting:F2} N={results[0].Northing:F2}");
+            TestContext.Out.WriteLine($"  Last:  E={results[^1].Easting:F2} N={results[^1].Northing:F2}");
+
+            // Check for gaps (dropped updates = larger position jumps)
+            var dists = new List<double>();
+            for (int i = 1; i < results.Count; i++)
+            {
+                double dE = results[i].Easting - results[i - 1].Easting;
+                double dN = results[i].Northing - results[i - 1].Northing;
+                dists.Add(Math.Sqrt(dE * dE + dN * dN));
+            }
+            if (dists.Count > 0)
+            {
+                dists.Sort();
+                TestContext.Out.WriteLine($"  Step sizes: min={dists[0]:F3}m avg={dists.Average():F3}m max={dists[^1]:F3}m");
+                if (dists[^1] > dists[0] * 3)
+                    TestContext.Out.WriteLine($"  >>> Inconsistent steps detected - some updates dropped mid-stream");
+            }
+        }
+
+        // Verdict
+        TestContext.Out.WriteLine();
+        if (dropped > gpsPairs.Length * 0.1)
+        {
+            TestContext.Out.WriteLine($">>> VERDICT: {dropped} drops ({(double)dropped / gpsPairs.Length * 100:F0}%) with real services");
+            TestContext.Out.WriteLine($">>> The real services ARE the bottleneck (not the pipeline framework)");
+        }
+        else
+        {
+            TestContext.Out.WriteLine($">>> VERDICT: Pipeline keeps up with real services ({completed}/{gpsPairs.Length} delivered)");
+            TestContext.Out.WriteLine($">>> Bottleneck must be in the UI layer (Dispatcher.Post / render contention)");
+        }
+
+        Assert.That(completed, Is.GreaterThan(0), "At least some cycles should complete");
+
+        realPipeline.Stop();
+        realAutoSteer.Stop();
+        realGpsService.Stop();
     }
 }
