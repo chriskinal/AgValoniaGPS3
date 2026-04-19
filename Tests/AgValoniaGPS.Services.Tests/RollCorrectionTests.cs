@@ -147,13 +147,13 @@ public class RollCorrectionTests
         ConfigurationStore.Instance.Vehicle.AntennaHeight = 4.0;
         SensorState.Instance.ImuRoll = 15.0;
 
-        var gpsData = MakeGpsData(easting: 0, northing: 0, heading: 0);
+        var gpsData = MakeGpsData(easting: 500, northing: 500, heading: 0);
         gpsService.UpdateGpsData(gpsData);
 
         double expected = Math.Sin(15.0 * Math.PI / 180.0) * 4.0; // ~1.035m
         double actualShift = Math.Sqrt(
-            Math.Pow(gpsData.CurrentPosition.Easting, 2) +
-            Math.Pow(gpsData.CurrentPosition.Northing, 2));
+            Math.Pow(gpsData.CurrentPosition.Easting - 500, 2) +
+            Math.Pow(gpsData.CurrentPosition.Northing - 500, 2));
 
         Assert.That(actualShift, Is.EqualTo(expected).Within(0.05),
             $"Total shift should be sin(15)*4 = {expected:F3}m, got {actualShift:F3}m");
@@ -177,6 +177,26 @@ public class RollCorrectionTests
             "Pivot should move position south");
         Assert.That(gpsData.CurrentPosition.Easting, Is.LessThan(100.0),
             "Roll should move position west");
+    }
+
+    [Test]
+    public void RollWithZeroEastingNorthing_SkipsCorrection_NoTeleportToOrigin()
+    {
+        // Regression: when NMEA parser creates GpsData without local plane conversion,
+        // Easting=Northing=0. Roll correction was applied to zeros, producing small
+        // non-zero values that broke GpsPipelineService's auto-conversion check,
+        // teleporting the tractor to the local origin.
+        var gpsService = new GpsService();
+        ConfigurationStore.Instance.Vehicle.AntennaHeight = 3.0;
+        SensorState.Instance.ImuRoll = 10.0;
+
+        var gpsData = MakeGpsData(easting: 0, northing: 0, heading: 45);
+        gpsService.UpdateGpsData(gpsData);
+
+        Assert.That(gpsData.CurrentPosition.Easting, Is.EqualTo(0.0).Within(0.0001),
+            "Easting should remain 0 when no local plane conversion has occurred");
+        Assert.That(gpsData.CurrentPosition.Northing, Is.EqualTo(0.0).Within(0.0001),
+            "Northing should remain 0 when no local plane conversion has occurred");
     }
 
     private static GpsData MakeGpsData(double easting, double northing, double heading)
