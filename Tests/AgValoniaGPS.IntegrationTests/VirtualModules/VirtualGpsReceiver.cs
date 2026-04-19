@@ -158,7 +158,7 @@ public class VirtualGpsReceiver : IDisposable
         lat = Math.Abs(lat);
         int degrees = (int)lat;
         double minutes = (lat - degrees) * 60.0;
-        return $"{degrees:D2}{minutes:00.0000}";
+        return string.Format(CultureInfo.InvariantCulture, "{0:D2}{1:00.0000}", degrees, minutes);
     }
 
     /// <summary>Format longitude as DDDMM.MMMM</summary>
@@ -167,7 +167,7 @@ public class VirtualGpsReceiver : IDisposable
         lon = Math.Abs(lon);
         int degrees = (int)lon;
         double minutes = (lon - degrees) * 60.0;
-        return $"{degrees:D3}{minutes:00.0000}";
+        return string.Format(CultureInfo.InvariantCulture, "{0:D3}{1:00.0000}", degrees, minutes);
     }
 
     public void Dispose()
