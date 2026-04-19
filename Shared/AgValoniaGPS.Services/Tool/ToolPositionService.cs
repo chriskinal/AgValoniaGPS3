@@ -51,6 +51,14 @@ public class ToolPositionService : IToolPositionService
     // Jackknife protection threshold (~115 degrees)
     private const double JACKKNIFE_THRESHOLD = 2.0;
 
+    // Heading smoothing (circular EMA) to reduce GPS heading noise
+    // amplified by hitch length. At 10Hz GPS with alpha=0.4, this gives
+    // ~2.5 frame effective window - enough to damp jitter without
+    // noticeable lag.
+    private const double HEADING_SMOOTH_ALPHA = 0.4;
+    private double _smoothedHeading;
+    private bool _headingSmoothed;
+
     public Vec3 ToolPosition => _toolPosition;
     public Vec3 ToolPivotPosition => _toolPivotPosition;
     public double ToolHeading => _toolHeading;
@@ -69,7 +77,27 @@ public class ToolPositionService : IToolPositionService
     {
         var tool = ConfigurationStore.Instance.Tool;
 
-        // Calculate hitch point on vehicle
+        // Smooth heading to reduce GPS noise amplified by hitch length.
+        // Uses circular EMA to handle 0/2pi wrapping correctly.
+        double smoothedHeading;
+        if (!_headingSmoothed)
+        {
+            _smoothedHeading = vehicleHeading;
+            _headingSmoothed = true;
+            smoothedHeading = vehicleHeading;
+        }
+        else
+        {
+            // Circular interpolation: find shortest angular path
+            double diff = vehicleHeading - _smoothedHeading;
+            // Wrap to [-pi, pi]
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            while (diff < -Math.PI) diff += 2 * Math.PI;
+            _smoothedHeading += HEADING_SMOOTH_ALPHA * diff;
+            smoothedHeading = _smoothedHeading;
+        }
+
+        // Calculate hitch point on vehicle using smoothed heading
         // HitchLength is stored as positive distance; sign determined by tool type
         // Front tools: positive direction (ahead of pivot)
         // Rear tools: negative direction (behind pivot)
@@ -81,9 +109,9 @@ public class ToolPositionService : IToolPositionService
         // Front fixed keeps positive (ahead of vehicle)
 
         _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
-            vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
-            vehicleHeading
+            vehiclePivot.Easting + Math.Sin(smoothedHeading) * hitchDistance,
+            vehiclePivot.Northing + Math.Cos(smoothedHeading) * hitchDistance,
+            smoothedHeading
         );
 
         if (tool.IsToolFrontFixed || tool.IsToolRearFixed)
