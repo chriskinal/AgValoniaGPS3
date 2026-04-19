@@ -3319,7 +3319,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
                     drawingContext.FillRectangle(
                         new ImmutableSolidColorBrush(bgColor),
-                        new Rect(s.CameraX - diagonal, -(s.CameraY + diagonal), diagonal * 2, diagonal * 2));
+                        new Rect(s.CameraX - diagonal, s.CameraY - diagonal, diagonal * 2, diagonal * 2));
                 }
 
                 t0 = rt ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
@@ -3501,10 +3501,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // non-distinct so the stretched version is visually indistinguishable
             // from the tiled version in practice. One draw call at any zoom,
             // constant cost.
+            //
+            // Coordinates are in world space (camera transform handles Y-flip).
+            // Use world coords directly like the grid does, not manual Y-flip.
             double centerX = s.CameraX;
             double centerY = s.CameraY;
             double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
-            var viewRect = new Rect(centerX - diagonal, -(centerY + diagonal), diagonal * 2, diagonal * 2);
+            var viewRect = new Rect(centerX - diagonal, centerY - diagonal, diagonal * 2, diagonal * 2);
             dc.DrawBitmap(s.GroundTexture!, viewRect);
         }
 
