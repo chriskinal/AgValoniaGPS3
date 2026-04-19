@@ -23,8 +23,15 @@ public partial class MainViewModel
     /// Called on the UI thread after the service pipeline computes results on a background thread.
     /// This is the ONLY place where GPS-derived properties are set during normal operation.
     /// </summary>
+    private long _applyResultCount;
+
     public void ApplyGpsCycleResult(GpsCycleResult result)
     {
+        _applyResultCount++;
+        if (_applyResultCount % 10 == 0)
+            System.Diagnostics.Debug.WriteLine(
+                $"[ApplyResult] count={_applyResultCount} E={result.Easting:F2} N={result.Northing:F2} tool=({result.ToolEasting:F2},{result.ToolNorthing:F2})");
+
         // Mark GPS as received (updates timeout tracking for connection status)
         if (result.GpsValid)
             _gpsService.MarkGpsReceived();

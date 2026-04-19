@@ -204,14 +204,23 @@ public sealed class GpsPipelineService : IGpsPipelineService
     // GPS event handler
     // ══════════════════════════════════════════════════════════════════════
 
+    private long _gpsReceivedCount;
+    private long _gpsDroppedCount;
+
     private void OnGpsDataUpdated(object? sender, GpsData data)
     {
+        _gpsReceivedCount++;
+
         // Skip if previous cycle is still running (back-pressure)
         if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0)
+        {
+            _gpsDroppedCount++;
             return;
+        }
 
         Task.Run(() =>
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 ProcessCycle(data);
@@ -223,6 +232,10 @@ public sealed class GpsPipelineService : IGpsPipelineService
             finally
             {
                 Volatile.Write(ref _processing, 0);
+                sw.Stop();
+                if (_gpsReceivedCount % 10 == 0)
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[Pipeline] received={_gpsReceivedCount} dropped={_gpsDroppedCount} cycleMs={sw.ElapsedMilliseconds}");
             }
         });
     }
