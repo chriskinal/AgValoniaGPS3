@@ -314,6 +314,129 @@ public class SimulatorDataFlowTests
             "Sensor percent should be approximately 50%");
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Tractor Movement Tests
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Helper: send a VirtualGpsReceiver PANDA sentence via UDP and capture the raw bytes.
+    /// </summary>
+    private static byte[] BuildPandaBytes(double lat, double lon, double heading = 0,
+        double speedKnots = 5, int fixQuality = 4)
+    {
+        using var listener = new UdpClient(0);
+        int port = ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
+        listener.Client.ReceiveTimeout = 2000;
+
+        using var gps = new VirtualGpsReceiver(targetPort: port);
+        gps.Latitude = lat;
+        gps.Longitude = lon;
+        gps.HeadingDegrees = heading;
+        gps.SpeedKnots = speedKnots;
+        gps.FixQuality = fixQuality;
+        gps.Satellites = 12;
+        gps.Hdop = 0.7;
+
+        gps.SendOnce();
+        IPEndPoint? remote = null;
+        return listener.Receive(ref remote);
+    }
+
+    [Test]
+    public void TractorMoves_WithoutField_AutoCreatedPlane()
+    {
+        // First GPS fix at origin -- auto-creates local plane, so Easting/Northing near 0
+        var bytes1 = BuildPandaBytes(lat: 42.0, lon: -93.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap1 = null;
+        EventHandler<VehicleStateSnapshot> h1 = (_, s) => snap1 = s;
+        _autoSteer.StateUpdated += h1;
+        _autoSteer.ProcessGpsBuffer(bytes1, bytes1.Length);
+        _autoSteer.StateUpdated -= h1;
+
+        Assert.That(snap1, Is.Not.Null, "Should produce snapshot from first fix");
+        Assert.That(Math.Abs(snap1!.Value.Easting), Is.LessThan(1.0),
+            "First fix Easting should be near origin");
+        Assert.That(Math.Abs(snap1.Value.Northing), Is.LessThan(1.0),
+            "First fix Northing should be near origin");
+
+        // Second fix ~11m north (0.0001 degrees latitude)
+        var bytes2 = BuildPandaBytes(lat: 42.0001, lon: -93.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap2 = null;
+        _autoSteer.StateUpdated += (_, s) => snap2 = s;
+        _autoSteer.ProcessGpsBuffer(bytes2, bytes2.Length);
+
+        Assert.That(snap2, Is.Not.Null, "Should produce snapshot from second fix");
+        Assert.That(snap2!.Value.Northing, Is.GreaterThan(5.0),
+            "Northing should increase when moving north");
+        Assert.That(Math.Abs(snap2.Value.Easting), Is.LessThan(1.0),
+            "Easting should stay near zero when only latitude changes");
+    }
+
+    [Test]
+    public void TractorMoves_WithField_FieldOriginPlane()
+    {
+        // Set up a field local plane at lat=42.0, lon=-93.0 BEFORE sending GPS
+        var fieldOrigin = new Wgs84(42.0, -93.0);
+        var sharedProps = new SharedFieldProperties();
+        var fieldPlane = new LocalPlane(fieldOrigin, sharedProps);
+        _autoSteer.SetLocalPlane(fieldPlane, sharedProps);
+
+        // First GPS fix at origin -- should be near (0,0)
+        var bytes1 = BuildPandaBytes(lat: 42.0, lon: -93.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap1 = null;
+        EventHandler<VehicleStateSnapshot> h1 = (_, s) => snap1 = s;
+        _autoSteer.StateUpdated += h1;
+        _autoSteer.ProcessGpsBuffer(bytes1, bytes1.Length);
+        _autoSteer.StateUpdated -= h1;
+
+        Assert.That(snap1, Is.Not.Null, "Should produce snapshot from first fix");
+        Assert.That(Math.Abs(snap1!.Value.Easting), Is.LessThan(1.0),
+            "Easting at field origin should be near zero");
+        Assert.That(Math.Abs(snap1.Value.Northing), Is.LessThan(1.0),
+            "Northing at field origin should be near zero");
+
+        // Second fix at lat=42.001 (~111m north)
+        var bytes2 = BuildPandaBytes(lat: 42.001, lon: -93.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap2 = null;
+        _autoSteer.StateUpdated += (_, s) => snap2 = s;
+        _autoSteer.ProcessGpsBuffer(bytes2, bytes2.Length);
+
+        Assert.That(snap2, Is.Not.Null, "Should produce snapshot from second fix");
+        Assert.That(snap2!.Value.Northing, Is.GreaterThan(50.0),
+            "Northing should be significant (~111m) after moving 0.001 degrees north");
+        Assert.That(snap2.Value.Northing, Is.Not.EqualTo(snap1.Value.Northing),
+            "Position should change between fixes");
+    }
+
+    [Test]
+    public void TractorMoves_FieldOriginDifferentFromGps_CorrectOffset()
+    {
+        // Field origin at lat=42.0, lon=-93.0
+        var fieldOrigin = new Wgs84(42.0, -93.0);
+        var sharedProps = new SharedFieldProperties();
+        var fieldPlane = new LocalPlane(fieldOrigin, sharedProps);
+        _autoSteer.SetLocalPlane(fieldPlane, sharedProps);
+
+        // GPS fix at lat=42.001 (0.001 degrees north of field origin ~ 111m)
+        var bytes = BuildPandaBytes(lat: 42.001, lon: -93.0, heading: 0, speedKnots: 5);
+
+        VehicleStateSnapshot? snap = null;
+        _autoSteer.StateUpdated += (_, s) => snap = s;
+        _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+
+        Assert.That(snap, Is.Not.Null, "Should produce snapshot");
+
+        // Northing should be approximately 111m (not 0, proving field origin is used)
+        Assert.That(snap!.Value.Northing, Is.EqualTo(111.0).Within(5.0),
+            "Northing should be ~111m when GPS is 0.001 deg north of field origin");
+        Assert.That(Math.Abs(snap.Value.Easting), Is.LessThan(1.0),
+            "Easting should be near zero (same longitude as field origin)");
+    }
+
     /// <summary>Get a random ephemeral port by binding to 0 and reading the assigned port.</summary>
     private static int GetEphemeralPort()
     {
