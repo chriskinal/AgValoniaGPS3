@@ -349,7 +349,117 @@ public class PipelineThroughputTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Test 4: Position delta verification
+    // Test 4: Full receive path (AutoSteerService + Pipeline on same thread)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Test]
+    public async Task FullReceivePath_WithAutoSteer_MeasureBlockingTime()
+    {
+        // Create a real AutoSteerService (same as production receive path)
+        var realAutoSteer = new AutoSteerService(
+            Substitute.For<ITrackGuidanceService>(),
+            Substitute.For<IUdpCommunicationService>());
+        realAutoSteer.Start();
+
+        // Pre-build raw GPS bytes (same as what UDP delivers)
+        var gpsBytePairs = new (byte[] bytes, string sentence)[50];
+        for (int i = 0; i < 50; i++)
+        {
+            using var listener = new UdpClient(0);
+            int port = ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
+            listener.Client.ReceiveTimeout = 2000;
+
+            using var gps = new VirtualGpsReceiver(targetPort: port);
+            gps.Latitude = 42.0 + i * 0.00001;
+            gps.Longitude = -93.0;
+            gps.HeadingDegrees = 0;
+            gps.SpeedKnots = 5;
+            gps.FixQuality = 4;
+            gps.Satellites = 12;
+
+            gps.SendOnce();
+            IPEndPoint? remote = null;
+            var bytes = listener.Receive(ref remote);
+            gpsBytePairs[i] = (bytes, Encoding.ASCII.GetString(bytes));
+        }
+
+        // Simulate the REAL receive callback path at 10Hz:
+        // 1. AutoSteerService.ProcessGpsBuffer (blocking, on receive thread)
+        // 2. NmeaParser.ParseSentence (blocking, on receive thread)
+        var autoSteerTimes = new List<double>();
+        var parseTimes = new List<double>();
+
+        var sw = Stopwatch.StartNew();
+        for (int i = 0; i < gpsBytePairs.Length; i++)
+        {
+            var (bytes, sentence) = gpsBytePairs[i];
+
+            // Step 1: AutoSteerService (blocking - this is the suspected bottleneck)
+            var t1 = Stopwatch.GetTimestamp();
+            realAutoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+            var t2 = Stopwatch.GetTimestamp();
+
+            // Step 2: Old parser path (blocking)
+            _nmeaParser.ParseSentence(sentence);
+            var t3 = Stopwatch.GetTimestamp();
+
+            autoSteerTimes.Add((t2 - t1) * 1000.0 / Stopwatch.Frequency);
+            parseTimes.Add((t3 - t2) * 1000.0 / Stopwatch.Frequency);
+
+            if (i < gpsBytePairs.Length - 1)
+                await Task.Delay(100); // 10Hz
+        }
+        sw.Stop();
+
+        // Wait for pipeline to drain
+        await Task.Delay(500);
+
+        long completed = Interlocked.Read(ref _cycleCompletedCount);
+        long parsed = Interlocked.Read(ref _gpsDataUpdatedCount);
+        long dropped = parsed - completed;
+
+        // Analyze AutoSteer timing
+        autoSteerTimes.Sort();
+        parseTimes.Sort();
+
+        TestContext.Out.WriteLine($"=== Full Receive Path (AutoSteer + Pipeline) ===");
+        TestContext.Out.WriteLine($"Sentences:           {gpsBytePairs.Length}");
+        TestContext.Out.WriteLine($"GpsDataUpdated:      {parsed}");
+        TestContext.Out.WriteLine($"CycleCompleted:      {completed}");
+        TestContext.Out.WriteLine($"Dropped:             {dropped} ({(double)dropped / parsed * 100:F1}%)");
+        TestContext.Out.WriteLine($"Effective Hz:        {completed / sw.Elapsed.TotalSeconds:F1}");
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"AutoSteerService.ProcessGpsBuffer timing:");
+        TestContext.Out.WriteLine($"  Min:    {autoSteerTimes[0]:F2}ms");
+        TestContext.Out.WriteLine($"  Avg:    {autoSteerTimes.Average():F2}ms");
+        TestContext.Out.WriteLine($"  Median: {autoSteerTimes[autoSteerTimes.Count / 2]:F2}ms");
+        TestContext.Out.WriteLine($"  P95:    {autoSteerTimes[(int)(autoSteerTimes.Count * 0.95)]:F2}ms");
+        TestContext.Out.WriteLine($"  Max:    {autoSteerTimes[^1]:F2}ms");
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"NmeaParser.ParseSentence timing:");
+        TestContext.Out.WriteLine($"  Min:    {parseTimes[0]:F2}ms");
+        TestContext.Out.WriteLine($"  Avg:    {parseTimes.Average():F2}ms");
+        TestContext.Out.WriteLine($"  Median: {parseTimes[parseTimes.Count / 2]:F2}ms");
+        TestContext.Out.WriteLine($"  Max:    {parseTimes[^1]:F2}ms");
+
+        double totalBlockingAvg = autoSteerTimes.Average() + parseTimes.Average();
+        TestContext.Out.WriteLine();
+        TestContext.Out.WriteLine($"Total receive thread blocking: {totalBlockingAvg:F2}ms avg");
+        TestContext.Out.WriteLine($"Budget at 10Hz: 100ms");
+        TestContext.Out.WriteLine($"Headroom: {100 - totalBlockingAvg:F1}ms");
+
+        if (totalBlockingAvg > 50)
+        {
+            TestContext.Out.WriteLine($"\n>>> RECEIVE THREAD BLOCKING {totalBlockingAvg:F0}ms — over 50% of 10Hz budget");
+            TestContext.Out.WriteLine($">>> This delays packet reception and starves the pipeline");
+        }
+
+        Assert.That(parsed, Is.EqualTo(50), "All sentences should parse");
+        realAutoSteer.Stop();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Test 5: Position delta verification
     // ═══════════════════════════════════════════════════════════════════════
 
     [Test]
