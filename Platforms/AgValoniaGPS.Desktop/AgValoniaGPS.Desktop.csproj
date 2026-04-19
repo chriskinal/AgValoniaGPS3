@@ -12,10 +12,16 @@
   </PropertyGroup>
 
   <!-- Embed git hash + dirty flag into AssemblyInformationalVersion (e.g. "26.2.0+9e92e46" or "26.2.0+9e92e46-dirty") -->
-  <Target Name="SetGitHash" BeforeTargets="InitializeSourceControlInformation">
+  <Target Name="SetGitHash" BeforeTargets="InitializeSourceControlInformation;CoreCompile">
     <Exec Command="git describe --always --dirty" ConsoleToMsBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="SourceRevisionId" />
     </Exec>
+    <!-- Write hash to a temp file so MSBuild detects changes and doesn't skip CoreCompile -->
+    <WriteLinesToFile File="$(IntermediateOutputPath)git-hash.txt" Lines="$(SourceRevisionId)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <AdditionalCompileInputs Include="$(IntermediateOutputPath)git-hash.txt" />
+      <CustomAdditionalCompileInputs Include="$(IntermediateOutputPath)git-hash.txt" />
+    </ItemGroup>
   </Target>
 
   <PropertyGroup>
