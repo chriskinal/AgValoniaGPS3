@@ -437,6 +437,66 @@ public class SimulatorDataFlowTests
             "Easting should be near zero (same longitude as field origin)");
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Pipeline Throughput Test
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Test]
+    public void PipelineThroughput_OldPath_MeasureDropRate()
+    {
+        // Simulate the full old pipeline path:
+        // NmeaParser -> GpsService -> GpsPipelineService -> CycleCompleted
+        // Measures how many of 50 GPS updates at 10Hz actually make it through.
+
+        var gpsService = new GpsService();
+        gpsService.Start();
+
+        var nmeaParser = new NmeaParserService(gpsService);
+
+        // Count how many GpsDataUpdated events fire
+        int gpsDataUpdatedCount = 0;
+        gpsService.GpsDataUpdated += (_, _) => Interlocked.Increment(ref gpsDataUpdatedCount);
+
+        // Build 50 PANDA sentences with slightly different positions (simulating movement)
+        var sentences = new string[50];
+        for (int i = 0; i < 50; i++)
+        {
+            using var listener = new UdpClient(0);
+            int port = ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
+            listener.Client.ReceiveTimeout = 2000;
+
+            using var gps = new VirtualGpsReceiver(targetPort: port);
+            gps.Latitude = 42.0 + i * 0.00001; // ~1.1m steps
+            gps.Longitude = -93.0;
+            gps.HeadingDegrees = 0;
+            gps.SpeedKnots = 5;
+            gps.FixQuality = 4;
+            gps.Satellites = 12;
+
+            gps.SendOnce();
+            IPEndPoint? remote = null;
+            var bytes = listener.Receive(ref remote);
+            sentences[i] = System.Text.Encoding.ASCII.GetString(bytes);
+        }
+
+        // Feed all 50 sentences through the old parser path synchronously
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        foreach (var sentence in sentences)
+        {
+            nmeaParser.ParseSentence(sentence);
+        }
+        sw.Stop();
+
+        TestContext.Out.WriteLine($"NmeaParser: {sentences.Length} sentences in {sw.ElapsedMilliseconds}ms");
+        TestContext.Out.WriteLine($"GpsDataUpdated events fired: {gpsDataUpdatedCount} / {sentences.Length}");
+        TestContext.Out.WriteLine($"Average parse time: {sw.Elapsed.TotalMilliseconds / sentences.Length:F2}ms");
+
+        // All 50 should trigger GpsDataUpdated (parsing shouldn't drop any)
+        Assert.That(gpsDataUpdatedCount, Is.EqualTo(50),
+            $"All 50 sentences should parse successfully and fire GpsDataUpdated. " +
+            $"Only {gpsDataUpdatedCount} fired. Check NmeaParserService checksum validation.");
+    }
+
     /// <summary>Get a random ephemeral port by binding to 0 and reading the assigned port.</summary>
     private static int GetEphemeralPort()
     {
