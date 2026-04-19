@@ -3131,7 +3131,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private SKBitmap? _coverageSnapshotSource;    // last source reference (for identity checks)
         private DateTime _coverageSnapshotTime = DateTime.MinValue;
         private int _coverageSnapshotInFlight;        // 0 = idle, 1 = bg task running
-        private const double CoverageSnapshotIntervalMs = 200.0;
+        private const double CoverageSnapshotIntervalMs = 500.0;
         private static readonly SKSamplingOptions _coverageSampling =
             new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
 
@@ -3754,7 +3754,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 && System.Threading.Interlocked.CompareExchange(ref _coverageSnapshotInFlight, 1, 0) == 0)
             {
                 _coverageSnapshotSource = bitmap;
-                _coverageSnapshotTime = now;
+                // Don't set _coverageSnapshotTime here - set it AFTER the bg task
+                // completes. Otherwise the 500ms throttle counts from dispatch time,
+                // not completion time, and a 200ms bg task triggers immediately again.
                 var capturedBitmap = bitmap;
                 System.Threading.Tasks.Task.Run(() =>
                 {
@@ -3778,6 +3780,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     }
                     finally
                     {
+                        // Set timestamp AFTER completion so the 500ms throttle
+                        // starts from when this refresh finished, not when it started.
+                        _coverageSnapshotTime = DateTime.UtcNow;
                         System.Threading.Volatile.Write(ref _coverageSnapshotInFlight, 0);
                     }
                 });
