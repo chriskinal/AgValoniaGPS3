@@ -77,27 +77,36 @@ public class ToolPositionService : IToolPositionService
     {
         var tool = ConfigurationStore.Instance.Tool;
 
-        // Smooth heading to reduce GPS noise amplified by hitch length.
-        // Uses circular EMA to handle 0/2pi wrapping correctly.
-        double smoothedHeading;
-        if (!_headingSmoothed)
+        // For fixed tools, smooth heading to reduce GPS noise amplified by
+        // hitch length (circular EMA). For trailing/TBT tools, use raw heading
+        // because Torriem's algorithm already smooths via the movement vector.
+        // Smoothing trailing tools causes the hitch point to lag then snap,
+        // making the implement jump forward.
+        bool useSmoothing = tool.IsToolFrontFixed || tool.IsToolRearFixed;
+        double hitchHeading;
+
+        if (useSmoothing)
         {
-            _smoothedHeading = vehicleHeading;
-            _headingSmoothed = true;
-            smoothedHeading = vehicleHeading;
+            if (!_headingSmoothed)
+            {
+                _smoothedHeading = vehicleHeading;
+                _headingSmoothed = true;
+            }
+            else
+            {
+                double diff = vehicleHeading - _smoothedHeading;
+                while (diff > Math.PI) diff -= 2 * Math.PI;
+                while (diff < -Math.PI) diff += 2 * Math.PI;
+                _smoothedHeading += HEADING_SMOOTH_ALPHA * diff;
+            }
+            hitchHeading = _smoothedHeading;
         }
         else
         {
-            // Circular interpolation: find shortest angular path
-            double diff = vehicleHeading - _smoothedHeading;
-            // Wrap to [-pi, pi]
-            while (diff > Math.PI) diff -= 2 * Math.PI;
-            while (diff < -Math.PI) diff += 2 * Math.PI;
-            _smoothedHeading += HEADING_SMOOTH_ALPHA * diff;
-            smoothedHeading = _smoothedHeading;
+            hitchHeading = vehicleHeading;
         }
 
-        // Calculate hitch point on vehicle using smoothed heading
+        // Calculate hitch point on vehicle
         // HitchLength is stored as positive distance; sign determined by tool type
         // Front tools: positive direction (ahead of pivot)
         // Rear tools: negative direction (behind pivot)
@@ -109,9 +118,9 @@ public class ToolPositionService : IToolPositionService
         // Front fixed keeps positive (ahead of vehicle)
 
         _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(smoothedHeading) * hitchDistance,
-            vehiclePivot.Northing + Math.Cos(smoothedHeading) * hitchDistance,
-            smoothedHeading
+            vehiclePivot.Easting + Math.Sin(hitchHeading) * hitchDistance,
+            vehiclePivot.Northing + Math.Cos(hitchHeading) * hitchDistance,
+            hitchHeading
         );
 
         if (tool.IsToolFrontFixed || tool.IsToolRearFixed)
