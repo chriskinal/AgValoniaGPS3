@@ -245,10 +245,17 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 
             if (bytesReceived > 0)
             {
+                // Log first byte and source for debugging
+                char firstChar = (char)_receiveBuffer[0];
+                var remoteEP = (IPEndPoint)_remoteEndPoint;
+                System.Diagnostics.Debug.WriteLine(
+                    $"[UDP] Received {bytesReceived}B from {remoteEP.Address}:{remoteEP.Port} first=0x{_receiveBuffer[0]:X2} ('{(firstChar >= 32 && firstChar < 127 ? firstChar : '?')}')");
+
                 // ZERO-COPY PATH: Check if this is NMEA data for AutoSteer
                 // Process directly from receive buffer before any copying
                 if (_receiveBuffer[0] == (byte)'$' && _autoSteerService != null)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[UDP] GPS NMEA detected, processing via zero-copy path");
                     // Direct zero-copy call - this is the critical low-latency path
                     // GPS → Parse → Guidance → PGN all happen here before we continue
                     _autoSteerService.ProcessGpsBuffer(_receiveBuffer, bytesReceived);
