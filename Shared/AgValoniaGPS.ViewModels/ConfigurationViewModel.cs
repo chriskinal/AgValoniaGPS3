@@ -1417,11 +1417,11 @@ public partial class ConfigurationViewModel : ObservableObject
             Config.MarkChanged();
         });
 
-        // Set roll zero to current roll value (would need access to current sensor data)
-        // For now, this just resets to 0
+        // Set roll zero: capture current roll reading as the new level reference.
+        // Matches legacy: rollZero = imuRoll + rollZero
         SetRollZeroCommand = new RelayCommand(() =>
         {
-            Ahrs.RollZero = 0;
+            Ahrs.RollZero = SensorState.Instance.ImuRoll + Ahrs.RollZero;
             Config.MarkChanged();
         });
     }

@@ -26,13 +26,15 @@ namespace AgValoniaGPS.Views.Converters;
 
 public class BoolToColorConverter : IValueConverter
 {
+    private static readonly IBrush DisconnectedBrush = new SolidColorBrush(Color.FromRgb(180, 60, 60));
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool boolValue)
         {
-            return boolValue ? Brushes.LimeGreen : Brushes.Gray;
+            return boolValue ? Brushes.LimeGreen : DisconnectedBrush;
         }
-        return Brushes.Gray;
+        return DisconnectedBrush;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
