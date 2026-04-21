@@ -45,6 +45,7 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
     private readonly byte[] _receiveBuffer = new byte[1024];
     private EndPoint _remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
     private CancellationTokenSource? _cancellationTokenSource;
+    private SynchronizationContext? _eventContext;
     private bool _isDisposed;
 
     // AutoSteer service for zero-copy GPS processing
@@ -95,6 +96,9 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 
         try
         {
+            // Capture caller context (typically UI thread) for safe event dispatch
+            _eventContext = SynchronizationContext.Current;
+
             // Get local IP address
             LocalIPAddress = GetLocalIPAddress();
 
@@ -105,6 +109,13 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
 
             // Reduce receive buffer to minimize packet buffering/delay
             _udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, 8192);
+
+            // Windows UDP behavior: ignore ICMP Port Unreachable as receive exceptions
+            if (OperatingSystem.IsWindows())
+            {
+                const int SIO_UDP_CONNRESET = -1744830452; // 0x9800000C
+                _udpSocket.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0 }, null);
+            }
 
             _udpSocket.Bind(new IPEndPoint(IPAddress.Any, 9999));
 
@@ -261,7 +272,18 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
                 ProcessReceivedData(data, (IPEndPoint)_remoteEndPoint);
             }
         }
-        catch { }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+        {
+            // Non-fatal on UDP when peer/target port is unreachable
+        }
+        catch (ObjectDisposedException)
+        {
+            // Socket closed during shutdown
+            return;
+        }
+        catch (Exception ex)
+        {
+        }
 
         // IMMEDIATELY start the next receive operation - this is the key fix!
         if (_udpSocket != null)
@@ -289,7 +311,7 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
             UpdateModuleConnection(pgn, remoteEndPoint);
 
             // Fire event
-            DataReceived?.Invoke(this, new UdpDataReceivedEventArgs
+            RaiseDataReceived(new UdpDataReceivedEventArgs
             {
                 Data = data,
                 RemoteEndPoint = remoteEndPoint,
@@ -301,13 +323,28 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
         {
             // Text NMEA sentence (starts with $)
             // Fire event with PGN 0 to indicate NMEA text
-            DataReceived?.Invoke(this, new UdpDataReceivedEventArgs
+            RaiseDataReceived(new UdpDataReceivedEventArgs
             {
                 Data = data,
                 RemoteEndPoint = remoteEndPoint,
                 PGN = 0, // Special PGN for NMEA text
                 Timestamp = DateTime.Now
             });
+        }
+    }
+
+    private void RaiseDataReceived(UdpDataReceivedEventArgs args)
+    {
+        var handler = DataReceived;
+        if (handler == null) return;
+
+        if (_eventContext != null)
+        {
+            _eventContext.Post(_ => handler(this, args), null);
+        }
+        else
+        {
+            handler(this, args);
         }
     }
 
@@ -422,7 +459,7 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                if (ip.AddressFamily == AddressFamily.InterNetwork && ip.ToString().StartsWith("192.168"))
                 {
                     return ip.ToString();
                 }
