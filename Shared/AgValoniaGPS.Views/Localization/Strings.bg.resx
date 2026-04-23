@@ -1051,7 +1051,7 @@
     <value>Създател на трамвайни линии</value>
   </data>
   <data xml:space="preserve" name="TurnSensor">
-    <value>Сензор за завой</value>
+    <value>Сензор на волана</value>
   </data>
   <data xml:space="preserve" name="Type">
     <value>Тип</value>
