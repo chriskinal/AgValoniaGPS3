@@ -1,0 +1,1416 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data xml:space="preserve" name="ABCurve">
+    <value>Крива АВ</value>
+  </data>
+  <data xml:space="preserve" name="ABLine">
+    <value>АВ Линия</value>
+  </data>
+  <data xml:space="preserve" name="About">
+    <value>Относно</value>
+  </data>
+  <data xml:space="preserve" name="Acres">
+    <value>акра</value>
+  </data>
+  <data xml:space="preserve" name="Active">
+    <value>Активен</value>
+  </data>
+  <data xml:space="preserve" name="AgShareApi">
+    <value>AgShare API</value>
+  </data>
+  <data xml:space="preserve" name="AgShareDownload">
+    <value>Изтегляне от AgShare</value>
+  </data>
+  <data xml:space="preserve" name="AgShareUpload">
+    <value>Качване в AgShare</value>
+  </data>
+  <data xml:space="preserve" name="AgshareSettings">
+    <value>Настройки на AgShare</value>
+  </data>
+  <data xml:space="preserve" name="Agvaloniagps">
+    <value>AgValoniaGPS</value>
+  </data>
+  <data xml:space="preserve" name="Algorithm">
+    <value>Алгоритъм</value>
+  </data>
+  <data xml:space="preserve" name="AllSettings">
+    <value>Всички настройки</value>
+  </data>
+  <data xml:space="preserve" name="Altitude">
+    <value>Надморска височина</value>
+  </data>
+  <data xml:space="preserve" name="Antenna">
+    <value>Антена</value>
+  </data>
+  <data xml:space="preserve" name="AntennaPivot">
+    <value>Ос на въртене на антената</value>
+  </data>
+  <data xml:space="preserve" name="ApiKey">
+    <value>API ключ</value>
+  </data>
+  <data xml:space="preserve" name="AppDirectories">
+    <value>Директории на приложението</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationLog">
+    <value>Лог на приложението</value>
+  </data>
+  <data xml:space="preserve" name="ApplicationSettings">
+    <value>Настройки на приложението</value>
+  </data>
+  <data xml:space="preserve" name="Apply">
+    <value>Приложи</value>
+  </data>
+  <data xml:space="preserve" name="AreYouSure">
+    <value>Сигурни ли сте?</value>
+  </data>
+  <data xml:space="preserve" name="Area">
+    <value>Площ</value>
+  </data>
+  <data xml:space="preserve" name="AreaHa">
+    <value>Площ (ха)</value>
+  </data>
+  <data xml:space="preserve" name="AssociatedFields">
+    <value>Свързани полета</value>
+  </data>
+  <data xml:space="preserve" name="Attach">
+    <value>Свържи</value>
+  </data>
+  <data xml:space="preserve" name="AutoConnectWhenAssociatedFieldIsLoaded">
+    <value>Авто-свързване при зареждане на свързаното поле</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteer">
+    <value>Автоматично управление</value>
+  </data>
+  <data xml:space="preserve" name="AutoSteerConfiguration">
+    <value>Конфигурация на автоматично управление</value>
+  </data>
+  <data xml:space="preserve" name="BasedOnAgopengpsByBrianTee">
+    <value>Базирано на AgOpenGPS от Brian Tee</value>
+  </data>
+  <data xml:space="preserve" name="Boundary">
+    <value>Граница</value>
+  </data>
+  <data xml:space="preserve" name="BugReportDump">
+    <value>Дъмп за доклад за грешка</value>
+  </data>
+  <data xml:space="preserve" name="Build">
+    <value>Изгради</value>
+  </data>
+  <data xml:space="preserve" name="BuildHeadland">
+    <value>Изгради край на поле</value>
+  </data>
+  <data xml:space="preserve" name="BuiltWithAvaloniaUi1139Andnet100">
+    <value>Построено с Avalonia UI 11.3.9 и .NET 10.0</value>
+  </data>
+  <data xml:space="preserve" name="Button">
+    <value>Бутон</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Отказ</value>
+  </data>
+  <data xml:space="preserve" name="Caster">
+    <value>Кастър</value>
+  </data>
+  <data xml:space="preserve" name="CasterHost">
+    <value>Хост на кастър</value>
+  </data>
+  <data xml:space="preserve" name="CasterSettings">
+    <value>Настройки на кастър</value>
+  </data>
+  <data xml:space="preserve" name="CentimetersPerSecond">
+    <value>см/с</value>
+  </data>
+  <data xml:space="preserve" name="Clear">
+    <value>Изчисти</value>
+  </data>
+  <data xml:space="preserve" name="Click2PointsOnTheBoundaryToDefineHeadlandLine">
+    <value>Щракнете 2 точки на границата, за да определите линията на край на поле</value>
+  </data>
+  <data xml:space="preserve" name="ClickAKeyButtonThenPressANewKeyToReassign">
+    <value>Щракнете върху бутон за клавиш, след това натиснете нов клавиш за преназначаване.</value>
+  </data>
+  <data xml:space="preserve" name="Clip">
+    <value>Изрязване</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Затвори</value>
+  </data>
+  <data xml:space="preserve" name="CloseField">
+    <value>Затвори поле</value>
+  </data>
+  <data xml:space="preserve" name="Cm">
+    <value>см</value>
+  </data>
+  <data xml:space="preserve" name="CmPixel">
+    <value>см -&gt; Пиксел</value>
+  </data>
+  <data xml:space="preserve" name="CmPx">
+    <value>см/пкс</value>
+  </data>
+  <data xml:space="preserve" name="Configuration">
+    <value>Конфигурация</value>
+  </data>
+  <data xml:space="preserve" name="ConfirmDelete">
+    <value>Потвърди изтриване</value>
+  </data>
+  <data xml:space="preserve" name="Contour">
+    <value>Контур</value>
+  </data>
+  <data xml:space="preserve" name="Counts">
+    <value>Брой импулси</value>
+  </data>
+  <data xml:space="preserve" name="CountsPerDegree">
+    <value>Импулси на градус</value>
+  </data>
+  <data xml:space="preserve" name="Create">
+    <value>Създай</value>
+  </data>
+  <data xml:space="preserve" name="CreateFieldFromExisting">
+    <value>Създай поле от съществуващо</value>
+  </data>
+  <data xml:space="preserve" name="CreateNewField">
+    <value>Създай ново поле</value>
+  </data>
+  <data xml:space="preserve" name="CrossPlatformAgriculturalGpsGuidance">
+    <value>Крос-платформено GPS насочване за земеделие</value>
+  </data>
+  <data xml:space="preserve" name="CrossTrackError">
+    <value>Напречна грешка</value>
+  </data>
+  <data xml:space="preserve" name="CrossTrackError">
+    <value>Грешка в напречната линия</value>
+  </data>
+  <data xml:space="preserve" name="CurrentGpsPosition">
+    <value>Текуща GPS позиция:</value>
+  </data>
+  <data xml:space="preserve" name="CurrentTurn">
+    <value>Текущ завой</value>
+  </data>
+  <data xml:space="preserve" name="Curve">
+    <value>Крива</value>
+  </data>
+  <data xml:space="preserve" name="Cytron">
+    <value>Cytron</value>
+  </data>
+  <data xml:space="preserve" name="Danfoss">
+    <value>Danfoss</value>
+  </data>
+  <data xml:space="preserve" name="DataIOConfiguration">
+    <value>Конфигурация на вход/изход данни</value>
+  </data>
+  <data xml:space="preserve" name="DayNight">
+    <value>Ден/Нощ</value>
+  </data>
+  <data xml:space="preserve" name="Deadzone">
+    <value>Мъртва зона</value>
+  </data>
+  <data xml:space="preserve" name="Debug">
+    <value>Дебаг</value>
+  </data>
+  <data xml:space="preserve" name="Default">
+    <value>По подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="Defaults">
+    <value>Стандартни</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Изтрий</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAll">
+    <value>Изтрий всички</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAllFlags">
+    <value>Изтрий всички флагове</value>
+  </data>
+  <data xml:space="preserve" name="DeleteAppliedArea">
+    <value>Изтрий обработената площ</value>
+  </data>
+  <data xml:space="preserve" name="DeleteContours">
+    <value>Изтрий контурите</value>
+  </data>
+  <data xml:space="preserve" name="DeleteHeadland">
+    <value>Изтрий край на поле</value>
+  </data>
+  <data xml:space="preserve" name="DeselectAll">
+    <value>Отмаркирай всички</value>
+  </data>
+  <data xml:space="preserve" name="DgpsFix">
+    <value>DGPS фикс</value>
+  </data>
+  <data xml:space="preserve" name="Differential">
+    <value>Диференциал</value>
+  </data>
+  <data xml:space="preserve" name="Disable">
+    <value>Изключи</value>
+  </data>
+  <data xml:space="preserve" name="Display">
+    <value>Дисплей</value>
+  </data>
+  <data xml:space="preserve" name="DisplaySettings">
+    <value>Настройки на дисплея</value>
+  </data>
+  <data xml:space="preserve" name="Distance">
+    <value>Разстояние</value>
+  </data>
+  <data xml:space="preserve" name="Done">
+    <value>Готово</value>
+  </data>
+  <data xml:space="preserve" name="DownloadAll">
+    <value>Изтегли всички</value>
+  </data>
+  <data xml:space="preserve" name="DownloadFromAgshare">
+    <value>Изтегли от AgShare</value>
+  </data>
+  <data xml:space="preserve" name="DownloadSelected">
+    <value>Изтегли избраните</value>
+  </data>
+  <data xml:space="preserve" name="Draw">
+    <value>Рисувай</value>
+  </data>
+  <data xml:space="preserve" name="DrawAB">
+    <value>Начертай АВ</value>
+  </data>
+  <data xml:space="preserve" name="DrawFieldBoundary">
+    <value>Начертай граница на поле</value>
+  </data>
+  <data xml:space="preserve" name="DrawTrackOnMap">
+    <value>Начертай следа на картата</value>
+  </data>
+  <data xml:space="preserve" name="DriveAB">
+    <value>Карай по АВ</value>
+  </data>
+  <data xml:space="preserve" name="DriveAB2">
+    <value>Карай А-В</value>
+  </data>
+  <data xml:space="preserve" name="DriveIn">
+    <value>Вкарай</value>
+  </data>
+  <data xml:space="preserve" name="DriveThru">
+    <value>Премини през</value>
+  </data>
+  <data xml:space="preserve" name="EWM">
+    <value>И/З (м)</value>
+  </data>
+  <data xml:space="preserve" name="EditNtripProfile">
+    <value>Редактирай NTRIP профил</value>
+  </data>
+  <data xml:space="preserve" name="Enable">
+    <value>Включи</value>
+  </data>
+  <data xml:space="preserve" name="Enabled">
+    <value>Активиран</value>
+  </data>
+  <data xml:space="preserve" name="EnterFieldNameOriginWillBeSetToCurrentGpsPosition">
+    <value>Въведете име на поле - началната точка ще бъде зададена от текущата GPS позиция</value>
+  </data>
+  <data xml:space="preserve" name="EnterGpsCoordinates">
+    <value>Въведете GPS координати</value>
+  </data>
+  <data xml:space="preserve" name="EnterSimCoords">
+    <value>Въведете координати за симулатор</value>
+  </data>
+  <data xml:space="preserve" name="EnterWgs84CoordinatesInDecimalDegrees">
+    <value>Въведете WGS84 координати в десетични градуси</value>
+  </data>
+  <data xml:space="preserve" name="Error">
+    <value>Грешка</value>
+  </data>
+  <data xml:space="preserve" name="ExternalEnable">
+    <value>Външно включване</value>
+  </data>
+  <data xml:space="preserve" name="Fast">
+    <value>Бързо</value>
+  </data>
+  <data xml:space="preserve" name="FieldName">
+    <value>Име на поле</value>
+  </data>
+  <data xml:space="preserve" name="FieldName2">
+    <value>Име на поле:</value>
+  </data>
+  <data xml:space="preserve" name="FieldTools">
+    <value>Инструменти за поле</value>
+  </data>
+  <data xml:space="preserve" name="Fields">
+    <value>Полета</value>
+  </data>
+  <data xml:space="preserve" name="FieldsNotSelectedWillUseTheDefaultProfileIfSet">
+    <value>Немаркираните полета ще използват профила по подразбиране (ако е зададен).</value>
+  </data>
+  <data xml:space="preserve" name="FileMenu">
+    <value>Меню Файл</value>
+  </data>
+  <data xml:space="preserve" name="FixQuality">
+    <value>Качество на фикса:</value>
+  </data>
+  <data xml:space="preserve" name="FlagByLatLon">
+    <value>Флаг по ширина/дължина</value>
+  </data>
+  <data xml:space="preserve" name="FlagList">
+    <value>Списък с флагове</value>
+  </data>
+  <data xml:space="preserve" name="Flags">
+    <value>Флагове</value>
+  </data>
+  <data xml:space="preserve" name="ForceOverwriteExistingFields">
+    <value>Принудително презаписване на съществуващи полета</value>
+  </data>
+  <data xml:space="preserve" name="FreeDrive">
+    <value>Свободно каране</value>
+  </data>
+  <data xml:space="preserve" name="FromExisting">
+    <value>От съществуващо</value>
+  </data>
+  <data xml:space="preserve" name="FromKml">
+    <value>От KML</value>
+  </data>
+  <data xml:space="preserve" name="Gain">
+    <value>Усилване</value>
+  </data>
+  <data xml:space="preserve" name="GetYourApiKeyFromAgshareagopengpscom">
+    <value>Вземете своя API ключ от agshare.agopengps.com</value>
+  </data>
+  <data xml:space="preserve" name="GithubcomChriskinalAgvaloniagps3">
+    <value>github.com/chriskinal/AgValoniaGPS3</value>
+  </data>
+  <data xml:space="preserve" name="GpsActive">
+    <value>GPS активен</value>
+  </data>
+  <data xml:space="preserve" name="GpsData">
+    <value>GPS данни</value>
+  </data>
+  <data xml:space="preserve" name="GpsFix">
+    <value>GPS фикс</value>
+  </data>
+  <data xml:space="preserve" name="GpsOffsetFix">
+    <value>Корекция на GPS отместване</value>
+  </data>
+  <data xml:space="preserve" name="GpsSimulator">
+    <value>GPS симулатор</value>
+  </data>
+  <data xml:space="preserve" name="Grid">
+    <value>Мрежа</value>
+  </data>
+  <data xml:space="preserve" name="Guidance">
+    <value>Насочване</value>
+  </data>
+  <data xml:space="preserve" name="HardwareConfig">
+    <value>Хардуерна конфигурация</value>
+  </data>
+  <data xml:space="preserve" name="Head">
+    <value>Глава</value>
+  </data>
+  <data xml:space="preserve" name="Heading">
+    <value>Посока</value>
+  </data>
+  <data xml:space="preserve" name="HeadingChart">
+    <value>Графика на посоката</value>
+  </data>
+  <data xml:space="preserve" name="Headland">
+    <value>Край на поле</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandBuilder">
+    <value>Изграждане на край на поле</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandDistance">
+    <value>Разстояние на край на поле</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandDistanceMeters">
+    <value>Разстояние на край на поле (метри)</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandEditor">
+    <value>Редактор на край на поле</value>
+  </data>
+  <data xml:space="preserve" name="HeadlandLineActive">
+    <value>Линията на край на поле е активна</value>
+  </data>
+  <data xml:space="preserve" name="Hectares">
+    <value>ха</value>
+  </data>
+  <data xml:space="preserve" name="Help">
+    <value>Помощ</value>
+  </data>
+  <data xml:space="preserve" name="Hitch">
+    <value>Теглич</value>
+  </data>
+  <data xml:space="preserve" name="HitchLength">
+    <value>Дължина на теглича</value>
+  </data>
+  <data xml:space="preserve" name="HotkeyConfiguration">
+    <value>Конфигурация на бързи клавиши</value>
+  </data>
+  <data xml:space="preserve" name="Hotkeys">
+    <value>Бързи клавиши</value>
+  </data>
+  <data xml:space="preserve" name="HttpsAgshareagopengpscom">
+    <value>https://agshare.agopengps.com</value>
+  </data>
+  <data xml:space="preserve" name="Ibt2">
+    <value>IBT2</value>
+  </data>
+  <data xml:space="preserve" name="Implement">
+    <value>Инструмент</value>
+  </data>
+  <data xml:space="preserve" name="Import">
+    <value>Импортирай</value>
+  </data>
+  <data xml:space="preserve" name="ImportFieldFromIsoXml">
+    <value>Импортирай поле от ISO-XML</value>
+  </data>
+  <data xml:space="preserve" name="ImportFieldFromKml">
+    <value>Импортирай поле от KML</value>
+  </data>
+  <data xml:space="preserve" name="ImportTracks">
+    <value>Импортирай следи</value>
+  </data>
+  <data xml:space="preserve" name="ImportTracksFromField">
+    <value>Импортирай следи от поле</value>
+  </data>
+  <data xml:space="preserve" name="Imu">
+    <value>IMU:</value>
+  </data>
+  <data xml:space="preserve" name="ImuAxisSwap">
+    <value>Размяна на IMU оси</value>
+  </data>
+  <data xml:space="preserve" name="In">
+    <value>В</value>
+  </data>
+  <data xml:space="preserve" name="IncludeBackgroundImage">
+    <value>Включи фонова картина</value>
+  </data>
+  <data xml:space="preserve" name="Info">
+    <value>Информация</value>
+  </data>
+  <data xml:space="preserve" name="Integral">
+    <value>Интеграл</value>
+  </data>
+  <data xml:space="preserve" name="InvertMotor">
+    <value>Инвертирай мотора</value>
+  </data>
+  <data xml:space="preserve" name="InvertRelays">
+    <value>Инвертирай релетата</value>
+  </data>
+  <data xml:space="preserve" name="InvertWas">
+    <value>Инвертирай WAS</value>
+  </data>
+  <data xml:space="preserve" name="IsoXml">
+    <value>ISO-XML</value>
+  </data>
+  <data xml:space="preserve" name="JobMenu">
+    <value>Меню Работа</value>
+  </data>
+  <data xml:space="preserve" name="Kilometers">
+    <value>км</value>
+  </data>
+  <data xml:space="preserve" name="KilometersPerHour">
+    <value>км/ч</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Език</value>
+  </data>
+  <data xml:space="preserve" name="Lat">
+    <value>Шир.:</value>
+  </data>
+  <data xml:space="preserve" name="Latitude">
+    <value>Географска ширина</value>
+  </data>
+  <data xml:space="preserve" name="Latitude2">
+    <value>Географска ширина:</value>
+  </data>
+  <data xml:space="preserve" name="Latitude90To90">
+    <value>Географска ширина (-90 до +90)</value>
+  </data>
+  <data xml:space="preserve" name="Latitude90To902">
+    <value>Географска ширина (-90 до 90)</value>
+  </data>
+  <data xml:space="preserve" name="Left">
+    <value>◀ ЛЯВО</value>
+  </data>
+  <data xml:space="preserve" name="LicenseGnuGeneralPublicLicenseV30">
+    <value>Лиценз: GNU General Public License v3.0</value>
+  </data>
+  <data xml:space="preserve" name="Lightbar">
+    <value>Светлинна лента</value>
+  </data>
+  <data xml:space="preserve" name="Line">
+    <value>Линия</value>
+  </data>
+  <data xml:space="preserve" name="LineWidth">
+    <value>Ширина на линията</value>
+  </data>
+  <data xml:space="preserve" name="Lines">
+    <value>Линии</value>
+  </data>
+  <data xml:space="preserve" name="Load">
+    <value>Зареди</value>
+  </data>
+  <data xml:space="preserve" name="LoadProfile">
+    <value>Зареди профил</value>
+  </data>
+  <data xml:space="preserve" name="LoadingFields">
+    <value>Зареждане на полета...</value>
+  </data>
+  <data xml:space="preserve" name="LogViewer">
+    <value>Преглед на логове</value>
+  </data>
+  <data xml:space="preserve" name="Lon">
+    <value>Дълж.:</value>
+  </data>
+  <data xml:space="preserve" name="Longitude">
+    <value>Географска дължина</value>
+  </data>
+  <data xml:space="preserve" name="Longitude2">
+    <value>Географска дължина:</value>
+  </data>
+  <data xml:space="preserve" name="Longitude180To180">
+    <value>Географска дължина (-180 до +180)</value>
+  </data>
+  <data xml:space="preserve" name="Longitude180To1802">
+    <value>Географска дължина (-180 до 180)</value>
+  </data>
+  <data xml:space="preserve" name="Machine">
+    <value>Машина:</value>
+  </data>
+  <data xml:space="preserve" name="MakeFieldsPublic">
+    <value>Направи полетата публични</value>
+  </data>
+  <data xml:space="preserve" name="ManualLeft">
+    <value>Ръчно ляво</value>
+  </data>
+  <data xml:space="preserve" name="ManualRight">
+    <value>Ръчно дясно</value>
+  </data>
+  <data xml:space="preserve" name="ManualTurns">
+    <value>Ръчни завои</value>
+  </data>
+  <data xml:space="preserve" name="Map">
+    <value>Карта</value>
+  </data>
+  <data xml:space="preserve" name="MaxLimit">
+    <value>Макс. граница</value>
+  </data>
+  <data xml:space="preserve" name="MaxSpeed">
+    <value>Макс. скорост</value>
+  </data>
+  <data xml:space="preserve" name="MaxSteerAngle">
+    <value>Макс. ъгъл на завиване</value>
+  </data>
+  <data xml:space="preserve" name="Meters">
+    <value>м</value>
+  </data>
+  <data xml:space="preserve" name="MilesPerHour">
+    <value>мили/ч</value>
+  </data>
+  <data xml:space="preserve" name="MinSpeed">
+    <value>Мин. скорост</value>
+  </data>
+  <data xml:space="preserve" name="MinimumToMove">
+    <value>Минимум за движение</value>
+  </data>
+  <data xml:space="preserve" name="ModuleConnections">
+    <value>Връзки на модули</value>
+  </data>
+  <data xml:space="preserve" name="MotorDriver">
+    <value>Драйвер на мотора</value>
+  </data>
+  <data xml:space="preserve" name="MountPoint">
+    <value>Монтираща точка</value>
+  </data>
+  <data xml:space="preserve" name="NSM">
+    <value>С/Ю (м)</value>
+  </data>
+  <data xml:space="preserve" name="NetworkAndGpsSettings">
+    <value>Настройки на мрежа и GPS</value>
+  </data>
+  <data xml:space="preserve" name="NetworkStatus">
+    <value>Статус на мрежата:</value>
+  </data>
+  <data xml:space="preserve" name="NewField">
+    <value>Ново поле</value>
+  </data>
+  <data xml:space="preserve" name="NewFieldName">
+    <value>Ново име на поле:</value>
+  </data>
+  <data xml:space="preserve" name="NewFromDefault">
+    <value>Нов от подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="NewProfile">
+    <value>Нов профил</value>
+  </data>
+  <data xml:space="preserve" name="NextGuidance">
+    <value>Следващо насочване</value>
+  </data>
+  <data xml:space="preserve" name="No">
+    <value>Не</value>
+  </data>
+  <data xml:space="preserve" name="NoBoundaryLoadedPleaseCreateOrLoadAFieldFirst">
+    <value>Няма заредена граница - моля, първо създайте или заредете поле</value>
+  </data>
+  <data xml:space="preserve" name="NoFix">
+    <value>Няма фикс</value>
+  </data>
+  <data xml:space="preserve" name="None">
+    <value>Нищо</value>
+  </data>
+  <data xml:space="preserve" name="North">
+    <value>Север</value>
+  </data>
+  <data xml:space="preserve" name="NotSet">
+    <value>(не е зададено)</value>
+  </data>
+  <data xml:space="preserve" name="NtripProfile">
+    <value>NTRIP профил</value>
+  </data>
+  <data xml:space="preserve" name="NtripProfiles">
+    <value>NTRIP профили</value>
+  </data>
+  <data xml:space="preserve" name="Nudge">
+    <value>Побутване</value>
+  </data>
+  <data xml:space="preserve" name="NudgeDistance">
+    <value>Разстояние за побутване</value>
+  </data>
+  <data xml:space="preserve" name="NumberOfPasses">
+    <value>Брой преминавания</value>
+  </data>
+  <data xml:space="preserve" name="OK">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="Off">
+    <value>Изкл</value>
+  </data>
+  <data xml:space="preserve" name="Off2">
+    <value>ИЗКЛ</value>
+  </data>
+  <data xml:space="preserve" name="OffAt">
+    <value>Изкл при %</value>
+  </data>
+  <data xml:space="preserve" name="Offset">
+    <value>Отместване</value>
+  </data>
+  <data xml:space="preserve" name="OffsetFix">
+    <value>Корекция на отместване</value>
+  </data>
+  <data xml:space="preserve" name="On">
+    <value>Вкл</value>
+  </data>
+  <data xml:space="preserve" name="On2">
+    <value>ВКЛ</value>
+  </data>
+  <data xml:space="preserve" name="OnDelay">
+    <value>Забавяне при вкл</value>
+  </data>
+  <data xml:space="preserve" name="OnOff">
+    <value>Вкл/Изкл</value>
+  </data>
+  <data xml:space="preserve" name="Open">
+    <value>Отвори</value>
+  </data>
+  <data xml:space="preserve" name="OpenField">
+    <value>Отвори поле</value>
+  </data>
+  <data xml:space="preserve" name="Out">
+    <value>Извън</value>
+  </data>
+  <data xml:space="preserve" name="Overlap">
+    <value>Припокриване</value>
+  </data>
+  <data xml:space="preserve" name="OvershootReduction">
+    <value>Намаляване на превишаване</value>
+  </data>
+  <data xml:space="preserve" name="Password">
+    <value>Парола</value>
+  </data>
+  <data xml:space="preserve" name="Path">
+    <value>Път</value>
+  </data>
+  <data xml:space="preserve" name="Pause">
+    <value>Пауза</value>
+  </data>
+  <data xml:space="preserve" name="Pixels">
+    <value>пиксела</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlag">
+    <value>Постави флаг</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlagByLatLon">
+    <value>Постави флаг по ширина/дължина</value>
+  </data>
+  <data xml:space="preserve" name="PlaceFlagHere">
+    <value>Постави флаг тук</value>
+  </data>
+  <data xml:space="preserve" name="PlaceHere">
+    <value>Постави тук</value>
+  </data>
+  <data xml:space="preserve" name="PlaceIsoXmlFoldersContainingTaskdataxmlInDocumentsAgvaloniagpsImport">
+    <value>Поставете ISO-XML папки (съдържащи TASKDATA.xml) в Documents/AgValoniaGPS/Import</value>
+  </data>
+  <data xml:space="preserve" name="PlaceKmlFilesInDocumentsAgvaloniagpsImport">
+    <value>Поставете KML файлове в Documents/AgValoniaGPS/Import</value>
+  </data>
+  <data xml:space="preserve" name="PlaceOnMap">
+    <value>Постави на картата</value>
+  </data>
+  <data xml:space="preserve" name="Points">
+    <value>Точки:</value>
+  </data>
+  <data xml:space="preserve" name="Port">
+    <value>Порт</value>
+  </data>
+  <data xml:space="preserve" name="PressureTurn">
+    <value>Завой под налягане</value>
+  </data>
+  <data xml:space="preserve" name="PreviewShownOnMap">
+    <value>Прегледът се показва на картата</value>
+  </data>
+  <data xml:space="preserve" name="ProfileName">
+    <value>Име на профил</value>
+  </data>
+  <data xml:space="preserve" name="ProportionalGain">
+    <value>Пропорционално усилване</value>
+  </data>
+  <data xml:space="preserve" name="PurePursuit">
+    <value>Чисто проследяване</value>
+  </data>
+  <data xml:space="preserve" name="Pwm">
+    <value>ШИМ:</value>
+  </data>
+  <data xml:space="preserve" name="QuickAbLineCreator">
+    <value>Бърз създател на АВ линия</value>
+  </data>
+  <data xml:space="preserve" name="ReadOnlyViewOfCurrentConfigurationValues">
+    <value>Само за четене изглед на текущите конфигурационни стойности</value>
+  </data>
+  <data xml:space="preserve" name="RecordedPath">
+    <value>Записан път</value>
+  </data>
+  <data xml:space="preserve" name="Refresh">
+    <value>Опресни</value>
+  </data>
+  <data xml:space="preserve" name="RenameFlag">
+    <value>Преименувай флаг</value>
+  </data>
+  <data xml:space="preserve" name="Reset">
+    <value>Нулирай</value>
+  </data>
+  <data xml:space="preserve" name="ResetAllSettings">
+    <value>Нулирай всички настройки</value>
+  </data>
+  <data xml:space="preserve" name="ResetDefaults">
+    <value>Нулирай стандартните</value>
+  </data>
+  <data xml:space="preserve" name="ResetToDefaults">
+    <value>Нулиране до стандартните?</value>
+  </data>
+  <data xml:space="preserve" name="Resume">
+    <value>Продължи</value>
+  </data>
+  <data xml:space="preserve" name="ReverseDirection">
+    <value>Обърни посоката</value>
+  </data>
+  <data xml:space="preserve" name="Right">
+    <value>ДЯСНО ▶</value>
+  </data>
+  <data xml:space="preserve" name="RollCorrection">
+    <value>Корекция на наклона</value>
+  </data>
+  <data xml:space="preserve" name="RtkFix">
+    <value>RTK фикс</value>
+  </data>
+  <data xml:space="preserve" name="RtkFloat">
+    <value>RTK плаващ</value>
+  </data>
+  <data xml:space="preserve" name="Satellites">
+    <value>Сателити:</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Запази</value>
+  </data>
+  <data xml:space="preserve" name="SaveProfile">
+    <value>Запази профил</value>
+  </data>
+  <data xml:space="preserve" name="Sec">
+    <value>сек</value>
+  </data>
+  <data xml:space="preserve" name="SectionControl">
+    <value>Секционен контрол</value>
+  </data>
+  <data xml:space="preserve" name="Sections">
+    <value>Секции</value>
+  </data>
+  <data xml:space="preserve" name="SelectAFieldToImportItsTracksIntoTheCurrentField">
+    <value>Изберете поле, за да импортирате неговите следи в текущото поле:</value>
+  </data>
+  <data xml:space="preserve" name="SelectAll">
+    <value>Избери всички</value>
+  </data>
+  <data xml:space="preserve" name="SelectCreationMode">
+    <value>Изберете режим на създаване:</value>
+  </data>
+  <data xml:space="preserve" name="SelectField">
+    <value>Избери поле</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldToOpen">
+    <value>Изберете поле за отваряне</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldsThatWillUseThisNtripProfile">
+    <value>Изберете полета, които ще използват този NTRIP профил:</value>
+  </data>
+  <data xml:space="preserve" name="SelectFieldsToUpload">
+    <value>Изберете полета за качване</value>
+  </data>
+  <data xml:space="preserve" name="SelectLanguage">
+    <value>Избери език</value>
+  </data>
+  <data xml:space="preserve" name="SelectProfile">
+    <value>Избери профил</value>
+  </data>
+  <data xml:space="preserve" name="SendSave">
+    <value>Изпрати+Запази</value>
+  </data>
+  <data xml:space="preserve" name="ServerUrl">
+    <value>URL на сървър</value>
+  </data>
+  <data xml:space="preserve" name="Set">
+    <value>Задай:</value>
+  </data>
+  <data xml:space="preserve" name="SetA">
+    <value>Задай А</value>
+  </data>
+  <data xml:space="preserve" name="SetAsDefaultProfileForFieldsWithoutSpecificAssociation">
+    <value>Задай като профил по подразбиране (за полета без специфична асоциация)</value>
+  </data>
+  <data xml:space="preserve" name="SetB">
+    <value>Задай Б</value>
+  </data>
+  <data xml:space="preserve" name="SidehillDegree">
+    <value>Страничен наклон / Градус</value>
+  </data>
+  <data xml:space="preserve" name="Simulator">
+    <value>Симулатор</value>
+  </data>
+  <data xml:space="preserve" name="SimulatorEnabled">
+    <value>Симулаторът е активиран</value>
+  </data>
+  <data xml:space="preserve" name="Single">
+    <value>Единичен</value>
+  </data>
+  <data xml:space="preserve" name="SkipRows">
+    <value>Пропусни редове</value>
+  </data>
+  <data xml:space="preserve" name="Slow">
+    <value>Бавно</value>
+  </data>
+  <data xml:space="preserve" name="SlowlyIncreasesSteerAngleToReduceCrossTrackError">
+    <value>Бавно увеличава ъгъла на завиване за намаляване на напречната грешка</value>
+  </data>
+  <data xml:space="preserve" name="SnapToPivot">
+    <value>Залепи към ос</value>
+  </data>
+  <data xml:space="preserve" name="SortAZ">
+    <value>Сортирай А-Я</value>
+  </data>
+  <data xml:space="preserve" name="Sources">
+    <value>Източници</value>
+  </data>
+  <data xml:space="preserve" name="Space">
+    <value>Интервал</value>
+  </data>
+  <data xml:space="preserve" name="Speed">
+    <value>Скорост</value>
+  </data>
+  <data xml:space="preserve" name="Speed2">
+    <value>Скорост:</value>
+  </data>
+  <data xml:space="preserve" name="SpeedFactor">
+    <value>Фактор на скоростта</value>
+  </data>
+  <data xml:space="preserve" name="SpeedLimits">
+    <value>Граници на скоростта</value>
+  </data>
+  <data xml:space="preserve" name="Stanley">
+    <value>Стенли</value>
+  </data>
+  <data xml:space="preserve" name="StanleyGains">
+    <value>Усилвания на Стенли</value>
+  </data>
+  <data xml:space="preserve" name="Start">
+    <value>Старт</value>
+  </data>
+  <data xml:space="preserve" name="StartNewField">
+    <value>Започни ново поле</value>
+  </data>
+  <data xml:space="preserve" name="StartOrDeleteBoundary">
+    <value>Започни или изтрий граница</value>
+  </data>
+  <data xml:space="preserve" name="Status">
+    <value>Статус:</value>
+  </data>
+  <data xml:space="preserve" name="SteerBar">
+    <value>Лента за управление</value>
+  </data>
+  <data xml:space="preserve" name="SteerChart">
+    <value>Графика на управление</value>
+  </data>
+  <data xml:space="preserve" name="SteerInReverse">
+    <value>Управление на заден ход</value>
+  </data>
+  <data xml:space="preserve" name="SteerResponse">
+    <value>Реакция на управление</value>
+  </data>
+  <data xml:space="preserve" name="SteerWizard">
+    <value>Съветник за управление</value>
+  </data>
+  <data xml:space="preserve" name="SteeringAlgorithm">
+    <value>Алгоритъм за управление</value>
+  </data>
+  <data xml:space="preserve" name="Stop">
+    <value>Стоп</value>
+  </data>
+  <data xml:space="preserve" name="Straight">
+    <value>Право</value>
+  </data>
+  <data xml:space="preserve" name="StraightLine">
+    <value>Права линия:</value>
+  </data>
+  <data xml:space="preserve" name="Switch">
+    <value>Превключвател</value>
+  </data>
+  <data xml:space="preserve" name="Tap2PointsToCreateAStraightAbLine">
+    <value>Докоснете 2 точки за създаване на права АВ линия</value>
+  </data>
+  <data xml:space="preserve" name="Tap3PointsThenTapFinishInTheStatusBar">
+    <value>Докоснете 3+ точки, след това докоснете Готово в статус лентата</value>
+  </data>
+  <data xml:space="preserve" name="TapOnTheMapToAddBoundaryPointsPanWithDragPinchToZoom">
+    <value>Докоснете картата за добавяне на гранични точки. Придвижване с влачене, прищипване за мащабиране.</value>
+  </data>
+  <data xml:space="preserve" name="TapOnTheMapToPlacePoints">
+    <value>Докоснете картата за поставяне на точки</value>
+  </data>
+  <data xml:space="preserve" name="Taskdata">
+    <value>TASKDATA</value>
+  </data>
+  <data xml:space="preserve" name="TestConnection">
+    <value>Тест на връзката</value>
+  </data>
+  <data xml:space="preserve" name="TestMode">
+    <value>Тестов режим</value>
+  </data>
+  <data xml:space="preserve" name="TheFieldOriginWillBeSetToYourCurrentGpsPositionWhenYouCreateTheField">
+    <value>Началната точка на полето ще бъде зададена от текущата ви GPS позиция, когато създадете полето.</value>
+  </data>
+  <data xml:space="preserve" name="ThisWillResetAllAutosteerSettingsToFactoryDefaultsAndSendThemToTheModule">
+    <value>Това ще нулира ВСИЧКИ настройки за автоматично управление до фабричните стандартни и ще ги изпрати на модула.</value>
+  </data>
+  <data xml:space="preserve" name="TiltDown">
+    <value>Наклон надолу</value>
+  </data>
+  <data xml:space="preserve" name="TiltUp">
+    <value>Наклон нагоре</value>
+  </data>
+  <data xml:space="preserve" name="Tool">
+    <value>Инструмент</value>
+  </data>
+  <data xml:space="preserve" name="ToolWidth">
+    <value>Ширина на инструмента</value>
+  </data>
+  <data xml:space="preserve" name="ToolWidths">
+    <value>Ширини на инструменти</value>
+  </data>
+  <data xml:space="preserve" name="Tools">
+    <value>Инструменти</value>
+  </data>
+  <data xml:space="preserve" name="TrackName">
+    <value>Име на следа</value>
+  </data>
+  <data xml:space="preserve" name="TrackType">
+    <value>Тип на следа</value>
+  </data>
+  <data xml:space="preserve" name="TrackWidth">
+    <value>Ширина на следа</value>
+  </data>
+  <data xml:space="preserve" name="Tracks">
+    <value>Следи</value>
+  </data>
+  <data xml:space="preserve" name="TramLines">
+    <value>Трамвайни линии</value>
+  </data>
+  <data xml:space="preserve" name="TramLinesBuilder">
+    <value>Създател на трамвайни линии</value>
+  </data>
+  <data xml:space="preserve" name="TurnSensor">
+    <value>Сензор за завой</value>
+  </data>
+  <data xml:space="preserve" name="Type">
+    <value>Тип</value>
+  </data>
+  <data xml:space="preserve" name="UTurnCompensation">
+    <value>Компенсация на U-завой</value>
+  </data>
+  <data xml:space="preserve" name="UdpCommunication">
+    <value>UDP комуникация</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Отмени</value>
+  </data>
+  <data xml:space="preserve" name="Units">
+    <value>Единици:</value>
+  </data>
+  <data xml:space="preserve" name="Upload">
+    <value>Качи</value>
+  </data>
+  <data xml:space="preserve" name="UploadToAgshare">
+    <value>Качи в AgShare</value>
+  </data>
+  <data xml:space="preserve" name="Username">
+    <value>Потребителско име</value>
+  </data>
+  <data xml:space="preserve" name="Vehicle">
+    <value>Превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="VehicleConfiguration">
+    <value>Конфигурация на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="VehicleSettings">
+    <value>Настройки на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="ViewAllSettings">
+    <value>Преглед на всички настройки</value>
+  </data>
+  <data xml:space="preserve" name="ViewSettings">
+    <value>Преглед на настройки</value>
+  </data>
+  <data xml:space="preserve" name="WaitingForGps">
+    <value>Изчакване на GPS</value>
+  </data>
+  <data xml:space="preserve" name="Warning">
+    <value>Предупреждение</value>
+  </data>
+  <data xml:space="preserve" name="WasZero">
+    <value>Нулиране на WAS</value>
+  </data>
+  <data xml:space="preserve" name="Wheelbase">
+    <value>Междуосие</value>
+  </data>
+  <data xml:space="preserve" name="Width">
+    <value>Ширина:</value>
+  </data>
+  <data xml:space="preserve" name="Wizard">
+    <value>Съветник</value>
+  </data>
+  <data xml:space="preserve" name="XteChart">
+    <value>XTE графика</value>
+  </data>
+  <data xml:space="preserve" name="Yes">
+    <value>Да</value>
+  </data>
+  <data xml:space="preserve" name="YouTurn">
+    <value>U-Завой</value>
+  </data>
+  <data xml:space="preserve" name="ZeroWas">
+    <value>Нулирай WAS</value>
+  </data>
+  <data xml:space="preserve" name="lt">
+    <value>&lt;--</value>
+  </data>
+  <data xml:space="preserve" name="1CmPerClick">
+    <value>1 см на клик</value>
+  </data>
+  <data xml:space="preserve" name="2">
+    <value>|||</value>
+  </data>
+  <data xml:space="preserve" name="2Pts">
+    <value>(2 т.)</value>
+  </data>
+  <data xml:space="preserve" name="3Pts">
+    <value>(3+ т.)</value>
+  </data>
+  <data xml:space="preserve" name="ALine">
+    <value>А+ Линия</value>
+  </data>
+  <data xml:space="preserve" name="AbLineTracks">
+    <value>АВ Линия следи</value>
+  </data>
+  <data xml:space="preserve" name="Ackermann">
+    <value>Акерман</value>
+  </data>
+  <data xml:space="preserve" name="AcquireFactor">
+    <value>Фактор на придобиване</value>
+  </data>
+  <data xml:space="preserve" name="AcquireFactorHold">
+    <value>Придобиване = Фактор * Задържане</value>
+  </data>
+  <data xml:space="preserve" name="Act">
+    <value>Действ.:</value>
+  </data>
+  <data xml:space="preserve" name="ActualSteerAngle">
+    <value>Действителен ъгъл на завиване</value>
+  </data>
+  <data xml:space="preserve" name="AdConverter">
+    <value>AD преобразувател</value>
+  </data>
+  <data xml:space="preserve" name="Aggressiveness">
+    <value>Агресивност</value>
+  </data>
+  <data xml:space="preserve" name="Articulated">
+    <value>Съчленен</value>
+  </data>
+  <data xml:space="preserve" name="Attach">
+    <value>Прикрепи</value>
+  </data>
+  <data xml:space="preserve" name="Autosteer">
+    <value>Автоуправление:</value>
+  </data>
+  <data xml:space="preserve" name="CannotDeleteActiveTool">
+    <value>Активният инструмент не може да бъде изтрит</value>
+  </data>
+  <data xml:space="preserve" name="CannotDeleteActiveVehicle">
+    <value>Активното превозно средство не може да бъде изтрито</value>
+  </data>
+  <data xml:space="preserve" name="Caster">
+    <value>Кастър</value>
+  </data>
+  <data xml:space="preserve" name="ConvertFrom">
+    <value>Конвертирай от</value>
+  </data>
+  <data xml:space="preserve" name="ConvertOldProfiles">
+    <value>Конвертиране на стари профили</value>
+  </data>
+  <data xml:space="preserve" name="ConvertStep1">
+    <value>Стъпка 1</value>
+  </data>
+  <data xml:space="preserve" name="ConvertStep2">
+    <value>Стъпка 2</value>
+  </data>
+  <data xml:space="preserve" name="ConvertTitle">
+    <value>Конвертиране</value>
+  </data>
+  <data xml:space="preserve" name="ConversionComplete">
+    <value>Конвертирането завърши</value>
+  </data>
+  <data xml:space="preserve" name="ConversionErrors">
+    <value>Грешки при конвертиране</value>
+  </data>
+  <data xml:space="preserve" name="ConversionErrorMsg">
+    <value>Възникнаха грешки</value>
+  </data>
+  <data xml:space="preserve" name="Converted">
+    <value>конвертирани</value>
+  </data>
+  <data xml:space="preserve" name="ConvertedSuccess">
+    <value>Конвертиран успешно</value>
+  </data>
+  <data xml:space="preserve" name="ConvertedSuccess">
+    <value>Конвертирането завърши успешно</value>
+  </data>
+  <data xml:space="preserve" name="CreateDefaultTool">
+    <value>Създай инструмент по подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="CreateDefaultToolConfirm">
+    <value>Да се създаде ли профил на инструмент по подразбиране със стандартни настройки?</value>
+  </data>
+  <data xml:space="preserve" name="CreateDefaultVehicle">
+    <value>Създай превозно средство по подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="CreateDefaultVehicleConfirm">
+    <value>Да се създаде ли профил на превозно средство по подразбиране със стандартни настройки?</value>
+  </data>
+  <data xml:space="preserve" name="CurrentTool">
+    <value>Текущ инструмент</value>
+  </data>
+  <data xml:space="preserve" name="CurrentVehicle">
+    <value>Текущо превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="Curve2">
+    <value>Крива:</value>
+  </data>
+  <data xml:space="preserve" name="DefaultToolLoaded">
+    <value>Зареден е инструментът по подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="DefaultVehicleLoaded">
+    <value>Заредено е превозното средство по подразбиране</value>
+  </data>
+  <data xml:space="preserve" name="DeleteToolConfirm">
+    <value>Потвърди изтриване на инструмент</value>
+  </data>
+  <data xml:space="preserve" name="DeleteVehicleConfirm">
+    <value>Потвърди изтриване на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="EnterNewToolName">
+    <value>Въведете ново име на инструмент</value>
+  </data>
+  <data xml:space="preserve" name="EnterNewVehicleName">
+    <value>Въведете ново име на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="EnterToolName">
+    <value>Въведете име на инструмент</value>
+  </data>
+  <data xml:space="preserve" name="EnterVehicleName">
+    <value>Въведете име на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="EnvironmentMigratedLoaded">
+    <value>Настройките на средата са мигрирани и заредени</value>
+  </data>
+  <data xml:space="preserve" name="Err">
+    <value>Грешка:</value>
+  </data>
+  <data xml:space="preserve" name="ErrorLoadingTool">
+    <value>Грешка при зареждане на инструмент</value>
+  </data>
+  <data xml:space="preserve" name="ErrorLoadingVehicle">
+    <value>Грешка при зареждане на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="Exists">
+    <value>Съществува</value>
+  </data>
+  <data xml:space="preserve" name="FileName">
+    <value>Име на файл</value>
+  </data>
+  <data xml:space="preserve" name="FileResult">
+    <value>Резултат от файл</value>
+  </data>
+  <data xml:space="preserve" name="Front">
+    <value>Преден</value>
+  </data>
+  <data xml:space="preserve" name="Harvester">
+    <value>Комбайн</value>
+  </data>
+  <data xml:space="preserve" name="Hitch">
+    <value>Теглич</value>
+  </data>
+  <data xml:space="preserve" name="ImportTool">
+    <value>Импортиране на инструмент</value>
+  </data>
+  <data xml:space="preserve" name="ImportVehicle">
+    <value>Импортиране на превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="LoadVehicleTool">
+    <value>Зареди превозно средство/инструмент</value>
+  </data>
+  <data xml:space="preserve" name="NewTool">
+    <value>Нов инструмент</value>
+  </data>
+  <data xml:space="preserve" name="NewVehicle">
+    <value>Ново превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="NoImport">
+    <value>Без импортиране</value>
+  </data>
+  <data xml:space="preserve" name="NoOldFormatFiles">
+    <value>Не са намерени файлове в стар формат</value>
+  </data>
+  <data xml:space="preserve" name="OldFiles">
+    <value>стари файлове</value>
+  </data>
+  <data xml:space="preserve" name="OldFilesStatus">
+    <value>стари файлове: конвертирани, за конвертиране</value>
+  </data>
+  <data xml:space="preserve" name="Overwrite">
+    <value>Презапиши</value>
+  </data>
+  <data xml:space="preserve" name="ProfileExistsOverwrite">
+    <value>Профилът вече съществува. Да се презапише ли?</value>
+  </data>
+  <data xml:space="preserve" name="RearFixed">
+    <value>Заден фиксиран</value>
+  </data>
+  <data xml:space="preserve" name="Rename">
+    <value>Преименувай</value>
+  </data>
+  <data xml:space="preserve" name="RenameTool">
+    <value>Преименувай инструмент</value>
+  </data>
+  <data xml:space="preserve" name="RenameVehicle">
+    <value>Преименувай превозно средство</value>
+  </data>
+  <data xml:space="preserve" name="SaveEnvironmentSettings">
+    <value>Настройки на средата</value>
+  </data>
+  <data xml:space="preserve" name="SaveEnvironmentSettingsSaved">
+    <value>Настройките на средата са запазени</value>
+  </data>
+  <data xml:space="preserve" name="SaveSettings">
+    <value>Запази настройките</value>
+  </data>
+  <data xml:space="preserve" name="SaveSettingsSaved">
+    <value>Настройките са запазени</value>
+  </data>
+  <data xml:space="preserve" name="SaveToolSettings">
+    <value>Настройки на инструмента</value>
+  </data>
+  <data xml:space="preserve" name="SaveToolSettingsSaved">
+    <value>Настройките на инструмента са запазени</value>
+  </data>
+  <data xml:space="preserve" name="SaveVehicleSettings">
+    <value>Настройки на превозното средство</value>
+  </data>
+  <data xml:space="preserve" name="SaveVehicleSettingsSaved">
+    <value>Настройките на превозното средство са запазени</value>
+  </data>
+  <data xml:space="preserve" name="Selected">
+    <value>Избрано</value>
+  </data>
+  <data xml:space="preserve" name="SmartWAS">
+    <value>Интелигентен WAS</value>
+  </data>
+  <data xml:space="preserve" name="SmartWASHelp">
+    <value>Автоматично калибрира нулата на WAS чрез анализ на ъглите на завиване по време на движение. Включете автоматичното управление и карайте плавно по линията.</value>
+  </data>
+  <data xml:space="preserve" name="TBT">
+    <value>TBT</value>
+  </data>
+  <data xml:space="preserve" name="ToolAlreadyExists">
+    <value>Инструментът вече съществува</value>
+  </data>
+  <data xml:space="preserve" name="ToolExists">
+    <value>Инструментът вече съществува</value>
+  </data>
+  <data xml:space="preserve" name="ToolInUse">
+    <value>Инструментът е в употреба</value>
+  </data>
+  <data xml:space="preserve" name="ToolProfileName">
+    <value>Име на профила на инструмента</value>
+  </data>
+  <data xml:space="preserve" name="ToConvert">
+    <value>за конвертиране</value>
+  </data>
+  <data xml:space="preserve" name="Tractor">
+    <value>Трактор</value>
+  </data>
+  <data xml:space="preserve" name="Trailing">
+    <value>Теглен</value>
+  </data>
+  <data xml:space="preserve" name="TrailingHitch">
+    <value>Заден теглич</value>
+  </data>
+  <data xml:space="preserve" name="VehicleAlreadyExists">
+    <value>Превозното средство вече съществува</value>
+  </data>
+  <data xml:space="preserve" name="VehicleExists">
+    <value>Превозното средство вече съществува</value>
+  </data>
+  <data xml:space="preserve" name="VehicleInUse">
+    <value>Превозното средство е в употреба</value>
+  </data>
+  <data xml:space="preserve" name="VehicleProfileName">
+    <value>Име на профила на превозното средство</value>
+  </data>
+  <data xml:space="preserve" name="VehicleTool">
+    <value>Превозно средство / Инструмент</value>
+  </data>
+  <data xml:space="preserve" name="v_AboutIntro">
+    <value>https://www.youtube.com/watch?v=iN2cZ8avHag</value>
+  </data>
+</root>
