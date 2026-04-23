@@ -65,7 +65,7 @@ public class TranslationSource : INotifyPropertyChanged
     /// </summary>
     public static readonly string[] AvailableLanguages = new[]
     {
-        "en", "da", "de", "es", "et", "fi", "fr", "hu", "it", "ko",
+        "en", "bg", "da", "de", "es", "et", "fi", "fr", "hu", "it", "ko",
         "lt", "lv", "nl", "no", "pl", "pt", "ru", "sk", "sr", "tr",
         "uk", "zh-Hans"
     };
