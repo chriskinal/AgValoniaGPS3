@@ -196,7 +196,7 @@
     <value>Текуща GPS позиция:</value>
   </data>
   <data xml:space="preserve" name="CurrentTurn">
-    <value>Текущ завой</value>
+    <value>Сензор за ток</value>
   </data>
   <data xml:space="preserve" name="Curve">
     <value>Крива</value>
@@ -217,7 +217,7 @@
     <value>Мъртва зона</value>
   </data>
   <data xml:space="preserve" name="Debug">
-    <value>Дебаг</value>
+    <value>Дебъг</value>
   </data>
   <data xml:space="preserve" name="Default">
     <value>По подразбиране</value>
@@ -295,7 +295,7 @@
     <value>Карай А-В</value>
   </data>
   <data xml:space="preserve" name="DriveIn">
-    <value>Вкарай</value>
+    <value>Карай</value>
   </data>
   <data xml:space="preserve" name="DriveThru">
     <value>Премини през</value>
@@ -769,7 +769,7 @@
     <value>Порт</value>
   </data>
   <data xml:space="preserve" name="PressureTurn">
-    <value>Завой под налягане</value>
+    <value>Сензор за налягане</value>
   </data>
   <data xml:space="preserve" name="PreviewShownOnMap">
     <value>Прегледът се показва на картата</value>
