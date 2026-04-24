@@ -170,6 +170,7 @@ public class ToolPositionService : IToolPositionService
         if (Math.Abs(dx) > 0.001 || Math.Abs(dy) > 0.001)
         {
             _toolHeading = Math.Atan2(dx, dy);
+            if (_toolHeading < 0) _toolHeading += 2 * Math.PI; // Normalize to [0, 2pi]
         }
 
         // Check for jackknife condition
@@ -235,6 +236,7 @@ public class ToolPositionService : IToolPositionService
         if (Math.Abs(tankDx) > 0.001 || Math.Abs(tankDy) > 0.001)
         {
             tankHeading = Math.Atan2(tankDx, tankDy);
+            if (tankHeading < 0) tankHeading += 2 * Math.PI;
         }
 
         // Tank position trails behind hitch
@@ -251,6 +253,7 @@ public class ToolPositionService : IToolPositionService
         if (Math.Abs(toolDx) > 0.001 || Math.Abs(toolDy) > 0.001)
         {
             _toolHeading = Math.Atan2(toolDx, toolDy);
+            if (_toolHeading < 0) _toolHeading += 2 * Math.PI;
         }
 
         // Check for jackknife
