@@ -421,12 +421,28 @@ public class TractorPathTests
         var appState = new ApplicationState();
         var toolPosition = new AgValoniaGPS.Services.Tool.ToolPositionService();
 
-        // Skip startup frames for trailing - we feed known-good headings
-        if (trailing)
-            toolPosition.ResetTrailingState(new Vec3(0, 0, 0), 0);
-
         var pipeline = BuildFullPipeline(toolPosition, appState);
         pipeline.Start();
+
+        // Warmup: burn through startup frames with straight driving so
+        // Torriem is fully active before the actual test scenario begins.
+        if (trailing)
+        {
+            toolPosition.ResetTrailingState(new Vec3(0, 0, 0), 0);
+            var warmup = new BicycleModel
+            {
+                Lat = 41.999, Lon = -93.0, HeadingDeg = 0,
+                SpeedKmh = 10, SteerAngleDeg = 0, Wheelbase = 2.5
+            };
+            for (int w = 0; w < 10; w++)
+            {
+                warmup.Step(0.1);
+                var wb = BuildPandaBytes(warmup.Lat, warmup.Lon, warmup.HeadingDeg, 10 / 1.852);
+                _autoSteer.ProcessGpsBuffer(wb, wb.Length);
+                System.Threading.Thread.Sleep(5);
+            }
+            System.Threading.Thread.Sleep(200);
+        }
 
         var results = new List<GpsCycleResult>();
         pipeline.CycleCompleted += r => { lock (results) results.Add(r); };
