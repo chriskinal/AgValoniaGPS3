@@ -152,22 +152,22 @@ public class VirtualGpsReceiver : IDisposable
         return sb.ToString();
     }
 
-    /// <summary>Format latitude as DDMM.MMMM</summary>
+    /// <summary>Format latitude as DDMM.MMMMM (5 decimal places = 0.019m resolution)</summary>
     private static string FormatLatitude(double lat)
     {
         lat = Math.Abs(lat);
         int degrees = (int)lat;
         double minutes = (lat - degrees) * 60.0;
-        return string.Format(CultureInfo.InvariantCulture, "{0:D2}{1:00.0000}", degrees, minutes);
+        return string.Format(CultureInfo.InvariantCulture, "{0:D2}{1:00.00000}", degrees, minutes);
     }
 
-    /// <summary>Format longitude as DDDMM.MMMM</summary>
+    /// <summary>Format longitude as DDDMM.MMMMM (5 decimal places = 0.019m resolution)</summary>
     private static string FormatLongitude(double lon)
     {
         lon = Math.Abs(lon);
         int degrees = (int)lon;
         double minutes = (lon - degrees) * 60.0;
-        return string.Format(CultureInfo.InvariantCulture, "{0:D3}{1:00.0000}", degrees, minutes);
+        return string.Format(CultureInfo.InvariantCulture, "{0:D3}{1:00.00000}", degrees, minutes);
     }
 
     public void Dispose()
