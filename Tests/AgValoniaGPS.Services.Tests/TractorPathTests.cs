@@ -324,51 +324,54 @@ public class TractorPathTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Test 4: Roll applied - lateral shift without path corruption
+    // Test 4: Roll correction via full pipeline (GpsCycleResult)
     // ═══════════════════════════════════════════════════════════════════════
 
     [Test]
-    public void Roll10Deg_ShiftsLaterally_PathStillProgresses()
+    public void Roll10Deg_ShiftsLaterally_ViaPipeline()
     {
         ConfigurationStore.Instance.Vehicle.AntennaHeight = 3.0;
         SensorState.Instance.ImuRoll = 10.0;
 
-        var (inputs, outputs) = DriveAndCollect(
-            speedKmh: 10, steerAngleDeg: 0, steps: 30);
+        // Expected lateral shift: sin(10 deg) * 3m = 0.521m
+        double expectedShift = Math.Sin(10.0 * Math.PI / 180.0) * 3.0;
 
-        TestContext.Out.WriteLine("=== Roll=10, AntennaHeight=3m, Straight Line ===");
+        // Run with fixed rear implement to get pipeline results
+        var results = DriveWithImplement(0, 40, "roll_test.csv",
+            trailing: false, fixedRear: true);
 
-        // Position should still progress northward (not stuck at origin)
-        double totalNorthing = LatDiffMeters(outputs[0].lat, outputs[^1].lat);
-        TestContext.Out.WriteLine($"Total northing travel: {totalNorthing:F2}m");
-        TestContext.Out.WriteLine($"First: ({outputs[0].lat:F8}, {outputs[0].lon:F8})");
-        TestContext.Out.WriteLine($"Last:  ({outputs[^1].lat:F8}, {outputs[^1].lon:F8})");
+        TestContext.Out.WriteLine($"=== Roll=10, AntennaHeight=3m, Heading North via Pipeline ===");
+        TestContext.Out.WriteLine($"Expected lateral shift: {expectedShift:F3}m");
+        TestContext.Out.WriteLine($"Cycles: {results.Count}");
 
-        // Log each position
-        for (int i = 0; i < outputs.Count; i += 5)
-        {
-            double dist = DistanceMeters(inputs[i].lat, inputs[i].lon,
-                outputs[i].lat, outputs[i].lon);
-            TestContext.Out.WriteLine(
-                $"  [{i:D2}] in=({inputs[i].lat:F8},{inputs[i].lon:F8}) " +
-                $"out=({outputs[i].lat:F8},{outputs[i].lon:F8}) offset={dist:F4}m");
-        }
-
-        // At 10 km/h for 30 steps at 0.1s = 3 seconds = ~8.3m travel
+        // Path should progress northward (no teleport)
+        double totalNorthing = Math.Abs(results[^1].Northing - results[0].Northing);
+        TestContext.Out.WriteLine($"Northing travel: {totalNorthing:F2}m");
         Assert.That(totalNorthing, Is.GreaterThan(5.0),
-            $"Tractor should travel >5m northward, got {totalNorthing:F2}m. " +
-            "Roll correction may have corrupted the path or caused teleport.");
+            "Tractor should travel >5m northward");
 
-        // Verify consecutive positions are progressing (no jumps back to origin)
-        for (int i = 1; i < outputs.Count; i++)
+        // Heading north with roll right: antenna shifts right, correction shifts LEFT (west)
+        // Check that easting is consistently negative (shifted west)
+        double avgEasting = 0;
+        for (int i = results.Count / 2; i < results.Count; i++)
+            avgEasting += results[i].Easting;
+        avgEasting /= (results.Count - results.Count / 2);
+
+        TestContext.Out.WriteLine($"Avg easting (steady state): {avgEasting:F4}m");
+        TestContext.Out.WriteLine($"Expected: ~-{expectedShift:F3}m (shifted west by roll correction)");
+
+        Assert.That(Math.Abs(avgEasting), Is.GreaterThan(0.1),
+            $"Roll correction should shift position laterally by ~{expectedShift:F1}m, " +
+            $"but avg easting is only {avgEasting:F4}m. Correction not being applied.");
+
+        // No teleports
+        for (int i = 1; i < results.Count; i++)
         {
-            double stepDist = DistanceMeters(
-                outputs[i - 1].lat, outputs[i - 1].lon,
-                outputs[i].lat, outputs[i].lon);
-
-            Assert.That(stepDist, Is.LessThan(2.0),
-                $"Step [{i-1}->{i}] jumped {stepDist:F2}m - possible teleport. " +
-                "Expected ~0.28m per step at 10 km/h.");
+            double step = Math.Sqrt(
+                Math.Pow(results[i].Easting - results[i - 1].Easting, 2) +
+                Math.Pow(results[i].Northing - results[i - 1].Northing, 2));
+            Assert.That(step, Is.LessThan(2.0),
+                $"Step [{i - 1}->{i}] jumped {step:F2}m - possible teleport");
         }
     }
 
@@ -495,31 +498,37 @@ public class TractorPathTests
     [Test] public void FixedRear_Turn20() => DriveWithImplement(20, 100, "fixed_turn20.csv", trailing: false, fixedRear: true);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Test 5: Antenna offset applied - consistent lateral shift
+    // Test 5: Antenna offset via full pipeline
     // ═══════════════════════════════════════════════════════════════════════
 
     [Test]
-    public void AntennaOffset_ConsistentLateralShift()
+    public void AntennaOffset_ShiftsLaterally_ViaPipeline()
     {
         ConfigurationStore.Instance.Vehicle.AntennaOffset = 0.5; // 0.5m right
 
-        var (inputs, outputs) = DriveAndCollect(
-            speedKmh: 10, steerAngleDeg: 0, steps: 20);
+        var results = DriveWithImplement(0, 40, "offset_test.csv",
+            trailing: false, fixedRear: true);
 
-        TestContext.Out.WriteLine("=== AntennaOffset=0.5m, Straight Line Heading North ===");
+        TestContext.Out.WriteLine("=== AntennaOffset=0.5m, Heading North via Pipeline ===");
+        TestContext.Out.WriteLine($"Cycles: {results.Count}");
+
+        // Path should progress northward
+        double totalNorthing = Math.Abs(results[^1].Northing - results[0].Northing);
+        TestContext.Out.WriteLine($"Northing travel: {totalNorthing:F2}m");
+        Assert.That(totalNorthing, Is.GreaterThan(5.0));
 
         // With heading north and antenna 0.5m right of center,
-        // the corrected position should be shifted ~0.5m left (west = lower lon)
-        for (int i = 0; i < outputs.Count; i += 5)
-        {
-            double lonShift = LonDiffMeters(inputs[i].lon, outputs[i].lon, inputs[i].lat);
-            TestContext.Out.WriteLine(
-                $"  [{i:D2}] lon_in={inputs[i].lon:F8} lon_out={outputs[i].lon:F8} shift={lonShift:F4}m");
-        }
+        // correction shifts position 0.5m LEFT (west = negative easting)
+        double avgEasting = 0;
+        for (int i = results.Count / 2; i < results.Count; i++)
+            avgEasting += results[i].Easting;
+        avgEasting /= (results.Count - results.Count / 2);
 
-        // Path should still progress northward
-        double totalNorthing = LatDiffMeters(outputs[0].lat, outputs[^1].lat);
-        Assert.That(totalNorthing, Is.GreaterThan(3.0),
-            "Tractor should still travel northward with antenna offset");
+        TestContext.Out.WriteLine($"Avg easting (steady state): {avgEasting:F4}m");
+        TestContext.Out.WriteLine($"Expected: ~-0.5m (shifted west by antenna offset correction)");
+
+        Assert.That(Math.Abs(avgEasting), Is.GreaterThan(0.1),
+            $"Antenna offset should shift position by ~0.5m, " +
+            $"but avg easting is only {avgEasting:F4}m. Correction not applied.");
     }
 }

@@ -91,6 +91,14 @@ public class GpsService : IGpsService
     /// </summary>
     private void TransformAntennaToPivot(GpsData gpsData)
     {
+        // Skip when Easting/Northing are still 0 (not yet converted to local
+        // coordinates). The pipeline applies these corrections after local plane
+        // conversion in ProcessCycle step (1b). Applying them here to zeros
+        // corrupts the pipeline's auto-conversion check.
+        if (Math.Abs(gpsData.CurrentPosition.Easting) < 0.001
+            && Math.Abs(gpsData.CurrentPosition.Northing) < 0.001)
+            return;
+
         var vehicle = ConfigurationStore.Instance.Vehicle;
 
         // Convert heading to radians

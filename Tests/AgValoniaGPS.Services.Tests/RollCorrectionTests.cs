@@ -147,13 +147,13 @@ public class RollCorrectionTests
         ConfigurationStore.Instance.Vehicle.AntennaHeight = 4.0;
         SensorState.Instance.ImuRoll = 15.0;
 
-        var gpsData = MakeGpsData(easting: 0, northing: 0, heading: 0);
+        var gpsData = MakeGpsData(easting: 500, northing: 500, heading: 0);
         gpsService.UpdateGpsData(gpsData);
 
         double expected = Math.Sin(15.0 * Math.PI / 180.0) * 4.0; // ~1.035m
         double actualShift = Math.Sqrt(
-            Math.Pow(gpsData.CurrentPosition.Easting, 2) +
-            Math.Pow(gpsData.CurrentPosition.Northing, 2));
+            Math.Pow(gpsData.CurrentPosition.Easting - 500, 2) +
+            Math.Pow(gpsData.CurrentPosition.Northing - 500, 2));
 
         Assert.That(actualShift, Is.EqualTo(expected).Within(0.05),
             $"Total shift should be sin(15)*4 = {expected:F3}m, got {actualShift:F3}m");
