@@ -492,6 +492,20 @@ public class TractorPathTests
         return collected;
     }
 
+    [Test]
+    public void FixedRear_Turn20_WithAntennaOffset()
+    {
+        ConfigurationStore.Instance.Vehicle.AntennaOffset = 0.5;
+        DriveWithImplement(20, 100, "fixed_turn20_offset.csv", trailing: false, fixedRear: true);
+    }
+
+    [Test]
+    public void Trailing_Turn20_WithAntennaOffset()
+    {
+        ConfigurationStore.Instance.Vehicle.AntennaOffset = 0.5;
+        DriveWithImplement(20, 100, "trailing_turn20_offset.csv");
+    }
+
     [Test] public void Trailing_Straight() => DriveWithImplement(0, 80, "trailing_straight.csv");
     [Test] public void Trailing_Turn20() => DriveWithImplement(20, 100, "trailing_turn20.csv");
     [Test] public void FixedRear_Straight() => DriveWithImplement(0, 80, "fixed_straight.csv", trailing: false, fixedRear: true);
