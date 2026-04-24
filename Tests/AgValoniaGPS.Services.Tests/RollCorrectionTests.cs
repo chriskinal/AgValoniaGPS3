@@ -147,13 +147,13 @@ public class RollCorrectionTests
         ConfigurationStore.Instance.Vehicle.AntennaHeight = 4.0;
         SensorState.Instance.ImuRoll = 15.0;
 
-        var gpsData = MakeGpsData(easting: 0, northing: 0, heading: 0);
+        var gpsData = MakeGpsData(easting: 500, northing: 500, heading: 0);
         gpsService.UpdateGpsData(gpsData);
 
         double expected = Math.Sin(15.0 * Math.PI / 180.0) * 4.0; // ~1.035m
         double actualShift = Math.Sqrt(
-            Math.Pow(gpsData.CurrentPosition.Easting, 2) +
-            Math.Pow(gpsData.CurrentPosition.Northing, 2));
+            Math.Pow(gpsData.CurrentPosition.Easting - 500, 2) +
+            Math.Pow(gpsData.CurrentPosition.Northing - 500, 2));
 
         Assert.That(actualShift, Is.EqualTo(expected).Within(0.05),
             $"Total shift should be sin(15)*4 = {expected:F3}m, got {actualShift:F3}m");
@@ -177,6 +177,47 @@ public class RollCorrectionTests
             "Pivot should move position south");
         Assert.That(gpsData.CurrentPosition.Easting, Is.LessThan(100.0),
             "Roll should move position west");
+    }
+
+    [Test]
+    public void RollWithZeroEastingNorthing_DoesNotTeleportToOrigin()
+    {
+        // Regression: when GPS data arrives via the Phase B pipeline path,
+        // GpsData has Easting=Northing=0 (no local plane conversion yet).
+        // If roll correction is applied to zeros, it produces small non-zero
+        // values that break the pipeline's auto-conversion check, teleporting
+        // the tractor to the local origin.
+        var gpsService = new GpsService();
+        ConfigurationStore.Instance.Vehicle.AntennaHeight = 3.0;
+        SensorState.Instance.ImuRoll = 10.0;
+
+        var gpsData = MakeGpsData(easting: 0, northing: 0, heading: 45);
+        gpsService.UpdateGpsData(gpsData);
+
+        // After roll correction on zeros, the values should either:
+        // (a) remain exactly 0 (if roll correction is skipped for E=N=0), or
+        // (b) be small enough that pipeline's < 0.001 check still triggers conversion
+        double totalOffset = Math.Sqrt(
+            gpsData.CurrentPosition.Easting * gpsData.CurrentPosition.Easting +
+            gpsData.CurrentPosition.Northing * gpsData.CurrentPosition.Northing);
+
+        TestContext.Out.WriteLine($"Roll=10, AntennaHeight=3, E/N input=0,0");
+        TestContext.Out.WriteLine($"Output: E={gpsData.CurrentPosition.Easting:F6} N={gpsData.CurrentPosition.Northing:F6}");
+        TestContext.Out.WriteLine($"Total offset: {totalOffset:F6}m");
+
+        // If the offset exceeds the pipeline's threshold (0.001m),
+        // it will skip the local plane auto-creation and the tractor teleports.
+        if (totalOffset > 0.001)
+        {
+            TestContext.Out.WriteLine(">>> BUG: Roll correction on zero E/N produces offset > 0.001m");
+            TestContext.Out.WriteLine(">>> This will cause the pipeline to skip local plane conversion");
+            TestContext.Out.WriteLine(">>> Result: tractor teleports to local origin when roll != 0");
+        }
+
+        Assert.That(totalOffset, Is.LessThan(0.001),
+            $"Roll correction on zero E/N must not produce offset > 0.001m " +
+            $"(got {totalOffset:F6}m). This causes the pipeline to skip local " +
+            "plane conversion, teleporting the tractor to origin.");
     }
 
     private static GpsData MakeGpsData(double easting, double northing, double heading)
