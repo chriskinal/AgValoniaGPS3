@@ -402,55 +402,49 @@ public class TractorPathTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Test: Straight line with full pipeline + implement position
+    // Implement path tests with full pipeline + CSV dump
     // ═══════════════════════════════════════════════════════════════════════
 
-    [Test]
-    public void StraightLine_WithImplement_DumpCsv()
+    private List<GpsCycleResult> DriveWithImplement(
+        double steerAngleDeg, int steps, string csvName,
+        bool trailing = true, bool fixedRear = false)
     {
-        // Configure trailing implement
         var config = ConfigurationStore.Instance;
         config.Tool.HitchLength = 3.0;
-        config.Tool.TrailingHitchLength = 2.0;
         config.Tool.Width = 6.0;
-        config.Tool.IsToolTrailing = true;
-        config.Tool.IsToolFrontFixed = false;
-        config.Tool.IsToolRearFixed = false;
+        config.Tool.IsToolTrailing = trailing;
+        config.Tool.IsToolRearFixed = fixedRear;
+        config.Tool.IsToolFrontFixed = !trailing && !fixedRear;
         config.Tool.IsToolTBT = false;
+        config.Tool.TrailingHitchLength = trailing ? 2.0 : 0;
 
         var appState = new ApplicationState();
-
-        // Build full pipeline with real ToolPositionService
         var toolPosition = new AgValoniaGPS.Services.Tool.ToolPositionService();
-        var pipeline = BuildFullPipeline(toolPosition, appState);
 
+        // Skip startup frames for trailing - we feed known-good headings
+        if (trailing)
+            toolPosition.ResetTrailingState(new Vec3(0, 0, 0), 0);
+
+        var pipeline = BuildFullPipeline(toolPosition, appState);
         pipeline.Start();
 
-        // Collect results from CycleCompleted
         var results = new List<GpsCycleResult>();
         pipeline.CycleCompleted += r => { lock (results) results.Add(r); };
 
-        // Drive straight
         var model = new BicycleModel
         {
             Lat = 42.0, Lon = -93.0, HeadingDeg = 0,
-            SpeedKmh = 10, SteerAngleDeg = 0, Wheelbase = 2.5
+            SpeedKmh = 10, SteerAngleDeg = steerAngleDeg, Wheelbase = 2.5
         };
 
-        var inputs = new List<(double lat, double lon, double heading)>();
-        for (int i = 0; i < 80; i++)
+        for (int i = 0; i < steps; i++)
         {
             model.Step(0.1);
-            inputs.Add((model.Lat, model.Lon, model.HeadingDeg));
-
             var bytes = BuildPandaBytes(model.Lat, model.Lon, model.HeadingDeg, 10 / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-
-            // Let pipeline process
             System.Threading.Thread.Sleep(5);
         }
 
-        // Wait for pipeline to drain
         System.Threading.Thread.Sleep(500);
         pipeline.Stop();
 
@@ -458,82 +452,7 @@ public class TractorPathTests
         lock (results) collected = new List<GpsCycleResult>(results);
 
         // Write CSV
-        var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "straight_implement.csv");
-        using (var writer = new System.IO.StreamWriter(csvPath))
-        {
-            writer.WriteLine("step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,tool_heading,hitch_e,hitch_n,dist_tractor_tool");
-            double originLat = collected.Count > 0 ? collected[0].Latitude : 42.0;
-            double originLon = collected.Count > 0 ? collected[0].Longitude : -93.0;
-            double cosLat = Math.Cos(originLat * Math.PI / 180.0);
-
-            for (int i = 0; i < collected.Count; i++)
-            {
-                var r = collected[i];
-                double dist = Math.Sqrt(
-                    Math.Pow(r.Easting - r.ToolEasting, 2) +
-                    Math.Pow(r.Northing - r.ToolNorthing, 2));
-                writer.WriteLine($"{i},{r.Easting:F4},{r.Northing:F4},{r.Heading:F2}," +
-                    $"{r.ToolEasting:F4},{r.ToolNorthing:F4},{r.ToolHeadingRadians:F4}," +
-                    $"{r.HitchEasting:F4},{r.HitchNorthing:F4},{dist:F4}");
-            }
-        }
-
-        TestContext.Out.WriteLine($"CSV written to: {csvPath}");
-        TestContext.Out.WriteLine($"Pipeline cycles: {collected.Count} from {inputs.Count} inputs");
-
-        if (collected.Count > 0)
-        {
-            TestContext.Out.WriteLine($"First tractor: E={collected[0].Easting:F2} N={collected[0].Northing:F2}");
-            TestContext.Out.WriteLine($"Last tractor:  E={collected[^1].Easting:F2} N={collected[^1].Northing:F2}");
-            TestContext.Out.WriteLine($"First tool:    E={collected[0].ToolEasting:F2} N={collected[0].ToolNorthing:F2}");
-            TestContext.Out.WriteLine($"Last tool:     E={collected[^1].ToolEasting:F2} N={collected[^1].ToolNorthing:F2}");
-        }
-
-        Assert.That(collected.Count, Is.GreaterThan(10), "Pipeline should produce results");
-    }
-
-    [Test]
-    public void Turn20Deg_WithImplement_DumpCsv()
-    {
-        var config = ConfigurationStore.Instance;
-        config.Tool.HitchLength = 3.0;
-        config.Tool.TrailingHitchLength = 2.0;
-        config.Tool.Width = 6.0;
-        config.Tool.IsToolTrailing = true;
-        config.Tool.IsToolFrontFixed = false;
-        config.Tool.IsToolRearFixed = false;
-        config.Tool.IsToolTBT = false;
-
-        var appState = new ApplicationState();
-        var toolPosition = new AgValoniaGPS.Services.Tool.ToolPositionService();
-        var pipeline = BuildFullPipeline(toolPosition, appState);
-
-        pipeline.Start();
-
-        var results = new List<GpsCycleResult>();
-        pipeline.CycleCompleted += r => { lock (results) results.Add(r); };
-
-        var model = new BicycleModel
-        {
-            Lat = 42.0, Lon = -93.0, HeadingDeg = 0,
-            SpeedKmh = 10, SteerAngleDeg = 20, Wheelbase = 2.5
-        };
-
-        for (int i = 0; i < 100; i++)
-        {
-            model.Step(0.1);
-            var bytes = BuildPandaBytes(model.Lat, model.Lon, model.HeadingDeg, 10 / 1.852);
-            _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            System.Threading.Thread.Sleep(5);
-        }
-
-        System.Threading.Thread.Sleep(500);
-        pipeline.Stop();
-
-        List<GpsCycleResult> collected;
-        lock (results) collected = new List<GpsCycleResult>(results);
-
-        var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "turn20_implement.csv");
+        var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, csvName);
         using (var writer = new System.IO.StreamWriter(csvPath))
         {
             writer.WriteLine("step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,tool_heading_rad,hitch_e,hitch_n,dist_tractor_tool");
@@ -549,10 +468,15 @@ public class TractorPathTests
             }
         }
 
-        TestContext.Out.WriteLine($"CSV written to: {csvPath}");
-        TestContext.Out.WriteLine($"Pipeline cycles: {collected.Count}");
+        TestContext.Out.WriteLine($"CSV: {csvPath} ({collected.Count} cycles)");
         Assert.That(collected.Count, Is.GreaterThan(10));
+        return collected;
     }
+
+    [Test] public void Trailing_Straight() => DriveWithImplement(0, 80, "trailing_straight.csv");
+    [Test] public void Trailing_Turn20() => DriveWithImplement(20, 100, "trailing_turn20.csv");
+    [Test] public void FixedRear_Straight() => DriveWithImplement(0, 80, "fixed_straight.csv", trailing: false, fixedRear: true);
+    [Test] public void FixedRear_Turn20() => DriveWithImplement(20, 100, "fixed_turn20.csv", trailing: false, fixedRear: true);
 
     // ═══════════════════════════════════════════════════════════════════════
     // Test 5: Antenna offset applied - consistent lateral shift
