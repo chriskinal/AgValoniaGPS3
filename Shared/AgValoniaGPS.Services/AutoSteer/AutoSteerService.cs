@@ -395,6 +395,9 @@ public class AutoSteerService : IAutoSteerService
             SatellitesInUse = _state.Satellites,
             Hdop = _state.Hdop,
             DifferentialAge = _state.DifferentialAge,
+            ImuRoll = _state.Roll,
+            ImuPitch = _state.Pitch,
+            ImuYawRate = _state.YawRate,
             Timestamp = DateTime.UtcNow,
         };
         _gpsService.UpdateGpsData(gpsData);

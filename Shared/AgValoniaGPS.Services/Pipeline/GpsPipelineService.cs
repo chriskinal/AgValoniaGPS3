@@ -446,8 +446,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
                 posNorthing -= Math.Cos(perpHeading) * vehicle.AntennaOffset;
             }
 
-            // Roll correction
-            double imuRoll = SensorState.Instance.ImuRoll;
+            // Roll correction (read from GpsData, not SensorState — Phase B
+            // removed NmeaParserService which was the only SensorState writer)
+            double imuRoll = data.ImuRoll;
             if (Math.Abs(imuRoll) > 0.01 && Math.Abs(vehicle.AntennaHeight) > 0.01)
             {
                 double rollRad = imuRoll * Math.PI / 180.0;
@@ -740,7 +741,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
             Northing = driftedNorthing,
             Heading = pos.Heading,
             Speed = pos.Speed,
-            RollDegrees = SensorState.Instance.ImuRoll,
+            RollDegrees = data.ImuRoll,
             SatelliteCount = data.SatellitesInUse,
             FixQuality = data.FixQuality,
             GpsValid = data.IsValid,

@@ -151,7 +151,7 @@ public class TractorPathTests
     }
 
     private static byte[] BuildPandaBytes(double lat, double lon,
-        double heading, double speedKnots)
+        double heading, double speedKnots, double roll = 0)
     {
         using var listener = new UdpClient(0);
         int port = ((IPEndPoint)listener.Client.LocalEndPoint!).Port;
@@ -162,6 +162,7 @@ public class TractorPathTests
         gps.Longitude = lon;
         gps.HeadingDegrees = heading;
         gps.SpeedKnots = speedKnots;
+        gps.RollDegrees = roll;
         gps.FixQuality = 4;
         gps.Satellites = 12;
         gps.Hdop = 0.7;
@@ -459,7 +460,8 @@ public class TractorPathTests
         for (int i = 0; i < steps; i++)
         {
             model.Step(0.1);
-            var bytes = BuildPandaBytes(model.Lat, model.Lon, model.HeadingDeg, 10 / 1.852);
+            var bytes = BuildPandaBytes(model.Lat, model.Lon, model.HeadingDeg, 10 / 1.852,
+                roll: SensorState.Instance.ImuRoll);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
             System.Threading.Thread.Sleep(5);
         }

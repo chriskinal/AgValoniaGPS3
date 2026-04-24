@@ -45,6 +45,15 @@ public class GpsData
     /// </summary>
     public double DifferentialAge { get; set; }
 
+    /// <summary>IMU roll angle in degrees (from $PANDA field 13)</summary>
+    public double ImuRoll { get; set; }
+
+    /// <summary>IMU pitch angle in degrees (from $PANDA field 14)</summary>
+    public double ImuPitch { get; set; }
+
+    /// <summary>IMU yaw rate in degrees/second (from $PANDA field 15)</summary>
+    public double ImuYawRate { get; set; }
+
     /// <summary>
     /// Timestamp when data was received
     /// </summary>
