@@ -93,15 +93,6 @@ public class GpsService : IGpsService
     {
         var vehicle = ConfigurationStore.Instance.Vehicle;
 
-        // Skip coordinate-space transforms when Easting/Northing are still 0
-        // (not yet converted to local coordinates by the pipeline). Applying
-        // offsets to zeros produces small non-zero values that break the
-        // pipeline's auto-conversion check (|E| < 0.001), causing a teleport
-        // to the local origin when roll != 0.
-        if (Math.Abs(gpsData.CurrentPosition.Easting) < 0.001
-            && Math.Abs(gpsData.CurrentPosition.Northing) < 0.001)
-            return;
-
         // Convert heading to radians
         double headingRadians = gpsData.CurrentPosition.Heading * Math.PI / 180.0;
 
