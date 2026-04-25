@@ -75,12 +75,19 @@ public class YouTurnWorkingState
     // Zone the tractor is in — source of truth for turn creation gating.
     public TractorZone CurrentZone { get; set; } = TractorZone.OutsideBoundary;
 
+    /// <summary>
+    /// Previous distance to turn end point. Used for closest-approach completion:
+    /// when distance starts increasing after being close, the turn is complete.
+    /// </summary>
+    public double PreviousDistToTurnEnd { get; set; } = double.MaxValue;
+
     public void Reset()
     {
         IsTriggered = false;
         IsExecuting = false;
         TurnPath = null;
         PathIndex = 0;
+        PreviousDistToTurnEnd = double.MaxValue;
         DistanceToHeadland = double.MaxValue;
         DistanceToTrigger = 0;
         NextTrack = null;

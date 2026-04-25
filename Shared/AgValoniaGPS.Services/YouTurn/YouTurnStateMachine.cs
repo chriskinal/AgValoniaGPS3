@@ -51,7 +51,10 @@ public sealed class YouTurnStateMachine
     private const double TriggerProximityMeters = 2.0;
 
     // Completion thresholds.
-    private const double CompletionProximityMeters = 2.0;
+    // ClosestApproachThreshold: if the tractor was this close to the end
+    // point and starts moving away, the turn is complete. This is more
+    // robust than a fixed radius check because it works at any speed/GPS rate.
+    private const double ClosestApproachThreshold = 5.0;
     private const double CompletionMinTraveledMeters = 5.0;
 
     private readonly YouTurnCreationService _creation;
@@ -208,6 +211,10 @@ public sealed class YouTurnStateMachine
         }
 
         // ── TURN COMPLETION ─────────────────────────────────────────────
+        // Closest-approach detection: complete the turn when the tractor
+        // starts moving AWAY from the end point after being close enough.
+        // This is speed/GPS-rate independent — a fixed radius check misses
+        // the end point at high speeds because discrete GPS steps jump over it.
         if (turn.IsExecuting && turn.TurnPath != null && turn.TurnPath.Count > 2)
         {
             var startPoint = turn.TurnPath[0];
@@ -220,12 +227,21 @@ public sealed class YouTurnStateMachine
                 (currentPosition.Easting - endPoint.Easting) * (currentPosition.Easting - endPoint.Easting) +
                 (currentPosition.Northing - endPoint.Northing) * (currentPosition.Northing - endPoint.Northing));
 
-            if (distToTurnEnd <= CompletionProximityMeters
-                && distToTurnEnd < distToTurnStart
-                && distToTurnStart > CompletionMinTraveledMeters)
+            // Complete when: tractor was close to end, is now moving away,
+            // and has traveled far enough from the start.
+            bool wasClose = turn.PreviousDistToTurnEnd < ClosestApproachThreshold;
+            bool movingAway = distToTurnEnd > turn.PreviousDistToTurnEnd;
+            bool traveledEnough = distToTurnStart > CompletionMinTraveledMeters;
+
+            if (wasClose && movingAway && traveledEnough
+                && distToTurnEnd < distToTurnStart)
             {
+                _logger.LogDebug("[YouTurn] Closest-approach completion: distEnd={DistEnd:F1}m prevDist={Prev:F1}m distStart={DistStart:F1}m",
+                    distToTurnEnd, turn.PreviousDistToTurnEnd, distToTurnStart);
                 CompleteTurn(in ctx, guidance, turn, effects);
             }
+
+            turn.PreviousDistToTurnEnd = distToTurnEnd;
         }
 
         return effects;
