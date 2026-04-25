@@ -381,11 +381,14 @@ public class AutoSteerUTurnNUnitTests
             phase: "pass1", allResults: allResults);
 
         var pass1 = allResults.Where(x => x.phase == "pass1").Select(x => x.r).ToList();
+        double pass1Northing = pass1.Count > 50
+            ? pass1.Skip(50).Average(r => r.Northing) : 0;
         TestContext.Out.WriteLine($"Pass 1: {pass1.Count} cycles, " +
-            $"E={pass1.FirstOrDefault()?.Easting:F1} -> {pass1.LastOrDefault()?.Easting:F1}");
+            $"E={pass1.FirstOrDefault()?.Easting:F1} -> {pass1.LastOrDefault()?.Easting:F1}, " +
+            $"avg N={pass1Northing:F1} (expected {abNorthing:F1})");
 
-        // No manual trigger - let the auto-trigger handle it
-        TestContext.Out.WriteLine("=== U-Turn (auto-trigger) ===");
+        // No manual trigger or pass switch - let auto-trigger + auto-detect handle it
+        TestContext.Out.WriteLine("=== U-Turn (auto-trigger, auto pass detect) ===");
 
         DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 12, maxSteps: 200,
             phase: "uturn", allResults: allResults);
@@ -393,18 +396,36 @@ public class AutoSteerUTurnNUnitTests
         var uturn = allResults.Where(x => x.phase == "uturn").Select(x => x.r).ToList();
         TestContext.Out.WriteLine($"U-Turn: {uturn.Count} cycles, heading {hdg:F1}");
 
-        // Pass 2: Drive west
-        TestContext.Out.WriteLine("=== Pass 2: West (autosteer feedback) ===");
+        // After U-turn, check which pass the pipeline detected
+        var lastUturnResult = uturn.LastOrDefault();
+        int detectedPass = lastUturnResult?.Guidance?.HowManyPathsAway ?? -1;
+        TestContext.Out.WriteLine($"Detected pass after U-turn: {detectedPass}");
+
+        // Pass 2: Drive with autosteer feedback - NO manual pass switch
+        TestContext.Out.WriteLine("=== Pass 2: (autosteer feedback, auto pass detect) ===");
         DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 25, maxSteps: 300,
             phase: "pass2", allResults: allResults);
 
         var pass2 = allResults.Where(x => x.phase == "pass2").Select(x => x.r).ToList();
+        double pass2Northing = pass2.Count > 50
+            ? pass2.Skip(50).Average(r => r.Northing) : 0;
+        double expectedPass2Northing = abNorthing + TOOL_WIDTH; // next pass = one tool width north
         TestContext.Out.WriteLine($"Pass 2: {pass2.Count} cycles, " +
-            $"E={pass2.FirstOrDefault()?.Easting:F1} -> {pass2.LastOrDefault()?.Easting:F1}");
+            $"E={pass2.FirstOrDefault()?.Easting:F1} -> {pass2.LastOrDefault()?.Easting:F1}, " +
+            $"avg N={pass2Northing:F1} (expected {expectedPass2Northing:F1})");
 
         // Assertions
         Assert.That(pass1.Count, Is.GreaterThan(50), "Pass 1 should produce cycles");
         Assert.That(pass2.Count, Is.GreaterThan(50), "Pass 2 should produce cycles");
+
+        // Verify pass 2 is on a DIFFERENT northing than pass 1
+        TestContext.Out.WriteLine($"\nPass separation: {Math.Abs(pass2Northing - pass1Northing):F1}m " +
+            $"(expected ~{TOOL_WIDTH:F0}m)");
+        if (Math.Abs(pass2Northing - pass1Northing) < TOOL_WIDTH * 0.5)
+        {
+            TestContext.Out.WriteLine(">>> WARNING: Pass 2 is on the same line as Pass 1!");
+            TestContext.Out.WriteLine(">>> Auto-detect did not switch to next pass after U-turn");
+        }
 
         // Write CSV
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_passes.csv");
