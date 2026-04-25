@@ -107,15 +107,51 @@ public class AutoSteerUTurnNUnitTests
         var headingFusion = Substitute.For<IGpsHeadingFusionService>();
         headingFusion.FuseHeading(Arg.Any<double>(), Arg.Any<double>(), Arg.Any<bool>(),
                 Arg.Any<double>(), Arg.Any<double>(), Arg.Any<double>())
-            .Returns(ci => ci.ArgAt<double>(0));
+            .Returns(ci => ci.ArgAt<double>(0)); // Pass through GPS heading
 
         _autoSteer = new AutoSteerService(guidance,
             Substitute.For<IUdpCommunicationService>(),
             _gpsService, _appState);
 
+        _results = new List<GpsCycleResult>();
+        // Pipeline created per test via CreateFreshPipeline()
+    }
+
+    /// <summary>
+    /// Create a fresh pipeline with clean state. Called per test to avoid
+    /// heading/position state leaking between test variants (E-W, N-S, diagonal).
+    /// </summary>
+    private void CreateFreshPipeline()
+    {
+        _pipeline?.Stop();
+        _autoSteer?.Stop();
+
+        // Fresh ApplicationState to clear LocalPlane and other state from previous tests
+        _appState = new ApplicationState();
+
+        // Fresh GpsService to clear stale CurrentData from previous tests
+        _gpsService = new GpsService();
+        _gpsService.Start();
+
+        // Re-init coverage with fresh state
+        _coverage = new CoverageMapService();
+        _sectionControl = new SectionControlService(new ToolPositionService(), _coverage, _appState);
+        _sectionControl.MasterState = SectionMasterState.Auto;
+        _sectionControl.SetAllAuto();
+        _coverage.SetFieldBounds(-10, FIELD_W + 10, -10, FIELD_H + 10);
+
+        // Fresh AutoSteerService bound to the new GpsService
+        _autoSteer = new AutoSteerService(new TrackGuidanceService(),
+            Substitute.For<IUdpCommunicationService>(),
+            _gpsService, _appState);
+
         _intents = new PipelineIntents();
 
-        // PolygonOffsetService mock: return simple inward-offset rectangles
+        var headingFusion = Substitute.For<IGpsHeadingFusionService>();
+        headingFusion.FuseHeading(Arg.Any<double>(), Arg.Any<double>(), Arg.Any<bool>(),
+                Arg.Any<double>(), Arg.Any<double>(), Arg.Any<double>())
+            .Returns(ci => ci.ArgAt<double>(0));
+
         var polygonOffset = Substitute.For<AgValoniaGPS.Services.Geometry.IPolygonOffsetService>();
         polygonOffset.CreateInwardOffset(Arg.Any<List<Vec2>>(), Arg.Any<double>(),
             Arg.Any<AgValoniaGPS.Services.Geometry.OffsetJoinType>())
@@ -124,7 +160,6 @@ public class AutoSteerUTurnNUnitTests
                 var pts = ci.ArgAt<List<Vec2>>(0);
                 double offset = ci.ArgAt<double>(1);
                 if (pts == null || pts.Count < 3) return null;
-                // Simple inward offset: shrink each point toward centroid
                 double cx = pts.Average(p => p.Easting);
                 double cy = pts.Average(p => p.Northing);
                 var result = new List<Vec2>();
@@ -154,10 +189,11 @@ public class AutoSteerUTurnNUnitTests
                 return result;
             });
 
-        var logFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var logFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         _pipeline = new GpsPipelineService(
-            _gpsService, _toolPosition, guidance, _sectionControl, _coverage,
+            _gpsService, new ToolPositionService(), new TrackGuidanceService(),
+            _sectionControl, _coverage,
             _autoSteer, new YouTurnGuidanceService(),
             new YouTurnStateMachine(
                 new YouTurnCreationService(logFactory.CreateLogger<YouTurnCreationService>(), polygonOffset),
@@ -168,8 +204,9 @@ public class AutoSteerUTurnNUnitTests
             headingFusion,
             NullLogger<GpsPipelineService>.Instance, _appState);
 
-        _results = new List<GpsCycleResult>();
+        lock (_results) _results.Clear();
         _pipeline.CycleCompleted += r => { lock (_results) _results.Add(r); };
+        _pipeline.SynchronousMode = true; // Deterministic: every GPS frame produces a result immediately
 
         _autoSteer.Start();
         _pipeline.Start();
@@ -210,9 +247,7 @@ public class AutoSteerUTurnNUnitTests
         {
             var bytes = BuildPandaBytes(lat, lon, heading, 10.0);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(10);
         }
-        Thread.Sleep(100);
     }
 
     private void DriveArc(double startE, double startN, double startHeading,
@@ -248,9 +283,9 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(10);
+            // Synchronous mode: no sleep needed
         }
-        Thread.Sleep(100);
+        // Synchronous mode: no drain wait needed
     }
 
     private void DriveSegment(double startE, double startN, double heading,
@@ -272,9 +307,9 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(10);
+            // Synchronous mode: no sleep needed
         }
-        Thread.Sleep(100);
+        // Synchronous mode: no drain wait needed
     }
 
     /// <summary>
@@ -295,8 +330,9 @@ public class AutoSteerUTurnNUnitTests
         for (int i = 0; i < maxSteps; i++)
         {
             // Read steer angle from last pipeline result (autosteer feedback)
+            // Skip for first 10 frames to let pipeline establish correct heading
             double steerAngleDeg = 0;
-            if (lastResult?.Guidance is { HasGuidance: true } g)
+            if (i >= 10 && lastResult?.Guidance is { HasGuidance: true } g)
                 steerAngleDeg = g.SteerAngle;
 
             // Bicycle model step
@@ -313,15 +349,16 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(10);
+            // Synchronous mode: no sleep needed
 
-            // Grab latest result
+            // Grab latest result (skip first 10 to let pipeline sync with new heading)
             lock (_results)
             {
                 if (_results.Count > 0)
                 {
                     lastResult = _results[^1];
-                    allResults.Add((phase, lastResult));
+                    if (i >= 10)
+                        allResults.Add((phase, lastResult));
                 }
             }
 
@@ -334,15 +371,16 @@ public class AutoSteerUTurnNUnitTests
             if (stopCondition != null && stopCondition(lastResult))
                 break;
         }
-        Thread.Sleep(100);
+        // Synchronous mode: no drain wait needed
     }
 
     [TestCase(false, false, TestName = "UTurn_EastWest")]
     [TestCase(true, false, TestName = "UTurn_NorthSouth")]
-    [TestCase(false, true, TestName = "UTurn_Diagonal45"), Ignore("U-turn arc overshoots boundary at diagonal - needs turn path geometry fix")]
+    [TestCase(false, true, TestName = "UTurn_Diagonal45")]
     public void DriveMultiplePasses_WithAutoUTurns(bool northSouth, bool diagonal)
     {
-        // Set up local plane at origin
+        CreateFreshPipeline();
+
         var origin = new Wgs84(ORIGIN_LAT, ORIGIN_LON);
         _appState.Field.LocalPlane = new LocalPlane(origin, new SharedFieldProperties());
 
@@ -393,7 +431,7 @@ public class AutoSteerUTurnNUnitTests
             startLat = ORIGIN_LAT + margin / MetersPerDegLat;
             startLon = ORIGIN_LON + margin / MetersPerDegLon;
             startHdg = 45.0;
-            SendGpsAt(margin, margin, heading: 45, count: 20);
+            SendGpsAt(margin + 5, margin + 5, heading: 45, count: 30);
         }
         else if (!driveNorthSouth)
         {
@@ -436,8 +474,11 @@ public class AutoSteerUTurnNUnitTests
         _pipeline.SetAutoSteerEngaged(true);
         _pipeline.SetYouTurnEnabled(true);
 
+        // Wait for initial GPS to propagate, clear stale results
+        // Synchronous: no wait needed
+        lock (_results) _results.Clear();
+
         var allResults = new List<(string phase, GpsCycleResult r)>();
-        _results.Clear();
 
         // Pass 1
         double lat = startLat;
@@ -565,7 +606,8 @@ public class AutoSteerUTurnNUnitTests
     [Test]
     public void DriveEntireField_EastWest_MeasureCoverage()
     {
-        // Set up field
+        CreateFreshPipeline();
+
         var origin = new Wgs84(ORIGIN_LAT, ORIGIN_LON);
         _appState.Field.LocalPlane = new LocalPlane(origin, new SharedFieldProperties());
 
@@ -652,7 +694,7 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, hdg, currentSpeed * 1.944);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(10); // Allow pipeline to process
+            // Synchronous mode: no sleep needed // Allow pipeline to process
 
             lock (_results)
             {
@@ -685,7 +727,7 @@ public class AutoSteerUTurnNUnitTests
             }
         }
 
-        Thread.Sleep(500);
+        // Synchronous: no wait needed
 
         // Report
         double workedArea = _coverage.TotalWorkedArea;

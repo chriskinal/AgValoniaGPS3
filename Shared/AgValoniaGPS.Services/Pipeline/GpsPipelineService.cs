@@ -245,9 +245,24 @@ public sealed class GpsPipelineService : IGpsPipelineService
     // GPS event handler
     // ══════════════════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// When true, ProcessCycle runs synchronously on the calling thread instead
+    /// of Task.Run. Eliminates async timing issues in tests: every GPS frame
+    /// produces its result before the next frame is sent.
+    /// </summary>
+    public bool SynchronousMode { get; set; }
+
     private void OnGpsDataUpdated(object? sender, GpsData data)
     {
-        // Skip if previous cycle is still running (back-pressure)
+        if (SynchronousMode)
+        {
+            // Test mode: process inline, no back-pressure, no threading
+            try { ProcessCycle(data); }
+            catch (Exception ex) { _logger.LogError(ex, "GpsPipelineService.ProcessCycle failed"); }
+            return;
+        }
+
+        // Production mode: Task.Run with single-cycle-in-flight back-pressure
         if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0)
             return;
 
