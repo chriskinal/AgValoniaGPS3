@@ -534,7 +534,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
         bool autoSteerDisengaged = false;
         string? disengageReason = null;
 
-        bool skipBoundaryCheck = (isTrackOnBoundary && passNumber == 0) || isInYouTurn;
+        // During U-turns the tractor may go slightly outside the headland but
+        // must NEVER leave the outer field boundary. Only skip for on-boundary pass 0.
+        bool skipBoundaryCheck = isTrackOnBoundary && passNumber == 0;
         if (autoSteerEngaged && !skipBoundaryCheck
             && !IsPointInsideBoundary(boundary, driftedEasting, driftedNorthing))
         {

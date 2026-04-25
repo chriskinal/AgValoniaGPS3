@@ -209,7 +209,7 @@ public class AutoSteerUTurnNUnitTests
         {
             var bytes = BuildPandaBytes(lat, lon, heading, 10.0);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(5);
+            Thread.Sleep(10);
         }
         Thread.Sleep(100);
     }
@@ -247,7 +247,7 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(5);
+            Thread.Sleep(10);
         }
         Thread.Sleep(100);
     }
@@ -271,7 +271,7 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(5);
+            Thread.Sleep(10);
         }
         Thread.Sleep(100);
     }
@@ -312,7 +312,7 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(5);
+            Thread.Sleep(10);
 
             // Grab latest result
             lock (_results)
@@ -323,6 +323,12 @@ public class AutoSteerUTurnNUnitTests
                     allResults.Add((phase, lastResult));
                 }
             }
+
+            // Safety: stop if tractor leaves field
+            double tractorE = (lon - ORIGIN_LON) * MetersPerDegLon;
+            double tractorN = (lat - ORIGIN_LAT) * MetersPerDegLat;
+            if (tractorE < -20 || tractorE > FIELD_W + 20 || tractorN < -20 || tractorN > FIELD_H + 20)
+                break;
 
             if (stopCondition != null && stopCondition(lastResult))
                 break;
@@ -478,6 +484,15 @@ public class AutoSteerUTurnNUnitTests
         // Assertions
         Assert.That(pass1.Count, Is.GreaterThan(50), "Pass 1 should produce cycles");
         Assert.That(pass2.Count, Is.GreaterThan(50), "Pass 2 should produce cycles");
+
+        // Verify tractor never left the field (allow 10m for U-turn arcs)
+        foreach (var (phase, r) in allResults)
+        {
+            Assert.That(r.Easting, Is.GreaterThan(-10.0).And.LessThan(FIELD_W + 10),
+                $"Tractor left field at {phase}: E={r.Easting:F1}");
+            Assert.That(r.Northing, Is.GreaterThan(-10.0).And.LessThan(FIELD_H + 10),
+                $"Tractor left field at {phase}: N={r.Northing:F1}");
+        }
 
         // Verify pass 2 is on a DIFFERENT northing than pass 1
         TestContext.Out.WriteLine($"\nPass separation: {Math.Abs(pass2Northing - pass1Northing):F1}m " +
@@ -636,7 +651,7 @@ public class AutoSteerUTurnNUnitTests
 
             var bytes = BuildPandaBytes(lat, lon, hdg, currentSpeed * 1.944);
             _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
-            Thread.Sleep(2);
+            Thread.Sleep(10); // Allow pipeline to process
 
             lock (_results)
             {
@@ -648,6 +663,15 @@ public class AutoSteerUTurnNUnitTests
             }
 
             totalSteps++;
+
+            // Safety: stop if tractor leaves field by more than 20m
+            double tractorE = (lon - ORIGIN_LON) * MetersPerDegLon;
+            double tractorN = (lat - ORIGIN_LAT) * MetersPerDegLat;
+            if (tractorE < -20 || tractorE > FIELD_W + 20 || tractorN < -20 || tractorN > FIELD_H + 20)
+            {
+                TestContext.Out.WriteLine($"  SAFETY STOP at step {totalSteps}: E={tractorE:F0} N={tractorN:F0}");
+                fieldDone = true;
+            }
 
             // Log every 500 steps
             if (totalSteps % 500 == 0)
@@ -701,5 +725,15 @@ public class AutoSteerUTurnNUnitTests
         TestContext.Out.WriteLine($"Coverage CSV: {covCsvPath}");
 
         Assert.That(coveragePct, Is.GreaterThan(50), $"Coverage should be >50%, got {coveragePct:F1}%");
+
+        // Verify tractor never left the field (allow 10m overshoot for U-turn arcs)
+        double margin = 10.0;
+        foreach (var (_, r) in allResults)
+        {
+            Assert.That(r.Easting, Is.GreaterThan(-margin).And.LessThan(FIELD_W + margin),
+                $"Tractor left field: E={r.Easting:F1} (field: 0-{FIELD_W})");
+            Assert.That(r.Northing, Is.GreaterThan(-margin).And.LessThan(FIELD_H + margin),
+                $"Tractor left field: N={r.Northing:F1} (field: 0-{FIELD_H})");
+        }
     }
 }
