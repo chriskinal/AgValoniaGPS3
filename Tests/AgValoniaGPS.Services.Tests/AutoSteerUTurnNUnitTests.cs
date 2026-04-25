@@ -44,8 +44,8 @@ public class AutoSteerUTurnNUnitTests
     private const double ORIGIN_LON = -74.006000;
     private const double FIELD_W = 200.0;
     private const double FIELD_H = 78.0;
-    private const double HEADLAND = 15.0;
-    private const double TOOL_WIDTH = 12.0;
+    private const double HEADLAND = 12.0; // Match real app headland distance
+    private const double TOOL_WIDTH = 6.0; // Match real app bug report
 
     private static readonly double MetersPerDegLat = 111320.0;
     private static readonly double MetersPerDegLon = 111320.0 * Math.Cos(ORIGIN_LAT * Math.PI / 180.0);
@@ -63,24 +63,26 @@ public class AutoSteerUTurnNUnitTests
     {
         var config = new ConfigurationStore();
         ConfigurationStore.SetInstance(config);
+        // Match real app config from bug report
         config.Vehicle.Wheelbase = 2.5;
-        config.Vehicle.AntennaHeight = 0;
+        config.Vehicle.AntennaHeight = 3.0;
         config.Vehicle.AntennaPivot = 0;
         config.Vehicle.AntennaOffset = 0;
-        config.Tool.Width = TOOL_WIDTH;
-        config.Tool.HitchLength = 0;
-        config.Tool.IsToolRearFixed = true;
-        config.Tool.IsToolTrailing = false;
+        config.Vehicle.MaxSteerAngle = 35;
+        config.Tool.Width = TOOL_WIDTH; // 6m
+        config.Tool.HitchLength = 3.0;
+        config.Tool.TrailingHitchLength = 3.0;
+        config.Tool.IsToolTrailing = true;
+        config.Tool.IsToolRearFixed = false;
         config.Tool.IsToolFrontFixed = false;
         config.Tool.IsToolTBT = false;
-        config.NumSections = 6;
-        for (int i = 0; i < 6; i++)
-            config.Tool.SetSectionWidth(i, 200.0); // 2m each
-        config.Guidance.UTurnRadius = TOOL_WIDTH / 2.0;
+        config.NumSections = 3;
+        for (int i = 0; i < 3; i++)
+            config.Tool.SetSectionWidth(i, 200.0);
+        config.Guidance.UTurnRadius = 8.0;
         config.Guidance.GoalPointLookAheadHold = 4.0;
         config.Guidance.GoalPointLookAheadMult = 1.4;
         config.Guidance.MinLookAheadDistance = 2.0;
-        config.Vehicle.MaxSteerAngle = 35;
 
         SensorState.Instance.ImuRoll = 0;
         _appState = new ApplicationState();
