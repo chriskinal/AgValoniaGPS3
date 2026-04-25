@@ -585,7 +585,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
             if (isYouTurnTriggered && youTurnPath != null && youTurnPath.Count > 0)
             {
                 // YouTurn guidance — steer along turn path
-                var ytResult = CalculateYouTurnGuidance(pos, youTurnPath);
+                // Use drifted local coordinates (not pos which has raw E=0,N=0)
+                var ytPos = pos with { Easting = driftedEasting, Northing = driftedNorthing };
+                var ytResult = CalculateYouTurnGuidance(ytPos, youTurnPath);
                 if (ytResult != null)
                 {
                     steerAngle = ytResult.Value.steerAngle;
