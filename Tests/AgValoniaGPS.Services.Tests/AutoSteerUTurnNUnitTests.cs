@@ -410,7 +410,7 @@ public class AutoSteerUTurnNUnitTests
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_passes.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,steer_angle,has_guidance,yt_triggered,yt_executing");
+            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,steer_angle,has_guidance,yt_triggered,yt_executing,goal_e,goal_n");
             int step = 0;
             foreach (var (phase, r) in allResults)
             {
@@ -418,8 +418,11 @@ public class AutoSteerUTurnNUnitTests
                 bool hasG = r.Guidance?.HasGuidance ?? false;
                 bool ytTriggered = r.YouTurn?.IsTriggered ?? false;
                 bool ytExec = r.YouTurn?.IsExecuting ?? false;
+                double goalE = r.Guidance?.GoalPoint.Easting ?? 0;
+                double goalN = r.Guidance?.GoalPoint.Northing ?? 0;
                 writer.WriteLine($"{phase},{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1}," +
-                    $"{r.ToolEasting:F2},{r.ToolNorthing:F2},{steer:F2},{hasG},{ytTriggered},{ytExec}");
+                    $"{r.ToolEasting:F2},{r.ToolNorthing:F2},{steer:F2},{hasG},{ytTriggered},{ytExec}," +
+                    $"{goalE:F2},{goalN:F2}");
             }
         }
 
