@@ -173,6 +173,11 @@ public class YouTurnState : ObservableObject
         set => SetProperty(ref _currentZone, value);
     }
 
+    /// <summary>
+    /// Previous distance to turn end point (state machine bookkeeping for closest-approach completion).
+    /// </summary>
+    public double PreviousDistToTurnEnd { get; set; } = double.MaxValue;
+
     public void Reset()
     {
         IsTriggered = false;
