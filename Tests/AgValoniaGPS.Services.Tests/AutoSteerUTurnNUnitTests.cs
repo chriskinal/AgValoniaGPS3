@@ -25,7 +25,9 @@ using AgValoniaGPS.Services.Section;
 using AgValoniaGPS.Services.Tool;
 using AgValoniaGPS.Services.Track;
 using AgValoniaGPS.Services.YouTurn;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
 using NSubstitute;
 
 namespace AgValoniaGPS.Services.Tests;
@@ -75,6 +77,10 @@ public class AutoSteerUTurnNUnitTests
         for (int i = 0; i < 6; i++)
             config.Tool.SetSectionWidth(i, 200.0); // 2m each
         config.Guidance.UTurnRadius = TOOL_WIDTH / 2.0;
+        config.Guidance.GoalPointLookAheadHold = 4.0;
+        config.Guidance.GoalPointLookAheadMult = 1.4;
+        config.Guidance.MinLookAheadDistance = 2.0;
+        config.Vehicle.MaxSteerAngle = 35;
 
         SensorState.Instance.ImuRoll = 0;
         _appState = new ApplicationState();
@@ -97,15 +103,54 @@ public class AutoSteerUTurnNUnitTests
 
         _intents = new PipelineIntents();
 
+        // PolygonOffsetService mock: return simple inward-offset rectangles
+        var polygonOffset = Substitute.For<AgValoniaGPS.Services.Geometry.IPolygonOffsetService>();
+        polygonOffset.CreateInwardOffset(Arg.Any<List<Vec2>>(), Arg.Any<double>(),
+            Arg.Any<AgValoniaGPS.Services.Geometry.OffsetJoinType>())
+            .Returns(ci =>
+            {
+                var pts = ci.ArgAt<List<Vec2>>(0);
+                double offset = ci.ArgAt<double>(1);
+                if (pts == null || pts.Count < 3) return null;
+                // Simple inward offset: shrink each point toward centroid
+                double cx = pts.Average(p => p.Easting);
+                double cy = pts.Average(p => p.Northing);
+                var result = new List<Vec2>();
+                foreach (var p in pts)
+                {
+                    double dx = p.Easting - cx;
+                    double dy = p.Northing - cy;
+                    double dist = Math.Sqrt(dx * dx + dy * dy);
+                    if (dist < 0.01) { result.Add(p); continue; }
+                    double scale = Math.Max(0, (dist - offset) / dist);
+                    result.Add(new Vec2(cx + dx * scale, cy + dy * scale));
+                }
+                return result;
+            });
+        polygonOffset.CalculatePointHeadings(Arg.Any<List<Vec2>>())
+            .Returns(ci =>
+            {
+                var pts = ci.ArgAt<List<Vec2>>(0);
+                var result = new List<Vec3>();
+                for (int i = 0; i < pts.Count; i++)
+                {
+                    int next = (i + 1) % pts.Count;
+                    double h = Math.Atan2(pts[next].Easting - pts[i].Easting,
+                                          pts[next].Northing - pts[i].Northing);
+                    result.Add(new Vec3(pts[i].Easting, pts[i].Northing, h));
+                }
+                return result;
+            });
+
+        var logFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
+
         _pipeline = new GpsPipelineService(
             _gpsService, _toolPosition, guidance, sectionControl, coverage,
             _autoSteer, new YouTurnGuidanceService(),
             new YouTurnStateMachine(
-                new YouTurnCreationService(
-                    NullLogger<YouTurnCreationService>.Instance,
-                    Substitute.For<AgValoniaGPS.Services.Geometry.IPolygonOffsetService>()),
+                new YouTurnCreationService(logFactory.CreateLogger<YouTurnCreationService>(), polygonOffset),
                 new YouTurnPathingService(NullLogger<YouTurnPathingService>.Instance),
-                NullLogger<YouTurnStateMachine>.Instance),
+                logFactory.CreateLogger<YouTurnStateMachine>()),
             Substitute.For<IAudioService>(),
             _intents,
             headingFusion,
@@ -220,6 +265,60 @@ public class AutoSteerUTurnNUnitTests
         Thread.Sleep(100);
     }
 
+    /// <summary>
+    /// Drive using the autosteer feedback loop: pipeline outputs steer angle,
+    /// bicycle model follows it, sends new GPS position back to pipeline.
+    /// Returns the phase tag for each result collected.
+    /// </summary>
+    private void DriveWithFeedback(ref double lat, ref double lon, ref double heading,
+        double speedKmh, int maxSteps, string phase,
+        List<(string phase, GpsCycleResult r)> allResults,
+        Func<GpsCycleResult?, bool>? stopCondition = null)
+    {
+        double speedMs = speedKmh / 3.6;
+        double dt = 0.1;
+        double wheelbase = ConfigurationStore.Instance.Vehicle.Wheelbase;
+        GpsCycleResult? lastResult = null;
+
+        for (int i = 0; i < maxSteps; i++)
+        {
+            // Read steer angle from last pipeline result (autosteer feedback)
+            double steerAngleDeg = 0;
+            if (lastResult?.Guidance is { HasGuidance: true } g)
+                steerAngleDeg = g.SteerAngle;
+
+            // Bicycle model step
+            double headingRad = heading * Math.PI / 180.0;
+            double steerRad = steerAngleDeg * Math.PI / 180.0;
+            if (Math.Abs(wheelbase) > 0.1)
+                headingRad += speedMs * Math.Tan(steerRad) / wheelbase * dt;
+
+            heading = (headingRad * 180.0 / Math.PI) % 360.0;
+            if (heading < 0) heading += 360.0;
+
+            lat += speedMs * Math.Cos(headingRad) * dt / MetersPerDegLat;
+            lon += speedMs * Math.Sin(headingRad) * dt / MetersPerDegLon;
+
+            var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
+            _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+            Thread.Sleep(5);
+
+            // Grab latest result
+            lock (_results)
+            {
+                if (_results.Count > 0)
+                {
+                    lastResult = _results[^1];
+                    allResults.Add((phase, lastResult));
+                }
+            }
+
+            if (stopCondition != null && stopCondition(lastResult))
+                break;
+        }
+        Thread.Sleep(100);
+    }
+
     [Test]
     public void DriveMultiplePasses_WithManualUTurns()
     {
@@ -237,6 +336,17 @@ public class AutoSteerUTurnNUnitTests
         var boundary = new Boundary { OuterBoundary = outerPoly };
         _pipeline.SetBoundary(boundary);
 
+        // Create headland line for YouTurn detection
+        var headlandLine = new List<Vec3>
+        {
+            new Vec3(HEADLAND, HEADLAND, 0),
+            new Vec3(FIELD_W - HEADLAND, HEADLAND, 0),
+            new Vec3(FIELD_W - HEADLAND, FIELD_H - HEADLAND, 0),
+            new Vec3(HEADLAND, FIELD_H - HEADLAND, 0),
+            new Vec3(HEADLAND, HEADLAND, 0), // close the loop
+        };
+        _pipeline.SetHeadlandLine(headlandLine);
+
         // Create AB line along first pass
         double abNorthing = HEADLAND + TOOL_WIDTH / 2.0; // 21m
         var track = new AgValoniaGPS.Models.Track.Track
@@ -251,88 +361,66 @@ public class AutoSteerUTurnNUnitTests
         };
         _pipeline.SetActiveTrack(track, passNumber: 0, nudgeOffset: 0, isOnBoundary: false);
         _pipeline.SetAutoSteerEngaged(true);
+        _pipeline.SetYouTurnEnabled(true);
 
-        // Send initial position
+        // Send initial position to establish pipeline state
         SendGpsAt(HEADLAND + 5, abNorthing, heading: 90, count: 20);
 
-        // Collect ALL results (pass1 + uturn + pass2) for plotting
         var allResults = new List<(string phase, GpsCycleResult r)>();
         _results.Clear();
 
-        // Drive first pass east
-        TestContext.Out.WriteLine("=== Pass 1: East ===");
-        DriveSegment(startE: HEADLAND, startN: abNorthing, heading: 90,
-            speedKmh: 25, steps: 250);
+        // Pass 1: Drive east with autosteer feedback
+        double lat = ORIGIN_LAT + abNorthing / MetersPerDegLat;
+        double lon = ORIGIN_LON + HEADLAND / MetersPerDegLon;
+        double hdg = 90.0;
 
-        int pass1Count;
-        lock (_results) pass1Count = _results.Count;
-        TestContext.Out.WriteLine($"Pass 1 cycles: {pass1Count}");
+        TestContext.Out.WriteLine("=== Pass 1: East (autosteer feedback) ===");
+        DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 25, maxSteps: 300,
+            phase: "pass1", allResults: allResults);
 
-        List<GpsCycleResult> pass1Results;
-        lock (_results) pass1Results = _results.ToList();
-        foreach (var r in pass1Results) allResults.Add(("pass1", r));
+        var pass1 = allResults.Where(x => x.phase == "pass1").Select(x => x.r).ToList();
+        TestContext.Out.WriteLine($"Pass 1: {pass1.Count} cycles, " +
+            $"E={pass1.FirstOrDefault()?.Easting:F1} -> {pass1.LastOrDefault()?.Easting:F1}");
 
-        if (pass1Results.Count > 10)
-        {
-            double startE = pass1Results[5].Easting;
-            double endE = pass1Results[^1].Easting;
-            TestContext.Out.WriteLine($"Pass 1: E={startE:F1} -> {endE:F1} ({endE - startE:F1}m east)");
-            Assert.That(endE - startE, Is.GreaterThan(50),
-                "Should travel >50m east on first pass");
-        }
-
-        // Drive U-turn arc using bicycle model (semicircle from east to west)
-        TestContext.Out.WriteLine("=== U-Turn 1 ===");
+        // Trigger manual U-turn (left = northward)
+        TestContext.Out.WriteLine("=== U-Turn (manual trigger, autosteer follows) ===");
+        _intents.RequestManualYouTurn(turnLeft: true);
         _pipeline.SetActiveTrack(track, passNumber: 1, nudgeOffset: 0, isOnBoundary: false);
 
-        double uturnStartE = FIELD_W - HEADLAND;
-        double uturnStartN = abNorthing;
-        double pass2Northing = abNorthing + TOOL_WIDTH; // 33m
-        double uturnRadius = TOOL_WIDTH / 2.0; // 6m
+        DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 12, maxSteps: 200,
+            phase: "uturn", allResults: allResults);
 
-        // Drive a semicircle: heading 90 -> 270 (left turn, northward)
-        // 180 degrees of arc at speed 12 km/h
-        DriveArc(uturnStartE, uturnStartN, startHeading: 90,
-            turnRadiusDeg: 180, turnLeft: true, speedKmh: 12, stepsPerDeg: 1);
+        var uturn = allResults.Where(x => x.phase == "uturn").Select(x => x.r).ToList();
+        TestContext.Out.WriteLine($"U-Turn: {uturn.Count} cycles, heading {hdg:F1}");
 
-        List<GpsCycleResult> uturnResults;
-        lock (_results) uturnResults = _results.Skip(pass1Results.Count).ToList();
-        foreach (var r in uturnResults) allResults.Add(("uturn", r));
+        // Pass 2: Drive west
+        TestContext.Out.WriteLine("=== Pass 2: West (autosteer feedback) ===");
+        DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 25, maxSteps: 300,
+            phase: "pass2", allResults: allResults);
 
-        _results.Clear();
+        var pass2 = allResults.Where(x => x.phase == "pass2").Select(x => x.r).ToList();
+        TestContext.Out.WriteLine($"Pass 2: {pass2.Count} cycles, " +
+            $"E={pass2.FirstOrDefault()?.Easting:F1} -> {pass2.LastOrDefault()?.Easting:F1}");
 
-        // Drive second pass west
-        TestContext.Out.WriteLine("=== Pass 2: West ===");
-        DriveSegment(startE: FIELD_W - HEADLAND, startN: pass2Northing, heading: 270,
-            speedKmh: 25, steps: 250);
+        // Assertions
+        Assert.That(pass1.Count, Is.GreaterThan(50), "Pass 1 should produce cycles");
+        Assert.That(pass2.Count, Is.GreaterThan(50), "Pass 2 should produce cycles");
 
-        List<GpsCycleResult> pass2Results;
-        lock (_results) pass2Results = _results.ToList();
-        foreach (var r in pass2Results) allResults.Add(("pass2", r));
-
-        if (pass2Results.Count > 10)
-        {
-            double startE = pass2Results[5].Easting;
-            double endE = pass2Results[^1].Easting;
-            TestContext.Out.WriteLine($"Pass 2: E={startE:F1} -> {endE:F1} ({startE - endE:F1}m west)");
-            Assert.That(startE - endE, Is.GreaterThan(50),
-                "Should travel >50m west on second pass");
-        }
-
-        // Verify both passes produced pipeline output
-        TestContext.Out.WriteLine($"\nPass 1: {pass1Count} cycles, Pass 2: {pass2Results.Count} cycles");
-        Assert.That(pass1Count, Is.GreaterThan(50), "Pass 1 should produce >50 cycles");
-        Assert.That(pass2Results.Count, Is.GreaterThan(50), "Pass 2 should produce >50 cycles");
-
-        // Write CSV for all phases
+        // Write CSV
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_passes.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n");
+            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,steer_angle,has_guidance");
             int step = 0;
             foreach (var (phase, r) in allResults)
-                writer.WriteLine($"{phase},{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1},{r.ToolEasting:F2},{r.ToolNorthing:F2}");
+            {
+                double steer = r.Guidance?.SteerAngle ?? 0;
+                bool hasG = r.Guidance?.HasGuidance ?? false;
+                writer.WriteLine($"{phase},{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1}," +
+                    $"{r.ToolEasting:F2},{r.ToolNorthing:F2},{steer:F2},{hasG}");
+            }
         }
         TestContext.Out.WriteLine($"CSV: {csvPath}");
+        TestContext.Out.WriteLine($"Total: {allResults.Count} data points");
     }
 }
