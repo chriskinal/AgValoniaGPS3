@@ -512,7 +512,10 @@ public sealed class YouTurnStateMachine
 
             // WasHeadingSameWayAtTurnStart was saved at turn creation — IsHeadingSameWay has
             // since flipped (we just finished a 180° turn), so we need the pre-turn value.
-            bool positiveOffset = turn.IsTurnLeft ^ turn.WasHeadingSameWayAtTurnStart;
+            // Turn left while heading same way = positive offset (next pass in +perpendicular).
+            // This matches HandleSnakeCreation where IsTurnLeft = positiveOffset ^ IsHeadingSameWay,
+            // inverted: positiveOffset = !(IsTurnLeft ^ WasHeadingSameWay).
+            bool positiveOffset = !(turn.IsTurnLeft ^ turn.WasHeadingSameWayAtTurnStart);
 
             if (ctx.IsSkipWorkedMode && ctx.SelectedTrack != null)
             {
