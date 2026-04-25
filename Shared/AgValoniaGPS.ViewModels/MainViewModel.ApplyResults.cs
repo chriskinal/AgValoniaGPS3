@@ -26,6 +26,9 @@ public partial class MainViewModel
     /// </summary>
     public void ApplyGpsCycleResult(GpsCycleResult result)
     {
+        // Record for debug dump (ring buffer, last 60 seconds at 10Hz)
+        AgValoniaGPS.Services.Logging.GpsDataRecorder.Instance.Record(result);
+
         // Mark GPS as received (updates timeout tracking for connection status)
         if (result.GpsValid)
             _gpsService.MarkGpsReceived();

@@ -99,6 +99,18 @@ public class DebugDumpService
             AddTextEntry(archive, "logs_error.txt", ex.ToString());
         }
 
+        // 5b. GPS data recorder (last 60 seconds of position/guidance/YouTurn)
+        try
+        {
+            var gpsCsv = Logging.GpsDataRecorder.Instance.ExportCsv();
+            if (gpsCsv.Length > 50) // more than just the header
+                AddTextEntry(archive, "gps_data_log.csv", gpsCsv);
+        }
+        catch (Exception ex)
+        {
+            AddTextEntry(archive, "gps_data_log_error.txt", ex.ToString());
+        }
+
         // 6. Current field files (if a field is open)
         try
         {
