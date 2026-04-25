@@ -356,8 +356,8 @@ public class AutoSteerUTurnNUnitTests
             Name = "AB_Test",
             Points = new List<Vec3>
             {
-                new Vec3(HEADLAND, abNorthing, 0),
-                new Vec3(FIELD_W - HEADLAND, abNorthing, 0)
+                new Vec3(HEADLAND, abNorthing, Math.PI / 2),       // heading east
+                new Vec3(FIELD_W - HEADLAND, abNorthing, Math.PI / 2)
             },
             Type = AgValoniaGPS.Models.Track.TrackType.ABLine
         };

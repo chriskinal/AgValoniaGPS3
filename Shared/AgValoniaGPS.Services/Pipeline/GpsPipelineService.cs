@@ -882,6 +882,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
         double distAway = widthMinusOverlap * passNumber + nudgeOffset;
 
+        if (_cycleCounter % 50 == 0)
+        {
+            Console.WriteLine($"[Guidance] pass={passNumber} distAway={distAway:F1} pivot=({driftedEasting:F1},{driftedNorthing:F1}) h={headingRad*180/Math.PI:F1}");
+        }
+
         Models.Track.Track currentTrack;
         string? statusMessage = null;
 
@@ -915,6 +920,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
                 IsVisible = true,
                 IsActive = true
             };
+        }
+
+        if (_cycleCounter % 50 == 0 && currentTrack.Points.Count >= 2)
+        {
+            var p0 = currentTrack.Points[0];
+            var pN = currentTrack.Points[^1];
+            Console.WriteLine($"[Guidance] track: ({p0.Easting:F1},{p0.Northing:F1})->({pN.Easting:F1},{pN.Northing:F1})");
         }
 
         // Calculate heading alignment using the offset track we're actually following
