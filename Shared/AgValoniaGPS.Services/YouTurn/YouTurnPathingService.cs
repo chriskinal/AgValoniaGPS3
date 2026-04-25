@@ -157,12 +157,21 @@ public sealed class YouTurnPathingService
         int nextPathsAwayNeg = guidance.HowManyPathsAway - pathsToMove;
         int nextPathsAwayPos = guidance.HowManyPathsAway + pathsToMove;
 
-        if (CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayNeg,
-                boundary, headlandLine, config))
-            return (true, false); // negative direction works
-        if (CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayPos,
-                boundary, headlandLine, config))
-            return (true, true); // positive direction works
+        bool negInside = CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayNeg,
+                boundary, headlandLine, config);
+        bool posInside = CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayPos,
+                boundary, headlandLine, config);
+
+        if (negInside && posInside)
+        {
+            // Both directions work — prefer the one that continues advancing
+            // (same direction as the current pass offset from 0).
+            // If on pass 0, prefer negative (original convention).
+            bool preferPositive = guidance.HowManyPathsAway > 0;
+            return (true, preferPositive);
+        }
+        if (negInside) return (true, false);
+        if (posInside) return (true, true);
         return (false, false);
     }
 

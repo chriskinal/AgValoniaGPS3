@@ -43,8 +43,8 @@ public class AutoSteerUTurnNUnitTests
     private const double ORIGIN_LAT = 43.712800;
     private const double ORIGIN_LON = -74.006000;
     private const double FIELD_W = 200.0;
-    private const double FIELD_H = 78.0;
-    private const double HEADLAND = 12.0; // Match real app headland distance
+    private const double FIELD_H = 200.0; // Square field for fair E-W vs N-S comparison
+    private const double HEADLAND = 12.0;
     private const double TOOL_WIDTH = 6.0; // Match real app bug report
 
     private static readonly double MetersPerDegLat = 111320.0;
@@ -321,9 +321,10 @@ public class AutoSteerUTurnNUnitTests
         Thread.Sleep(100);
     }
 
-    [TestCase(false, TestName = "UTurn_EastWest")]
-    [TestCase(true, TestName = "UTurn_NorthSouth")]
-    public void DriveMultiplePasses_WithAutoUTurns(bool northSouth)
+    [TestCase(false, false, TestName = "UTurn_EastWest")]
+    [TestCase(true, false, TestName = "UTurn_NorthSouth")]
+    [TestCase(false, true, TestName = "UTurn_Diagonal45")]
+    public void DriveMultiplePasses_WithAutoUTurns(bool northSouth, bool diagonal)
     {
         // Set up local plane at origin
         var origin = new Wgs84(ORIGIN_LAT, ORIGIN_LON);
@@ -358,7 +359,27 @@ public class AutoSteerUTurnNUnitTests
         AgValoniaGPS.Models.Track.Track track;
         double startLat, startLon, startHdg;
 
-        if (!driveNorthSouth)
+        if (diagonal)
+        {
+            // 45 degree diagonal AB line (NE to SW)
+            double heading45 = Math.PI / 4; // 45 degrees
+            double margin = HEADLAND * 1.5;
+            track = new AgValoniaGPS.Models.Track.Track
+            {
+                Name = "AB_Test_Diag",
+                Points = new List<Vec3>
+                {
+                    new Vec3(margin, margin, heading45),
+                    new Vec3(FIELD_W - margin, FIELD_H - margin, heading45)
+                },
+                Type = AgValoniaGPS.Models.Track.TrackType.ABLine
+            };
+            startLat = ORIGIN_LAT + margin / MetersPerDegLat;
+            startLon = ORIGIN_LON + margin / MetersPerDegLon;
+            startHdg = 45.0;
+            SendGpsAt(margin, margin, heading: 45, count: 20);
+        }
+        else if (!driveNorthSouth)
         {
             // East-West AB line
             track = new AgValoniaGPS.Models.Track.Track
@@ -384,7 +405,7 @@ public class AutoSteerUTurnNUnitTests
                 Name = "AB_Test_NS",
                 Points = new List<Vec3>
                 {
-                    new Vec3(abEasting, HEADLAND, 0),        // heading north
+                    new Vec3(abEasting, HEADLAND, 0),
                     new Vec3(abEasting, FIELD_H - HEADLAND, 0)
                 },
                 Type = AgValoniaGPS.Models.Track.TrackType.ABLine
