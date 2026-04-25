@@ -158,6 +158,44 @@ public class AutoSteerUTurnNUnitTests
         Thread.Sleep(100);
     }
 
+    private void DriveArc(double startE, double startN, double startHeading,
+        double turnRadiusDeg, bool turnLeft, double speedKmh, int stepsPerDeg)
+    {
+        int totalSteps = (int)(Math.Abs(turnRadiusDeg) * stepsPerDeg);
+        double speedMs = speedKmh / 3.6;
+        double dt = 0.1;
+        // Compute steer angle for desired arc: R = wheelbase / tan(steer)
+        // We want a semicircle of radius TOOL_WIDTH/2 = 6m
+        double turnRadius = TOOL_WIDTH / 2.0;
+        double steerAngleDeg = Math.Atan(ConfigurationStore.Instance.Vehicle.Wheelbase / turnRadius) * 180 / Math.PI;
+        if (turnLeft) steerAngleDeg = -steerAngleDeg;
+
+        double heading = startHeading;
+        double lat = ORIGIN_LAT + startN / MetersPerDegLat;
+        double lon = ORIGIN_LON + startE / MetersPerDegLon;
+
+        for (int i = 0; i < totalSteps; i++)
+        {
+            double headingRad = heading * Math.PI / 180.0;
+            double steerRad = steerAngleDeg * Math.PI / 180.0;
+            double omega = speedMs * Math.Tan(steerRad) / ConfigurationStore.Instance.Vehicle.Wheelbase;
+
+            headingRad += omega * dt;
+            heading = (headingRad * 180 / Math.PI) % 360;
+            if (heading < 0) heading += 360;
+
+            double dx = speedMs * Math.Sin(headingRad) * dt;
+            double dy = speedMs * Math.Cos(headingRad) * dt;
+            lat += dy / MetersPerDegLat;
+            lon += dx / MetersPerDegLon;
+
+            var bytes = BuildPandaBytes(lat, lon, heading, speedKmh / 1.852);
+            _autoSteer.ProcessGpsBuffer(bytes, bytes.Length);
+            Thread.Sleep(5);
+        }
+        Thread.Sleep(100);
+    }
+
     private void DriveSegment(double startE, double startN, double heading,
         double speedKmh, int steps)
     {
@@ -217,6 +255,8 @@ public class AutoSteerUTurnNUnitTests
         // Send initial position
         SendGpsAt(HEADLAND + 5, abNorthing, heading: 90, count: 20);
 
+        // Collect ALL results (pass1 + uturn + pass2) for plotting
+        var allResults = new List<(string phase, GpsCycleResult r)>();
         _results.Clear();
 
         // Drive first pass east
@@ -228,9 +268,9 @@ public class AutoSteerUTurnNUnitTests
         lock (_results) pass1Count = _results.Count;
         TestContext.Out.WriteLine($"Pass 1 cycles: {pass1Count}");
 
-        // Check we traveled east
         List<GpsCycleResult> pass1Results;
         lock (_results) pass1Results = _results.ToList();
+        foreach (var r in pass1Results) allResults.Add(("pass1", r));
 
         if (pass1Results.Count > 10)
         {
@@ -241,13 +281,23 @@ public class AutoSteerUTurnNUnitTests
                 "Should travel >50m east on first pass");
         }
 
-        // Manual U-turn: switch to pass 1 (next track north)
+        // Drive U-turn arc using bicycle model (semicircle from east to west)
         TestContext.Out.WriteLine("=== U-Turn 1 ===");
         _pipeline.SetActiveTrack(track, passNumber: 1, nudgeOffset: 0, isOnBoundary: false);
 
-        // Drive U-turn arc (simplified: just drive west at the new northing)
+        double uturnStartE = FIELD_W - HEADLAND;
+        double uturnStartN = abNorthing;
         double pass2Northing = abNorthing + TOOL_WIDTH; // 33m
-        SendGpsAt(FIELD_W - HEADLAND, pass2Northing, heading: 270, count: 20);
+        double uturnRadius = TOOL_WIDTH / 2.0; // 6m
+
+        // Drive a semicircle: heading 90 -> 270 (left turn, northward)
+        // 180 degrees of arc at speed 12 km/h
+        DriveArc(uturnStartE, uturnStartN, startHeading: 90,
+            turnRadiusDeg: 180, turnLeft: true, speedKmh: 12, stepsPerDeg: 1);
+
+        List<GpsCycleResult> uturnResults;
+        lock (_results) uturnResults = _results.Skip(pass1Results.Count).ToList();
+        foreach (var r in uturnResults) allResults.Add(("uturn", r));
 
         _results.Clear();
 
@@ -258,6 +308,7 @@ public class AutoSteerUTurnNUnitTests
 
         List<GpsCycleResult> pass2Results;
         lock (_results) pass2Results = _results.ToList();
+        foreach (var r in pass2Results) allResults.Add(("pass2", r));
 
         if (pass2Results.Count > 10)
         {
@@ -273,20 +324,14 @@ public class AutoSteerUTurnNUnitTests
         Assert.That(pass1Count, Is.GreaterThan(50), "Pass 1 should produce >50 cycles");
         Assert.That(pass2Results.Count, Is.GreaterThan(50), "Pass 2 should produce >50 cycles");
 
-        // Write CSV for both passes
+        // Write CSV for all phases
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_passes.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("pass,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n");
-            lock (_results)
-            {
-                int step = 0;
-                foreach (var r in pass1Results)
-                    writer.WriteLine($"1,{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1},{r.ToolEasting:F2},{r.ToolNorthing:F2}");
-                step = 0;
-                foreach (var r in pass2Results)
-                    writer.WriteLine($"2,{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1},{r.ToolEasting:F2},{r.ToolNorthing:F2}");
-            }
+            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n");
+            int step = 0;
+            foreach (var (phase, r) in allResults)
+                writer.WriteLine($"{phase},{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1},{r.ToolEasting:F2},{r.ToolNorthing:F2}");
         }
         TestContext.Out.WriteLine($"CSV: {csvPath}");
     }
