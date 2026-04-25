@@ -382,10 +382,8 @@ public class AutoSteerUTurnNUnitTests
         TestContext.Out.WriteLine($"Pass 1: {pass1.Count} cycles, " +
             $"E={pass1.FirstOrDefault()?.Easting:F1} -> {pass1.LastOrDefault()?.Easting:F1}");
 
-        // Trigger manual U-turn (left = northward)
-        TestContext.Out.WriteLine("=== U-Turn (manual trigger, autosteer follows) ===");
-        _intents.RequestManualYouTurn(turnLeft: true);
-        _pipeline.SetActiveTrack(track, passNumber: 1, nudgeOffset: 0, isOnBoundary: false);
+        // No manual trigger - let the auto-trigger handle it
+        TestContext.Out.WriteLine("=== U-Turn (auto-trigger) ===");
 
         DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 12, maxSteps: 200,
             phase: "uturn", allResults: allResults);
@@ -410,14 +408,33 @@ public class AutoSteerUTurnNUnitTests
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_passes.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,steer_angle,has_guidance");
+            writer.WriteLine("phase,step,tractor_e,tractor_n,tractor_heading,tool_e,tool_n,steer_angle,has_guidance,yt_triggered,yt_executing");
             int step = 0;
             foreach (var (phase, r) in allResults)
             {
                 double steer = r.Guidance?.SteerAngle ?? 0;
                 bool hasG = r.Guidance?.HasGuidance ?? false;
+                bool ytTriggered = r.YouTurn?.IsTriggered ?? false;
+                bool ytExec = r.YouTurn?.IsExecuting ?? false;
                 writer.WriteLine($"{phase},{step++},{r.Easting:F2},{r.Northing:F2},{r.Heading:F1}," +
-                    $"{r.ToolEasting:F2},{r.ToolNorthing:F2},{steer:F2},{hasG}");
+                    $"{r.ToolEasting:F2},{r.ToolNorthing:F2},{steer:F2},{hasG},{ytTriggered},{ytExec}");
+            }
+        }
+
+        // Write turn path if available
+        var turnPathCsv = Path.Combine(TestContext.CurrentContext.WorkDirectory, "uturn_turnpath.csv");
+        using (var writer = new StreamWriter(turnPathCsv))
+        {
+            writer.WriteLine("point,e,n,heading");
+            foreach (var (_, r) in allResults)
+            {
+                if (r.YouTurn?.TurnPath != null && r.YouTurn.TurnPath.Count > 0)
+                {
+                    int pt = 0;
+                    foreach (var p in r.YouTurn.TurnPath)
+                        writer.WriteLine($"{pt++},{p.Easting:F2},{p.Northing:F2},{p.Heading:F4}");
+                    break; // Only write the first turn path found
+                }
             }
         }
         TestContext.Out.WriteLine($"CSV: {csvPath}");
