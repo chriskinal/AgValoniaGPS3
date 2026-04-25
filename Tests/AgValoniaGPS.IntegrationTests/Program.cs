@@ -40,7 +40,7 @@ sealed class Program
     static bool _headless = false;
     static bool _catalogMode = false;
     static bool _fieldTestMode = false;
-    static bool _uturnTestMode = false;
+    // UTurn test moved to NUnit: AgValoniaGPS.Services.Tests/AutoSteerUTurnNUnitTests.cs
     static bool _tileTestMode = false;
     static bool _recPathTestMode = false;
     static bool _remoteTestMode = false;
@@ -55,7 +55,7 @@ sealed class Program
         _headless = args.Contains("--headless");
         _catalogMode = args.Contains("--catalog");
         _fieldTestMode = args.Contains("--field-test");
-        _uturnTestMode = args.Contains("--uturn-test");
+        // --uturn-test removed: now in NUnit (AutoSteerUTurnNUnitTests)
         _tileTestMode = args.Contains("--tile-test");
         _recPathTestMode = args.Contains("--recpath-test");
         _remoteTestMode = args.Contains("--remote-test");
@@ -101,7 +101,6 @@ sealed class Program
         App.OnAppReady = _remoteTestMode ? RunRemoteTestServer
                        : _recPathTestMode ? RunRecPathTest
                        : _tileTestMode ? RunTileTest
-                       : _uturnTestMode ? RunUTurnTest
                        : _fieldTestMode ? RunFieldTest
                        : _catalogMode ? RunCatalog
                        : RunScenario;
@@ -324,24 +323,7 @@ sealed class Program
         Console.WriteLine($"tracks={vm.SavedTracks.Count} OK");
     }
 
-    static async Task RunUTurnTest(IClassicDesktopStyleApplicationLifetime lifetime)
-    {
-        var window = lifetime.MainWindow as Window
-            ?? throw new Exception("MainWindow not found");
-        var vm = (MainViewModel)window.DataContext!;
-
-        try
-        {
-            await AutoSteerUTurnTest.Run(window, vm);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[UTurnTest] ERROR: {ex.Message}");
-            _scenarioFailed = true;
-        }
-
-        lifetime.Shutdown();
-    }
+    // RunUTurnTest removed — now in NUnit: AutoSteerUTurnNUnitTests.cs
 
     static async Task RunFieldTest(IClassicDesktopStyleApplicationLifetime lifetime)
     {
