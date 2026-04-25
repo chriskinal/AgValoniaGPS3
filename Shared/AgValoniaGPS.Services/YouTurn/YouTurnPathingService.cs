@@ -134,7 +134,12 @@ public sealed class YouTurnPathingService
     /// non-rectangular fields. New implementation walks the full offset line at fixed spacing
     /// and returns true if any sample lies inside the cultivated area.
     /// </remarks>
-    public bool WouldNextLineBeInsideBoundary(
+    /// <summary>
+    /// Check if the next pass line (in either direction) falls inside the cultivated area.
+    /// Returns (isInside, positiveDirection) where positiveDirection indicates which
+    /// offset direction has cultivated area.
+    /// </summary>
+    public (bool isInside, bool positiveDirection) WouldNextLineBeInsideBoundary(
         Models.Track.Track currentTrack,
         double abHeading,
         GuidanceWorkingState guidance,
@@ -143,14 +148,29 @@ public sealed class YouTurnPathingService
         int uTurnSkipRows)
     {
         if (boundary?.OuterBoundary == null || !boundary.OuterBoundary.IsValid)
-            return true;
+            return (true, false);
         if (currentTrack.Points.Count < 2)
-            return true;
+            return (true, false);
 
         var config = ConfigurationStore.Instance;
-        // Normal turn: turnLeft == sameWay so positiveOffset == false → path number decreases.
         int pathsToMove = uTurnSkipRows + 1;
-        int nextPathsAway = guidance.HowManyPathsAway - pathsToMove;
+        int nextPathsAwayNeg = guidance.HowManyPathsAway - pathsToMove;
+        int nextPathsAwayPos = guidance.HowManyPathsAway + pathsToMove;
+
+        if (CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayNeg,
+                boundary, headlandLine, config))
+            return (true, false); // negative direction works
+        if (CheckOffsetLineInsideCultivated(currentTrack, abHeading, nextPathsAwayPos,
+                boundary, headlandLine, config))
+            return (true, true); // positive direction works
+        return (false, false);
+    }
+
+    private bool CheckOffsetLineInsideCultivated(
+        Models.Track.Track currentTrack, double abHeading, int nextPathsAway,
+        Boundary? boundary, IReadOnlyList<Vec3>? headlandLine,
+        ConfigurationStore config)
+    {
 
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
         double nextDistAway = widthMinusOverlap * nextPathsAway;
@@ -190,14 +210,14 @@ public sealed class YouTurnPathingService
             double n = midNorthing + abNy * t;
             if (IsPointInsideCultivatedArea(e, n, boundary, headlandLine))
             {
-                _logger.LogDebug("[NextTrack] currentPath={Cur}, nextPath={Next}, sample at t={T:F0}m hit cultivated area",
-                    guidance.HowManyPathsAway, nextPathsAway, t);
+                _logger.LogDebug("[NextTrack] nextPath={Next}, sample at t={T:F0}m hit cultivated area",
+                    nextPathsAway, t);
                 return true;
             }
         }
 
-        _logger.LogDebug("[NextTrack] currentPath={Cur}, nextPath={Next}, no sample along {N} samples of offset line hit cultivated area",
-            guidance.HowManyPathsAway, nextPathsAway, sampleCount + 1);
+        _logger.LogDebug("[NextTrack] nextPath={Next}, no sample along {N} samples of offset line hit cultivated area",
+            nextPathsAway, sampleCount + 1);
         return false;
     }
 

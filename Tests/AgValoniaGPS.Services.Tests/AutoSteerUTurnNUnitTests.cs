@@ -321,8 +321,9 @@ public class AutoSteerUTurnNUnitTests
         Thread.Sleep(100);
     }
 
-    [Test]
-    public void DriveMultiplePasses_WithManualUTurns()
+    [TestCase(false, TestName = "UTurn_EastWest")]
+    [TestCase(true, TestName = "UTurn_NorthSouth")]
+    public void DriveMultiplePasses_WithAutoUTurns(bool northSouth)
     {
         // Set up local plane at origin
         var origin = new Wgs84(ORIGIN_LAT, ORIGIN_LON);
@@ -349,32 +350,62 @@ public class AutoSteerUTurnNUnitTests
         };
         _pipeline.SetHeadlandLine(headlandLine);
 
-        // Create AB line along first pass
-        double abNorthing = HEADLAND + TOOL_WIDTH / 2.0; // 21m
-        var track = new AgValoniaGPS.Models.Track.Track
+        // Create AB line along first pass - parameterized direction
+        double abNorthing = HEADLAND + TOOL_WIDTH / 2.0; // 15m
+        double abEasting = HEADLAND + TOOL_WIDTH / 2.0;  // 15m
+        bool driveNorthSouth = northSouth;
+
+        AgValoniaGPS.Models.Track.Track track;
+        double startLat, startLon, startHdg;
+
+        if (!driveNorthSouth)
         {
-            Name = "AB_Test",
-            Points = new List<Vec3>
+            // East-West AB line
+            track = new AgValoniaGPS.Models.Track.Track
             {
-                new Vec3(HEADLAND, abNorthing, Math.PI / 2),       // heading east
-                new Vec3(FIELD_W - HEADLAND, abNorthing, Math.PI / 2)
-            },
-            Type = AgValoniaGPS.Models.Track.TrackType.ABLine
-        };
+                Name = "AB_Test",
+                Points = new List<Vec3>
+                {
+                    new Vec3(HEADLAND, abNorthing, Math.PI / 2),
+                    new Vec3(FIELD_W - HEADLAND, abNorthing, Math.PI / 2)
+                },
+                Type = AgValoniaGPS.Models.Track.TrackType.ABLine
+            };
+            startLat = ORIGIN_LAT + abNorthing / MetersPerDegLat;
+            startLon = ORIGIN_LON + HEADLAND / MetersPerDegLon;
+            startHdg = 90.0;
+            SendGpsAt(HEADLAND + 5, abNorthing, heading: 90, count: 20);
+        }
+        else
+        {
+            // South-North AB line
+            track = new AgValoniaGPS.Models.Track.Track
+            {
+                Name = "AB_Test_NS",
+                Points = new List<Vec3>
+                {
+                    new Vec3(abEasting, HEADLAND, 0),        // heading north
+                    new Vec3(abEasting, FIELD_H - HEADLAND, 0)
+                },
+                Type = AgValoniaGPS.Models.Track.TrackType.ABLine
+            };
+            startLat = ORIGIN_LAT + HEADLAND / MetersPerDegLat;
+            startLon = ORIGIN_LON + abEasting / MetersPerDegLon;
+            startHdg = 0.0;
+            SendGpsAt(abEasting, HEADLAND + 5, heading: 0, count: 20);
+        }
+
         _pipeline.SetActiveTrack(track, passNumber: 0, nudgeOffset: 0, isOnBoundary: false);
         _pipeline.SetAutoSteerEngaged(true);
         _pipeline.SetYouTurnEnabled(true);
 
-        // Send initial position to establish pipeline state
-        SendGpsAt(HEADLAND + 5, abNorthing, heading: 90, count: 20);
-
         var allResults = new List<(string phase, GpsCycleResult r)>();
         _results.Clear();
 
-        // Pass 1: Drive east with autosteer feedback
-        double lat = ORIGIN_LAT + abNorthing / MetersPerDegLat;
-        double lon = ORIGIN_LON + HEADLAND / MetersPerDegLon;
-        double hdg = 90.0;
+        // Pass 1
+        double lat = startLat;
+        double lon = startLon;
+        double hdg = startHdg;
 
         TestContext.Out.WriteLine("=== Pass 1: East (autosteer feedback) ===");
         DriveWithFeedback(ref lat, ref lon, ref hdg, speedKmh: 25, maxSteps: 300,

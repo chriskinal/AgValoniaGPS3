@@ -434,10 +434,10 @@ public sealed class YouTurnStateMachine
         YouTurnWorkingState turn,
         YouTurnEffects effects)
     {
-        bool nextLineInside = _pathing.WouldNextLineBeInsideBoundary(
+        var (nextLineInside, positiveDirection) = _pathing.WouldNextLineBeInsideBoundary(
             track, abHeading, guidance, ctx.Boundary, ctx.HeadlandLine, ctx.UTurnSkipRows);
 
-        _logger.LogDebug("[YouTurn] Creating turn? nextLineInside={Inside}", nextLineInside);
+        _logger.LogDebug("[YouTurn] Creating turn? nextLineInside={Inside} positiveDir={Dir}", nextLineInside, positiveDirection);
         if (!nextLineInside)
         {
             _logger.LogDebug("[YouTurn] Next line would be outside boundary - stopping U-turns");
@@ -446,7 +446,9 @@ public sealed class YouTurnStateMachine
         }
 
         _logger.LogDebug("[YouTurn] Creating turn path at {Dist:F1}m from headland", turn.DistanceToHeadland);
-        turn.IsTurnLeft = guidance.IsHeadingSameWay;
+        // IsTurnLeft depends on which direction has cultivated area and the current heading.
+        // positiveDirection ^ IsHeadingSameWay gives the correct turn direction.
+        turn.IsTurnLeft = positiveDirection ^ guidance.IsHeadingSameWay;
         turn.WasHeadingSameWayAtTurnStart = guidance.IsHeadingSameWay;
 
         _pathing.ComputeNextTrack(
