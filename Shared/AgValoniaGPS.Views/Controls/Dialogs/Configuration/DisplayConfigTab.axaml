@@ -209,8 +209,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Guide Count" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Row 3: Direction Markers, Section Lines -->
-                        <!-- Line Smooth removed: Avalonia Skia renderer handles AA by default (#85) -->
+                        <!-- Row 3: Line Smooth (coverage anti-aliasing), Direction Markers, Section Lines -->
+                        <StackPanel Grid.Row="3" Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
+                            <Button Classes="DisplayToggle"
+                                    Background="{Binding Display.LineSmoothEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                    BorderBrush="{Binding Display.LineSmoothEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                    Command="{Binding ToggleLineSmoothCommand}">
+                                <TextBlock Text="AA" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Width="60" Height="60" TextAlignment="Center" Padding="0,14,0,0"/>
+                            </Button>
+                            <TextBlock Text="Smoothing" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        </StackPanel>
 
                         <!-- Hidden: bitmap coverage system does not populate geometry cache (#117) -->
                         <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" HorizontalAlignment="Center"

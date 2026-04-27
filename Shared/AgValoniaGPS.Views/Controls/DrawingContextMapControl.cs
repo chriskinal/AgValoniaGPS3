@@ -270,6 +270,7 @@ internal class MapRenderState
     public bool SvennArrowVisible;
     public bool DirectionMarkersVisible;
     public bool FieldTextureVisible;
+    public bool LineSmoothEnabled;
     public bool ExtraGuidelines;
     public int ExtraGuidelinesCount;
     public bool HeadlandDistanceVisible;
@@ -859,6 +860,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             SvennArrowVisible = displayCfg.SvennArrowVisible,
             DirectionMarkersVisible = displayCfg.DirectionMarkersVisible,
             FieldTextureVisible = displayCfg.FieldTextureVisible,
+            LineSmoothEnabled = displayCfg.LineSmoothEnabled,
             ExtraGuidelines = displayCfg.ExtraGuidelines,
             ExtraGuidelinesCount = displayCfg.ExtraGuidelinesCount,
             HeadlandDistanceVisible = displayCfg.HeadlandDistanceVisible,
@@ -3170,8 +3172,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private DateTime _coverageSnapshotTime = DateTime.MinValue;
         private int _coverageSnapshotInFlight;        // 0 = idle, 1 = bg task running
         private const double CoverageSnapshotIntervalMs = 200.0;
-        private static readonly SKSamplingOptions _coverageSampling =
+        private static readonly SKSamplingOptions _coverageSamplingNearest =
             new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
+        private static readonly SKSamplingOptions _coverageSamplingLinear =
+            new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
 
         // Immutable brushes
         private static readonly IImmutableBrush _vehicleBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 200, 0));
@@ -3834,7 +3838,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 (float)s.BitmapMinE, (float)s.BitmapMinN,
                 (float)(s.BitmapMinE + worldWidth), (float)(s.BitmapMinN + worldHeight));
 
-            canvas.DrawImage(_coverageSnapshot, src, dst, _coverageSampling);
+            var sampling = s.LineSmoothEnabled ? _coverageSamplingLinear : _coverageSamplingNearest;
+            canvas.DrawImage(_coverageSnapshot, src, dst, sampling);
         }
 
         private void DrawBoundary(SKCanvas canvas, MapRenderState s)
