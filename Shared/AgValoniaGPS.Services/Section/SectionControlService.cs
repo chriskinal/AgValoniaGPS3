@@ -890,6 +890,14 @@ public class SectionControlService : ISectionControlService
         for (int i = 0; i < 16; i++)
         {
             _sectionStates[i].ButtonState = state;
+
+            // Mirror SetSectionState: sync IsOn for manual states so the UI
+            // reflects the change immediately. Auto is left for Update() to
+            // determine based on coverage/boundaries.
+            if (state == SectionButtonState.On)
+                _sectionStates[i].IsOn = true;
+            else if (state == SectionButtonState.Off)
+                _sectionStates[i].IsOn = false;
         }
 
         SectionStateChanged?.Invoke(this, new SectionStateChangedEventArgs

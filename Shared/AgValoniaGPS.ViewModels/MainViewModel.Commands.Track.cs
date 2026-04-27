@@ -793,10 +793,7 @@ public partial class MainViewModel
                 IsSectionMasterOn = false;
 
             var newState = IsManualSectionMode ? SectionButtonState.On : SectionButtonState.Off;
-            for (int i = 0; i < _sectionControlService.NumSections; i++)
-            {
-                _sectionControlService.SetSectionState(i, newState);
-            }
+            _sectionControlService.SetAllSections(newState);
 
             StatusMessage = IsManualSectionMode ? "All sections ON" : "All sections OFF";
         });
@@ -808,10 +805,7 @@ public partial class MainViewModel
                 IsManualSectionMode = false;
 
             var newState = IsSectionMasterOn ? SectionButtonState.Auto : SectionButtonState.Off;
-            for (int i = 0; i < _sectionControlService.NumSections; i++)
-            {
-                _sectionControlService.SetSectionState(i, newState);
-            }
+            _sectionControlService.SetAllSections(newState);
 
             StatusMessage = IsSectionMasterOn ? "All sections AUTO" : "All sections OFF";
         });
