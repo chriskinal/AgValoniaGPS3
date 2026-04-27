@@ -3525,25 +3525,35 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         private void DrawGroundTexture(ImmediateDrawingContext dc, MapRenderState s, double viewWidth, double viewHeight)
         {
-            // Always draw the texture as a single stretched bitmap covering the
-            // viewport. A tile loop produced a hard FPS discontinuity at zoom
-            // levels that crossed the tile-count threshold (e.g. 19 FPS on one
-            // side, 51 on the other). The texture pattern is intentionally
-            // non-distinct so the stretched version is visually indistinguishable
-            // from the tiled version in practice. One draw call at any zoom,
-            // constant cost.
+            // Tile the texture at fixed world coordinates so it visually moves
+            // with the grid when the camera pans. Each tile is anchored to a
+            // world-space grid, not the camera position.
             //
-            // The rect is in world coordinates (the camera transform is already
-            // pushed on dc). Center on the camera so the texture tracks the
-            // viewport rather than drifting relative to fixed world features.
-            // The earlier tile-loop fallback used `-(centerY + diagonal)` here,
-            // which mirrored the Y axis incorrectly and caused the texture to
-            // appear to slide south as the tractor moved north (issue #262).
-            double centerX = s.CameraX;
-            double centerY = s.CameraY;
-            double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
-            var viewRect = new Rect(centerX - diagonal, centerY - diagonal, diagonal * 2, diagonal * 2);
-            dc.DrawBitmap(s.GroundTexture!, viewRect);
+            // Tile size chosen to balance visibility of movement (smaller =
+            // more obvious scrolling) vs draw call count (larger = fewer tiles).
+            // At 50m tiles, max ~25 tiles visible at typical zoom. Capped at 36
+            // to prevent FPS drops at extreme zoom-out.
+            const double TileSize = 50.0;
+            const int MaxTiles = 36;
+
+            double halfW = viewWidth / 2 + TileSize;
+            double halfH = viewHeight / 2 + TileSize;
+
+            // Snap to tile grid
+            double startX = Math.Floor((s.CameraX - halfW) / TileSize) * TileSize;
+            double startY = Math.Floor((s.CameraY - halfH) / TileSize) * TileSize;
+            double endX = s.CameraX + halfW;
+            double endY = s.CameraY + halfH;
+
+            int tileCount = 0;
+            for (double tx = startX; tx < endX && tileCount < MaxTiles; tx += TileSize)
+            {
+                for (double ty = startY; ty < endY && tileCount < MaxTiles; ty += TileSize)
+                {
+                    dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, TileSize, TileSize));
+                    tileCount++;
+                }
+            }
         }
 
         private void DrawBackgroundImage(ImmediateDrawingContext dc, MapRenderState s)
