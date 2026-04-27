@@ -210,17 +210,19 @@ public class SectionControlService : ISectionControlService
         }
         _previousHeading = toolHeading;
 
-        // Check if speed is below cutoff
+        // Check if speed is below cutoff - turn off AUTO sections but keep
+        // MANUAL ON sections active so coverage doesn't gap on stop/restart.
         if (speed < tool.SlowSpeedCutoff)
         {
             for (int i = 0; i < numSections; i++)
             {
-                UpdateSectionOff(i);
+                if (_sectionStates[i].ButtonState != SectionButtonState.On)
+                    UpdateSectionOff(i);
             }
             _yawRate = 0; // Reset when stopped
             _instantYawRate = 0;
             _vehicleYawRate = 0;
-            return;
+            // Don't return early - manual sections still need UpdateSectionOn
         }
 
         // Reset timing accumulators

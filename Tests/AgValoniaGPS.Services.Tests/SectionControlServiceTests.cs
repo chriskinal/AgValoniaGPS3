@@ -45,9 +45,9 @@ public class SectionControlServiceTests
     #region Slow Speed
 
     [Test]
-    public void Update_SlowSpeed_AllSectionsOff()
+    public void Update_SlowSpeed_AutoSectionsOff_ManualStaysOn()
     {
-        // Set all sections to Auto and manually turn them on first
+        // Set sections: 0=Manual ON, 1=Manual ON, 2=Auto
         _service.SetAllAuto();
         _service.SetSectionState(0, SectionButtonState.On);
         _service.SetSectionState(1, SectionButtonState.On);
@@ -55,10 +55,11 @@ public class SectionControlServiceTests
         // Update at very slow speed (below 0.5 m/s cutoff)
         _service.Update(new Vec3(50, 50, 0), 0, 0, 0.1);
 
-        Assert.That(_service.SectionStates[0].IsOn, Is.False);
-        Assert.That(_service.SectionStates[1].IsOn, Is.False);
+        // Manual ON sections stay on (prevents coverage gap on stop/restart)
+        Assert.That(_service.SectionStates[0].IsOn, Is.True);
+        Assert.That(_service.SectionStates[1].IsOn, Is.True);
+        // Auto sections turn off
         Assert.That(_service.SectionStates[2].IsOn, Is.False);
-        Assert.That(_service.IsAnySectionOn, Is.False);
     }
 
     #endregion
