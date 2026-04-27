@@ -3526,33 +3526,33 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private void DrawGroundTexture(ImmediateDrawingContext dc, MapRenderState s, double viewWidth, double viewHeight)
         {
             // Tile the texture at fixed world coordinates so it visually moves
-            // with the grid when the camera pans. Each tile is anchored to a
-            // world-space grid, not the camera position.
-            //
-            // Tile size chosen to balance visibility of movement (smaller =
-            // more obvious scrolling) vs draw call count (larger = fewer tiles).
-            // At 50m tiles, max ~25 tiles visible at typical zoom. Capped at 36
-            // to prevent FPS drops at extreme zoom-out.
+            // with the grid when the camera pans. At extreme zoom-out, fall back
+            // to a single stretched bitmap (texture detail is invisible anyway,
+            // and tiling would require too many draw calls).
             const double TileSize = 50.0;
-            const int MaxTiles = 36;
+            const int MaxTilesPerAxis = 6; // 6x6 = 36 max tiles
 
-            double halfW = viewWidth / 2 + TileSize;
-            double halfH = viewHeight / 2 + TileSize;
+            int tilesX = (int)Math.Ceiling(viewWidth / TileSize) + 2;
+            int tilesY = (int)Math.Ceiling(viewHeight / TileSize) + 2;
 
-            // Snap to tile grid
-            double startX = Math.Floor((s.CameraX - halfW) / TileSize) * TileSize;
-            double startY = Math.Floor((s.CameraY - halfH) / TileSize) * TileSize;
-            double endX = s.CameraX + halfW;
-            double endY = s.CameraY + halfH;
-
-            int tileCount = 0;
-            for (double tx = startX; tx < endX && tileCount < MaxTiles; tx += TileSize)
+            if (tilesX <= MaxTilesPerAxis && tilesY <= MaxTilesPerAxis)
             {
-                for (double ty = startY; ty < endY && tileCount < MaxTiles; ty += TileSize)
-                {
-                    dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, TileSize, TileSize));
-                    tileCount++;
-                }
+                // Tiled mode: visible texture movement
+                double startX = Math.Floor((s.CameraX - viewWidth / 2 - TileSize) / TileSize) * TileSize;
+                double startY = Math.Floor((s.CameraY - viewHeight / 2 - TileSize) / TileSize) * TileSize;
+                double endX = s.CameraX + viewWidth / 2 + TileSize;
+                double endY = s.CameraY + viewHeight / 2 + TileSize;
+
+                for (double tx = startX; tx < endX; tx += TileSize)
+                    for (double ty = startY; ty < endY; ty += TileSize)
+                        dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, TileSize, TileSize));
+            }
+            else
+            {
+                // Fallback: single stretched bitmap (zoomed out too far for tiling)
+                double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
+                dc.DrawBitmap(s.GroundTexture!, new Rect(
+                    s.CameraX - diagonal, s.CameraY - diagonal, diagonal * 2, diagonal * 2));
             }
         }
 
