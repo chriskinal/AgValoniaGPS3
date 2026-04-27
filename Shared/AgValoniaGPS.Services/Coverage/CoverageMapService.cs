@@ -266,8 +266,10 @@ public class CoverageMapService : ICoverageMapService
                 double cellCenterE = (ce + 0.5) * BITMAP_CELL_SIZE;
                 double cellCenterN = (cn + 0.5) * BITMAP_CELL_SIZE;
 
-                // Check if cell center is inside quad (point-in-polygon test)
-                if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
+                // Two-triangle decomposition: handles self-intersecting bowties
+                // that occur when inner section edges reverse during sharp turns.
+                if (IsPointInTriangle(cellCenterE, cellCenterN, p0, p1, p2)
+                    || IsPointInTriangle(cellCenterE, cellCenterN, p0, p2, p3))
                 {
                     if (MarkCellCovered(ce, cn, zoneIndex))
                     {
@@ -301,6 +303,23 @@ public class CoverageMapService : ICoverageMapService
         bool hasPos = (d0 > 0) || (d1 > 0) || (d2 > 0) || (d3 > 0);
 
         // Inside if all same sign (all positive or all negative)
+        return !(hasNeg && hasPos);
+    }
+
+    /// <summary>
+    /// Check if a point is inside a triangle using cross product sign test.
+    /// Unlike a quad, a triangle can never self-intersect.
+    /// </summary>
+    private static bool IsPointInTriangle(double px, double py,
+        (double E, double N) a, (double E, double N) b, (double E, double N) c)
+    {
+        double d0 = CrossProductSign(px, py, a.E, a.N, b.E, b.N);
+        double d1 = CrossProductSign(px, py, b.E, b.N, c.E, c.N);
+        double d2 = CrossProductSign(px, py, c.E, c.N, a.E, a.N);
+
+        bool hasNeg = (d0 < 0) || (d1 < 0) || (d2 < 0);
+        bool hasPos = (d0 > 0) || (d1 > 0) || (d2 > 0);
+
         return !(hasNeg && hasPos);
     }
 
@@ -999,7 +1018,8 @@ public class CoverageMapService : ICoverageMapService
                 double cellCenterE = (ce + 0.5) * BITMAP_CELL_SIZE;
                 double cellCenterN = (cn + 0.5) * BITMAP_CELL_SIZE;
 
-                if (IsPointInQuad(cellCenterE, cellCenterN, p0, p1, p2, p3))
+                if (IsPointInTriangle(cellCenterE, cellCenterN, p0, p1, p2)
+                    || IsPointInTriangle(cellCenterE, cellCenterN, p0, p2, p3))
                 {
                     if (MarkCellCovered(ce, cn, 0))
                     {
