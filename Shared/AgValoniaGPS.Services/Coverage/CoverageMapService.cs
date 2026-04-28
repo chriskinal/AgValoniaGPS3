@@ -520,6 +520,36 @@ public class CoverageMapService : ICoverageMapService
     }
 
     /// <summary>
+    /// Mark a rectangular area as covered. Useful for tests that need pre-applied coverage
+    /// without driving through the area.
+    /// </summary>
+    /// <param name="minE">Minimum easting in meters</param>
+    /// <param name="maxE">Maximum easting in meters</param>
+    /// <param name="minN">Minimum northing in meters</param>
+    /// <param name="maxN">Maximum northing in meters</param>
+    /// <param name="zone">Zone index (default 0)</param>
+    /// <returns>Number of cells marked</returns>
+    public int MarkRectangleCovered(double minE, double maxE, double minN, double maxN, int zone = 0)
+    {
+        int count = 0;
+        int cellMinE = (int)Math.Floor(minE / BITMAP_CELL_SIZE);
+        int cellMaxE = (int)Math.Ceiling(maxE / BITMAP_CELL_SIZE);
+        int cellMinN = (int)Math.Floor(minN / BITMAP_CELL_SIZE);
+        int cellMaxN = (int)Math.Ceiling(maxN / BITMAP_CELL_SIZE);
+
+        for (int cn = cellMinN; cn <= cellMaxN; cn++)
+        {
+            for (int ce = cellMinE; ce <= cellMaxE; ce++)
+            {
+                if (MarkCellCovered(ce, cn, zone))
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
     /// Get area covered by a specific zone in hectares.
     /// </summary>
     public double GetZoneArea(int zone)

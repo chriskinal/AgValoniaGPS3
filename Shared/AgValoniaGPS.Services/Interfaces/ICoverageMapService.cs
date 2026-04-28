@@ -168,6 +168,12 @@ public interface ICoverageMapService
     IReadOnlyList<CoveragePatch> GetPatchesForZone(int zoneIndex);
 
     /// <summary>
+    /// Mark a rectangular area as covered without driving through it.
+    /// Useful for tests and pre-seeding coverage.
+    /// </summary>
+    int MarkRectangleCovered(double minE, double maxE, double minN, double maxN, int zone = 0);
+
+    /// <summary>
     /// Set fixed field bounds for bitmap coordinate calculations.
     /// This establishes a stable coordinate system that doesn't change as coverage expands.
     /// Should be called when a field/boundary is loaded.

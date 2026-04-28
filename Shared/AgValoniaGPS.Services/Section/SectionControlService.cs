@@ -932,6 +932,15 @@ public class SectionControlService : ISectionControlService
         _masterState = SectionMasterState.Auto;
     }
 
+    /// <summary>
+    /// Invalidate the coverage check cache, forcing a fresh query on the next Update.
+    /// Useful in tests where wall-clock time doesn't advance between frames.
+    /// </summary>
+    public void InvalidateCoverageCache()
+    {
+        _coverageCacheValid = false;
+    }
+
     public void RecalculateSectionPositions()
     {
         var tool = ConfigurationStore.Instance.Tool;
