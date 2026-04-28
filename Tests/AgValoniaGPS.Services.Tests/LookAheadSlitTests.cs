@@ -385,6 +385,193 @@ public class LookAheadSlitTests
 
     #endregion
 
+    #region Edge Cases
+
+    /// <summary>
+    /// Asymmetric look-ahead: very slow valve open (2s) but fast close (0.1s).
+    /// Verifies the OFF and ON sides handle independent durations correctly.
+    /// </summary>
+    [Test]
+    public void EdgeCase_AsymmetricLookAhead_SlowOpenFastClose()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 2.0, lookAheadOffSeconds: 0.1);
+        SetUpField();
+
+        var (framesOn, framesOff, newCoverage, log) = RunSlitTest(6.0, 15.0, 1);
+        LogResults("Asymmetric On=2.0s Off=0.1s", 6.0, 1, framesOn, framesOff, newCoverage, log);
+        ExportCsv("edge_asymmetric_slowopen", 1, log);
+
+        Assert.That(framesOff[0], Is.GreaterThan(0));
+
+        // OFF should land near slit start (LookAheadOff=0.1s, fast close)
+        // ON should land near slit end (LookAheadOn=2s actuator, but slit only 6m)
+        // With LookAheadOn=2s = 8.3m at 15km/h > slit width, the section can't
+        // complete the full TURNING_ON cycle while still in clear ground.
+        // Verify it eventually turns ON after exiting slit.
+        bool sawOnAfterSlit = false;
+        foreach (var entry in log)
+        {
+            if (entry.northing > 103 && entry.sectionStates[0])
+            {
+                sawOnAfterSlit = true;
+                break;
+            }
+        }
+        Assert.That(sawOnAfterSlit, Is.True, "Section should turn ON eventually after slit");
+    }
+
+    /// <summary>
+    /// Very long LookAhead exceeding slit width — was flickering before fix.
+    /// With matched phase duration, should still produce clean transitions.
+    /// </summary>
+    [Test]
+    public void EdgeCase_LongLookAhead_NoFlicker()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 2.0, lookAheadOffSeconds: 1.0);
+        SetUpField();
+
+        // Use a 4m slit (smaller than projection) to stress test
+        var (framesOn, framesOff, newCoverage, log) = RunSlitTest(4.0, 15.0, 1);
+
+        // Count transitions
+        int transitions = 0;
+        bool prev = false;
+        foreach (var entry in log)
+        {
+            if (entry.sectionStates[0] != prev) { transitions++; prev = entry.sectionStates[0]; }
+        }
+
+        TestContext.Out.WriteLine($"Long LookAhead, slit 4m, transitions: {transitions}");
+        ExportCsv("edge_long_lookahead", 1, log);
+
+        // With matched phase durations, should be at most 3 transitions even when
+        // projection exceeds slit width
+        Assert.That(transitions, Is.LessThanOrEqualTo(3),
+            $"No flicker expected with matched phase durations, got {transitions} transitions");
+    }
+
+    /// <summary>
+    /// Multiple consecutive slits with small gaps. Verifies the timer state
+    /// machine handles rapid OFF/ON cycles without getting stuck.
+    /// </summary>
+    [Test]
+    public void EdgeCase_MultipleSlits_NoStuckTimer()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
+        SetUpField();
+
+        double toolCenter = FIELD_SIZE / 2;
+
+        // Paint 3 slits at N=95, 100, 105 (each 2m wide, 3m gaps between)
+        _coverage.MarkRectangleCovered(toolCenter - 20, toolCenter + 20, 94, 96, 0);
+        _coverage.MarkRectangleCovered(toolCenter - 20, toolCenter + 20, 99, 101, 0);
+        _coverage.MarkRectangleCovered(toolCenter - 20, toolCenter + 20, 104, 106, 0);
+
+        _sectionControl.SetAllAuto();
+        double lat = ORIGIN_LAT + 80 / MetersPerDegLat;
+        DriveNorth(toolCenter, ref lat, 15.0, 20); // warmup approaching slits
+
+        _results.Clear();
+        DriveNorth(toolCenter, ref lat, 15.0, 80); // drive through all 3 slits
+
+        List<GpsCycleResult> crossResults;
+        lock (_results) crossResults = _results.ToList();
+
+        var transitions = new List<(double n, bool on)>();
+        bool prev = !crossResults[0].SectionStates![0];
+        foreach (var r in crossResults)
+        {
+            bool on = r.SectionStates != null && r.SectionStates[0];
+            if (on != prev)
+            {
+                transitions.Add((r.Northing, on));
+                prev = on;
+            }
+        }
+
+        TestContext.Out.WriteLine($"=== Multiple Slits Test ===");
+        TestContext.Out.WriteLine($"Total transitions: {transitions.Count}");
+        foreach (var t in transitions)
+            TestContext.Out.WriteLine($"  N={t.n:F2}: {(t.on ? "ON" : "OFF")}");
+
+        // Expect: ON->OFF (slit1)->ON (gap)->OFF (slit2)->ON (gap)->OFF (slit3)->ON
+        // = 6 transitions (3 ON->OFF + 3 OFF->ON)
+        Assert.That(transitions.Count, Is.GreaterThanOrEqualTo(6),
+            "Should respond to all 3 slits");
+        Assert.That(transitions.Count, Is.LessThanOrEqualTo(8),
+            "Should not flicker excessively");
+    }
+
+    /// <summary>
+    /// Manual override during TURNING_ON state. User presses button while
+    /// section is in transition - should respect the manual command immediately.
+    /// </summary>
+    [Test]
+    public void EdgeCase_ManualOverride_DuringTurningOn()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 2.0, lookAheadOffSeconds: 0.5);
+        SetUpField();
+
+        double toolCenter = FIELD_SIZE / 2;
+        // Paint a slit so section will go OFF then transition back ON later
+        _coverage.MarkRectangleCovered(toolCenter - 20, toolCenter + 20, 99, 102, 0);
+
+        _sectionControl.SetAllAuto();
+        double lat = ORIGIN_LAT + 80 / MetersPerDegLat;
+        DriveNorth(toolCenter, ref lat, 15.0, 20); // warmup
+
+        // Drive into the slit so section goes OFF
+        DriveNorth(toolCenter, ref lat, 15.0, 25);
+
+        // At this point section should be OFF or in TURNING_ON state
+        // Force manual OFF override
+        _sectionControl.SetSectionState(0, SectionButtonState.Off);
+
+        // Drive past the slit
+        DriveNorth(toolCenter, ref lat, 15.0, 30);
+
+        // Section should still be OFF (manual override holds)
+        Assert.That(_sectionControl.SectionStates[0].IsOn, Is.False,
+            "Manual OFF override should hold even after slit is past");
+        Assert.That(_sectionControl.SectionStates[0].ButtonState, Is.EqualTo(SectionButtonState.Off));
+    }
+
+    /// <summary>
+    /// Master state change during TURNING_OFF — section should turn off
+    /// immediately and respect the master state.
+    /// </summary>
+    [Test]
+    public void EdgeCase_MasterStateChange_DuringTurningOff()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.5, lookAheadOffSeconds: 1.0); // long off phase
+        SetUpField();
+
+        double toolCenter = FIELD_SIZE / 2;
+        _coverage.MarkRectangleCovered(toolCenter - 20, toolCenter + 20, 99, 102, 0);
+
+        _sectionControl.SetAllAuto();
+        double lat = ORIGIN_LAT + 80 / MetersPerDegLat;
+        DriveNorth(toolCenter, ref lat, 15.0, 30); // warmup, section ON
+
+        // Should be approaching slit, will enter TURNING_OFF
+        DriveNorth(toolCenter, ref lat, 15.0, 10);
+
+        // Force master OFF
+        _sectionControl.MasterState = SectionMasterState.Off;
+        DriveNorth(toolCenter, ref lat, 15.0, 1);
+
+        Assert.That(_sectionControl.SectionStates[0].IsOn, Is.False,
+            "Master OFF should immediately turn section off");
+        Assert.That(_sectionControl.IsAnySectionOn, Is.False);
+    }
+
+    #endregion
+
     #region Coverage During Transition States
 
     /// <summary>
