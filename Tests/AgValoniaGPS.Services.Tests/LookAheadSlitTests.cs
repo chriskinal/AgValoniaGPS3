@@ -497,12 +497,9 @@ public class LookAheadSlitTests
         foreach (var t in transitions)
             TestContext.Out.WriteLine($"  N={t.n:F2}: {(t.on ? "ON" : "OFF")}");
 
-        // Expect: ON->OFF (slit1)->ON (gap)->OFF (slit2)->ON (gap)->OFF (slit3)->ON
-        // = 6 transitions (3 ON->OFF + 3 OFF->ON)
-        Assert.That(transitions.Count, Is.GreaterThanOrEqualTo(6),
-            "Should respond to all 3 slits");
-        Assert.That(transitions.Count, Is.LessThanOrEqualTo(8),
-            "Should not flicker excessively");
+        // Expect exactly: initial ON + 3 OFF + 3 ON = 7 transitions counted from prev=false
+        Assert.That(transitions.Count, Is.EqualTo(7),
+            $"Expected 7 transitions for 3 slits (initial ON + 3 OFF + 3 ON), got {transitions.Count}");
     }
 
     /// <summary>
@@ -685,10 +682,12 @@ public class LookAheadSlitTests
         TestContext.Out.WriteLine($"  OFF at N={offN:F2} -> {offOffset:+0.00;-0.00}m relative to slit start ({slitSouth})");
         TestContext.Out.WriteLine($"  ON  at N={onN:F2} -> {onOffset:+0.00;-0.00}m relative to slit end ({slitNorth})");
 
-        // Both transitions should land within ~1m of the slit edge regardless of speed
-        Assert.That(Math.Abs(offOffset), Is.LessThan(1.5),
+        // Both transitions should land within frame discretization of the slit edge.
+        // At 25 km/h one frame = 0.69m, so 0.8m allows for ~1 frame variance plus
+        // small geometric effects from the segment-coverage threshold.
+        Assert.That(Math.Abs(offOffset), Is.LessThan(0.8),
             $"OFF transition should be near slit start at {speedKmh} km/h, got {offOffset}m offset");
-        Assert.That(Math.Abs(onOffset), Is.LessThan(2.0),
+        Assert.That(Math.Abs(onOffset), Is.LessThan(0.8),
             $"ON transition should be near slit end at {speedKmh} km/h, got {onOffset}m offset");
     }
 
@@ -730,7 +729,7 @@ public class LookAheadSlitTests
         TestContext.Out.WriteLine($"  ON  at N={onN:F2} ({onN - slitNorth:+0.00;-0.00}m vs slit end)");
 
         // OFF should land near slit start regardless of configured turn-off delay
-        Assert.That(Math.Abs(offN - slitSouth), Is.LessThan(1.5),
+        Assert.That(Math.Abs(offN - slitSouth), Is.LessThan(0.5),
             $"OFF transition should be near slit start with TurnOffDelay={turnOffDelaySec}s, got offset={offN - slitSouth}m");
     }
 
