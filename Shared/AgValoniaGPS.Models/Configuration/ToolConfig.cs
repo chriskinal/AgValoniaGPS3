@@ -243,6 +243,9 @@ public class ToolConfig : ObservableObject
         set => SetProperty(ref _defaultSectionWidth, value);
     }
 
+    // Cutoff is stored and edited in km/h to match the UI label and user
+    // expectation. SectionControlService converts to m/s before comparing
+    // against the GPS-reported speed.
     private double _slowSpeedCutoff = 0.5;
     public double SlowSpeedCutoff
     {

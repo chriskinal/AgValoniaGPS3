@@ -212,7 +212,9 @@ public class SectionControlService : ISectionControlService
 
         // Check if speed is below cutoff - turn off AUTO sections but keep
         // MANUAL ON sections active so coverage doesn't gap on stop/restart.
-        if (speed < tool.SlowSpeedCutoff)
+        // SlowSpeedCutoff is stored in km/h (matching the UI); speed is m/s.
+        double slowSpeedCutoffMps = tool.SlowSpeedCutoff / 3.6;
+        if (speed < slowSpeedCutoffMps)
         {
             for (int i = 0; i < numSections; i++)
             {
