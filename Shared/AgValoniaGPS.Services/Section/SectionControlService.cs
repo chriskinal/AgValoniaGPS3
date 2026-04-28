@@ -428,13 +428,12 @@ public class SectionControlService : ISectionControlService
         }
 
         // Determine if section should be on.
-        // Require BOTH look-ON and look-OFF points to be clear. The look-OFF check
-        // prevents brief ON blips when look-ON sees past a covered zone but look-OFF
-        // is still in it. The actuator-delay compensation built into the projection
-        // means the valve receives the OPEN command in time for spray to start exactly
-        // at the clear ground (TURNING_ON state spans the actuator open time).
+        // The actuator-delay compensation built into lookOnDist means the valve receives
+        // the OPEN command exactly the actuator's open-time before reaching clear ground.
+        // The SECTION_ON_DELAY debounce inside the state machine protects against brief
+        // false positives — by the time it expires, the section has moved enough that
+        // a transient blip cannot reach IsOn=true unless lookOnCovered stays false.
         bool shouldBeOn = !lookOnCovered      // Not already covered at look-ON point
-                       && !lookOffCovered     // Not already covered at look-OFF point
                        && lookOnInBoundary    // Inside boundary at look-ahead
                        && !lookOnInHeadland;  // Not in headland
 
