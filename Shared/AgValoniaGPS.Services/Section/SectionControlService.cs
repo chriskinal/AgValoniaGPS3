@@ -421,7 +421,10 @@ public class SectionControlService : ISectionControlService
         }
 
         // Determine if section should be on
-        bool shouldBeOn = !lookOnCovered      // Not already covered at look-ahead point
+        // Check BOTH look-ahead points are clear to prevent brief ON blips
+        // when look-ON sees past a covered zone but look-OFF is still in it
+        bool shouldBeOn = !lookOnCovered      // Not already covered at look-ON point
+                       && !lookOffCovered     // Not already covered at look-OFF point
                        && lookOnInBoundary    // Inside boundary at look-ahead
                        && !lookOnInHeadland;  // Not in headland
 
