@@ -107,9 +107,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Info box -->
-            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+            <Border Background="{DynamicResource InfoPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,8,0,0">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Note:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Text="Note:" Foreground="{DynamicResource AccentForegroundBrush}" FontWeight="SemiBold"/>
                     <TextBlock Text="Values are entered as positive numbers. The system automatically applies the correct sign based on tool type (negative for rear, positive for front)."
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>

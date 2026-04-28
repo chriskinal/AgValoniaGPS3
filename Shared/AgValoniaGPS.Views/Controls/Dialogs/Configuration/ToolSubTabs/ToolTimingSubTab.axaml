@@ -82,9 +82,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Grid>
 
             <!-- Info box -->
-            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
+            <Border Background="{DynamicResource InfoPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Timing Tips:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Text="Timing Tips:" Foreground="{DynamicResource AccentForegroundBrush}" FontWeight="SemiBold"/>
                     <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Look Ahead On"/>
                         <Run Text=" - Increase for slow-responding equipment (spray valves)"/>

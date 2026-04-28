@@ -49,6 +49,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <SolidColorBrush x:Key="SystemControlForegroundBaseMediumHighBrush" Color="#333333"/>
             <SolidColorBrush x:Key="SystemControlForegroundBaseMediumBrush" Color="#555555"/>
             <SolidColorBrush x:Key="SystemControlForegroundBaseLowBrush" Color="#888888"/>
+
+            <!-- Semantic accent panels used in configuration dialogs -->
+            <SolidColorBrush x:Key="InfoPanelBackgroundBrush" Color="#E8F5EE"/>
+            <SolidColorBrush x:Key="CardPanelBackgroundBrush" Color="#EEF1F7"/>
+            <SolidColorBrush x:Key="HighlightPanelBackgroundBrush" Color="#C8E8D6"/>
+            <SolidColorBrush x:Key="WarningPanelBackgroundBrush" Color="#F5F1DC"/>
+            <SolidColorBrush x:Key="SecondaryButtonBackgroundBrush" Color="#E8DCD8"/>
+            <SolidColorBrush x:Key="AccentForegroundBrush" Color="#1E8449"/>
         </ResourceDictionary>
         <!-- Dark: use dark blue-gray instead of pure black -->
         <ResourceDictionary x:Key="Dark">
@@ -59,6 +67,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="#3A3A4E"/>
             <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumLowBrush" Color="#45455A"/>
             <SolidColorBrush x:Key="SystemControlBackgroundBaseMediumBrush" Color="#505068"/>
+
+            <!-- Semantic accent panels used in configuration dialogs -->
+            <SolidColorBrush x:Key="InfoPanelBackgroundBrush" Color="#DD2A4A3A"/>
+            <SolidColorBrush x:Key="CardPanelBackgroundBrush" Color="#DD1A1A2E"/>
+            <SolidColorBrush x:Key="HighlightPanelBackgroundBrush" Color="#DD1E8449"/>
+            <SolidColorBrush x:Key="WarningPanelBackgroundBrush" Color="#DD3A3A2A"/>
+            <SolidColorBrush x:Key="SecondaryButtonBackgroundBrush" Color="#DD4A3A3A"/>
+            <SolidColorBrush x:Key="AccentForegroundBrush" Color="#4A9A7E"/>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 

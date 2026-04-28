@@ -124,9 +124,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Info box -->
-            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+            <Border Background="{DynamicResource InfoPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,8,0,0">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Switch Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Text="Switch Usage:" Foreground="{DynamicResource AccentForegroundBrush}" FontWeight="SemiBold"/>
                     <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Work Switch"/>
                         <Run Text=" - Typically connected to implement hydraulic raise/lower sensor"/>

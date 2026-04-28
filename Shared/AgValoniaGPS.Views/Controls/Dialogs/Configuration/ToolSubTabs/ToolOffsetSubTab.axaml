@@ -59,7 +59,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Value="{Binding Tool.Offset, Mode=TwoWay}"
                             Unit="m" FormatString="F2"
                             EditCommand="{Binding EditToolOffsetCommand}"/>
-                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
+                        <Button Content="Zero" Background="{DynamicResource SecondaryButtonBackgroundBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -79,15 +79,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Value="{Binding Tool.Overlap, Mode=TwoWay}"
                             Unit="m" FormatString="F2"
                             EditCommand="{Binding EditToolOverlapCommand}"/>
-                        <Button Content="Zero" Background="#DD4A3A3A" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
+                        <Button Content="Zero" Background="{DynamicResource SecondaryButtonBackgroundBrush}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" Padding="8,6"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
 
             <!-- Info box -->
-            <Border Background="#DD2A4A3A" CornerRadius="6" Padding="12" Margin="0,16,0,0">
+            <Border Background="{DynamicResource InfoPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,16,0,0">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Usage:" Foreground="#4A9A7E" FontWeight="SemiBold"/>
+                    <TextBlock Text="Usage:" Foreground="{DynamicResource AccentForegroundBrush}" FontWeight="SemiBold"/>
                     <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="12" TextWrapping="Wrap">
                         <Run Text="Offset"/>
                         <Run Text=" - Use when tool is not centered on tractor (side-mounted sprayer)"/>

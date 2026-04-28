@@ -58,7 +58,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <ScrollViewer>
         <StackPanel Spacing="12" Margin="16,8,16,16">
             <!-- Mode Toggle -->
-            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+            <Border Background="{DynamicResource CardPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,0,0,8">
                 <StackPanel>
                     <TextBlock Text="Section Mode" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <StackPanel Orientation="Horizontal" Spacing="16">
@@ -102,7 +102,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Individual Section Widths Grid (only shown when IsSectionsNotZones is true) -->
-            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,8,0,0"
+            <Border Background="{DynamicResource CardPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,8,0,0"
                     IsVisible="{Binding Tool.IsSectionsNotZones}">
                 <StackPanel>
                     <TextBlock Text="Section Widths" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -236,7 +236,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Zone Configuration (only shown when IsSectionsNotZones is false) -->
-            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,8,0,0"
+            <Border Background="{DynamicResource CardPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,8,0,0"
                     IsVisible="{Binding !Tool.IsSectionsNotZones}">
                 <StackPanel>
                     <TextBlock Text="Zone Configuration" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -334,7 +334,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Total Width Display (calculated from sections) -->
-            <Border Background="#DD1E8449" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+            <Border Background="{DynamicResource HighlightPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,8,0,0">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Calculated Total Width" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
@@ -361,7 +361,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <!-- Section Color Preview (only shown when multi-colored is enabled) -->
-            <Border Background="#DD1A1A2E" CornerRadius="6" Padding="12" Margin="0,4,0,0"
+            <Border Background="{DynamicResource CardPanelBackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,4,0,0"
                     IsVisible="{Binding Tool.IsMultiColoredSections}">
                 <StackPanel>
                     <TextBlock Text="Section Colors" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" Margin="0,0,0,8"/>
