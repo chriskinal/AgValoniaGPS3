@@ -46,7 +46,9 @@ public class VirtualModuleHub : IDisposable
     {
         Steer.Start();
         Machine.Start();
-        Gps.Start();
+        // Don't start Gps's auto-send loop here — the host drives SendOnce
+        // from its physics tick. Running both produces duplicate packets at
+        // a drifting phase, which the receiver sees as a stuttering position.
     }
 
     public void Stop()
