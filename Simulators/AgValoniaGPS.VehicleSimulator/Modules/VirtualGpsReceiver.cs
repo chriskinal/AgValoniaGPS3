@@ -134,8 +134,13 @@ public class VirtualGpsReceiver : IDisposable
         sb.Append(Altitude.ToString("F1", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(DifferentialAge.ToString("F1", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(SpeedKnots.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
-        sb.Append(HeadingDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
-        sb.Append(RollDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
+        // PANDA encodes IMU heading and roll as int(degrees * 10) on the wire
+        // (per AiO firmware); the parser scales them back by 0.1 on receive.
+        // Sentinel 65535 means "no IMU" — never emit it from the simulator.
+        int headingScaled = (int)Math.Round(HeadingDegrees * 10.0);
+        int rollScaled = (int)Math.Round(RollDegrees * 10.0);
+        sb.Append(headingScaled.ToString(CultureInfo.InvariantCulture)); sb.Append(',');
+        sb.Append(rollScaled.ToString(CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(PitchDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(YawRateDegPerSec.ToString("F2", CultureInfo.InvariantCulture));
 
