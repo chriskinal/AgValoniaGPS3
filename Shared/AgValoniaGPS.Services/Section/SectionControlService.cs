@@ -292,15 +292,14 @@ public class SectionControlService : ISectionControlService
         }
 
         // Auto mode - check boundary/overlap conditions
-        // Calculate look-ahead distances. The user-configured LookAheadOnSetting/OffSetting
-        // compensate for physical actuator delay (valve open/close). Add the software state
-        // machine debounce to the projection so the actual transition position matches the
-        // configured target — without this, sections transition (debounce-distance) past where
-        // the user expects (~0.8m at 15 km/h with default debounce).
-        double softwareOnDelaySec = SECTION_ON_DELAY * 0.1;                  // 2 frames at 10Hz
-        double softwareOffDelaySec = Math.Max(tool.TurnOffDelay, 0.1);       // matches state machine clamp
-        double lookAheadOnDist = speed * (tool.LookAheadOnSetting + softwareOnDelaySec);
-        double lookAheadOffDist = speed * (tool.LookAheadOffSetting + softwareOffDelaySec);
+        // Look-ahead distances match the TURNING_ON / TURNING_OFF phase duration
+        // (max(SECTION_ON_DELAY, LookAheadOn) for ON; max(1, LookAheadOff) for OFF).
+        // The phase delay exactly cancels the projection, so the physical IsOn flip
+        // lines up with the slit edge regardless of LookAhead settings.
+        double turnOnPhaseSec = Math.Max(SECTION_ON_DELAY * 0.1, tool.LookAheadOnSetting);
+        double turnOffPhaseSec = Math.Max(0.1, tool.LookAheadOffSetting);
+        double lookAheadOnDist = speed * turnOnPhaseSec;
+        double lookAheadOffDist = speed * turnOffPhaseSec;
 
         // Calculate section half-width for segment-based checks
         double halfWidth = (section.PositionRight - section.PositionLeft) / 2.0;
@@ -450,7 +449,13 @@ public class SectionControlService : ISectionControlService
             section.SectionOnTimer++;
             section.SectionOffTimer = 0;
 
-            if (section.SectionOnTimer > SECTION_ON_DELAY)
+            // TURNING_ON phase models the valve open time. Coverage is NOT
+            // applied during this phase (valve opening, no fluid yet). Phase
+            // duration = LookAheadOnSetting (configured actuator open time)
+            // with a SECTION_ON_DELAY minimum for software debounce.
+            int turnOnPhaseFrames = Math.Max(SECTION_ON_DELAY, (int)(tool.LookAheadOnSetting * 10));
+
+            if (section.SectionOnTimer > turnOnPhaseFrames)
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
@@ -464,11 +469,18 @@ public class SectionControlService : ISectionControlService
             section.SectionOffTimer++;
             section.SectionOnTimer = 0;
 
-            // Use configured turn-off delay
-            int turnOffDelay = (int)(tool.TurnOffDelay * 10); // Convert seconds to cycles at 10Hz
-            if (turnOffDelay < 1) turnOffDelay = 1;
+            // TURNING_OFF phase models the valve close time. Section is still
+            // physically applying spray during this transition, so keep updating
+            // coverage. The phase duration matches LookAheadOffSetting (the
+            // user-configured actuator close time) so the projection's
+            // anticipation is exactly cancelled by the phase delay — physical
+            // spray stops at the intended position.
+            UpdateMapping(index, leftEdge, rightEdge, toolHeading);
 
-            if (section.SectionOffTimer > turnOffDelay)
+            int turnOffPhaseFrames = (int)(tool.LookAheadOffSetting * 10);
+            if (turnOffPhaseFrames < 1) turnOffPhaseFrames = 1;
+
+            if (section.SectionOffTimer > turnOffPhaseFrames)
             {
                 section.IsOn = false;
                 section.SectionOffRequest = false;
