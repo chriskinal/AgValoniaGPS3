@@ -292,9 +292,15 @@ public class SectionControlService : ISectionControlService
         }
 
         // Auto mode - check boundary/overlap conditions
-        // Calculate look-ahead distances
-        double lookAheadOnDist = speed * tool.LookAheadOnSetting;
-        double lookAheadOffDist = speed * tool.LookAheadOffSetting;
+        // Calculate look-ahead distances. The user-configured LookAheadOnSetting/OffSetting
+        // compensate for physical actuator delay (valve open/close). Add the software state
+        // machine debounce to the projection so the actual transition position matches the
+        // configured target — without this, sections transition (debounce-distance) past where
+        // the user expects (~0.8m at 15 km/h with default debounce).
+        double softwareOnDelaySec = SECTION_ON_DELAY * 0.1;                  // 2 frames at 10Hz
+        double softwareOffDelaySec = Math.Max(tool.TurnOffDelay, 0.1);       // matches state machine clamp
+        double lookAheadOnDist = speed * (tool.LookAheadOnSetting + softwareOnDelaySec);
+        double lookAheadOffDist = speed * (tool.LookAheadOffSetting + softwareOffDelaySec);
 
         // Calculate section half-width for segment-based checks
         double halfWidth = (section.PositionRight - section.PositionLeft) / 2.0;
@@ -380,6 +386,7 @@ public class SectionControlService : ISectionControlService
         // Section is "covered" if coverage exceeds threshold
         // Use MinCoverage setting from config (0-100), default to 70% if not set
         double coverageThreshold = tool.MinCoverage > 0 ? tool.MinCoverage / 100.0 : DEFAULT_COVERAGE_THRESHOLD;
+        bool currentCovered = currentCoverage.CoveragePercent >= coverageThreshold;
         bool lookOnCovered = lookOnCoverage.CoveragePercent >= coverageThreshold;
         bool lookOffCovered = lookOffCoverage.CoveragePercent >= coverageThreshold;
 
@@ -421,10 +428,14 @@ public class SectionControlService : ISectionControlService
         }
 
         // Determine if section should be on
-        // Check BOTH look-ahead points are clear to prevent brief ON blips
-        // when look-ON sees past a covered zone but look-OFF is still in it
+        // Require current position AND look-ahead point to be clear of coverage.
+        // Current position guards against spraying over already-covered ground when
+        // exiting a covered zone (look-ON sees past it before section physically clears it).
+        // Look-OFF check prevents brief ON blips when look-ON sees past a covered zone
+        // but look-OFF is still in it.
         bool shouldBeOn = !lookOnCovered      // Not already covered at look-ON point
                        && !lookOffCovered     // Not already covered at look-OFF point
+                       && !currentCovered     // Current position not in covered zone
                        && lookOnInBoundary    // Inside boundary at look-ahead
                        && !lookOnInHeadland;  // Not in headland
 

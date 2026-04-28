@@ -293,7 +293,10 @@ public class LookAheadSlitTests
     [TestCase(1.0, TestName = "LookAhead_Slit_1m")]
     public void DriveOverAppliedSlit_SingleSection(double slitWidthMeters)
     {
-        SetUpPipeline(numSections: 1, totalToolWidth: 6.0);
+        // Zero look-ahead matches the simulator's zero actuator delay.
+        // Real hardware would set LookAheadOnSetting/OffSetting to match valve open/close time.
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
         SetUpField();
 
         var (framesOn, framesOff, newCoverage, log) = RunSlitTest(slitWidthMeters, 15.0, 1);
