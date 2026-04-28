@@ -369,6 +369,170 @@ public class LookAheadSlitTests
 
     #endregion
 
+    #region Coverage During Transition States
+
+    /// <summary>
+    /// Verify that during TURNING_ON state (code=4) the section does NOT
+    /// record coverage. The valve has received the OPEN command but is not
+    /// yet physically applying — recording coverage during this window would
+    /// indicate spray on still-covered or about-to-be-clear ground.
+    /// </summary>
+    [Test]
+    public void TurningOnState_DoesNotApplyCoverage()
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
+        SetUpField();
+
+        double toolCenter = FIELD_SIZE / 2;
+        double slitNorthing = FIELD_SIZE / 2;
+
+        // Paint a slit
+        _coverage.MarkRectangleCovered(
+            toolCenter - 20, toolCenter + 20,
+            slitNorthing - 3, slitNorthing + 3, zone: 0);
+
+        _sectionControl.SetAllAuto();
+        double lat = ORIGIN_LAT + (slitNorthing - 20) / MetersPerDegLat;
+        DriveNorth(toolCenter, ref lat, 15.0, 20); // warmup
+
+        _results.Clear();
+
+        // Drive frame-by-frame, recording coverage delta and color code each frame
+        double prevCoverage = _coverage.TotalWorkedArea;
+        var perFrameDeltas = new List<(double northing, int colorCode, double coverageDelta)>();
+
+        int crossFrames = (int)(40.0 / (15.0 / 3.6 * 0.1));
+        for (int i = 0; i < crossFrames; i++)
+        {
+            DriveNorth(toolCenter, ref lat, 15.0, 1);
+            double newCoverage = _coverage.TotalWorkedArea;
+            double delta = newCoverage - prevCoverage;
+            prevCoverage = newCoverage;
+
+            GpsCycleResult? r;
+            lock (_results) r = _results.LastOrDefault();
+            if (r == null) continue;
+
+            int color = r.SectionColorCodes != null && r.SectionColorCodes.Length > 0
+                ? r.SectionColorCodes[0] : -1;
+            perFrameDeltas.Add((r.Northing, color, delta));
+        }
+
+        // Find frames where TURNING_ON state was active
+        var turningOnFrames = perFrameDeltas.Where(f => f.colorCode == 4).ToList();
+        TestContext.Out.WriteLine($"=== TURNING_ON Coverage Check ===");
+        TestContext.Out.WriteLine($"Total TURNING_ON frames: {turningOnFrames.Count}");
+        foreach (var f in turningOnFrames)
+            TestContext.Out.WriteLine($"  N={f.northing:F2}: coverage delta = {f.coverageDelta:F3} m2");
+
+        Assert.That(turningOnFrames.Count, Is.GreaterThan(0),
+            "Test should produce TURNING_ON frames (look-ahead transition)");
+
+        // CORE ASSERTION: no coverage applied during TURNING_ON
+        foreach (var f in turningOnFrames)
+        {
+            Assert.That(f.coverageDelta, Is.LessThan(0.01),
+                $"No coverage should be applied during TURNING_ON at N={f.northing:F2}, but got {f.coverageDelta:F3} m2");
+        }
+    }
+
+    #endregion
+
+    #region Different Speeds and Delays
+
+    /// <summary>
+    /// Verify timing accuracy at various speeds. With proper software-delay
+    /// compensation, the section should transition at approximately the same
+    /// distance from the slit edge regardless of speed.
+    /// </summary>
+    [TestCase(5.0, TestName = "Timing_Speed_5kmh")]
+    [TestCase(10.0, TestName = "Timing_Speed_10kmh")]
+    [TestCase(15.0, TestName = "Timing_Speed_15kmh")]
+    [TestCase(25.0, TestName = "Timing_Speed_25kmh")]
+    public void DriveOverSlit_DifferentSpeeds(double speedKmh)
+    {
+        // Zero look-ahead matches simulator's zero actuator delay
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
+        SetUpField();
+
+        double slitWidth = 6.0;
+        var (framesOn, framesOff, newCoverage, log) = RunSlitTest(slitWidth, speedKmh, 1);
+
+        // Find OFF and ON transition positions (where IsOn changes)
+        double slitSouth = FIELD_SIZE / 2 - slitWidth / 2;
+        double slitNorth = FIELD_SIZE / 2 + slitWidth / 2;
+        double offN = double.NaN, onN = double.NaN;
+        bool prev = true;
+        foreach (var entry in log)
+        {
+            if (entry.sectionStates[0] != prev)
+            {
+                if (!entry.sectionStates[0] && double.IsNaN(offN)) offN = entry.northing;
+                else if (entry.sectionStates[0] && !double.IsNaN(offN) && double.IsNaN(onN)) onN = entry.northing;
+                prev = entry.sectionStates[0];
+            }
+        }
+
+        double offOffset = offN - slitSouth;  // negative = before slit, positive = into slit
+        double onOffset = onN - slitNorth;    // negative = before end, positive = past slit
+
+        TestContext.Out.WriteLine($"=== Speed: {speedKmh} km/h ({speedKmh / 3.6:F2} m/s) ===");
+        TestContext.Out.WriteLine($"  OFF at N={offN:F2} -> {offOffset:+0.00;-0.00}m relative to slit start ({slitSouth})");
+        TestContext.Out.WriteLine($"  ON  at N={onN:F2} -> {onOffset:+0.00;-0.00}m relative to slit end ({slitNorth})");
+
+        // Both transitions should land within ~1m of the slit edge regardless of speed
+        Assert.That(Math.Abs(offOffset), Is.LessThan(1.5),
+            $"OFF transition should be near slit start at {speedKmh} km/h, got {offOffset}m offset");
+        Assert.That(Math.Abs(onOffset), Is.LessThan(2.0),
+            $"ON transition should be near slit end at {speedKmh} km/h, got {onOffset}m offset");
+    }
+
+    /// <summary>
+    /// Verify timing with different turn-off delays. The look-ahead projection
+    /// should compensate for the configured turn-off delay so transitions land
+    /// at the same position regardless of delay.
+    /// </summary>
+    [TestCase(0.0, TestName = "Timing_TurnOffDelay_0s")]
+    [TestCase(0.2, TestName = "Timing_TurnOffDelay_0.2s")]
+    [TestCase(0.5, TestName = "Timing_TurnOffDelay_0.5s")]
+    [TestCase(1.0, TestName = "Timing_TurnOffDelay_1.0s")]
+    public void DriveOverSlit_DifferentTurnOffDelays(double turnOffDelaySec)
+    {
+        SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
+            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
+        ConfigurationStore.Instance.Tool.TurnOffDelay = turnOffDelaySec;
+        SetUpField();
+
+        double slitWidth = 6.0;
+        var (framesOn, framesOff, newCoverage, log) = RunSlitTest(slitWidth, 15.0, 1);
+
+        double slitSouth = FIELD_SIZE / 2 - slitWidth / 2;
+        double slitNorth = FIELD_SIZE / 2 + slitWidth / 2;
+        double offN = double.NaN, onN = double.NaN;
+        bool prev = true;
+        foreach (var entry in log)
+        {
+            if (entry.sectionStates[0] != prev)
+            {
+                if (!entry.sectionStates[0] && double.IsNaN(offN)) offN = entry.northing;
+                else if (entry.sectionStates[0] && !double.IsNaN(offN) && double.IsNaN(onN)) onN = entry.northing;
+                prev = entry.sectionStates[0];
+            }
+        }
+
+        TestContext.Out.WriteLine($"=== TurnOffDelay: {turnOffDelaySec}s ===");
+        TestContext.Out.WriteLine($"  OFF at N={offN:F2} ({offN - slitSouth:+0.00;-0.00}m vs slit start)");
+        TestContext.Out.WriteLine($"  ON  at N={onN:F2} ({onN - slitNorth:+0.00;-0.00}m vs slit end)");
+
+        // OFF should land near slit start regardless of configured turn-off delay
+        Assert.That(Math.Abs(offN - slitSouth), Is.LessThan(1.5),
+            $"OFF transition should be near slit start with TurnOffDelay={turnOffDelaySec}s, got offset={offN - slitSouth}m");
+    }
+
+    #endregion
+
     #region Multiple Sections
 
     [TestCase(3, 6.0, TestName = "LookAhead_3Sections_6m")]

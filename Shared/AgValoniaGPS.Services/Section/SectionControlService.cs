@@ -427,15 +427,14 @@ public class SectionControlService : ISectionControlService
             }
         }
 
-        // Determine if section should be on
-        // Require current position AND look-ahead point to be clear of coverage.
-        // Current position guards against spraying over already-covered ground when
-        // exiting a covered zone (look-ON sees past it before section physically clears it).
-        // Look-OFF check prevents brief ON blips when look-ON sees past a covered zone
-        // but look-OFF is still in it.
+        // Determine if section should be on.
+        // Require BOTH look-ON and look-OFF points to be clear. The look-OFF check
+        // prevents brief ON blips when look-ON sees past a covered zone but look-OFF
+        // is still in it. The actuator-delay compensation built into the projection
+        // means the valve receives the OPEN command in time for spray to start exactly
+        // at the clear ground (TURNING_ON state spans the actuator open time).
         bool shouldBeOn = !lookOnCovered      // Not already covered at look-ON point
                        && !lookOffCovered     // Not already covered at look-OFF point
-                       && !currentCovered     // Current position not in covered zone
                        && lookOnInBoundary    // Inside boundary at look-ahead
                        && !lookOnInHeadland;  // Not in headland
 
