@@ -175,7 +175,7 @@ public class LookAheadSlitTests
     /// Returns (framesOn, framesOff, newCoverage, sectionLog per section).
     /// </summary>
     private (int[] framesOn, int[] framesOff, double newCoverage,
-             List<(double northing, bool[] sectionStates)> log)
+             List<(double northing, bool[] sectionStates, int[] colorCodes)> log)
         RunSlitTest(double slitWidthMeters, double speedKmh, int numSections)
     {
         double toolCenter = FIELD_SIZE / 2;
@@ -211,26 +211,32 @@ public class LookAheadSlitTests
 
         int[] framesOn = new int[numSections];
         int[] framesOff = new int[numSections];
-        var log = new List<(double northing, bool[] sectionStates)>();
+        var log = new List<(double northing, bool[] sectionStates, int[] colorCodes)>();
 
         foreach (var r in crossResults)
         {
             bool[] states = new bool[numSections];
+            int[] colors = new int[numSections];
             for (int s = 0; s < numSections; s++)
             {
                 bool on = r.SectionStates != null && s < r.SectionStates.Length && r.SectionStates[s];
                 states[s] = on;
+                colors[s] = r.SectionColorCodes != null && s < r.SectionColorCodes.Length
+                    ? r.SectionColorCodes[s] : (on ? 2 : 0);
                 if (on) framesOn[s]++; else framesOff[s]++;
             }
-            log.Add((r.Northing, states));
+            log.Add((r.Northing, states, colors));
         }
 
         return (framesOn, framesOff, newCoverage, log);
     }
 
+    // Color code names for logging
+    private static readonly string[] ColorNames = { "OFF", "MANUAL", "AUTO_ON", "TURNING_OFF", "TURNING_ON", "AUTO_OFF" };
+
     private void LogResults(string testName, double slitWidthMeters, int numSections,
         int[] framesOn, int[] framesOff, double newCoverage,
-        List<(double northing, bool[] sectionStates)> log)
+        List<(double northing, bool[] sectionStates, int[] colorCodes)> log)
     {
         TestContext.Out.WriteLine($"=== {testName} ===");
         TestContext.Out.WriteLine($"Slit: {slitWidthMeters}m, Sections: {numSections}");
@@ -239,15 +245,16 @@ public class LookAheadSlitTests
         {
             TestContext.Out.WriteLine($"  Section {s}: {framesOn[s]} ON, {framesOff[s]} OFF");
 
-            // Log transitions
-            bool prev = false;
+            // Log transitions with color codes
+            int prevColor = -1;
             for (int i = 0; i < log.Count; i++)
             {
-                if (log[i].sectionStates[s] != prev)
+                int color = log[i].colorCodes[s];
+                if (color != prevColor)
                 {
-                    string label = log[i].sectionStates[s] ? "ON" : "OFF";
-                    TestContext.Out.WriteLine($"    N={log[i].northing:F1}: {label}");
-                    prev = log[i].sectionStates[s];
+                    string colorName = color >= 0 && color < ColorNames.Length ? ColorNames[color] : $"?{color}";
+                    TestContext.Out.WriteLine($"    N={log[i].northing:F1}: {colorName} (code={color})");
+                    prevColor = color;
                 }
             }
         }
@@ -258,21 +265,21 @@ public class LookAheadSlitTests
     }
 
     private string ExportCsv(string name, int numSections,
-        List<(double northing, bool[] sectionStates)> log)
+        List<(double northing, bool[] sectionStates, int[] colorCodes)> log)
     {
         var csvPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"{name}.csv");
         using (var writer = new StreamWriter(csvPath))
         {
             var header = "step,northing";
             for (int s = 0; s < numSections; s++)
-                header += $",section_{s}";
+                header += $",section_{s},color_{s}";
             writer.WriteLine(header);
 
             for (int i = 0; i < log.Count; i++)
             {
                 var line = $"{i},{log[i].northing:F2}";
                 for (int s = 0; s < numSections; s++)
-                    line += $",{(log[i].sectionStates[s] ? 1 : 0)}";
+                    line += $",{(log[i].sectionStates[s] ? 1 : 0)},{log[i].colorCodes[s]}";
                 writer.WriteLine(line);
             }
         }

@@ -3175,9 +3175,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private static readonly IImmutableBrush _recordingPointBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(255, 128, 0));
         private static readonly IImmutableBrush _pointABrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 255, 0));
         private static readonly IImmutableBrush _pointBBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(255, 0, 0));
-        private static readonly IImmutableBrush _sectionOffBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(242, 51, 51));
-        private static readonly IImmutableBrush _sectionManualOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(247, 247, 0));
-        private static readonly IImmutableBrush _sectionAutoOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 242, 0));
+        private static readonly IImmutableBrush _sectionOffBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(242, 51, 51));        // Red
+        private static readonly IImmutableBrush _sectionManualOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(247, 247, 0)); // Yellow
+        private static readonly IImmutableBrush _sectionAutoOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 242, 0));    // Green
+        private static readonly IImmutableBrush _sectionTurningOffBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(0, 222, 222)); // Cyan
+        private static readonly IImmutableBrush _sectionTurningOnBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(255, 165, 0));  // Orange
+        private static readonly IImmutableBrush _sectionAutoOffBrushImm = new ImmutableSolidColorBrush(Color.FromRgb(150, 150, 150));  // Gray
 
         public MapCompositionHandler(DrawingContextMapControl owner)
         {
@@ -4263,8 +4266,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
                         IImmutableBrush brush = s.SectionButtonState[i] switch
                         {
-                            0 => _sectionOffBrushImm,
-                            2 => _sectionManualOnBrushImm,
+                            0 => _sectionOffBrushImm,          // Manual Off (red)
+                            1 => _sectionManualOnBrushImm,     // Manual ON (yellow)
+                            2 => _sectionAutoOnBrushImm,       // Auto ON (green)
+                            3 => _sectionTurningOffBrushImm,   // Turning OFF (cyan)
+                            4 => _sectionTurningOnBrushImm,    // Turning ON (orange)
+                            5 => _sectionAutoOffBrushImm,      // Auto OFF (gray)
                             _ => _sectionAutoOnBrushImm
                         };
                         dc.DrawRectangle(brush, _sectionOutlinePenImm,
@@ -4619,9 +4626,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
                     SKColor secColor = s.SectionButtonState[i] switch
                     {
-                        0 => new SKColor(242, 51, 51),   // Off = red
-                        2 => new SKColor(247, 247, 0),    // ManualOn = yellow
-                        _ => new SKColor(0, 242, 0)       // AutoOn = green
+                        0 => new SKColor(242, 51, 51),   // Off (red)
+                        1 => new SKColor(247, 247, 0),   // Manual ON (yellow)
+                        2 => new SKColor(0, 242, 0),     // Auto ON (green)
+                        3 => new SKColor(0, 222, 222),   // Turning OFF (cyan)
+                        4 => new SKColor(255, 165, 0),   // Turning ON (orange)
+                        5 => new SKColor(150, 150, 150), // Auto OFF (gray)
+                        _ => new SKColor(0, 242, 0)
                     };
 
                     using var secPaint = new SKPaint { Color = secColor, Style = SKPaintStyle.Fill };

@@ -220,7 +220,7 @@ public partial class MainViewModel
                     GetSectionStates(),
                     GetSectionWidths(),
                     NumSections,
-                    GetSectionButtonStates());
+                    result.SectionColorCodes ?? GetSectionButtonStates());
             }
 
             // Skip-and-fill bookkeeping: any active section means the current
