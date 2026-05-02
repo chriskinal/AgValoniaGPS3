@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Threading;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Interfaces;
@@ -22,8 +23,27 @@ using AgValoniaGPS.Services.Interfaces;
 namespace AgValoniaGPS.Services.Tool;
 
 /// <summary>
+/// Immutable snapshot of tool position state, swapped atomically by
+/// <see cref="ToolPositionService"/> at the end of each Update so readers
+/// see a fully-consistent view across multiple fields.
+/// </summary>
+internal sealed record ToolPositionSnapshot(
+    Vec3 ToolPosition,
+    Vec3 ToolPivotPosition,
+    double ToolHeading,
+    Vec3 TankPosition,
+    Vec3 HitchPosition,
+    bool IsToolPositionReady);
+
+/// <summary>
 /// Calculates tool/implement position relative to vehicle pivot point.
 /// Implements Torriem's algorithm for trailing tool heading calculation.
+///
+/// Thread-safety (#313): the host control loop calls Update at 100 Hz on
+/// its own thread; readers (GPS pipeline, UI, renderer) pull from any
+/// thread. A write lock serializes Update / ResetTrailingState so the
+/// internal Torriem state stays consistent across frames; readers get a
+/// fully-consistent snapshot via atomic reference swap with no locking.
 ///
 /// Tool Types:
 /// - Fixed Front: Tool rigidly attached in front of pivot
@@ -33,14 +53,14 @@ namespace AgValoniaGPS.Services.Tool;
 /// </summary>
 public class ToolPositionService : IToolPositionService
 {
-    // Current state
+    // Current state — only mutated under _writeLock by Update / ResetTrailingState.
     private Vec3 _toolPosition;
     private Vec3 _toolPivotPosition;
     private Vec3 _tankPosition;
     private Vec3 _hitchPosition;
     private double _toolHeading;
 
-    // State for trailing calculations (Torriem algorithm)
+    // State for trailing calculations (Torriem algorithm) — internal to writers.
     private Vec3 _lastToolPivotPos;
     private Vec3 _lastTankPos;
     private Vec3 _lastHitchPos;
@@ -51,59 +71,82 @@ public class ToolPositionService : IToolPositionService
     // Jackknife protection threshold (~115 degrees)
     private const double JACKKNIFE_THRESHOLD = 2.0;
 
-    public Vec3 ToolPosition => _toolPosition;
-    public Vec3 ToolPivotPosition => _toolPivotPosition;
-    public double ToolHeading => _toolHeading;
-    public Vec3 TankPosition => _tankPosition;
-    public Vec3 HitchPosition => _hitchPosition;
+    // Read snapshot — atomically swapped after each writer completes.
+    // Readers never lock; they observe a fully-consistent record.
+    private ToolPositionSnapshot _snapshot = new(
+        default, default, 0, default, default, false);
+
+    // Serializes the two writers (Update from control loop, ResetTrailingState
+    // from UI/MainViewModel). Brief — contains only field updates and snapshot
+    // construction.
+    private readonly object _writeLock = new();
+
+    public Vec3 ToolPosition => Volatile.Read(ref _snapshot).ToolPosition;
+    public Vec3 ToolPivotPosition => Volatile.Read(ref _snapshot).ToolPivotPosition;
+    public double ToolHeading => Volatile.Read(ref _snapshot).ToolHeading;
+    public Vec3 TankPosition => Volatile.Read(ref _snapshot).TankPosition;
+    public Vec3 HitchPosition => Volatile.Read(ref _snapshot).HitchPosition;
 
     /// <summary>
     /// True when tool position is based on actual movement, not startup snap.
     /// During startup, the tool heading may be unreliable (GPS heading = 0 when stationary).
     /// </summary>
-    public bool IsToolPositionReady => _startCounter >= STARTUP_FRAMES;
+    public bool IsToolPositionReady => Volatile.Read(ref _snapshot).IsToolPositionReady;
+
+    private void PublishSnapshot()
+    {
+        Interlocked.Exchange(ref _snapshot, new ToolPositionSnapshot(
+            _toolPosition, _toolPivotPosition, _toolHeading,
+            _tankPosition, _hitchPosition,
+            _startCounter >= STARTUP_FRAMES));
+    }
 
     public void Update(Vec3 vehiclePivot, double vehicleHeading)
     {
-        var tool = ConfigurationStore.Instance.Tool;
+        lock (_writeLock)
+        {
+            var tool = ConfigurationStore.Instance.Tool;
 
-        // Calculate hitch point on vehicle
-        // HitchLength is stored as positive distance; sign determined by tool type
-        // Front tools: positive direction (ahead of pivot)
-        // Rear tools: negative direction (behind pivot)
-        double hitchDistance = Math.Abs(tool.HitchLength);
-        if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
-        {
-            hitchDistance = -hitchDistance; // Behind the vehicle
-        }
-        // Front fixed keeps positive (ahead of vehicle)
+            // Calculate hitch point on vehicle
+            // HitchLength is stored as positive distance; sign determined by tool type
+            // Front tools: positive direction (ahead of pivot)
+            // Rear tools: negative direction (behind pivot)
+            double hitchDistance = Math.Abs(tool.HitchLength);
+            if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+            {
+                hitchDistance = -hitchDistance; // Behind the vehicle
+            }
+            // Front fixed keeps positive (ahead of vehicle)
 
-        _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
-            vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
-            vehicleHeading
-        );
+            _hitchPosition = new Vec3(
+                vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
+                vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
+                vehicleHeading
+            );
 
-        if (tool.IsToolFrontFixed || tool.IsToolRearFixed)
-        {
-            CalculateFixedToolPosition(vehiclePivot, vehicleHeading, tool);
-        }
-        else if (tool.IsToolTBT)
-        {
-            CalculateTBTToolPosition(vehicleHeading, tool);
-        }
-        else if (tool.IsToolTrailing)
-        {
-            CalculateTrailingToolPosition(vehicleHeading, tool);
-        }
-        else
-        {
-            // Default: treat as fixed rear
-            CalculateFixedToolPosition(vehiclePivot, vehicleHeading, tool);
-        }
+            if (tool.IsToolFrontFixed || tool.IsToolRearFixed)
+            {
+                CalculateFixedToolPosition(vehiclePivot, vehicleHeading, tool);
+            }
+            else if (tool.IsToolTBT)
+            {
+                CalculateTBTToolPosition(vehicleHeading, tool);
+            }
+            else if (tool.IsToolTrailing)
+            {
+                CalculateTrailingToolPosition(vehicleHeading, tool);
+            }
+            else
+            {
+                // Default: treat as fixed rear
+                CalculateFixedToolPosition(vehiclePivot, vehicleHeading, tool);
+            }
 
-        // Apply lateral offset
-        ApplyLateralOffset(tool.Offset);
+            // Apply lateral offset
+            ApplyLateralOffset(tool.Offset);
+
+            PublishSnapshot();
+        }
     }
 
     /// <summary>
@@ -368,31 +411,32 @@ public class ToolPositionService : IToolPositionService
     {
         double sectionCenter = (sectionLeft + sectionRight) / 2.0;
 
-        // Perpendicular to tool heading
-        double perpHeading = _toolHeading + Math.PI / 2.0;
+        // Read consistent pose from snapshot.
+        var snap = Volatile.Read(ref _snapshot);
+        double perpHeading = snap.ToolHeading + Math.PI / 2.0;
 
         return new Vec3(
-            _toolPosition.Easting + Math.Sin(perpHeading) * sectionCenter,
-            _toolPosition.Northing + Math.Cos(perpHeading) * sectionCenter,
-            _toolHeading
+            snap.ToolPosition.Easting + Math.Sin(perpHeading) * sectionCenter,
+            snap.ToolPosition.Northing + Math.Cos(perpHeading) * sectionCenter,
+            snap.ToolHeading
         );
     }
 
     public (Vec3 left, Vec3 right) GetSectionEdgePositions(double sectionLeft, double sectionRight)
     {
-        // Perpendicular to tool heading (right is positive)
-        double perpHeading = _toolHeading + Math.PI / 2.0;
+        var snap = Volatile.Read(ref _snapshot);
+        double perpHeading = snap.ToolHeading + Math.PI / 2.0;
 
         var left = new Vec3(
-            _toolPosition.Easting + Math.Sin(perpHeading) * sectionLeft,
-            _toolPosition.Northing + Math.Cos(perpHeading) * sectionLeft,
-            _toolHeading
+            snap.ToolPosition.Easting + Math.Sin(perpHeading) * sectionLeft,
+            snap.ToolPosition.Northing + Math.Cos(perpHeading) * sectionLeft,
+            snap.ToolHeading
         );
 
         var right = new Vec3(
-            _toolPosition.Easting + Math.Sin(perpHeading) * sectionRight,
-            _toolPosition.Northing + Math.Cos(perpHeading) * sectionRight,
-            _toolHeading
+            snap.ToolPosition.Easting + Math.Sin(perpHeading) * sectionRight,
+            snap.ToolPosition.Northing + Math.Cos(perpHeading) * sectionRight,
+            snap.ToolHeading
         );
 
         return (left, right);
@@ -400,31 +444,36 @@ public class ToolPositionService : IToolPositionService
 
     public void ResetTrailingState(Vec3 vehiclePivot, double vehicleHeading)
     {
-        _startCounter = STARTUP_FRAMES - 5; // Brief snap period (5 frames) then resume trailing
-
-        var tool = ConfigurationStore.Instance.Tool;
-
-        // Calculate hitch position - must match Update() sign convention:
-        // negative distance for rear/trailing tools (behind vehicle)
-        double hitchDistance = Math.Abs(tool.HitchLength);
-        if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+        lock (_writeLock)
         {
-            hitchDistance = -hitchDistance;
-        }
+            _startCounter = STARTUP_FRAMES - 5; // Brief snap period (5 frames) then resume trailing
 
-        _hitchPosition = new Vec3(
-            vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
-            vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
-            vehicleHeading
-        );
+            var tool = ConfigurationStore.Instance.Tool;
 
-        if (tool.IsToolTBT)
-        {
-            SnapTBTBehindVehicle(vehicleHeading, tool);
-        }
-        else
-        {
-            SnapToolBehindVehicle(vehicleHeading, tool);
+            // Calculate hitch position - must match Update() sign convention:
+            // negative distance for rear/trailing tools (behind vehicle)
+            double hitchDistance = Math.Abs(tool.HitchLength);
+            if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+            {
+                hitchDistance = -hitchDistance;
+            }
+
+            _hitchPosition = new Vec3(
+                vehiclePivot.Easting + Math.Sin(vehicleHeading) * hitchDistance,
+                vehiclePivot.Northing + Math.Cos(vehicleHeading) * hitchDistance,
+                vehicleHeading
+            );
+
+            if (tool.IsToolTBT)
+            {
+                SnapTBTBehindVehicle(vehicleHeading, tool);
+            }
+            else
+            {
+                SnapToolBehindVehicle(vehicleHeading, tool);
+            }
+
+            PublishSnapshot();
         }
     }
 }
