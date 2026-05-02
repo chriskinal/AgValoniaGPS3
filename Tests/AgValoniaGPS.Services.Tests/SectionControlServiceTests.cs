@@ -104,6 +104,80 @@ public class SectionControlServiceTests
 
     #endregion
 
+    #region Tick rate (#313 commit 5a)
+
+    [Test]
+    public void TickHz_Default_Is10Hz()
+    {
+        Assert.That(_service.TickHz, Is.EqualTo(10.0));
+    }
+
+    [Test]
+    public void TickHz_100_TurnOnDelayScalesUp()
+    {
+        // Section ON delay is 0.2 s. At 10 Hz that's 2 ticks; at 100 Hz that's
+        // 20 ticks. Verify by counting how many Update calls it takes for an
+        // Auto section sitting in-boundary at speed to flip IsOn=true.
+        var outerPoly = new BoundaryPolygon();
+        outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 200, 0));
+        outerPoly.Points.Add(new BoundaryPoint(0, 200, 0));
+        outerPoly.UpdateBounds();
+        _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
+
+        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.0;  // Force min delay
+
+        _service.SetAllAuto();
+        _service.MasterState = SectionMasterState.Auto;
+        _service.TickHz = 100.0;
+
+        // At 100 Hz, ON delay = 0.2 s × 100 = 20 ticks. The state machine
+        // flips on the tick AFTER the timer exceeds the threshold, so 21 ticks
+        // is the first one that turns IsOn = true.
+        for (int i = 0; i < 20; i++)
+        {
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+            Assert.That(_service.SectionStates[0].IsOn, Is.False,
+                $"Should not turn on yet at tick {i + 1} of 21 (100 Hz, 0.2s delay)");
+        }
+        _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.True,
+            "Should turn on at tick 21 (just past 20-tick threshold)");
+    }
+
+    [Test]
+    public void TickHz_10_TurnOnDelayMatchesLegacyBehavior()
+    {
+        // Same scenario as above but at the legacy 10 Hz default. Should
+        // flip on tick 3 (just past the 2-tick threshold).
+        var outerPoly = new BoundaryPolygon();
+        outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 200, 0));
+        outerPoly.Points.Add(new BoundaryPoint(0, 200, 0));
+        outerPoly.UpdateBounds();
+        _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
+
+        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.0;
+
+        _service.SetAllAuto();
+        _service.MasterState = SectionMasterState.Auto;
+        // TickHz default = 10.
+
+        for (int i = 0; i < 2; i++)
+        {
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+            Assert.That(_service.SectionStates[0].IsOn, Is.False,
+                $"Should not turn on yet at tick {i + 1} of 3 (10 Hz, 0.2s delay)");
+        }
+        _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.True,
+            "Should turn on at tick 3 (just past 2-tick threshold)");
+    }
+
+    #endregion
+
     #region No Boundary
 
     [Test]

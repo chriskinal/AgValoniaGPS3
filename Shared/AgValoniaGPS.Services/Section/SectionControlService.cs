@@ -43,10 +43,27 @@ public class SectionControlService : ISectionControlService
     private readonly SectionControlState[] _sectionStates;
     private SectionMasterState _masterState = SectionMasterState.Off;
 
-    // Timing thresholds (in update cycles, typically 10Hz = 100ms per cycle)
-    private const int SECTION_ON_DELAY = 2;   // ~200ms delay before turning on
-    private const int MAPPING_ON_DELAY = 2;   // ~200ms delay before recording coverage
-    private const int MAPPING_OFF_DELAY = 2;  // ~200ms delay before stopping coverage
+    // Timing thresholds in seconds. Originally expressed as integer frame
+    // counts at 10 Hz (e.g. SECTION_ON_DELAY = 2 frames = 200 ms); now
+    // stored as seconds so the state machine works at any tick rate.
+    // Tick rate comes from <see cref="TickHz"/>, set by the caller (the
+    // host control loop in production, 100 Hz; existing tests still use
+    // the 10 Hz default).
+    private const double SECTION_ON_DELAY_SECONDS = 0.2;
+    private const double MAPPING_ON_DELAY_SECONDS = 0.2;
+    private const double MAPPING_OFF_DELAY_SECONDS = 0.2;
+
+    /// <summary>
+    /// Rate at which <see cref="Update"/> is being called. Defaults to
+    /// 10 Hz (legacy GPS-cycle cadence). The host control loop (#313)
+    /// sets this to 100 Hz for sub-frame section control. Used to convert
+    /// seconds-based delays into integer tick thresholds.
+    /// </summary>
+    public double TickHz { get; set; } = 10.0;
+
+    private int SectionOnDelayTicks => (int)Math.Round(SECTION_ON_DELAY_SECONDS * TickHz);
+    private int MappingOnDelayTicks => (int)Math.Round(MAPPING_ON_DELAY_SECONDS * TickHz);
+    private int MappingOffDelayTicks => (int)Math.Round(MAPPING_OFF_DELAY_SECONDS * TickHz);
 
     // Default coverage overlap threshold (used if MinCoverage is 0)
     private const double DEFAULT_COVERAGE_THRESHOLD = 0.70; // 70%
@@ -302,10 +319,10 @@ public class SectionControlService : ISectionControlService
 
         // Auto mode - check boundary/overlap conditions
         // Look-ahead distances match the TURNING_ON / TURNING_OFF phase duration
-        // (max(SECTION_ON_DELAY, LookAheadOn) for ON; max(1, LookAheadOff) for OFF).
+        // (max(SECTION_ON_DELAY_SECONDS, LookAheadOn) for ON; max(0.1, LookAheadOff) for OFF).
         // The phase delay exactly cancels the projection, so the physical IsOn flip
         // lines up with the slit edge regardless of LookAhead settings.
-        double turnOnPhaseSec = Math.Max(SECTION_ON_DELAY * 0.1, tool.LookAheadOnSetting);
+        double turnOnPhaseSec = Math.Max(SECTION_ON_DELAY_SECONDS, tool.LookAheadOnSetting);
         double turnOffPhaseSec = Math.Max(0.1, tool.LookAheadOffSetting);
         double lookAheadOnDist = speed * turnOnPhaseSec;
         double lookAheadOffDist = speed * turnOffPhaseSec;
@@ -461,10 +478,12 @@ public class SectionControlService : ISectionControlService
             // TURNING_ON phase models the valve open time. Coverage is NOT
             // applied during this phase (valve opening, no fluid yet). Phase
             // duration = LookAheadOnSetting (configured actuator open time)
-            // with a SECTION_ON_DELAY minimum for software debounce.
-            int turnOnPhaseFrames = Math.Max(SECTION_ON_DELAY, (int)(tool.LookAheadOnSetting * 10));
+            // with a SECTION_ON_DELAY_SECONDS minimum for software debounce.
+            int turnOnPhaseTicks = Math.Max(
+                SectionOnDelayTicks,
+                (int)Math.Round(tool.LookAheadOnSetting * TickHz));
 
-            if (section.SectionOnTimer > turnOnPhaseFrames)
+            if (section.SectionOnTimer > turnOnPhaseTicks)
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
@@ -486,10 +505,10 @@ public class SectionControlService : ISectionControlService
             // spray stops at the intended position.
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
 
-            int turnOffPhaseFrames = (int)(tool.LookAheadOffSetting * 10);
-            if (turnOffPhaseFrames < 1) turnOffPhaseFrames = 1;
+            int turnOffPhaseTicks = (int)Math.Round(tool.LookAheadOffSetting * TickHz);
+            if (turnOffPhaseTicks < 1) turnOffPhaseTicks = 1;
 
-            if (section.SectionOffTimer > turnOffPhaseFrames)
+            if (section.SectionOffTimer > turnOffPhaseTicks)
             {
                 section.IsOn = false;
                 section.SectionOffRequest = false;
@@ -572,7 +591,7 @@ public class SectionControlService : ISectionControlService
         var section = _sectionStates[index];
         section.MappingOnTimer++;
 
-        if (section.MappingOnTimer > MAPPING_ON_DELAY && !section.IsMappingOn)
+        if (section.MappingOnTimer > MappingOnDelayTicks && !section.IsMappingOn)
         {
             section.IsMappingOn = true;
             section.MappingOnTimer = 0;
@@ -707,7 +726,7 @@ public class SectionControlService : ISectionControlService
         var section = _sectionStates[index];
         section.MappingOffTimer++;
 
-        if (section.MappingOffTimer > MAPPING_OFF_DELAY && section.IsMappingOn)
+        if (section.MappingOffTimer > MappingOffDelayTicks && section.IsMappingOn)
         {
             section.IsMappingOn = false;
             section.MappingOffTimer = 0;
