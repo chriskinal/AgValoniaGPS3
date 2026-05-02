@@ -132,25 +132,25 @@ public class SectionControlServiceTests
         _service.MasterState = SectionMasterState.Auto;
         _service.TickHz = 100.0;
 
-        // At 100 Hz, ON delay = 0.2 s × 100 = 20 ticks. The state machine
-        // flips on the tick AFTER the timer exceeds the threshold, so 21 ticks
-        // is the first one that turns IsOn = true.
-        for (int i = 0; i < 20; i++)
+        // At 100 Hz, ON delay = 0.2 s × 100 = 20 ticks. With >= semantics
+        // the section flips on the tick that completes the debounce, so
+        // tick 20 is the first that turns IsOn = true (200 ms exactly).
+        for (int i = 0; i < 19; i++)
         {
             _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
             Assert.That(_service.SectionStates[0].IsOn, Is.False,
-                $"Should not turn on yet at tick {i + 1} of 21 (100 Hz, 0.2s delay)");
+                $"Should not turn on yet at tick {i + 1} of 20 (100 Hz, 0.2s delay)");
         }
         _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
         Assert.That(_service.SectionStates[0].IsOn, Is.True,
-            "Should turn on at tick 21 (just past 20-tick threshold)");
+            "Should turn on at tick 20 (completing 200 ms debounce)");
     }
 
     [Test]
     public void TickHz_10_TurnOnDelayMatchesLegacyBehavior()
     {
         // Same scenario as above but at the legacy 10 Hz default. Should
-        // flip on tick 3 (just past the 2-tick threshold).
+        // flip on tick 2 (completing the 200 ms debounce).
         var outerPoly = new BoundaryPolygon();
         outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
         outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
@@ -165,15 +165,12 @@ public class SectionControlServiceTests
         _service.MasterState = SectionMasterState.Auto;
         // TickHz default = 10.
 
-        for (int i = 0; i < 2; i++)
-        {
-            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
-            Assert.That(_service.SectionStates[0].IsOn, Is.False,
-                $"Should not turn on yet at tick {i + 1} of 3 (10 Hz, 0.2s delay)");
-        }
+        _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.False,
+            "Should not turn on yet at tick 1 of 2 (10 Hz, 0.2s delay)");
         _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
         Assert.That(_service.SectionStates[0].IsOn, Is.True,
-            "Should turn on at tick 3 (just past 2-tick threshold)");
+            "Should turn on at tick 2 (completing 200 ms debounce)");
     }
 
     #endregion

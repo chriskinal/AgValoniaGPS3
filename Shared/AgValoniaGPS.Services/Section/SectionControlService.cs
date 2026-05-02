@@ -498,9 +498,12 @@ public class SectionControlService : ISectionControlService
             // on the boundary edge. Derive ticks from the same seconds value
             // — *not* from LookAheadOnSetting alone — otherwise the floor
             // (SECTION_ON_DELAY_SECONDS) doesn't carry into the wait time.
+            // Use >= so the flip happens on the tick that completes the
+            // debounce; > would add one extra tick of wait (visible as a
+            // tick-period of late spray at any tick rate).
             int turnOnPhaseTicks = Math.Max(1, (int)Math.Round(turnOnPhaseSec * TickHz));
 
-            if (section.SectionOnTimer > turnOnPhaseTicks)
+            if (section.SectionOnTimer >= turnOnPhaseTicks)
             {
                 section.IsOn = true;
                 section.SectionOnRequest = false;
@@ -523,10 +526,10 @@ public class SectionControlService : ISectionControlService
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
 
             // Same as ON: derive ticks from turnOffPhaseSec and use >= so the
-            // OFF flip lands exactly on the boundary instead of one tick past.
+            // OFF flip lands at the intended position instead of one tick past.
             int turnOffPhaseTicks = Math.Max(1, (int)Math.Round(turnOffPhaseSec * TickHz));
 
-            if (section.SectionOffTimer > turnOffPhaseTicks)
+            if (section.SectionOffTimer >= turnOffPhaseTicks)
             {
                 section.IsOn = false;
                 section.SectionOffRequest = false;
