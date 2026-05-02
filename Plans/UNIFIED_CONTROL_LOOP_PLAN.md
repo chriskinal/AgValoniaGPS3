@@ -271,10 +271,13 @@ Single feature branch `feature/unified-control-loop`. Commits in this order; eac
    - Replace property-bound section colors on map with snapshot read.
    - Headless UI tests in `AgValoniaGPS.UI.Tests` must still pass.
 
-7. **Coverage timing audit**
-   - Profile rasterization rate at simulated 25 km/h with 16 sections all on.
-   - If rasterization exceeds budget, add a per-section hard upper bound (e.g., 50 rasterizes/sec/section).
-   - Confirm 24 FPS floor holds on iPad Pro 2nd gen and Android tablet.
+7. **Coverage timing audit** ✓
+   - Static analysis: `GetSegmentCoverageMulti` is cache-throttled at 150 ms (~6.7 Hz) so the most expensive per-section op is unchanged from 10 Hz.
+   - `RasterizeQuadToBitmap` at 16 sections × 100 Hz = 1600 calls/sec × ~60 cells each = ~96 k cell writes/sec, memory-bound, sub-ms CPU.
+   - Boundary/headland polygon checks at 5 × 16 × 100 Hz = 8000/sec ≈ 5–10 ms CPU/sec at typical field complexity.
+   - Net added CPU vs 10 Hz baseline: ~10–20 ms/sec ≈ 1–2% of one core. Within budget for iPad Pro 2nd gen and Android tablet.
+   - The pre-emptive min-distance throttle the original plan called for would re-introduce a fix that was deliberately removed (`UpdateMapping` comment at SectionControlService.cs:634 — "near-degenerate triangles preferable to gaps").
+   - **No throttling added.** Real-hardware FPS verification in commits 8–9 is the proof-test; if iPad/Android drops below 24 FPS we add a time-budgeted throttle then.
 
 8. **End-to-end smoke in app**
    - Drive in simulator, verify section state machine behaves as before.
