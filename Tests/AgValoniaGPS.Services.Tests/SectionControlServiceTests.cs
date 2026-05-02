@@ -62,6 +62,46 @@ public class SectionControlServiceTests
         Assert.That(_service.SectionStates[2].IsOn, Is.False);
     }
 
+    [Test]
+    public void Update_SlowSpeed_AutoSection_InsideBoundary_DoesNotReArmOnRequest()
+    {
+        // Regression for #324: at standstill inside the boundary, Auto
+        // sections were stuck displaying "Turning ON" (orange, code 4)
+        // because the slow-speed cutoff cleared the request, then
+        // UpdateSection's look-ahead re-armed it the same frame
+        // (lookOnDist=0 at speed=0 evaluates the section center, which
+        // sits inside the boundary → shouldBeOn=true → SectionOnRequest=true).
+        // Expected: section settles to Auto OFF (code 5) — IsOn=false AND
+        // SectionOnRequest=false.
+        var outerPoly = new BoundaryPolygon();
+        outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 200, 0));
+        outerPoly.Points.Add(new BoundaryPoint(0, 200, 0));
+        outerPoly.UpdateBounds();
+        _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
+
+        _service.SetAllAuto();
+        _service.MasterState = SectionMasterState.Auto;
+
+        // Tick a few frames at standstill so any re-arm bug compounds.
+        // Use a position well inside the boundary so all section centers are inside.
+        for (int frame = 0; frame < 5; frame++)
+        {
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 0.1);
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            Assert.That(_service.SectionStates[i].IsOn, Is.False,
+                $"Section {i} IsOn should be false at standstill");
+            Assert.That(_service.SectionStates[i].SectionOnRequest, Is.False,
+                $"Section {i} SectionOnRequest should not be re-armed at standstill (would render as orange Turning ON)");
+            Assert.That(_service.SectionStates[i].SectionOnTimer, Is.EqualTo(0),
+                $"Section {i} SectionOnTimer should be 0 at standstill");
+        }
+    }
+
     #endregion
 
     #region No Boundary

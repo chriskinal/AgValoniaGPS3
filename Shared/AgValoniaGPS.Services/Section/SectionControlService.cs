@@ -214,7 +214,8 @@ public class SectionControlService : ISectionControlService
         // MANUAL ON sections active so coverage doesn't gap on stop/restart.
         // SlowSpeedCutoff is stored in km/h (matching the UI); speed is m/s.
         double slowSpeedCutoffMps = tool.SlowSpeedCutoff / 3.6;
-        if (speed < slowSpeedCutoffMps)
+        bool isSlowSpeedCutoff = speed < slowSpeedCutoffMps;
+        if (isSlowSpeedCutoff)
         {
             for (int i = 0; i < numSections; i++)
             {
@@ -240,9 +241,15 @@ public class SectionControlService : ISectionControlService
             _coverageThrottleTimestamp = now;
         }
 
-        // Update each section
+        // Update each section. During slow-speed cutoff, Auto sections were
+        // already cleared above; skip them here so UpdateSection's look-ahead
+        // doesn't re-arm SectionOnRequest at speed=0 (lookOnDist collapses to
+        // the section center, which evaluates as shouldBeOn inside the
+        // boundary, leaving the section pinned in TURNING_ON forever).
         for (int i = 0; i < numSections; i++)
         {
+            if (isSlowSpeedCutoff && _sectionStates[i].ButtonState == SectionButtonState.Auto)
+                continue;
             UpdateSection(i, toolPosition, toolHeading, speed);
         }
 
