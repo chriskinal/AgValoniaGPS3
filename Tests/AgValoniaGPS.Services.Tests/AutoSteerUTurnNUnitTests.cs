@@ -54,6 +54,8 @@ public class AutoSteerUTurnNUnitTests
     private AutoSteerService _autoSteer = null!;
     private GpsPipelineService _pipeline = null!;
     private ToolPositionService _toolPosition = null!;
+    private PositionEstimator _estimator = null!;
+    private ManualControlLoop _controlLoop = null!;
     private SectionControlService _sectionControl = null!;
     private CoverageMapService _coverage = null!;
     private PipelineIntents _intents = null!;
@@ -135,7 +137,8 @@ public class AutoSteerUTurnNUnitTests
 
         // Re-init coverage with fresh state
         _coverage = new CoverageMapService();
-        _sectionControl = new SectionControlService(new ToolPositionService(), _coverage, _appState);
+        _toolPosition = new ToolPositionService();
+        _sectionControl = new SectionControlService(_toolPosition, _coverage, _appState);
         _sectionControl.MasterState = SectionMasterState.Auto;
         _sectionControl.SetAllAuto();
         _coverage.SetFieldBounds(-10, FIELD_W + 10, -10, FIELD_H + 10);
@@ -191,8 +194,10 @@ public class AutoSteerUTurnNUnitTests
 
         var logFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
+        _estimator = new PositionEstimator();
+
         _pipeline = new GpsPipelineService(
-            _gpsService, new ToolPositionService(), new TrackGuidanceService(),
+            _gpsService, _toolPosition, new TrackGuidanceService(),
             _sectionControl, _coverage,
             _autoSteer, new YouTurnGuidanceService(),
             new YouTurnStateMachine(
@@ -202,7 +207,28 @@ public class AutoSteerUTurnNUnitTests
             Substitute.For<IAudioService>(),
             _intents,
             headingFusion,
-            NullLogger<GpsPipelineService>.Instance, _appState);
+            NullLogger<GpsPipelineService>.Instance, _appState,
+            _estimator);
+
+        // Mirror production control loop in tests (#313 commit 5c). Section
+        // state machine is no longer driven by the pipeline; the loop is.
+        _controlLoop = new ManualControlLoop(frequencyHz: 10.0);
+        _sectionControl.TickHz = 10.0;
+        _controlLoop.Ticked += ts =>
+        {
+            if (_estimator.GetLatestSnapshot() is null) return;
+            var pose = _estimator.GetPose(ts);
+            _toolPosition.Update(
+                new Vec3(pose.Position.Easting, pose.Position.Northing, pose.Heading),
+                pose.Heading);
+            _sectionControl.Update(
+                _toolPosition.ToolPosition,
+                _toolPosition.ToolHeading,
+                pose.Heading,
+                pose.SpeedMps);
+        };
+        _controlLoop.Start();
+        _pipeline.PoseEstimatorUpdated += ts => _controlLoop.Tick(ts);
 
         lock (_results) _results.Clear();
         _pipeline.CycleCompleted += r => { lock (_results) _results.Add(r); };

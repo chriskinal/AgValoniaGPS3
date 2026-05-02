@@ -53,6 +53,9 @@ public class AsymmetricSectionTurnTests
     private CoverageMapService _coverage = null!;
     private ApplicationState _appState = null!;
     private List<GpsCycleResult> _results = null!;
+    private PositionEstimator _estimator = null!;
+    private ToolPositionService _toolPosition = null!;
+    private ManualControlLoop _controlLoop = null!;
 
     [SetUp]
     public void SetUp()
@@ -84,9 +87,9 @@ public class AsymmetricSectionTurnTests
         _gpsService = new GpsService();
         _gpsService.Start();
 
-        var toolPosition = new ToolPositionService();
+        _toolPosition = new ToolPositionService();
         _coverage = new CoverageMapService();
-        _sectionControl = new SectionControlService(toolPosition, _coverage, _appState);
+        _sectionControl = new SectionControlService(_toolPosition, _coverage, _appState);
         _sectionControl.MasterState = SectionMasterState.Auto;
         _sectionControl.SetAllAuto();
         _coverage.SetFieldBounds(-10, FIELD_SIZE + 10, -10, FIELD_SIZE + 10);
@@ -100,8 +103,10 @@ public class AsymmetricSectionTurnTests
             Substitute.For<IUdpCommunicationService>(),
             _gpsService, _appState);
 
+        _estimator = new PositionEstimator();
+
         _pipeline = new GpsPipelineService(
-            _gpsService, toolPosition, new TrackGuidanceService(),
+            _gpsService, _toolPosition, new TrackGuidanceService(),
             _sectionControl, _coverage,
             _autoSteer, new YouTurnGuidanceService(),
             new YouTurnStateMachine(
@@ -112,10 +117,33 @@ public class AsymmetricSectionTurnTests
             Substitute.For<IAudioService>(),
             new PipelineIntents(),
             headingFusion,
-            NullLogger<GpsPipelineService>.Instance, _appState);
+            NullLogger<GpsPipelineService>.Instance, _appState,
+            _estimator);
 
         _pipeline.SynchronousMode = true;
         _results = new List<GpsCycleResult>();
+
+        // Mirror the production control loop in tests (#313 commit 5c).
+        // Pipeline no longer drives section/tool updates; the loop does.
+        // Tick on PoseEstimatorUpdated so section state is current when the
+        // pipeline reads it for GpsCycleResult.
+        _controlLoop = new ManualControlLoop(frequencyHz: 10.0);
+        _sectionControl.TickHz = 10.0;
+        _controlLoop.Ticked += ts =>
+        {
+            if (_estimator.GetLatestSnapshot() is null) return;
+            var pose = _estimator.GetPose(ts);
+            _toolPosition.Update(
+                new Vec3(pose.Position.Easting, pose.Position.Northing, pose.Heading),
+                pose.Heading);
+            _sectionControl.Update(
+                _toolPosition.ToolPosition,
+                _toolPosition.ToolHeading,
+                pose.Heading,
+                pose.SpeedMps);
+        };
+        _controlLoop.Start();
+        _pipeline.PoseEstimatorUpdated += ts => _controlLoop.Tick(ts);
         _pipeline.CycleCompleted += r => { lock (_results) _results.Add(r); };
 
         _autoSteer.Start();

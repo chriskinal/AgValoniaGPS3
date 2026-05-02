@@ -52,6 +52,9 @@ public class LookAheadSlitTests
     private CoverageMapService _coverage = null!;
     private ApplicationState _appState = null!;
     private List<GpsCycleResult> _results = null!;
+    private PositionEstimator _estimator = null!;
+    private ToolPositionService _toolPosition = null!;
+    private ManualControlLoop _controlLoop = null!;
 
     /// <summary>
     /// Configure and create the full pipeline with specified section/look-ahead config.
@@ -82,9 +85,9 @@ public class LookAheadSlitTests
         _gpsService = new GpsService();
         _gpsService.Start();
 
-        var toolPosition = new ToolPositionService();
+        _toolPosition = new ToolPositionService();
         _coverage = new CoverageMapService();
-        _sectionControl = new SectionControlService(toolPosition, _coverage, _appState);
+        _sectionControl = new SectionControlService(_toolPosition, _coverage, _appState);
         _sectionControl.MasterState = SectionMasterState.Auto;
         _sectionControl.SetAllAuto();
         _coverage.SetFieldBounds(-10, FIELD_SIZE + 10, -10, FIELD_SIZE + 10);
@@ -98,8 +101,10 @@ public class LookAheadSlitTests
             Substitute.For<IUdpCommunicationService>(),
             _gpsService, _appState);
 
+        _estimator = new PositionEstimator();
+
         _pipeline = new GpsPipelineService(
-            _gpsService, toolPosition, new TrackGuidanceService(),
+            _gpsService, _toolPosition, new TrackGuidanceService(),
             _sectionControl, _coverage,
             _autoSteer, new YouTurnGuidanceService(),
             new YouTurnStateMachine(
@@ -110,11 +115,47 @@ public class LookAheadSlitTests
             Substitute.For<IAudioService>(),
             new PipelineIntents(),
             headingFusion,
-            NullLogger<GpsPipelineService>.Instance, _appState);
+            NullLogger<GpsPipelineService>.Instance, _appState,
+            _estimator);
 
         _pipeline.SynchronousMode = true;
         _results = new List<GpsCycleResult>();
-        _pipeline.CycleCompleted += r => { lock (_results) _results.Add(r); };
+
+        // Manual control loop to mirror the production loop in tests:
+        // section state machine and tool position are now driven by the
+        // loop, not the GPS pipeline (#313 commit 5c). For tests at the
+        // legacy 10 Hz GPS cadence, tick the loop once per CycleCompleted
+        // — preserves existing edge-accuracy behavior so the slit tests
+        // continue to validate the same thing they always have.
+        _controlLoop = new ManualControlLoop(frequencyHz: 10.0);
+        _sectionControl.TickHz = 10.0;
+        _controlLoop.Ticked += ts =>
+        {
+            if (_estimator.GetLatestSnapshot() is null) return;
+            var pose = _estimator.GetPose(ts);
+            _toolPosition.Update(
+                new Vec3(pose.Position.Easting, pose.Position.Northing, pose.Heading),
+                pose.Heading);
+            _sectionControl.Update(
+                _toolPosition.ToolPosition,
+                _toolPosition.ToolHeading,
+                pose.Heading,
+                pose.SpeedMps);
+        };
+        _controlLoop.Start();
+
+        // Tick the loop synchronously inside ProcessCycle, right after the
+        // estimator gets the new pose, so the section state machine runs
+        // BEFORE the cycle reads SectionBits to build GpsCycleResult. This
+        // matches what the production loop achieves at 100 Hz (max ~10 ms
+        // lag between GPS arrival and section update); without this hook,
+        // tests at 10 Hz would see one full GPS frame of section-state lag.
+        _pipeline.PoseEstimatorUpdated += ts => _controlLoop.Tick(ts);
+
+        _pipeline.CycleCompleted += r =>
+        {
+            lock (_results) _results.Add(r);
+        };
 
         _autoSteer.Start();
         _pipeline.Start();

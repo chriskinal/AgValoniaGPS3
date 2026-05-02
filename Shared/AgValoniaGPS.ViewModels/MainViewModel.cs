@@ -83,6 +83,7 @@ public partial class MainViewModel : ObservableObject
     private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
     private readonly IControlLoopService? _controlLoop;
+    private readonly IPositionEstimator? _positionEstimator;
     private readonly IPipelineIntents _intents;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
@@ -201,7 +202,8 @@ public partial class MainViewModel : ObservableObject
         IPipelineIntents intents,
         ILogger<MainViewModel> logger,
         ApplicationState appState,
-        IControlLoopService? controlLoop = null)
+        IControlLoopService? controlLoop = null,
+        IPositionEstimator? positionEstimator = null)
     {
         _logger = logger;
         _tramLineService = tramLineService;
@@ -256,6 +258,7 @@ public partial class MainViewModel : ObservableObject
         _elevationLogService = elevationLogService;
         _gpsPipelineService = gpsPipelineService;
         _controlLoop = controlLoop;
+        _positionEstimator = positionEstimator;
         _intents = intents;
         _appState = appState;
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -271,14 +274,20 @@ public partial class MainViewModel : ObservableObject
         _gpsPipelineService.CycleCompleted += OnGpsCycleCompleted;
         _gpsPipelineService.Start();
 
-        // Host control loop (#313): runs at 100 Hz on its own thread, sends
-        // PGN 254 + PGN 239 each tick so the firmware autosteer task —
-        // which also runs at 100 Hz — sees a fresh PGN every cycle. State
-        // mutation continues to happen at GPS rate; the loop reads the
-        // latest state on each tick. Optional in test builds.
+        // Host control loop (#313): runs at 100 Hz on its own thread.
+        // Each tick: read interpolated pose from estimator, update tool
+        // position + section state machine, send PGN 254 + PGN 239. This
+        // gives sub-frame section edge accuracy (~0.05 m at 25 km/h vs
+        // ~0.7 m on the prior 10 Hz path) and matches the firmware
+        // autosteer cadence so PGNs land fresh every firmware tick.
+        // Optional in test builds.
         if (_controlLoop is not null)
         {
-            _controlLoop.Ticked += _ => _autoSteerService.SendPgnsForControlTick();
+            // TickHz is on the concrete SectionControlService, not the
+            // interface (it's an internal-tuning concern, not a contract).
+            if (_sectionControlService is Services.Section.SectionControlService scsConcrete)
+                scsConcrete.TickHz = _controlLoop.FrequencyHz;
+            _controlLoop.Ticked += OnControlLoopTicked;
             _controlLoop.Start();
         }
         _udpService.ModuleConnectionChanged += OnModuleConnectionChanged;
@@ -380,6 +389,35 @@ public partial class MainViewModel : ObservableObject
                 }
             }, Avalonia.Threading.DispatcherPriority.Background);
         }
+    }
+
+    /// <summary>
+    /// Host control loop tick handler (#313). Runs at 100 Hz on the loop's
+    /// own thread. Reads the latest GPS-anchored pose from the estimator,
+    /// updates tool position + section state machine, then sends PGN 254 +
+    /// PGN 239 so the firmware autosteer task — which also runs at 100 Hz
+    /// — sees fresh data every cycle.
+    /// </summary>
+    private void OnControlLoopTicked(long timestampTicks)
+    {
+        // Only run the section/tool pipeline once a GPS sample exists; before
+        // then the estimator returns default(InterpolatedPose) which would
+        // pin tool position at (0,0). Autosteer PGN sends are still useful
+        // before the first GPS sample (firmware needs to see SOMETHING to
+        // know we're alive), so they don't gate.
+        if (_positionEstimator?.GetLatestSnapshot() is not null)
+        {
+            var p = _positionEstimator.GetPose(timestampTicks);
+            _toolPositionService.Update(
+                new Vec3(p.Position.Easting, p.Position.Northing, p.Heading),
+                p.Heading);
+            _sectionControlService.Update(
+                _toolPositionService.ToolPosition,
+                _toolPositionService.ToolHeading,
+                p.Heading,
+                p.SpeedMps);
+        }
+        _autoSteerService.SendPgnsForControlTick();
     }
 
     private void RestoreSettings()
