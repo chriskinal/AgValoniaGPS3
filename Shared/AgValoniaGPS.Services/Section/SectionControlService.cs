@@ -373,12 +373,14 @@ public class SectionControlService : ISectionControlService
         bool lookOffInBoundary = lookOffBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD_LOOKAHEAD;
 
         // Check headland conditions
-        // Use speed-dependent look-ahead so coverage triangles extend INTO headland consistently
-        // The look-ahead compensates for MAPPING_ON_DELAY (vehicle travels during the delay)
-        // Formula: lookAhead = targetPenetration + speed * delayTime
-        const double TARGET_PENETRATION = 0.30;  // Target: first coverage point 30cm into headland
-        const double MAPPING_DELAY_SECONDS = 0.2; // MAPPING_ON_DELAY = 2 cycles at 10Hz
-        double headlandOnLookAhead = TARGET_PENETRATION + speed * MAPPING_DELAY_SECONDS;
+        // Use speed-dependent look-ahead so coverage edges land at the headland
+        // line. The look-ahead must cancel the actual wait time between
+        // shouldBeOn and the first painted quad. With MAPPING_ON_DELAY = 0
+        // (#313), the only wait is the TURNING_ON phase (turnOnPhaseSec
+        // seconds). Formula: lookAhead = speed * turnOnPhaseSec, so the
+        // section flips ON exactly when section_center crosses the headland
+        // line and the first coverage quad lands at that crossing.
+        double headlandOnLookAhead = speed * turnOnPhaseSec;
         var headlandOnCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, headlandOnLookAhead, speed);
 
         _sectionSw.Restart();
