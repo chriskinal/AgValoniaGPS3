@@ -61,7 +61,10 @@ public class SectionControlService : ISectionControlService
     /// </summary>
     public double TickHz { get; set; } = 10.0;
 
-    private int SectionOnDelayTicks => (int)Math.Round(SECTION_ON_DELAY_SECONDS * TickHz);
+    // Section ON/OFF phase ticks are derived from turnOnPhaseSec /
+    // turnOffPhaseSec (which already include the SECTION_ON_DELAY_SECONDS /
+    // 0.1 s minimum floors for debounce); see UpdateSection. Mapping
+    // delays are separate concerns.
     private int MappingOnDelayTicks => (int)Math.Round(MAPPING_ON_DELAY_SECONDS * TickHz);
     private int MappingOffDelayTicks => (int)Math.Round(MAPPING_OFF_DELAY_SECONDS * TickHz);
 
@@ -475,13 +478,14 @@ public class SectionControlService : ISectionControlService
             section.SectionOnTimer++;
             section.SectionOffTimer = 0;
 
-            // TURNING_ON phase models the valve open time. Coverage is NOT
-            // applied during this phase (valve opening, no fluid yet). Phase
-            // duration = LookAheadOnSetting (configured actuator open time)
-            // with a SECTION_ON_DELAY_SECONDS minimum for software debounce.
-            int turnOnPhaseTicks = Math.Max(
-                SectionOnDelayTicks,
-                (int)Math.Round(tool.LookAheadOnSetting * TickHz));
+            // TURNING_ON phase: duration must match the look-ahead anticipation
+            // (turnOnPhaseSec, in seconds, computed above) so the projection
+            // exactly cancels the phase delay and the physical IsOn flip lands
+            // on the boundary edge. Derive ticks from the same seconds value
+            // — *not* from LookAheadOnSetting alone — otherwise the floor
+            // (SECTION_ON_DELAY_SECONDS) doesn't carry into the wait time and
+            // the section flips early or late depending on tick rate.
+            int turnOnPhaseTicks = Math.Max(1, (int)Math.Round(turnOnPhaseSec * TickHz));
 
             if (section.SectionOnTimer > turnOnPhaseTicks)
             {
@@ -505,8 +509,10 @@ public class SectionControlService : ISectionControlService
             // spray stops at the intended position.
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
 
-            int turnOffPhaseTicks = (int)Math.Round(tool.LookAheadOffSetting * TickHz);
-            if (turnOffPhaseTicks < 1) turnOffPhaseTicks = 1;
+            // Same fix as ON: derive ticks from turnOffPhaseSec (the same
+            // seconds value used for the look-ahead distance) so the phase
+            // duration cancels the projection at any tick rate.
+            int turnOffPhaseTicks = Math.Max(1, (int)Math.Round(turnOffPhaseSec * TickHz));
 
             if (section.SectionOffTimer > turnOffPhaseTicks)
             {
