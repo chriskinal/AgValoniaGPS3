@@ -146,6 +146,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPipelineIntents, PipelineIntents>();
         // Fusion service holds fix-to-fix state between cycles; singleton required.
         services.AddSingleton<IGpsHeadingFusionService, GpsHeadingFusionService>();
+        // Position estimator: GPS-anchored snapshot bridge between the GPS
+        // arrival path (10 Hz) and the host control loop (100 Hz, wired in
+        // commit 4 of #313). Singleton — single shared snapshot.
+        services.AddSingleton<IPositionEstimator, PositionEstimator>();
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // iOS-specific services
