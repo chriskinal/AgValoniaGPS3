@@ -373,25 +373,24 @@ public class SectionControlService : ISectionControlService
         bool lookOffInBoundary = lookOffBoundaryResult.InsidePercent >= BOUNDARY_THRESHOLD_LOOKAHEAD;
 
         // Check headland conditions
-        // Use speed-dependent look-ahead so coverage edges land at the headland
-        // line. The look-ahead must cancel the actual wait time between
-        // shouldBeOn and the first painted quad. With MAPPING_ON_DELAY = 0
-        // (#313), the only wait is the TURNING_ON phase (turnOnPhaseSec
-        // seconds). Formula: lookAhead = speed * turnOnPhaseSec, so the
-        // section flips ON exactly when section_center crosses the headland
-        // line and the first coverage quad lands at that crossing.
+        // Use speed-dependent look-ahead so coverage edges land exactly on
+        // the headland line. The look-ahead distance must cancel the wait
+        // time between shouldBeOn/Off and the actual IsOn flip:
+        //   ON:  lookahead = speed * turnOnPhaseSec  (cancels TURNING_ON wait)
+        //   OFF: lookahead = speed * turnOffPhaseSec (cancels TURNING_OFF wait)
+        // With MAPPING_ON_DELAY = 0, the TURNING phases are the only wait,
+        // so this gives strip start/end at the line with no gap and no
+        // overspray when all timings are 0.
         double headlandOnLookAhead = speed * turnOnPhaseSec;
+        double headlandOffLookAhead = speed * turnOffPhaseSec;
         var headlandOnCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, headlandOnLookAhead, speed);
+        var headlandOffCheckPoint = ProjectForwardCurved(sectionCenter, toolHeading, headlandOffLookAhead, speed);
 
         _sectionSw.Restart();
         bool isInHeadland = IsPointInHeadland(sectionCenter);
-        bool lookAheadInHeadland = IsPointInHeadland(headlandOnCheckPoint);
+        bool lookOnInHeadland = IsPointInHeadland(headlandOnCheckPoint);
+        bool lookOffInHeadland = IsPointInHeadland(headlandOffCheckPoint);
         _totalHeadlandMs += _sectionSw.Elapsed.TotalMilliseconds;
-
-        // For ON: use speed-adjusted look-ahead so triangle extends ~30cm into headland at any speed
-        // For OFF: use current position so we stop AFTER entering headland (last point in headland)
-        bool lookOnInHeadland = lookAheadInHeadland;  // Turn ON when look-ahead exits headland
-        bool lookOffInHeadland = isInHeadland;        // Turn OFF when current pos enters headland
 
         // Check coverage using segment-based detection (throttled for performance)
         // This checks the entire section width, not just center point
