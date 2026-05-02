@@ -49,8 +49,20 @@ public class SectionControlService : ISectionControlService
     // Tick rate comes from <see cref="TickHz"/>, set by the caller (the
     // host control loop in production, 100 Hz; existing tests still use
     // the 10 Hz default).
+    //
+    // SECTION_ON_DELAY_SECONDS: software debounce on IsOn flip; cancelled
+    //   exactly by the equivalent look-ahead anticipation so the physical
+    //   transition lands on the boundary edge.
+    // MAPPING_ON_DELAY_SECONDS = 0: the section state machine's own
+    //   debounce (above) already gates against false positives, so adding
+    //   a second debounce here just delays the visible coverage strip
+    //   start by the same amount, leaving an unsprayed gap inside the
+    //   spray-needed area. Removed to make the strip start at the boundary.
+    // MAPPING_OFF_DELAY_SECONDS: kept non-zero so a brief shouldBeOff /
+    //   shouldBeOn flicker doesn't tear the strip — UpdateMapping continues
+    //   painting through the debounce since IsMappingOn is still true.
     private const double SECTION_ON_DELAY_SECONDS = 0.2;
-    private const double MAPPING_ON_DELAY_SECONDS = 0.2;
+    private const double MAPPING_ON_DELAY_SECONDS = 0.0;
     private const double MAPPING_OFF_DELAY_SECONDS = 0.2;
 
     /// <summary>
@@ -483,8 +495,7 @@ public class SectionControlService : ISectionControlService
             // exactly cancels the phase delay and the physical IsOn flip lands
             // on the boundary edge. Derive ticks from the same seconds value
             // — *not* from LookAheadOnSetting alone — otherwise the floor
-            // (SECTION_ON_DELAY_SECONDS) doesn't carry into the wait time and
-            // the section flips early or late depending on tick rate.
+            // (SECTION_ON_DELAY_SECONDS) doesn't carry into the wait time.
             int turnOnPhaseTicks = Math.Max(1, (int)Math.Round(turnOnPhaseSec * TickHz));
 
             if (section.SectionOnTimer > turnOnPhaseTicks)
@@ -509,9 +520,8 @@ public class SectionControlService : ISectionControlService
             // spray stops at the intended position.
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
 
-            // Same fix as ON: derive ticks from turnOffPhaseSec (the same
-            // seconds value used for the look-ahead distance) so the phase
-            // duration cancels the projection at any tick rate.
+            // Same as ON: derive ticks from turnOffPhaseSec and use >= so the
+            // OFF flip lands exactly on the boundary instead of one tick past.
             int turnOffPhaseTicks = Math.Max(1, (int)Math.Round(turnOffPhaseSec * TickHz));
 
             if (section.SectionOffTimer > turnOffPhaseTicks)
