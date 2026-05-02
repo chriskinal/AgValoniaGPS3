@@ -649,8 +649,11 @@ public class LookAheadSlitTests
     [Test]
     public void TurningOnState_DoesNotApplyCoverage()
     {
+        // Non-zero LookAheadOn so the TURNING_ON phase actually exists
+        // (the test premise depends on it). With zero look-aheads the
+        // section flips immediately and there is no TURNING_ON state.
         SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
-            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0);
+            lookAheadOnSeconds: 0.5, lookAheadOffSeconds: 0.5);
         SetUpField();
 
         double toolCenter = FIELD_SIZE / 2;
@@ -907,8 +910,12 @@ public class LookAheadSlitTests
     [TestCase(25.0, TestName = "SubFrame_Slit_25kmh_100Hz")]
     public void DriveOverSlit_AtSubFrame100Hz_TransitionsLogPerTick(double speedKmh)
     {
+        // Use realistic look-aheads (0.5 s) so the slit-detection geometry
+        // matches typical sprayer config. With zero look-aheads the
+        // boundary/coverage checks degenerate to point-at-section-center
+        // which doesn't exercise the sub-frame benefit meaningfully.
         SetUpPipeline(numSections: 1, totalToolWidth: 6.0,
-            lookAheadOnSeconds: 0.0, lookAheadOffSeconds: 0.0,
+            lookAheadOnSeconds: 0.5, lookAheadOffSeconds: 0.5,
             tickHz: 100.0);
         SetUpField();
 

@@ -115,9 +115,8 @@ public class SectionControlServiceTests
     [Test]
     public void TickHz_100_TurnOnDelayScalesUp()
     {
-        // Section ON delay is 0.2 s. At 10 Hz that's 2 ticks; at 100 Hz that's
-        // 20 ticks. Verify by counting how many Update calls it takes for an
-        // Auto section sitting in-boundary at speed to flip IsOn=true.
+        // With LookAheadOn = 0.2 s configured, at 100 Hz that's 20 ticks of
+        // wait. Verify by counting Update calls — section flips on tick 20.
         var outerPoly = new BoundaryPolygon();
         outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
         outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
@@ -126,7 +125,7 @@ public class SectionControlServiceTests
         outerPoly.UpdateBounds();
         _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
 
-        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.0;  // Force min delay
+        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.2;  // 200 ms wait
 
         _service.SetAllAuto();
         _service.MasterState = SectionMasterState.Auto;
@@ -150,7 +149,7 @@ public class SectionControlServiceTests
     public void TickHz_10_TurnOnDelayMatchesLegacyBehavior()
     {
         // Same scenario as above but at the legacy 10 Hz default. Should
-        // flip on tick 2 (completing the 200 ms debounce).
+        // flip on tick 2 (completing the 200 ms wait).
         var outerPoly = new BoundaryPolygon();
         outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
         outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
@@ -159,7 +158,7 @@ public class SectionControlServiceTests
         outerPoly.UpdateBounds();
         _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
 
-        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.0;
+        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.2;
 
         _service.SetAllAuto();
         _service.MasterState = SectionMasterState.Auto;

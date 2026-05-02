@@ -43,25 +43,16 @@ public class SectionControlService : ISectionControlService
     private readonly SectionControlState[] _sectionStates;
     private SectionMasterState _masterState = SectionMasterState.Off;
 
-    // Timing thresholds in seconds. Originally expressed as integer frame
-    // counts at 10 Hz (e.g. SECTION_ON_DELAY = 2 frames = 200 ms); now
-    // stored as seconds so the state machine works at any tick rate.
-    // Tick rate comes from <see cref="TickHz"/>, set by the caller (the
-    // host control loop in production, 100 Hz; existing tests still use
-    // the 10 Hz default).
+    // Timing in seconds. The state machine honors *only* what the user
+    // configures via Tool.LookAheadOnSetting / LookAheadOffSetting — no
+    // built-in floors. Per-tick math is rate-independent via TickHz.
     //
-    // SECTION_ON_DELAY_SECONDS: software debounce on IsOn flip; cancelled
-    //   exactly by the equivalent look-ahead anticipation so the physical
-    //   transition lands on the boundary edge.
-    // MAPPING_ON_DELAY_SECONDS = 0: the section state machine's own
-    //   debounce (above) already gates against false positives, so adding
-    //   a second debounce here just delays the visible coverage strip
-    //   start by the same amount, leaving an unsprayed gap inside the
-    //   spray-needed area. Removed to make the strip start at the boundary.
+    // MAPPING_ON_DELAY_SECONDS = 0: the section's own LookAheadOn timing
+    //   (configured by the user) already gates the IsOn flip; an extra
+    //   mapping-side debounce would just leave an unsprayed gap.
     // MAPPING_OFF_DELAY_SECONDS: kept non-zero so a brief shouldBeOff /
     //   shouldBeOn flicker doesn't tear the strip — UpdateMapping continues
     //   painting through the debounce since IsMappingOn is still true.
-    private const double SECTION_ON_DELAY_SECONDS = 0.2;
     private const double MAPPING_ON_DELAY_SECONDS = 0.0;
     private const double MAPPING_OFF_DELAY_SECONDS = 0.2;
 
@@ -332,13 +323,14 @@ public class SectionControlService : ISectionControlService
             return;
         }
 
-        // Auto mode - check boundary/overlap conditions
-        // Look-ahead distances match the TURNING_ON / TURNING_OFF phase duration
-        // (max(SECTION_ON_DELAY_SECONDS, LookAheadOn) for ON; max(0.1, LookAheadOff) for OFF).
-        // The phase delay exactly cancels the projection, so the physical IsOn flip
-        // lines up with the slit edge regardless of LookAhead settings.
-        double turnOnPhaseSec = Math.Max(SECTION_ON_DELAY_SECONDS, tool.LookAheadOnSetting);
-        double turnOffPhaseSec = Math.Max(0.1, tool.LookAheadOffSetting);
+        // Auto mode - check boundary/overlap conditions.
+        // Look-ahead distances and TURNING_ON / TURNING_OFF phase durations
+        // come straight from user config. The phase delay exactly cancels the
+        // projection, so the physical IsOn flip lands on the boundary edge.
+        // With both settings at 0, no anticipation and no wait — section
+        // flips on the first tick that shouldBe(On|Off) becomes true.
+        double turnOnPhaseSec = tool.LookAheadOnSetting;
+        double turnOffPhaseSec = tool.LookAheadOffSetting;
         double lookAheadOnDist = speed * turnOnPhaseSec;
         double lookAheadOffDist = speed * turnOffPhaseSec;
 
