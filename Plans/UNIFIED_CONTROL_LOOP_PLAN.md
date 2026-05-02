@@ -249,31 +249,32 @@ Single feature branch `feature/unified-control-loop`. Commits in this order; eac
    - On GPS sample receive, build `PoseSnapshot` and call `UpdateFromGps`.
    - Estimator now has live data; nothing reads it yet except tests.
 
-4. **Move section + autosteer work into control loop**
+4. **Move autosteer PGN sends into control loop**
    - DI: register `ControlLoopService` as `IControlLoopService` for production.
-   - `App.axaml.cs` (Desktop/iOS/Android): start the control loop after GPS service starts.
-   - `GpsPipelineService.ProcessCycle` stops calling `SectionControlService.Update` and `AutoSteerService.SendPgns`.
-   - `ControlLoopService.Tick` calls `_sectionControl.Update(pose, speed)` and `_autoSteer.SendPgn254()` + `_autoSteer.SendPgn239()`.
+   - `MainViewModel` ctor: start the control loop after the GPS pipeline starts. Subscribe handler that calls `_autoSteer.SendPgnsForControlTick()`.
+   - `AutoSteerService.ProcessSimulatedPosition` stops calling `SendPgns()` — PGNs come from the loop.
+   - All existing tests must pass.
+   - **Note**: split out from the original commit 4 because moving the section state machine has wider blast radius than initially scoped (LookAheadSlitTests drives the pipeline synchronously and assumes the pipeline calls `SectionControlService.Update`). Section move + test rewrites land together as commit 5.
+
+5. **Move section state machine into control loop + rewrite tests**
+   - `ControlLoopService.Ticked` handler calls `_toolPositionService.Update(interpolatedPose)` and `_sectionControl.Update(toolPos, ...)` on each tick.
+   - `GpsPipelineService.ProcessCycle` stops calling `_sectionControlService.Update`.
    - `SectionControlService` constants retuned for 100 Hz tick rate (derive from seconds-based config, don't hardcode tick counts).
+   - `ToolPositionService` made thread-safe (single writer = control loop, multiple readers).
+   - `LookAheadSlitTests` and `AsymmetricSectionTurnTests` rewritten to drive via `ManualControlLoop` + `TestClock`. Add 25 and 40 km/h tests with edge accuracy ≤ 0.05 m. Existing slit tests at 5 / 10 / 15 km/h continue to pass.
    - All existing tests must pass.
 
-5. **Renderer pulls live state at draw time**
+6. **Renderer pulls live state at draw time**
    - Inject `IPositionEstimator` and `ISectionControlService` into `DrawingContextMapControl`.
    - Add `SnapshotStates()` to `ISectionControlService` (defensive copy of `_sectionStates`).
    - Replace property-bound chevron position/heading with `_positionEstimator.GetPose(now)`.
    - Replace property-bound section colors on map with snapshot read.
    - Headless UI tests in `AgValoniaGPS.UI.Tests` must still pass.
 
-6. **Coverage timing audit**
+7. **Coverage timing audit**
    - Profile rasterization rate at simulated 25 km/h with 16 sections all on.
    - If rasterization exceeds budget, add a per-section hard upper bound (e.g., 50 rasterizes/sec/section).
    - Confirm 24 FPS floor holds on iPad Pro 2nd gen and Android tablet.
-
-7. **Test rewrites for sub-frame accuracy**
-   - `LookAheadSlitTests` driven by `ManualControlLoop` + `TestClock`.
-   - Add tests at 25 and 40 km/h.
-   - Tighten edge accuracy threshold to ≤ 0.05 m.
-   - Existing slit tests at 5 / 10 / 15 km/h continue to pass with current thresholds (they had headroom).
 
 8. **End-to-end smoke in app**
    - Drive in simulator, verify section state machine behaves as before.

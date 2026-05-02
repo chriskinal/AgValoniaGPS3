@@ -82,6 +82,7 @@ public partial class MainViewModel : ObservableObject
     private bool _hasTramSystemsEverUsed;
     private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
+    private readonly IControlLoopService? _controlLoop;
     private readonly IPipelineIntents _intents;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ApplicationState _appState;
@@ -199,7 +200,8 @@ public partial class MainViewModel : ObservableObject
         IGpsPipelineService gpsPipelineService,
         IPipelineIntents intents,
         ILogger<MainViewModel> logger,
-        ApplicationState appState)
+        ApplicationState appState,
+        IControlLoopService? controlLoop = null)
     {
         _logger = logger;
         _tramLineService = tramLineService;
@@ -253,6 +255,7 @@ public partial class MainViewModel : ObservableObject
         _audioService = audioService;
         _elevationLogService = elevationLogService;
         _gpsPipelineService = gpsPipelineService;
+        _controlLoop = controlLoop;
         _intents = intents;
         _appState = appState;
         _fieldPlaneFileService = new FieldPlaneFileService();
@@ -267,6 +270,17 @@ public partial class MainViewModel : ObservableObject
         // Start the background GPS processing pipeline
         _gpsPipelineService.CycleCompleted += OnGpsCycleCompleted;
         _gpsPipelineService.Start();
+
+        // Host control loop (#313): runs at 100 Hz on its own thread, sends
+        // PGN 254 + PGN 239 each tick so the firmware autosteer task —
+        // which also runs at 100 Hz — sees a fresh PGN every cycle. State
+        // mutation continues to happen at GPS rate; the loop reads the
+        // latest state on each tick. Optional in test builds.
+        if (_controlLoop is not null)
+        {
+            _controlLoop.Ticked += _ => _autoSteerService.SendPgnsForControlTick();
+            _controlLoop.Start();
+        }
         _udpService.ModuleConnectionChanged += OnModuleConnectionChanged;
         _ntripService.ConnectionStatusChanged += OnNtripConnectionChanged;
         _ntripService.RtcmDataReceived += OnRtcmDataReceived;

@@ -147,9 +147,12 @@ public static class ServiceCollectionExtensions
         // Fusion service holds fix-to-fix state between cycles; singleton required.
         services.AddSingleton<IGpsHeadingFusionService, GpsHeadingFusionService>();
         // Position estimator: GPS-anchored snapshot bridge between the GPS
-        // arrival path (10 Hz) and the host control loop (100 Hz, wired in
-        // commit 4 of #313). Singleton — single shared snapshot.
+        // arrival path (10 Hz) and the host control loop (100 Hz). Singleton —
+        // single shared snapshot.
         services.AddSingleton<IPositionEstimator, PositionEstimator>();
+        // Host control loop (#313): runs at 100 Hz on its own thread, sends
+        // PGN 254 + PGN 239 every tick to match the firmware autosteer cadence.
+        services.AddSingleton<IControlLoopService>(_ => new ControlLoopService(frequencyHz: 100.0));
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // iOS-specific services

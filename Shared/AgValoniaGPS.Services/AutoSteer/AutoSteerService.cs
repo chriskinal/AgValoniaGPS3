@@ -371,10 +371,10 @@ public class AutoSteerService : IAutoSteerService
         // Detect tram line wheel positions for PGN 239
         UpdateTramState();
 
-        // Build and send PGNs
-        SendPgns();
-
-        // Mark PGN sent and record latency
+        // PGN sends now happen on the host control loop (#313 commit 4 of 11)
+        // at 100 Hz, matching the firmware autosteer task cadence. State mutation
+        // here still happens at GPS rate; the loop reads the latest state on
+        // each tick.
         _state.MarkPgnSent();
         RecordLatency(_state.TotalLatencyMs);
 
@@ -475,6 +475,21 @@ public class AutoSteerService : IAutoSteerService
             tram: _state.TramState,
             geoStop: _state.GeoStopState);
         _udpService.SendToModules(machinePgn);
+    }
+
+    /// <summary>
+    /// Build and send PGN 254 + PGN 239 from the current vehicle state.
+    /// Called by the host control loop (#313) on every tick (100 Hz) so the
+    /// firmware autosteer task — which also runs at 100 Hz — sees a fresh
+    /// PGN every cycle. Reads <c>_state</c> without locking; concurrent
+    /// updates from the GPS pipeline thread may produce a torn read on
+    /// individual fields, which the firmware tolerates by acting on
+    /// whatever bits it has at its next loop iteration.
+    /// </summary>
+    public void SendPgnsForControlTick()
+    {
+        if (!_isEnabled) return;
+        SendPgns();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

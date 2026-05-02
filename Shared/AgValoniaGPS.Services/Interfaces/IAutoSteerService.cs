@@ -76,6 +76,14 @@ public interface IAutoSteerService
     void UpdateGuidanceResults(double steerAngle, double crossTrackError);
 
     /// <summary>
+    /// Build and send PGN 254 + PGN 239 from the current vehicle state.
+    /// Called by the host control loop (#313) on every tick (100 Hz) so the
+    /// firmware autosteer task — which also runs at 100 Hz — sees a fresh
+    /// PGN every cycle.
+    /// </summary>
+    void SendPgnsForControlTick();
+
+    /// <summary>
     /// Engage auto-steer (start sending steering commands to hardware).
     /// </summary>
     void Engage();
