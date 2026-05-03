@@ -55,7 +55,7 @@ public class AutoSteerUTurnNUnitTests
     private GpsPipelineService _pipeline = null!;
     private ToolPositionService _toolPosition = null!;
     private PositionEstimator _estimator = null!;
-    private ManualControlLoop _controlLoop = null!;
+    private ManualSteerMachineLoop _controlLoop = null!;
     private SectionControlService _sectionControl = null!;
     private CoverageMapService _coverage = null!;
     private PipelineIntents _intents = null!;
@@ -212,7 +212,7 @@ public class AutoSteerUTurnNUnitTests
 
         // Mirror production control loop in tests (#313 commit 5c). Section
         // state machine is no longer driven by the pipeline; the loop is.
-        _controlLoop = new ManualControlLoop(frequencyHz: 10.0);
+        _controlLoop = new ManualSteerMachineLoop(frequencyHz: 10.0);
         _sectionControl.TickHz = 10.0;
         _controlLoop.Ticked += ts =>
         {

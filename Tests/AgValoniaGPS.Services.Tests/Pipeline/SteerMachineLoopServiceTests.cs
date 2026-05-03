@@ -12,12 +12,12 @@ using AgValoniaGPS.Services.Pipeline;
 namespace AgValoniaGPS.Services.Tests.Pipeline;
 
 [TestFixture]
-public class ManualControlLoopTests
+public class ManualSteerMachineLoopTests
 {
     [Test]
     public void Tick_WhenNotRunning_DoesNotFire()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         int count = 0;
         loop.Ticked += _ => count++;
 
@@ -30,7 +30,7 @@ public class ManualControlLoopTests
     [Test]
     public void Tick_WhenRunning_FiresWithTimestamp()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         long observedTs = -1;
         loop.Ticked += ts => observedTs = ts;
         loop.Start();
@@ -43,7 +43,7 @@ public class ManualControlLoopTests
     [Test]
     public void Tick_AfterStop_DoesNotFire()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         int count = 0;
         loop.Ticked += _ => count++;
         loop.Start();
@@ -59,7 +59,7 @@ public class ManualControlLoopTests
     [Test]
     public void Start_IsIdempotent()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         loop.Start();
         loop.Start();
 
@@ -69,19 +69,19 @@ public class ManualControlLoopTests
     [Test]
     public void DefaultFrequency_Is100Hz()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         Assert.That(loop.FrequencyHz, Is.EqualTo(100.0));
     }
 }
 
 [TestFixture]
-public class ControlLoopServiceTests
+public class SteerMachineLoopServiceTests
 {
     [Test]
     public void Constructor_RejectsNonPositiveFrequency()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ControlLoopService(0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ControlLoopService(-50));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new SteerMachineLoopService(0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new SteerMachineLoopService(-50));
     }
 
     [Test]
@@ -89,7 +89,7 @@ public class ControlLoopServiceTests
     {
         // Use 50 Hz for a faster test (20 ms period). Run for ~200 ms,
         // expect roughly 10 ticks (allow generous bounds for OS scheduling).
-        using var loop = new ControlLoopService(frequencyHz: 50);
+        using var loop = new SteerMachineLoopService(frequencyHz: 50);
         var timestamps = new List<long>();
         loop.Ticked += ts => { lock (timestamps) timestamps.Add(ts); }
 ;
@@ -108,7 +108,7 @@ public class ControlLoopServiceTests
     [Test]
     public void Start_IsIdempotent()
     {
-        using var loop = new ControlLoopService(frequencyHz: 50);
+        using var loop = new SteerMachineLoopService(frequencyHz: 50);
         loop.Start();
         loop.Start();
         Assert.That(loop.IsRunning, Is.True);
@@ -118,7 +118,7 @@ public class ControlLoopServiceTests
     [Test]
     public void Stop_StopsFiringTicks()
     {
-        using var loop = new ControlLoopService(frequencyHz: 100);
+        using var loop = new SteerMachineLoopService(frequencyHz: 100);
         int countAfterStop = 0;
         int countWhileRunning = 0;
         loop.Ticked += _ => Interlocked.Increment(ref countWhileRunning);
@@ -137,7 +137,7 @@ public class ControlLoopServiceTests
     [Test]
     public void TickedTimestamps_AreMonotonicallyIncreasing()
     {
-        using var loop = new ControlLoopService(frequencyHz: 100);
+        using var loop = new SteerMachineLoopService(frequencyHz: 100);
         var timestamps = new List<long>();
         loop.Ticked += ts => { lock (timestamps) timestamps.Add(ts); };
         loop.Start();
@@ -158,7 +158,7 @@ public class ControlLoopServiceTests
     {
         // Manual Tick should fire even on production impl — useful for
         // synthetic ticks at startup and for diagnostics.
-        using var loop = new ControlLoopService(frequencyHz: 100);
+        using var loop = new SteerMachineLoopService(frequencyHz: 100);
         long observed = -1;
         loop.Ticked += ts => observed = ts;
 
@@ -170,7 +170,7 @@ public class ControlLoopServiceTests
     [Test]
     public void Dispose_StopsLoop()
     {
-        var loop = new ControlLoopService(frequencyHz: 100);
+        var loop = new SteerMachineLoopService(frequencyHz: 100);
         loop.Start();
         Thread.Sleep(20);
         loop.DisposeAsync().AsTask().Wait();

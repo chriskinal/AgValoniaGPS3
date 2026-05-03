@@ -30,13 +30,13 @@ namespace AgValoniaGPS.Services.Pipeline;
 /// 100 Hz is the default and matches the firmware autosteer cadence so
 /// PGN 254 sends never starve the firmware loop.
 /// </summary>
-public sealed class ControlLoopService : IControlLoopService, IDisposable, IAsyncDisposable
+public sealed class SteerMachineLoopService : ISteerMachineLoopService, IDisposable, IAsyncDisposable
 {
     private readonly object _lifecycleLock = new();
     private CancellationTokenSource? _cts;
     private Task? _loopTask;
 
-    public ControlLoopService(double frequencyHz = 100.0)
+    public SteerMachineLoopService(double frequencyHz = 100.0)
     {
         if (frequencyHz <= 0)
             throw new ArgumentOutOfRangeException(nameof(frequencyHz),

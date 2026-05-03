@@ -28,7 +28,7 @@ namespace AgValoniaGPS.Services.Interfaces;
 /// Production impl uses <c>PeriodicTimer</c>; test impl is driven
 /// manually so unit tests can advance virtual time deterministically.
 /// </summary>
-public interface IControlLoopService
+public interface ISteerMachineLoopService
 {
     /// <summary>
     /// Begin ticking. No-op if already running.

@@ -152,7 +152,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPositionEstimator, PositionEstimator>();
         // Host control loop (#313): runs at 100 Hz on its own thread, sends
         // PGN 254 + PGN 239 every tick to match the firmware autosteer cadence.
-        services.AddSingleton<IControlLoopService>(_ => new ControlLoopService(frequencyHz: 100.0));
+        services.AddSingleton<ISteerMachineLoopService>(_ => new SteerMachineLoopService(frequencyHz: 100.0));
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
         // Android-specific services

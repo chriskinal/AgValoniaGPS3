@@ -54,7 +54,7 @@ public class LookAheadSlitTests
     private List<GpsCycleResult> _results = null!;
     private PositionEstimator _estimator = null!;
     private ToolPositionService _toolPosition = null!;
-    private ManualControlLoop _controlLoop = null!;
+    private ManualSteerMachineLoop _controlLoop = null!;
     private AgValoniaGPS.Models.Timing.TestClock? _testClock;
     private int _ticksPerGpsFrame = 1;
 
@@ -128,7 +128,7 @@ public class LookAheadSlitTests
         // Default tickHz=10 preserves existing legacy behavior. Tests can
         // request tickHz=100 to exercise sub-frame section control with
         // dead-reckoned poses between GPS samples (#313 commit 5d).
-        _controlLoop = new ManualControlLoop(frequencyHz: tickHz);
+        _controlLoop = new ManualSteerMachineLoop(frequencyHz: tickHz);
         _sectionControl.TickHz = tickHz;
         _ticksPerGpsFrame = (int)Math.Round(tickHz / 10.0); // GPS at 10 Hz
         if (_ticksPerGpsFrame > 1)

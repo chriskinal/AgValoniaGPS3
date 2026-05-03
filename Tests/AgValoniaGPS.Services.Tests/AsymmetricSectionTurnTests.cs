@@ -55,7 +55,7 @@ public class AsymmetricSectionTurnTests
     private List<GpsCycleResult> _results = null!;
     private PositionEstimator _estimator = null!;
     private ToolPositionService _toolPosition = null!;
-    private ManualControlLoop _controlLoop = null!;
+    private ManualSteerMachineLoop _controlLoop = null!;
 
     [SetUp]
     public void SetUp()
@@ -127,7 +127,7 @@ public class AsymmetricSectionTurnTests
         // Pipeline no longer drives section/tool updates; the loop does.
         // Tick on PoseEstimatorUpdated so section state is current when the
         // pipeline reads it for GpsCycleResult.
-        _controlLoop = new ManualControlLoop(frequencyHz: 10.0);
+        _controlLoop = new ManualSteerMachineLoop(frequencyHz: 10.0);
         _sectionControl.TickHz = 10.0;
         _controlLoop.Ticked += ts =>
         {

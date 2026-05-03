@@ -83,7 +83,7 @@ public partial class MainViewModel : ObservableObject
     private bool _hasTramSystemsEverUsed;
     private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
-    private readonly IControlLoopService? _controlLoop;
+    private readonly ISteerMachineLoopService? _controlLoop;
     private readonly IPositionEstimator? _positionEstimator;
     private readonly IPipelineIntents _intents;
     private readonly ILogger<MainViewModel> _logger;
@@ -204,7 +204,7 @@ public partial class MainViewModel : ObservableObject
         IPipelineIntents intents,
         ILogger<MainViewModel> logger,
         ApplicationState appState,
-        IControlLoopService? controlLoop = null,
+        ISteerMachineLoopService? controlLoop = null,
         IPositionEstimator? positionEstimator = null)
     {
         _logger = logger;

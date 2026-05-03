@@ -41,7 +41,7 @@ public class AutoSteerControlTickTests
     [Test]
     public void ControlLoopTick_TriggersTwoPgnSends()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         loop.Ticked += _ => _autoSteer.SendPgnsForControlTick();
         loop.Start();
 
@@ -54,7 +54,7 @@ public class AutoSteerControlTickTests
     [Test]
     public void ControlLoopTick_NotEnabled_SuppressesSends()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         loop.Ticked += _ => _autoSteer.SendPgnsForControlTick();
         loop.Start();
         _autoSteer.Stop();
@@ -67,7 +67,7 @@ public class AutoSteerControlTickTests
     [Test]
     public void MultipleTicks_FireProportionalSendCount()
     {
-        var loop = new ManualControlLoop();
+        var loop = new ManualSteerMachineLoop();
         loop.Ticked += _ => _autoSteer.SendPgnsForControlTick();
         loop.Start();
 
