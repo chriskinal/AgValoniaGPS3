@@ -89,6 +89,17 @@ namespace AgValoniaGPS.Services.PathPlanning
                         };
                         dubinsShortestPathList.Add(pt);
                     }
+
+                    // Terminate the path at the requested goal. GetTotalPath already appends
+                    // goalPos as the final entry of PathCoordinates after each segment is built
+                    // from floor(length/DriveDistance) integer steps; the i+=5 subsample loop
+                    // above otherwise drops that goal point, so the arc can end up to one
+                    // subsample stride (~25 cm) short of the target along its tangent — and the
+                    // accumulated truncation error from the floor() in each segment leaves a
+                    // few-cm perpendicular offset that's visible as the U-turn arc not landing
+                    // on the next-track AB line. (#332)
+                    var goalPt = pathDataList[0].PathCoordinates[cnt - 1];
+                    dubinsShortestPathList.Add(new Vec3(goalPt.Easting, goalPt.Northing, goalHeading));
                 }
             }
             return dubinsShortestPathList;
