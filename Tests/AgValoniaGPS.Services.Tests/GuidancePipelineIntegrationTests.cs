@@ -195,9 +195,16 @@ public class GuidancePipelineIntegrationTests
             path.Add(new Vec3(10, 15 - i, Math.PI));
 
         bool turnComplete = false;
+        // Drive the pivot all the way to the last point (was capped at path.Count - 2,
+        // which only worked because YouTurnGuidanceService used to set IsTurnComplete
+        // any time the goal-point lookahead extended past the end of the path. That
+        // signal froze the goal point during the last few meters of the turn (#337);
+        // the lookahead-past-end branch now keeps publishing a forward-projected goal,
+        // so completion correctly requires the pivot itself to reach the end — matching
+        // YouTurnStateMachine's closest-approach detection in production.
         for (int i = 0; i < 100 && !turnComplete; i++)
         {
-            int idx = Math.Min(i, path.Count - 2);
+            int idx = Math.Min(i, path.Count - 1);
             var pos = path[idx];
 
             var output = guidanceService.CalculateGuidance(new AgValoniaGPS.Models.YouTurn.YouTurnGuidanceInput

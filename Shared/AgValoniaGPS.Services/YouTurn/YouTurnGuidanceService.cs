@@ -285,8 +285,23 @@ namespace AgValoniaGPS.Services.YouTurn
 
                 if (i == ptCount - 1) // goalPointDistance is longer than remaining u-turn
                 {
-                    output.IsTurnComplete = true;
-                    return;
+                    // Lookahead extends past the last point of the U-turn path.
+                    // Project the remainder along the endpoint heading so the
+                    // goal point keeps advancing onto the next pass direction.
+                    // Do NOT set IsTurnComplete here — that would zero the goal
+                    // upstream and gate off SetGuidancePoints, freezing the
+                    // goal-point dot at the U-turn end while the tractor is
+                    // still approaching it. Turn completion is owned by
+                    // YouTurnStateMachine.Tick's closest-approach check, which
+                    // uses the actual tractor position. Without this projection
+                    // the steering controller chases a stationary target during
+                    // the headland traverse, producing visible wobble entering
+                    // the next pass. (#337)
+                    double remaining = goalPointDistance - distSoFar;
+                    var endPt = input.TurnPath[i];
+                    goalPoint.Easting = endPt.Easting + Math.Sin(endPt.Heading) * remaining;
+                    goalPoint.Northing = endPt.Northing + Math.Cos(endPt.Heading) * remaining;
+                    break;
                 }
 
                 if (input.UTurnStyle == 1 && input.IsReverse)
