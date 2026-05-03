@@ -1,3 +1,4 @@
+using System.Linq;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
 using AgValoniaGPS.Services.Profile;
@@ -119,27 +120,180 @@ public class ProfileJsonServiceTests
     }
 
     [Test]
-    public void SaveAndLoad_SectionPositions_DynamicArray()
+    public void SaveAndLoad_SectionWidths_PersistAcrossRoundTrip()
     {
+        // Tool.SectionWidths (cm) is the runtime source of truth — what the
+        // section UI edits and what SectionControlService consumes. The fix
+        // wires it through the JSON; before the fix, edits silently dropped
+        // because only the derived Positions array was serialized.
+        // (#section-width-persistence)
         SetupTestStore("SectionTest");
         _store.NumSections = 4;
-        _store.SectionPositions = new double[17];
-        _store.SectionPositions[0] = -6.0;
-        _store.SectionPositions[1] = -3.0;
-        _store.SectionPositions[2] = 0.0;
-        _store.SectionPositions[3] = 3.0;
-        _store.SectionPositions[4] = 6.0;
+        _store.Tool.Offset = 0.0;
+        _store.Tool.SetSectionWidth(0, 300.0); // 3 m
+        _store.Tool.SetSectionWidth(1, 300.0);
+        _store.Tool.SetSectionWidth(2, 300.0);
+        _store.Tool.SetSectionWidth(3, 300.0);
 
         ProfileJsonService.Save(_tempDir, "SectionTest", _store);
         var loadStore = new ConfigurationStore();
         ProfileJsonService.Load(_tempDir, "SectionTest", loadStore);
 
         Assert.That(loadStore.NumSections, Is.EqualTo(4));
+        // Widths round-trip — the regression that issue described.
+        Assert.That(loadStore.Tool.GetSectionWidth(0), Is.EqualTo(300.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(1), Is.EqualTo(300.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(2), Is.EqualTo(300.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(3), Is.EqualTo(300.0).Within(1e-6));
+        // Positions are derived (centered, +Offset) and round-trip too.
         Assert.That(loadStore.SectionPositions[0], Is.EqualTo(-6.0).Within(1e-6));
         Assert.That(loadStore.SectionPositions[1], Is.EqualTo(-3.0).Within(1e-6));
         Assert.That(loadStore.SectionPositions[2], Is.EqualTo(0.0).Within(1e-6));
         Assert.That(loadStore.SectionPositions[3], Is.EqualTo(3.0).Within(1e-6));
         Assert.That(loadStore.SectionPositions[4], Is.EqualTo(6.0).Within(1e-6));
+    }
+
+    [Test]
+    public void SaveAndLoad_NonUniformSectionWidths_PersistAcrossRoundTrip()
+    {
+        // The original report: change a section width from 100 to 150 cm,
+        // confirm, close + reopen, value should still be 150.
+        SetupTestStore("SectionEdit");
+        _store.NumSections = 4;
+        _store.Tool.Offset = 0.0;
+        _store.Tool.SetSectionWidth(0, 100.0);
+        _store.Tool.SetSectionWidth(1, 150.0); // user-edited
+        _store.Tool.SetSectionWidth(2, 100.0);
+        _store.Tool.SetSectionWidth(3, 100.0);
+
+        ProfileJsonService.Save(_tempDir, "SectionEdit", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "SectionEdit", loadStore);
+
+        Assert.That(loadStore.Tool.GetSectionWidth(0), Is.EqualTo(100.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(1), Is.EqualTo(150.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(2), Is.EqualTo(100.0).Within(1e-6));
+        Assert.That(loadStore.Tool.GetSectionWidth(3), Is.EqualTo(100.0).Within(1e-6));
+    }
+
+    [Test]
+    public void SaveAndLoad_PreviouslyDroppedToolFields_RoundTrip()
+    {
+        // Regression for #343: Tool.* fields edited via UI silently lost on
+        // save because they weren't wired into ProfileJsonService.
+        SetupTestStore("ToolFields");
+        _store.Tool.DefaultSectionWidth = 175.0;
+        _store.Tool.SlowSpeedCutoff = 0.7;
+        _store.Tool.CoverageMargin = 12.5;
+        _store.Tool.Zones = 4;
+        _store.Tool.ZoneRanges = new int[9] { 0, 3, 6, 9, 12, 15, 16, 16, 16 };
+        _store.Tool.IsSectionsNotZones = false;
+        _store.Tool.IsWorkSwitchEnabled = true;
+        _store.Tool.IsWorkSwitchActiveLow = true;
+        _store.Tool.IsWorkSwitchManualSections = true;
+        _store.Tool.IsSteerSwitchEnabled = true;
+        _store.Tool.IsSteerSwitchManualSections = true;
+        var customColors = new uint[16];
+        for (int i = 0; i < 16; i++) customColors[i] = 0x010203 + (uint)i;
+        _store.Tool.SectionColors = customColors;
+
+        ProfileJsonService.Save(_tempDir, "ToolFields", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "ToolFields", loadStore);
+
+        Assert.That(loadStore.Tool.DefaultSectionWidth, Is.EqualTo(175.0).Within(1e-6));
+        Assert.That(loadStore.Tool.SlowSpeedCutoff, Is.EqualTo(0.7).Within(1e-6));
+        Assert.That(loadStore.Tool.CoverageMargin, Is.EqualTo(12.5).Within(1e-6));
+        Assert.That(loadStore.Tool.Zones, Is.EqualTo(4));
+        Assert.That(loadStore.Tool.ZoneRanges, Is.EqualTo(new int[9] { 0, 3, 6, 9, 12, 15, 16, 16, 16 }));
+        Assert.That(loadStore.Tool.IsSectionsNotZones, Is.False);
+        Assert.That(loadStore.Tool.IsWorkSwitchEnabled, Is.True);
+        Assert.That(loadStore.Tool.IsWorkSwitchActiveLow, Is.True);
+        Assert.That(loadStore.Tool.IsWorkSwitchManualSections, Is.True);
+        Assert.That(loadStore.Tool.IsSteerSwitchEnabled, Is.True);
+        Assert.That(loadStore.Tool.IsSteerSwitchManualSections, Is.True);
+        Assert.That(loadStore.Tool.SectionColors, Is.EqualTo(customColors));
+    }
+
+    [Test]
+    public void SaveAndLoad_PreviouslyDroppedGuidanceFields_RoundTrip()
+    {
+        // Regression for #343: Guidance.* fields edited via UI silently lost
+        // on save because they weren't wired into ProfileJsonService.
+        SetupTestStore("GuidanceFields");
+        _store.Guidance.MinLookAheadDistance = 3.5;
+        _store.Guidance.StanleyIntegralDistanceAwayTriggerAB = 0.45;
+        _store.Guidance.DeadZoneHeading = 0.8;
+        _store.Guidance.DeadZoneDelay = 25;
+        _store.Guidance.TramPasses = 7;
+        _store.Guidance.TramDisplay = false;
+        _store.Guidance.TramLine = 4;
+        _store.Guidance.HydLiftLookAheadDistanceLeft = 2.5;
+        _store.Guidance.HydLiftLookAheadDistanceRight = 1.75;
+
+        ProfileJsonService.Save(_tempDir, "GuidanceFields", _store);
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "GuidanceFields", loadStore);
+
+        Assert.That(loadStore.Guidance.MinLookAheadDistance, Is.EqualTo(3.5).Within(1e-6));
+        Assert.That(loadStore.Guidance.StanleyIntegralDistanceAwayTriggerAB, Is.EqualTo(0.45).Within(1e-6));
+        Assert.That(loadStore.Guidance.DeadZoneHeading, Is.EqualTo(0.8).Within(1e-6));
+        Assert.That(loadStore.Guidance.DeadZoneDelay, Is.EqualTo(25));
+        Assert.That(loadStore.Guidance.TramPasses, Is.EqualTo(7));
+        Assert.That(loadStore.Guidance.TramDisplay, Is.False);
+        Assert.That(loadStore.Guidance.TramLine, Is.EqualTo(4));
+        Assert.That(loadStore.Guidance.HydLiftLookAheadDistanceLeft, Is.EqualTo(2.5).Within(1e-6));
+        Assert.That(loadStore.Guidance.HydLiftLookAheadDistanceRight, Is.EqualTo(1.75).Within(1e-6));
+    }
+
+    [Test]
+    public void Load_OlderProfileWithoutNewFields_KeepsModelDefaults()
+    {
+        // Older profile (no DefaultSectionWidth / CoverageMargin / etc.) must
+        // load cleanly and leave the in-memory defaults intact. Verifies the
+        // ToolDto / GuidanceDto fields added for #343 are nullable and the
+        // load paths fall through to the model initializer values.
+        var droppedToolKeys = new[]
+        {
+            "defaultSectionWidth", "slowSpeedCutoff", "coverageMargin", "zones",
+            "zoneRanges", "isWorkSwitchEnabled", "isWorkSwitchActiveLow",
+            "isWorkSwitchManualSections", "isSteerSwitchEnabled",
+            "isSteerSwitchManualSections", "sectionColors",
+        };
+        var droppedGuidanceKeys = new[]
+        {
+            "minLookAheadDistance", "stanleyIntegralDistanceAwayTriggerAB",
+            "deadZoneHeading", "deadZoneDelay", "tramPasses", "tramDisplay",
+            "tramLine", "hydLiftLookAheadDistanceLeft",
+            "hydLiftLookAheadDistanceRight",
+        };
+
+        SetupTestStore("OldProfile");
+        ProfileJsonService.Save(_tempDir, "OldProfile", _store);
+        var path = System.IO.Path.Combine(_tempDir, "OldProfile.json");
+
+        // Reparse, remove the new fields properly, write back. Mirrors what an
+        // older app build's saved profile would look like.
+        using (var src = System.IO.File.OpenRead(path))
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse(src)!;
+            var toolObj = node["tool"]!.AsObject();
+            foreach (var k in droppedToolKeys) toolObj.Remove(k);
+            var guidanceObj = node["guidance"]!.AsObject();
+            foreach (var k in droppedGuidanceKeys) guidanceObj.Remove(k);
+            System.IO.File.WriteAllText(path, node.ToJsonString(
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        var loadStore = new ConfigurationStore();
+        ProfileJsonService.Load(_tempDir, "OldProfile", loadStore);
+
+        // Defaults from ToolConfig / GuidanceConfig initializers.
+        Assert.That(loadStore.Tool.DefaultSectionWidth, Is.EqualTo(100.0).Within(1e-6));
+        Assert.That(loadStore.Tool.CoverageMargin, Is.EqualTo(5.0).Within(1e-6));
+        Assert.That(loadStore.Tool.Zones, Is.EqualTo(2));
+        Assert.That(loadStore.Guidance.MinLookAheadDistance, Is.EqualTo(2.0).Within(1e-6));
+        Assert.That(loadStore.Guidance.DeadZoneDelay, Is.EqualTo(10));
     }
 
     [Test]

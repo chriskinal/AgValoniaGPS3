@@ -90,10 +90,27 @@ public static class ProfileJsonService
 
     private static ProfileDto ToDto(string profileName, ConfigurationStore store)
     {
-        // Trim trailing zeros from section positions
-        int usedPositions = store.NumSections + 1;
-        var sectionPositions = new double[usedPositions];
-        Array.Copy(store.SectionPositions, sectionPositions, Math.Min(usedPositions, store.SectionPositions.Length));
+        // Section widths (cm) are the runtime source of truth — Tool.SectionWidths
+        // is what the UI edits and what SectionControlService.RecalculateSectionPositions
+        // consumes. Persist the live widths array, sized to the actual section count
+        // so a 6-section tool doesn't carry along 10 trailing 100 cm defaults.
+        int numSections = Math.Max(1, store.NumSections);
+        var sectionWidths = new double[numSections];
+        for (int i = 0; i < numSections; i++)
+            sectionWidths[i] = store.Tool.GetSectionWidth(i);
+
+        // Positions (m, NumSections+1 boundary points, centered on tool with Offset)
+        // are derived from widths so existing readers (and earlier app builds that
+        // only consume Positions) still get a consistent geometry. Without this
+        // derivation the on-disk Positions array drifts away from the live widths
+        // every time the user edits a section. (#section-width-persistence)
+        double totalMeters = 0;
+        for (int i = 0; i < numSections; i++)
+            totalMeters += sectionWidths[i] / 100.0;
+        var sectionPositions = new double[numSections + 1];
+        sectionPositions[0] = -totalMeters / 2.0 + store.Tool.Offset;
+        for (int i = 0; i < numSections; i++)
+            sectionPositions[i + 1] = sectionPositions[i] + sectionWidths[i] / 100.0;
 
         return new ProfileDto
         {
@@ -120,6 +137,16 @@ public static class ProfileJsonService
                 PurePursuitIntegralGain = store.Guidance.PurePursuitIntegralGain,
                 IsPurePursuit = store.Guidance.IsPurePursuit,
                 UTurnCompensation = store.Guidance.UTurnCompensation,
+                // #343: previously not persisted.
+                MinLookAheadDistance = store.Guidance.MinLookAheadDistance,
+                StanleyIntegralDistanceAwayTriggerAB = store.Guidance.StanleyIntegralDistanceAwayTriggerAB,
+                DeadZoneHeading = store.Guidance.DeadZoneHeading,
+                DeadZoneDelay = store.Guidance.DeadZoneDelay,
+                TramPasses = store.Guidance.TramPasses,
+                TramDisplay = store.Guidance.TramDisplay,
+                TramLine = store.Guidance.TramLine,
+                HydLiftLookAheadDistanceLeft = store.Guidance.HydLiftLookAheadDistanceLeft,
+                HydLiftLookAheadDistanceRight = store.Guidance.HydLiftLookAheadDistanceRight,
             },
             Tool = new ToolDto
             {
@@ -142,11 +169,24 @@ public static class ProfileJsonService
                 LookAheadOn = store.Tool.LookAheadOnSetting,
                 LookAheadOff = store.Tool.LookAheadOffSetting,
                 TurnOffDelay = store.Tool.TurnOffDelay,
+                // #343: previously not persisted — UI edits silently dropped on save.
+                DefaultSectionWidth = store.Tool.DefaultSectionWidth,
+                SlowSpeedCutoff = store.Tool.SlowSpeedCutoff,
+                CoverageMargin = store.Tool.CoverageMargin,
+                Zones = store.Tool.Zones,
+                ZoneRanges = (int[])store.Tool.ZoneRanges.Clone(),
+                IsWorkSwitchEnabled = store.Tool.IsWorkSwitchEnabled,
+                IsWorkSwitchActiveLow = store.Tool.IsWorkSwitchActiveLow,
+                IsWorkSwitchManualSections = store.Tool.IsWorkSwitchManualSections,
+                IsSteerSwitchEnabled = store.Tool.IsSteerSwitchEnabled,
+                IsSteerSwitchManualSections = store.Tool.IsSteerSwitchManualSections,
+                SectionColors = (uint[])store.Tool.SectionColors.Clone(),
             },
             Sections = new SectionsDto
             {
-                Count = store.NumSections,
+                Count = numSections,
                 Positions = sectionPositions,
+                Widths = sectionWidths,
             },
             YouTurn = new YouTurnDto
             {
@@ -194,6 +234,16 @@ public static class ProfileJsonService
         store.Guidance.StanleyIntegralGainAB = dto.Guidance?.StanleyIntegralGainAB ?? 0.0;
         store.Guidance.PurePursuitIntegralGain = dto.Guidance?.PurePursuitIntegralGain ?? 0.0;
         store.Guidance.UTurnCompensation = dto.Guidance?.UTurnCompensation ?? 1.0;
+        // #343: previously not persisted — defaults match GuidanceConfig initializers.
+        store.Guidance.MinLookAheadDistance = dto.Guidance?.MinLookAheadDistance ?? 2.0;
+        store.Guidance.StanleyIntegralDistanceAwayTriggerAB = dto.Guidance?.StanleyIntegralDistanceAwayTriggerAB ?? 0.3;
+        store.Guidance.DeadZoneHeading = dto.Guidance?.DeadZoneHeading ?? 0.5;
+        store.Guidance.DeadZoneDelay = dto.Guidance?.DeadZoneDelay ?? 10;
+        store.Guidance.TramPasses = dto.Guidance?.TramPasses ?? 3;
+        store.Guidance.TramDisplay = dto.Guidance?.TramDisplay ?? true;
+        store.Guidance.TramLine = dto.Guidance?.TramLine ?? 1;
+        store.Guidance.HydLiftLookAheadDistanceLeft = dto.Guidance?.HydLiftLookAheadDistanceLeft ?? 1.0;
+        store.Guidance.HydLiftLookAheadDistanceRight = dto.Guidance?.HydLiftLookAheadDistanceRight ?? 1.0;
 
         // U-Turn settings
         store.Guidance.UTurnRadius = dto.YouTurn?.TurnRadius ?? 8.0;
@@ -222,15 +272,58 @@ public static class ProfileJsonService
         store.Tool.TurnOffDelay = dto.Tool?.TurnOffDelay ?? 0.0;
         store.Tool.MinCoverage = dto.Tool?.MinCoverage ?? 100;
         store.Tool.IsMultiColoredSections = dto.Tool?.IsMultiColoredSections ?? false;
+        // Was written but not loaded — see #343.
+        store.Tool.IsSectionsNotZones = dto.Tool?.IsSectionsNotZones ?? true;
         store.Tool.IsSectionOffWhenOut = dto.Tool?.IsSectionOffWhenOut ?? true;
         store.Tool.IsHeadlandSectionControl = dto.Tool?.IsHeadlandSectionControl ?? true;
+        // #343: previously not persisted — defaults match the in-memory ToolConfig
+        // initializers so loading an older profile (no field present) yields the
+        // same behavior as an unmodified store.
+        store.Tool.DefaultSectionWidth = dto.Tool?.DefaultSectionWidth ?? 100.0;
+        store.Tool.SlowSpeedCutoff = dto.Tool?.SlowSpeedCutoff ?? 0.5;
+        store.Tool.CoverageMargin = dto.Tool?.CoverageMargin ?? 5.0;
+        store.Tool.Zones = dto.Tool?.Zones ?? 2;
+        if (dto.Tool?.ZoneRanges != null && dto.Tool.ZoneRanges.Length == 9)
+            store.Tool.ZoneRanges = (int[])dto.Tool.ZoneRanges.Clone();
+        store.Tool.IsWorkSwitchEnabled = dto.Tool?.IsWorkSwitchEnabled ?? false;
+        store.Tool.IsWorkSwitchActiveLow = dto.Tool?.IsWorkSwitchActiveLow ?? false;
+        store.Tool.IsWorkSwitchManualSections = dto.Tool?.IsWorkSwitchManualSections ?? false;
+        store.Tool.IsSteerSwitchEnabled = dto.Tool?.IsSteerSwitchEnabled ?? false;
+        store.Tool.IsSteerSwitchManualSections = dto.Tool?.IsSteerSwitchManualSections ?? false;
+        if (dto.Tool?.SectionColors != null && dto.Tool.SectionColors.Length == 16)
+            store.Tool.SectionColors = (uint[])dto.Tool.SectionColors.Clone();
 
-        // Section config
+        // Section config — set NumSections first so width-derivation knows how
+        // many sections to populate.
         store.NumSections = dto.Sections?.Count ?? 1;
         var sectionPositions = new double[17];
         if (dto.Sections?.Positions != null)
             Array.Copy(dto.Sections.Positions, sectionPositions, Math.Min(dto.Sections.Positions.Length, 17));
         store.SectionPositions = sectionPositions;
+
+        // Restore Tool.SectionWidths — the runtime source of truth that the
+        // section UI edits and SectionControlService.RecalculateSectionPositions
+        // consumes. Prefer the explicit Widths array (new format). Fall back
+        // to deriving from Positions for older profiles that pre-date the
+        // Widths field — guard against the bogus profile shape we've seen
+        // in the wild (Count=16 with only 7 valid positions; trailing zeros
+        // would otherwise produce widths = [..., -91 cm, 0, 0, 0]).
+        // (#section-width-persistence)
+        int restoredNum = Math.Max(1, store.NumSections);
+        if (dto.Sections?.Widths != null && dto.Sections.Widths.Length >= restoredNum)
+        {
+            for (int i = 0; i < restoredNum; i++)
+                store.Tool.SetSectionWidth(i, dto.Sections.Widths[i]);
+        }
+        else if (dto.Sections?.Positions != null && dto.Sections.Positions.Length >= restoredNum + 1)
+        {
+            for (int i = 0; i < restoredNum; i++)
+            {
+                double widthM = dto.Sections.Positions[i + 1] - dto.Sections.Positions[i];
+                if (widthM > 0)
+                    store.Tool.SetSectionWidth(i, widthM * 100.0);
+            }
+        }
 
         // Display config
         store.IsMetric = dto.General?.IsMetric ?? false;
@@ -278,6 +371,16 @@ public static class ProfileJsonService
         public double PurePursuitIntegralGain { get; set; }
         public bool IsPurePursuit { get; set; }
         public double UTurnCompensation { get; set; }
+        // #343: nullable so older profiles take ApplyDtoToStore defaults.
+        public double? MinLookAheadDistance { get; set; }
+        public double? StanleyIntegralDistanceAwayTriggerAB { get; set; }
+        public double? DeadZoneHeading { get; set; }
+        public int? DeadZoneDelay { get; set; }
+        public int? TramPasses { get; set; }
+        public bool? TramDisplay { get; set; }
+        public int? TramLine { get; set; }
+        public double? HydLiftLookAheadDistanceLeft { get; set; }
+        public double? HydLiftLookAheadDistanceRight { get; set; }
     }
 
     internal class ToolDto
@@ -301,12 +404,29 @@ public static class ProfileJsonService
         public double LookAheadOn { get; set; }
         public double LookAheadOff { get; set; }
         public double TurnOffDelay { get; set; }
+        // #343: nullable so older profiles (no field present) take the
+        // ApplyDtoToStore default and don't get reset to "0".
+        public double? DefaultSectionWidth { get; set; }
+        public double? SlowSpeedCutoff { get; set; }
+        public double? CoverageMargin { get; set; }
+        public int? Zones { get; set; }
+        public int[]? ZoneRanges { get; set; }
+        public bool? IsWorkSwitchEnabled { get; set; }
+        public bool? IsWorkSwitchActiveLow { get; set; }
+        public bool? IsWorkSwitchManualSections { get; set; }
+        public bool? IsSteerSwitchEnabled { get; set; }
+        public bool? IsSteerSwitchManualSections { get; set; }
+        public uint[]? SectionColors { get; set; }
     }
 
     internal class SectionsDto
     {
         public int Count { get; set; }
         public double[] Positions { get; set; } = Array.Empty<double>();
+        // cm per section, length = Count. Authoritative; Positions is derived
+        // for backward compat. Nullable so older profiles that lack the field
+        // fall through to position-based derivation in ApplyDtoToStore.
+        public double[]? Widths { get; set; }
     }
 
     internal class YouTurnDto
