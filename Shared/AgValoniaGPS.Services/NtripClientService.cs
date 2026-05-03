@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AgValoniaGPS.Models;
+using AgValoniaGPS.Models.Timing;
 using AgValoniaGPS.Services.Interfaces;
 
 namespace AgValoniaGPS.Services;
@@ -49,9 +50,29 @@ public class NtripClientService : INtripClientService, IDisposable
     private IPEndPoint? _rtcmUdpEndpoint;
     private Timer? _ggaTimer;
     private Timer? _rtcmForwardTimer;
+    private Timer? _watchdogTimer;
     private readonly Queue<byte> _rtcmQueue = new Queue<byte>();
     private readonly object _queueLock = new object();
-    private const int RTCM_PACKET_SIZE = 256; // Match AgIO default
+    // Bumped from the AgIO-default 256 to drain caster bursts faster. The
+    // caster periodically pauses for ~10–20 s and then releases the buffered
+    // RTCM in one burst (#334). At 256 B per 50 ms tick the AiO catches up
+    // at ~5 KB/s — a 30 KB burst takes ~6 s. At 1024 B per tick the same
+    // burst clears in ~1.5 s. 1024 B is well under the typical 1500 B UDP
+    // MTU, so no fragmentation risk on the local LAN.
+    private const int RTCM_PACKET_SIZE = 1024;
+
+    // ── Stall watchdog ────────────────────────────────────────────────────
+    // Last time bytes arrived from the caster. Updated by ForwardRtcmData.
+    // Watchdog fires from _watchdogTimer; if no bytes for >= reconnect
+    // threshold we disconnect and reconnect (the connection may be silently
+    // half-open after the caster's TCP keep-alive timeout). The shorter
+    // warn threshold gives operators a log line before reconnect kicks in.
+    private long _lastRtcmReceivedTimestamp;
+    private const double WATCHDOG_TIMER_INTERVAL_MS = 5000.0;
+    private const double WATCHDOG_WARN_SECONDS = 30.0;
+    private const double WATCHDOG_RECONNECT_SECONDS = 60.0;
+    private bool _watchdogWarnLogged;
+    private int _reconnectInProgress;  // 0/1 flag, atomic via Interlocked
 
     // Cap header accumulation to prevent memory-exhaustion DoS from a
     // malicious caster — or a MITM on the path — streaming bytes without
@@ -134,6 +155,19 @@ public class NtripClientService : INtripClientService, IDisposable
                 TimeSpan.FromMilliseconds(50),
                 TimeSpan.FromMilliseconds(50));
 
+            // Stall watchdog: triggers reconnect if no RTCM has arrived for
+            // WATCHDOG_RECONNECT_SECONDS. The caster's normal hiccups last
+            // ~10–20 s (#334 capture), so a 60 s threshold won't false-fire
+            // on those but does catch the case where the connection dies
+            // silently (the 302 s cutoff in the original report).
+            _lastRtcmReceivedTimestamp = Clock.Current.GetTimestamp();
+            _watchdogWarnLogged = false;
+            _watchdogTimer = new Timer(
+                WatchdogTimerCallback,
+                null,
+                TimeSpan.FromMilliseconds(WATCHDOG_TIMER_INTERVAL_MS),
+                TimeSpan.FromMilliseconds(WATCHDOG_TIMER_INTERVAL_MS));
+
             IsConnected = true;
             TotalBytesReceived = 0;
 
@@ -164,6 +198,9 @@ public class NtripClientService : INtripClientService, IDisposable
 
         _rtcmForwardTimer?.Dispose();
         _rtcmForwardTimer = null;
+
+        _watchdogTimer?.Dispose();
+        _watchdogTimer = null;
 
         _cancellationTokenSource?.Cancel();
 
@@ -363,6 +400,12 @@ public class NtripClientService : INtripClientService, IDisposable
         }
 
         TotalBytesReceived += (ulong)rtcmData.Length;
+        Volatile.Write(ref _lastRtcmReceivedTimestamp, Clock.Current.GetTimestamp());
+        if (_watchdogWarnLogged)
+        {
+            // Recovery — clear so the next stall logs a fresh warning.
+            _watchdogWarnLogged = false;
+        }
     }
 
     private void RtcmForwardTimerCallback(object? state)
@@ -375,7 +418,7 @@ public class NtripClientService : INtripClientService, IDisposable
             if (_rtcmQueue.Count == 0)
                 return;
 
-            // Limit to packet size (256 bytes like AgIO)
+            // Limit per-tick chunk to RTCM_PACKET_SIZE (#334).
             int count = Math.Min(_rtcmQueue.Count, RTCM_PACKET_SIZE);
             byte[] packet = new byte[count];
 
@@ -457,6 +500,66 @@ public class NtripClientService : INtripClientService, IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"NTRIP: GGA timer error: {ex.Message}");
+        }
+    }
+
+    private void WatchdogTimerCallback(object? state)
+    {
+        if (!IsConnected) return;
+
+        long now = Clock.Current.GetTimestamp();
+        long last = Volatile.Read(ref _lastRtcmReceivedTimestamp);
+        double secondsSinceData = Clock.Current.ElapsedMs(last, now) / 1000.0;
+
+        // Periodic health line — once per WATCHDOG_TIMER_INTERVAL_MS regardless
+        // of state. Helps operators distinguish "caster paused" (warn line below
+        // hasn't fired but data flow is choppy) from "AgValonia broke".
+        _logger.LogInformation(
+            "[NTRIP] last RTCM {Sec:F1}s ago, total {Bytes} bytes",
+            secondsSinceData, TotalBytesReceived);
+
+        if (secondsSinceData >= WATCHDOG_RECONNECT_SECONDS)
+        {
+            // Reconnect once; serialize via Interlocked so two ticks can't
+            // double-fire the reconnect (timer callbacks share the thread pool
+            // and a slow reconnect could overlap the next tick).
+            if (Interlocked.CompareExchange(ref _reconnectInProgress, 1, 0) == 0)
+            {
+                _logger.LogWarning(
+                    "[NTRIP] no RTCM for {Sec:F1}s — forcing reconnect (#334)",
+                    secondsSinceData);
+                _ = ReconnectAsync();
+            }
+        }
+        else if (secondsSinceData >= WATCHDOG_WARN_SECONDS && !_watchdogWarnLogged)
+        {
+            _watchdogWarnLogged = true;
+            _logger.LogWarning(
+                "[NTRIP] no RTCM for {Sec:F1}s — caster paused or connection stalled",
+                secondsSinceData);
+        }
+    }
+
+    private async Task ReconnectAsync()
+    {
+        try
+        {
+            var config = _config;
+            if (config == null) return;
+
+            await DisconnectAsync();
+            // Brief pause so any TCP teardown completes before the new SYN.
+            await Task.Delay(500);
+            await ConnectAsync(config);
+            _logger.LogInformation("[NTRIP] reconnect complete");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[NTRIP] reconnect failed");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _reconnectInProgress, 0);
         }
     }
 
