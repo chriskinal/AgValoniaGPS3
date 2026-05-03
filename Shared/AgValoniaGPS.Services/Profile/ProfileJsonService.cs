@@ -217,8 +217,8 @@ public static class ProfileJsonService
         store.Tool.IsToolTBT = dto.Tool?.IsToolTBT ?? false;
         store.Tool.IsToolRearFixed = dto.Tool?.IsToolRearFixed ?? true;
         store.Tool.IsToolFrontFixed = dto.Tool?.IsToolFrontFixed ?? false;
-        store.Tool.LookAheadOnSetting = dto.Tool?.LookAheadOn ?? 1.0;
-        store.Tool.LookAheadOffSetting = dto.Tool?.LookAheadOff ?? 0.5;
+        store.Tool.LookAheadOnSetting = dto.Tool?.LookAheadOn ?? 0.0;
+        store.Tool.LookAheadOffSetting = dto.Tool?.LookAheadOff ?? 0.0;
         store.Tool.TurnOffDelay = dto.Tool?.TurnOffDelay ?? 0.0;
         store.Tool.MinCoverage = dto.Tool?.MinCoverage ?? 100;
         store.Tool.IsMultiColoredSections = dto.Tool?.IsMultiColoredSections ?? false;

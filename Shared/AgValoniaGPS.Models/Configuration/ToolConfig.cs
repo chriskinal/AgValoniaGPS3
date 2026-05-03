@@ -114,15 +114,19 @@ public class ToolConfig : ObservableObject
         set => SetProperty(ref _isToolFrontFixed, value);
     }
 
-    // Section lookahead settings
-    private double _lookAheadOnSetting = 1.0;
+    // Section lookahead settings — default to 0 (no anticipation, no wait).
+    // Non-zero values model an actuator open/close delay; with the SectionControlService
+    // implementation the projection cancels the phase delay so the spray edge lands on
+    // the boundary, but only if the user actually has a slow valve. Defaulting to 0
+    // means a freshly-created vehicle paints right up to coverage edges (#332/#339).
+    private double _lookAheadOnSetting = 0.0;
     public double LookAheadOnSetting
     {
         get => _lookAheadOnSetting;
         set => SetProperty(ref _lookAheadOnSetting, value);
     }
 
-    private double _lookAheadOffSetting = 0.5;
+    private double _lookAheadOffSetting = 0.0;
     public double LookAheadOffSetting
     {
         get => _lookAheadOffSetting;
