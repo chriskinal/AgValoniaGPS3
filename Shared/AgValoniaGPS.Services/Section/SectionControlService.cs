@@ -83,14 +83,6 @@ public class SectionControlService : ISectionControlService
     // Last coverage point position per zone (for minimum distance filtering)
     private readonly Dictionary<int, Vec2> _lastCoveragePosition = new();
 
-    // Coverage check throttling - don't check every frame (too expensive with many patches)
-    private const double COVERAGE_CHECK_INTERVAL_MS = 150; // Check coverage every 150ms
-    private long _coverageThrottleTimestamp = Clock.Current.GetTimestamp();
-    private readonly CoverageResult[] _cachedCurrentCoverage = new CoverageResult[16];
-    private readonly CoverageResult[] _cachedLookOnCoverage = new CoverageResult[16];
-    private readonly CoverageResult[] _cachedLookOffCoverage = new CoverageResult[16];
-    private bool _coverageCacheValid = false;
-
     // Yaw rate tracking for curve-following coverage margin
     private double _previousHeading = double.NaN;
     private double _previousVehicleHeading = double.NaN;
@@ -256,14 +248,6 @@ public class SectionControlService : ISectionControlService
         _totalHeadlandMs = 0;
         _totalCoverageMs = 0;
 
-        // Check if coverage cache should be invalidated (throttle coverage checks)
-        var now = Clock.Current.GetTimestamp();
-        if (Clock.Current.ElapsedMs(_coverageThrottleTimestamp, now) >= COVERAGE_CHECK_INTERVAL_MS)
-        {
-            _coverageCacheValid = false;
-            _coverageThrottleTimestamp = now;
-        }
-
         // Update each section. During slow-speed cutoff, Auto sections were
         // already cleared above; skip them here so UpdateSection's look-ahead
         // doesn't re-arm SectionOnRequest at speed=0 (lookOnDist collapses to
@@ -275,9 +259,6 @@ public class SectionControlService : ISectionControlService
                 continue;
             UpdateSection(i, toolPosition, toolHeading, speed);
         }
-
-        // Mark coverage cache as valid for next frame (until throttle timer expires)
-        _coverageCacheValid = true;
 
         // Flush coverage updates after all sections processed (fires event once, not 16 times)
         _coverageMapService.FlushCoverageUpdate();
@@ -384,37 +365,19 @@ public class SectionControlService : ISectionControlService
         bool lookOffInHeadland = IsPointInHeadland(headlandOffCheckPoint);
         _totalHeadlandMs += _sectionSw.Elapsed.TotalMilliseconds;
 
-        // Check coverage using segment-based detection (throttled for performance)
-        // This checks the entire section width, not just center point
-        CoverageResult currentCoverage, lookOnCoverage, lookOffCoverage;
-
-        if (_coverageCacheValid && index < _cachedCurrentCoverage.Length)
-        {
-            // Use cached results
-            currentCoverage = _cachedCurrentCoverage[index];
-            lookOnCoverage = _cachedLookOnCoverage[index];
-            lookOffCoverage = _cachedLookOffCoverage[index];
-        }
-        else
-        {
-            // Perform actual coverage check
-            _sectionSw.Restart();
-            (currentCoverage, lookOnCoverage, lookOffCoverage) = _coverageMapService.GetSegmentCoverageMulti(
-                sectionCenter,
-                toolHeading,
-                halfWidth,
-                lookAheadOnDist,
-                lookAheadOffDist);
-            _totalCoverageMs += _sectionSw.Elapsed.TotalMilliseconds;
-
-            // Cache results
-            if (index < _cachedCurrentCoverage.Length)
-            {
-                _cachedCurrentCoverage[index] = currentCoverage;
-                _cachedLookOnCoverage[index] = lookOnCoverage;
-                _cachedLookOffCoverage[index] = lookOffCoverage;
-            }
-        }
+        // Bitmap-based coverage check is O(width / cellSize) bit reads per section
+        // (~80 reads for an 8 m boom at 10 cm cells). Cheap enough to run every tick;
+        // the prior 150 ms throttle was a holdover from polygon-based coverage and
+        // produced 15 ticks of stale-cache lag at 100 Hz, leaving a visible gap when
+        // exiting previously-covered area (section stays cached-OFF past the edge).
+        _sectionSw.Restart();
+        var (currentCoverage, lookOnCoverage, lookOffCoverage) = _coverageMapService.GetSegmentCoverageMulti(
+            sectionCenter,
+            toolHeading,
+            halfWidth,
+            lookAheadOnDist,
+            lookAheadOffDist);
+        _totalCoverageMs += _sectionSw.Elapsed.TotalMilliseconds;
 
         // Section is "covered" if coverage exceeds threshold
         // Use MinCoverage setting from config (0-100), default to 70% if not set
@@ -997,13 +960,11 @@ public class SectionControlService : ISectionControlService
     }
 
     /// <summary>
-    /// Invalidate the coverage check cache, forcing a fresh query on the next Update.
-    /// Useful in tests where wall-clock time doesn't advance between frames.
+    /// No-op since the per-tick cache was removed; coverage is now queried
+    /// every Update directly. Kept for backwards compatibility with tests
+    /// that explicitly invalidated the old cache between frames.
     /// </summary>
-    public void InvalidateCoverageCache()
-    {
-        _coverageCacheValid = false;
-    }
+    public void InvalidateCoverageCache() { }
 
     public void RecalculateSectionPositions()
     {
