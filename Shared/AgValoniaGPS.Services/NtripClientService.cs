@@ -49,30 +49,31 @@ public class NtripClientService : INtripClientService, IDisposable
 
     private IPEndPoint? _rtcmUdpEndpoint;
     private Timer? _ggaTimer;
-    private Timer? _rtcmForwardTimer;
     private Timer? _watchdogTimer;
-    private readonly Queue<byte> _rtcmQueue = new Queue<byte>();
-    private readonly object _queueLock = new object();
-    // Bumped from the AgIO-default 256 to drain caster bursts faster. The
-    // caster periodically pauses for ~10–20 s and then releases the buffered
-    // RTCM in one burst (#334). At 256 B per 50 ms tick the AiO catches up
-    // at ~5 KB/s — a 30 KB burst takes ~6 s. At 1024 B per tick the same
-    // burst clears in ~1.5 s. 1024 B is well under the typical 1500 B UDP
-    // MTU, so no fragmentation risk on the local LAN.
+    // UDP MTU-safe chunk size for forwarding RTCM to the AiO. RTCM is forwarded
+    // directly from the receive callback (no queue, no drain timer) — caching
+    // would only deliver stale corrections after a caster pause, and stale RTCM
+    // is worse than useless for re-establishing RTK fix. (#334)
     private const int RTCM_PACKET_SIZE = 1024;
 
     // ── Stall watchdog ────────────────────────────────────────────────────
-    // Last time bytes arrived from the caster. Updated by ForwardRtcmData.
-    // Watchdog fires from _watchdogTimer; if no bytes for >= reconnect
-    // threshold we disconnect and reconnect (the connection may be silently
-    // half-open after the caster's TCP keep-alive timeout). The shorter
-    // warn threshold gives operators a log line before reconnect kicks in.
+    // Logs a 5 s health line so operators can distinguish caster pauses from
+    // app brokenness. Triggers a reconnect at WATCHDOG_RECONNECT_SECONDS of
+    // no data on the wire (catches silent half-open TCP and caster keep-alive
+    // timeout cases that the receive loop wouldn't notice on its own).
     private long _lastRtcmReceivedTimestamp;
     private const double WATCHDOG_TIMER_INTERVAL_MS = 5000.0;
-    private const double WATCHDOG_WARN_SECONDS = 30.0;
-    private const double WATCHDOG_RECONNECT_SECONDS = 60.0;
-    private bool _watchdogWarnLogged;
+    private const double WATCHDOG_RECONNECT_SECONDS = 30.0;
+
+    // ── Reconnect with backoff ────────────────────────────────────────────
+    // Triggered by any failure (receive error, send error, watchdog stall).
+    // Backoff schedule: 1s, 2s, 4s, 8s, 15s — then hold at 15s indefinitely.
+    // Small glitches recover quickly; long outages keep retrying without
+    // hammering the caster. Each reconnect is a full TCP teardown + new
+    // ConnectAsync (NTRIP is HTTP-style stateless — no session resume).
+    private static readonly int[] BackoffScheduleSec = new[] { 1, 2, 4, 8, 15 };
     private int _reconnectInProgress;  // 0/1 flag, atomic via Interlocked
+    private CancellationTokenSource? _reconnectCts;
 
     // Cap header accumulation to prevent memory-exhaustion DoS from a
     // malicious caster — or a MITM on the path — streaming bytes without
@@ -148,20 +149,10 @@ public class NtripClientService : INtripClientService, IDisposable
                     TimeSpan.FromSeconds(config.GgaIntervalSeconds));
             }
 
-            // Start RTCM forward timer (50ms interval like AgIO)
-            _rtcmForwardTimer = new Timer(
-                RtcmForwardTimerCallback,
-                null,
-                TimeSpan.FromMilliseconds(50),
-                TimeSpan.FromMilliseconds(50));
-
-            // Stall watchdog: triggers reconnect if no RTCM has arrived for
-            // WATCHDOG_RECONNECT_SECONDS. The caster's normal hiccups last
-            // ~10–20 s (#334 capture), so a 60 s threshold won't false-fire
-            // on those but does catch the case where the connection dies
-            // silently (the 302 s cutoff in the original report).
+            // Stall watchdog — drives the periodic [NTRIP] health log line
+            // and triggers a reconnect if no RTCM has arrived for
+            // WATCHDOG_RECONNECT_SECONDS (catches silent half-open TCP).
             _lastRtcmReceivedTimestamp = Clock.Current.GetTimestamp();
-            _watchdogWarnLogged = false;
             _watchdogTimer = new Timer(
                 WatchdogTimerCallback,
                 null,
@@ -195,9 +186,6 @@ public class NtripClientService : INtripClientService, IDisposable
 
         _ggaTimer?.Dispose();
         _ggaTimer = null;
-
-        _rtcmForwardTimer?.Dispose();
-        _rtcmForwardTimer = null;
 
         _watchdogTimer?.Dispose();
         _watchdogTimer = null;
@@ -366,9 +354,10 @@ public class NtripClientService : INtripClientService, IDisposable
                 }
                 else
                 {
-                    // Connection closed by server
+                    // Connection closed by server (FIN). NTRIP has no resume,
+                    // so kick the backoff reconnect loop. (#334)
                     _logger.LogInformation("Connection closed by caster");
-                    await DisconnectAsync();
+                    TriggerReconnect("caster sent FIN");
                     return;
                 }
             }
@@ -379,7 +368,7 @@ public class NtripClientService : INtripClientService, IDisposable
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Receive error");
-                await DisconnectAsync();
+                TriggerReconnect($"receive error: {ex.Message}");
                 break;
             }
         }
@@ -390,65 +379,46 @@ public class NtripClientService : INtripClientService, IDisposable
         if (rtcmData.Length == 0)
             return;
 
-        // Enqueue received RTCM bytes for timer-based forwarding (like AgIO)
-        lock (_queueLock)
+        // Forward each TCP read directly to the AiO in MTU-sized UDP chunks.
+        // No queue, no timer — RTCM is real-time data; any buffering would
+        // only deliver stale corrections to the AiO after a caster pause and
+        // delay the fresh ones that re-establish RTK fix. (#334)
+        var udpSocket = _udpSocket;
+        var endpoint = _rtcmUdpEndpoint;
+        if (udpSocket != null && endpoint != null)
         {
-            foreach (byte b in rtcmData)
+            int offset = 0;
+            while (offset < rtcmData.Length)
             {
-                _rtcmQueue.Enqueue(b);
+                int chunkSize = Math.Min(rtcmData.Length - offset, RTCM_PACKET_SIZE);
+                byte[] chunk;
+                if (offset == 0 && chunkSize == rtcmData.Length)
+                {
+                    chunk = rtcmData;
+                }
+                else
+                {
+                    chunk = new byte[chunkSize];
+                    Array.Copy(rtcmData, offset, chunk, 0, chunkSize);
+                }
+                try
+                {
+                    udpSocket.SendTo(chunk, endpoint);
+                    RtcmDataReceived?.Invoke(this, new RtcmDataReceivedEventArgs
+                    {
+                        BytesReceived = chunkSize
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to forward RTCM data");
+                }
+                offset += chunkSize;
             }
         }
 
         TotalBytesReceived += (ulong)rtcmData.Length;
         Volatile.Write(ref _lastRtcmReceivedTimestamp, Clock.Current.GetTimestamp());
-        if (_watchdogWarnLogged)
-        {
-            // Recovery — clear so the next stall logs a fresh warning.
-            _watchdogWarnLogged = false;
-        }
-    }
-
-    private void RtcmForwardTimerCallback(object? state)
-    {
-        if (!IsConnected || _udpSocket == null || _rtcmUdpEndpoint == null)
-            return;
-
-        lock (_queueLock)
-        {
-            if (_rtcmQueue.Count == 0)
-                return;
-
-            // Limit per-tick chunk to RTCM_PACKET_SIZE (#334).
-            int count = Math.Min(_rtcmQueue.Count, RTCM_PACKET_SIZE);
-            byte[] packet = new byte[count];
-
-            for (int i = 0; i < count; i++)
-            {
-                packet[i] = _rtcmQueue.Dequeue();
-            }
-
-            try
-            {
-                // Forward RTCM3 corrections to GPS module via UDP broadcast
-                _udpSocket.SendTo(packet, _rtcmUdpEndpoint);
-
-                RtcmDataReceived?.Invoke(this, new RtcmDataReceivedEventArgs
-                {
-                    BytesReceived = packet.Length
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to forward RTCM data");
-            }
-
-            // Clear queue if it gets too large (like AgIO does at 10000 bytes)
-            if (_rtcmQueue.Count > 10000)
-            {
-                _logger.LogWarning("Queue overflow, clearing {ByteCount} bytes", _rtcmQueue.Count);
-                _rtcmQueue.Clear();
-            }
-        }
     }
 
     private void GgaTimerCallback(object? state)
@@ -512,54 +482,80 @@ public class NtripClientService : INtripClientService, IDisposable
         double secondsSinceData = Clock.Current.ElapsedMs(last, now) / 1000.0;
 
         // Periodic health line — once per WATCHDOG_TIMER_INTERVAL_MS regardless
-        // of state. Helps operators distinguish "caster paused" (warn line below
-        // hasn't fired but data flow is choppy) from "AgValonia broke".
+        // of state. Operators read this to tell "caster paused" from
+        // "AgValonia broke" without needing the debug log.
         _logger.LogInformation(
             "[NTRIP] last RTCM {Sec:F1}s ago, total {Bytes} bytes",
             secondsSinceData, TotalBytesReceived);
 
         if (secondsSinceData >= WATCHDOG_RECONNECT_SECONDS)
         {
-            // Reconnect once; serialize via Interlocked so two ticks can't
-            // double-fire the reconnect (timer callbacks share the thread pool
-            // and a slow reconnect could overlap the next tick).
-            if (Interlocked.CompareExchange(ref _reconnectInProgress, 1, 0) == 0)
-            {
-                _logger.LogWarning(
-                    "[NTRIP] no RTCM for {Sec:F1}s — forcing reconnect (#334)",
-                    secondsSinceData);
-                _ = ReconnectAsync();
-            }
-        }
-        else if (secondsSinceData >= WATCHDOG_WARN_SECONDS && !_watchdogWarnLogged)
-        {
-            _watchdogWarnLogged = true;
-            _logger.LogWarning(
-                "[NTRIP] no RTCM for {Sec:F1}s — caster paused or connection stalled",
-                secondsSinceData);
+            TriggerReconnect($"no RTCM for {secondsSinceData:F1}s");
         }
     }
 
-    private async Task ReconnectAsync()
+    /// <summary>
+    /// Kick off the backoff reconnect loop. Idempotent — overlapping
+    /// triggers (e.g. watchdog stall + receive error firing in the same
+    /// window) are coalesced via the Interlocked guard.
+    /// </summary>
+    private void TriggerReconnect(string reason)
     {
+        if (Interlocked.CompareExchange(ref _reconnectInProgress, 1, 0) != 0)
+            return;
+        _logger.LogWarning("[NTRIP] reconnect triggered: {Reason}", reason);
+        _ = ReconnectWithBackoffAsync();
+    }
+
+    private async Task ReconnectWithBackoffAsync()
+    {
+        var cts = new CancellationTokenSource();
+        _reconnectCts = cts;
+        var token = cts.Token;
         try
         {
-            var config = _config;
-            if (config == null) return;
+            // Always start with a clean teardown so the next ConnectAsync
+            // opens fresh sockets and re-authenticates from scratch — NTRIP
+            // is HTTP-style stateless, the caster has dropped our mountpoint
+            // subscription anyway.
+            try { await DisconnectAsync(); } catch { /* best effort */ }
 
-            await DisconnectAsync();
-            // Brief pause so any TCP teardown completes before the new SYN.
-            await Task.Delay(500);
-            await ConnectAsync(config);
-            _logger.LogInformation("[NTRIP] reconnect complete");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[NTRIP] reconnect failed");
+            for (int attempt = 0; !token.IsCancellationRequested; attempt++)
+            {
+                int backoffSec = BackoffScheduleSec[Math.Min(attempt, BackoffScheduleSec.Length - 1)];
+                _logger.LogInformation(
+                    "[NTRIP] reconnect attempt {Attempt} after {Sec}s backoff",
+                    attempt + 1, backoffSec);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(backoffSec), token);
+                }
+                catch (OperationCanceledException) { return; }
+
+                var config = _config;
+                if (config == null) return;
+                try
+                {
+                    await ConnectAsync(config);
+                    _logger.LogInformation(
+                        "[NTRIP] reconnect succeeded on attempt {Attempt}",
+                        attempt + 1);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        "[NTRIP] reconnect attempt {Attempt} failed: {Msg}",
+                        attempt + 1, ex.Message);
+                }
+            }
         }
         finally
         {
             Interlocked.Exchange(ref _reconnectInProgress, 0);
+            if (ReferenceEquals(_reconnectCts, cts))
+                _reconnectCts = null;
+            cts.Dispose();
         }
     }
 
@@ -574,7 +570,10 @@ public class NtripClientService : INtripClientService, IDisposable
         }
         catch (Exception ex)
         {
+            // Send failures usually mean the TCP path is broken even if the
+            // receive loop hasn't noticed yet. Kick the reconnect loop. (#334)
             _logger.LogError(ex, "Failed to send GGA");
+            TriggerReconnect($"GGA send failed: {ex.Message}");
         }
     }
 
