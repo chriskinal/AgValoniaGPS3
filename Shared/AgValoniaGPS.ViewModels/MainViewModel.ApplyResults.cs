@@ -82,6 +82,7 @@ public partial class MainViewModel
         if (result.AutoSteerDisengagedThisCycle)
         {
             IsAutoSteerEngaged = false;
+            _autoSteerService.Disengage();
             StatusMessage = result.DisengageReason ?? "AutoSteer disengaged";
         }
 

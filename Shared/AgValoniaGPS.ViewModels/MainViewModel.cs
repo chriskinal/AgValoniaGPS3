@@ -1523,6 +1523,7 @@ public partial class MainViewModel : ObservableObject
         if (IsAutoSteerEngaged)
         {
             IsAutoSteerEngaged = false;
+            _autoSteerService.Disengage();
             SyncGuidanceStateToPipeline();
         }
 
