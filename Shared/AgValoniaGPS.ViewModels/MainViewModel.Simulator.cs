@@ -149,6 +149,21 @@ public partial class MainViewModel
                 }
                 else
                 {
+                    // Hardware parity: a real stationary GPS keeps emitting
+                    // NMEA frames with speed=0, which leaves the position
+                    // estimator's last snapshot at zero velocity so dead
+                    // reckoning produces no motion. Mirror that here — emit
+                    // one final stopped-in-place frame before halting the
+                    // timer so the estimator and the next pipeline cycle both
+                    // see a coherent stop. Without this, the 30 Hz vehicle
+                    // render-pull tick keeps gliding the tractor forward up
+                    // to MaxStaleSeconds (1 s) while the implement — which
+                    // only updates on cycle results — sits frozen.
+                    _simulatorService.StepDistance = 0;
+                    _simulatorService.IsAcceleratingForward = false;
+                    _simulatorService.IsAcceleratingBackward = false;
+                    _simulatorService.Tick(SimulatorSteerAngle);
+
                     State.Simulator.IsRunning = false;
                     _simulatorTimer.Stop();
                     StatusMessage = "Simulator OFF";
