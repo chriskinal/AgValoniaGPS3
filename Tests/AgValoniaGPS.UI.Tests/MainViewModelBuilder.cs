@@ -18,6 +18,7 @@ public class MainViewModelBuilder
     public ISettingsService SettingsService { get; } = Substitute.For<ISettingsService>();
     public IVehicleProfileService VehicleProfileService { get; } = Substitute.For<IVehicleProfileService>();
     public INtripProfileService NtripProfileService { get; } = Substitute.For<INtripProfileService>();
+    public IAutoSteerService AutoSteerService { get; } = Substitute.For<IAutoSteerService>();
     public AgValoniaGPS.Services.Pipeline.PipelineIntents Intents { get; } = new();
 
     public MainViewModelBuilder()
@@ -59,7 +60,7 @@ public class MainViewModelBuilder
             turnAreaService: Substitute.For<AgValoniaGPS.Services.Interfaces.ITurnAreaService>(),
             vehicleProfileService: VehicleProfileService,
             configurationService: Substitute.For<IConfigurationService>(),
-            autoSteerService: Substitute.For<IAutoSteerService>(),
+            autoSteerService: AutoSteerService,
             smartWasService: Substitute.For<ISmartWasCalibrationService>(),
             trackCopierService: Substitute.For<ITrackCopierService>(),
             moduleCommunicationService: Substitute.For<IModuleCommunicationService>(),
