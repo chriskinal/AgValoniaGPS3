@@ -125,6 +125,22 @@ public partial class MainViewModel
         get => _isSimulatorEnabled;
         set
         {
+            // Hardware parity stop: when DISABLING, emit one final stationary
+            // frame BEFORE flipping the flag. OnSimulatorGpsDataUpdated guards
+            // on !_isSimulatorEnabled and drops events once the flag flips,
+            // so a Tick after SetProperty would never reach the GPS pipeline.
+            // Without this, the position estimator's last snapshot retains
+            // non-zero speed, the 30 Hz vehicle render-pull tick dead-reckons
+            // the tractor forward up to MaxStaleSeconds (1 s), and the
+            // implement (which only updates on cycle results) sits frozen.
+            if (!value && _isSimulatorEnabled)
+            {
+                _simulatorService.StepDistance = 0;
+                _simulatorService.IsAcceleratingForward = false;
+                _simulatorService.IsAcceleratingBackward = false;
+                _simulatorService.Tick(SimulatorSteerAngle);
+            }
+
             if (SetProperty(ref _isSimulatorEnabled, value))
             {
                 // Update centralized state
@@ -149,21 +165,6 @@ public partial class MainViewModel
                 }
                 else
                 {
-                    // Hardware parity: a real stationary GPS keeps emitting
-                    // NMEA frames with speed=0, which leaves the position
-                    // estimator's last snapshot at zero velocity so dead
-                    // reckoning produces no motion. Mirror that here — emit
-                    // one final stopped-in-place frame before halting the
-                    // timer so the estimator and the next pipeline cycle both
-                    // see a coherent stop. Without this, the 30 Hz vehicle
-                    // render-pull tick keeps gliding the tractor forward up
-                    // to MaxStaleSeconds (1 s) while the implement — which
-                    // only updates on cycle results — sits frozen.
-                    _simulatorService.StepDistance = 0;
-                    _simulatorService.IsAcceleratingForward = false;
-                    _simulatorService.IsAcceleratingBackward = false;
-                    _simulatorService.Tick(SimulatorSteerAngle);
-
                     State.Simulator.IsRunning = false;
                     _simulatorTimer.Stop();
                     StatusMessage = "Simulator OFF";
