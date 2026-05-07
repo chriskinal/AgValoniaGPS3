@@ -4501,12 +4501,13 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // Sized to the new body-sprite proportions (PR #361 made the
-                    // bitmap rect ~2.3x wider/longer). Scaled relative to the
-                    // bitmap world dimensions so the overlay grows with the
-                    // sprite, not just with TrackWidth/Wheelbase.
-                    double wheelWidth = 0.22 * bitmapWidthWorld;
-                    double wheelHeight = 0.36 * bitmapHeightWorld;
+                    // FrontWheels.png is square (128x128). Rect aspect kept
+                    // ~square so the bitmap doesn't get stretched into a thin
+                    // strip. Scale tracks the body-sprite (bitmap rect) rather
+                    // than just TrackWidth/Wheelbase, so the overlay stays
+                    // visually proportional after PR #361 enlarged the body.
+                    double wheelWidth = 0.40 * bitmapWidthWorld;
+                    double wheelHeight = 0.45 * bitmapHeightWorld;
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4772,8 +4773,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float wheelW = (float)(0.22 * bitmapWWorld);
-                float wheelH = (float)(0.36 * bitmapHWorld);
+                float wheelW = (float)(0.40 * bitmapWWorld);
+                float wheelH = (float)(0.45 * bitmapHWorld);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
