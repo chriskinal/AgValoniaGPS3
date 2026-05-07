@@ -624,10 +624,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
         youTurnPath = _youTurn.TurnPath;
 
         // ── (3) Tool position ───────────────────────────────────────────
-        _toolPositionService.Update(
-            new Vec3(driftedEasting, driftedNorthing, headingRad),
-            headingRad);
-
+        // ToolPositionService is updated by ControlLoopService at 100 Hz
+        // (MainViewModel.OnControlLoopTicked). The pipeline used to call
+        // Update here too, but that created a dual-writer race on Torriem
+        // state — pipeline fed GPS-anchored pose at 10 Hz while the control
+        // loop fed dead-reckoned pose at 100 Hz, causing the trailing-tool
+        // atan2 baseline to thrash. Single writer now; we just read the
+        // latest snapshot (lock-free, at most ~10 ms stale).
         var toolPos = _toolPositionService.ToolPosition;
         var hitchPos = _toolPositionService.HitchPosition;
         double toolHeading = _toolPositionService.ToolHeading;
