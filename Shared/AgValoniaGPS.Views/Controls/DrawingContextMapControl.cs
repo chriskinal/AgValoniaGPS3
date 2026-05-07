@@ -4481,15 +4481,24 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 dc.DrawLine(twPen, new Point(-trackWidth / 2.0, wheelbase), new Point(trackWidth / 2.0, wheelbase));
                 dc.DrawEllipse(twTickBrush, null, new Point(-trackWidth / 2.0, wheelbase), 0.12, 0.12);
                 dc.DrawEllipse(twTickBrush, null, new Point(trackWidth / 2.0, wheelbase), 0.12, 0.12);
+                dc.DrawLine(twPen, new Point(-trackWidth / 2.0, 0), new Point(trackWidth / 2.0, 0));
+                dc.DrawEllipse(twTickBrush, null, new Point(-trackWidth / 2.0, 0), 0.12, 0.12);
+                dc.DrawEllipse(twTickBrush, null, new Point(trackWidth / 2.0, 0), 0.12, 0.12);
                 dc.DrawLine(wbPen, new Point(0, 0), new Point(0, wheelbase));
                 dc.DrawEllipse(wbTickBrush, null, new Point(0, 0), 0.12, 0.12);
                 dc.DrawEllipse(wbTickBrush, null, new Point(0, wheelbase), 0.12, 0.12);
-                double dbgWheelW = Math.Max(1.0, 0.22 * bitmapHeightWorld);
-                double dbgWheelH = Math.Max(2.0, 0.45 * bitmapHeightWorld);
+                double dbgWheelW = Math.Max(0.7, 0.25 * wheelbase);
+                double dbgWheelH = Math.Max(1.4, 0.50 * wheelbase);
+                // Front
                 dc.DrawRectangle(null, wheelTargetPen,
                     new Rect(trackWidth / 2.0 - dbgWheelW / 2, wheelbase - dbgWheelH / 2, dbgWheelW, dbgWheelH));
                 dc.DrawRectangle(null, wheelTargetPen,
                     new Rect(-trackWidth / 2.0 - dbgWheelW / 2, wheelbase - dbgWheelH / 2, dbgWheelW, dbgWheelH));
+                // Rear
+                dc.DrawRectangle(null, wheelTargetPen,
+                    new Rect(trackWidth / 2.0 - dbgWheelW / 2, -dbgWheelH / 2, dbgWheelW, dbgWheelH));
+                dc.DrawRectangle(null, wheelTargetPen,
+                    new Rect(-trackWidth / 2.0 - dbgWheelW / 2, -dbgWheelH / 2, dbgWheelW, dbgWheelH));
 
                 // Heading unknown indicator — "?" placed off the right side of the body
                 if (!s.HasValidHeading)
@@ -4523,14 +4532,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // FrontWheels.png is square (128x128). Scale wheel size off
-                    // bitmap HEIGHT (Wheelbase-driven) for both dimensions —
-                    // tying width to bitmap WIDTH (TrackWidth-driven) shrinks
-                    // the overlay to <1m on narrow-track tractors. Floor at
-                    // 1.0 m × 2.0 m so wheels stay visually plausible
-                    // regardless of vehicle config.
-                    double wheelWidth = Math.Max(1.0, 0.22 * bitmapHeightWorld);
-                    double wheelHeight = Math.Max(2.0, 0.45 * bitmapHeightWorld);
+                    // Tractor front-tire-ish footprint sized off Wheelbase.
+                    // 0.45 × bitmapHeight is the same as Wheelbase (since
+                    // bitmapHeight = Wheelbase / 0.45) — that was rendering
+                    // the wheel as tall as the entire wheelbase. Use direct
+                    // wheelbase fractions instead, with floors so wheels stay
+                    // visible on small configs.
+                    double wheelWidth = Math.Max(0.7, 0.25 * wheelbase);
+                    double wheelHeight = Math.Max(1.4, 0.50 * wheelbase);
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4796,8 +4805,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float wheelW = (float)Math.Max(1.0, 0.22 * bitmapHWorld);
-                float wheelH = (float)Math.Max(2.0, 0.45 * bitmapHWorld);
+                float wheelW = (float)Math.Max(0.7, 0.25 * wheelbase);
+                float wheelH = (float)Math.Max(1.4, 0.50 * wheelbase);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
@@ -4837,13 +4846,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 canvas.DrawLine(-trackWidth / 2f, wheelbase, trackWidth / 2f, wheelbase, twPaint);
                 canvas.DrawCircle(-trackWidth / 2f, wheelbase, 0.12f, twTick);
                 canvas.DrawCircle(trackWidth / 2f, wheelbase, 0.12f, twTick);
+                // TrackWidth at rear axle
+                canvas.DrawLine(-trackWidth / 2f, 0, trackWidth / 2f, 0, twPaint);
+                canvas.DrawCircle(-trackWidth / 2f, 0, 0.12f, twTick);
+                canvas.DrawCircle(trackWidth / 2f, 0, 0.12f, twTick);
                 // Wheelbase on centerline
                 canvas.DrawLine(0, 0, 0, wheelbase, wbPaint);
                 canvas.DrawCircle(0, 0, 0.12f, wbTick);
                 canvas.DrawCircle(0, wheelbase, 0.12f, wbTick);
                 // Wheel target squares — same size/position as the rendered overlay.
-                float dbgWheelW = (float)Math.Max(1.0, 0.22 * bitmapHWorld);
-                float dbgWheelH = (float)Math.Max(2.0, 0.45 * bitmapHWorld);
+                float dbgWheelW = (float)Math.Max(0.7, 0.25 * wheelbase);
+                float dbgWheelH = (float)Math.Max(1.4, 0.50 * wheelbase);
+                // Front
                 canvas.DrawRect(
                     new SKRect(trackWidth / 2f - dbgWheelW / 2, wheelbase - dbgWheelH / 2,
                                trackWidth / 2f + dbgWheelW / 2, wheelbase + dbgWheelH / 2),
@@ -4851,6 +4865,15 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 canvas.DrawRect(
                     new SKRect(-trackWidth / 2f - dbgWheelW / 2, wheelbase - dbgWheelH / 2,
                                -trackWidth / 2f + dbgWheelW / 2, wheelbase + dbgWheelH / 2),
+                    wheelTargetPaint);
+                // Rear
+                canvas.DrawRect(
+                    new SKRect(trackWidth / 2f - dbgWheelW / 2, -dbgWheelH / 2,
+                               trackWidth / 2f + dbgWheelW / 2, dbgWheelH / 2),
+                    wheelTargetPaint);
+                canvas.DrawRect(
+                    new SKRect(-trackWidth / 2f - dbgWheelW / 2, -dbgWheelH / 2,
+                               -trackWidth / 2f + dbgWheelW / 2, dbgWheelH / 2),
                     wheelTargetPaint);
             }
 
