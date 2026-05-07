@@ -16,6 +16,12 @@ using AgValoniaGPS.VehicleSimulator.Modules;
 
 namespace AgValoniaGPS.VehicleSimulator.ViewModels;
 
+public enum DriveMode
+{
+    Bicycle,
+    Raw
+}
+
 public class MainWindowViewModel : INotifyPropertyChanged
 {
     private VirtualModuleHub? _hub;
@@ -40,7 +46,8 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private double _commandedAngle;
     private byte _pwmDisplay;
     private bool _steerSwitchOn = true;
-    private bool _autoSteerActive;
+    private bool _autoSteerEngaged;
+    private DriveMode _driveMode = DriveMode.Bicycle;
     private string _statusText = "Stopped";
 
     public double Speed
@@ -115,10 +122,20 @@ public class MainWindowViewModel : INotifyPropertyChanged
         set { _steerSwitchOn = value; OnPropertyChanged(); }
     }
 
-    public bool AutoSteerActive
+    /// <summary>
+    /// Read-only indicator: autosteer engaged signal received from the host
+    /// (PGN 254 IsEngaged bit).
+    /// </summary>
+    public bool AutoSteerEngaged
     {
-        get => _autoSteerActive;
-        set { _autoSteerActive = value; OnPropertyChanged(); }
+        get => _autoSteerEngaged;
+        private set { _autoSteerEngaged = value; OnPropertyChanged(); }
+    }
+
+    public DriveMode DriveMode
+    {
+        get => _driveMode;
+        set { _driveMode = value; OnPropertyChanged(); }
     }
 
     public string StatusText
@@ -202,25 +219,44 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         if (_hub == null) return;
 
-        // When autosteer is active, WAS follows the commanded angle with response lag
-        if (_autoSteerActive)
+        // Mirror host's autosteer engagement to the read-only indicator. When
+        // engaged, the simulated WAS follows the commanded angle with lag.
+        bool engaged = _hub.Steer.LastCommand?.IsEngaged ?? false;
+        AutoSteerEngaged = engaged;
+        if (engaged)
         {
             double commanded = _hub.Steer.CommandedSteerAngleDeg;
-            double responseRate = 0.3; // lag factor per tick
+            double responseRate = 0.3;
             WasAngle += (commanded - WasAngle) * responseRate;
         }
 
-        // Feed current values into the physics model
-        _vehicle.SpeedKmh = Speed;
-        _vehicle.SteerAngleDeg = WasAngle;
+        const double dt = 0.1; // 10 Hz tick
+        if (DriveMode == DriveMode.Bicycle)
+        {
+            _vehicle.SpeedKmh = Speed;
+            _vehicle.SteerAngleDeg = WasAngle;
+            _vehicle.Step(dt);
 
-        // Step the bicycle model (10 Hz = 0.1s per tick)
-        _vehicle.Step(0.1);
+            Heading = _vehicle.HeadingDeg;
+            Latitude = _vehicle.Latitude;
+            Longitude = _vehicle.Longitude;
+        }
+        else
+        {
+            // Raw mode: slider Heading is source of truth; just integrate position.
+            double speedMs = Speed / 3.6;
+            double headingRad = Heading * Math.PI / 180.0;
+            double dNorth = speedMs * Math.Cos(headingRad) * dt;
+            double dEast = speedMs * Math.Sin(headingRad) * dt;
+            Latitude += dNorth / 111320.0;
+            Longitude += dEast / (111320.0 * Math.Cos(Latitude * Math.PI / 180.0));
 
-        // Read back physics results
-        Heading = _vehicle.HeadingDeg;
-        Latitude = _vehicle.Latitude;
-        Longitude = _vehicle.Longitude;
+            // Keep the bicycle model's pose in sync so a switch back to Bicycle
+            // mode resumes from the user's current pose rather than snapping back.
+            _vehicle.Latitude = Latitude;
+            _vehicle.Longitude = Longitude;
+            _vehicle.HeadingDeg = Heading;
+        }
 
         // Push updated values to GPS module
         _hub.Gps.Latitude = Latitude;

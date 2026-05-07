@@ -28,6 +28,12 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Vehicle" FontWeight="SemiBold" FontSize="14" />
 
+                    <TextBlock Text="Drive Mode" />
+                    <ComboBox SelectedItem="{Binding DriveMode}" HorizontalAlignment="Stretch">
+                        <vm:DriveMode>Bicycle</vm:DriveMode>
+                        <vm:DriveMode>Raw</vm:DriveMode>
+                    </ComboBox>
+
                     <TextBlock Text="{Binding Speed, StringFormat='Speed: {0:F1} km/h'}" />
                     <Slider Minimum="0" Maximum="30" Value="{Binding Speed}"
                             TickFrequency="1" IsSnapToTickEnabled="False" />
@@ -76,8 +82,18 @@
                                    Minimum="0" Maximum="30" />
 
                     <CheckBox Content="Steer Switch ON" IsChecked="{Binding SteerSwitchOn}" />
-                    <CheckBox Content="AutoSteer Active" IsChecked="{Binding AutoSteerActive}"
-                              ToolTip.Tip="When enabled, WAS follows the commanded steer angle from the main app" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Panel Width="14" Height="14">
+                            <Border CornerRadius="7" BorderBrush="Black" BorderThickness="1"
+                                    Background="LimeGreen"
+                                    IsVisible="{Binding AutoSteerEngaged}" />
+                            <Border CornerRadius="7" BorderBrush="Black" BorderThickness="1"
+                                    Background="DimGray"
+                                    IsVisible="{Binding !AutoSteerEngaged}" />
+                        </Panel>
+                        <TextBlock Text="AutoSteer Engaged (from host)" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
