@@ -4408,17 +4408,37 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             }
         }
 
-        private void DrawVehicle(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        // TractorAoG.png is a top-down sprite where the depicted body
+        // (PTO/3PT, cab, hood, antenna) extends well beyond the axles —
+        // the rear axle sits ~30% from the bitmap bottom and the front
+        // axle ~75%, with the depicted wheel centers ~21% from the bitmap
+        // centerline. #336 sized the rect to literal (TrackWidth × Wheelbase),
+        // which squashed the visible tractor to ~1/4 of a real tractor's
+        // footprint and made the 0.15 m hitch line look thick by comparison.
+        // Instead, scale the rect so the depicted axles match the configured
+        // Wheelbase and the depicted front wheels match TrackWidth/2; with
+        // those constraints the AgOpen wheel-overlay formula (TrackWidth/2,
+        // Wheelbase) lands directly on the depicted wheels.
+        private const double BitmapRearAxleYNorm = 0.30;          // depicted rear-axle position, fraction from bitmap bottom
+        private const double BitmapFrontAxleYNorm = 0.75;         // depicted front-axle position, fraction from bitmap bottom
+        private const double BitmapFrontWheelHalfXNorm = 0.21;    // depicted front-wheel half-spacing, fraction of bitmap width
+        private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm; // 0.45
+
+        private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
-            // Body sprite is sized to the configured wheelbase / track width so
-            // the rear axle (= vehicle pivot) sits at the bitmap's bottom edge
-            // (y = 0) and the front axle at the top (y = Wheelbase). This is
-            // AgOpen's CVehicle sizing convention. The legacy 5×5 m hardcoded
-            // sprite floated the body around the pivot and made it impossible
-            // to overlay the steerable front wheels at the right position.
             double trackWidth = s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8;
             double wheelbase = s.VehicleWheelbase > 0.01 ? s.VehicleWheelbase : 2.8;
-            double bodyHalfWidth = trackWidth / 2.0;
+            widthWorld = trackWidth / (2.0 * BitmapFrontWheelHalfXNorm);
+            heightWorld = wheelbase / BitmapAxleSpanYNorm;
+        }
+
+        private void DrawVehicle(ImmediateDrawingContext dc, SKCanvas? canvas, MapRenderState s)
+        {
+            BitmapTractorSize(s, out double bitmapWidthWorld, out double bitmapHeightWorld);
+            double bodyHalfWidth = bitmapWidthWorld / 2.0;
+            double rectTopWorldY = (1.0 - BitmapRearAxleYNorm) * bitmapHeightWorld;
+            double wheelbase = s.VehicleWheelbase > 0.01 ? s.VehicleWheelbase : 2.8;
+            double trackWidth = s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8;
 
             using (dc.PushPreTransform(Matrix.CreateTranslation(s.VehicleX, s.VehicleY)))
             using (dc.PushPreTransform(Matrix.CreateRotation(-s.VehicleHeading)))
@@ -4427,10 +4447,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     using (dc.PushPreTransform(Matrix.CreateScale(1, -1)))
                     {
-                        // Y-flip: bitmap top (front of tractor) maps to world +Y.
-                        // After flip the rect is in pre-flip space, so y=-Wheelbase
-                        // means "Wheelbase forward" of the pivot in world coords.
-                        dc.DrawBitmap(vehicleBitmap, new Rect(-bodyHalfWidth, -wheelbase, trackWidth, wheelbase));
+                        // Y-flip: bitmap top (front of tractor) maps to world
+                        // +Y. After flip the rect is in pre-flip space, so the
+                        // rect's pre-flip top edge (-rectTopWorldY) becomes the
+                        // tractor's front edge in world coords.
+                        dc.DrawBitmap(vehicleBitmap,
+                            new Rect(-bodyHalfWidth, -rectTopWorldY, bitmapWidthWorld, bitmapHeightWorld));
                     }
                 }
                 else
@@ -4470,22 +4492,18 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 dc.DrawEllipse(antennaBrush, null, new Point(s.AntennaOffset, s.AntennaPivot), 0.25, 0.25);
 
                 // Front wheels: rotate by the live WAS / sim steer angle around
-                // each wheel pivot. Position is empirically tuned to TractorAoG.png:
-                // the depicted front wheels sit at ~0.67 × Wheelbase forward of
-                // the rear axle and ~0.27 × TrackWidth from centerline (the body
-                // bitmap has decorative space — antenna mast — above the front
-                // axle so the AgOpen "wheel at (TrackWidth/2, Wheelbase)"
-                // formula puts overlay wheels past the mast top). Wheel size is
-                // sized to plausible tire footprint, not AgOpen's stretched
-                // delta, so the rotating overlay roughly matches the bitmap's
-                // depicted wheels and stays inside the body. See issue #336.
+                // each wheel pivot. The bitmap rect is sized so depicted axles
+                // match physical Wheelbase and depicted wheel centers match
+                // TrackWidth/2, so the AgOpen formula (TrackWidth/2, Wheelbase)
+                // lands the overlay directly on the depicted wheels. See #336.
                 if (s.FrontWheelImage is Bitmap wheelBitmap
                     && s.VehicleWheelbase > 0.01 && s.VehicleTrackWidth > 0.01)
                 {
-                    double wheelOffsetX = 0.21 * s.VehicleTrackWidth;
-                    double wheelOffsetY = 0.74 * s.VehicleWheelbase;
-                    double wheelWidth = 0.36 * s.VehicleTrackWidth;
-                    double wheelHeight = 0.60 * s.VehicleWheelbase;
+                    double wheelOffsetX = trackWidth / 2.0;
+                    double wheelOffsetY = wheelbase;
+                    // Depicted front wheel is ~16% of bitmap width × ~20% of bitmap height.
+                    double wheelWidth = 0.16 * bitmapWidthWorld;
+                    double wheelHeight = 0.20 * bitmapHeightWorld;
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4675,11 +4693,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         private void DrawVehicleSk(SKCanvas canvas, MapRenderState s)
         {
-            // Body sprite sized to (TrackWidth × Wheelbase), bottom edge at the
-            // pivot (rear axle). See DrawVehicle for the rationale.
+            // Bitmap rect sized so depicted axles match physical Wheelbase and
+            // depicted wheel centers match TrackWidth. See DrawVehicle.
+            BitmapTractorSize(s, out double bitmapWWorld, out double bitmapHWorld);
             float trackWidth = (float)(s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8);
             float wheelbase = (float)(s.VehicleWheelbase > 0.01 ? s.VehicleWheelbase : 2.8);
-            float bodyHalfWidth = trackWidth / 2.0f;
+            float bodyHalfWidth = (float)(bitmapWWorld / 2.0);
+            float rectTopWorldY = (float)((1.0 - BitmapRearAxleYNorm) * bitmapHWorld);
+            float rectBottomWorldY = (float)(-BitmapRearAxleYNorm * bitmapHWorld);
             float vx = (float)s.VehicleX, vy = (float)s.VehicleY;
 
             canvas.Save();
@@ -4703,9 +4724,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_vehicleSkBitmap != null)
             {
                 // Y-flip because world coordinates have Y-up but bitmap is Y-down.
-                // Pre-flip rect: bottom (rear axle) at y=0, top (front axle) at y=-Wheelbase.
+                // Pre-flip rect: top edge at y=-rectTopWorldY (becomes +rectTopWorldY
+                // in world after flip = front of tractor), bottom edge at
+                // y=+|rectBottomWorldY| (becomes rectBottomWorldY in world = rear).
                 canvas.Scale(1, -1);
-                var dst = new SKRect(-bodyHalfWidth, -wheelbase, bodyHalfWidth, 0);
+                var dst = new SKRect(-bodyHalfWidth, -rectTopWorldY, bodyHalfWidth, -rectBottomWorldY);
                 canvas.DrawBitmap(_vehicleSkBitmap, dst);
                 canvas.Scale(1, -1); // Restore for antenna dot + wheels
             }
@@ -4743,11 +4766,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             if (_frontWheelSkBitmap != null
                 && s.VehicleWheelbase > 0.01 && s.VehicleTrackWidth > 0.01)
             {
-                // Empirical positions to match TractorAoG.png (see DrawVehicle).
-                float wheelOffsetX = (float)(0.21 * s.VehicleTrackWidth);
-                float wheelOffsetY = (float)(0.74 * s.VehicleWheelbase);
-                float wheelW = (float)(0.36 * s.VehicleTrackWidth);
-                float wheelH = (float)(0.60 * s.VehicleWheelbase);
+                // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
+                float wheelOffsetX = trackWidth / 2.0f;
+                float wheelOffsetY = wheelbase;
+                float wheelW = (float)(0.16 * bitmapWWorld);
+                float wheelH = (float)(0.20 * bitmapHWorld);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
