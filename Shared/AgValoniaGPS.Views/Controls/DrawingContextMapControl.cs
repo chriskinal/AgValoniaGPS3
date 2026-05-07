@@ -4419,26 +4419,26 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Wheelbase and the depicted front wheels match TrackWidth/2; with
         // those constraints the AgOpen wheel-overlay formula (TrackWidth/2,
         // Wheelbase) lands directly on the depicted wheels.
-        private const double BitmapRearAxleYNorm = 0.30;          // depicted rear-axle position, fraction from bitmap bottom
+        private const double BitmapRearAxleYNorm = 0.245;         // depicted rear-axle position, fraction from bitmap bottom
         private const double BitmapFrontAxleYNorm = 0.75;         // depicted front-axle position, fraction from bitmap bottom
         private const double BitmapFrontWheelHalfXNorm = 0.21;    // depicted front-wheel half-spacing, fraction of bitmap width
-        private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm; // 0.45
+        private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm;
 
         // FrontWheels.png is a 128x128 bitmap with the actual tire content
         // centered and transparent margins around it. The rect we draw the
         // bitmap into is the FULL bitmap canvas, but only the tire-content
-        // fraction is visible — so to render a 1.0 m visible tire we need a
-        // rect ~2 m wide. Measured visually from the source PNG.
-        private const double WheelBitmapContentWFraction = 0.50;
-        private const double WheelBitmapContentHFraction = 0.65;
+        // fraction is visible — so to render a target visible tire we need a
+        // rect ~1/fraction larger. Tuned empirically against the cyan debug
+        // square.
+        private const double WheelBitmapContentWFraction = 0.35;
+        private const double WheelBitmapContentHFraction = 0.50;
 
         // Reference tire footprints. Front: 14.9R28 → 14.9" wide section,
-        // ~1.40 m overall diameter. Rear: 18.4R38 → 18.4" wide section,
-        // ~1.84 m overall diameter. (Agricultural R-1, typical sidewall.)
-        // Used both for the front-wheel overlay sprite size and for the
-        // cyan debug squares that mark expected wheel footprints.
+        // 0.85 m overall diameter (per user's reference). Rear: 18.4R38 →
+        // 18.4" wide section, 1.84 m overall diameter. Used both for the
+        // front-wheel overlay sprite size and for the cyan debug squares.
         private const double FrontTireWidthM = 0.378;
-        private const double FrontTireDiameterM = 1.40;
+        private const double FrontTireDiameterM = 0.85;
         private const double RearTireWidthM = 0.467;
         private const double RearTireDiameterM = 1.84;
 
