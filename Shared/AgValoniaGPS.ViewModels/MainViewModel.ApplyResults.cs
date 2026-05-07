@@ -256,12 +256,13 @@ public partial class MainViewModel
         if (result.StatusMessage != null)
             StatusMessage = result.StatusMessage;
 
-        // Map service position update (single atomic call)
-        _mapService.SetAllPositions(
-            result.Easting, result.Northing, result.Heading * Math.PI / 180.0,
-            result.ToolEasting, result.ToolNorthing, result.ToolHeadingRadians,
-            result.ToolWidth, result.HitchEasting, result.HitchNorthing,
-            result.IsToolPositionReady);
+        // Map vehicle/tool/hitch positions are pushed by OnRenderPullTick at
+        // 30 Hz (vehicle dead-reckoned to "now" from the estimator, tool/hitch
+        // from the live ToolPositionService snapshot updated at 100 Hz by the
+        // control loop). The pipeline result captures stale values at
+        // pipeline-run time; pushing them here as well caused the implement to
+        // jitter back and forth at GPS rate as the stale write fought the
+        // live render-pull write.
 
         // Live wheel angle for the front-wheel sprite (#336). Real WAS reading
         // when an autosteer module is attached, simulator slider value when

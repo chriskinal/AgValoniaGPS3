@@ -463,13 +463,28 @@ public partial class MainViewModel : ObservableObject
     /// dead-reckoned to "now" from the latest GPS snapshot using yaw rate
     /// and velocity, so position advances ~7 cm per 30 Hz frame at 25 km/h
     /// instead of a 28 cm jump every 100 ms.
+    ///
+    /// Tool/hitch are pulled from the latest ToolPositionService snapshot
+    /// (updated at 100 Hz by the control loop) and pushed in the same
+    /// atomic SetAllPositions call as the vehicle. Otherwise the vehicle
+    /// would slide forward at 30 Hz while the tool stayed pinned to the
+    /// last 10 Hz GpsCycleResult, making the implement appear to lag and
+    /// then snap forward at every GPS sample — visible as back-and-forth
+    /// jitter relative to the tractor.
     /// </summary>
     private void OnRenderPullTick(object? sender, EventArgs e)
     {
         if (_positionEstimator?.GetLatestSnapshot() is null)
             return;
         var p = _positionEstimator.GetPose(Clock.Current.GetTimestamp());
-        _mapService.SetVehiclePosition(p.Position.Easting, p.Position.Northing, p.Heading);
+
+        var toolPos = _toolPositionService.ToolPosition;
+        var hitchPos = _toolPositionService.HitchPosition;
+        _mapService.SetAllPositions(
+            p.Position.Easting, p.Position.Northing, p.Heading,
+            toolPos.Easting, toolPos.Northing, _toolPositionService.ToolHeading,
+            ConfigStore.ActualToolWidth, hitchPos.Easting, hitchPos.Northing,
+            _toolPositionService.IsToolPositionReady);
     }
 
     private void RestoreSettings()
