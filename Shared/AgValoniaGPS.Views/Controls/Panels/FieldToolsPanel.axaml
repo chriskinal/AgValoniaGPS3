@@ -47,5 +47,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                          Text="{loc:Localize RecordedPath}"
                          Command="{Binding ToggleRecordedPathPanelCommand}"/>
 
+    <controls:MenuButton Icon="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png"
+                         Text="{loc:Localize OffsetFix}"
+                         Command="{Binding ShowOffsetFixDialogCommand}"/>
+
   </controls:FloatingPanel>
 </UserControl>
