@@ -205,6 +205,24 @@ public partial class MainViewModel
             State.Field.LocalPlane = result.FirstFixLocalPlane;
         }
 
+        // Origin guard: live GPS jumped beyond the temp-origin threshold while
+        // no field was loaded. Overwrite the existing observable plane (the
+        // cycle has already swapped its own cache) and surface a status toast.
+        if (result.ReplacementLocalPlane != null)
+        {
+            State.Field.LocalPlane = result.ReplacementLocalPlane;
+            StatusMessage =
+                $"GPS source moved {result.ReplacementDistanceKm:F0} km " +
+                $"from local origin; origin re-anchored.";
+        }
+
+        // Origin guard: live GPS far from the loaded field. Drop autosteer
+        // and prompt the operator for a close/keep-driving decision.
+        if (result.FarFromFieldWarning is { } w)
+        {
+            HandleFarFromFieldWarning(w);
+        }
+
         // Section states
         if (result.SectionStates != null)
         {
