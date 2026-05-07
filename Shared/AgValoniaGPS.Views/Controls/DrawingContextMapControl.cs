@@ -4501,13 +4501,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // FrontWheels.png is square (128x128). Rect aspect kept
-                    // ~square so the bitmap doesn't get stretched into a thin
-                    // strip. Scale tracks the body-sprite (bitmap rect) rather
-                    // than just TrackWidth/Wheelbase, so the overlay stays
-                    // visually proportional after PR #361 enlarged the body.
-                    double wheelWidth = 0.40 * bitmapWidthWorld;
-                    double wheelHeight = 0.45 * bitmapHeightWorld;
+                    // FrontWheels.png is square (128x128). Scale wheel size off
+                    // bitmap HEIGHT (Wheelbase-driven) for both dimensions —
+                    // tying width to bitmap WIDTH (TrackWidth-driven) shrinks
+                    // the overlay to <1m on narrow-track tractors. Floor at
+                    // 1.0 m × 2.0 m so wheels stay visually plausible
+                    // regardless of vehicle config.
+                    double wheelWidth = Math.Max(1.0, 0.22 * bitmapHeightWorld);
+                    double wheelHeight = Math.Max(2.0, 0.45 * bitmapHeightWorld);
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4773,8 +4774,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float wheelW = (float)(0.40 * bitmapWWorld);
-                float wheelH = (float)(0.45 * bitmapHWorld);
+                float wheelW = (float)Math.Max(1.0, 0.22 * bitmapHWorld);
+                float wheelH = (float)Math.Max(2.0, 0.45 * bitmapHWorld);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
