@@ -83,7 +83,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Steer Angle Display -->
                 <TextBlock Text="{Binding SimulatorSteerAngleDisplay, Mode=OneWay}"
-                           HorizontalAlignment="Center" FontSize="12" Foreground="#DDD"/>
+                           HorizontalAlignment="Center" FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
@@ -116,7 +117,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Speed Display -->
                 <TextBlock Text="{Binding SimulatorSpeedDisplay, Mode=OneWay}"
-                           HorizontalAlignment="Center" FontSize="12" Foreground="#DDD"/>
+                           HorizontalAlignment="Center" FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
                 <!-- Stop -->
                 <Button ClickMode="Press"

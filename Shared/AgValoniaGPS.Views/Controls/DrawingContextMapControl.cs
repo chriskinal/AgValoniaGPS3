@@ -4501,9 +4501,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // Depicted front wheel is ~16% of bitmap width × ~20% of bitmap height.
-                    double wheelWidth = 0.16 * bitmapWidthWorld;
-                    double wheelHeight = 0.20 * bitmapHeightWorld;
+                    // Plausible front-tire footprint sized to physical TrackWidth /
+                    // Wheelbase. Bitmap-relative scaling under-sized the overlay
+                    // against the larger body sprite from PR #361.
+                    double wheelWidth = 0.36 * trackWidth;
+                    double wheelHeight = 0.60 * wheelbase;
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4769,8 +4771,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float wheelW = (float)(0.16 * bitmapWWorld);
-                float wheelH = (float)(0.20 * bitmapHWorld);
+                float wheelW = (float)(0.36 * trackWidth);
+                float wheelH = (float)(0.60 * wheelbase);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
