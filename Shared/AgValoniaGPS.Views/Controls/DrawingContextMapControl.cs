@@ -4432,6 +4432,16 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private const double WheelBitmapContentWFraction = 0.50;
         private const double WheelBitmapContentHFraction = 0.65;
 
+        // Reference tire footprints. Front: 14.9R28 → 14.9" wide section,
+        // ~1.40 m overall diameter. Rear: 18.4R38 → 18.4" wide section,
+        // ~1.84 m overall diameter. (Agricultural R-1, typical sidewall.)
+        // Used both for the front-wheel overlay sprite size and for the
+        // cyan debug squares that mark expected wheel footprints.
+        private const double FrontTireWidthM = 0.378;
+        private const double FrontTireDiameterM = 1.40;
+        private const double RearTireWidthM = 0.467;
+        private const double RearTireDiameterM = 1.84;
+
         private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
             double trackWidth = s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8;
@@ -4495,18 +4505,17 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 dc.DrawLine(wbPen, new Point(0, 0), new Point(0, wheelbase));
                 dc.DrawEllipse(wbTickBrush, null, new Point(0, 0), 0.12, 0.12);
                 dc.DrawEllipse(wbTickBrush, null, new Point(0, wheelbase), 0.12, 0.12);
-                double dbgWheelW = Math.Max(0.7, 0.25 * wheelbase);
-                double dbgWheelH = Math.Max(1.4, 0.50 * wheelbase);
-                // Front
+                // Front squares = 14.9R28, rear squares = 18.4R38.
+                double frontDbgW = FrontTireWidthM, frontDbgH = FrontTireDiameterM;
+                double rearDbgW = RearTireWidthM, rearDbgH = RearTireDiameterM;
                 dc.DrawRectangle(null, wheelTargetPen,
-                    new Rect(trackWidth / 2.0 - dbgWheelW / 2, wheelbase - dbgWheelH / 2, dbgWheelW, dbgWheelH));
+                    new Rect(trackWidth / 2.0 - frontDbgW / 2, wheelbase - frontDbgH / 2, frontDbgW, frontDbgH));
                 dc.DrawRectangle(null, wheelTargetPen,
-                    new Rect(-trackWidth / 2.0 - dbgWheelW / 2, wheelbase - dbgWheelH / 2, dbgWheelW, dbgWheelH));
-                // Rear
+                    new Rect(-trackWidth / 2.0 - frontDbgW / 2, wheelbase - frontDbgH / 2, frontDbgW, frontDbgH));
                 dc.DrawRectangle(null, wheelTargetPen,
-                    new Rect(trackWidth / 2.0 - dbgWheelW / 2, -dbgWheelH / 2, dbgWheelW, dbgWheelH));
+                    new Rect(trackWidth / 2.0 - rearDbgW / 2, -rearDbgH / 2, rearDbgW, rearDbgH));
                 dc.DrawRectangle(null, wheelTargetPen,
-                    new Rect(-trackWidth / 2.0 - dbgWheelW / 2, -dbgWheelH / 2, dbgWheelW, dbgWheelH));
+                    new Rect(-trackWidth / 2.0 - rearDbgW / 2, -rearDbgH / 2, rearDbgW, rearDbgH));
 
                 // Heading unknown indicator — "?" placed off the right side of the body
                 if (!s.HasValidHeading)
@@ -4540,14 +4549,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // Target visible tire size, then upscale the rect to
-                    // compensate for the bitmap's transparent margins so the
-                    // rendered tire actually matches the target. Floors keep
-                    // the tire visible on small configs.
-                    double visibleWheelW = Math.Max(0.7, 0.25 * wheelbase);
-                    double visibleWheelH = Math.Max(1.4, 0.50 * wheelbase);
-                    double wheelWidth = visibleWheelW / WheelBitmapContentWFraction;
-                    double wheelHeight = visibleWheelH / WheelBitmapContentHFraction;
+                    // Target visible tire footprint = 14.9R28 (~0.38 m × 1.40 m).
+                    // Upscale the rect by 1/contentFraction so the rendered
+                    // tire matches that target after the PNG's transparent
+                    // margins are accounted for.
+                    double wheelWidth = FrontTireWidthM / WheelBitmapContentWFraction;
+                    double wheelHeight = FrontTireDiameterM / WheelBitmapContentHFraction;
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4813,10 +4820,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float visibleW = (float)Math.Max(0.7, 0.25 * wheelbase);
-                float visibleH = (float)Math.Max(1.4, 0.50 * wheelbase);
-                float wheelW = (float)(visibleW / WheelBitmapContentWFraction);
-                float wheelH = (float)(visibleH / WheelBitmapContentHFraction);
+                float wheelW = (float)(FrontTireWidthM / WheelBitmapContentWFraction);
+                float wheelH = (float)(FrontTireDiameterM / WheelBitmapContentHFraction);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
@@ -4864,28 +4869,28 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 canvas.DrawLine(0, 0, 0, wheelbase, wbPaint);
                 canvas.DrawCircle(0, 0, 0.12f, wbTick);
                 canvas.DrawCircle(0, wheelbase, 0.12f, wbTick);
-                // Wheel target squares — track the *visible* tire content
-                // (after the bitmap's transparent margins are subtracted),
-                // which is what the user actually sees as the tire.
-                float dbgWheelW = (float)Math.Max(0.7, 0.25 * wheelbase);
-                float dbgWheelH = (float)Math.Max(1.4, 0.50 * wheelbase);
+                // Wheel target squares: front = 14.9R28, rear = 18.4R38.
+                float frontDbgW = (float)FrontTireWidthM;
+                float frontDbgH = (float)FrontTireDiameterM;
+                float rearDbgW = (float)RearTireWidthM;
+                float rearDbgH = (float)RearTireDiameterM;
                 // Front
                 canvas.DrawRect(
-                    new SKRect(trackWidth / 2f - dbgWheelW / 2, wheelbase - dbgWheelH / 2,
-                               trackWidth / 2f + dbgWheelW / 2, wheelbase + dbgWheelH / 2),
+                    new SKRect(trackWidth / 2f - frontDbgW / 2, wheelbase - frontDbgH / 2,
+                               trackWidth / 2f + frontDbgW / 2, wheelbase + frontDbgH / 2),
                     wheelTargetPaint);
                 canvas.DrawRect(
-                    new SKRect(-trackWidth / 2f - dbgWheelW / 2, wheelbase - dbgWheelH / 2,
-                               -trackWidth / 2f + dbgWheelW / 2, wheelbase + dbgWheelH / 2),
+                    new SKRect(-trackWidth / 2f - frontDbgW / 2, wheelbase - frontDbgH / 2,
+                               -trackWidth / 2f + frontDbgW / 2, wheelbase + frontDbgH / 2),
                     wheelTargetPaint);
                 // Rear
                 canvas.DrawRect(
-                    new SKRect(trackWidth / 2f - dbgWheelW / 2, -dbgWheelH / 2,
-                               trackWidth / 2f + dbgWheelW / 2, dbgWheelH / 2),
+                    new SKRect(trackWidth / 2f - rearDbgW / 2, -rearDbgH / 2,
+                               trackWidth / 2f + rearDbgW / 2, rearDbgH / 2),
                     wheelTargetPaint);
                 canvas.DrawRect(
-                    new SKRect(-trackWidth / 2f - dbgWheelW / 2, -dbgWheelH / 2,
-                               -trackWidth / 2f + dbgWheelW / 2, dbgWheelH / 2),
+                    new SKRect(-trackWidth / 2f - rearDbgW / 2, -rearDbgH / 2,
+                               -trackWidth / 2f + rearDbgW / 2, rearDbgH / 2),
                     wheelTargetPaint);
             }
 
