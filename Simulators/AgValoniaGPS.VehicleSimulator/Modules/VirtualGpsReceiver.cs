@@ -134,8 +134,11 @@ public class VirtualGpsReceiver : IDisposable
         sb.Append(Altitude.ToString("F1", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(DifferentialAge.ToString("F1", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(SpeedKnots.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
-        sb.Append(HeadingDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
-        sb.Append(RollDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
+        // Fields 12-13: heading and roll as (int)(deg * 10), per Teensy firmware.
+        sb.Append(((int)Math.Round(HeadingDegrees * 10.0)).ToString(CultureInfo.InvariantCulture));
+        sb.Append(',');
+        sb.Append(((int)Math.Round(RollDegrees * 10.0)).ToString(CultureInfo.InvariantCulture));
+        sb.Append(',');
         sb.Append(PitchDegrees.ToString("F2", CultureInfo.InvariantCulture)); sb.Append(',');
         sb.Append(YawRateDegPerSec.ToString("F2", CultureInfo.InvariantCulture));
 
