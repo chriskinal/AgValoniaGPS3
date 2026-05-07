@@ -72,6 +72,14 @@ public interface IGpsPipelineService
     /// </summary>
     void SetYouTurnConfig(int uTurnSkipRows, bool isSkipWorkedMode, double headlandCalculatedWidth, double headlandDistance);
 
+    /// <summary>
+    /// Tell the pipeline whether a real field is currently loaded. Used by the
+    /// cycle worker to choose between silently re-anchoring the temporary
+    /// origin (no field) and emitting a far-from-field warning (field loaded)
+    /// when the live GPS position drifts beyond the configured threshold.
+    /// </summary>
+    void SetHasActiveField(bool hasActiveField);
+
     // ── Read-back state the ViewModel needs for commands ─────────────────
 
     /// <summary>Whether autosteer is currently engaged.</summary>

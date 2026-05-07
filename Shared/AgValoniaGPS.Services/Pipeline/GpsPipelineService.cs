@@ -35,6 +35,17 @@ public sealed class GpsPipelineService : IGpsPipelineService
     // Matches AgOpen's setAS_guidanceLookAheadTime default. See #261.
     private const double GuidanceLookAheadSeconds = 2.0;
 
+    // Re-anchor the temporary first-fix LocalPlane when the live GPS jumps
+    // farther than this from the existing origin (no field loaded). The
+    // flat-earth approximation gets noisy at very large local-plane offsets
+    // and the camera/render math goes weird, so silently re-anchor.
+    private const double TempOriginReinitDistanceM = 50_000.0;
+
+    // Surface a "GPS far from field" warning when the live GPS reports a
+    // position farther than this from the loaded field's origin. Autosteer
+    // is dropped immediately as a safety measure on the UI thread.
+    private const double FieldOriginWarnDistanceM = 10_000.0;
+
     // ── Dependencies ────────────────────────────────────────────────────
     private readonly IGpsService _gpsService;
     private readonly IToolPositionService _toolPositionService;
@@ -94,6 +105,12 @@ public sealed class GpsPipelineService : IGpsPipelineService
     private Boundary? _boundary;
     private double _driftE;
     private double _driftN;
+    private bool _hasActiveField;
+
+    // One-shot latch so the field-far warning fires once per loaded field.
+    // SetHasActiveField clears it on the false->true transition (new field
+    // opened) so the next field gets a fresh chance to warn.
+    private bool _farFromFieldWarned;
 
     // ── Pipeline-owned guidance state (only touched on background thread) ─
     private Models.Track.TrackGuidanceState? _trackGuidanceState;
@@ -253,6 +270,19 @@ public sealed class GpsPipelineService : IGpsPipelineService
         lock (_stateLock) { _driftE = driftE; _driftN = driftN; }
     }
 
+    public void SetHasActiveField(bool hasActiveField)
+    {
+        lock (_stateLock)
+        {
+            // Reset the one-shot warning latch on the false->true transition so
+            // re-opening (or opening a different) field gets a fresh shot at
+            // the warning.
+            if (hasActiveField && !_hasActiveField)
+                _farFromFieldWarned = false;
+            _hasActiveField = hasActiveField;
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     // Read-back properties
     // ══════════════════════════════════════════════════════════════════════
@@ -384,6 +414,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
         List<Vec3>? headlandLine;
         Boundary? boundary;
         double driftE, driftN;
+        bool hasActiveField;
 
         lock (_stateLock)
         {
@@ -404,6 +435,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
             boundary = _boundary;
             driftE = _driftE;
             driftN = _driftN;
+            hasActiveField = _hasActiveField;
         }
 
         // YouTurn working state is cycle-owned — no cross-thread writers.
@@ -449,6 +481,42 @@ public sealed class GpsPipelineService : IGpsPipelineService
                 new Wgs84(pos.Latitude, pos.Longitude));
             posEasting = geoCoord.Easting;
             posNorthing = geoCoord.Northing;
+        }
+
+        // Origin guard: if the live GPS source has drifted very far from the
+        // current LocalPlane origin, either silently re-anchor (no field) or
+        // surface a warning (field loaded). Skip when only the cycle-local
+        // cache exists — that means we just bootstrapped the plane this tick.
+        LocalPlane? replacementLocalPlane = null;
+        double replacementDistanceKm = 0.0;
+        FarFromFieldWarning? farFromFieldWarning = null;
+        if (committedLocalPlane != null && data.FixQuality > 0)
+        {
+            var converted = committedLocalPlane.ConvertWgs84ToGeoCoord(
+                new Wgs84(pos.Latitude, pos.Longitude));
+            double distFromOrigin = Math.Sqrt(
+                converted.Easting * converted.Easting +
+                converted.Northing * converted.Northing);
+
+            if (!hasActiveField && distFromOrigin > TempOriginReinitDistanceM)
+            {
+                var newPlane = new LocalPlane(
+                    new Wgs84(pos.Latitude, pos.Longitude),
+                    new SharedFieldProperties());
+                _cycleLocalPlane = newPlane;
+                replacementLocalPlane = newPlane;
+                replacementDistanceKm = distFromOrigin / 1000.0;
+                posEasting = 0;
+                posNorthing = 0;
+            }
+            else if (hasActiveField
+                     && distFromOrigin > FieldOriginWarnDistanceM
+                     && !_farFromFieldWarned)
+            {
+                farFromFieldWarning = new FarFromFieldWarning(
+                    distFromOrigin, pos.Latitude, pos.Longitude);
+                _farFromFieldWarned = true;
+            }
         }
 
         // Stage 3 (Phase B C2): Heading fusion. Replaces the raw NMEA heading
@@ -824,6 +892,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
             // Phase E: first-fix LocalPlane auto-create — non-null only on
             // the single cycle where the cycle bootstrapped the plane.
             FirstFixLocalPlane = firstFixLocalPlane,
+
+            // Origin guard: replacement plane (silent re-anchor when no field
+            // is loaded and the GPS source jumped > TempOriginReinitDistanceM)
+            // or a far-from-field warning (field loaded, > FieldOriginWarnDistanceM).
+            ReplacementLocalPlane = replacementLocalPlane,
+            ReplacementDistanceKm = replacementDistanceKm,
+            FarFromFieldWarning = farFromFieldWarning,
 
             // Status
             StatusMessage = statusMessage ?? youTurnTickEffects?.StatusMessage ?? fixRejectionReason
