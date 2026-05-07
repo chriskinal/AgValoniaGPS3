@@ -4424,6 +4424,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private const double BitmapFrontWheelHalfXNorm = 0.21;    // depicted front-wheel half-spacing, fraction of bitmap width
         private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm; // 0.45
 
+        // FrontWheels.png is a 128x128 bitmap with the actual tire content
+        // centered and transparent margins around it. The rect we draw the
+        // bitmap into is the FULL bitmap canvas, but only the tire-content
+        // fraction is visible — so to render a 1.0 m visible tire we need a
+        // rect ~2 m wide. Measured visually from the source PNG.
+        private const double WheelBitmapContentWFraction = 0.50;
+        private const double WheelBitmapContentHFraction = 0.65;
+
         private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
             double trackWidth = s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8;
@@ -4532,14 +4540,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 {
                     double wheelOffsetX = trackWidth / 2.0;
                     double wheelOffsetY = wheelbase;
-                    // Tractor front-tire-ish footprint sized off Wheelbase.
-                    // 0.45 × bitmapHeight is the same as Wheelbase (since
-                    // bitmapHeight = Wheelbase / 0.45) — that was rendering
-                    // the wheel as tall as the entire wheelbase. Use direct
-                    // wheelbase fractions instead, with floors so wheels stay
-                    // visible on small configs.
-                    double wheelWidth = Math.Max(0.7, 0.25 * wheelbase);
-                    double wheelHeight = Math.Max(1.4, 0.50 * wheelbase);
+                    // Target visible tire size, then upscale the rect to
+                    // compensate for the bitmap's transparent margins so the
+                    // rendered tire actually matches the target. Floors keep
+                    // the tire visible on small configs.
+                    double visibleWheelW = Math.Max(0.7, 0.25 * wheelbase);
+                    double visibleWheelH = Math.Max(1.4, 0.50 * wheelbase);
+                    double wheelWidth = visibleWheelW / WheelBitmapContentWFraction;
+                    double wheelHeight = visibleWheelH / WheelBitmapContentHFraction;
                     var wheelDst = new Rect(-wheelWidth / 2, -wheelHeight / 2, wheelWidth, wheelHeight);
 
                     // Right front wheel
@@ -4805,8 +4813,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
                 float wheelOffsetY = wheelbase;
-                float wheelW = (float)Math.Max(0.7, 0.25 * wheelbase);
-                float wheelH = (float)Math.Max(1.4, 0.50 * wheelbase);
+                float visibleW = (float)Math.Max(0.7, 0.25 * wheelbase);
+                float visibleH = (float)Math.Max(1.4, 0.50 * wheelbase);
+                float wheelW = (float)(visibleW / WheelBitmapContentWFraction);
+                float wheelH = (float)(visibleH / WheelBitmapContentHFraction);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
                 float steerDeg = -(float)(s.VehicleSteerAngle * 180.0 / Math.PI);
 
@@ -4854,7 +4864,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 canvas.DrawLine(0, 0, 0, wheelbase, wbPaint);
                 canvas.DrawCircle(0, 0, 0.12f, wbTick);
                 canvas.DrawCircle(0, wheelbase, 0.12f, wbTick);
-                // Wheel target squares — same size/position as the rendered overlay.
+                // Wheel target squares — track the *visible* tire content
+                // (after the bitmap's transparent margins are subtracted),
+                // which is what the user actually sees as the tire.
                 float dbgWheelW = (float)Math.Max(0.7, 0.25 * wheelbase);
                 float dbgWheelH = (float)Math.Max(1.4, 0.50 * wheelbase);
                 // Front
