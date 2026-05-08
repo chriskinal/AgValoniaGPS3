@@ -41,15 +41,16 @@ the inner Button via element binding.
         <Style Selector="Button.GlyphButtonInner:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
-        <!-- Press: pin the ContentPresenter background to the idle brush so the
-             Fluent theme's default press tint doesn't fire. The Foreground swap
-             below is what gives the visible feedback — only the glyph + label
-             flash green. -->
+        <!-- Press: flash the button background green and pin the foreground
+             (glyph + label) to white. Higher-contrast feedback than a foreground
+             color change — easier to spot for older operators and in bright cab
+             sunlight. /template/ ContentPresenter targets the same level the
+             Fluent theme uses, so we override its default press tint. -->
         <Style Selector="Button.GlyphButtonInner:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AccentForegroundBrush}"/>
         </Style>
         <Style Selector="Button.GlyphButtonInner:pressed">
-            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
         <!-- IsActive=true: accent-tinted background (background only, glyph stays themed) -->
         <Style Selector="Button.GlyphButtonInner.Active">
