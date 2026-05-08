@@ -4421,7 +4421,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Wheelbase) lands directly on the depicted wheels.
         private const double BitmapRearAxleYNorm = 0.245;         // depicted rear-axle position, fraction from bitmap bottom
         private const double BitmapFrontAxleYNorm = 0.75;         // depicted front-axle position, fraction from bitmap bottom
-        private const double BitmapFrontWheelHalfXNorm = 0.225;   // depicted front-wheel half-spacing, fraction of bitmap width
+        private const double BitmapFrontWheelHalfXNorm = 0.235;   // depicted front-wheel half-spacing, fraction of bitmap width
         private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm;
 
         // FrontWheels.png is a 128x128 bitmap with the actual tire content
@@ -4430,8 +4430,8 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // fraction is visible — so to render a target visible tire we need a
         // rect ~1/fraction larger. Tuned empirically against the cyan debug
         // square.
-        private const double WheelBitmapContentWFraction = 0.30;
-        private const double WheelBitmapContentHFraction = 0.32;
+        private const double WheelBitmapContentWFraction = 0.27;
+        private const double WheelBitmapContentHFraction = 0.29;
 
         // Reference tire footprints. Front: 14.9R28 → 14.9" wide section,
         // 0.85 m overall diameter (per user's reference). Rear: 18.4R38 →
