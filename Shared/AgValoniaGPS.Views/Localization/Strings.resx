@@ -1162,8 +1162,8 @@
     <value>&amp;lt;--</value>
   </data>
   <!-- Glyph button labels (chrome navigation panels) -->
-  <data xml:space="preserve" name="Btn.File">
-    <value>File</value>
+  <data xml:space="preserve" name="Btn.Settings">
+    <value>Settings</value>
   </data>
   <data xml:space="preserve" name="Btn.View">
     <value>View</value>
@@ -1180,8 +1180,8 @@
   <data xml:space="preserve" name="Btn.FieldTools">
     <value>Field Tools</value>
   </data>
-  <data xml:space="preserve" name="Btn.AutoSteer">
-    <value>AutoSteer</value>
+  <data xml:space="preserve" name="Btn.SteerConfig">
+    <value>Steer Config</value>
   </data>
   <data xml:space="preserve" name="Btn.Contour">
     <value>Contour</value>
@@ -1201,8 +1201,8 @@
   <data xml:space="preserve" name="Btn.UTurnRight">
     <value>U-Turn R</value>
   </data>
-  <data xml:space="preserve" name="Btn.Steer">
-    <value>Steer</value>
+  <data xml:space="preserve" name="Btn.AutoSteer">
+    <value>AutoSteer</value>
   </data>
   <data xml:space="preserve" name="Btn.SkipRows">
     <value>Skip Rows</value>

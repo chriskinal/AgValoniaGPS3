@@ -51,6 +51,16 @@ the inner Button via element binding.
         <Style Selector="Button.GlyphButtonInner.Active:pointerover">
             <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight1}"/>
         </Style>
+        <!-- Default glyph: stroked outline -->
+        <Style Selector="Path.GlyphPath">
+            <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}"/>
+            <Setter Property="Fill" Value="{x:Null}"/>
+        </Style>
+        <!-- Filled variant: swap stroke for fill -->
+        <Style Selector="Path.GlyphPath.Filled">
+            <Setter Property="Stroke" Value="{x:Null}"/>
+            <Setter Property="Fill" Value="{Binding $parent[Button].Foreground}"/>
+        </Style>
     </UserControl.Styles>
 
     <Button Classes="GlyphButtonInner"
@@ -60,14 +70,14 @@ the inner Button via element binding.
         <StackPanel Orientation="Vertical"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-            <Path Data="{Binding #root.Glyph}"
+            <Path Classes="GlyphPath"
+                  Classes.Filled="{Binding #root.IsGlyphFilled}"
+                  Data="{Binding #root.Glyph}"
                   Width="32" Height="32"
                   Stretch="Uniform"
-                  Stroke="{Binding $parent[Button].Foreground}"
                   StrokeThickness="2"
                   StrokeLineCap="Round"
-                  StrokeJoin="Round"
-                  Fill="{x:Null}"/>
+                  StrokeJoin="Round"/>
             <TextBlock Text="{Binding #root.Label}"
                        FontSize="11"
                        Margin="0,4,0,0"

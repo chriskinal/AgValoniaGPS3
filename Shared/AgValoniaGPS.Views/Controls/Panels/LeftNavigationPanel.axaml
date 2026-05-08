@@ -71,49 +71,55 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Navigation Button Bar -->
         <Border Classes="FloatingPanel">
             <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
-                <!-- 1. File/Application Menu (smoke test for GlyphButton — Phase D pilot) -->
-                <c:GlyphButton Glyph="{StaticResource Glyph.File}"
-                               Label="{loc:Localize Btn.File}"
-                               ToolTip.Tip="File Menu"
+                <!-- 1. Application Settings (language, hotkeys, NTRIP profiles, simulator, etc.) -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.Settings}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.Settings}"
+                               ToolTip.Tip="Application Settings"
                                Command="{Binding ToggleFileMenuPanelCommand}"/>
 
                 <Separator Classes="LeftPanelSeparator"/>
 
                 <!-- 2. View Settings -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="View Settings"
-                        Command="{Binding ToggleViewSettingsPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/NavigationSettings.png" Stretch="Uniform"/>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.View}"
+                               Label="{loc:Localize Btn.View}"
+                               ToolTip.Tip="View Settings"
+                               Command="{Binding ToggleViewSettingsPanelCommand}"/>
 
                 <!-- 3. Tools -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Tools"
-                        Command="{Binding ToggleToolsPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SpecialFunctions.png" Stretch="Uniform"/>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.Tools}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.Tools}"
+                               ToolTip.Tip="Tools"
+                               Command="{Binding ToggleToolsPanelCommand}"/>
 
                 <!-- 4. Vehicle Configuration -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Vehicle Configuration"
-                        Command="{Binding ToggleConfigurationPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Stretch="Uniform"/>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.Vehicle}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.Vehicle}"
+                               ToolTip.Tip="Vehicle Configuration"
+                               Command="{Binding ToggleConfigurationPanelCommand}"/>
 
                 <!-- 5. Field Operations -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Field Operations"
-                        Command="{Binding ToggleFieldOperationsPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Stretch="Uniform"/>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.Fields}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.Fields}"
+                               ToolTip.Tip="Field Operations"
+                               Command="{Binding ToggleFieldOperationsPanelCommand}"/>
 
                 <!-- 6. Field Tools (includes Boundary) -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Field Tools"
-                        Command="{Binding ToggleFieldToolsPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FieldTools.png" Stretch="Uniform"/>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.FieldTools}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.FieldTools}"
+                               ToolTip.Tip="Field Tools"
+                               Command="{Binding ToggleFieldToolsPanelCommand}"/>
 
-                <!-- 7. AutoSteer Config -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="AutoSteer Configuration"
-                        Command="{Binding ShowAutoSteerConfigCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerConf.png" Stretch="Uniform"/>
-                </Button>
+                <!-- 7. AutoSteer Config (left = setup; the runtime engage lives on the right panel) -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.SteerConfig}"
+                               IsGlyphFilled="True"
+                               Label="{loc:Localize Btn.SteerConfig}"
+                               ToolTip.Tip="AutoSteer Configuration"
+                               Command="{Binding ShowAutoSteerConfigCommand}"/>
             </StackPanel>
         </Border>
 

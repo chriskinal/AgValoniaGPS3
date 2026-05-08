@@ -12,9 +12,9 @@ Audit done against develop @ `5c72f1c`. Counts may shift slightly as
 we touch the panels.
 
 - **`LeftNavigationPanel.axaml`** — 7 top-level buttons
-  File · View · Tools · Vehicle · Fields · Field Tools · AutoSteer
+  Settings · View · Tools · Vehicle · Fields · Field Tools · Steer Config
 - **`RightNavigationPanel.axaml`** — 7 top-level buttons
-  Contour · Sections · Auto Sect · U-Turn · U-Turn L · U-Turn R · Steer
+  Contour · Sections · Auto Sect · U-Turn · U-Turn L · U-Turn R · AutoSteer
 - **`BottomNavigationPanel.axaml`** — ~12 top-level buttons
   Skip Rows · Color · Reset Tool · HD Sect · Headland · Flags · Snap L
   · Snap R · Snap Pivot · Tram · AB Line · Auto Track
@@ -139,20 +139,20 @@ tests via `Avalonia.Headless.NUnit` already cover that pattern.
 Add to `Shared/AgValoniaGPS.Views/Localization/Strings.resx`:
 
 ```
-Btn.File           = File
+Btn.Settings       = Settings           (left panel — application settings)
 Btn.View           = View
 Btn.Tools          = Tools
 Btn.Vehicle        = Vehicle
 Btn.Fields         = Fields
 Btn.FieldTools     = Field Tools
-Btn.AutoSteer      = AutoSteer
+Btn.SteerConfig    = Steer Config       (left panel — opens AutoSteer config)
 Btn.Contour        = Contour
 Btn.Sections       = Sections
 Btn.SectionsAuto   = Auto Sect
 Btn.UTurn          = U-Turn
 Btn.UTurnLeft      = U-Turn L
 Btn.UTurnRight     = U-Turn R
-Btn.Steer          = Steer
+Btn.AutoSteer      = AutoSteer          (right panel — runtime engage toggle)
 Btn.SkipRows       = Skip Rows
 Btn.SectionColor   = Color
 Btn.ResetTool      = Reset Tool

@@ -30,6 +30,9 @@ public partial class GlyphButton : UserControl
     public static readonly StyledProperty<bool> IsActiveProperty =
         AvaloniaProperty.Register<GlyphButton, bool>(nameof(IsActive));
 
+    public static readonly StyledProperty<bool> IsGlyphFilledProperty =
+        AvaloniaProperty.Register<GlyphButton, bool>(nameof(IsGlyphFilled));
+
     public Geometry? Glyph
     {
         get => GetValue(GlyphProperty);
@@ -58,6 +61,17 @@ public partial class GlyphButton : UserControl
     {
         get => GetValue(IsActiveProperty);
         set => SetValue(IsActiveProperty, value);
+    }
+
+    /// <summary>
+    /// When true, the glyph is rendered as a filled silhouette (Fill=Foreground,
+    /// Stroke=null). When false (default), it's rendered as an outline
+    /// (Stroke=Foreground, Fill=null).
+    /// </summary>
+    public bool IsGlyphFilled
+    {
+        get => GetValue(IsGlyphFilledProperty);
+        set => SetValue(IsGlyphFilledProperty, value);
     }
 
     public GlyphButton()
