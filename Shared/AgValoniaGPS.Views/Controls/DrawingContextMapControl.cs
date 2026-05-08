@@ -4442,6 +4442,12 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         private const double RearTireWidthM = 0.467;
         private const double RearTireDiameterM = 1.84;
 
+        // FrontWheels.png has the tire content shifted slightly off-center
+        // within its 128x128 canvas (more transparent space on one side).
+        // Shift the rendered overlay forward by this amount so the visible
+        // tire centers on the cyan target square (= AgOpen front-axle pos).
+        private const double FrontWheelSpriteForwardOffsetM = 0.20;
+
         private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
             double trackWidth = s.VehicleTrackWidth > 0.01 ? s.VehicleTrackWidth : 1.8;
@@ -4548,7 +4554,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     && s.VehicleWheelbase > 0.01 && s.VehicleTrackWidth > 0.01)
                 {
                     double wheelOffsetX = trackWidth / 2.0;
-                    double wheelOffsetY = wheelbase;
+                    double wheelOffsetY = wheelbase + FrontWheelSpriteForwardOffsetM;
                     // Target visible tire footprint = 14.9R28 (~0.38 m × 1.40 m).
                     // Upscale the rect by 1/contentFraction so the rendered
                     // tire matches that target after the PNG's transparent
@@ -4819,7 +4825,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             {
                 // AgOpen formula — bitmap rect is sized so this lands on the depicted wheels.
                 float wheelOffsetX = trackWidth / 2.0f;
-                float wheelOffsetY = wheelbase;
+                float wheelOffsetY = wheelbase + (float)FrontWheelSpriteForwardOffsetM;
                 float wheelW = (float)(FrontTireWidthM / WheelBitmapContentWFraction);
                 float wheelH = (float)(FrontTireDiameterM / WheelBitmapContentHFraction);
                 var wheelDst = new SKRect(-wheelW / 2, -wheelH / 2, wheelW / 2, wheelH / 2);
