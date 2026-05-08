@@ -4421,7 +4421,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // Wheelbase) lands directly on the depicted wheels.
         private const double BitmapRearAxleYNorm = 0.245;         // depicted rear-axle position, fraction from bitmap bottom
         private const double BitmapFrontAxleYNorm = 0.75;         // depicted front-axle position, fraction from bitmap bottom
-        private const double BitmapFrontWheelHalfXNorm = 0.235;   // depicted front-wheel half-spacing, fraction of bitmap width
+        private const double BitmapFrontWheelHalfXNorm = 0.245;   // depicted front-wheel half-spacing, fraction of bitmap width
         private const double BitmapAxleSpanYNorm = BitmapFrontAxleYNorm - BitmapRearAxleYNorm;
 
         // FrontWheels.png is a 128x128 bitmap with the actual tire content
@@ -4491,11 +4491,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 //   Magenta: TrackWidth at front axle
                 //   Green: Wheelbase on centerline (rear→front axle)
                 //   Cyan hollow squares: where the front wheels should render
-                var twPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(255, 0, 255)), 0.08);
-                var wbPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(0, 255, 0)), 0.08);
-                var wheelTargetPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(0, 255, 255)), 0.06);
-                var twTickBrush = new ImmutableSolidColorBrush(Color.FromRgb(255, 0, 255));
-                var wbTickBrush = new ImmutableSolidColorBrush(Color.FromRgb(0, 255, 0));
+                var twPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 255, 0, 255)), 0.08);
+                var wbPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 0, 255, 0)), 0.08);
+                var wheelTargetPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 0, 255, 255)), 0.06);
+                var twTickBrush = new ImmutableSolidColorBrush(Color.FromArgb(140, 255, 0, 255));
+                var wbTickBrush = new ImmutableSolidColorBrush(Color.FromArgb(140, 0, 255, 0));
                 dc.DrawLine(twPen, new Point(-trackWidth / 2.0, wheelbase), new Point(trackWidth / 2.0, wheelbase));
                 dc.DrawEllipse(twTickBrush, null, new Point(-trackWidth / 2.0, wheelbase), 0.12, 0.12);
                 dc.DrawEllipse(twTickBrush, null, new Point(trackWidth / 2.0, wheelbase), 0.12, 0.12);
@@ -4851,11 +4851,11 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             //   - Cyan hollow squares: where the front wheels SHOULD render
             //     (at the AgOpen formula position ±TrackWidth/2, Wheelbase),
             //     sized to the wheel-overlay rect for direct comparison.
-            using (var twPaint = new SKPaint { Color = new SKColor(255, 0, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
-            using (var wbPaint = new SKPaint { Color = new SKColor(0, 255, 0), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
-            using (var twTick = new SKPaint { Color = new SKColor(255, 0, 255), Style = SKPaintStyle.Fill, IsAntialias = true })
-            using (var wbTick = new SKPaint { Color = new SKColor(0, 255, 0), Style = SKPaintStyle.Fill, IsAntialias = true })
-            using (var wheelTargetPaint = new SKPaint { Color = new SKColor(0, 255, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 0.06f, IsAntialias = true })
+            using (var twPaint = new SKPaint { Color = new SKColor(255, 0, 255, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
+            using (var wbPaint = new SKPaint { Color = new SKColor(0, 255, 0, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
+            using (var twTick = new SKPaint { Color = new SKColor(255, 0, 255, 140), Style = SKPaintStyle.Fill, IsAntialias = true })
+            using (var wbTick = new SKPaint { Color = new SKColor(0, 255, 0, 140), Style = SKPaintStyle.Fill, IsAntialias = true })
+            using (var wheelTargetPaint = new SKPaint { Color = new SKColor(0, 255, 255, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 0.06f, IsAntialias = true })
             {
                 // TrackWidth at front axle
                 canvas.DrawLine(-trackWidth / 2f, wheelbase, trackWidth / 2f, wheelbase, twPaint);
