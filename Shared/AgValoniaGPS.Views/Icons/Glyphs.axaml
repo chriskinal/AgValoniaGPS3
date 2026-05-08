@@ -1,0 +1,99 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+Glyph geometry resources for the GlyphButton control.
+All paths are authored in a 24x24 coordinate space and rendered
+stroke-only via Path.Stroke + StrokeThickness in the GlyphButton style;
+the geometries themselves carry no stroke or fill information.
+
+Naming convention: Glyph.<ButtonId>
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== LeftNavigationPanel — 7 buttons ===== -->
+
+    <!-- File: folder with corner fold -->
+    <StreamGeometry x:Key="Glyph.File">M5 4 L14 4 L19 9 L19 20 L5 20 Z M14 4 L14 9 L19 9</StreamGeometry>
+
+    <!-- View: eye (almond + iris) -->
+    <StreamGeometry x:Key="Glyph.View">M2 12 C5 6 19 6 22 12 C19 18 5 18 2 12 Z M8 12 A4 4 0 0 0 16 12 A4 4 0 0 0 8 12</StreamGeometry>
+
+    <!-- Tools: gear with eight spokes -->
+    <StreamGeometry x:Key="Glyph.Tools">M7 12 A5 5 0 0 0 17 12 A5 5 0 0 0 7 12 M12 2 L12 5 M22 12 L19 12 M12 22 L12 19 M2 12 L5 12 M5 5 L7 7 M19 5 L17 7 M19 19 L17 17 M5 19 L7 17</StreamGeometry>
+
+    <!-- Vehicle: tractor side profile -->
+    <StreamGeometry x:Key="Glyph.Vehicle">M3 14 L3 18 L21 18 L21 14 L17 14 L17 8 L9 8 L9 14 Z M5 18 A2 2 0 0 0 9 18 A2 2 0 0 0 5 18 M15 18 A2 2 0 0 0 19 18 A2 2 0 0 0 15 18</StreamGeometry>
+
+    <!-- Fields: 2x3 grid of plots -->
+    <StreamGeometry x:Key="Glyph.Fields">M3 5 L21 5 L21 19 L3 19 Z M3 12 L21 12 M9 5 L9 19 M15 5 L15 19</StreamGeometry>
+
+    <!-- FieldTools: line chart with ascending segments -->
+    <StreamGeometry x:Key="Glyph.FieldTools">M3 4 L3 20 L21 20 M5 16 L9 11 L13 14 L19 6</StreamGeometry>
+
+    <!-- AutoSteer: crosshair / target reticle -->
+    <StreamGeometry x:Key="Glyph.AutoSteer">M2 12 A10 10 0 0 0 22 12 A10 10 0 0 0 2 12 M8 12 A4 4 0 0 0 16 12 A4 4 0 0 0 8 12 M12 2 L12 8 M12 16 L12 22 M2 12 L8 12 M16 12 L22 12</StreamGeometry>
+
+    <!-- ===== RightNavigationPanel — 7 buttons ===== -->
+
+    <!-- Contour: wavy follow-line -->
+    <StreamGeometry x:Key="Glyph.Contour">M2 14 C5 6 9 18 13 9 C16 1 19 14 22 12</StreamGeometry>
+
+    <!-- Sections: three rectangles in a row -->
+    <StreamGeometry x:Key="Glyph.Sections">M3 9 L8 9 L8 15 L3 15 Z M9.5 9 L14.5 9 L14.5 15 L9.5 15 Z M16 9 L21 9 L21 15 L16 15 Z</StreamGeometry>
+
+    <!-- SectionsAuto: three rectangles + checkmark -->
+    <StreamGeometry x:Key="Glyph.SectionsAuto">M3 7 L8 7 L8 13 L3 13 Z M9.5 7 L14.5 7 L14.5 13 L9.5 13 Z M16 7 L21 7 L21 13 L16 13 Z M5 18 L9 22 L19 16</StreamGeometry>
+
+    <!-- UTurn: symmetric U (no direction emphasis) -->
+    <StreamGeometry x:Key="Glyph.UTurn">M5 21 L5 11 A6 6 0 0 1 17 11 L17 21</StreamGeometry>
+
+    <!-- UTurnLeft: U with arrow on left leg -->
+    <StreamGeometry x:Key="Glyph.UTurnLeft">M19 21 L19 11 A6 6 0 0 0 7 11 L7 21 M4 18 L7 21 L10 18</StreamGeometry>
+
+    <!-- UTurnRight: U with arrow on right leg -->
+    <StreamGeometry x:Key="Glyph.UTurnRight">M5 21 L5 11 A6 6 0 0 1 17 11 L17 21 M14 18 L17 21 L20 18</StreamGeometry>
+
+    <!-- Steer: steering wheel (rim + hub + 3 spokes) -->
+    <StreamGeometry x:Key="Glyph.Steer">M2 12 A10 10 0 0 0 22 12 A10 10 0 0 0 2 12 M10 12 A2 2 0 0 0 14 12 A2 2 0 0 0 10 12 M12 2 L12 10 M3.5 17 L10 13.5 M20.5 17 L14 13.5</StreamGeometry>
+
+    <!-- ===== BottomNavigationPanel — 12 top-level buttons ===== -->
+
+    <!-- SkipRows: double chevron forward -->
+    <StreamGeometry x:Key="Glyph.SkipRows">M3 6 L9 12 L3 18 M11 6 L17 12 L11 18</StreamGeometry>
+
+    <!-- SectionColor: three overlapping circles -->
+    <StreamGeometry x:Key="Glyph.SectionColor">M5 9 A4 4 0 0 0 13 9 A4 4 0 0 0 5 9 M11 9 A4 4 0 0 0 19 9 A4 4 0 0 0 11 9 M8 15 A4 4 0 0 0 16 15 A4 4 0 0 0 8 15</StreamGeometry>
+
+    <!-- ResetTool: circular arrow (3/4 arc with arrow tail) -->
+    <StreamGeometry x:Key="Glyph.ResetTool">M20 12 A8 8 0 1 1 12 4 M12 4 L9 4 M12 4 L12 7</StreamGeometry>
+
+    <!-- HeadlandSect: top boundary line + three section rectangles -->
+    <StreamGeometry x:Key="Glyph.HeadlandSect">M3 6 L21 6 M5 10 L9 10 L9 18 L5 18 Z M10.5 10 L13.5 10 L13.5 18 L10.5 18 Z M15 10 L19 10 L19 18 L15 18 Z</StreamGeometry>
+
+    <!-- Headland: outer field with inner safe zone -->
+    <StreamGeometry x:Key="Glyph.Headland">M3 4 L21 4 L21 20 L3 20 Z M7 8 L17 8 L17 16 L7 16 Z</StreamGeometry>
+
+    <!-- Flags: flagpole with triangular pennant -->
+    <StreamGeometry x:Key="Glyph.Flags">M6 3 L6 21 M6 3 L18 7 L6 11</StreamGeometry>
+
+    <!-- SnapLeft: left arrow + vertical bar at right -->
+    <StreamGeometry x:Key="Glyph.SnapLeft">M2 12 L14 12 M6 8 L2 12 L6 16 M19 4 L19 20</StreamGeometry>
+
+    <!-- SnapRight: right arrow + vertical bar at left -->
+    <StreamGeometry x:Key="Glyph.SnapRight">M22 12 L10 12 M18 8 L22 12 L18 16 M5 4 L5 20</StreamGeometry>
+
+    <!-- SnapPivot: concentric circles -->
+    <StreamGeometry x:Key="Glyph.SnapPivot">M9 12 A3 3 0 0 0 15 12 A3 3 0 0 0 9 12 M4 12 A8 8 0 0 0 20 12 A8 8 0 0 0 4 12</StreamGeometry>
+
+    <!-- TramLines: two parallel vertical lines -->
+    <StreamGeometry x:Key="Glyph.TramLines">M9 3 L9 21 M15 3 L15 21</StreamGeometry>
+
+    <!-- ABLine: diagonal line A->B -->
+    <StreamGeometry x:Key="Glyph.ABLine">M4 19 L20 5</StreamGeometry>
+
+    <!-- AutoTrack: diagonal line with target circle in the middle -->
+    <StreamGeometry x:Key="Glyph.AutoTrack">M3 18 L21 6 M9 12 A3 3 0 0 0 15 12 A3 3 0 0 0 9 12</StreamGeometry>
+
+</ResourceDictionary>

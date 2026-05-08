@@ -24,6 +24,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     Include this in each platform's App.axaml Application.Resources section.
     -->
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://AgValoniaGPS.Views/Icons/Glyphs.axaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
     <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
     <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
     <converters:FixQualityToColorConverter x:Key="FixQualityToColorConverter"/>
