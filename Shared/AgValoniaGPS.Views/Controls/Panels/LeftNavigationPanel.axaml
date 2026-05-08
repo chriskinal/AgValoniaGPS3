@@ -22,6 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              xmlns:controls="using:AgValoniaGPS.Views.Controls.Panels"
              xmlns:c="using:AgValoniaGPS.Views.Controls"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.LeftNavigationPanel"
              x:DataType="vm:MainViewModel"
@@ -72,7 +73,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
                 <!-- 1. File/Application Menu (smoke test for GlyphButton — Phase D pilot) -->
                 <c:GlyphButton Glyph="{StaticResource Glyph.File}"
-                               Label="File"
+                               Label="{loc:Localize Btn.File}"
                                ToolTip.Tip="File Menu"
                                Command="{Binding ToggleFileMenuPanelCommand}"/>
 

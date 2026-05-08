@@ -1161,4 +1161,83 @@
   <data xml:space="preserve" name="lt">
     <value>&amp;lt;--</value>
   </data>
+  <!-- Glyph button labels (chrome navigation panels) -->
+  <data xml:space="preserve" name="Btn.File">
+    <value>File</value>
+  </data>
+  <data xml:space="preserve" name="Btn.View">
+    <value>View</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Tools">
+    <value>Tools</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Vehicle">
+    <value>Vehicle</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Fields">
+    <value>Fields</value>
+  </data>
+  <data xml:space="preserve" name="Btn.FieldTools">
+    <value>Field Tools</value>
+  </data>
+  <data xml:space="preserve" name="Btn.AutoSteer">
+    <value>AutoSteer</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Contour">
+    <value>Contour</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Sections">
+    <value>Sections</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SectionsAuto">
+    <value>Auto Sect</value>
+  </data>
+  <data xml:space="preserve" name="Btn.UTurn">
+    <value>U-Turn</value>
+  </data>
+  <data xml:space="preserve" name="Btn.UTurnLeft">
+    <value>U-Turn L</value>
+  </data>
+  <data xml:space="preserve" name="Btn.UTurnRight">
+    <value>U-Turn R</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Steer">
+    <value>Steer</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SkipRows">
+    <value>Skip Rows</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SectionColor">
+    <value>Color</value>
+  </data>
+  <data xml:space="preserve" name="Btn.ResetTool">
+    <value>Reset Tool</value>
+  </data>
+  <data xml:space="preserve" name="Btn.HeadlandSect">
+    <value>HD Sect</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Headland">
+    <value>Headland</value>
+  </data>
+  <data xml:space="preserve" name="Btn.Flags">
+    <value>Flags</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SnapLeft">
+    <value>Snap L</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SnapRight">
+    <value>Snap R</value>
+  </data>
+  <data xml:space="preserve" name="Btn.SnapPivot">
+    <value>Snap Pivot</value>
+  </data>
+  <data xml:space="preserve" name="Btn.TramLines">
+    <value>Tram</value>
+  </data>
+  <data xml:space="preserve" name="Btn.ABLine">
+    <value>AB Line</value>
+  </data>
+  <data xml:space="preserve" name="Btn.AutoTrack">
+    <value>Auto Track</value>
+  </data>
 </root>
