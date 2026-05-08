@@ -97,9 +97,9 @@ Services are unit-testable without a dispatcher, a view, or a mocked VM. Once co
 
 AgValoniaGPS uses a strict one-way data flow driven by a dedicated background cycle worker. This is a hard architectural requirement, not a convention — violating it reintroduces the AgOpenGPS/WinForms failure mode where domain logic races on the UI thread.
 
-![Threading model](Plans/threading_model.svg)
+![Threading model](Plans/Completed/threading_model.svg)
 
-See [`Plans/threading_model_overview.svg`](Plans/threading_model_overview.svg) for the full picture (current → phases → target in one frame) and [`Plans/THREADING_MIGRATION_PLAN.md`](Plans/THREADING_MIGRATION_PLAN.md) for the authoritative plan.
+See [`Plans/Completed/threading_model_overview.svg`](Plans/Completed/threading_model_overview.svg) for the full picture (current → phases → target in one frame) and [`Plans/Completed/THREADING_MIGRATION_PLAN.md`](Plans/Completed/THREADING_MIGRATION_PLAN.md) for the historical migration plan (now complete).
 
 ### The invariant (non-negotiable)
 

@@ -1197,6 +1197,7 @@ public partial class MainViewModel : ObservableObject
             CurrentFieldName = fieldName;
             IsFieldOpen = true;
             FieldsRootDirectory = Path.GetDirectoryName(fieldPath) ?? string.Empty;
+            _gpsPipelineService.SetHasActiveField(true);
 
             // Load field origin from Field.txt
             try
@@ -1523,11 +1524,13 @@ public partial class MainViewModel : ObservableObject
         if (IsAutoSteerEngaged)
         {
             IsAutoSteerEngaged = false;
+            _autoSteerService.Disengage();
             SyncGuidanceStateToPipeline();
         }
 
         CurrentFieldName = string.Empty;
         IsFieldOpen = false;
+        _gpsPipelineService.SetHasActiveField(false);
 
         // Clear boundary
         SetCurrentBoundary(null);

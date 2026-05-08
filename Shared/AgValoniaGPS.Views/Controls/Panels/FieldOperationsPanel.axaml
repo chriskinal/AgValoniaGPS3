@@ -62,12 +62,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="From Default" VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowOffsetFixDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="28" Height="28"/>
-                            <TextBlock Text="Offset Fix" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
                 </UniformGrid>
 
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mockup 4 — Glyph-over-word treatment for every top-level button in the
+  current shell. Each button is icon + label stacked, matching the
+  Windows/iOS convention. Status indicators in the top bars stay as
+  data-only (no glyph treatment for purely read-only fields).
+  Canvas: 1280 x 800 (landscape tablet).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800"
+     font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <!-- shared glyph styling -->
+    <style>
+      .gl { fill: none; stroke: #d4dadf; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+      .gf { fill: #d4dadf; }
+      .gA { fill: none; stroke: #f5d27a; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; } /* active/accent stroke */
+      .gAf { fill: #f5d27a; }
+    </style>
+
+    <!-- left-bar glyphs -->
+    <symbol id="g-file" viewBox="-16 -16 32 32"><path class="gl" d="M-9 -10 L-9 10 L9 10 L9 -5 L4 -10 Z M4 -10 L4 -5 L9 -5"/></symbol>
+    <symbol id="g-view" viewBox="-16 -16 32 32"><circle class="gl" r="4"/><path class="gl" d="M-12 0 C-8 -7 8 -7 12 0 C8 7 -8 7 -12 0 Z"/></symbol>
+    <symbol id="g-tools" viewBox="-16 -16 32 32"><path class="gl" d="M-10 -6 L-2 -6 M-2 -6 L-2 -10 L4 -10 L4 -6 L10 -6 L10 0 L4 0 L4 4 L-2 4 L-2 0 L-10 0 Z"/></symbol>
+    <symbol id="g-vehicle" viewBox="-16 -16 32 32">
+      <rect class="gl" x="-11" y="-4" width="22" height="10" rx="1.5"/>
+      <rect class="gl" x="-7" y="-9" width="14" height="5" rx="1"/>
+      <circle class="gl" cx="-6" cy="8" r="3"/><circle class="gl" cx="6" cy="8" r="3"/>
+    </symbol>
+    <symbol id="g-field" viewBox="-16 -16 32 32"><path class="gl" d="M-12 -8 H12 M-12 0 H12 M-12 8 H12 M-8 -12 V12 M0 -12 V12 M8 -12 V12"/></symbol>
+    <symbol id="g-fieldtools" viewBox="-16 -16 32 32"><path class="gl" d="M-11 -10 L-11 10 L11 10"/><path class="gl" d="M-7 5 L-1 -2 L4 3 L11 -7"/><circle class="gf" cx="-7" cy="5" r="1.6"/><circle class="gf" cx="-1" cy="-2" r="1.6"/><circle class="gf" cx="4" cy="3" r="1.6"/></symbol>
+    <symbol id="g-autosteer" viewBox="-16 -16 32 32"><circle class="gl" r="11"/><circle class="gl" r="3"/><path class="gl" d="M0 -11 V-3 M0 11 V3 M-11 0 H-3 M11 0 H3"/></symbol>
+
+    <!-- right-bar glyphs -->
+    <symbol id="g-contour" viewBox="-16 -16 32 32"><path class="gl" d="M-12 6 C-7 -8 -2 8 3 -6 C7 -16 12 0 12 0"/></symbol>
+    <symbol id="g-sections" viewBox="-16 -16 32 32"><rect class="gl" x="-12" y="-4" width="6" height="8"/><rect class="gl" x="-3" y="-4" width="6" height="8"/><rect class="gl" x="6" y="-4" width="6" height="8"/></symbol>
+    <symbol id="g-sectionsauto" viewBox="-16 -16 32 32"><rect class="gA" x="-12" y="-4" width="6" height="8"/><rect class="gA" x="-3" y="-4" width="6" height="8"/><rect class="gA" x="6" y="-4" width="6" height="8"/><text x="0" y="11" text-anchor="middle" fill="#f5d27a" font-size="9" font-weight="700">A</text></symbol>
+    <symbol id="g-uturn" viewBox="-16 -16 32 32"><path class="gl" d="M-8 8 L-8 -3 A6 6 0 0 1 4 -3 L4 8"/><path class="gl" d="M0 12 L4 8 L8 12"/></symbol>
+    <symbol id="g-uturnL" viewBox="-16 -16 32 32"><path class="gl" d="M9 8 L9 -3 A6 6 0 0 0 -3 -3 L-3 8"/><path class="gl" d="M-7 4 L-3 8 L1 4"/></symbol>
+    <symbol id="g-uturnR" viewBox="-16 -16 32 32"><path class="gl" d="M-9 8 L-9 -3 A6 6 0 0 1 3 -3 L3 8"/><path class="gl" d="M-1 4 L3 8 L7 4"/></symbol>
+    <symbol id="g-steer" viewBox="-16 -16 32 32"><circle class="gl" r="11"/><circle class="gf" r="2.4"/><path class="gl" d="M0 -11 V-3 M-9.5 5.5 L-3 1.7 M9.5 5.5 L3 1.7"/></symbol>
+
+    <!-- bottom-bar glyphs -->
+    <symbol id="g-skip" viewBox="-16 -16 32 32"><path class="gl" d="M-12 -4 H4 M-12 4 H4 M0 -8 L8 -4 L0 0 M0 0 L8 4 L0 8"/></symbol>
+    <symbol id="g-color" viewBox="-16 -16 32 32"><circle class="gl" cx="-5" cy="-3" r="4"/><circle class="gl" cx="5" cy="-3" r="4"/><circle class="gl" cx="0" cy="6" r="4"/></symbol>
+    <symbol id="g-reset" viewBox="-16 -16 32 32"><path class="gl" d="M-9 -3 A9 9 0 1 1 -9 4 L-12 0 M-9 4 L-6 1"/></symbol>
+    <symbol id="g-hdsect" viewBox="-16 -16 32 32"><path class="gl" d="M-12 -8 H12"/><rect class="gl" x="-10" y="-4" width="4" height="10"/><rect class="gl" x="-2" y="-4" width="4" height="10"/><rect class="gl" x="6" y="-4" width="4" height="10"/></symbol>
+    <symbol id="g-headland" viewBox="-16 -16 32 32"><rect class="gl" x="-12" y="-10" width="24" height="20" rx="2"/><rect class="gl" x="-7" y="-5" width="14" height="10" rx="1"/></symbol>
+    <symbol id="g-flag" viewBox="-16 -16 32 32"><path class="gl" d="M-7 -10 V12"/><path class="gl" d="M-7 -10 L9 -7 L-7 -2 Z"/></symbol>
+    <symbol id="g-snapL" viewBox="-16 -16 32 32"><path class="gl" d="M-10 0 H6 M-6 -4 L-10 0 L-6 4"/><line class="gl" x1="10" y1="-8" x2="10" y2="8"/></symbol>
+    <symbol id="g-snapR" viewBox="-16 -16 32 32"><path class="gl" d="M10 0 H-6 M6 -4 L10 0 L6 4"/><line class="gl" x1="-10" y1="-8" x2="-10" y2="8"/></symbol>
+    <symbol id="g-snapP" viewBox="-16 -16 32 32"><circle class="gl" r="3"/><circle class="gl" r="9"/></symbol>
+    <symbol id="g-tram" viewBox="-16 -16 32 32"><line class="gl" x1="-7" y1="-12" x2="-7" y2="12"/><line class="gl" x1="7" y1="-12" x2="7" y2="12"/></symbol>
+    <symbol id="g-abline" viewBox="-16 -16 32 32"><line class="gl" x1="-11" y1="9" x2="11" y2="-9"/><circle class="gf" cx="-11" cy="9" r="2"/><circle class="gf" cx="11" cy="-9" r="2"/><text x="-10" y="-1" font-size="7" fill="#d4dadf">A</text><text x="6" y="9" font-size="7" fill="#d4dadf">B</text></symbol>
+    <symbol id="g-autotrack" viewBox="-16 -16 32 32"><line class="gl" x1="-12" y1="6" x2="12" y2="-6"/><text x="0" y="11" text-anchor="middle" fill="#f5d27a" font-size="9" font-weight="700">A</text></symbol>
+  </defs>
+
+  <!-- background -->
+  <rect width="1280" height="800" fill="#0f1419"/>
+
+  <!-- ===== map area ===== -->
+  <rect x="112" y="56" width="1056" height="664" fill="#15324a"/>
+  <g stroke="#1f4a72" stroke-width="1" opacity="0.55">
+    <path d="M112 120 H1168 M112 184 H1168 M112 248 H1168 M112 312 H1168
+             M112 376 H1168 M112 440 H1168 M112 504 H1168 M112 568 H1168
+             M112 632 H1168 M112 696 H1168"/>
+    <path d="M176 56 V720 M240 56 V720 M304 56 V720 M368 56 V720 M432 56 V720
+             M496 56 V720 M560 56 V720 M624 56 V720 M688 56 V720 M752 56 V720
+             M816 56 V720 M880 56 V720 M944 56 V720 M1008 56 V720 M1072 56 V720
+             M1136 56 V720"/>
+  </g>
+  <path d="M632 600 L632 388 L647 388 L647 600 Z" fill="#3d8f4a" opacity="0.55"/>
+  <line x1="639" y1="80" x2="639" y2="720" stroke="#f59f00" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.7"/>
+  <g transform="translate(632 388)">
+    <polygon points="0,-18 14,12 0,6 -14,12" fill="#f59f00" stroke="#fff8e0" stroke-width="1"/>
+    <circle r="2.5" fill="#fff8e0"/>
+  </g>
+
+  <!-- compass/camera mode (Reserved) -->
+  <g transform="translate(1132 96)">
+    <circle r="22" fill="#1c2128" stroke="#7d8590" stroke-width="1"/>
+    <text y="5" text-anchor="middle" fill="#f59f00" font-size="14" font-weight="700">M</text>
+  </g>
+
+  <!-- ===== top-left status bar (data, no glyphs swap) ===== -->
+  <rect x="0" y="0" width="464" height="56" fill="#1c2128"/>
+  <circle cx="22" cy="28" r="7" fill="#3d8f4a"/>
+  <text x="36"  y="32" fill="#d4dadf" font-size="12">RTK Fix</text>
+  <text x="100" y="32" fill="#7d8590" font-size="12">Sat 14</text>
+  <text x="156" y="32" fill="#7d8590" font-size="12">NTRIP ✓</text>
+  <text x="228" y="32" fill="#d4dadf" font-size="12">Field: South 40</text>
+  <text x="350" y="32" fill="#7d8590" font-size="12">14:23</text>
+
+  <!-- ===== top-right field stats (data, no glyphs swap) ===== -->
+  <rect x="816" y="0" width="464" height="56" fill="#1c2128"/>
+  <text x="836" y="22" fill="#7d8590" font-size="10">AREA</text>
+  <text x="836" y="42" fill="#d4dadf" font-size="16" font-weight="600">12.4 ha</text>
+  <text x="922" y="22" fill="#7d8590" font-size="10">DIST</text>
+  <text x="922" y="42" fill="#d4dadf" font-size="16" font-weight="600">3.2 km</text>
+  <text x="1004" y="22" fill="#7d8590" font-size="10">HEADLAND</text>
+  <text x="1004" y="42" fill="#d4dadf" font-size="16" font-weight="600">8.6 m</text>
+  <rect x="1200" y="14" width="60" height="28" rx="4" fill="#3d8f4a"/>
+  <text x="1230" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">AUTO</text>
+
+  <!-- ===== left toolbar (glyph over word) ===== -->
+  <rect x="0" y="56" width="112" height="664" fill="#1c2128"/>
+  <g font-size="10" fill="#d4dadf" text-anchor="middle">
+    <g><rect x="8" y="64"  width="96" height="80" rx="6" fill="#262d36"/><use href="#g-file"      x="48" y="76" width="32" height="32"/><text x="56" y="128">File</text></g>
+    <g><rect x="8" y="152" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-view"      x="48" y="164" width="32" height="32"/><text x="56" y="216">View</text></g>
+    <g><rect x="8" y="240" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-tools"     x="48" y="252" width="32" height="32"/><text x="56" y="304">Tools</text></g>
+    <g><rect x="8" y="328" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-vehicle"   x="48" y="340" width="32" height="32"/><text x="56" y="392">Vehicle</text></g>
+    <g><rect x="8" y="416" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-field"     x="48" y="428" width="32" height="32"/><text x="56" y="480">Fields</text></g>
+    <g><rect x="8" y="504" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-fieldtools" x="48" y="516" width="32" height="32"/><text x="56" y="568">Field Tools</text></g>
+    <g><rect x="8" y="592" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-autosteer" x="48" y="604" width="32" height="32"/><text x="56" y="656">AutoSteer</text></g>
+  </g>
+
+  <!-- ===== right toolbar (glyph over word) ===== -->
+  <rect x="1168" y="56" width="112" height="664" fill="#1c2128"/>
+  <g font-size="10" fill="#d4dadf" text-anchor="middle">
+    <g><rect x="1176" y="64"  width="96" height="80" rx="6" fill="#262d36"/><use href="#g-contour"     x="1216" y="76"  width="32" height="32"/><text x="1224" y="128">Contour</text></g>
+    <g><rect x="1176" y="152" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-sections"    x="1216" y="164" width="32" height="32"/><text x="1224" y="216">Sections</text></g>
+    <g><rect x="1176" y="240" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-sectionsauto" x="1216" y="252" width="32" height="32"/><text x="1224" y="304">Auto Sect</text></g>
+    <g><rect x="1176" y="328" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-uturn"       x="1216" y="340" width="32" height="32"/><text x="1224" y="392">U-Turn</text></g>
+    <g><rect x="1176" y="416" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-uturnL"      x="1216" y="428" width="32" height="32"/><text x="1224" y="480">U-Turn L</text></g>
+    <g><rect x="1176" y="504" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-uturnR"      x="1216" y="516" width="32" height="32"/><text x="1224" y="568">U-Turn R</text></g>
+    <g><rect x="1176" y="592" width="96" height="80" rx="6" fill="#262d36"/><use href="#g-steer"       x="1216" y="604" width="32" height="32"/><text x="1224" y="656">Steer</text></g>
+  </g>
+
+  <!-- ===== bottom toolbar (glyph over word, 12 buttons) ===== -->
+  <rect x="0" y="720" width="1280" height="80" fill="#1c2128"/>
+  <g font-size="10" fill="#d4dadf" text-anchor="middle">
+    <g><rect x="40"   y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-skip"      x="80"   y="730" width="28" height="28"/><text x="88"   y="780">Skip Rows</text></g>
+    <g><rect x="144"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-color"     x="184"  y="730" width="28" height="28"/><text x="192"  y="780">Color</text></g>
+    <g><rect x="248"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-reset"     x="288"  y="730" width="28" height="28"/><text x="296"  y="780">Reset Tool</text></g>
+    <g><rect x="352"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-hdsect"    x="392"  y="730" width="28" height="28"/><text x="400"  y="780">HD Sect</text></g>
+    <g><rect x="456"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-headland"  x="496"  y="730" width="28" height="28"/><text x="504"  y="780">Headland</text></g>
+    <g><rect x="560"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-flag"      x="600"  y="730" width="28" height="28"/><text x="608"  y="780">Flags</text></g>
+    <g><rect x="664"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-snapL"     x="704"  y="730" width="28" height="28"/><text x="712"  y="780">Snap L</text></g>
+    <g><rect x="768"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-snapR"     x="808"  y="730" width="28" height="28"/><text x="816"  y="780">Snap R</text></g>
+    <g><rect x="872"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-snapP"     x="912"  y="730" width="28" height="28"/><text x="920"  y="780">Snap Pivot</text></g>
+    <g><rect x="976"  y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-tram"      x="1016" y="730" width="28" height="28"/><text x="1024" y="780">Tram</text></g>
+    <g><rect x="1080" y="724" width="96" height="72" rx="6" fill="#262d36"/><use href="#g-abline"    x="1120" y="730" width="28" height="28"/><text x="1128" y="780">AB Line</text></g>
+    <g><rect x="1184" y="724" width="80" height="72" rx="6" fill="#262d36"/><use href="#g-autotrack" x="1216" y="730" width="28" height="28"/><text x="1224" y="780">Auto Track</text></g>
+  </g>
+
+</svg>

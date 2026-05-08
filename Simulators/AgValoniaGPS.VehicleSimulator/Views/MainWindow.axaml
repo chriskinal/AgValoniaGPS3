@@ -5,7 +5,7 @@
         x:DataType="vm:MainWindowViewModel"
         Title="AgValoniaGPS Vehicle Simulator"
         Width="750" Height="480"
-        MinWidth="650" MinHeight="400">
+        MinWidth="400" MinHeight="200">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -18,8 +18,11 @@
                    FontSize="20" FontWeight="Bold"
                    Margin="0,0,0,12" />
 
-        <!-- Main content: three columns -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,0,0,12">
+        <!-- Main content: three columns, scrollable when window is too small -->
+        <ScrollViewer Grid.Row="1" Margin="0,0,0,12"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+        <Grid ColumnDefinitions="*,*,*">
 
             <!-- Column 1: Vehicle -->
             <Border Grid.Column="0" Margin="0,0,6,0" Padding="12"
@@ -122,6 +125,7 @@
                 </StackPanel>
             </Border>
         </Grid>
+        </ScrollViewer>
 
         <!-- Bottom bar -->
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*">

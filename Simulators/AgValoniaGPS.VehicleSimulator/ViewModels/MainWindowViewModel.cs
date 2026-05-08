@@ -45,7 +45,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private bool _isRunning;
     private double _commandedAngle;
     private byte _pwmDisplay;
-    private bool _steerSwitchOn = true;
+    private bool _steerSwitchOn;
     private bool _autoSteerEngaged;
     private DriveMode _driveMode = DriveMode.Bicycle;
     private string _statusText = "Stopped";

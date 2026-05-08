@@ -885,8 +885,13 @@ public partial class MainViewModel
                 : Services.Interfaces.SoundEffect.AutoSteerOff);
             if (IsAutoSteerEngaged)
             {
+                _autoSteerService.Engage();
                 double widthMinusOverlap = ConfigStore.ActualToolWidth - Tool.Overlap;
                 _logger.LogDebug($"[NUDGE] AutoSteer ENGAGED: State.Guidance.HowManyPathsAway={State.Guidance.HowManyPathsAway}, offset={State.Guidance.HowManyPathsAway * widthMinusOverlap:F2}m");
+            }
+            else
+            {
+                _autoSteerService.Disengage();
             }
             SyncGuidanceStateToPipeline();
             StatusMessage = IsAutoSteerEngaged ? "AutoSteer ENGAGED" : "AutoSteer disengaged";

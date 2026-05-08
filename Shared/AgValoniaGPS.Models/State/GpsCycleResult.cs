@@ -69,6 +69,35 @@ public record GpsCycleResult
     /// </summary>
     public LocalPlane? FirstFixLocalPlane { get; init; }
 
+    /// <summary>
+    /// Non-null on the single cycle where the cycle worker re-anchors the
+    /// temporary local plane because the live GPS source has moved beyond
+    /// the configured threshold from the existing origin (no field loaded).
+    /// The UI thread overwrites <c>State.Field.LocalPlane</c> and surfaces
+    /// a status toast describing how far the source jumped.
+    /// </summary>
+    public LocalPlane? ReplacementLocalPlane { get; init; }
+
+    /// <summary>
+    /// Distance in kilometres between the previous origin and the live GPS
+    /// position on the cycle that triggered <see cref="ReplacementLocalPlane"/>.
+    /// </summary>
+    public double ReplacementDistanceKm { get; init; }
+
+    /// <summary>
+    /// Non-null on the single cycle where the cycle worker first detects
+    /// that the live GPS position is far from the loaded field origin.
+    /// The UI thread disables autosteer and prompts the operator.
+    /// </summary>
+    public FarFromFieldWarning? FarFromFieldWarning { get; init; }
+
     // Status
     public string? StatusMessage { get; init; }
 }
+
+/// <summary>
+/// Payload for the "GPS far from field" warning: how far the live position
+/// is from the loaded field's local-plane origin, plus the offending lat/lon.
+/// </summary>
+public sealed record FarFromFieldWarning(
+    double DistanceMeters, double Latitude, double Longitude);
