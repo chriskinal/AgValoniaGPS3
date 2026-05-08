@@ -4446,7 +4446,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         // within its 128x128 canvas (more transparent space on one side).
         // Shift the rendered overlay along Y so the visible tire centers on
         // the cyan target square (= AgOpen front-axle pos). Negative = back.
-        private const double FrontWheelSpriteForwardOffsetM = -0.20;
+        private const double FrontWheelSpriteForwardOffsetM = -0.05;
 
         private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
