@@ -79,31 +79,7 @@ operators learn what the button actually does.
 Each phase leaves the app working; commits should be reviewable in
 isolation.
 
-### Phase A — Build `GlyphButton` UserControl
-
-`Shared/AgValoniaGPS.Views/Controls/GlyphButton.axaml(.cs)`
-
-DPs needed:
-- `Glyph` (`Geometry`) — the path icon
-- `Label` (`string`) — text below
-- `Command` (`ICommand`) + `CommandParameter` — forwarded to inner Button
-- `IsActive` (`bool`) — toggled-on visual state
-- Inherit `ToolTip.Tip` via attached property (works automatically)
-
-Visual:
-- Width 80, Height 80 (was 64×64 — accommodates label without
-  squashing the icon)
-- Vertical `StackPanel`: `PathIcon` 32×32 above, `TextBlock` 11pt below
-- Padding 4 top, 6 bottom, 4 sides
-- `:pointerover`, `:pressed`, `IsActive=true` change *background*, not
-  glyph color
-- Tap target ≥44pt by virtue of 80×80 outer
-
-Unit tests: render light theme, dark theme, Active=true, Active=false,
-disabled. All four panels currently render at desktop and iOS — UI
-tests via `Avalonia.Headless.NUnit` already cover that pattern.
-
-### Phase B — Icon resource library
+### Phase A — Icon resource library
 
 `Shared/AgValoniaGPS.Views/Icons/Glyphs.axaml`
 
@@ -121,10 +97,42 @@ glyph. Reference the mockup
 </StreamGeometry>
 ```
 
-26 entries to author. Stroke-width applied via `PathIcon` style, not
-baked into the path.
+26 entries to author in a single sitting for visual consistency. Paths
+are stroke-friendly (rendered with `Path` + `Stroke`, not filled) using
+a 24×24 coordinate space. Stroke thickness is set in the `GlyphButton`
+control style, not baked into the path.
 
-Register the dictionary in `App.axaml` so the resources are app-global.
+Register the dictionary in `App.axaml` so resources are app-global.
+
+This phase is authored standalone — geometries can be inspected with a
+throwaway `Path` test page before the control exists. Doing this first
+means Phase B has real glyphs to render against from the very first
+build.
+
+### Phase B — Build `GlyphButton` UserControl
+
+`Shared/AgValoniaGPS.Views/Controls/GlyphButton.axaml(.cs)`
+
+DPs needed:
+- `Glyph` (`Geometry`) — the path icon
+- `Label` (`string`) — text below
+- `Command` (`ICommand`) + `CommandParameter` — forwarded to inner Button
+- `IsActive` (`bool`) — toggled-on visual state
+- Inherit `ToolTip.Tip` via attached property (works automatically)
+
+Visual:
+- Width 80, Height 80 (was 64×64 — accommodates label without
+  squashing the icon)
+- Vertical `StackPanel`: `Path` 32×32 above (Stroke=Foreground,
+  StrokeThickness=2), `TextBlock` 11pt below
+- Padding 4 top, 6 bottom, 4 sides
+- `:pointerover`, `:pressed`, `IsActive=true` change *background*, not
+  glyph color
+- Tap target ≥44pt by virtue of 80×80 outer
+
+Unit tests: render light theme, dark theme, Active=true, Active=false,
+disabled. All four panels currently render at desktop and iOS — UI
+tests via `Avalonia.Headless.NUnit` already cover that pattern.
 
 ### Phase C — Localization keys
 
