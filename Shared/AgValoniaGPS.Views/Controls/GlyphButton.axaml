@@ -37,11 +37,19 @@ the inner Button via element binding.
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <Style Selector="Button.GlyphButtonInner:pointerover">
+        <!-- Hover: subtle background tint (no-op on touch devices) -->
+        <Style Selector="Button.GlyphButtonInner:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
         </Style>
+        <!-- Press: pin the ContentPresenter background to the idle brush so the
+             Fluent theme's default press tint doesn't fire. The Foreground swap
+             below is what gives the visible feedback — only the glyph + label
+             flash green. -->
+        <Style Selector="Button.GlyphButtonInner:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
         <Style Selector="Button.GlyphButtonInner:pressed">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
         </Style>
         <!-- IsActive=true: accent-tinted background (background only, glyph stays themed) -->
         <Style Selector="Button.GlyphButtonInner.Active">
@@ -67,6 +75,12 @@ the inner Button via element binding.
             Classes.Active="{Binding #root.IsActive}"
             Command="{Binding #root.Command}"
             CommandParameter="{Binding #root.CommandParameter}">
+        <Button.Transitions>
+            <Transitions>
+                <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Button.Transitions>
         <StackPanel Orientation="Vertical"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
@@ -80,6 +94,7 @@ the inner Button via element binding.
                   StrokeJoin="Round"/>
             <TextBlock Text="{Binding #root.Label}"
                        FontSize="11"
+                       Foreground="{Binding $parent[Button].Foreground}"
                        Margin="0,4,0,0"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
