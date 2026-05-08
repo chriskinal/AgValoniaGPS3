@@ -1,0 +1,80 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+GlyphButton — stacked icon-over-label button used across the
+navigation chrome.
+
+  <controls:GlyphButton Glyph="{StaticResource Glyph.File}"
+                        Label="File"
+                        Command="{Binding ShowFileMenuCommand}"
+                        ToolTip.Tip="Open the file menu"/>
+
+The visual is a single Button child carrying the press / hover /
+active states; the outer UserControl exposes the four DPs (Glyph,
+Label, Command, CommandParameter, IsActive) and forwards Command to
+the inner Button via element binding.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls"
+             x:Class="AgValoniaGPS.Views.Controls.GlyphButton"
+             x:DataType="controls:GlyphButton"
+             x:Name="root"
+             Width="80" Height="80">
+
+    <UserControl.Styles>
+        <!-- Inner button: idle state -->
+        <Style Selector="Button.GlyphButtonInner">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="4,4,4,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.GlyphButtonInner:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="Button.GlyphButtonInner:pressed">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
+        </Style>
+        <!-- IsActive=true: accent-tinted background (background only, glyph stays themed) -->
+        <Style Selector="Button.GlyphButtonInner.Active">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.GlyphButtonInner.Active:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight1}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Button Classes="GlyphButtonInner"
+            Classes.Active="{Binding #root.IsActive}"
+            Command="{Binding #root.Command}"
+            CommandParameter="{Binding #root.CommandParameter}">
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <Path Data="{Binding #root.Glyph}"
+                  Width="32" Height="32"
+                  Stretch="Uniform"
+                  Stroke="{Binding $parent[Button].Foreground}"
+                  StrokeThickness="2"
+                  StrokeLineCap="Round"
+                  StrokeJoin="Round"
+                  Fill="{x:Null}"/>
+            <TextBlock Text="{Binding #root.Label}"
+                       FontSize="11"
+                       Margin="0,4,0,0"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       MaxLines="1"/>
+        </StackPanel>
+    </Button>
+</UserControl>
