@@ -4497,6 +4497,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 //   Magenta: TrackWidth at front axle
                 //   Green: Wheelbase on centerline (rear→front axle)
                 //   Cyan hollow squares: where the front wheels should render
+                // Off by default; enable with DiagFlags.ShowVehicleDebug.
+                if (DiagFlags.ShowVehicleDebug)
+                {
                 var twPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 255, 0, 255)), 0.08);
                 var wbPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 0, 255, 0)), 0.08);
                 var wheelTargetPen = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(140, 0, 255, 255)), 0.06);
@@ -4522,6 +4525,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     new Rect(trackWidth / 2.0 - rearDbgW / 2, -rearDbgH / 2, rearDbgW, rearDbgH));
                 dc.DrawRectangle(null, wheelTargetPen,
                     new Rect(-trackWidth / 2.0 - rearDbgW / 2, -rearDbgH / 2, rearDbgW, rearDbgH));
+                }
 
                 // Heading unknown indicator — "?" placed off the right side of the body
                 if (!s.HasValidHeading)
@@ -4851,12 +4855,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // Debug overlay: bright lines + target squares to visually
             // verify the body-sprite + wheel-overlay scaling matches the
             // vehicle config. Drawn inside the translate/rotate so the
-            // overlay stays attached to the tractor.
+            // overlay stays attached to the tractor. Off by default; enable
+            // with a marker file (DiagFlags.ShowVehicleDebug).
             //   - Magenta line: TrackWidth between front-wheel positions
             //   - Green line: Wheelbase, rear axle to front axle on centerline
             //   - Cyan hollow squares: where the front wheels SHOULD render
             //     (at the AgOpen formula position ±TrackWidth/2, Wheelbase),
             //     sized to the wheel-overlay rect for direct comparison.
+            if (DiagFlags.ShowVehicleDebug)
             using (var twPaint = new SKPaint { Color = new SKColor(255, 0, 255, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
             using (var wbPaint = new SKPaint { Color = new SKColor(0, 255, 0, 140), Style = SKPaintStyle.Stroke, StrokeWidth = 0.08f, IsAntialias = true })
             using (var twTick = new SKPaint { Color = new SKColor(255, 0, 255, 140), Style = SKPaintStyle.Fill, IsAntialias = true })

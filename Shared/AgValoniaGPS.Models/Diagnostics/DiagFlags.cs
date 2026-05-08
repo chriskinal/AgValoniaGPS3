@@ -28,6 +28,9 @@ public static class DiagFlags
     public static readonly bool SkipGrid;
     public static readonly bool SkipVehicle;
 
+    // Vehicle-debug overlay (track-width / wheelbase / wheel-target squares)
+    public static readonly bool ShowVehicleDebug;
+
     // Panel/UI flags
     public static readonly bool PanelsOpaque;
     public static readonly bool HideAllPanels;
@@ -50,6 +53,7 @@ public static class DiagFlags
         SkipGroundTexture          = MarkerPresent(".skip_ground_texture");
         SkipGrid                   = MarkerPresent(".skip_grid");
         SkipVehicle                = MarkerPresent(".skip_vehicle");
+        ShowVehicleDebug           = MarkerPresent(".show_vehicle_debug");
         PanelsOpaque               = MarkerPresent(".panels_opaque");
         HideAllPanels              = MarkerPresent(".hide_all_panels");
         DisableAnimationFrameUpdate = MarkerPresent(".disable_animation_frame_update");
@@ -59,6 +63,7 @@ public static class DiagFlags
 
         AnySet = SkipCoverageDraw || SkipBoundaryDraw || SkipTracks
                || SkipGroundTexture || SkipGrid || SkipVehicle
+               || ShowVehicleDebug
                || PanelsOpaque || HideAllPanels
                || DisableAnimationFrameUpdate || LogSendStateFrequency
                || LogRenderTiming || AutoResumeField;
@@ -78,6 +83,7 @@ public static class DiagFlags
             + $" ground={SkipGroundTexture}"
             + $" grid={SkipGrid}"
             + $" vehicle={SkipVehicle}"
+            + $" vehicleDebug={ShowVehicleDebug}"
             + $" opaquePanels={PanelsOpaque}"
             + $" hidePanels={HideAllPanels}"
             + $" disableAnimFrame={DisableAnimationFrameUpdate}"
