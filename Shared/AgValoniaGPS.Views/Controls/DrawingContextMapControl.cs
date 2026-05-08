@@ -4444,9 +4444,9 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         // FrontWheels.png has the tire content shifted slightly off-center
         // within its 128x128 canvas (more transparent space on one side).
-        // Shift the rendered overlay forward by this amount so the visible
-        // tire centers on the cyan target square (= AgOpen front-axle pos).
-        private const double FrontWheelSpriteForwardOffsetM = 0.20;
+        // Shift the rendered overlay along Y so the visible tire centers on
+        // the cyan target square (= AgOpen front-axle pos). Negative = back.
+        private const double FrontWheelSpriteForwardOffsetM = -0.20;
 
         private static void BitmapTractorSize(MapRenderState s, out double widthWorld, out double heightWorld)
         {
