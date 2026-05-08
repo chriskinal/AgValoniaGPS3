@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              xmlns:controls="using:AgValoniaGPS.Views.Controls.Panels"
+             xmlns:c="using:AgValoniaGPS.Views.Controls"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.LeftNavigationPanel"
              x:DataType="vm:MainViewModel"
@@ -69,11 +70,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Navigation Button Bar -->
         <Border Classes="FloatingPanel">
             <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
-                <!-- 1. File/Application Menu -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="File Menu"
-                        Command="{Binding ToggleFileMenuPanelCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/fileMenu.png" Stretch="Uniform"/>
-                </Button>
+                <!-- 1. File/Application Menu (smoke test for GlyphButton — Phase D pilot) -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.File}"
+                               Label="File"
+                               ToolTip.Tip="File Menu"
+                               Command="{Binding ToggleFileMenuPanelCommand}"/>
 
                 <Separator Classes="LeftPanelSeparator"/>
 
