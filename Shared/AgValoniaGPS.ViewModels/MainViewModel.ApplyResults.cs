@@ -83,6 +83,7 @@ public partial class MainViewModel
         {
             IsAutoSteerEngaged = false;
             _autoSteerService.Disengage();
+            _audioService.Play(Services.Interfaces.SoundEffect.AutoSteerOff);
             StatusMessage = result.DisengageReason ?? "AutoSteer disengaged";
         }
 
