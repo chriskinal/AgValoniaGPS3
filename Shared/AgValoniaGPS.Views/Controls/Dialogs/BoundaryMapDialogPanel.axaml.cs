@@ -557,6 +557,7 @@ public partial class BoundaryMapDialogPanel : UserControl
             if (_pointsLayer != null) _pointsLayer.Enabled = false;
             if (_polygonLayer != null) _polygonLayer.Enabled = false;
             if (_existingBoundaryLayer != null) _existingBoundaryLayer.Enabled = false;
+            if (_tractorLayer != null) _tractorLayer.Enabled = false;
             MapControl.Refresh();
 
             // Wait for tile layer to finish loading
@@ -608,6 +609,7 @@ public partial class BoundaryMapDialogPanel : UserControl
             if (_pointsLayer != null) _pointsLayer.Enabled = true;
             if (_polygonLayer != null) _polygonLayer.Enabled = true;
             if (_existingBoundaryLayer != null) _existingBoundaryLayer.Enabled = true;
+            if (_tractorLayer != null) _tractorLayer.Enabled = true;
             MapControl.Refresh();
 
             // Create geo-reference file content (includes Mercator bounds)
@@ -625,6 +627,7 @@ public partial class BoundaryMapDialogPanel : UserControl
             if (_pointsLayer != null) _pointsLayer.Enabled = true;
             if (_polygonLayer != null) _polygonLayer.Enabled = true;
             if (_existingBoundaryLayer != null) _existingBoundaryLayer.Enabled = true;
+            if (_tractorLayer != null) _tractorLayer.Enabled = true;
             MapControl.Refresh();
 
             return null;
