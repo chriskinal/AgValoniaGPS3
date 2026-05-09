@@ -3724,6 +3724,14 @@ public partial class MainViewModel : ObservableObject
         _mapService.SetBoundary(boundary);
         CurrentBoundary = boundary;
 
+        // Keep the in-memory Field model's boundary in sync. Without this,
+        // ActiveField.Boundary remains whatever LoadField returned at open
+        // time (usually the empty placeholder for a freshly-created field),
+        // and CloseFieldAsync → FieldService.SaveField → SaveBoundary
+        // overwrites the user's drawing on disk with "$Boundary\n".
+        if (ActiveField != null)
+            ActiveField.Boundary = boundary;
+
         // Set HasBoundary based on whether we have a valid outer boundary
         HasBoundary = boundary?.OuterBoundary != null && boundary.OuterBoundary.IsValid;
 
