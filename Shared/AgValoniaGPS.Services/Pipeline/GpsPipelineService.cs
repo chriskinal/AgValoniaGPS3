@@ -441,6 +441,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
         // YouTurn working state is cycle-owned — no cross-thread writers.
         // TriggerManual (manual U-turn) and ClearState (field close / track
         // deselect) run on the cycle thread via intents drained above.
+        // Mirror the user's YouTurn-enabled toggle into the cycle-owned working
+        // state so the YouTurnSnapshot.IsEnabled flag (and therefore
+        // State.YouTurn.IsEnabled, used by the distance-to-trigger widget's
+        // visibility predicate) tracks the toggle. Without this the snapshot
+        // always reports IsEnabled=false because nothing else writes the
+        // working-state flag, hiding the distance widget on every cycle.
+        _youTurn.IsEnabled = youTurnEnabled;
         bool isYouTurnTriggered = _youTurn.IsTriggered;
         bool isInYouTurn = _youTurn.IsExecuting;
         List<Vec3>? youTurnPath = _youTurn.TurnPath;

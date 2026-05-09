@@ -6,6 +6,9 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
+using AgValoniaGPS.Models.Pipeline;
+using AgValoniaGPS.Models.State;
+
 namespace AgValoniaGPS.UI.Tests;
 
 /// <summary>
@@ -151,6 +154,43 @@ public class UTurnDirectionToggleTests
 
         Assert.That(vm.IsUTurnDistanceVisible, Is.True,
             "Widget must remain visible through turn execution.");
+    }
+
+    /// <summary>
+    /// Regression for the v4 distance-widget-not-showing bug. The cycle's
+    /// <see cref="YouTurnSnapshot"/> already populates DistanceToTrigger, but
+    /// the widget's <see cref="MainViewModel.IsUTurnDistanceVisible"/> predicate
+    /// gates on <c>State.YouTurn.IsEnabled</c>. Both fields must be mirrored
+    /// from the snapshot onto <c>State.YouTurn</c> by ApplyGpsCycleResult so
+    /// the widget actually shows during approach.
+    /// </summary>
+    [Test]
+    public void ApplyGpsCycleResult_MirrorsSnapshotDistanceAndIsEnabled_OntoStateYouTurn()
+    {
+        var vm = new MainViewModelBuilder().Build();
+
+        var result = new GpsCycleResult
+        {
+            YouTurn = new YouTurnSnapshot
+            {
+                IsEnabled = true,
+                IsTriggered = false,
+                IsExecuting = false,
+                DistanceToTrigger = 27.5,
+            },
+        };
+
+        vm.ApplyGpsCycleResult(result);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(vm.State.YouTurn.IsEnabled, Is.True,
+                "Snapshot.IsEnabled must reach State.YouTurn.IsEnabled");
+            Assert.That(vm.State.YouTurn.DistanceToTrigger, Is.EqualTo(27.5).Within(0.001),
+                "Snapshot.DistanceToTrigger must reach State.YouTurn.DistanceToTrigger");
+            Assert.That(vm.IsUTurnDistanceVisible, Is.True,
+                "Widget must be visible once both fields are mirrored");
+        });
     }
 
     [Test]

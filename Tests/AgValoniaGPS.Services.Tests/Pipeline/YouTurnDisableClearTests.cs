@@ -160,6 +160,41 @@ public class YouTurnDisableClearTests
         });
     }
 
+    /// <summary>
+    /// Regression for the distance-widget bug: the pipeline must mirror the
+    /// user's <c>SetYouTurnEnabled</c> toggle into the cycle-owned
+    /// <see cref="YouTurnWorkingState.IsEnabled"/> flag every cycle. The
+    /// snapshot mirror in <c>ApplyGpsCycleResult</c> reads this field, and the
+    /// distance-to-trigger widget's <c>IsUTurnDistanceVisible</c> predicate in
+    /// turn reads the snapshot's flag on <c>State.YouTurn</c>. Without this
+    /// mirror, <c>IsEnabled</c> stays at its default <c>false</c> and the
+    /// widget is hidden permanently.
+    /// </summary>
+    [Test]
+    public void Cycle_WithYouTurnEnabled_PublishesIsEnabledTrueOnSnapshot()
+    {
+        _pipeline.SetYouTurnEnabled(true);
+
+        _gpsService.UpdateGpsData(ValidFix());
+
+        Assert.That(Last.YouTurn, Is.Not.Null);
+        Assert.That(Last.YouTurn!.IsEnabled, Is.True,
+            "Pipeline must mirror SetYouTurnEnabled(true) into YouTurnSnapshot.IsEnabled");
+    }
+
+    [Test]
+    public void Cycle_WithYouTurnDisabled_PublishesIsEnabledFalseOnSnapshot()
+    {
+        // Start enabled then disable to verify the mirror tracks both transitions.
+        _pipeline.SetYouTurnEnabled(true);
+        _gpsService.UpdateGpsData(ValidFix());
+        _pipeline.SetYouTurnEnabled(false);
+        _gpsService.UpdateGpsData(ValidFix());
+
+        Assert.That(Last.YouTurn!.IsEnabled, Is.False,
+            "Pipeline must mirror SetYouTurnEnabled(false) into YouTurnSnapshot.IsEnabled");
+    }
+
     [Test]
     public void Cycle_WithYouTurnEnabled_DoesNotForceClearYouTurn()
     {
