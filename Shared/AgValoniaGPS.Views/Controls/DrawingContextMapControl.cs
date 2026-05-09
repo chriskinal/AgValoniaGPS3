@@ -5060,8 +5060,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             // when on pass 0). Drawn dashed with A/B markers and labels so it
             // is visually distinct from the (solid) current-pass line above.
             // We render this on top of the active track so the markers stay
-            // visible. For AB lines we extend across the viewport for the same
-            // reason as the active track.
+            // visible. The source AB is drawn as a finite segment between A
+            // and B (NOT extended across the viewport) so the dashed line
+            // visually anchors to the actual A/B reference points; the
+            // current/active pass line remains extended above.
             var sourceAb = ResolveSourceAbTrack(s);
             if (sourceAb != null && sourceAb.Points.Count == 2)
             {
@@ -5076,7 +5078,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     IsAntialias = true,
                     PathEffect = SKPathEffect.CreateDash(new float[] { 1.5f, 1.0f }, 0f),
                 };
-                DrawExtendedABLineSk(canvas, pA, pB, dashPaint);
+                canvas.DrawLine(
+                    (float)pA.Easting, (float)pA.Northing,
+                    (float)pB.Easting, (float)pB.Northing,
+                    dashPaint);
 
                 // A/B markers (small filled squares) + text labels.
                 // World units: at default zoom the view is ~200m tall so a
