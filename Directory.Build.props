@@ -1,0 +1,25 @@
+<Project>
+
+  <!--
+    Repo-wide MSBuild defaults. Imported automatically by every .csproj
+    under this directory, ahead of the project's own settings.
+  -->
+
+  <PropertyGroup>
+    <!--
+      Activate the globalization analyzer category (CA1304/05/10/11)
+      across every project. AnalysisModeGlobalization=All is a category-
+      scoped override that flips the rules on without dragging in every
+      other CA category the way <AnalysisLevel> would. .editorconfig at
+      the repo root then sets CA1305 severity to error so any new
+      ToString / Parse / string.Format / $"…" without an IFormatProvider
+      breaks the build.
+
+      See CONTRIBUTING.md → "Persisted numeric/date strings" for the
+      "why" — comma-decimal locales (fi-FI etc.) silently corrupted
+      Field.txt on disk before this fence existed.
+    -->
+    <AnalysisModeGlobalization>All</AnalysisModeGlobalization>
+  </PropertyGroup>
+
+</Project>

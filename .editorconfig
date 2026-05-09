@@ -19,3 +19,63 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+# Globalization / culture-correctness rules.
+#
+# CA1305 fires anywhere a culture-sensitive ToString / Parse / interpolated
+# string is used without an explicit IFormatProvider. We don't want it as
+# an error globally — `DateTime.Now.ToString("HH-mm")` for a UI label is
+# fine — but anything that lands on disk or on the wire MUST use
+# InvariantCulture. So scope the error severity to those paths.
+#
+# Default: CA1305 only. The other globalization rules
+# (CA1303 localization, CA1307/CA1310 string comparison, CA1308
+# upper/lower normalization) are stylistic for this project — silence
+# them so only the IFormatProvider rule shows up.
+[*.cs]
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1303.severity = none
+dotnet_diagnostic.CA1304.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1308.severity = none
+dotnet_diagnostic.CA1310.severity = none
+dotnet_diagnostic.CA1311.severity = none
+
+# Persistence & wire-format paths: a culture miss here is a real,
+# user-visible bug (see Field.txt fi-FI regression that prompted this).
+# Promote to error so the build breaks before the bug ships.
+[Shared/AgValoniaGPS.Services/Fields/**/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/AutoSteer/PgnBuilder.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/NmeaParser*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/NtripClientService.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/FieldPlaneFileService.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/AgShare/**/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/IsoXml/**/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/Tram/**/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Shared/AgValoniaGPS.Services/Pipeline/**/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+[Simulators/**/Modules/*.cs]
+dotnet_diagnostic.CA1305.severity = error
+
+# UI views: bindings and codegen create lots of ToString calls; current
+# culture is correct for display. Silence the rule here.
+[Shared/AgValoniaGPS.Views/**/*.cs]
+dotnet_diagnostic.CA1305.severity = none
+[*.{xaml,axaml}]
+dotnet_diagnostic.CA1305.severity = none
+
+# Generated files: skip culture rules entirely.
+[**/{obj,bin}/**]
+generated_code = true
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1304.severity = none
+dotnet_diagnostic.CA1310.severity = none
+dotnet_diagnostic.CA1311.severity = none
