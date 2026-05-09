@@ -129,7 +129,7 @@ Licensed under GNU GPL v3. See LICENSE.md.
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                FontSize="13"/>
                                     <TextBlock Grid.Column="1"
-                                               Text="{Binding DistanceKm, StringFormat='{}{0:F1}'}"
+                                               Text="{Binding DistanceKmDisplay}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                                FontSize="13" TextAlignment="Right"/>
                                     <TextBlock Grid.Column="2"

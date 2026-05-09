@@ -166,10 +166,13 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
             else
             {
                 var dir = System.IO.Path.Combine(root, name);
+                // NaN, not 0, so the UI renders "—" instead of an
+                // alarmingly precise "0.0 km" for fields whose origin
+                // couldn't be read or is (0,0).
                 rows.Add(new NearbyField(
                     Name: name,
                     DirectoryPath: dir,
-                    DistanceKm: 0,
+                    DistanceKm: double.NaN,
                     BoundaryAreaHectares: 0));
             }
         }

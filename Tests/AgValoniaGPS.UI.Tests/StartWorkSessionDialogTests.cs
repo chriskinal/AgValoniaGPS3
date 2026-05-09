@@ -69,6 +69,12 @@ public class StartWorkSessionDialogTests
             Is.EqualTo(new[] { "Nearby", "FarAway", "Aaa", "Zzz" }),
             "Known-distance rows first (by distance), then unknown rows alphabetically.");
         Assert.That(vm.StatusMessage, Is.Null);
+
+        // Unknown-distance rows must NOT render as "0.0" — that misleads
+        // the operator into thinking the field is at their location.
+        var aaa = vm.Fields.First(f => f.Name == "Aaa");
+        Assert.That(double.IsNaN(aaa.DistanceKm), Is.True);
+        Assert.That(aaa.DistanceKmDisplay, Is.EqualTo("—"));
     }
 
     [Test]
