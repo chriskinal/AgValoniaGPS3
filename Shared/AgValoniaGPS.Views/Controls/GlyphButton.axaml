@@ -99,8 +99,9 @@ the inner Button via element binding.
                        Margin="0,4,0,0"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
+                       TextWrapping="Wrap"
                        TextTrimming="CharacterEllipsis"
-                       MaxLines="1"/>
+                       MaxLines="2"/>
         </StackPanel>
     </Button>
 </UserControl>

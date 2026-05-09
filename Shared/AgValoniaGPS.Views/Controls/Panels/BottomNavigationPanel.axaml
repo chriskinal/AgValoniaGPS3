@@ -22,16 +22,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              xmlns:converters="using:AgValoniaGPS.Views.Converters"
+             xmlns:c="using:AgValoniaGPS.Views.Controls"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.BottomNavigationPanel"
              x:DataType="vm:MainViewModel"
              ClipToBounds="False"
              Background="{x:Null}"
              IsHitTestVisible="True">
-
-    <UserControl.Resources>
-        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
-    </UserControl.Resources>
 
     <UserControl.Styles>
         <!-- Floating Panel Style -->
@@ -106,11 +103,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Panel ClipToBounds="False" Background="{x:Null}">
         <!-- Main bottom bar -->
         <Border x:Name="MainPanel" Classes="FloatingPanel">
-            <StackPanel x:Name="ButtonStack" Spacing="4" Orientation="Horizontal">
+            <StackPanel x:Name="ButtonStack" Spacing="4" Orientation="Horizontal" VerticalAlignment="Center">
 
                 <!-- === AB LINE DEPENDENT BUTTONS (Hidden when no AB line) === -->
 
-                <!-- U-Turn Skip Rows (0-9) - tap to cycle - hidden when no AB line -->
+                <!-- U-Turn Skip Rows (0-9) - tap to cycle - hidden when no AB line.
+                     Stays as a numeric readout (not a GlyphButton) — the
+                     value IS the visual; a glyph would just clutter it. -->
                 <Button Width="64" Height="64"
                         Command="{Binding CycleUTurnSkipRowsCommand}"
                         IsVisible="{Binding HasActiveTrack}"
@@ -127,82 +126,74 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Button>
 
                 <!-- U-Turn Skip Rows On/Off - hidden when no AB line -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="U-Turn Skip Rows On/Off"
-                        Command="{Binding ToggleUTurnSkipRowsCommand}"
-                        IsVisible="{Binding HasActiveTrack}">
-                    <Panel>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouSkipOn.png" Stretch="Uniform"
-                               IsVisible="{Binding IsUTurnSkipRowsEnabled}"/>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouSkipOff.png" Stretch="Uniform"
-                               IsVisible="{Binding IsUTurnSkipRowsEnabled, Converter={StaticResource InverseBoolConverter}}"/>
-                    </Panel>
-                </Button>
+                <c:GlyphButton Glyph="{StaticResource Glyph.SkipRows}"
+                               Label="{loc:Localize Btn.SkipRows}"
+                               ToolTip.Tip="U-Turn Skip Rows On/Off"
+                               IsActive="{Binding IsUTurnSkipRowsEnabled}"
+                               IsVisible="{Binding HasActiveTrack}"
+                               Command="{Binding ToggleUTurnSkipRowsCommand}"/>
 
                 <!-- === ALWAYS VISIBLE BUTTONS === -->
 
-                <!-- Color Picker / Section Mapping - always visible -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Section Mapping Color"
-                        Command="{Binding ChangeMappingColorCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMapping.png" Stretch="Uniform"/>
-                </Button>
+                <!-- Color Picker / Section Mapping -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.SectionColor}"
+                               Label="{loc:Localize Btn.SectionColor}"
+                               ToolTip.Tip="Section Mapping Color"
+                               Command="{Binding ChangeMappingColorCommand}"/>
 
-                <!-- Reset Tool Heading - always visible -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Reset Tool Heading"
-                        Command="{Binding ResetToolHeadingCommand}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ResetTool.png" Stretch="Uniform"/>
-                </Button>
+                <!-- Reset Tool Heading -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.ResetTool}"
+                               Label="{loc:Localize Btn.ResetTool}"
+                               ToolTip.Tip="Reset Tool Heading"
+                               Command="{Binding ResetToolHeadingCommand}"/>
 
-                <!-- Section Control in Headland - always visible (toggle button) -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Section Control in Headland"
-                        Command="{Binding ToggleSectionInHeadlandCommand}">
-                    <Panel>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOn.png" Stretch="Uniform"
-                               IsVisible="{Binding IsSectionControlInHeadland}"/>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandSectionOff.png" Stretch="Uniform"
-                               IsVisible="{Binding IsSectionControlInHeadland, Converter={StaticResource InverseBoolConverter}}"/>
-                    </Panel>
-                </Button>
+                <!-- Section Control in Headland (toggle) -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.HeadlandSect}"
+                               Label="{loc:Localize Btn.HeadlandSect}"
+                               ToolTip.Tip="Section Control in Headland"
+                               IsActive="{Binding IsSectionControlInHeadland}"
+                               Command="{Binding ToggleSectionInHeadlandCommand}"/>
 
-                <!-- Headland On/Off - always visible (toggle button) -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Toggle Headland"
-                        Command="{Binding ToggleHeadlandCommand}">
-                    <Panel>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOn.png" Stretch="Uniform"
-                               IsVisible="{Binding IsHeadlandOn}"/>
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/HeadlandOff.png" Stretch="Uniform"
-                               IsVisible="{Binding IsHeadlandOn, Converter={StaticResource InverseBoolConverter}}"/>
-                    </Panel>
-                </Button>
+                <!-- Headland On/Off (toggle) -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.Headland}"
+                               Label="{loc:Localize Btn.Headland}"
+                               ToolTip.Tip="Toggle Headland"
+                               IsActive="{Binding IsHeadlandOn}"
+                               Command="{Binding ToggleHeadlandCommand}"/>
 
-                <!-- Flags Menu Button - always visible -->
+                <!-- Flags Menu Button (opens flyout) — sub-menu expander, kept
+                     icon-only per IMPL plan; gets the glyph treatment in the
+                     follow-up phase that migrates the flyout contents too. -->
                 <Button x:Name="FlagMenuButton" Classes="MenuButton" ToolTip.Tip="Flags">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FlagRed.png" Stretch="Uniform"/>
                 </Button>
 
                 <!-- === AB LINE DEPENDENT BUTTONS (Hidden when no AB line) === -->
 
-                <!-- Snap Left - hidden when no AB line -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Snap to Left Track"
-                        Command="{Binding SnapLeftCommand}"
-                        IsVisible="{Binding HasActiveTrack}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapLeft.png" Stretch="Uniform"/>
-                </Button>
+                <!-- Snap Left -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.SnapLeft}"
+                               Label="{loc:Localize Btn.SnapLeft}"
+                               ToolTip.Tip="Snap to Left Track"
+                               IsVisible="{Binding HasActiveTrack}"
+                               Command="{Binding SnapLeftCommand}"/>
 
-                <!-- Snap Right - hidden when no AB line -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Snap to Right Track"
-                        Command="{Binding SnapRightCommand}"
-                        IsVisible="{Binding HasActiveTrack}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapRight.png" Stretch="Uniform"/>
-                </Button>
+                <!-- Snap Right -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.SnapRight}"
+                               Label="{loc:Localize Btn.SnapRight}"
+                               ToolTip.Tip="Snap to Right Track"
+                               IsVisible="{Binding HasActiveTrack}"
+                               Command="{Binding SnapRightCommand}"/>
 
-                <!-- Snap to Pivot - hidden when no AB line -->
-                <Button Classes="BottomPanelButton" ToolTip.Tip="Snap to Pivot"
-                        Command="{Binding SnapToPivotCommand}"
-                        IsVisible="{Binding HasActiveTrack}">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SnapToPivot.png" Stretch="Uniform"/>
-                </Button>
+                <!-- Snap to Pivot -->
+                <c:GlyphButton Glyph="{StaticResource Glyph.SnapPivot}"
+                               Label="{loc:Localize Btn.SnapPivot}"
+                               ToolTip.Tip="Snap to Pivot"
+                               IsVisible="{Binding HasActiveTrack}"
+                               Command="{Binding SnapToPivotCommand}"/>
 
-                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) -->
+                <!-- Tram Display Mode (cycles Off/All/Lines/Outer) — kept as
+                     image-driven cycler since it has 4 states, not a binary
+                     toggle. Will get a state-aware glyph swap in a follow-up. -->
                 <Button Classes="BottomPanelButton" ToolTip.Tip="Tram Lines Display Mode"
                         Command="{Binding ToggleTramDisplayCommand}"
                         IsVisible="{Binding IsFieldOpen}">
@@ -211,7 +202,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <Separator Classes="BottomPanelSeparator"/>
 
-                <!-- AB Line Menu Button (opens flyout) - always visible -->
+                <!-- AB Line Menu Button (opens flyout) — sub-menu expander,
+                     kept icon-only per IMPL plan. -->
                 <Button x:Name="ABLineMenuButton" Classes="MenuButton" ToolTip.Tip="AB Line Options">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrackOn.png" Stretch="Uniform"/>
                 </Button>
