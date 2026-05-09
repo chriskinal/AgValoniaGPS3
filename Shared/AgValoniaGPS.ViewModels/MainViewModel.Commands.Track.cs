@@ -847,6 +847,7 @@ public partial class MainViewModel
 
         ManualYouTurnLeftCommand = new RelayCommand(TriggerManualYouTurnLeft);
         ManualYouTurnRightCommand = new RelayCommand(TriggerManualYouTurnRight);
+        ToggleUTurnDirectionCommand = new RelayCommand(ToggleUTurnDirection);
 
         ToggleAutoSteerCommand = new RelayCommand(() =>
         {

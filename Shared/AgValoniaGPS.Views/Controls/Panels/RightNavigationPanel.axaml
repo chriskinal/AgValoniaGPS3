@@ -30,6 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <UserControl.Resources>
         <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:BoolToStringConverter x:Key="BoolToStringConverter"/>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -125,6 +126,37 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnNo.png" Stretch="Uniform"
                            IsVisible="{Binding IsYouTurnEnabled, Converter={StaticResource InverseBoolConverter}}"/>
                 </Panel>
+            </Button>
+
+            <!-- 4a. U-Turn Direction Toggle + Distance to trigger.
+                 Mirrors legacy AgOpenGPS UTurn button (FormGPS DrawUTurnBtn / SwapDirection):
+                 single tap-target showing the armed direction arrow with distance underneath. -->
+            <Button Classes="RightPanelButton" Width="64" Height="64"
+                    ToolTip.Tip="Toggle U-Turn direction"
+                    Command="{Binding ToggleUTurnDirectionCommand}"
+                    IsVisible="{Binding IsUTurnButtonVisible}">
+                <Grid RowDefinitions="*,Auto" Margin="2">
+                    <!-- Direction arrow.
+                         When armed: bind to State.YouTurn.IsTurnLeft.
+                         When idle: bind to NextUTurnDirectionLeftOverride. -->
+                    <Panel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock FontSize="26"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   IsVisible="{Binding State.YouTurn.IsTriggered}"
+                                   Text="{Binding State.YouTurn.IsTurnLeft, Converter={StaticResource BoolToStringConverter}, ConverterParameter=↰|↱}"/>
+                        <TextBlock FontSize="26"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   IsVisible="{Binding State.YouTurn.IsTriggered, Converter={StaticResource InverseBoolConverter}}"
+                                   Text="{Binding NextUTurnDirectionLeftOverride, Converter={StaticResource BoolToStringConverter}, ConverterParameter=↰|↱}"/>
+                    </Panel>
+                    <TextBlock Grid.Row="1"
+                               FontSize="11"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Bottom"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               Text="{Binding State.YouTurn.DistanceToTrigger, StringFormat={}{0:F0} m}"
+                               IsVisible="{Binding State.YouTurn.IsTriggered}"/>
+                </Grid>
             </Button>
 
             <!-- 4b. Manual U-Turn Left/Right buttons (only visible when autosteer engaged) -->
