@@ -633,6 +633,24 @@ public sealed class GpsPipelineService : IGpsPipelineService
         passNumber = _guidanceWorking.HowManyPathsAway;
         nudgeOffset = _guidanceWorking.NudgeOffset;
 
+        // U-turn lifecycle is bound to the YouTurn-enabled toggle: when the
+        // operator disables YouTurn the rendered turn path must clear so a
+        // stale arc doesn't linger on the map. The auto tick above is gated
+        // on youTurnEnabled, so without this clear the working state would
+        // freeze with IsTriggered/IsExecuting=true and the snapshot would
+        // keep emitting the old TurnPath every cycle — ApplyGpsCycleResult
+        // would then keep pushing it back to the map. Mirrors the
+        // autosteer-disengage clear; re-enabling rebuilds the turn from
+        // scratch via the auto tick or a manual trigger.
+        if (!youTurnEnabled
+            && (_youTurn.IsTriggered || _youTurn.IsExecuting || _youTurn.TurnPath != null))
+        {
+            YouTurnStateMachine.ClearState(_youTurn);
+            isYouTurnTriggered = false;
+            isInYouTurn = false;
+            youTurnPath = null;
+        }
+
         // ── (3) Tool position ───────────────────────────────────────────
         // ToolPositionService is updated by ControlLoopService at 100 Hz
         // (MainViewModel.OnControlLoopTicked). The pipeline used to call
