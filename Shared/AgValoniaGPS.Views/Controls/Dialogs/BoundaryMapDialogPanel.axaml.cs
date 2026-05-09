@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -47,6 +48,9 @@ public partial class BoundaryMapDialogPanel : UserControl
     private WritableLayer? _pointsLayer;
     private WritableLayer? _polygonLayer;
     private WritableLayer? _existingBoundaryLayer;
+    private WritableLayer? _tractorLayer;
+    private GeometryFeature? _tractorFeature;
+    private AgValoniaGPS.ViewModels.MainViewModel? _trackedVm;
     private bool _isDrawingMode;
     private bool _mapInitialized;
     private readonly List<(double Lat, double Lon)> _boundaryPoints = new();
@@ -61,14 +65,22 @@ public partial class BoundaryMapDialogPanel : UserControl
 
     private void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property.Name == nameof(IsVisible) && IsVisible)
+        if (e.Property.Name == nameof(IsVisible))
         {
-            if (!_mapInitialized)
+            if (IsVisible)
             {
-                SetupMap();
-                _mapInitialized = true;
+                if (!_mapInitialized)
+                {
+                    SetupMap();
+                    _mapInitialized = true;
+                }
+                UpdateExistingBoundaryLayer();
+                AttachTractorTracking();
             }
-            UpdateExistingBoundaryLayer();
+            else
+            {
+                DetachTractorTracking();
+            }
         }
     }
 
@@ -119,6 +131,21 @@ public partial class BoundaryMapDialogPanel : UserControl
         };
         map.Layers.Add(_pointsLayer);
 
+        // Tractor position marker — green dot, on top so it stays visible
+        // over the boundary the user is drawing.
+        _tractorLayer = new WritableLayer
+        {
+            Name = "Tractor",
+            Style = new SymbolStyle
+            {
+                SymbolType = SymbolType.Ellipse,
+                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(46, 204, 113, 255)),  // green
+                Outline = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(255, 255, 255, 255), 2),
+                SymbolScale = 0.6
+            }
+        };
+        map.Layers.Add(_tractorLayer);
+
         // Get initial position from ViewModel
         double lat = 39.8283; // Default to US center
         double lon = -98.5795;
@@ -154,6 +181,73 @@ public partial class BoundaryMapDialogPanel : UserControl
 
         // Handle pointer movement for coordinate display
         MapControl.PointerMoved += OnPointerMoved;
+    }
+
+    /// <summary>
+    /// Subscribe to the VM's GPS PropertyChanged so the tractor marker
+    /// follows live position while the dialog is open. Idempotent.
+    /// </summary>
+    private void AttachTractorTracking()
+    {
+        if (DataContext is not AgValoniaGPS.ViewModels.MainViewModel vm) return;
+        if (ReferenceEquals(_trackedVm, vm)) return;
+
+        DetachTractorTracking();
+        _trackedVm = vm;
+        _trackedVm.PropertyChanged += OnVmPropertyChanged;
+        UpdateTractorMarker(); // initial render
+    }
+
+    private void DetachTractorTracking()
+    {
+        if (_trackedVm != null)
+        {
+            _trackedVm.PropertyChanged -= OnVmPropertyChanged;
+            _trackedVm = null;
+        }
+    }
+
+    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AgValoniaGPS.ViewModels.MainViewModel.Latitude)
+                           or nameof(AgValoniaGPS.ViewModels.MainViewModel.Longitude))
+        {
+            // Hop to UI thread; PropertyChanged from the GPS pipeline can
+            // arrive on a worker thread depending on dispatcher state.
+            if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+                UpdateTractorMarker();
+            else
+                Avalonia.Threading.Dispatcher.UIThread.Post(UpdateTractorMarker);
+        }
+    }
+
+    private void UpdateTractorMarker()
+    {
+        if (_tractorLayer == null || _trackedVm == null || MapControl?.Map == null)
+            return;
+
+        double lat = _trackedVm.Latitude;
+        double lon = _trackedVm.Longitude;
+        if (lat == 0 && lon == 0)
+        {
+            // No fix — hide the marker rather than render at (0,0).
+            _tractorLayer.Clear();
+            _tractorFeature = null;
+            _tractorLayer.DataHasChanged();
+            return;
+        }
+
+        var merc = SphericalMercator.FromLonLat(lon, lat);
+        if (_tractorFeature == null)
+        {
+            _tractorFeature = new GeometryFeature(new NtsPoint(merc.x, merc.y));
+            _tractorLayer.Add(_tractorFeature);
+        }
+        else
+        {
+            _tractorFeature.Geometry = new NtsPoint(merc.x, merc.y);
+        }
+        _tractorLayer.DataHasChanged();
     }
 
     /// <summary>
