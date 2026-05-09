@@ -667,6 +667,25 @@ public sealed class GpsPipelineService : IGpsPipelineService
             lock (_stateLock) _autoSteerEngaged = false;
         }
 
+        // U-turn lifecycle is bound to autosteer: when autosteer is not
+        // engaged (user toggled off, boundary kickout, far-from-field guard,
+        // or any other disengage path), the rendered turn path must clear so
+        // the operator doesn't see a stale arc on the map. The state machine
+        // tick is also gated on autoSteerEngaged, so without this clear the
+        // working state would freeze with IsTriggered/IsExecuting=true and
+        // the snapshot would keep emitting the old TurnPath every cycle —
+        // ApplyGpsCycleResult would then keep pushing it back to the map.
+        // Re-engaging autosteer rebuilds the turn from scratch via the auto
+        // tick or a manual trigger.
+        if (!autoSteerEngaged
+            && (_youTurn.IsTriggered || _youTurn.IsExecuting || _youTurn.TurnPath != null))
+        {
+            YouTurnStateMachine.ClearState(_youTurn);
+            isYouTurnTriggered = false;
+            isInYouTurn = false;
+            youTurnPath = null;
+        }
+
         // ── (6) Guidance calculation ────────────────────────────────────
         double steerAngle = 0;
         double crossTrackError = 0;
