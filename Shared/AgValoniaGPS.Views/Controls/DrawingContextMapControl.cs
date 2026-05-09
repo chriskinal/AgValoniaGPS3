@@ -5033,7 +5033,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         private void DrawTrackSk(SKCanvas canvas, MapRenderState s)
         {
-            // Active track (magenta)
+            // Active track (magenta) — current pass guidance line
+            // For AB lines (2 points) we extend the segment across the whole
+            // viewport (an AB line is conceptually an infinite line, not a
+            // segment). For curves we draw the polyline as-is.
             if (s.ActiveTrack != null && s.ActiveTrack.Points.Count >= 2)
             {
                 using var trackPaint = new SKPaint
@@ -5043,20 +5046,73 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     StrokeWidth = 0.5f,
                     IsAntialias = true
                 };
-                DrawTrackPointsSk(canvas, s.ActiveTrack.Points, trackPaint);
+                if (s.ActiveTrack.Points.Count == 2)
+                {
+                    DrawExtendedABLineSk(canvas, s.ActiveTrack.Points[0], s.ActiveTrack.Points[1], trackPaint);
+                }
+                else
+                {
+                    DrawTrackPointsSk(canvas, s.ActiveTrack.Points, trackPaint);
+                }
             }
 
-            // Base track (purple)
-            if (s.BaseTrack != null && s.BaseTrack.Points.Count >= 2)
+            // Base track — original AB line definition (or shared with active
+            // when on pass 0). Drawn dashed with A/B markers and labels so it
+            // is visually distinct from the (solid) current-pass line above.
+            // We render this on top of the active track so the markers stay
+            // visible. For AB lines we extend across the viewport for the same
+            // reason as the active track.
+            var sourceAb = ResolveSourceAbTrack(s);
+            if (sourceAb != null && sourceAb.Points.Count == 2)
             {
+                var pA = sourceAb.Points[0];
+                var pB = sourceAb.Points[1];
+
+                using var dashPaint = new SKPaint
+                {
+                    Color = new SKColor(180, 100, 255),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 0.3f,
+                    IsAntialias = true,
+                    PathEffect = SKPathEffect.CreateDash(new float[] { 1.5f, 1.0f }, 0f),
+                };
+                DrawExtendedABLineSk(canvas, pA, pB, dashPaint);
+
+                // A/B markers (small filled squares) + text labels.
+                // World units: at default zoom the view is ~200m tall so a
+                // 1m marker is comfortably visible. Labels are drawn with the
+                // Y axis flipped because world Y is north-up (the canvas
+                // transform inverts Y so text would otherwise render upside
+                // down — same trick as flag labels above).
+                float markerHalf = 0.6f;
+                using var markerPaint = new SKPaint { Color = new SKColor(0, 255, 0), Style = SKPaintStyle.Fill, IsAntialias = true };
+                using var markerOutline = new SKPaint { Color = SKColors.White, Style = SKPaintStyle.Stroke, StrokeWidth = 0.15f, IsAntialias = true };
+                var aRect = new SKRect((float)pA.Easting - markerHalf, (float)pA.Northing - markerHalf,
+                    (float)pA.Easting + markerHalf, (float)pA.Northing + markerHalf);
+                canvas.DrawRect(aRect, markerPaint);
+                canvas.DrawRect(aRect, markerOutline);
+
+                using var bPaint = new SKPaint { Color = new SKColor(255, 0, 0), Style = SKPaintStyle.Fill, IsAntialias = true };
+                var bRect = new SKRect((float)pB.Easting - markerHalf, (float)pB.Northing - markerHalf,
+                    (float)pB.Easting + markerHalf, (float)pB.Northing + markerHalf);
+                canvas.DrawRect(bRect, bPaint);
+                canvas.DrawRect(bRect, markerOutline);
+
+                DrawAbLabelSk(canvas, "A", pA.Easting + markerHalf + 0.4, pA.Northing + markerHalf + 0.4);
+                DrawAbLabelSk(canvas, "B", pB.Easting + markerHalf + 0.4, pB.Northing + markerHalf + 0.4);
+            }
+            else if (sourceAb != null && sourceAb.Points.Count > 2)
+            {
+                // Source curve — render dashed too so it's distinguishable.
                 using var basePaint = new SKPaint
                 {
                     Color = new SKColor(180, 100, 255),
                     Style = SKPaintStyle.Stroke,
                     StrokeWidth = 0.3f,
-                    IsAntialias = true
+                    IsAntialias = true,
+                    PathEffect = SKPathEffect.CreateDash(new float[] { 1.5f, 1.0f }, 0f),
                 };
-                DrawTrackPointsSk(canvas, s.BaseTrack.Points, basePaint);
+                DrawTrackPointsSk(canvas, sourceAb.Points, basePaint);
             }
 
             // Next track for U-turn (cyan)
@@ -5069,7 +5125,14 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                     StrokeWidth = 0.4f,
                     IsAntialias = true
                 };
-                DrawTrackPointsSk(canvas, s.NextTrack.Points, nextPaint);
+                if (s.NextTrack.Points.Count == 2)
+                {
+                    DrawExtendedABLineSk(canvas, s.NextTrack.Points[0], s.NextTrack.Points[1], nextPaint);
+                }
+                else
+                {
+                    DrawTrackPointsSk(canvas, s.NextTrack.Points, nextPaint);
+                }
             }
 
             // Pending point A
@@ -5078,6 +5141,82 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 using var pointPaint = new SKPaint { Color = new SKColor(0, 255, 0), Style = SKPaintStyle.Fill };
                 canvas.DrawCircle((float)s.PendingPointA.Easting, (float)s.PendingPointA.Northing, 1.0f, pointPaint);
             }
+        }
+
+        /// <summary>
+        /// Returns the original AB definition track to render dashed with
+        /// A/B markers. When the tractor is shifted off pass 0, BaseTrack
+        /// holds the unshifted reference and ActiveTrack holds the offset
+        /// pass; we then prefer BaseTrack. On pass 0, BaseTrack is null
+        /// (or equal to ActiveTrack) and ActiveTrack is itself the source
+        /// AB line, so we fall back to it.
+        /// </summary>
+        private static AgValoniaGPS.Models.Track.Track? ResolveSourceAbTrack(MapRenderState s)
+        {
+            if (s.BaseTrack != null && s.BaseTrack.Points.Count >= 2 && s.BaseTrack != s.ActiveTrack)
+                return s.BaseTrack;
+            if (s.ActiveTrack != null && s.ActiveTrack.Points.Count >= 2)
+                return s.ActiveTrack;
+            return null;
+        }
+
+        /// <summary>
+        /// Draws an infinite line passing through A and B by extending the
+        /// segment by a large distance (5 km) in both directions. This fully
+        /// covers the visible viewport at any reasonable zoom level — the
+        /// view box width is 200/Zoom and the renderer caps zoom well above
+        /// 0.04, so 5 km of extension gives at least a few full screens of
+        /// margin. We use a constant rather than computing exact viewport
+        /// intersection because (a) the camera transform includes rotation
+        /// in 3D mode which makes per-edge clipping fiddly, and (b) Skia
+        /// strokes the off-screen segments away cheaply.
+        /// </summary>
+        private static void DrawExtendedABLineSk(SKCanvas canvas,
+            AgValoniaGPS.Models.Base.Vec3 a,
+            AgValoniaGPS.Models.Base.Vec3 b,
+            SKPaint paint)
+        {
+            double dx = b.Easting - a.Easting;
+            double dy = b.Northing - a.Northing;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.01)
+            {
+                // Degenerate (A == B): just draw a dot — no direction to extend.
+                canvas.DrawPoint((float)a.Easting, (float)a.Northing, paint);
+                return;
+            }
+            double nx = dx / len, ny = dy / len;
+            const double ext = 5000.0;
+            float x1 = (float)(a.Easting - nx * ext);
+            float y1 = (float)(a.Northing - ny * ext);
+            float x2 = (float)(b.Easting + nx * ext);
+            float y2 = (float)(b.Northing + ny * ext);
+            canvas.DrawLine(x1, y1, x2, y2, paint);
+        }
+
+        /// <summary>
+        /// Draws an A/B point label at a world position. The world canvas has
+        /// Y inverted (north is up); we counter-flip locally so text renders
+        /// upright instead of mirrored. Mirrors the technique used for flag
+        /// labels elsewhere in this file.
+        /// </summary>
+        private static void DrawAbLabelSk(SKCanvas canvas, string text, double worldX, double worldY)
+        {
+            float fontSize = 1.6f; // ~1.6 m tall in world units
+            using var font = new SKFont(SKTypeface.Default, fontSize);
+            using var textPaint = new SKPaint(font) { Color = SKColors.White, IsAntialias = true };
+            using var halo = new SKPaint(font)
+            {
+                Color = SKColors.Black,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 0.25f,
+            };
+            canvas.Save();
+            canvas.Scale(1, -1, (float)worldX, (float)worldY);
+            canvas.DrawText(text, (float)worldX, (float)worldY + fontSize / 2, font, halo);
+            canvas.DrawText(text, (float)worldX, (float)worldY + fontSize / 2, font, textPaint);
+            canvas.Restore();
         }
 
         private static void DrawTrackPointsSk(SKCanvas canvas, IReadOnlyList<AgValoniaGPS.Models.Base.Vec3> points, SKPaint paint)
