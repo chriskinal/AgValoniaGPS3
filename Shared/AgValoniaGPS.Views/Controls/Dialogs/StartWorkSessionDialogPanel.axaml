@@ -219,6 +219,24 @@ Licensed under GNU GPL v3. See LICENSE.md.
                     </Grid>
                 </Grid>
 
+                <!-- Empty-state when no field is selected (or no fields exist).
+                     Keeps the right column populated so the dialog never has
+                     a wide blank area. -->
+                <Border Grid.Row="1" Grid.Column="2"
+                        IsVisible="{Binding SelectedField, Converter={x:Static ObjectConverters.IsNull}}"
+                        VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <StackPanel Spacing="8" HorizontalAlignment="Center">
+                        <TextBlock Text="No field selected"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding StatusMessage, FallbackValue='Pick a field on the left to start or resume a job.'}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="12" TextWrapping="Wrap" MaxWidth="320"
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Status / error message -->
                 <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
                            Text="{Binding StatusMessage}"
