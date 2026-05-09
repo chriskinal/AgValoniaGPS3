@@ -102,14 +102,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                  Two 35x35 arrow buttons over a shared "U-Turn" label, fitting
                  the same 80x80 footprint as the surrounding GlyphButtons. -->
             <StackPanel Orientation="Vertical"
-                        Width="80" Height="80"
+                        Width="80" Height="64"
                         HorizontalAlignment="Center"
                         IsVisible="{Binding IsAutoSteerEngaged}">
                 <Grid ColumnDefinitions="Auto,Auto"
                       HorizontalAlignment="Center"
-                      Margin="0,4,0,0">
+                      Margin="0,2,0,0">
                     <Button Grid.Column="0" Classes="UTurnArrow"
-                            Width="35" Height="35"
+                            Width="32" Height="32"
                             ToolTip.Tip="Manual U-Turn Left"
                             Command="{Binding ManualYouTurnLeftCommand}"
                             Margin="0,0,3,0">
@@ -122,7 +122,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                               Stretch="Uniform"/>
                     </Button>
                     <Button Grid.Column="1" Classes="UTurnArrow"
-                            Width="35" Height="35"
+                            Width="32" Height="32"
                             ToolTip.Tip="Manual U-Turn Right"
                             Command="{Binding ManualYouTurnRightCommand}"
                             Margin="3,0,0,0">
@@ -138,7 +138,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{loc:Localize Btn.UTurnManual}"
                            FontSize="11"
                            HorizontalAlignment="Center"
-                           Margin="0,4,0,0"/>
+                           Margin="0,2,0,0"/>
             </StackPanel>
 
             <!-- 7. AutoSteer Toggle (3 states: disabled/ready/engaged)

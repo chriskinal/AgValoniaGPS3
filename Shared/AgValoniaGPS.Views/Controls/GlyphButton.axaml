@@ -21,7 +21,7 @@ the inner Button via element binding.
              x:Class="AgValoniaGPS.Views.Controls.GlyphButton"
              x:DataType="controls:GlyphButton"
              x:Name="root"
-             Width="80" Height="80">
+             Width="80" Height="64">
 
     <UserControl.Styles>
         <!-- Inner button: idle state -->
@@ -29,7 +29,7 @@ the inner Button via element binding.
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="4,4,4,6"/>
+            <Setter Property="Padding" Value="4,2,4,2"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -88,7 +88,7 @@ the inner Button via element binding.
             <Path Classes="GlyphPath"
                   Classes.Filled="{Binding #root.IsGlyphFilled}"
                   Data="{Binding #root.Glyph}"
-                  Width="32" Height="32"
+                  Width="28" Height="28"
                   Stretch="Uniform"
                   StrokeThickness="2"
                   StrokeLineCap="Round"
@@ -96,7 +96,7 @@ the inner Button via element binding.
             <TextBlock Text="{Binding #root.Label}"
                        FontSize="11"
                        Foreground="{Binding $parent[Button].Foreground}"
-                       Margin="0,4,0,0"
+                       Margin="0,2,0,0"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
                        TextWrapping="Wrap"
