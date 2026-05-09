@@ -155,7 +155,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                VerticalAlignment="Bottom"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                Text="{Binding State.YouTurn.DistanceToTrigger, StringFormat={}{0:F0} m}"
-                               IsVisible="{Binding State.YouTurn.IsTriggered}"/>
+                               IsVisible="{Binding IsUTurnDistanceVisible}"/>
                 </Grid>
             </Button>
 

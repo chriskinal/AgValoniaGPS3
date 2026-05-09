@@ -82,6 +82,47 @@ public partial class MainViewModel
         set => SetProperty(ref _nextUTurnDirectionLeftOverride, value);
     }
 
+    /// <summary>
+    /// True when the U-turn distance-to-trigger widget should be shown.
+    /// Visible while YouTurn is enabled AND either:
+    ///   - the state machine has populated a meaningful approach distance
+    ///     (<c>DistanceToTrigger &gt; 0.5</c> m), OR
+    ///   - the turn is already armed (<c>IsTriggered</c>) or executing.
+    /// The original implementation gated only on <c>IsTriggered</c>, which
+    /// becomes true at the same instant the turn starts executing — the user
+    /// only ever saw the widget showing 0 m mid-turn. Showing during approach
+    /// matches legacy AgOpenGPS UTurn-button behavior.
+    /// </summary>
+    public bool IsUTurnDistanceVisible
+    {
+        get
+        {
+            var yt = State.YouTurn;
+            return yt.IsEnabled && (yt.DistanceToTrigger > 0.5 || yt.IsTriggered || yt.IsExecuting);
+        }
+    }
+
+    /// <summary>
+    /// Subscribe to <see cref="YouTurnState"/> property changes that affect
+    /// <see cref="IsUTurnDistanceVisible"/> so the bound AXAML re-evaluates
+    /// when the state machine snapshot lands.
+    /// Called once from the MainViewModel constructor.
+    /// </summary>
+    private void WireYouTurnDistanceVisibility()
+    {
+        State.YouTurn.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is
+                nameof(Models.State.YouTurnState.IsEnabled) or
+                nameof(Models.State.YouTurnState.IsTriggered) or
+                nameof(Models.State.YouTurnState.IsExecuting) or
+                nameof(Models.State.YouTurnState.DistanceToTrigger))
+            {
+                OnPropertyChanged(nameof(IsUTurnDistanceVisible));
+            }
+        };
+    }
+
     #endregion
 
     #region YouTurn Entry Points

@@ -82,4 +82,93 @@ public class UTurnDirectionToggleTests
 
         Assert.That(vm.State.YouTurn.IsTurnLeft, Is.False, "Must not modify YouTurnState when idle.");
     }
+
+    // ── IsUTurnDistanceVisible ─────────────────────────────────────────────
+    // The distance widget must appear during approach (not just during execution).
+    // See fix/uturn-distance-counter — the original af7d223b widget gated visibility
+    // on State.YouTurn.IsTriggered, which only flips true at the moment of execution.
+
+    [Test]
+    public void IsUTurnDistanceVisible_WhenYouTurnDisabled_ReturnsFalse()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = false;
+        vm.State.YouTurn.DistanceToTrigger = 25.0;
+        vm.State.YouTurn.IsTriggered = false;
+        vm.State.YouTurn.IsExecuting = false;
+
+        Assert.That(vm.IsUTurnDistanceVisible, Is.False,
+            "Widget must be hidden when YouTurn feature is off.");
+    }
+
+    [Test]
+    public void IsUTurnDistanceVisible_WhenEnabledAndApproaching_ReturnsTrue()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = true;
+        vm.State.YouTurn.DistanceToTrigger = 25.0;
+        vm.State.YouTurn.IsTriggered = false;
+        vm.State.YouTurn.IsExecuting = false;
+
+        Assert.That(vm.IsUTurnDistanceVisible, Is.True,
+            "Widget must show during approach when DistanceToTrigger > 0.");
+    }
+
+    [Test]
+    public void IsUTurnDistanceVisible_WhenEnabledAndDistanceZero_ReturnsFalse()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = true;
+        vm.State.YouTurn.DistanceToTrigger = 0.0;
+        vm.State.YouTurn.IsTriggered = false;
+        vm.State.YouTurn.IsExecuting = false;
+
+        Assert.That(vm.IsUTurnDistanceVisible, Is.False,
+            "No upcoming turn => no widget. Pipeline emits 0 when no turn is being approached.");
+    }
+
+    [Test]
+    public void IsUTurnDistanceVisible_WhenTriggered_ReturnsTrue()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = true;
+        vm.State.YouTurn.DistanceToTrigger = 0.0;
+        vm.State.YouTurn.IsTriggered = true;
+        vm.State.YouTurn.IsExecuting = false;
+
+        Assert.That(vm.IsUTurnDistanceVisible, Is.True,
+            "Widget must remain visible the moment the turn arms.");
+    }
+
+    [Test]
+    public void IsUTurnDistanceVisible_WhenExecuting_ReturnsTrue()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = true;
+        vm.State.YouTurn.DistanceToTrigger = 0.0;
+        vm.State.YouTurn.IsTriggered = true;
+        vm.State.YouTurn.IsExecuting = true;
+
+        Assert.That(vm.IsUTurnDistanceVisible, Is.True,
+            "Widget must remain visible through turn execution.");
+    }
+
+    [Test]
+    public void IsUTurnDistanceVisible_RaisesPropertyChanged_WhenDistanceToTriggerChanges()
+    {
+        var vm = new MainViewModelBuilder().Build();
+        vm.State.YouTurn.IsEnabled = true;
+        vm.State.YouTurn.DistanceToTrigger = 0.0;
+
+        bool raised = false;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(vm.IsUTurnDistanceVisible)) raised = true;
+        };
+
+        vm.State.YouTurn.DistanceToTrigger = 30.0;
+
+        Assert.That(raised, Is.True,
+            "IsUTurnDistanceVisible must re-raise when its inputs change so AXAML refreshes.");
+    }
 }

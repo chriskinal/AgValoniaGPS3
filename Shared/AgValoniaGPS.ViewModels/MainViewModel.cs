@@ -348,6 +348,10 @@ public partial class MainViewModel : ObservableObject
             }
         };
 
+        // Wire YouTurn state -> IsUTurnDistanceVisible computed property
+        // so the right-panel distance widget shows during approach, not just mid-turn.
+        WireYouTurnDistanceVisibility();
+
         // Subscribe to ConfigurationStore changes to update NumSections
         _numSections = Models.Configuration.ConfigurationStore.Instance.NumSections;
         Models.Configuration.ConfigurationStore.Instance.PropertyChanged += (s, e) =>
