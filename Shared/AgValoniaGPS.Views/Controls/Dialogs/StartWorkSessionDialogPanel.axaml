@@ -127,7 +127,8 @@ Licensed under GNU GPL v3. See LICENSE.md.
                                 <Grid ColumnDefinitions="*,80,80">
                                     <TextBlock Grid.Column="0" Text="{Binding Name}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                               FontSize="13"/>
+                                               FontSize="13"
+                                               TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding DistanceKmDisplay}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
@@ -147,7 +148,8 @@ Licensed under GNU GPL v3. See LICENSE.md.
                       RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                       IsVisible="{Binding SelectedField, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock Grid.Row="0" Classes="Header"
-                               Text="{Binding SelectedField.Name}"/>
+                               Text="{Binding SelectedField.Name}"
+                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Grid.Row="1" Classes="SubHeader"
                                Text="{Binding SelectedField.BoundaryAreaHectares, StringFormat='Area: {0:F1} ha'}"/>
 
