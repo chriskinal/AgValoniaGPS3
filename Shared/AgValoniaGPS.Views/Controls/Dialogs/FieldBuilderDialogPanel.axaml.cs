@@ -45,6 +45,30 @@ public partial class FieldBuilderDialogPanel : UserControl
     private double _canvasWidth, _canvasHeight;
     private bool _transformValid;
 
+    // Squared distance below which the source boundary is considered closed
+    // (first point ~= last point). Matches the threshold in MainViewModel.Headland.cs.
+    private const double ClosedBoundaryToleranceSq = 25.0;
+
+    /// <summary>
+    /// Returns true when the segment was built from a closed boundary polygon,
+    /// i.e. the offset polyline should be rendered as a closed loop.
+    /// Two cases qualify: an explicit Boundary-typed segment, or any segment whose
+    /// BoundaryPoints start and end coincide (e.g. HeadlandBoundary preview which
+    /// duplicates the first boundary point at the end).
+    /// </summary>
+    private static bool IsClosedBoundaryOffset(Models.Headland.HeadlandSegment seg)
+    {
+        if (seg.Type == Models.Headland.HeadlandSegmentType.Boundary)
+            return true;
+        if (seg.BoundaryPoints.Count < 3)
+            return false;
+        var first = seg.BoundaryPoints[0];
+        var last = seg.BoundaryPoints[^1];
+        double dx = first.Easting - last.Easting;
+        double dy = first.Northing - last.Northing;
+        return (dx * dx + dy * dy) < ClosedBoundaryToleranceSq;
+    }
+
     public FieldBuilderDialogPanel()
     {
         InitializeComponent();
@@ -1879,6 +1903,12 @@ public partial class FieldBuilderDialogPanel : UserControl
                     segPts.Add(ToCanvas(e1.Easting + edx / elen * seg.EndExtension, e1.Northing + edy / elen * seg.EndExtension));
             }
 
+            // For closed-boundary offsets (full polygon offset), close the polyline so
+            // the segment from last offset point back to first is drawn. The OffsetPoints
+            // list itself does NOT include a duplicate close-point (Clipper2 convention).
+            if (IsClosedBoundaryOffset(seg) && segPts.Count >= 3)
+                segPts.Add(segPts[0]);
+
             var segLine = new Polyline
             {
                 Stroke = segColor,
@@ -2197,6 +2227,12 @@ public partial class FieldBuilderDialogPanel : UserControl
                     if (elen > 0.01)
                         offsetPts.Add(ToCanvas(e1.Easting + edx / elen * _session.EndExtension, e1.Northing + edy / elen * _session.EndExtension));
                 }
+
+                // For closed-boundary offsets (full polygon offset), close the polyline so
+                // the segment from last offset point back to first is drawn. Without this the
+                // preview is missing the closing edge between p[N-1] and p[0].
+                if (IsClosedBoundaryOffset(tempSeg) && offsetPts.Count >= 3)
+                    offsetPts.Add(offsetPts[0]);
 
                 var offsetLine = new Polyline
                 {
