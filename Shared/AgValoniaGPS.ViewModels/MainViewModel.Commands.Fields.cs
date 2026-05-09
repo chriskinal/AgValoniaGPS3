@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -223,19 +224,30 @@ public partial class MainViewModel
             {
                 Directory.CreateDirectory(fieldPath);
 
+                // Lat/lon must be written with InvariantCulture (period
+                // decimal). FieldPlaneFileService.LoadField parses with
+                // InvariantCulture; using current culture here would write
+                // "42,03" in locales like fi-FI, the parser would silently
+                // reject it, the field would end up with origin (0,0), and
+                // FindFieldsNear would drop it from "near me" results.
+                var inv = CultureInfo.InvariantCulture;
+                var latStr = NewFieldLatitude.ToString("F8", inv);
+                var lonStr = NewFieldLongitude.ToString("F8", inv);
+
                 var originFile = Path.Combine(fieldPath, "field.origin");
-                File.WriteAllText(originFile, $"{NewFieldLatitude:F8},{NewFieldLongitude:F8}");
+                File.WriteAllText(originFile, $"{latStr},{lonStr}");
 
                 var fieldTxtPath = Path.Combine(fieldPath, "Field.txt");
-                var fieldTxtContent = $"{DateTime.Now:yyyy-MMM-dd hh:mm:ss tt}\n" +
-                                      "$FieldDir\n" +
-                                      $"{NewFieldName}\n" +
-                                      "$Offsets\n" +
-                                      "0,0\n" +
-                                      "Convergence\n" +
-                                      "0\n" +
-                                      "StartFix\n" +
-                                      $"{NewFieldLatitude:F8},{NewFieldLongitude:F8}\n";
+                var fieldTxtContent =
+                    $"{DateTime.Now.ToString("yyyy-MMM-dd hh:mm:ss tt", inv)}\n" +
+                    "$FieldDir\n" +
+                    $"{NewFieldName}\n" +
+                    "$Offsets\n" +
+                    "0,0\n" +
+                    "Convergence\n" +
+                    "0\n" +
+                    "StartFix\n" +
+                    $"{latStr},{lonStr}\n";
                 File.WriteAllText(fieldTxtPath, fieldTxtContent);
 
                 CurrentFieldName = NewFieldName;
