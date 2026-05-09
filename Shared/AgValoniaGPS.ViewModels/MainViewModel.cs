@@ -464,13 +464,16 @@ public partial class MainViewModel : ObservableObject
     /// and velocity, so position advances ~7 cm per 30 Hz frame at 25 km/h
     /// instead of a 28 cm jump every 100 ms.
     ///
-    /// Tool/hitch are pulled from the latest ToolPositionService snapshot
-    /// (updated at 100 Hz by the control loop) and pushed in the same
-    /// atomic SetAllPositions call as the vehicle. Otherwise the vehicle
-    /// would slide forward at 30 Hz while the tool stayed pinned to the
-    /// last 10 Hz GpsCycleResult, making the implement appear to lag and
-    /// then snap forward at every GPS sample — visible as back-and-forth
-    /// jitter relative to the tractor.
+    /// Tool/hitch are computed entirely from the current dead-reckoned
+    /// vehicle pose (for hitch) and the Torriem-stable tool heading from
+    /// the snapshot (for tool). Earlier attempts that translated the
+    /// snapshot tool by a dead-reckoned hitch delta still mixed two
+    /// estimator state bases when a GPS sample arrived between the last
+    /// control-loop tick and the render tick — the snapshot hitch used
+    /// the pre-arrival prediction while the new hitch used the post-
+    /// arrival prediction, leaking a small snap into the implement at
+    /// each sample. Computing both hitch and tool from the same single
+    /// estimator pose eliminates that.
     /// </summary>
     private void OnRenderPullTick(object? sender, EventArgs e)
     {
@@ -478,12 +481,46 @@ public partial class MainViewModel : ObservableObject
             return;
         var p = _positionEstimator.GetPose(Clock.Current.GetTimestamp());
 
-        var toolPos = _toolPositionService.ToolPosition;
-        var hitchPos = _toolPositionService.HitchPosition;
+        var tool = ConfigStore.Tool;
+        double hitchDistance = Math.Abs(tool.HitchLength);
+        if (tool.IsToolRearFixed || tool.IsToolTrailing || tool.IsToolTBT)
+            hitchDistance = -hitchDistance;
+
+        double hitchE = p.Position.Easting + Math.Sin(p.Heading) * hitchDistance;
+        double hitchN = p.Position.Northing + Math.Cos(p.Heading) * hitchDistance;
+
+        double toolE, toolN, toolHeading;
+        if (tool.IsToolFrontFixed || tool.IsToolRearFixed)
+        {
+            // Fixed tool follows the vehicle exactly — no Torriem state.
+            toolHeading = p.Heading;
+            toolE = hitchE;
+            toolN = hitchN;
+        }
+        else
+        {
+            // Trailing / TBT — use the Torriem-tracked heading from the
+            // snapshot (stable across ticks) and project the tool back from
+            // the freshly-computed hitch along that heading.
+            toolHeading = _toolPositionService.ToolHeading;
+            double pivotOffset = tool.TrailingHitchLength - tool.TrailingToolToPivotLength;
+            toolE = hitchE - Math.Sin(toolHeading) * pivotOffset;
+            toolN = hitchN - Math.Cos(toolHeading) * pivotOffset;
+        }
+
+        // Lateral offset perpendicular to tool heading (right is positive,
+        // matching ToolPositionService.ApplyLateralOffset).
+        if (Math.Abs(tool.Offset) > 0.001)
+        {
+            double perp = toolHeading + Math.PI / 2.0;
+            toolE += Math.Sin(perp) * tool.Offset;
+            toolN += Math.Cos(perp) * tool.Offset;
+        }
+
         _mapService.SetAllPositions(
             p.Position.Easting, p.Position.Northing, p.Heading,
-            toolPos.Easting, toolPos.Northing, _toolPositionService.ToolHeading,
-            ConfigStore.ActualToolWidth, hitchPos.Easting, hitchPos.Northing,
+            toolE, toolN, toolHeading,
+            ConfigStore.ActualToolWidth, hitchE, hitchN,
             _toolPositionService.IsToolPositionReady);
     }
 
