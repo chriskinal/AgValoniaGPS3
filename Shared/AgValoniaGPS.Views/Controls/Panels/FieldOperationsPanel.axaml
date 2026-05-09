@@ -38,6 +38,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 <!-- Create Field -->
                 <UniformGrid Columns="2">
+                    <Button Classes="ModernButton" Command="{Binding ShowNewFieldDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
+                            <TextBlock Text="New Field" VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="ModernButton" Command="{Binding ShowFromExistingFieldDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="28" Height="28"/>
+                            <TextBlock Text="From Existing" VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
                     <Button Classes="ModernButton" Command="{Binding ShowIsoXmlImportDialogCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ISOXML.png" Width="28" Height="28"/>
@@ -48,18 +60,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="28" Height="28"/>
                             <TextBlock Text="From KML" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowFromExistingFieldDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="28" Height="28"/>
-                            <TextBlock Text="From Existing" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowNewFieldDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
-                            <TextBlock Text="From Default" VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
                 </UniformGrid>
