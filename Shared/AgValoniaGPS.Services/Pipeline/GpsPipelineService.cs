@@ -97,6 +97,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
     // when snap / nudge / set-active-track all become intents).
 
     private bool _youTurnEnabled;
+    // One-shot direction override for the next armed automatic turn. The UI
+    // toggle pre-flips this while idle; the cycle mirrors it into
+    // _youTurn.NextUTurnDirectionLeftOverride and the state machine consumes
+    // and clears it during turn creation. Mirrors legacy SwapDirection.
+    private bool? _nextUTurnDirectionLeftOverride;
     private int _uTurnSkipRows;
     private bool _isSkipWorkedMode;
     private double _headlandCalculatedWidth;
@@ -232,6 +237,18 @@ public sealed class GpsPipelineService : IGpsPipelineService
     public void SetYouTurnEnabled(bool enabled)
     {
         lock (_stateLock) _youTurnEnabled = enabled;
+    }
+
+    /// <summary>
+    /// One-shot direction override for the *next* armed automatic U-turn. The
+    /// UI's direction toggle invokes this while idle; the cycle mirrors the
+    /// flag into <see cref="YouTurnWorkingState.NextUTurnDirectionLeftOverride"/>,
+    /// the state machine consumes it during the next turn-creation tick, and
+    /// then clears it. <c>null</c> means no override.
+    /// </summary>
+    public void SetNextUTurnDirectionLeftOverride(bool? leftOverride)
+    {
+        lock (_stateLock) _nextUTurnDirectionLeftOverride = leftOverride;
     }
 
     /// <summary>
@@ -415,6 +432,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
         Boundary? boundary;
         double driftE, driftN;
         bool hasActiveField;
+        bool? nextUTurnDirectionOverride;
 
         lock (_stateLock)
         {
@@ -436,6 +454,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
             driftE = _driftE;
             driftN = _driftN;
             hasActiveField = _hasActiveField;
+            // Snapshot the pending direction override and clear it so the UI
+            // can post a new one for the *next* turn even while this cycle
+            // hasn't yet armed the current one — last-wins.
+            nextUTurnDirectionOverride = _nextUTurnDirectionLeftOverride;
+            _nextUTurnDirectionLeftOverride = null;
         }
 
         // YouTurn working state is cycle-owned — no cross-thread writers.
@@ -448,6 +471,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
         // always reports IsEnabled=false because nothing else writes the
         // working-state flag, hiding the distance widget on every cycle.
         _youTurn.IsEnabled = youTurnEnabled;
+
+        // Mirror the UI's direction override (one-shot) into the cycle's
+        // working state. Only overwrite when the UI posted a new value —
+        // otherwise an unconsumed override (set on a prior cycle, not yet
+        // consumed because the tractor isn't in turn-creation range) survives.
+        if (nextUTurnDirectionOverride.HasValue)
+            _youTurn.NextUTurnDirectionLeftOverride = nextUTurnDirectionOverride;
         bool isYouTurnTriggered = _youTurn.IsTriggered;
         bool isInYouTurn = _youTurn.IsExecuting;
         List<Vec3>? youTurnPath = _youTurn.TurnPath;

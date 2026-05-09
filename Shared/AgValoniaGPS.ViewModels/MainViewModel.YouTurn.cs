@@ -73,13 +73,21 @@ public partial class MainViewModel
     /// When the user taps the U-turn direction toggle while no turn is currently
     /// armed, this flag captures the desired direction for the *next* armed turn.
     /// Mirrors legacy <c>FormGPS.SwapDirection</c> behavior of pre-flipping
-    /// <c>yt.isTurnLeft</c> before the next trigger. The state machine consumer
-    /// will be wired in a follow-up task.
+    /// <c>yt.isTurnLeft</c> before the next trigger. The setter forwards to the
+    /// cycle worker via <see cref="Services.Interfaces.IGpsPipelineService.SetNextUTurnDirectionLeftOverride"/>;
+    /// the state machine consumes and clears the override on the next
+    /// turn-creation tick.
     /// </summary>
     public bool NextUTurnDirectionLeftOverride
     {
         get => _nextUTurnDirectionLeftOverride;
-        set => SetProperty(ref _nextUTurnDirectionLeftOverride, value);
+        set
+        {
+            if (SetProperty(ref _nextUTurnDirectionLeftOverride, value))
+            {
+                _gpsPipelineService.SetNextUTurnDirectionLeftOverride(value);
+            }
+        }
     }
 
     /// <summary>

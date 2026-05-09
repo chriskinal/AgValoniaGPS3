@@ -52,6 +52,15 @@ public interface IGpsPipelineService
     void SetYouTurnEnabled(bool enabled);
 
     /// <summary>
+    /// One-shot direction override for the *next* armed automatic U-turn. The
+    /// UI's direction toggle invokes this while idle to pre-flip the upcoming
+    /// turn direction; the cycle's state machine consumes and clears the flag
+    /// on the next turn-creation tick. Pass <c>null</c> to clear an unconsumed
+    /// override.
+    /// </summary>
+    void SetNextUTurnDirectionLeftOverride(bool? leftOverride);
+
+    /// <summary>
     /// Provide the headland polygon for YouTurn zone detection.
     /// </summary>
     void SetHeadlandLine(IReadOnlyList<Vec3>? headlandLine);

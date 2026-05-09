@@ -399,6 +399,13 @@ public sealed class YouTurnStateMachine
         // skip logic — the sequence dictates pathDiff.
         bool positiveOffset = pathDiff > 0;
         turn.IsTurnLeft = positiveOffset ^ guidance.IsHeadingSameWay;
+        // Apply the UI's one-shot direction override before the snake geometry is
+        // committed; clear so the next snake step computes its own direction.
+        if (turn.NextUTurnDirectionLeftOverride is { } overrideLeft)
+        {
+            turn.IsTurnLeft = overrideLeft;
+            turn.NextUTurnDirectionLeftOverride = null;
+        }
         turn.WasHeadingSameWayAtTurnStart = guidance.IsHeadingSameWay;
         turn.NextTrackTurnOffset = Math.Abs(pathDiff) * widthMinusOverlap;
 
@@ -459,6 +466,16 @@ public sealed class YouTurnStateMachine
         // IsTurnLeft depends on which direction has cultivated area and the current heading.
         // positiveDirection ^ IsHeadingSameWay gives the correct turn direction.
         turn.IsTurnLeft = positiveDirection ^ guidance.IsHeadingSameWay;
+        // Apply the UI's one-shot direction override (set by the U-turn direction
+        // toggle while idle), then clear it so it doesn't leak into a later turn.
+        // Mirrors legacy FormGPS.SwapDirection — the user pre-selects which way
+        // the next U-turn should swing while still in the cultivated row.
+        if (turn.NextUTurnDirectionLeftOverride is { } overrideLeft)
+        {
+            turn.IsTurnLeft = overrideLeft;
+            turn.NextUTurnDirectionLeftOverride = null;
+            _logger.LogDebug("[YouTurn] Applied direction override: turnLeft={Left}", overrideLeft);
+        }
         turn.WasHeadingSameWayAtTurnStart = guidance.IsHeadingSameWay;
 
         _pathing.ComputeNextTrack(

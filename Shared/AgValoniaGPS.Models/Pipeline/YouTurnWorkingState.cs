@@ -81,6 +81,16 @@ public class YouTurnWorkingState
     /// </summary>
     public double PreviousDistToTurnEnd { get; set; } = double.MaxValue;
 
+    /// <summary>
+    /// One-shot override for the direction of the *next* armed automatic turn.
+    /// Set by the U-turn direction toggle while no turn is currently armed
+    /// (<c>!IsTriggered &amp;&amp; !IsExecuting</c>). The state machine consults
+    /// this when computing <see cref="IsTurnLeft"/> for the upcoming turn and
+    /// clears it on consumption so it never leaks into a later turn.
+    /// Mirrors legacy <c>FormGPS.SwapDirection</c> behavior.
+    /// </summary>
+    public bool? NextUTurnDirectionLeftOverride { get; set; }
+
     public void Reset()
     {
         IsTriggered = false;
@@ -99,6 +109,7 @@ public class YouTurnWorkingState
         SnakeSequence = null;
         SnakeIndex = -1;
         CurrentZone = TractorZone.OutsideBoundary;
+        NextUTurnDirectionLeftOverride = null;
     }
 
     public void CompleteTurn()

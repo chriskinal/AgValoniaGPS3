@@ -80,6 +80,66 @@ public class YouTurnDistanceToTriggerTests
         });
     }
 
+    // ── Direction override consumption ───────────────────────────────────
+    // The U-turn direction toggle pre-flips NextUTurnDirectionLeftOverride
+    // while the operator is idle in a row. The state machine must consult
+    // and clear the override when it next computes IsTurnLeft for an
+    // automatic turn. Mirrors legacy FormGPS.SwapDirection behavior.
+
+    /// <summary>
+    /// When NextUTurnDirectionLeftOverride is set before turn creation, Tick
+    /// must use it as the direction for the upcoming turn AND clear the
+    /// override so it doesn't leak into a later turn.
+    /// </summary>
+    [Test]
+    public void Tick_with_direction_override_set_applies_it_then_clears()
+    {
+        var stateMachine = BuildStateMachine();
+        // Tractor 35 m before the headland (within the 10–60 m create window),
+        // aligned with the AB line, in the cultivated area — turn-creation
+        // gating triggers on this cycle.
+        var ctx = BuildTickContext(tractorEasting: 0, tractorNorthing: 10);
+        var guidance = new GuidanceWorkingState();
+        var turn = new YouTurnWorkingState
+        {
+            // Pre-flip: the user wants the next turn to swing LEFT regardless
+            // of the geometry-derived default.
+            NextUTurnDirectionLeftOverride = true,
+        };
+
+        stateMachine.Tick(in ctx, guidance, turn);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(turn.IsTurnLeft, Is.True,
+                "Override must drive IsTurnLeft when set");
+            Assert.That(turn.NextUTurnDirectionLeftOverride, Is.Null,
+                "Override must be cleared on consumption so it doesn't leak");
+        });
+    }
+
+    [Test]
+    public void Tick_with_direction_override_false_applies_right_turn()
+    {
+        var stateMachine = BuildStateMachine();
+        var ctx = BuildTickContext(tractorEasting: 0, tractorNorthing: 10);
+        var guidance = new GuidanceWorkingState();
+        var turn = new YouTurnWorkingState
+        {
+            NextUTurnDirectionLeftOverride = false,
+        };
+
+        stateMachine.Tick(in ctx, guidance, turn);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(turn.IsTurnLeft, Is.False,
+                "Override=false must drive IsTurnLeft to false (right turn)");
+            Assert.That(turn.NextUTurnDirectionLeftOverride, Is.Null,
+                "Override must be cleared on consumption");
+        });
+    }
+
     /// <summary>
     /// With no precomputed turn path (no upcoming turn the state machine knows
     /// about), Tick must leave <c>DistanceToTrigger</c> at 0 — there's no
