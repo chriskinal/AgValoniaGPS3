@@ -1630,14 +1630,24 @@ public partial class MainViewModel : ObservableObject
     {
         if (field == null || string.IsNullOrEmpty(field.DirectoryPath))
         {
-            // Clear headland if no field - update centralized state
+            // Clear headland if no field - update centralized state.
+            // All in-memory headland state must be wiped here, otherwise it
+            // leaks across field-switch boundaries (e.g. close field A,
+            // create field B → field A's headland reappears on B because
+            // segments / preview were never cleared).
             State.Field.HeadlandLine = null;
             State.Field.HeadlandDistance = 0;
 
             _currentHeadlandLine = null;
             _mapService.SetHeadlandLine(null);
+            _mapService.SetHeadlandVisible(false);
+            HeadlandSegments.Clear();
+            HeadlandPreviewLine = null; // setter pushes null to map service
+
             HasHeadland = false;
             IsHeadlandOn = false;
+            OnPropertyChanged(nameof(CurrentHeadlandLine));
+            OnPropertyChanged(nameof(CurrentHeadlandLineForPreview));
             return;
         }
 

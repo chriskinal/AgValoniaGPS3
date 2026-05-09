@@ -21,6 +21,8 @@ public class MainViewModelBuilder
     public IAutoSteerService AutoSteerService { get; } = Substitute.For<IAutoSteerService>();
     public ICoverageMapService CoverageMapService { get; } = Substitute.For<ICoverageMapService>();
     public IJobService JobService { get; } = Substitute.For<IJobService>();
+    public IMapService MapService { get; } = Substitute.For<IMapService>();
+    public IFieldService FieldService { get; } = Substitute.For<IFieldService>();
     public AgValoniaGPS.Services.Pipeline.PipelineIntents Intents { get; } = new();
 
     public MainViewModelBuilder()
@@ -41,13 +43,13 @@ public class MainViewModelBuilder
         return new MainViewModel(
             udpService: Substitute.For<IUdpCommunicationService>(),
             gpsService: Substitute.For<AgValoniaGPS.Services.Interfaces.IGpsService>(),
-            fieldService: Substitute.For<IFieldService>(),
+            fieldService: FieldService,
             ntripService: Substitute.For<INtripClientService>(),
             displaySettings: Substitute.For<AgValoniaGPS.Services.Interfaces.IDisplaySettingsService>(),
             fieldStatistics: Substitute.For<AgValoniaGPS.Services.Interfaces.IFieldStatisticsService>(),
             simulatorService: Substitute.For<AgValoniaGPS.Services.Interfaces.IGpsSimulationService>(),
             settingsService: SettingsService,
-            mapService: Substitute.For<IMapService>(),
+            mapService: MapService,
             boundaryRecordingService: Substitute.For<IBoundaryRecordingService>(),
             boundaryBuilderService: Substitute.For<IBoundaryBuilderService>(),
             boundaryFileService: new BoundaryFileService(),
