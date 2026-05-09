@@ -37,6 +37,27 @@ public sealed class PositionEstimator : IPositionEstimator
 
     public void UpdateFromGps(PoseSnapshot snapshot)
     {
+        // Derive yaw rate from the heading delta versus the previous snapshot
+        // when none was supplied (e.g., the internal simulator has no IMU and
+        // passes YawRate=0). Without this, GetPose dead-reckons heading as
+        // constant between samples and snaps to the new value at each
+        // arrival. That snap propagates into the hitch's lateral position
+        // (which depends on heading × hitch length) and from there into the
+        // dead-reckoned tool, producing visible per-sample jitter while
+        // turning. Using the heading-delta-derived yaw rate makes heading
+        // ramp smoothly across the inter-sample interval, killing the snap.
+        var prev = Volatile.Read(ref _latest);
+        if (prev is not null && Math.Abs(snapshot.YawRateRadPerSec) < 1e-9)
+        {
+            double dt = Clock.Current.ElapsedSeconds(prev.TimestampTicks, snapshot.TimestampTicks);
+            if (dt > 1e-6)
+            {
+                double dh = snapshot.Heading - prev.Heading;
+                while (dh > Math.PI) dh -= 2 * Math.PI;
+                while (dh < -Math.PI) dh += 2 * Math.PI;
+                snapshot = snapshot with { YawRateRadPerSec = dh / dt };
+            }
+        }
         Interlocked.Exchange(ref _latest, snapshot);
     }
 
