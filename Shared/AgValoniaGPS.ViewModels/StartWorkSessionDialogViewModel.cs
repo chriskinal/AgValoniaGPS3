@@ -145,30 +145,44 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         var root = _settingsService.Settings.FieldsDirectory;
         var lat = _appState.Vehicle.Latitude;
         var lon = _appState.Vehicle.Longitude;
-        var maxKm = _nearbyMaxKm ?? DefaultMaxKm;
 
         Fields.Clear();
-        if (lat != 0 || lon != 0)
+
+        var allNames = _fieldService.GetAvailableFields(root);
+
+        // Always show every field on disk. When we have a fix, enrich with
+        // distance (uncapped) for sort ranking; rows whose origin is (0,0)
+        // or unreadable fall through to distance 0.0 and sort to the bottom.
+        var known = (lat != 0 || lon != 0)
+            ? _fieldService.FindFieldsNear(root, lat, lon, double.MaxValue)
+                .ToDictionary(f => f.Name, f => f, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, NearbyField>(StringComparer.OrdinalIgnoreCase);
+
+        var rows = new List<NearbyField>(allNames.Count);
+        foreach (var name in allNames)
         {
-            // Have a fix — order by distance, filter to maxKm.
-            foreach (var nf in _fieldService.FindFieldsNear(root, lat, lon, maxKm))
-                Fields.Add(nf);
-        }
-        else
-        {
-            // No fix yet — list every field with DistanceKm = 0 so the
-            // dialog still lets the operator pick one. Distance column
-            // will show 0.0 km; not useful but not lying either.
-            foreach (var name in _fieldService.GetAvailableFields(root))
+            if (known.TryGetValue(name, out var nf))
+                rows.Add(nf);
+            else
             {
                 var dir = System.IO.Path.Combine(root, name);
-                Fields.Add(new NearbyField(
+                rows.Add(new NearbyField(
                     Name: name,
                     DirectoryPath: dir,
                     DistanceKm: 0,
                     BoundaryAreaHectares: 0));
             }
         }
+        rows.Sort((a, b) =>
+        {
+            bool aKnown = known.ContainsKey(a.Name);
+            bool bKnown = known.ContainsKey(b.Name);
+            if (aKnown && bKnown) return a.DistanceKm.CompareTo(b.DistanceKm);
+            if (aKnown) return -1;
+            if (bKnown) return 1;
+            return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        });
+        foreach (var f in rows) Fields.Add(f);
 
         WorkTypeSuggestions.Clear();
         foreach (var s in _jobService.SuggestWorkTypes())
@@ -183,7 +197,10 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
                     string.Equals(f.Name, activeName, StringComparison.OrdinalIgnoreCase))
                 : null)
             ?? Fields.FirstOrDefault();
-        StatusMessage = null;
+
+        StatusMessage = Fields.Count == 0
+            ? "No fields found. Create one from Field Operations → Create Field."
+            : null;
     }
 
     partial void OnSelectedFieldChanged(NearbyField? value)
