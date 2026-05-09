@@ -20,17 +20,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
-             xmlns:converters="using:AgValoniaGPS.Views.Converters"
+             xmlns:c="using:AgValoniaGPS.Views.Controls"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.RightNavigationPanel"
              x:DataType="vm:MainViewModel"
              ClipToBounds="False"
              Background="{x:Null}"
              IsHitTestVisible="True">
-
-    <UserControl.Resources>
-        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
-    </UserControl.Resources>
 
     <UserControl.Styles>
         <!-- Floating Panel Style -->
@@ -42,36 +39,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-        <!-- Right Panel Button Style -->
-        <Style Selector="Button.RightPanelButton">
+        <!-- Small arrow buttons used in the manual U-Turn L/R pair. They share
+             a single "U-Turn" caption underneath, so the visual is two 35x35
+             arrow squares stacked over one label inside the standard 80x80
+             footprint. Mirrors the GlyphButton hover / press / accent feedback
+             so the row reads as a single button group. -->
+        <Style Selector="Button.UTurnArrow">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Width" Value="64"/>
-            <Setter Property="Height" Value="64"/>
-            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="2"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <Style Selector="Button.RightPanelButton:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-        </Style>
-        <Style Selector="Button.RightPanelButton:pressed">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumBrush}"/>
-        </Style>
-
-        <!-- Active State for toggle buttons -->
-        <Style Selector="Button.RightPanelButton.Active">
+        <Style Selector="Button.UTurnArrow:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="#DD2ECC71"/>
         </Style>
-        <Style Selector="Button.RightPanelButton.Active:pointerover">
-            <Setter Property="Background" Value="#DD27AE60"/>
-        </Style>
-
-        <!-- Right Panel Separator -->
-        <Style Selector="Separator.RightPanelSeparator">
-            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <Setter Property="Height" Value="2"/>
-            <Setter Property="Margin" Value="8,4"/>
+        <Style Selector="Button.UTurnArrow:pressed">
+            <Setter Property="Foreground" Value="White"/>
         </Style>
     </UserControl.Styles>
 
@@ -79,92 +66,90 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <Border x:Name="MainPanel" Classes="FloatingPanel">
         <StackPanel x:Name="ButtonStack" Spacing="6" Orientation="Vertical">
             <!-- 1. Contour/Track Mode Toggle -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="Contour Mode On/Off"
-                    Command="{Binding ToggleContourModeCommand}">
-                <Panel>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ContourOn.png" Stretch="Uniform"
-                           IsVisible="{Binding IsContourModeOn}"/>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ContourOff.png" Stretch="Uniform"
-                           IsVisible="{Binding IsContourModeOn, Converter={StaticResource InverseBoolConverter}}"/>
-                </Panel>
-            </Button>
+            <c:GlyphButton Glyph="{StaticResource Glyph.Contour}"
+                           Label="{loc:Localize Btn.Contour}"
+                           ToolTip.Tip="Contour Mode On/Off"
+                           IsActive="{Binding IsContourModeOn}"
+                           Command="{Binding ToggleContourModeCommand}"/>
 
-            <!-- 2. Manual Mode Toggle - All sections Manual On/Off -->
-            <!-- Hidden when no field open (#347): sections can't paint with no boundary anyway. -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Manual On/Off"
-                    Command="{Binding ToggleManualModeCommand}"
-                    IsVisible="{Binding HasBoundary}">
-                <Panel>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ManualOn.png" Stretch="Uniform"
-                           IsVisible="{Binding IsManualSectionMode}"/>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ManualOff.png" Stretch="Uniform"
-                           IsVisible="{Binding IsManualSectionMode, Converter={StaticResource InverseBoolConverter}}"/>
-                </Panel>
-            </Button>
+            <!-- 2. Manual Mode Toggle - All sections Manual On/Off
+                 Hidden when no field open (#347): sections can't paint with no boundary anyway. -->
+            <c:GlyphButton Glyph="{StaticResource Glyph.Sections}"
+                           Label="{loc:Localize Btn.Sections}"
+                           ToolTip.Tip="All Sections Manual On/Off"
+                           IsActive="{Binding IsManualSectionMode}"
+                           IsVisible="{Binding HasBoundary}"
+                           Command="{Binding ToggleManualModeCommand}"/>
 
-            <!-- 3. Section Master Toggle - All sections Auto/Off -->
-            <!-- Hidden when no field open (#347). -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="All Sections Auto/Off"
-                    Command="{Binding ToggleSectionMasterCommand}"
-                    IsVisible="{Binding HasBoundary}">
-                <Panel>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOn.png" Stretch="Uniform"
-                           IsVisible="{Binding IsSectionMasterOn}"/>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SectionMasterOff.png" Stretch="Uniform"
-                           IsVisible="{Binding IsSectionMasterOn, Converter={StaticResource InverseBoolConverter}}"/>
-                </Panel>
-            </Button>
+            <!-- 3. Section Master Toggle - All sections Auto/Off
+                 Hidden when no field open (#347). -->
+            <c:GlyphButton Glyph="{StaticResource Glyph.SectionsAuto}"
+                           Label="{loc:Localize Btn.SectionsAuto}"
+                           ToolTip.Tip="All Sections Auto/Off"
+                           IsActive="{Binding IsSectionMasterOn}"
+                           IsVisible="{Binding HasBoundary}"
+                           Command="{Binding ToggleSectionMasterCommand}"/>
 
             <!-- 4. YouTurn Toggle (visible when track active AND UTurn button enabled in config) -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="YouTurn Auto U-Turn"
-                    Command="{Binding ToggleYouTurnCommand}"
-                    IsVisible="{Binding IsUTurnButtonVisible}">
-                <Panel>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnYes.png" Stretch="Uniform"
-                           IsVisible="{Binding IsYouTurnEnabled}"/>
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnNo.png" Stretch="Uniform"
-                           IsVisible="{Binding IsYouTurnEnabled, Converter={StaticResource InverseBoolConverter}}"/>
-                </Panel>
-            </Button>
+            <c:GlyphButton Glyph="{StaticResource Glyph.UTurn}"
+                           Label="{loc:Localize Btn.UTurn}"
+                           ToolTip.Tip="YouTurn Auto U-Turn"
+                           IsActive="{Binding IsYouTurnEnabled}"
+                           IsVisible="{Binding IsUTurnButtonVisible}"
+                           Command="{Binding ToggleYouTurnCommand}"/>
 
-            <!-- 4b. Manual U-Turn Left/Right buttons (only visible when autosteer engaged) -->
-            <Grid ColumnDefinitions="*,*" IsVisible="{Binding IsAutoSteerEngaged}">
-                <Button Grid.Column="0" Classes="RightPanelButton" Width="30" Height="32"
-                        ToolTip.Tip="Manual U-Turn Left"
-                        Command="{Binding ManualYouTurnLeftCommand}"
-                        Margin="0,0,2,0">
-                    <TextBlock Text="↰" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-                <Button Grid.Column="1" Classes="RightPanelButton" Width="30" Height="32"
-                        ToolTip.Tip="Manual U-Turn Right"
-                        Command="{Binding ManualYouTurnRightCommand}"
-                        Margin="2,0,0,0">
-                    <TextBlock Text="↱" FontSize="20" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-            </Grid>
+            <!-- 5/6. Manual U-Turn pair (only visible when autosteer engaged).
+                 Two 35x35 arrow buttons over a shared "U-Turn" label, fitting
+                 the same 80x80 footprint as the surrounding GlyphButtons. -->
+            <StackPanel Orientation="Vertical"
+                        Width="80" Height="80"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding IsAutoSteerEngaged}">
+                <Grid ColumnDefinitions="Auto,Auto"
+                      HorizontalAlignment="Center"
+                      Margin="0,4,0,0">
+                    <Button Grid.Column="0" Classes="UTurnArrow"
+                            Width="35" Height="35"
+                            ToolTip.Tip="Manual U-Turn Left"
+                            Command="{Binding ManualYouTurnLeftCommand}"
+                            Margin="0,0,3,0">
+                        <Path Data="{StaticResource Glyph.UTurnLeft}"
+                              Stroke="{Binding $parent[Button].Foreground}"
+                              StrokeThickness="2"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Width="24" Height="24"
+                              Stretch="Uniform"/>
+                    </Button>
+                    <Button Grid.Column="1" Classes="UTurnArrow"
+                            Width="35" Height="35"
+                            ToolTip.Tip="Manual U-Turn Right"
+                            Command="{Binding ManualYouTurnRightCommand}"
+                            Margin="3,0,0,0">
+                        <Path Data="{StaticResource Glyph.UTurnRight}"
+                              Stroke="{Binding $parent[Button].Foreground}"
+                              StrokeThickness="2"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Width="24" Height="24"
+                              Stretch="Uniform"/>
+                    </Button>
+                </Grid>
+                <TextBlock Text="{loc:Localize Btn.UTurnManual}"
+                           FontSize="11"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
 
-            <!-- 5. AutoSteer Toggle (3 states: Gray=disabled, Off=ready, On=active) -->
-            <Button Classes="RightPanelButton" ToolTip.Tip="AutoSteer"
-                    Command="{Binding ToggleAutoSteerCommand}"
-                    IsEnabled="{Binding IsAutoSteerAvailable}">
-                <Panel>
-                    <!-- Gray when no track available -->
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerGray.png" Stretch="Uniform"
-                           IsVisible="{Binding IsAutoSteerAvailable, Converter={StaticResource InverseBoolConverter}}"/>
-                    <!-- On when autosteer is engaged -->
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOn.png" Stretch="Uniform"
-                           IsVisible="{Binding IsAutoSteerEngaged}"/>
-                    <!-- Off when available but not engaged -->
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOff.png" Stretch="Uniform">
-                        <Image.IsVisible>
-                            <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                <Binding Path="IsAutoSteerAvailable"/>
-                                <Binding Path="IsAutoSteerEngaged" Converter="{StaticResource InverseBoolConverter}"/>
-                            </MultiBinding>
-                        </Image.IsVisible>
-                    </Image>
-                </Panel>
-            </Button>
+            <!-- 7. AutoSteer Toggle (3 states: disabled/ready/engaged)
+                 IsEnabled=IsAutoSteerAvailable handles the gray (disabled) state automatically.
+                 IsActive=IsAutoSteerEngaged turns the button accent-tinted when engaged. -->
+            <c:GlyphButton Glyph="{StaticResource Glyph.AutoSteer}"
+                           Label="{loc:Localize Btn.AutoSteer}"
+                           ToolTip.Tip="AutoSteer"
+                           IsActive="{Binding IsAutoSteerEngaged}"
+                           IsEnabled="{Binding IsAutoSteerAvailable}"
+                           Command="{Binding ToggleAutoSteerCommand}"/>
 
         </StackPanel>
     </Border>

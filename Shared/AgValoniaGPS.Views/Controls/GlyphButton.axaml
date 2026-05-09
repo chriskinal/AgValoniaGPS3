@@ -37,28 +37,28 @@ the inner Button via element binding.
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <!-- Hover: subtle background tint (no-op on touch devices) -->
-        <Style Selector="Button.GlyphButtonInner:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
-        </Style>
+        <!-- Hover is intentionally NOT styled. On a touch-first tractor app
+             "pointerover" only fires for desktop mice; we want the button color
+             to read as a single solid state regardless of cursor proximity. -->
         <!-- Press: flash the button background green and pin the foreground
              (glyph + label) to white. Higher-contrast feedback than a foreground
              color change — easier to spot for older operators and in bright cab
              sunlight. /template/ ContentPresenter targets the same level the
              Fluent theme uses, so we override its default press tint. -->
         <Style Selector="Button.GlyphButtonInner:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AccentForegroundBrush}"/>
+            <Setter Property="Background" Value="#DD2ECC71"/>
         </Style>
         <Style Selector="Button.GlyphButtonInner:pressed">
             <Setter Property="Foreground" Value="White"/>
         </Style>
-        <!-- IsActive=true: accent-tinted background (background only, glyph stays themed) -->
-        <Style Selector="Button.GlyphButtonInner.Active">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+        <!-- IsActive=true: solid success-green background, stays green on hover.
+             Uses the same engaged color the right-panel toggles used pre-Glyph,
+             so operators reading "is the function on?" get the familiar cue. -->
+        <Style Selector="Button.GlyphButtonInner.Active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#DD2ECC71"/>
         </Style>
-        <Style Selector="Button.GlyphButtonInner.Active:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight1}"/>
+        <Style Selector="Button.GlyphButtonInner.Active">
+            <Setter Property="Foreground" Value="White"/>
         </Style>
         <!-- Default glyph: stroked outline -->
         <Style Selector="Path.GlyphPath">

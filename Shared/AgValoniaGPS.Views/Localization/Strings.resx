@@ -1201,6 +1201,9 @@
   <data xml:space="preserve" name="Btn.UTurnRight">
     <value>U-Turn R</value>
   </data>
+  <data xml:space="preserve" name="Btn.UTurnManual">
+    <value>Manual</value>
+  </data>
   <data xml:space="preserve" name="Btn.AutoSteer">
     <value>AutoSteer</value>
   </data>
