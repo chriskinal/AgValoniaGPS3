@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="AgValoniaGPS.Services.Tests" />
+    <InternalsVisibleTo Include="AgValoniaGPS.UI.Tests" />
   </ItemGroup>
 
   <ItemGroup>

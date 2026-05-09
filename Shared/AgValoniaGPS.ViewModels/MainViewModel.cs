@@ -1406,6 +1406,11 @@ public partial class MainViewModel : ObservableObject
             // nothing to draw until the operator starts a job.
             RefreshCoverageStatistics();
 
+            // Start periodic coverage autosave. The timer no-ops on each
+            // tick when ActiveJob is null (field-only open), so it's safe
+            // to start unconditionally here.
+            StartCoverageAutosave();
+
             // Load tram lines
             try
             {
@@ -1484,6 +1489,12 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public async Task CloseFieldAsync()
     {
+        // Stop the autosave timer first so a tick can't fire mid-close
+        // and race the explicit close-save below. ClearFieldState also
+        // stops it, but stopping here covers both branches without
+        // depending on call order.
+        StopCoverageAutosave();
+
         if (ActiveField == null || string.IsNullOrEmpty(ActiveField.DirectoryPath))
         {
             // No field to close, just clear state
@@ -1569,6 +1580,10 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     private void ClearFieldState()
     {
+        // Stop autosave (idempotent if already stopped). Belt-and-braces
+        // for callers that bypass CloseFieldAsync.
+        StopCoverageAutosave();
+
         // Disengage autosteer first so the cycle stops emitting steer commands
         // before the track / boundary / U-turn state vanishes out from under it.
         // Without this the tractor keeps executing the last-sent steer angle

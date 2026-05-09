@@ -19,6 +19,8 @@ public class MainViewModelBuilder
     public IVehicleProfileService VehicleProfileService { get; } = Substitute.For<IVehicleProfileService>();
     public INtripProfileService NtripProfileService { get; } = Substitute.For<INtripProfileService>();
     public IAutoSteerService AutoSteerService { get; } = Substitute.For<IAutoSteerService>();
+    public ICoverageMapService CoverageMapService { get; } = Substitute.For<ICoverageMapService>();
+    public IJobService JobService { get; } = Substitute.For<IJobService>();
     public AgValoniaGPS.Services.Pipeline.PipelineIntents Intents { get; } = new();
 
     public MainViewModelBuilder()
@@ -65,13 +67,13 @@ public class MainViewModelBuilder
             trackCopierService: Substitute.For<ITrackCopierService>(),
             moduleCommunicationService: Substitute.For<IModuleCommunicationService>(),
             toolPositionService: Substitute.For<IToolPositionService>(),
-            coverageMapService: Substitute.For<ICoverageMapService>(),
+            coverageMapService: CoverageMapService,
             sectionControlService: Substitute.For<ISectionControlService>(),
             ntripProfileService: NtripProfileService,
             chartDataService: Substitute.For<IChartDataService>(),
             audioService: Substitute.For<IAudioService>(),
             elevationLogService: Substitute.For<IElevationLogService>(),
-            jobService: Substitute.For<IJobService>(),
+            jobService: JobService,
             tramLineService: Substitute.For<ITramLineService>(),
             gpsPipelineService: Substitute.For<IGpsPipelineService>(),
             intents: Intents,
