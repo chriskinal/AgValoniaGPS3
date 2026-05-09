@@ -177,6 +177,10 @@ public sealed class YouTurnStateMachine
             canCreateTurn = _pathing.GetNextSnakePath(turn).HasValue;
         }
 
+        // Default: no armable trigger point — widget shows nothing meaningful.
+        // Recomputed below when a precomputed turn path exists and execution hasn't started.
+        turn.DistanceToTrigger = 0;
+
         if (turn.TurnPath == null && !turn.IsExecuting && canCreateTurn && isAlignedWithABLine)
         {
             if (ctx.IsSkipWorkedMode)
@@ -191,6 +195,12 @@ public sealed class YouTurnStateMachine
             double distToTurnStart = Math.Sqrt(
                 (currentPosition.Easting - turnStart.Easting) * (currentPosition.Easting - turnStart.Easting) +
                 (currentPosition.Northing - turnStart.Northing) * (currentPosition.Northing - turnStart.Northing));
+
+            // Publish current pivot→trigger distance for the UI countdown widget.
+            // Only meaningful while a precomputed turn-start exists and we haven't
+            // begun executing yet; once IsExecuting flips, the widget is expected
+            // to switch to a "turning" state and we revert to 0 (set above).
+            turn.DistanceToTrigger = distToTurnStart;
 
             if (distToTurnStart <= TriggerProximityMeters)
             {
