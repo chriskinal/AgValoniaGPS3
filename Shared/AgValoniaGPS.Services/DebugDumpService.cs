@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
@@ -43,7 +44,7 @@ public class DebugDumpService
         string filePrefix = "debug_dump",
         IReadOnlyList<string>? userAttachments = null)
     {
-        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         var dumpDir = outputDirectory
             ?? Path.Combine(Path.GetTempPath(), "AgValoniaGPS", "dumps");
         Directory.CreateDirectory(dumpDir);
@@ -208,16 +209,20 @@ public class DebugDumpService
             .GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()
             ?.Version ?? "unknown";
 
-        sb.AppendLine($"App Version: {fileVersion}");
-        sb.AppendLine($"Build Info: {infoVersion}");
-        sb.AppendLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"OS: {Environment.OSVersion}");
-        sb.AppendLine($"Runtime: {Environment.Version}");
-        sb.AppendLine($"64-bit OS: {Environment.Is64BitOperatingSystem}");
-        sb.AppendLine($"64-bit Process: {Environment.Is64BitProcess}");
-        sb.AppendLine($"Machine: {Environment.MachineName}");
-        sb.AppendLine($"Processors: {Environment.ProcessorCount}");
-        sb.AppendLine($"Working Set: {Environment.WorkingSet / 1024 / 1024}MB");
+        // Diagnostic dump is consumed by us / shared in bug reports —
+        // pin every interpolation to InvariantCulture so timestamps and
+        // numbers are unambiguous across reporters' locales.
+        var inv = CultureInfo.InvariantCulture;
+        sb.AppendLine(inv, $"App Version: {fileVersion}");
+        sb.AppendLine(inv, $"Build Info: {infoVersion}");
+        sb.AppendLine(inv, $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine(inv, $"OS: {Environment.OSVersion}");
+        sb.AppendLine(inv, $"Runtime: {Environment.Version}");
+        sb.AppendLine(inv, $"64-bit OS: {Environment.Is64BitOperatingSystem}");
+        sb.AppendLine(inv, $"64-bit Process: {Environment.Is64BitProcess}");
+        sb.AppendLine(inv, $"Machine: {Environment.MachineName}");
+        sb.AppendLine(inv, $"Processors: {Environment.ProcessorCount}");
+        sb.AppendLine(inv, $"Working Set: {Environment.WorkingSet / 1024 / 1024}MB");
         return sb.ToString();
     }
 
@@ -313,7 +318,8 @@ public class DebugDumpService
         var entries = LogStore.Instance.GetSnapshot();
         foreach (var entry in entries)
         {
-            sb.AppendLine($"[{entry.Timestamp:HH:mm:ss.fff}] [{entry.Level}] {entry.Category}: {entry.Message}");
+            sb.AppendLine(CultureInfo.InvariantCulture,
+                $"[{entry.Timestamp:HH:mm:ss.fff}] [{entry.Level}] {entry.Category}: {entry.Message}");
         }
         return sb.ToString();
     }

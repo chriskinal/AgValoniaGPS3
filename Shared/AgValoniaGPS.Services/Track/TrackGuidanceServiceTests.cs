@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Track;
 
@@ -41,14 +42,14 @@ public static class TrackGuidanceServiceTests
         try
         {
             var (passed, msg) = TestABLinePurePursuit();
-            results.AppendLine($"Test 1 - AB Line Pure Pursuit: {(passed ? "PASS" : "FAIL")}");
-            results.AppendLine($"  {msg}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 1 - AB Line Pure Pursuit: {(passed ? "PASS" : "FAIL")}");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 1 - AB Line Pure Pursuit: FAIL (Exception)");
-            results.AppendLine($"  {ex.Message}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 1 - AB Line Pure Pursuit: FAIL (Exception)");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {ex.Message}\n");
             allPassed = false;
         }
 
@@ -56,14 +57,14 @@ public static class TrackGuidanceServiceTests
         try
         {
             var (passed, msg) = TestCurvePurePursuit();
-            results.AppendLine($"Test 2 - Curve Pure Pursuit: {(passed ? "PASS" : "FAIL")}");
-            results.AppendLine($"  {msg}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 2 - Curve Pure Pursuit: {(passed ? "PASS" : "FAIL")}");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 2 - Curve Pure Pursuit: FAIL (Exception)");
-            results.AppendLine($"  {ex.Message}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 2 - Curve Pure Pursuit: FAIL (Exception)");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {ex.Message}\n");
             allPassed = false;
         }
 
@@ -71,14 +72,14 @@ public static class TrackGuidanceServiceTests
         try
         {
             var (passed, msg) = TestABLineStanley();
-            results.AppendLine($"Test 3 - AB Line Stanley: {(passed ? "PASS" : "FAIL")}");
-            results.AppendLine($"  {msg}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 3 - AB Line Stanley: {(passed ? "PASS" : "FAIL")}");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 3 - AB Line Stanley: FAIL (Exception)");
-            results.AppendLine($"  {ex.Message}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 3 - AB Line Stanley: FAIL (Exception)");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {ex.Message}\n");
             allPassed = false;
         }
 
@@ -86,14 +87,14 @@ public static class TrackGuidanceServiceTests
         try
         {
             var (passed, msg) = TestVehicleOnLine();
-            results.AppendLine($"Test 4 - Vehicle On Line: {(passed ? "PASS" : "FAIL")}");
-            results.AppendLine($"  {msg}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 4 - Vehicle On Line: {(passed ? "PASS" : "FAIL")}");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 4 - Vehicle On Line: FAIL (Exception)");
-            results.AppendLine($"  {ex.Message}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 4 - Vehicle On Line: FAIL (Exception)");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {ex.Message}\n");
             allPassed = false;
         }
 
@@ -101,18 +102,18 @@ public static class TrackGuidanceServiceTests
         try
         {
             var (passed, msg) = TestTrackProperties();
-            results.AppendLine($"Test 5 - Track Properties: {(passed ? "PASS" : "FAIL")}");
-            results.AppendLine($"  {msg}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 5 - Track Properties: {(passed ? "PASS" : "FAIL")}");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {msg}\n");
             allPassed &= passed;
         }
         catch (Exception ex)
         {
-            results.AppendLine($"Test 5 - Track Properties: FAIL (Exception)");
-            results.AppendLine($"  {ex.Message}\n");
+            results.AppendLine(CultureInfo.InvariantCulture, $"Test 5 - Track Properties: FAIL (Exception)");
+            results.AppendLine(CultureInfo.InvariantCulture, $"  {ex.Message}\n");
             allPassed = false;
         }
 
-        results.AppendLine($"=== Overall: {(allPassed ? "ALL TESTS PASSED" : "SOME TESTS FAILED")} ===");
+        results.AppendLine(CultureInfo.InvariantCulture, $"=== Overall: {(allPassed ? "ALL TESTS PASSED" : "SOME TESTS FAILED")} ===");
 
         return (allPassed, results.ToString());
     }

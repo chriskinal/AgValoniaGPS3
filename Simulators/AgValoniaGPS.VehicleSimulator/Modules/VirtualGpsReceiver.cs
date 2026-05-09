@@ -149,7 +149,7 @@ public class VirtualGpsReceiver : IDisposable
             checksum ^= (byte)c;
 
         sb.Append('*');
-        sb.Append(checksum.ToString("X2"));
+        sb.Append(checksum.ToString("X2", CultureInfo.InvariantCulture));
         sb.Append("\r\n");
 
         return sb.ToString();

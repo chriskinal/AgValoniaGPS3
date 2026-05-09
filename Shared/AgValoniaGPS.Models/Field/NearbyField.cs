@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+
 namespace AgValoniaGPS.Models;
 
 /// <summary>
@@ -38,5 +40,7 @@ public sealed record NearbyField(
     /// <see cref="DistanceKm"/> is NaN so the operator isn't misled
     /// by a literal 0.0 that means "we don't know".</summary>
     public string DistanceKmDisplay =>
-        double.IsNaN(DistanceKm) ? "—" : DistanceKm.ToString("F1");
+        double.IsNaN(DistanceKm)
+            ? "—"
+            : DistanceKm.ToString("F1", CultureInfo.CurrentCulture);
 }

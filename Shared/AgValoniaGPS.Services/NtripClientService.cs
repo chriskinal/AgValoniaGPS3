@@ -220,12 +220,14 @@ public class NtripClientService : INtripClientService, IDisposable
         var credentials = Convert.ToBase64String(
             Encoding.ASCII.GetBytes($"{_config.Username}:{_config.Password}"));
 
-        // Build request string manually with explicit \r\n to ensure correct formatting
+        // Build request string manually with explicit \r\n to ensure correct formatting.
+        // NTRIP protocol is invariant — interpolations must not pick up locale formatting.
+        var inv = CultureInfo.InvariantCulture;
         var request = new StringBuilder();
-        request.Append($"GET /{_config.MountPoint} HTTP/1.1\r\n");
-        request.Append($"Host: {_config.CasterAddress}\r\n");
+        request.Append(inv, $"GET /{_config.MountPoint} HTTP/1.1\r\n");
+        request.Append(inv, $"Host: {_config.CasterAddress}\r\n");
         request.Append("User-Agent: NTRIP AgValoniaGPS/1.0\r\n");
-        request.Append($"Authorization: Basic {credentials}\r\n");
+        request.Append(inv, $"Authorization: Basic {credentials}\r\n");
         request.Append("Accept: */*\r\n");
         request.Append("Connection: keep-alive\r\n");
         request.Append("\r\n");

@@ -710,23 +710,23 @@ public class TramLineService(
             {
                 if (line.StartsWith("$OuterTrack,"))
                 {
-                    int count = int.Parse(line.Split(',')[1]);
+                    int count = int.Parse(line.Split(',')[1], CultureInfo.InvariantCulture);
                     ReadPoints(reader, _outerBoundaryTrack, count);
                 }
                 else if (line.StartsWith("$InnerTrack,"))
                 {
-                    int count = int.Parse(line.Split(',')[1]);
+                    int count = int.Parse(line.Split(',')[1], CultureInfo.InvariantCulture);
                     ReadPoints(reader, _innerBoundaryTrack, count);
                 }
                 else if (line.StartsWith("$TramLines,"))
                 {
-                    int lineCount = int.Parse(line.Split(',')[1]);
+                    int lineCount = int.Parse(line.Split(',')[1], CultureInfo.InvariantCulture);
                     for (int i = 0; i < lineCount; i++)
                     {
                         line = reader.ReadLine();
                         if (line != null && line.StartsWith("$Line,"))
                         {
-                            int pointCount = int.Parse(line.Split(',')[1]);
+                            int pointCount = int.Parse(line.Split(',')[1], CultureInfo.InvariantCulture);
                             var tramLine = new List<Vec2>();
                             ReadPoints(reader, tramLine, pointCount);
                             if (tramLine.Count > 0)

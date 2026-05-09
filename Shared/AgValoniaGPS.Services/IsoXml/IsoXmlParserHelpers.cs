@@ -268,7 +268,7 @@ namespace AgValoniaGPS.Services.IsoXml
                 Mode = IsoXmlTrackMode.Curve,
                 PtA = ptA,
                 PtB = ptB,
-                Name = string.IsNullOrWhiteSpace(name) ? "Curve_" + DateTime.Now.ToString("HHmmss") : name
+                Name = string.IsNullOrWhiteSpace(name) ? "Curve_" + DateTime.Now.ToString("HHmmss", CultureInfo.InvariantCulture) : name
             };
 
             // Copy processed curve points and calculate headings

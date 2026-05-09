@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Services.Interfaces;
 
@@ -257,13 +258,16 @@ public class FieldStatisticsService : IFieldStatisticsService
     /// </summary>
     public string FormatArea(double squareMeters, bool useMetric = true)
     {
+        // User-facing string -> CurrentCulture so 1234.56 ha renders as
+        // "1234,56 ha" / "1,234.56 ha" per the operator's locale.
+        var c = CultureInfo.CurrentCulture;
         if (useMetric)
         {
-            return (squareMeters / 10000.0).ToString("F2") + " ha";
+            return (squareMeters / 10000.0).ToString("F2", c) + " ha";
         }
         else
         {
-            return (squareMeters / 4046.86).ToString("F2") + " ac";
+            return (squareMeters / 4046.86).ToString("F2", c) + " ac";
         }
     }
 
@@ -272,13 +276,14 @@ public class FieldStatisticsService : IFieldStatisticsService
     /// </summary>
     public string FormatDistance(double meters, bool useMetric = true)
     {
+        var c = CultureInfo.CurrentCulture;
         if (useMetric)
         {
-            return meters.ToString("F1") + " m";
+            return meters.ToString("F1", c) + " m";
         }
         else
         {
-            return (meters * 3.28084).ToString("F1") + " ft";
+            return (meters * 3.28084).ToString("F1", c) + " ft";
         }
     }
 }

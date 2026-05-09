@@ -180,7 +180,7 @@ namespace AgValoniaGPS.Services.AgShare
                 bool isHole = i != 0;
 
                 lines.Add(isHole ? "True" : "False");
-                lines.Add(ring.Count.ToString());
+                lines.Add(ring.Count.ToString(CultureInfo.InvariantCulture));
 
                 var enriched = BoundaryUtils.WithHeadings(ConvertToVec3List(ring));
 
@@ -233,7 +233,7 @@ namespace AgValoniaGPS.Services.AgShare
                 {
                     lines.Add("4"); // Curve mode
                     lines.Add("True");
-                    lines.Add(ab.CurvePoints!.Count.ToString());
+                    lines.Add(ab.CurvePoints!.Count.ToString(CultureInfo.InvariantCulture));
 
                     foreach (var pt in ab.CurvePoints)
                     {
