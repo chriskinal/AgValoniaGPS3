@@ -232,12 +232,33 @@ public partial class MainViewModel
             _bugReportScreenshot = null;
             BugReportAttachments.Clear();
 
-            // User cancelled — drop the captured snapshot zip.
-            if (_bugReportTempZipPath != null)
+            // User cancelled — keep the captured snapshot but finalize it
+            // without notes/attachments so the dump (which reflects app
+            // state at the moment they pressed the button) isn't lost.
+            if (_bugReportTempZipPath != null && File.Exists(_bugReportTempZipPath))
             {
-                try { File.Delete(_bugReportTempZipPath); } catch { }
-                _bugReportTempZipPath = null;
+                try
+                {
+                    var bugReportsDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "AgValoniaGPS", "BugReports");
+
+                    var savedPath = Services.DebugDumpService.FinalizeBugReport(
+                        sourceZipPath: _bugReportTempZipPath,
+                        outputDirectory: bugReportsDir,
+                        filePrefix: "bugreport_unnamed",
+                        notes: null,
+                        userAttachments: null);
+
+                    StatusMessage = $"Bug report saved (no details): {savedPath}";
+                    _logger.LogInformation("Bug report saved on cancel: {ZipPath}", savedPath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to finalize cancelled bug report snapshot");
+                }
             }
+            _bugReportTempZipPath = null;
 
             State.UI.CloseDialog();
         });

@@ -12,7 +12,8 @@
                 CornerRadius="12" Padding="24"
                 MaxWidth="520" MaxHeight="680"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                BoxShadow="0 4 16 #40000000">
+                BoxShadow="0 4 16 #40000000"
+                PointerPressed="Body_PointerPressed">
 
             <StackPanel Spacing="12">
                 <TextBlock Text="Report a Bug" FontSize="22" FontWeight="Bold"
