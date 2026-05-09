@@ -199,7 +199,11 @@ public partial class MainViewModel
         // Bug Report Dialog (#249)
         ShowBugReportDialogCommand = new RelayCommand(() =>
         {
-            // Capture screenshot BEFORE dialog opens (so it shows the actual state)
+            // Capture screenshot AND the full state-snapshot zip the moment
+            // the button is pressed, so the dump reflects app state when the
+            // bug occurred — not whatever state the operator drifts into
+            // while typing the title and description. Notes + user
+            // attachments get appended to the captured zip on submit.
             _bugReportScreenshot = null;
             try { _bugReportScreenshot = ScreenshotProvider?.Invoke(); }
             catch { /* screenshot is optional */ }
@@ -207,6 +211,19 @@ public partial class MainViewModel
             BugReportTitle = string.Empty;
             BugReportDescription = string.Empty;
             BugReportAttachments.Clear();
+
+            _bugReportTempZipPath = null;
+            try
+            {
+                _bugReportTempZipPath = Services.DebugDumpService.CreateDump(
+                    _settingsService, _appState, screenshotPng: _bugReportScreenshot);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Bug report state-snapshot capture failed");
+                StatusMessage = $"Bug report capture failed: {ex.Message}";
+            }
+
             State.UI.ShowDialog(Models.State.DialogType.BugReport);
         });
 
@@ -214,6 +231,14 @@ public partial class MainViewModel
         {
             _bugReportScreenshot = null;
             BugReportAttachments.Clear();
+
+            // User cancelled — drop the captured snapshot zip.
+            if (_bugReportTempZipPath != null)
+            {
+                try { File.Delete(_bugReportTempZipPath); } catch { }
+                _bugReportTempZipPath = null;
+            }
+
             State.UI.CloseDialog();
         });
 
@@ -256,14 +281,32 @@ public partial class MainViewModel
                     ? BugReportDescription
                     : $"# {BugReportTitle}\n\n{BugReportDescription}";
 
-                var zipPath = Services.DebugDumpService.CreateDump(
-                    _settingsService,
-                    _appState,
-                    additionalNotes: notes,
-                    screenshotPng: _bugReportScreenshot,
-                    outputDirectory: bugReportsDir,
-                    filePrefix: $"bugreport_{titleSlug}",
-                    userAttachments: attachmentPaths);
+                string zipPath;
+                if (_bugReportTempZipPath != null && File.Exists(_bugReportTempZipPath))
+                {
+                    // Snapshot already exists from button-press; just append
+                    // the user's title/description/attachments and rename.
+                    zipPath = Services.DebugDumpService.FinalizeBugReport(
+                        sourceZipPath: _bugReportTempZipPath,
+                        outputDirectory: bugReportsDir,
+                        filePrefix: $"bugreport_{titleSlug}",
+                        notes: notes,
+                        userAttachments: attachmentPaths);
+                    _bugReportTempZipPath = null;
+                }
+                else
+                {
+                    // Fallback: snapshot capture failed at button-press; do
+                    // everything in one shot now.
+                    zipPath = Services.DebugDumpService.CreateDump(
+                        _settingsService,
+                        _appState,
+                        additionalNotes: notes,
+                        screenshotPng: _bugReportScreenshot,
+                        outputDirectory: bugReportsDir,
+                        filePrefix: $"bugreport_{titleSlug}",
+                        userAttachments: attachmentPaths);
+                }
 
                 _bugReportScreenshot = null;
                 BugReportAttachments.Clear();
@@ -321,6 +364,9 @@ public partial class MainViewModel
     public ICommand? RemoveBugReportAttachmentCommand { get; private set; }
 
     private byte[]? _bugReportScreenshot;
+    // Path to the dump zip captured the moment the user pressed the Bug
+    // Report button. Cleared on submit or dialog cancel.
+    private string? _bugReportTempZipPath;
 
     private string _bugReportTitle = string.Empty;
     public string BugReportTitle

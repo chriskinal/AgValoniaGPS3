@@ -196,6 +196,72 @@ public class DebugDumpService
         return zipPath;
     }
 
+    /// <summary>
+    /// Append user-supplied notes and attachments to an existing dump zip,
+    /// then move it to its final location with a title-based filename.
+    /// Used by the Bug Report flow so the state-snapshot zip can be created
+    /// the moment the operator presses the Bug Report button (capturing app
+    /// state at the time the bug occurred), and only the user-visible parts
+    /// are appended after they finish typing in the dialog.
+    /// </summary>
+    /// <param name="sourceZipPath">Path to the existing dump zip (typically
+    /// from <see cref="CreateDump"/> with no notes/attachments). Deleted on
+    /// success; left in place if any step throws.</param>
+    /// <param name="outputDirectory">Final destination folder. Created if
+    /// missing.</param>
+    /// <param name="filePrefix">Final file's prefix; the timestamp suffix
+    /// is added here, not taken from the source zip's name.</param>
+    /// <param name="notes">Optional user-typed notes (becomes
+    /// <c>user_notes.txt</c> inside the zip).</param>
+    /// <param name="userAttachments">Optional list of file paths to attach
+    /// under <c>attachments/</c> inside the zip.</param>
+    /// <returns>The final zip path.</returns>
+    public static string FinalizeBugReport(
+        string sourceZipPath,
+        string outputDirectory,
+        string filePrefix,
+        string? notes,
+        IReadOnlyList<string>? userAttachments)
+    {
+        Directory.CreateDirectory(outputDirectory);
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+        var finalPath = Path.Combine(outputDirectory, $"{filePrefix}_{timestamp}.zip");
+
+        File.Copy(sourceZipPath, finalPath, overwrite: false);
+
+        using (var zipStream = File.Open(finalPath, FileMode.Open, FileAccess.ReadWrite))
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Update))
+        {
+            if (!string.IsNullOrEmpty(notes))
+                AddTextEntry(archive, "user_notes.txt", notes);
+
+            if (userAttachments != null)
+            {
+                foreach (var filePath in userAttachments)
+                {
+                    try
+                    {
+                        if (File.Exists(filePath))
+                        {
+                            var fileName = Path.GetFileName(filePath);
+                            var entry = archive.CreateEntry($"attachments/{fileName}");
+                            using var entryStream = entry.Open();
+                            using var fileStream = File.OpenRead(filePath);
+                            fileStream.CopyTo(entryStream);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AddTextEntry(archive, $"attachments/{Path.GetFileName(filePath)}_error.txt", ex.ToString());
+                    }
+                }
+            }
+        }
+
+        try { File.Delete(sourceZipPath); } catch { /* best-effort temp cleanup */ }
+        return finalPath;
+    }
+
     private static string BuildSystemInfo()
     {
         var sb = new StringBuilder();
