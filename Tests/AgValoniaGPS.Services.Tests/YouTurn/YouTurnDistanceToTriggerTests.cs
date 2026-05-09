@@ -141,6 +141,72 @@ public class YouTurnDistanceToTriggerTests
     }
 
     /// <summary>
+    /// Operator presses the swap-direction button while a turn path is already
+    /// rendered but execution hasn't started. Tick must drop the rendered path
+    /// (so the CREATE branch can recompute it with the new direction) and leave
+    /// the override set so the next CREATE consumes it. Without this, the
+    /// override is captured but never applied — the operator's tap has no
+    /// visible effect.
+    /// </summary>
+    [Test]
+    public void Tick_with_override_set_and_path_rendered_drops_path_for_recompute()
+    {
+        var stateMachine = BuildStateMachine();
+        // Pre-trigger window: tractor 10 m before the turn-start point, AB
+        // aligned, in cultivated area, headland in range.
+        var ctx = BuildTickContext(tractorEasting: 0, tractorNorthing: 30);
+        var guidance = new GuidanceWorkingState();
+        var renderedPath = BuildTurnPath(turnStartEasting: 0, turnStartNorthing: 40);
+        var turn = new YouTurnWorkingState
+        {
+            TurnPath = renderedPath,
+            IsTriggered = false,
+            IsExecuting = false,
+            NextUTurnDirectionLeftOverride = true, // operator just tapped the button
+        };
+
+        stateMachine.Tick(in ctx, guidance, turn);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(turn.TurnPath, Is.Not.SameAs(renderedPath),
+                "Rendered path must be cleared so CREATE can recompute with the new direction");
+            // Either the path is null (nothing to recompute this cycle because
+            // alignment/range conditions weren't all met) or it was rebuilt by
+            // the CREATE branch later in this same Tick. Both are acceptable —
+            // the key invariant is the original (wrong-direction) path no
+            // longer survives.
+        });
+    }
+
+    /// <summary>
+    /// Mid-arc safety: when the turn is already executing, the swap-direction
+    /// override must NOT yank the path out from under the guidance service.
+    /// Flipping direction mid-arc would whip the steering. The override stays
+    /// set; the state machine simply ignores it until the next idle cycle.
+    /// </summary>
+    [Test]
+    public void Tick_with_override_set_during_execution_does_not_clear_path()
+    {
+        var stateMachine = BuildStateMachine();
+        var ctx = BuildTickContext(tractorEasting: 0, tractorNorthing: 40);
+        var guidance = new GuidanceWorkingState();
+        var renderedPath = BuildTurnPath(turnStartEasting: 0, turnStartNorthing: 40);
+        var turn = new YouTurnWorkingState
+        {
+            TurnPath = renderedPath,
+            IsTriggered = true,
+            IsExecuting = true,
+            NextUTurnDirectionLeftOverride = true,
+        };
+
+        stateMachine.Tick(in ctx, guidance, turn);
+
+        Assert.That(turn.TurnPath, Is.SameAs(renderedPath),
+            "Mid-arc the rendered path must be preserved — flipping direction now would whip the steering");
+    }
+
+    /// <summary>
     /// With no precomputed turn path (no upcoming turn the state machine knows
     /// about), Tick must leave <c>DistanceToTrigger</c> at 0 — there's no
     /// trigger point to count down to.

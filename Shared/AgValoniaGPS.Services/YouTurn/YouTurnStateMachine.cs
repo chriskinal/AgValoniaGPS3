@@ -181,6 +181,27 @@ public sealed class YouTurnStateMachine
         // Recomputed below when a precomputed turn path exists and execution hasn't started.
         turn.DistanceToTrigger = 0;
 
+        // ── DIRECTION-OVERRIDE RE-ARM ───────────────────────────────────
+        // If the operator pressed the swap-direction button while a turn
+        // was already rendered (TurnPath != null) but execution hasn't
+        // begun, drop the rendered path so the CREATE branch below
+        // recomputes it with the new direction this same cycle. The
+        // override flag itself is cleared inside HandleNormalCreation /
+        // HandleSnakeCreation after consumption — leave it set here.
+        // Mid-arc flips are unsafe and stay no-op.
+        if (turn.NextUTurnDirectionLeftOverride.HasValue
+            && turn.TurnPath != null
+            && !turn.IsExecuting)
+        {
+            _logger.LogDebug("[YouTurn] Direction override set with rendered path — re-arming with {Dir}",
+                turn.NextUTurnDirectionLeftOverride.Value ? "LEFT" : "RIGHT");
+            turn.TurnPath = null;
+            turn.NextTrack = null;
+            turn.IsTriggered = false;
+            effects.SyncTurnPathToMap = true;
+            effects.SyncNextTrackToMap = true;
+        }
+
         if (turn.TurnPath == null && !turn.IsExecuting && canCreateTurn && isAlignedWithABLine)
         {
             if (ctx.IsSkipWorkedMode)
