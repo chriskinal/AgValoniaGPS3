@@ -534,16 +534,28 @@ public class SectionControlService : ISectionControlService
         }
         else if (section.IsOn)
         {
-            // Section is on and should stay on - update mapping
+            // Section is on and should stay on - update mapping.
+            // Clear any stale request flags from a prior tick so the section
+            // doesn't render as "Turning OFF" (cyan, code 3) after a transient
+            // shouldBeOff flicker that didn't accumulate enough timer ticks
+            // to actually flip IsOn. Without this, SectionOffRequest sticks
+            // true forever and the UI shows code 3 indefinitely.
             section.SectionOnTimer = 0;
             section.SectionOffTimer = 0;
+            section.SectionOnRequest = false;
+            section.SectionOffRequest = false;
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
         else
         {
-            // Section is off and should stay off
+            // Section is off and should stay off. Same reasoning as the
+            // steady-on branch: clear any stale SectionOnRequest from a
+            // transient shouldBeOn flicker so the section doesn't render
+            // as "Turning ON" (orange, code 4) indefinitely.
             section.SectionOnTimer = 0;
             section.SectionOffTimer = 0;
+            section.SectionOnRequest = false;
+            section.SectionOffRequest = false;
 
             // Keep ticking the StopMapping debounce while mapping is still
             // active — same reasoning as UpdateSectionOff. The shouldBeOff
@@ -596,8 +608,15 @@ public class SectionControlService : ISectionControlService
         {
             UpdateMapping(index, leftEdge, rightEdge, toolHeading);
         }
+        // Clear timers AND request flags. Without clearing the requests,
+        // a section that switches Auto -> Manual On while a SectionOffRequest
+        // was pending would carry that flag forever; the ButtonState=On
+        // path of GetSectionColorCode masks it as code 1 (yellow), but the
+        // dirty state shows up the moment the user flips back to Auto.
         section.SectionOnTimer = 0;
         section.SectionOffTimer = 0;
+        section.SectionOnRequest = false;
+        section.SectionOffRequest = false;
     }
 
     /// <summary>

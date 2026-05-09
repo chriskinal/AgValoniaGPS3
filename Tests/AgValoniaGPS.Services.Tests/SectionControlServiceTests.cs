@@ -257,6 +257,116 @@ public class SectionControlServiceTests
     }
 
     [Test]
+    public void StaleRequestFlags_ClearedOnSteadyState_NoStuckTransitionColor()
+    {
+        // Regression: user reported sections staying "blue" (cyan, code 3 =
+        // Turning OFF) or "orange" (code 4 = Turning ON) for longer than they
+        // are supposed to. The state machine sets SectionOnRequest /
+        // SectionOffRequest in the transition branches but the steady-state
+        // branches (`else if (section.IsOn)` and trailing `else`) only reset
+        // the timers — not the request flags. So a single flicker tick of
+        // shouldBeOff while IsOn=true leaves SectionOffRequest stuck true
+        // forever (rendering as cyan), and a flicker of shouldBeOn while
+        // IsOn=false leaves SectionOnRequest stuck (rendering as orange).
+        //
+        // This test drives both flicker patterns and asserts the request
+        // flags are cleared on the next steady tick so the section renders
+        // the correct steady-state color (Auto ON green, code 2; Auto OFF
+        // gray, code 5).
+        var outerPoly = new BoundaryPolygon();
+        outerPoly.Points.Add(new BoundaryPoint(0, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 0, 0));
+        outerPoly.Points.Add(new BoundaryPoint(200, 200, 0));
+        outerPoly.Points.Add(new BoundaryPoint(0, 200, 0));
+        outerPoly.UpdateBounds();
+        _appState.Field.CurrentBoundary = new Boundary { OuterBoundary = outerPoly };
+
+        // Use non-zero LookAheadOff so a single tick of shouldBeOff doesn't
+        // accumulate enough phase ticks to actually flip IsOn — that's the
+        // window where the bug shows up.
+        ConfigurationStore.Instance.Tool.LookAheadOffSetting = 0.5; // 500 ms
+        ConfigurationStore.Instance.Tool.LookAheadOnSetting = 0.5;
+        ConfigurationStore.Instance.Tool.MinCoverage = 70;
+
+        _service.SetAllAuto();
+        _service.MasterState = SectionMasterState.Auto;
+        _service.TickHz = 100.0; // matches host control loop
+
+        void SetCoverage(double pct)
+        {
+            var r = new CoverageResult(pct, pct > 0, pct >= 1.0, 0);
+            _coverageMap.GetSegmentCoverageMulti(default, default, default, default, default)
+                .ReturnsForAnyArgs((r, r, r));
+        }
+
+        // Phase 1: Drive to steady-on (uncovered, in boundary, in headland-free).
+        // turnOnPhaseTicks = 0.5 s × 100 Hz = 50 ticks of shouldBeOn needed.
+        SetCoverage(0.0);
+        for (int i = 0; i < 60; i++)
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.True,
+            "Phase 1: section should be ON after exhausting the turn-on debounce");
+        Assert.That(_service.SectionStates[0].SectionOnRequest, Is.False);
+        Assert.That(_service.SectionStates[0].SectionOffRequest, Is.False);
+
+        // Phase 2: One tick of "fully covered" (shouldBeOff = true) — sets
+        // SectionOffRequest=true and SectionOffTimer=1. Far below the 50-tick
+        // threshold, so IsOn stays true. This is the trigger for the bug.
+        SetCoverage(1.0);
+        _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.True,
+            "Phase 2: IsOn stays true after a single shouldBeOff tick");
+        Assert.That(_service.SectionStates[0].SectionOffRequest, Is.True,
+            "Phase 2: SectionOffRequest is set during the (incomplete) turn-off transition");
+
+        // Phase 3: Coverage drops back below the OFF threshold (shouldBeOff
+        // becomes false) and we're still ON → falls into the steady-on
+        // branch. The bug: SectionOffRequest was previously NOT cleared here,
+        // leaving the section rendered as code 3 (Turning OFF, cyan) forever.
+        SetCoverage(0.5); // below 0.99 OFF threshold, above 0.70 ON threshold
+        for (int i = 0; i < 5; i++)
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.True,
+            "Phase 3: section stays ON in the hysteresis gap");
+        Assert.That(_service.SectionStates[0].SectionOffRequest, Is.False,
+            "Phase 3: SectionOffRequest must be cleared in the steady-on branch — " +
+            "otherwise the UI renders as code 3 (Turning OFF / cyan) indefinitely");
+        Assert.That(_service.SectionStates[0].SectionOffTimer, Is.EqualTo(0));
+
+        // Phase 4: Push to fully covered for the full debounce so IsOn flips off.
+        SetCoverage(1.0);
+        for (int i = 0; i < 60; i++)
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.False,
+            "Phase 4: section should be OFF after exhausting the turn-off debounce");
+
+        // Phase 5: One tick of "uncovered" (shouldBeOn = true) — sets
+        // SectionOnRequest=true and SectionOnTimer=1. Below the 50-tick
+        // threshold, so IsOn stays false. Symmetric trigger to Phase 2.
+        SetCoverage(0.0);
+        _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.False,
+            "Phase 5: IsOn stays false after a single shouldBeOn tick");
+        Assert.That(_service.SectionStates[0].SectionOnRequest, Is.True,
+            "Phase 5: SectionOnRequest is set during the (incomplete) turn-on transition");
+
+        // Phase 6: Coverage rises into the hysteresis gap (above ON threshold,
+        // below OFF threshold). shouldBeOn becomes false; section falls into
+        // the steady-off branch. The bug: SectionOnRequest was previously NOT
+        // cleared here, leaving the section rendered as code 4
+        // (Turning ON / orange) indefinitely.
+        SetCoverage(0.85); // above 0.70 ON threshold, below 0.99 OFF threshold
+        for (int i = 0; i < 5; i++)
+            _service.Update(new Vec3(100, 100, 0), 0, 0, 5.0);
+        Assert.That(_service.SectionStates[0].IsOn, Is.False,
+            "Phase 6: section stays OFF in the hysteresis gap");
+        Assert.That(_service.SectionStates[0].SectionOnRequest, Is.False,
+            "Phase 6: SectionOnRequest must be cleared in the steady-off branch — " +
+            "otherwise the UI renders as code 4 (Turning ON / orange) indefinitely");
+        Assert.That(_service.SectionStates[0].SectionOnTimer, Is.EqualTo(0));
+    }
+
+    [Test]
     public void LookAheadDistance_ClampedToMinimum_AtSlowSpeedAndZeroSetting()
     {
         // Repro for the structural part of #345: with LookAheadOn/Off=0 and
