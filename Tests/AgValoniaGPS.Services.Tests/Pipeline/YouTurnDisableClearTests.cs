@@ -165,8 +165,10 @@ public class YouTurnDisableClearTests
     {
         // YouTurn enabled — the disable-clear path must NOT fire. (No track is
         // set, so the auto-tick won't reach in either; this exercises only the
-        // clear-on-disable branch we added.)
+        // clear-on-disable branch we added.) Also engage autosteer so the
+        // sibling clear-on-disengage block stays quiet too.
         _pipeline.SetYouTurnEnabled(true);
+        _pipeline.SetAutoSteerEngaged(true);
 
         var youTurn = GetCycleYouTurn();
         youTurn.IsTriggered = true;
