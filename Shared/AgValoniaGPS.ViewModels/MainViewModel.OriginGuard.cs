@@ -29,7 +29,7 @@ public partial class MainViewModel
             "GPS far from field",
             $"GPS reports a position {km:F1} km from the loaded field origin. " +
             "Autosteer has been disabled.\n\n" +
-            "Choose Confirm to close the field, or Cancel to keep driving without guidance.",
+            "Tap Yes to close the field, or No to keep driving without guidance.",
             () => _ = CloseFieldAsync());
     }
 }
