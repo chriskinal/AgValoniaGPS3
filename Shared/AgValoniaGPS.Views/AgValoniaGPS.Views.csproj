@@ -16,6 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.0.1" />
     <PackageReference Include="Avalonia.Skia" Version="12.0.1" />
+    <PackageReference Include="Avalonia.Controls.WebView" Version="12.0.0" />
     <PackageReference Include="Mapsui" Version="5.0.2" />
     <PackageReference Include="Mapsui.Rendering.Skia" Version="5.0.2" />
     <PackageReference Include="Mapsui.Tiling" Version="5.0.2" />

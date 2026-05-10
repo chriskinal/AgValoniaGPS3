@@ -70,6 +70,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:LoadVehicleToolDialogPanel/>
         <dialogs:StartWorkSessionDialogPanel/>
         <dialogs:ResumeJobDialogPanel/>
+        <dialogs:AiOWebViewDialogPanel/>
 
         <!-- Wizards -->
         <wizards:WizardDialogPanel DataContext="{Binding SteerWizardViewModel}"/>

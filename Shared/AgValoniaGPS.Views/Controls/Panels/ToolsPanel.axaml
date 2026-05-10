@@ -49,5 +49,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <controls:MenuButton Icon="avares://AgValoniaGPS.Views/Assets/Icons/ConS_SourcesRoll.png"
                          Text="{loc:Localize RollCorrection}"/>
+
+    <controls:MenuButton Text="{loc:Localize AiOWebInterface}"
+                         Command="{Binding ShowAiOWebViewDialogCommand}"/>
     </controls:FloatingPanel>
 </UserControl>

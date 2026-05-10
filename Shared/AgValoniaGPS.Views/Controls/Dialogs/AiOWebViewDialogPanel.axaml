@@ -1,0 +1,82 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:c="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.AiOWebViewDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsAiOWebViewDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsAiOWebViewDialogVisible}">
+
+    <Grid>
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                CornerRadius="12"
+                Padding="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Width="{Binding $parent[Window].Bounds.Width, Converter={x:Static c:ScaleConverter.Instance}, ConverterParameter=0.75}"
+                Height="{Binding $parent[Window].Bounds.Height, Converter={x:Static c:ScaleConverter.Instance}, ConverterParameter=0.75}"
+                MinWidth="600"
+                MinHeight="450">
+            <Grid RowDefinitions="Auto,*">
+                <!-- Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12,12,8">
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="2">
+                        <TextBlock Text="{loc:Localize AiOWebInterface}"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                        <TextBlock Text="{Binding AiOWebUrl}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   IsVisible="{Binding IsAiOWebUrlAvailable}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="✕"
+                            Command="{Binding CloseAiOWebViewDialogCommand}"
+                            Width="36" Height="36"
+                            FontSize="14"
+                            VerticalAlignment="Top"
+                            Background="Transparent"
+                            BorderThickness="0"/>
+                </Grid>
+
+                <!-- Body: WebView and placeholder both occupy the same Grid
+                     cell — only one is visible at a time. NativeWebView is
+                     placed directly in the Grid cell rather than wrapped in
+                     a Border/Panel: the native surface ignores Avalonia's
+                     CornerRadius/ClipToBounds anyway, and extra wrappers add
+                     layout noise that the native rendering layer doesn't
+                     benefit from. -->
+                <NativeWebView Grid.Row="1"
+                               Source="{Binding AiOWebUrl}"
+                               IsVisible="{Binding IsAiOWebUrlAvailable}"
+                               Margin="12,0,12,12"/>
+                <TextBlock Grid.Row="1"
+                           Text="{loc:Localize AiONotDetectedOnNetwork}"
+                           IsVisible="{Binding !IsAiOWebUrlAvailable}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           MaxWidth="400"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

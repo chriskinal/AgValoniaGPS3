@@ -2099,7 +2099,25 @@ public partial class MainViewModel : ObservableObject
     public ICommand? CloseAppDirectoriesDialogCommand { get; private set; }
     public ICommand? ShowAboutDialogCommand { get; private set; }
     public ICommand? CloseAboutDialogCommand { get; private set; }
+    public ICommand? ShowAiOWebViewDialogCommand { get; private set; }
+    public ICommand? CloseAiOWebViewDialogCommand { get; private set; }
     public ICommand? ResetAllSettingsCommand { get; private set; }
+
+    // AiO web interface URL — refreshed each time the dialog opens. Reads
+    // the most-recently-observed AutoSteer module IP from the UDP service
+    // (the AiO is the AutoSteer module). Empty string when the AiO has
+    // not been seen on the network yet; the dialog shows a placeholder.
+    private string _aioWebUrl = string.Empty;
+    public string AiOWebUrl
+    {
+        get => _aioWebUrl;
+        private set
+        {
+            if (SetProperty(ref _aioWebUrl, value))
+                OnPropertyChanged(nameof(IsAiOWebUrlAvailable));
+        }
+    }
+    public bool IsAiOWebUrlAvailable => !string.IsNullOrEmpty(_aioWebUrl);
 
     private ObservableCollection<AppDirectoryInfo> _appDirectories = new();
     public ObservableCollection<AppDirectoryInfo> AppDirectories

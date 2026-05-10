@@ -27,6 +27,12 @@
   <data xml:space="preserve" name="AgShareApi">
     <value>AgShare API</value>
   </data>
+  <data xml:space="preserve" name="AiOWebInterface">
+    <value>AiO Web Interface</value>
+  </data>
+  <data xml:space="preserve" name="AiONotDetectedOnNetwork">
+    <value>AiO not detected on the network. Make sure the module is powered and connected, then try again.</value>
+  </data>
   <data xml:space="preserve" name="Altitude">
     <value>Altitude</value>
   </data>

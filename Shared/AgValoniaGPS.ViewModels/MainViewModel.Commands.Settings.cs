@@ -57,6 +57,24 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        ShowAiOWebViewDialogCommand = new RelayCommand(() =>
+        {
+            // Resolve the AiO IP fresh each time — the user may have power-cycled
+            // it between opens. The AiO is the AutoSteer module per the UDP
+            // protocol (PGN.md). Empty URL surfaces the "not detected" placeholder
+            // in the dialog instead of attempting to navigate to a stale address.
+            var ip = _udpService.GetModuleIpAddress(Services.Interfaces.ModuleType.AutoSteer);
+            AiOWebUrl = !string.IsNullOrEmpty(ip) && _udpService.IsModuleHelloOk(Services.Interfaces.ModuleType.AutoSteer)
+                ? $"http://{ip}/"
+                : string.Empty;
+            State.UI.ShowDialog(Models.State.DialogType.AiOWebView);
+        });
+
+        CloseAiOWebViewDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
         ResetAllSettingsCommand = new RelayCommand(() =>
         {
             ShowConfirmationDialog(
