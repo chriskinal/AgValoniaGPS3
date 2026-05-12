@@ -1,0 +1,176 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+HomePage — app startup destination + launcher.
+
+Tiles are info-cards: each tile is a tappable button that doubles as
+a status readout for the most recent value in that domain (last
+operator, last tractor, last implement, last field). Fields & Jobs is
+a larger card containing a thumbnail of the last field + two buttons
+(open Fields & Jobs page, resume last job).
+
+Layout:
+- Top strip:    Operator Profile · Tractor · Implement   (3 cards, equal width)
+- Lower-left:   Fields & Jobs card  (5/6 width)
+- Lower-right:  NTRIP · App Settings · AgShare · Log Viewer  (1/6 width column)
+
+See Plans/PageBasedNavigation/PLAN.md.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:nav="using:AgValoniaGPS.Models.Navigation"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.HomePage"
+             x:DataType="vm:MainViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.HomeTile">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style Selector="Button.HomeTile:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#DD2ECC71"/>
+        </Style>
+        <Style Selector="Button.HomeTile:pressed">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Info-card text styles: label at top-left small, value below big -->
+        <Style Selector="TextBlock.CardLabel">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Opacity" Value="0.7"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style Selector="TextBlock.CardValue">
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="20"
+          RowDefinitions="160,*"
+          ColumnDefinitions="5*,*">
+
+        <!-- Top strip: 3 info-card tiles -->
+        <UniformGrid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                     Rows="1" Columns="3">
+
+            <Button Classes="HomeTile" Margin="6"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.OperatorProfile}">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Classes="CardLabel" Text="Operator Profile"/>
+                    <TextBlock Grid.Row="1" Classes="CardValue" Text="{Binding LastOperatorName}"/>
+                </Grid>
+            </Button>
+
+            <Button Classes="HomeTile" Margin="6"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.Tractor}">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Classes="CardLabel" Text="Tractor"/>
+                    <TextBlock Grid.Row="1" Classes="CardValue" Text="{Binding LastTractorName}"/>
+                </Grid>
+            </Button>
+
+            <Button Classes="HomeTile" Margin="6"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.Implement}">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Classes="CardLabel" Text="Implement"/>
+                    <TextBlock Grid.Row="1" Classes="CardValue" Text="{Binding LastImplementName}"/>
+                </Grid>
+            </Button>
+        </UniformGrid>
+
+        <!-- Lower-left 5/6: Fields & Jobs card (thumbnail + 2 action buttons) -->
+        <Border Grid.Row="1" Grid.Column="0"
+                Margin="6"
+                CornerRadius="14"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="16">
+            <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="*">
+                <TextBlock Grid.Row="0" Classes="CardLabel" Text="Last Field"/>
+
+                <!-- Placeholder thumbnail. Phase 5 wires this to a render of
+                     the actual last-opened field. -->
+                <Grid Grid.Row="1" Margin="0,8,0,8">
+                    <Border Background="#222"
+                            CornerRadius="8"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+                    <TextBlock Text="{Binding LastFieldName}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="(thumbnail comes in Phase 5)"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                               FontSize="11"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Bottom"
+                               Margin="0,0,0,8"/>
+                </Grid>
+
+                <UniformGrid Grid.Row="2" Rows="1" Columns="2">
+                    <Button Classes="HomeTile" Margin="0,0,6,0"
+                            Content="Fields &amp; Jobs"
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Height="80"
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.FieldsAndJobs}"/>
+                    <Button Classes="HomeTile" Margin="6,0,0,0"
+                            Content="Resume Last Job"
+                            FontSize="20"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Height="80"
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.MovingMap}"/>
+                </UniformGrid>
+            </Grid>
+        </Border>
+
+        <!-- Lower-right 1/6: stack of system + utility tiles -->
+        <UniformGrid Grid.Row="1" Grid.Column="1"
+                     Rows="4" Columns="1">
+            <Button Classes="HomeTile" Margin="6"
+                    Content="NTRIP / Network"
+                    FontSize="14"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.NtripNetworking}"/>
+            <Button Classes="HomeTile" Margin="6"
+                    Content="App Settings"
+                    FontSize="14"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.ApplicationSettings}"/>
+            <Button Classes="HomeTile" Margin="6"
+                    Content="AgShare"
+                    FontSize="14"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.AgShare}"/>
+            <Button Classes="HomeTile" Margin="6"
+                    Content="Log Viewer"
+                    FontSize="14"
+                    Command="{Binding NavigateToPageCommand}"
+                    CommandParameter="{x:Static nav:PageType.LogViewer}"/>
+        </UniformGrid>
+    </Grid>
+</UserControl>

@@ -35,27 +35,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
     <!-- Main content with dialog overlays -->
     <Panel>
-    <!-- Main layout: status bar row + content area -->
+    <!-- Main layout: status bar row + content area. Status bar is opaque
+         full-width across the top, like a conventional menu bar — the map
+         starts below it (no longer renders behind it). -->
     <Grid RowDefinitions="Auto,*">
-        <!-- Map Render Area (fills entire window behind everything) -->
+        <!-- Row 0: Top status bar (opaque, full-width). Matches the iOS +
+             Android shells so the layout is consistent across platforms. -->
+        <Border Grid.Row="0" Background="#2d2d2d" Padding="10" ZIndex="20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
+                <panels:FieldStatsPanel Grid.Column="2" DataContext="{Binding}"
+                                        IsVisible="{Binding HasActiveField}"/>
+            </Grid>
+        </Border>
+
+        <!-- Map Render Area (fills the content area below the status bar) -->
         <ContentControl x:Name="MapControlContainer" ZIndex="0"
-                        Grid.Row="0" Grid.RowSpan="2"
+                        Grid.Row="1"
                         Background="Transparent"
                         PointerPressed="MapOverlay_PointerPressed"
                         PointerMoved="MapOverlay_PointerMoved"
                         PointerReleased="MapOverlay_PointerReleased"
                         PointerWheelChanged="MapOverlay_PointerWheelChanged" />
-
-        <!-- Row 0: Top status bar area -->
-        <Grid Grid.Row="0" ZIndex="20" Margin="8,8,8,4" ColumnDefinitions="Auto,*,Auto">
-            <Border Classes="FloatingPanel" Grid.Column="0" IsHitTestVisible="True">
-                <panels:StatusBarPanel DataContext="{Binding}"/>
-            </Border>
-            <Border Classes="FloatingPanel" Grid.Column="2" IsHitTestVisible="True"
-                    IsVisible="{Binding HasActiveField}">
-                <panels:FieldStatsPanel DataContext="{Binding}"/>
-            </Border>
-        </Grid>
 
         <!-- Row 1: All panels live here, below the status bar -->
         <Grid Grid.Row="1">
@@ -72,8 +73,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     ZIndex="9"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
-                                    Margin="8,8,0,0"
+                                    Margin="8,60,0,0"
                                     DataContext="{Binding}"/>
+
+        <!-- HOME BUTTON: top-left of the moving map; returns to Home page.
+             Visible only when on the Moving Map page (when PageHost is hidden). -->
+        <Button ZIndex="11"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="8,8,0,0"
+                Width="44" Height="44"
+                CornerRadius="22"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                ToolTip.Tip="Home"
+                IsVisible="{Binding !IsPageHostVisible}"
+                Command="{Binding GoHomeCommand}">
+            <TextBlock Text="⌂" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Button>
 
         <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
@@ -132,6 +147,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                               PointerMoved="RecordedPath_PointerMoved"
                                               PointerReleased="RecordedPath_PointerReleased"/>
         </Canvas>
+
+        <!-- PAGE OVERLAY: covers the map+panels when on a non-Map page (Home,
+             Tractor, Implement, etc.). On the Moving Map page IsVisible is
+             false and the map shows through. See Plans/PageBasedNavigation/PLAN.md. -->
+        <controls:PageHost x:Name="PageHostOverlay"
+                           ZIndex="50"
+                           Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                           CurrentPage="{Binding CurrentPage}"
+                           IsVisible="{Binding IsPageHostVisible}"/>
         </Grid>
     </Grid>
 

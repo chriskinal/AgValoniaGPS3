@@ -100,6 +100,9 @@ public static class ServiceCollectionExtensions
         // AutoSteer pipeline service (zero-copy GPS→PGN path)
         services.AddSingleton<IAutoSteerService, AutoSteerService>();
 
+        // Page navigation (page-based UX — see Plans/PageBasedNavigation/PLAN.md)
+        services.AddSingleton<INavigationService, AgValoniaGPS.Services.Navigation.NavigationService>();
+
         // Smart WAS calibration (statistical WAS zero analyzer)
         services.AddSingleton<ISmartWasCalibrationService, SmartWasCalibrationService>();
 

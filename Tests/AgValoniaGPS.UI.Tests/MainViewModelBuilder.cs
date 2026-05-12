@@ -76,6 +76,7 @@ public class MainViewModelBuilder
             gpsPipelineService: Substitute.For<IGpsPipelineService>(),
             intents: Intents,
             logger: NullLogger<MainViewModel>.Instance,
-            appState: new ApplicationState());
+            appState: new ApplicationState(),
+            navigationService: new AgValoniaGPS.Services.Navigation.NavigationService(AutoSteerService));
     }
 }

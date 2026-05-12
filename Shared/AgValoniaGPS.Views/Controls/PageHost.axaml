@@ -1,0 +1,21 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+PageHost — the page-router container. Sits at the root of each platform's
+main view; swaps its child to the appropriate page when the app's
+CurrentPage changes. See Plans/PageBasedNavigation/PLAN.md.
+
+  <controls:PageHost CurrentPage="{Binding CurrentPage}"/>
+
+CurrentPage is a StyledProperty so the platform shells can bind it
+to the active page from MainViewModel (which mirrors INavigationService).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.PageHost"
+             ClipToBounds="False">
+    <ContentControl x:Name="PageContent"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"/>
+</UserControl>

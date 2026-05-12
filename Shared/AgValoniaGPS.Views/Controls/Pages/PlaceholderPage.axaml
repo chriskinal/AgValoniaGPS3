@@ -1,0 +1,55 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+PlaceholderPage — shared shell for pages whose Phase-1 implementation
+is "Coming soon." Used by Operator Profile, Tractor, Implement,
+Fields & Jobs, NTRIP / Networking, App Settings, AgShare, and Log
+Viewer until each gets its real content in later phases.
+
+Set the `PageName` property to the page's display name; the placeholder
+text and the page title come from there.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.PlaceholderPage"
+             x:DataType="vm:MainViewModel"
+             Background="Transparent">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Top row: Home button + page title -->
+        <Grid Grid.Row="0" Margin="20,16" ColumnDefinitions="Auto,*,Auto">
+            <Button Grid.Column="0"
+                    Width="44" Height="44"
+                    CornerRadius="22"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                    ToolTip.Tip="Home"
+                    Command="{Binding GoHomeCommand}">
+                <TextBlock Text="⌂" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+            <TextBlock Grid.Column="1"
+                       x:Name="TitleText"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Grid>
+
+        <!-- Body: coming-soon placeholder -->
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="12">
+            <TextBlock x:Name="ComingSoonText"
+                       FontSize="32"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="See Plans/PageBasedNavigation/PLAN.md for the migration phase that builds this out."
+                       FontSize="13"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

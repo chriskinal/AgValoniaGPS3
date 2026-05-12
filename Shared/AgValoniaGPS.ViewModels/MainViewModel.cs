@@ -86,6 +86,7 @@ public partial class MainViewModel : ObservableObject
     private bool _hasTramSystemsEverUsed;
     private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
+    private readonly INavigationService _navigationService;
     private readonly ISteerMachineLoopService? _controlLoop;
     private readonly IPositionEstimator? _positionEstimator;
     private readonly IPipelineIntents _intents;
@@ -208,6 +209,7 @@ public partial class MainViewModel : ObservableObject
         IPipelineIntents intents,
         ILogger<MainViewModel> logger,
         ApplicationState appState,
+        INavigationService navigationService,
         ISteerMachineLoopService? controlLoop = null,
         IPositionEstimator? positionEstimator = null)
     {
@@ -281,7 +283,11 @@ public partial class MainViewModel : ObservableObject
         _positionEstimator = positionEstimator;
         _intents = intents;
         _appState = appState;
+        _navigationService = navigationService;
         _fieldPlaneFileService = new FieldPlaneFileService();
+
+        // Wire CurrentPage observable mirror to the navigation service.
+        InitializeNavigation(navigationService);
 
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;
