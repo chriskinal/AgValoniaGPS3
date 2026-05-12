@@ -54,25 +54,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             ZIndex="9"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Top"
-                                            Margin="8,64,0,0"
+                                            Margin="8,10,0,0"
                                             DataContext="{Binding}"/>
 
-                <!-- HOME BUTTON: top-left of the moving map; returns to Home page
-                     (and disengages autosteer if engaged, per NavigationService).
-                     Visible only when on the Moving Map page. -->
-                <Button ZIndex="11"
-                        HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Margin="8,10,0,0"
-                        Width="44" Height="44"
-                        CornerRadius="22"
-                        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                        ToolTip.Tip="Home"
-                        IsVisible="{Binding !IsPageHostVisible}"
-                        Command="{Binding GoHomeCommand}">
-                    <TextBlock Text="⌂" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-
-                <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
+<!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             ZIndex="10" Margin="0,0,8,8" Spacing="4">
                     <panels:RightNavigationPanel x:Name="RightNavPanel"

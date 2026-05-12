@@ -36,6 +36,7 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(IsFieldStatsInfoVisible))]
     [NotifyPropertyChangedFor(nameof(CurrentPageTitle))]
     [NotifyPropertyChangedFor(nameof(IsPageTitleVisible))]
+    [NotifyPropertyChangedFor(nameof(IsHomeButtonVisible))]
     private PageType _currentPage = PageType.Home;
 
     /// <summary>
@@ -89,6 +90,9 @@ public partial class MainViewModel
     /// <summary>Whether the center page-title slot is shown. Hidden on Home + Moving Map.</summary>
     public bool IsPageTitleVisible =>
         CurrentPage != PageType.Home && CurrentPage != PageType.MovingMap;
+
+    /// <summary>Home button in the TopBar — visible everywhere except on Home itself.</summary>
+    public bool IsHomeButtonVisible => CurrentPage != PageType.Home;
 
     /// <summary>
     /// Wires the observable <see cref="CurrentPage"/> mirror to the

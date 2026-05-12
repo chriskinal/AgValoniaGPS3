@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using Avalonia.Controls;
+
 namespace AgValoniaGPS.Views.Controls.Pages;
 
-/// <summary>Phase 1 placeholder — Plan §Tractor page. Built out in Phase 3.</summary>
-public class TractorPage : PlaceholderPage
+public partial class TractorPage : UserControl
 {
-    public TractorPage() => PageName = "Tractor";
+    public TractorPage()
+    {
+        InitializeComponent();
+    }
 }

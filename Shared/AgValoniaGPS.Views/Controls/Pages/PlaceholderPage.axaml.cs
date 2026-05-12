@@ -50,8 +50,6 @@ public partial class PlaceholderPage : UserControl
 
     private void UpdateText(string pageName)
     {
-        if (this.FindControl<TextBlock>("TitleText") is { } title)
-            title.Text = pageName;
         if (this.FindControl<TextBlock>("ComingSoonText") is { } cs)
             cs.Text = $"{pageName} — Coming Soon";
     }

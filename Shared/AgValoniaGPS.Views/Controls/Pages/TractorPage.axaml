@@ -1,0 +1,108 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+TractorPage — everything tractor-specific. Uses Avalonia 12's native
+TabbedPage + ContentPage primitives instead of rolling tabs with
+TabControl. TabbedPage is platform-adaptive: top tabs on desktop,
+bottom tabs on iOS / Android (the "Auto" placement default).
+
+Tabs:
+- Profiles            launcher for the existing Profile picker
+- Vehicle Config      inline embed of VehicleConfigTab
+- Steer Config        launcher for the existing AutoSteer panel
+- Steer Wizard        launcher for the existing modal Steer Wizard
+
+The Profiles + Steer Config launchers will get their inner content
+extracted in a follow-up so they render inline like Vehicle Config.
+
+See Plans/PageBasedNavigation/PLAN.md.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:configTab="using:AgValoniaGPS.Views.Controls.Dialogs.Configuration"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.TractorPage"
+             x:DataType="vm:MainViewModel"
+             Background="Transparent">
+
+    <UserControl.Styles>
+        <!-- Big launcher button used in the tabs that haven't migrated their
+             inner content inline yet (Profiles, Steer Config, Steer Wizard). -->
+        <Style Selector="Button.TabLauncher">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="32"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.TabLauncher:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#DD2ECC71"/>
+        </Style>
+        <Style Selector="Button.TabLauncher:pressed">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.TabSub">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Opacity" Value="0.7"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <TabbedPage TabPlacement="Top">
+
+        <ContentPage Header="Profiles">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Classes="TabLauncher"
+                        Command="{Binding ShowLoadVehicleToolDialogCommand}">
+                    <StackPanel>
+                        <TextBlock Text="Manage Tractor Profiles" HorizontalAlignment="Center"/>
+                        <TextBlock Classes="TabSub"
+                                   Text="Load, save, rename, or delete vehicle profiles. Inline picker arrives once LoadVehicleToolDialog's content is extracted."/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </ContentPage>
+
+        <ContentPage Header="Vehicle Config">
+            <ScrollViewer>
+                <configTab:VehicleConfigTab DataContext="{Binding ConfigurationViewModel}"
+                                            Margin="20"/>
+            </ScrollViewer>
+        </ContentPage>
+
+        <ContentPage Header="Steer Config">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Classes="TabLauncher"
+                        Command="{Binding ShowAutoSteerConfigCommand}">
+                    <StackPanel>
+                        <TextBlock Text="Open Steer Configuration" HorizontalAlignment="Center"/>
+                        <TextBlock Classes="TabSub"
+                                   Text="PID gains, hardware, sensors, calibration. Inline embedding arrives once AutoSteerConfigPanel's inner content is extracted."/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </ContentPage>
+
+        <ContentPage Header="Steer Wizard">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Classes="TabLauncher"
+                        Command="{Binding ShowSteerWizardCommand}">
+                    <StackPanel>
+                        <TextBlock Text="Start Steer Wizard" HorizontalAlignment="Center"/>
+                        <TextBlock Classes="TabSub"
+                                   Text="Guided walkthrough of AutoSteer setup. The wizard takes over the full screen while running."/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </ContentPage>
+
+    </TabbedPage>
+</UserControl>

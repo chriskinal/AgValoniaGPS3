@@ -144,4 +144,57 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
     </Style>
 
+    <!-- Page tabs (top-of-page TabControl styled to look like our tile buttons).
+         Use on a TabControl with Classes="PageTabs" inside any top-level page
+         that organizes its content as tabs. The tabs visually sit on a darker
+         "tab strip" that runs along the top of the page card, with the
+         selected tab merged into the lighter content surface below — gives a
+         clear "tabbed pane" affordance instead of free-floating buttons.
+         See Plans/PageBasedNavigation/PLAN.md. -->
+    <Style Selector="Border.PageCard">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Margin" Value="20"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Border.PageTabStrip">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        <Setter Property="CornerRadius" Value="13,13,0,0"/>
+        <Setter Property="Padding" Value="8,8,8,0"/>
+    </Style>
+
+    <Style Selector="TabControl.PageTabs">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="TabControl.PageTabs > TabItem">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        <Setter Property="MinHeight" Value="56"/>
+        <Setter Property="MinWidth" Value="160"/>
+        <Setter Property="Padding" Value="20,8"/>
+        <Setter Property="Margin" Value="2,0,2,0"/>
+        <Setter Property="CornerRadius" Value="10,10,0,0"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TabControl.PageTabs > TabItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <!-- Selected tab merges into the content surface below it: same fill,
+         no shadow seam — reads as the page card's "active panel". -->
+    <Style Selector="TabControl.PageTabs > TabItem:selected">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <!-- Hide the FluentTheme selected-tab underline so our card-merge look stands on its own -->
+    <Style Selector="TabControl.PageTabs > TabItem /template/ Border#PART_SelectedPipe">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+
 </Styles>
