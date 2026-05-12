@@ -1,0 +1,166 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+AppShell — the v2 application chrome. Hosts a top status strip, the
+page content area, and a bottom tab bar. See Plans/PageBasedNavigation
+for design notes; DashboardTheme.axaml provides every chrome brush.
+
+PoC state: tabs are real Buttons with click handlers in the
+code-behind that swap the page content. Default page = HomePage.
+Non-Home tabs show inline placeholder text for now.
+
+Wired bindings to a NavigationService come in a follow-up; this lets
+us see and judge the look before plumbing the real navigation.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.AppShell"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <UserControl.Styles>
+        <!-- Tab button: text label, transparent background, no border. Active
+             state is set via the `.Active` class by the code-behind. -->
+        <Style Selector="Button.TabLabel">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="22,18"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+        </Style>
+        <!-- Hover + press states must target the ContentPresenter level
+             that Fluent's own button template uses, otherwise Fluent's
+             :pointerover Foreground override (which resolves to a dark
+             color on dark themes) wins and the label flips to black. -->
+        <Style Selector="Button.TabLabel:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        </Style>
+        <Style Selector="Button.TabLabel:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.TabLabel.Active">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.TabLabel.Active /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- Active-tab underline indicator. Lives inside the tab's Grid so
+             it positions directly under the label, only visible when its
+             parent has the .Active class. -->
+        <Style Selector="Border.TabIndicator">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="StackPanel.TabItem.Active > Border.TabIndicator">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <!-- Top status strip text — small, dim by default, primary when it's
+             actually showing data. -->
+        <Style Selector="TextBlock.StatusText">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.StatusText.Strong">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ============= TOP STATUS STRIP ============= -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ChromeStripBackgroundBrush}"
+                Padding="20,10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
+                    <TextBlock Classes="StatusText Strong" Text="● CONNECTED"/>
+                    <TextBlock Classes="StatusText" Text="RTK · 21 sats"/>
+                    <TextBlock Classes="StatusText" Text="G I A M"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20">
+                    <TextBlock Classes="StatusText" Text="2026-05-12"/>
+                    <TextBlock Classes="StatusText Strong" Text="14:32"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============= PAGE CONTENT AREA ============= -->
+        <ContentControl Grid.Row="1"
+                        x:Name="PageContent"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="{DynamicResource AppBackgroundBrush}"/>
+
+        <!-- ============= BOTTOM TAB BAR ============= -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource ChromeStripBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,8">
+            <StackPanel x:Name="TabBar"
+                        Orientation="Horizontal"
+                        Spacing="0"
+                        HorizontalAlignment="Center">
+
+                <StackPanel x:Name="TabHome" Classes="TabItem Active" Margin="6,0">
+                    <Button Classes="TabLabel" Content="HOME"
+                            Click="OnTabClicked" Tag="Home"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabOperator" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="OPERATOR"
+                            Click="OnTabClicked" Tag="Operator"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabTractor" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="TRACTOR"
+                            Click="OnTabClicked" Tag="Tractor"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabImplement" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="IMPLEMENT"
+                            Click="OnTabClicked" Tag="Implement"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabFieldsJobs" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="FIELDS &amp; JOBS"
+                            Click="OnTabClicked" Tag="FieldsJobs"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabMap" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="MAP"
+                            Click="OnTabClicked" Tag="Map"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabNtrip" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="NTRIP"
+                            Click="OnTabClicked" Tag="Ntrip"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabSettings" Classes="TabItem" Margin="6,0">
+                    <Button Classes="TabLabel" Content="SETTINGS"
+                            Click="OnTabClicked" Tag="Settings"/>
+                    <Border Classes="TabIndicator"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

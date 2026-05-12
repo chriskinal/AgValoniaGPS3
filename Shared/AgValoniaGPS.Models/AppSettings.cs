@@ -90,7 +90,9 @@ namespace AgValoniaGPS.Models
         // mode. Both default to match DisplayConfig field initializers so a
         // fresh AppSettings reproduces the in-memory defaults.
         public bool AutoDayNight { get; set; } = true;
-        public bool IsDayMode { get; set; } = true;
+        // v2 PoC default: start in Night/Dark so the navy dashboard chrome
+        // is what users see first. ApplyThemeVariant() maps IsDayMode→theme.
+        public bool IsDayMode { get; set; } = false;
 
         // NTRIP settings
         public string NtripCasterIp { get; set; } = string.Empty;

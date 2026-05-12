@@ -1,0 +1,156 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+HomePage — the app's dashboard. Card-based layout in the weather-HMI
+style: tiny uppercase label, big primary value, small secondary unit.
+
+Card row across the top: Operator · Tractor · Implement · Last Field.
+Below: dashboard widgets — coverage today, last job summary, alerts.
+(Lower row is sketched-out for now; real widgets land in later phases.)
+
+All chrome surfaces use brushes from DashboardTheme.axaml.
+
+The cards double as nav launchers — tapping Operator goes to the
+Operator page, tapping Tractor goes to Tractor, etc. The bottom tab
+bar in AppShell is the primary launcher; cards are an alt entry
+that doubles as a status readout (last operator name, last tractor,
+etc.).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.HomePage"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <UserControl.Styles>
+        <!-- ============= Card visual ============= -->
+        <Style Selector="Border.Card">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+        </Style>
+        <!-- Hover state — subtle accent-tinted border. Tap = navigate. -->
+        <Style Selector="Border.Card:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- ============= Card typography hierarchy ============= -->
+        <!-- Tiny uppercase label at the top of a card (TODAY · WIND · etc.) -->
+        <Style Selector="TextBlock.CardLabel">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource LabelTextBrush}"/>
+            <Setter Property="LetterSpacing" Value="1.2"/>
+        </Style>
+
+        <!-- The primary readout. Huge, white, semibold. -->
+        <Style Selector="TextBlock.CardValue">
+            <Setter Property="FontSize" Value="34"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <!-- Supporting text below the value (units, secondary info). -->
+        <Style Selector="TextBlock.CardUnit">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="20" RowDefinitions="Auto,*">
+
+        <!-- ============= Top row: 4 info cards ============= -->
+        <UniformGrid Grid.Row="0"
+                     Rows="1" Columns="4"
+                     Height="160">
+
+            <Border Classes="Card" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Classes="CardLabel" Text="OPERATOR"/>
+                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit" Text="No operator profile loaded"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="Card" Margin="8,0">
+                <StackPanel>
+                    <TextBlock Classes="CardLabel" Text="TRACTOR"/>
+                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit" Text="No tractor profile loaded"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="Card" Margin="8,0">
+                <StackPanel>
+                    <TextBlock Classes="CardLabel" Text="IMPLEMENT"/>
+                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit" Text="No implement loaded"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="Card" Margin="8,0,0,0">
+                <StackPanel>
+                    <TextBlock Classes="CardLabel" Text="LAST FIELD"/>
+                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit" Text="Open from Fields &amp; Jobs"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- ============= Lower area: dashboard widgets (sketched) ============= -->
+        <Grid Grid.Row="1"
+              Margin="0,20,0,0"
+              ColumnDefinitions="2*,*"
+              RowDefinitions="*">
+
+            <!-- Left 2/3: "Resume last job" feature card with thumbnail -->
+            <Border Grid.Column="0" Classes="Card" Margin="0,0,8,0">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Row="0" Classes="CardLabel" Text="RESUME LAST JOB"/>
+                    <!-- Thumbnail placeholder -->
+                    <Border Grid.Row="1"
+                            Margin="0,12,0,12"
+                            Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <TextBlock Text="(field thumbnail)"
+                                   Classes="CardUnit"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
+                        <TextBlock Classes="CardValue" Text="—" FontSize="22"/>
+                        <TextBlock Classes="CardUnit" VerticalAlignment="Bottom" Text="acres covered today"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Right 1/3: vertical stack of small metric cards -->
+            <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="16">
+                <Border Classes="Card">
+                    <StackPanel>
+                        <TextBlock Classes="CardLabel" Text="HOURS TODAY"/>
+                        <TextBlock Classes="CardValue" Text="0.0" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Classes="Card">
+                    <StackPanel>
+                        <TextBlock Classes="CardLabel" Text="ALERTS"/>
+                        <TextBlock Classes="CardValue" Text="0" Margin="0,8,0,0"/>
+                        <TextBlock Classes="CardUnit" Text="No active alerts"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

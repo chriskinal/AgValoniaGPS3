@@ -1,0 +1,68 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+DashboardTheme — canonical reference for the v2 page chrome palette.
+Two variants: Dark (deep navy / cyan-accent, modeled on the weather-
+HMI reference) and Light (very-light blue-gray surface with the same
+cyan accent).
+
+**IMPORTANT**: these brushes are NOT consumed from this file at runtime.
+ResourceInclude doesn't propagate `ResourceDictionary.ThemeDictionaries`
+to the application-level dictionary, so theme-variant resolution stops
+working when the include happens. Each platform's `App.axaml` carries
+its own copy of the ThemeDictionaries block under
+`Application.Resources` directly. Edit those copies in lockstep.
+
+This file remains as the canonical reference + diff target — if
+the palette changes here, update the three App.axaml files to match.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ============================ DARK ============================ -->
+        <ResourceDictionary x:Key="Dark">
+            <!-- ===== Surfaces ===== -->
+            <SolidColorBrush x:Key="AppBackgroundBrush"        Color="#0A1929"/>
+            <SolidColorBrush x:Key="CardBackgroundBrush"       Color="#132F4C"/>
+            <SolidColorBrush x:Key="CardBorderBrush"           Color="#1E4976"/>
+            <SolidColorBrush x:Key="ChromeStripBackgroundBrush" Color="#0A1929"/>
+
+            <!-- ===== Text ===== -->
+            <SolidColorBrush x:Key="PrimaryTextBrush"   Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="SecondaryTextBrush" Color="#B2BAC2"/>
+            <SolidColorBrush x:Key="LabelTextBrush"     Color="#6F7E8C"/>
+
+            <!-- ===== Accents ===== -->
+            <SolidColorBrush x:Key="AccentBrush"  Color="#66B2FF"/>
+            <SolidColorBrush x:Key="EngagedBrush" Color="#2ECC71"/>
+            <SolidColorBrush x:Key="WarningBrush" Color="#FF9800"/>
+            <SolidColorBrush x:Key="ErrorBrush"   Color="#F44336"/>
+        </ResourceDictionary>
+
+        <!-- ============================ LIGHT ============================ -->
+        <!-- Very light blue-gray surface, white cards, dark slate text.
+             Same cyan-blue accent, slightly desaturated to read on light. -->
+        <ResourceDictionary x:Key="Light">
+            <!-- ===== Surfaces ===== -->
+            <SolidColorBrush x:Key="AppBackgroundBrush"        Color="#EEF2F6"/>
+            <SolidColorBrush x:Key="CardBackgroundBrush"       Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="CardBorderBrush"           Color="#CFD8E0"/>
+            <SolidColorBrush x:Key="ChromeStripBackgroundBrush" Color="#FFFFFF"/>
+
+            <!-- ===== Text ===== -->
+            <SolidColorBrush x:Key="PrimaryTextBrush"   Color="#1F2937"/>
+            <SolidColorBrush x:Key="SecondaryTextBrush" Color="#4B5563"/>
+            <SolidColorBrush x:Key="LabelTextBrush"     Color="#6B7280"/>
+
+            <!-- ===== Accents ===== -->
+            <SolidColorBrush x:Key="AccentBrush"  Color="#1976D2"/>
+            <SolidColorBrush x:Key="EngagedBrush" Color="#16A34A"/>
+            <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+            <SolidColorBrush x:Key="ErrorBrush"   Color="#DC2626"/>
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>
