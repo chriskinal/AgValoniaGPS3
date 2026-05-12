@@ -15,6 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using Avalonia.Controls;
+using Avalonia.Input;
+using AgValoniaGPS.Models.Navigation;
+using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.Views.Controls.Pages;
 
@@ -23,5 +26,21 @@ public partial class HomePage : UserControl
     public HomePage()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Launcher-tile tap handler. Each card carries its target PageType
+    /// in Border.Tag; dispatch through MainViewModel.NavigateToPageCommand
+    /// so the standard NavigationService guardrails (autosteer disengage
+    /// on leaving Map, etc.) run.
+    /// </summary>
+    private void OnCardTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is Control { Tag: PageType page }
+            && DataContext is MainViewModel vm
+            && vm.NavigateToPageCommand.CanExecute(page))
+        {
+            vm.NavigateToPageCommand.Execute(page);
+        }
     }
 }

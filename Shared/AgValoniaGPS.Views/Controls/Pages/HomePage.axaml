@@ -19,6 +19,7 @@ etc.).
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:nav="using:AgValoniaGPS.Models.Navigation"
              x:Class="AgValoniaGPS.Views.Controls.Pages.HomePage"
              Background="{DynamicResource AppBackgroundBrush}">
 
@@ -64,11 +65,18 @@ etc.).
     <Grid Margin="20" RowDefinitions="Auto,*">
 
         <!-- ============= Top row: 4 info cards ============= -->
+        <!-- Cards double as nav launchers — tap routes to the matching
+             page via MainViewModel.NavigateToPageCommand. The PageType
+             travels through Border.Tag; OnCardTapped (code-behind)
+             reads it and dispatches. -->
         <UniformGrid Grid.Row="0"
                      Rows="1" Columns="4"
                      Height="160">
 
-            <Border Classes="Card" Margin="0,0,8,0">
+            <Border Classes="Card" Margin="0,0,8,0"
+                    Cursor="Hand"
+                    Tag="{x:Static nav:PageType.OperatorProfile}"
+                    Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="OPERATOR"/>
                     <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
@@ -77,7 +85,10 @@ etc.).
                 </StackPanel>
             </Border>
 
-            <Border Classes="Card" Margin="8,0">
+            <Border Classes="Card" Margin="8,0"
+                    Cursor="Hand"
+                    Tag="{x:Static nav:PageType.Tractor}"
+                    Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="TRACTOR"/>
                     <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
@@ -86,7 +97,10 @@ etc.).
                 </StackPanel>
             </Border>
 
-            <Border Classes="Card" Margin="8,0">
+            <Border Classes="Card" Margin="8,0"
+                    Cursor="Hand"
+                    Tag="{x:Static nav:PageType.Implement}"
+                    Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="IMPLEMENT"/>
                     <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
@@ -95,7 +109,10 @@ etc.).
                 </StackPanel>
             </Border>
 
-            <Border Classes="Card" Margin="8,0,0,0">
+            <Border Classes="Card" Margin="8,0,0,0"
+                    Cursor="Hand"
+                    Tag="{x:Static nav:PageType.FieldsAndJobs}"
+                    Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="LAST FIELD"/>
                     <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
