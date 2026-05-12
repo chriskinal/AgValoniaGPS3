@@ -32,6 +32,10 @@ public partial class MainViewModel
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPageHostVisible))]
+    [NotifyPropertyChangedFor(nameof(IsSensorInfoVisible))]
+    [NotifyPropertyChangedFor(nameof(IsFieldStatsInfoVisible))]
+    [NotifyPropertyChangedFor(nameof(CurrentPageTitle))]
+    [NotifyPropertyChangedFor(nameof(IsPageTitleVisible))]
     private PageType _currentPage = PageType.Home;
 
     /// <summary>
@@ -52,6 +56,39 @@ public partial class MainViewModel
     /// collapses so the platform shell's underlying map shows through.
     /// </summary>
     public bool IsPageHostVisible => CurrentPage != PageType.MovingMap;
+
+    /// <summary>
+    /// True when the top bar should show speed / heading / roll — Tractor
+    /// page (for setup validation) and Moving Map (driving). See Plan §Top bar.
+    /// </summary>
+    public bool IsSensorInfoVisible =>
+        CurrentPage == PageType.Tractor || CurrentPage == PageType.MovingMap;
+
+    /// <summary>
+    /// True when the top bar should show field/job stats — Fields & Jobs
+    /// page and Moving Map, gated on an active field.
+    /// </summary>
+    public bool IsFieldStatsInfoVisible =>
+        (CurrentPage == PageType.FieldsAndJobs || CurrentPage == PageType.MovingMap)
+        && HasActiveField;
+
+    /// <summary>Page title rendered in the top bar's center slot. Empty on Home + Moving Map.</summary>
+    public string CurrentPageTitle => CurrentPage switch
+    {
+        PageType.OperatorProfile     => "Operator Profile",
+        PageType.Tractor             => "Tractor",
+        PageType.Implement           => "Implement",
+        PageType.FieldsAndJobs       => "Fields & Jobs",
+        PageType.NtripNetworking     => "NTRIP / Networking",
+        PageType.ApplicationSettings => "Application Settings",
+        PageType.AgShare             => "AgShare",
+        PageType.LogViewer           => "Log Viewer",
+        _                            => string.Empty,
+    };
+
+    /// <summary>Whether the center page-title slot is shown. Hidden on Home + Moving Map.</summary>
+    public bool IsPageTitleVisible =>
+        CurrentPage != PageType.Home && CurrentPage != PageType.MovingMap;
 
     /// <summary>
     /// Wires the observable <see cref="CurrentPage"/> mirror to the

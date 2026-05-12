@@ -34,16 +34,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Main Content -->
         <Grid RowDefinitions="Auto,*">
 
-            <!-- Top Status Bar -->
-            <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <!-- Left: RTK Status and Diagnostics -->
-                    <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
-
-                    <!-- Right: Field Statistics (when field is active) -->
-                    <panels:FieldStatsPanel Grid.Column="2" DataContext="{Binding}"/>
-                </Grid>
-            </Border>
+            <!-- Top Bar: per-page slots (GPS + sensor info + field stats + GIAM) -->
+            <controls:TopBar Grid.Row="0" DataContext="{Binding}"/>
 
             <!-- Main Content Area - Cross-platform DrawingContext Map with overlay panels -->
             <Grid Grid.Row="1" Background="Transparent">

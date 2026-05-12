@@ -1,0 +1,200 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+TopBar — the always-present horizontal strip at the top of the
+application. Replaces the per-platform StatusBarPanel + FieldStatsPanel
+arrangement.
+
+Layout split:
+- LEFT  (system info):  GPS fix · GIAM module status · date/time
+- CENTER (page title):  hidden on Home + Moving Map
+- RIGHT (field info):   speed · heading · roll · field stats
+
+Slot visibility per page:
+- Always visible:  GPS fix · GIAM · date/time
+- Tractor + Map:   speed · heading · roll
+- F&J + Map:       field name · field size · work left/done · work rate
+
+See Plans/PageBasedNavigation/PLAN.md.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.TopBar"
+             x:DataType="vm:MainViewModel"
+             Background="#2d2d2d">
+
+    <UserControl.Styles>
+        <Style Selector="Button.StatusIndicator">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="MinWidth" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.StatusIndicator:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+        <Style Selector="Button.StatusIndicator TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style Selector="TextBlock.Slot">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.SlotLabel">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        </Style>
+        <Style Selector="Rectangle.Divider">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Fill" Value="#555"/>
+            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- ThemeVariantScope locks this control's theme resources to Dark,
+         regardless of the app-wide Light/Dark setting. The bar's background
+         is always #2d2d2d, so we want BaseHighBrush to resolve to white
+         (Dark theme) instead of black (Light theme) for the text. -->
+    <ThemeVariantScope RequestedThemeVariant="Dark">
+    <Grid Margin="10,8" ColumnDefinitions="*,Auto,*">
+
+        <!-- ===== LEFT ZONE: system info (GPS · modules · date/time) ===== -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+
+            <!-- GPS fix dot + label -->
+            <Ellipse Width="12" Height="12" VerticalAlignment="Center"
+                     Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
+            <TextBlock Classes="Slot" Margin="6,0,0,0" Width="80"
+                       Text="{Binding State.Vehicle.FixQualityText}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       FontWeight="Bold"/>
+
+            <Rectangle Classes="Divider"/>
+
+            <!-- GIAM module status -->
+            <Button Classes="StatusIndicator">
+                <TextBlock Text="G"
+                           Foreground="{Binding State.Connections.IsGpsDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="GPS" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding State.Vehicle.FixQualityText, StringFormat='Fix: {0}'}" FontSize="13"/>
+                            <TextBlock Text="{Binding State.Vehicle.SatelliteCount, StringFormat='Satellites: {0}'}" FontSize="13"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <Button Classes="StatusIndicator">
+                <TextBlock Text="I"
+                           Foreground="{Binding State.Connections.IsImuDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="IMU" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding State.Connections.ImuIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <Button Classes="StatusIndicator">
+                <TextBlock Text="A"
+                           Foreground="{Binding State.Connections.IsAutoSteerDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="AutoSteer" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding State.Connections.AutoSteerIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <Button Classes="StatusIndicator">
+                <TextBlock Text="M"
+                           Foreground="{Binding State.Connections.IsMachineDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                <Button.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Spacing="4" MinWidth="180">
+                            <TextBlock Text="Machine" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding State.Connections.MachineIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <Rectangle Classes="Divider"/>
+
+            <!-- Date/time -->
+            <TextBlock Classes="Slot" Width="80"
+                       Text="{Binding CurrentTime}"
+                       Foreground="#95A5A6"/>
+        </StackPanel>
+
+        <!-- ===== CENTER ZONE: page title (hidden on Home + Moving Map) ===== -->
+        <TextBlock Grid.Column="1"
+                   Text="{Binding CurrentPageTitle}"
+                   IsVisible="{Binding IsPageTitleVisible}"
+                   FontSize="18" FontWeight="SemiBold"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"
+                   Margin="20,0"/>
+
+        <!-- ===== RIGHT ZONE: field info (sensors · field stats) ===== -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="0"
+                    HorizontalAlignment="Right" VerticalAlignment="Center">
+
+            <!-- Sensor info: speed / heading / roll (Tractor + Map) -->
+            <StackPanel Orientation="Horizontal" Spacing="0"
+                        IsVisible="{Binding IsSensorInfoVisible}">
+                <TextBlock Classes="Slot" Width="105"
+                           Text="{Binding SpeedKmh, StringFormat='{}{0:F1} km/h'}"
+                           Foreground="#E67E22" FontWeight="Bold"/>
+                <Rectangle Classes="Divider"/>
+                <TextBlock Classes="Slot" Width="70"
+                           Text="{Binding Heading, StringFormat='{}{0:F0}°'}"
+                           Foreground="#E91E90" FontWeight="Bold"/>
+                <Rectangle Classes="Divider"/>
+                <TextBlock Classes="Slot" Width="95"
+                           Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}"
+                           Foreground="#9B59B6" FontWeight="Bold"/>
+            </StackPanel>
+
+            <!-- Field stats (F&J + Map, gated on HasActiveField) -->
+            <StackPanel Orientation="Horizontal" Spacing="0"
+                        IsVisible="{Binding IsFieldStatsInfoVisible}">
+                <Rectangle Classes="Divider" Margin="10,0,4,0"/>
+                <TextBlock Classes="Slot"
+                           Text="{Binding CurrentFieldAndJobLabel}"
+                           Foreground="#3498DB" FontWeight="Bold"
+                           IsVisible="{Binding CurrentFieldName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                <Rectangle Classes="Divider"
+                           IsVisible="{Binding CurrentFieldName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                <TextBlock Classes="Slot SlotLabel" Text="Field "/>
+                <TextBlock Classes="Slot" Text="{Binding BoundaryAreaDisplay}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="Bold"/>
+                <Rectangle Classes="Divider"/>
+                <TextBlock Classes="Slot SlotLabel" Text="Done "/>
+                <TextBlock Classes="Slot" Text="{Binding WorkedAreaDisplay}"
+                           Foreground="#2ECC71" FontWeight="Bold"/>
+                <Rectangle Classes="Divider"/>
+                <TextBlock Classes="Slot SlotLabel" Text="Left "/>
+                <TextBlock Classes="Slot" Text="{Binding RemainingPercent, StringFormat='{}{0:F1}%'}"
+                           Foreground="#F39C12" FontWeight="Bold"/>
+                <Rectangle Classes="Divider"/>
+                <TextBlock Classes="Slot SlotLabel" Text="Rate "/>
+                <TextBlock Classes="Slot" Text="{Binding WorkRateDisplay}"
+                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontWeight="Bold"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+    </ThemeVariantScope>
+</UserControl>

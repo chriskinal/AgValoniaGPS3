@@ -39,15 +39,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
          full-width across the top, like a conventional menu bar — the map
          starts below it (no longer renders behind it). -->
     <Grid RowDefinitions="Auto,*">
-        <!-- Row 0: Top status bar (opaque, full-width). Matches the iOS +
-             Android shells so the layout is consistent across platforms. -->
-        <Border Grid.Row="0" Background="#2d2d2d" Padding="10" ZIndex="20">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
-                <panels:FieldStatsPanel Grid.Column="2" DataContext="{Binding}"
-                                        IsVisible="{Binding HasActiveField}"/>
-            </Grid>
-        </Border>
+        <!-- Top Bar: per-page slots (GPS + sensor info + field stats + GIAM).
+             Same shared control as iOS + Android. -->
+        <controls:TopBar Grid.Row="0" ZIndex="20" DataContext="{Binding}"/>
 
         <!-- Map Render Area (fills the content area below the status bar) -->
         <ContentControl x:Name="MapControlContainer" ZIndex="0"

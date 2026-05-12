@@ -1169,6 +1169,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ActiveFieldName));
         OnPropertyChanged(nameof(ActiveFieldArea));
         OnPropertyChanged(nameof(HasActiveField));
+        OnPropertyChanged(nameof(IsFieldStatsInfoVisible));
     }
 
     // Pending intents consumed by the next OpenFieldAsync. Set by the
