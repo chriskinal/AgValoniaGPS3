@@ -337,3 +337,73 @@ resolves trivial conflicts.
 - Voice control / hotkey navigation between pages
 - "Recent fields" / "Recent jobs" widgets on Home (could come in a
   later dashboard pass)
+
+## Lessons learned (from the `feature/page-navigation` exploration)
+
+The first attempt landed on `feature/page-navigation` (commits up to
+`4c45e7a`). The architecture worked but the visual chrome was a mess.
+Below is what to **avoid** on the v2 attempt and what was **worth
+keeping**.
+
+### Discipline for v2 — visual
+
+- **No hardcoded chrome colors.** Every `Background`, `Foreground`,
+  `BorderBrush` in the page chrome must resolve through a
+  `DynamicResource` to a theme brush. Hex values like `#2d2d2d`,
+  `#1a1a1a`, `#DD2ECC71` belong inside specific states (engaged
+  toggles, AB-creation banners) — never in the surface chrome.
+- **Don't override Fluent control templates** until the bare control
+  is genuinely insufficient. The first attempt restyled `TabControl`,
+  `Button`, and a custom `TabbedPage` UserControl with hand-rolled
+  corner radii, colors, and margins before even seeing what Fluent
+  gives us. Result: a "high-school first UI" look.
+- **Prefer native Avalonia 12 page primitives** over hand-rolled
+  `PageHost` + `ContentControl` swapping. `NavigationPage`,
+  `TabbedPage`, `ContentPage`, `DrawerPage` are the documented
+  navigation building blocks and they bring platform-adaptive defaults
+  (mobile-bottom tabs, swipe gestures, page transitions) for free.
+- **One design system, not three.** The first attempt had
+  TopBar-language (dark strip), Home-tile-language (rounded chrome
+  buttons with green press flash), and tab-language (custom tile-
+  shaped tabs). Pick one Fluent surface model (probably `Card` +
+  standard `Button`) and apply it everywhere.
+- **Don't mix map-overlay assumptions with page chrome.** The
+  existing nav-panel styles were designed to float over a dark map
+  canvas. Don't reuse `FloatingPanel` / `ChromeMedium` brushes as
+  page-background surfaces; those resolve to chrome tints that look
+  fine over a map and terrible as a full-screen background.
+
+### Discipline for v2 — architecture
+
+- **The `NavigationService` + `PageType` enum + observable
+  `CurrentPage` approach worked.** Keep that shape; consider whether
+  Avalonia's `NavigationPage` (with its own back-stack + lifecycle
+  events) supersedes the hand-rolled router.
+- **One ctor parameter, three DI registrations.** Adding a new
+  shared service to `MainViewModel` already updates Desktop, iOS, and
+  Android `ServiceCollectionExtensions.cs` in lockstep — that pattern
+  worked. Don't break it.
+- **Existing modal panels have visibility baked in** (`IsPanelVisible`
+  / `IsDialogVisible` flags on their VMs). For tab embedding you
+  either: (a) extract the inner content into a clean reusable
+  UserControl + leave the modal wrapper as a thin shell around it,
+  or (b) refactor the panel so the visibility flag lives on a Border
+  wrapper rather than the UserControl itself. (a) is the long-term
+  right answer per the original plan §dialog cleanup.
+
+### What worked and is worth cherry-picking from the v1 branch
+
+- `Shared/AgValoniaGPS.Models/Navigation/PageType.cs` — enum of pages
+- `Shared/AgValoniaGPS.Services/Interfaces/INavigationService.cs`
+- `Shared/AgValoniaGPS.Services/Navigation/NavigationService.cs` —
+  including the "leaving Moving Map disengages autosteer" guardrail
+- `MainViewModel.Commands.Pages.cs` — observable `CurrentPage` +
+  `GoHomeCommand` + `NavigateToPageCommand(PageType)`
+- DI registrations in the 3 platforms' `ServiceCollectionExtensions`
+- `MainViewModelBuilder.cs` test-builder update for the new ctor param
+
+These are the architectural bones; the visual chrome layer
+(`PageHost.axaml`, `TopBar.axaml`, `HomePage.axaml`, placeholder
+pages, all the `Classes="HomeTile/PageTile/TabLauncher/PageTabs"`
+styles, all the hardcoded backgrounds in the platform shells) gets
+rebuilt from scratch with the discipline above.
