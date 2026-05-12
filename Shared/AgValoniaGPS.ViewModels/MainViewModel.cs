@@ -86,6 +86,7 @@ public partial class MainViewModel : ObservableObject
     private bool _hasTramSystemsEverUsed;
     private readonly Dictionary<string, (int start, int count, bool isBoundary)> _tramSystemLineRanges = new();
     private readonly IGpsPipelineService _gpsPipelineService;
+    private readonly INavigationService _navigationService;
     private readonly ISteerMachineLoopService? _controlLoop;
     private readonly IPositionEstimator? _positionEstimator;
     private readonly IPipelineIntents _intents;
@@ -209,6 +210,7 @@ public partial class MainViewModel : ObservableObject
         IJobService jobService,
         ITramLineService tramLineService,
         IGpsPipelineService gpsPipelineService,
+        INavigationService navigationService,
         IPipelineIntents intents,
         ILogger<MainViewModel> logger,
         ApplicationState appState,
@@ -281,6 +283,8 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(CurrentFieldAndJobLabel));
         };
         _gpsPipelineService = gpsPipelineService;
+        _navigationService = navigationService;
+        InitializeNavigation(navigationService);
         _controlLoop = controlLoop;
         _positionEstimator = positionEstimator;
         _intents = intents;

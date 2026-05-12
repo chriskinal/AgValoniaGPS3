@@ -15,7 +15,10 @@ us see and judge the look before plumbing the real navigation.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:nav="using:AgValoniaGPS.Models.Navigation"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.AppShell"
+             x:DataType="vm:MainViewModel"
              Background="{DynamicResource AppBackgroundBrush}">
 
     <UserControl.Styles>
@@ -113,51 +116,67 @@ us see and judge the look before plumbing the real navigation.
                         Spacing="0"
                         HorizontalAlignment="Center">
 
-                <StackPanel x:Name="TabHome" Classes="TabItem Active" Margin="6,0">
+                <StackPanel x:Name="TabHome" Classes="TabItem Active" Margin="6,0"
+                            Tag="{x:Static nav:PageType.Home}">
                     <Button Classes="TabLabel" Content="HOME"
-                            Click="OnTabClicked" Tag="Home"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.Home}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabOperator" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabOperator" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.OperatorProfile}">
                     <Button Classes="TabLabel" Content="OPERATOR"
-                            Click="OnTabClicked" Tag="Operator"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.OperatorProfile}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabTractor" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabTractor" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.Tractor}">
                     <Button Classes="TabLabel" Content="TRACTOR"
-                            Click="OnTabClicked" Tag="Tractor"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.Tractor}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabImplement" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabImplement" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.Implement}">
                     <Button Classes="TabLabel" Content="IMPLEMENT"
-                            Click="OnTabClicked" Tag="Implement"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.Implement}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabFieldsJobs" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabFieldsJobs" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.FieldsAndJobs}">
                     <Button Classes="TabLabel" Content="FIELDS &amp; JOBS"
-                            Click="OnTabClicked" Tag="FieldsJobs"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.FieldsAndJobs}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabMap" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabMap" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.MovingMap}">
                     <Button Classes="TabLabel" Content="MAP"
-                            Click="OnTabClicked" Tag="Map"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.MovingMap}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabNtrip" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabNtrip" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.NtripNetworking}">
                     <Button Classes="TabLabel" Content="NTRIP"
-                            Click="OnTabClicked" Tag="Ntrip"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.NtripNetworking}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
 
-                <StackPanel x:Name="TabSettings" Classes="TabItem" Margin="6,0">
+                <StackPanel x:Name="TabSettings" Classes="TabItem" Margin="6,0"
+                            Tag="{x:Static nav:PageType.ApplicationSettings}">
                     <Button Classes="TabLabel" Content="SETTINGS"
-                            Click="OnTabClicked" Tag="Settings"/>
+                            Command="{Binding NavigateToPageCommand}"
+                            CommandParameter="{x:Static nav:PageType.ApplicationSettings}"/>
                     <Border Classes="TabIndicator"/>
                 </StackPanel>
             </StackPanel>

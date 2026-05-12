@@ -14,80 +14,91 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.Media;
+using AgValoniaGPS.Models.Navigation;
+using AgValoniaGPS.ViewModels;
 using AgValoniaGPS.Views.Controls.Pages;
 
 namespace AgValoniaGPS.Views.Controls;
 
 /// <summary>
-/// PoC code-behind for AppShell: handles bottom-tab clicks, swaps the
-/// content area, toggles the .Active class on tab containers so the
-/// cyan underline indicator moves. Real navigation (via
-/// NavigationService) replaces this in a follow-up.
+/// AppShell hosts the v2 dashboard chrome. Tab Buttons bind to
+/// <c>MainViewModel.NavigateToPageCommand</c>; this code-behind listens
+/// to <c>MainViewModel.CurrentPage</c> changes and updates the active
+/// tab + content area accordingly.
 /// </summary>
 public partial class AppShell : UserControl
 {
+    private MainViewModel? _vm;
+
     public AppShell()
     {
         InitializeComponent();
-        // Default page: Home.
-        SetActiveTab("Home");
+        DataContextChanged += OnDataContextChanged;
+        ApplyPage(PageType.Home);
     }
 
-    private void OnTabClicked(object? sender, RoutedEventArgs e)
+    private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        if (sender is Button { Tag: string tag })
-            SetActiveTab(tag);
-    }
+        if (_vm != null)
+            _vm.PropertyChanged -= OnVmPropertyChanged;
 
-    private void SetActiveTab(string tag)
-    {
-        var tabs = new Dictionary<string, StackPanel?>
+        _vm = DataContext as MainViewModel;
+
+        if (_vm != null)
         {
-            ["Home"]       = this.FindControl<StackPanel>("TabHome"),
-            ["Operator"]   = this.FindControl<StackPanel>("TabOperator"),
-            ["Tractor"]    = this.FindControl<StackPanel>("TabTractor"),
-            ["Implement"]  = this.FindControl<StackPanel>("TabImplement"),
-            ["FieldsJobs"] = this.FindControl<StackPanel>("TabFieldsJobs"),
-            ["Map"]        = this.FindControl<StackPanel>("TabMap"),
-            ["Ntrip"]      = this.FindControl<StackPanel>("TabNtrip"),
-            ["Settings"]   = this.FindControl<StackPanel>("TabSettings"),
+            _vm.PropertyChanged += OnVmPropertyChanged;
+            ApplyPage(_vm.CurrentPage);
+        }
+    }
+
+    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.CurrentPage) && _vm != null)
+            ApplyPage(_vm.CurrentPage);
+    }
+
+    private void ApplyPage(PageType page)
+    {
+        var tabs = new Dictionary<PageType, StackPanel?>
+        {
+            [PageType.Home]                = this.FindControl<StackPanel>("TabHome"),
+            [PageType.OperatorProfile]     = this.FindControl<StackPanel>("TabOperator"),
+            [PageType.Tractor]             = this.FindControl<StackPanel>("TabTractor"),
+            [PageType.Implement]           = this.FindControl<StackPanel>("TabImplement"),
+            [PageType.FieldsAndJobs]       = this.FindControl<StackPanel>("TabFieldsJobs"),
+            [PageType.MovingMap]           = this.FindControl<StackPanel>("TabMap"),
+            [PageType.NtripNetworking]     = this.FindControl<StackPanel>("TabNtrip"),
+            [PageType.ApplicationSettings] = this.FindControl<StackPanel>("TabSettings"),
         };
 
-        // Move the Active class to the clicked tab; also move it to the
-        // tab's Button (which carries the cyan-text style).
         foreach (var (key, panel) in tabs)
         {
             if (panel == null) continue;
-            var active = key == tag;
-            // Toggle .Active on the StackPanel (controls the underline).
+            var active = key == page;
             panel.Classes.Set("Active", active);
-            // Toggle .Active on the inner button (controls the text color).
             if (panel.Children.Count > 0 && panel.Children[0] is Button btn)
                 btn.Classes.Set("Active", active);
         }
 
-        // Swap the page content. Home gets the real HomePage UserControl;
-        // every other tab gets an inline "[Name] coming soon" placeholder
-        // — enough to judge the look + tab-switch animation.
         var content = this.FindControl<ContentControl>("PageContent");
         if (content == null) return;
 
-        content.Content = tag switch
+        content.Content = page switch
         {
-            "Home" => (Control)new HomePage(),
-            _ => BuildPlaceholder(tag),
+            PageType.Home => (Control)new HomePage(),
+            _             => BuildPlaceholder(page),
         };
     }
 
-    /// <summary>Inline "coming soon" placeholder for tabs whose content
-    /// isn't built yet. Stays dark, uses the theme brushes, big page name
-    /// + small sub-text. Mirrors the dashboard aesthetic.</summary>
-    private static Control BuildPlaceholder(string tag) =>
+    /// <summary>Inline "coming soon" placeholder for pages whose content
+    /// isn't built yet.</summary>
+    private static Control BuildPlaceholder(PageType page) =>
         new Border
         {
             Padding = new Thickness(40),
@@ -100,7 +111,7 @@ public partial class AppShell : UserControl
                 {
                     new TextBlock
                     {
-                        Text = tag.ToUpperInvariant(),
+                        Text = page.ToString().ToUpperInvariant(),
                         FontSize = 11,
                         FontWeight = FontWeight.SemiBold,
                         HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
@@ -108,7 +119,7 @@ public partial class AppShell : UserControl
                     },
                     new TextBlock
                     {
-                        Text = $"{tag} page",
+                        Text = $"{page} page",
                         FontSize = 32,
                         FontWeight = FontWeight.SemiBold,
                         HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,

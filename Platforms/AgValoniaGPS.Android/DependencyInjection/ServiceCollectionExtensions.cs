@@ -164,6 +164,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISteerMachineLoopService>(_ => new SteerMachineLoopService(frequencyHz: 100.0));
         services.AddSingleton<IGpsPipelineService, GpsPipelineService>();
 
+        // Page-based navigation (Plans/PageBasedNavigation/PLAN.md)
+        services.AddSingleton<INavigationService, AgValoniaGPS.Services.Navigation.NavigationService>();
+
         // Android-specific services
         services.AddSingleton<IMapService, MapService>();
 

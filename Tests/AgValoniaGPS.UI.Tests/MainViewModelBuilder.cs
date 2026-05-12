@@ -78,6 +78,7 @@ public class MainViewModelBuilder
             jobService: JobService,
             tramLineService: Substitute.For<ITramLineService>(),
             gpsPipelineService: Substitute.For<IGpsPipelineService>(),
+            navigationService: Substitute.For<INavigationService>(),
             intents: Intents,
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState());
