@@ -31,7 +31,17 @@ namespace AgValoniaGPS.ViewModels;
 public partial class MainViewModel
 {
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMovingMapPage))]
+    [NotifyPropertyChangedFor(nameof(IsNotMovingMapPage))]
     private PageType _currentPage = PageType.Home;
+
+    /// <summary>
+    /// True iff the current page is MovingMap. AppShell uses this to
+    /// collapse its full chrome and surface only the floating Home
+    /// button, letting the v1 map+panels layout show through.
+    /// </summary>
+    public bool IsMovingMapPage => CurrentPage == PageType.MovingMap;
+    public bool IsNotMovingMapPage => CurrentPage != PageType.MovingMap;
 
     /// <summary>
     /// Wires the observable <see cref="CurrentPage"/> mirror to the

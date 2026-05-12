@@ -138,13 +138,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <!-- Map Banners (Flag Placement, AB Creation) -->
     <panels:MapBannersPanel DataContext="{Binding}" ZIndex="20"/>
 
-    <!-- Modal Dialog Overlays (shared across platforms) -->
-    <controls:DialogOverlayHost DataContext="{Binding}" ZIndex="100"/>
+    <!-- v2 dashboard chrome. Covers the v1 map+panels layout on every
+         page except MovingMap; on MovingMap it collapses to a floating
+         Home button and the v1 layout shows through. -->
+    <controls:AppShell ZIndex="100"/>
 
-    <!-- v2 PoC OVERLAY — covers the existing map+panels layout with the
-         new dashboard chrome. Remove this single element to fall back to
-         the v1 map view. ZIndex=200 puts it above DialogOverlayHost so
-         even modal dialogs are hidden during the look-and-feel preview. -->
-    <controls:AppShell ZIndex="200"/>
+    <!-- Modal Dialog Overlays (shared across platforms). ZIndex=200
+         keeps utility dialogs (Confirm, Error, NumericInput) above
+         the AppShell chrome on every page. -->
+    <controls:DialogOverlayHost DataContext="{Binding}" ZIndex="200"/>
     </Panel>
 </Window>

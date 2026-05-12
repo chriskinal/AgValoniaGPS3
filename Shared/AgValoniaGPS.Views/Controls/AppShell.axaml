@@ -18,8 +18,11 @@ us see and judge the look before plumbing the real navigation.
              xmlns:nav="using:AgValoniaGPS.Models.Navigation"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.AppShell"
-             x:DataType="vm:MainViewModel"
-             Background="{DynamicResource AppBackgroundBrush}">
+             x:DataType="vm:MainViewModel">
+    <!-- No Background on the UserControl root: when the FullChrome Grid
+         is hidden on MovingMap, pointer events fall through to the v1
+         map+panels layout underneath. -->
+
 
     <UserControl.Styles>
         <!-- Tab button: text label, transparent background, no border. Active
@@ -79,7 +82,15 @@ us see and judge the look before plumbing the real navigation.
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Panel>
+
+    <!-- ============= FULL CHROME (top strip + page + tab bar) =============
+         Hidden when CurrentPage == MovingMap so the v1 map+panels layout
+         underneath shows through. -->
+    <Grid x:Name="FullChrome"
+          IsVisible="{Binding IsNotMovingMapPage}"
+          Background="{DynamicResource AppBackgroundBrush}"
+          RowDefinitions="Auto,*,Auto">
 
         <!-- ============= TOP STATUS STRIP ============= -->
         <Border Grid.Row="0"
@@ -182,4 +193,24 @@ us see and judge the look before plumbing the real navigation.
             </StackPanel>
         </Border>
     </Grid>
+
+    <!-- ============= FLOATING HOME BUTTON =============
+         Visible only on the MovingMap page. Tapping it disengages
+         autosteer (via NavigationService guardrail) and returns to Home.
+         Top-left placement per Plans/PageBasedNavigation/PLAN.md §Moving Map. -->
+    <Button IsVisible="{Binding IsMovingMapPage}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Margin="16"
+            Padding="14,8"
+            Content="← HOME"
+            FontSize="14"
+            FontWeight="SemiBold"
+            Command="{Binding GoHomeCommand}"
+            Background="{DynamicResource ChromeStripBackgroundBrush}"
+            Foreground="{DynamicResource PrimaryTextBrush}"
+            BorderBrush="{DynamicResource AccentBrush}"
+            BorderThickness="1"/>
+
+    </Panel>
 </UserControl>
