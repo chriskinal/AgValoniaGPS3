@@ -119,11 +119,25 @@ public partial class MainViewModel
         private set => SetProperty(ref _currentTime, value);
     }
 
+    private string _currentDate = "";
+    public string CurrentDate
+    {
+        get => _currentDate;
+        private set => SetProperty(ref _currentDate, value);
+    }
+
     private void InitializeClock()
     {
-        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        var now = DateTime.Now;
+        CurrentTime = now.ToString("HH:mm:ss");
+        CurrentDate = now.ToString("yyyy-MM-dd");
         var clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        clockTimer.Tick += (_, _) => CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        clockTimer.Tick += (_, _) =>
+        {
+            var t = DateTime.Now;
+            CurrentTime = t.ToString("HH:mm:ss");
+            CurrentDate = t.ToString("yyyy-MM-dd");
+        };
         clockTimer.Start();
     }
 
