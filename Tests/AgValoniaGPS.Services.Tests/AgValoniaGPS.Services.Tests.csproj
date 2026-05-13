@@ -36,4 +36,10 @@
     <ProjectReference Include="..\AgValoniaGPS.IntegrationTests\AgValoniaGPS.IntegrationTests.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="YouTurn\Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

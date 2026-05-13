@@ -390,31 +390,58 @@ namespace AgValoniaGPS.Services.YouTurn
                 }
             }
 
-            // Anti-tangent post-walk guard. Independent of which loop branch
-            // produced the goal (in-segment interpolation OR end-of-path
-            // projection): if the resulting goal is behind the pivot's
-            // heading vector, the lookahead walked around a fold of the
-            // path — typical on an omega U-turn whose tight loop wraps the
-            // path back near its own start. The pure-pursuit controller
-            // chases an anti-tangent carrot, slams the wheels to full lock
-            // toward the wrong side, and the tractor drives over the path
-            // (visible "drive over" symptom — v8 dump 88202834, v10 dump
-            // 07d70927 row 333+: forward_dot decays smoothly from +4 to
-            // −2.94 over 16 cycles while the closest-segment search keeps
-            // returning adjacent indices, so the v8 closest-segment-
-            // selection guard doesn't trigger).
+            // Anti-tangent / collapsed-goal post-walk guard. Independent of
+            // which loop branch produced the goal: if the resulting goal is
+            // behind the pivot's heading vector OR has collapsed onto the
+            // pivot (Euclidean distance much smaller than the configured
+            // lookahead), the pure-pursuit math degenerates — steering
+            // angle = atan(2·L·sin(α)/D) explodes as D → 0 — and the
+            // controller slams the wheels to full lock. The visible
+            // "drive over" symptom comes in two flavours:
             //
-            // Replace anti-tangent goals with a projection from the pivot
-            // along its own heading at the configured lookahead distance.
-            // Goal is then forward by construction; pure pursuit re-anchors
-            // onto the path the next cycle as the pivot rotates into line.
+            //   (a) Anti-tangent on an omega fold: lookahead walks
+            //       around a tight loop and lands on a far segment whose
+            //       chord-to-pivot is anti-aligned with pivot heading.
+            //       Symptom: forward_dot decays smoothly +4 → −3 over
+            //       ~15 cycles while heading rotates. (v8 / v10 dumps.)
+            //
+            //   (b) Collapsed on path end: pivot reaches the path's last
+            //       segment, the walk can't advance past index ptCount-1,
+            //       so as the pivot keeps driving forward the goal stays
+            //       at the path endpoint while the chord-distance shrinks
+            //       to zero. forward_dot stays positive but tiny.
+            //       Symptom: gd decays smoothly 4 → 0 over 8 cycles, then
+            //       a single +35° steer spike on the cycle where D
+            //       crosses ~0.3 m. (v11 dump row 483, v12 dump row 384.)
+            //
+            // Both cases are caught by re-projecting from the pivot along
+            // its own heading at the configured lookahead distance. Goal
+            // is then guaranteed-forward and goal-distance == lookahead by
+            // construction. Pure pursuit re-anchors onto the path the
+            // next cycle as the pivot rotates and/or the
+            // YouTurnStateMachine completion detector fires.
+            //
+            // The collapsed-goal threshold is `goalPointDistance × 0.5`:
+            // above that, the controller's pure-pursuit math is stable;
+            // below it, |steer| starts growing super-linearly with the
+            // shrinking D. Calibrated against the v12 dump where the
+            // first dangerous cycle had gd=1.794 (still safe — steer
+            // -1.6°) and the spike-cycle had gd=0.322 (steer -31.9°);
+            // 0.5 × 4 m = 2 m sits cleanly in the safety margin.
             {
                 double pivotDirE = Math.Sin(input.FixHeading);
                 double pivotDirN = Math.Cos(input.FixHeading);
                 double goalFwd =
                     (goalPoint.Easting - pivot.Easting) * pivotDirE
                     + (goalPoint.Northing - pivot.Northing) * pivotDirN;
-                if (goalFwd < 0)
+                double goalDx = goalPoint.Easting - pivot.Easting;
+                double goalDy = goalPoint.Northing - pivot.Northing;
+                double goalDist = Math.Sqrt(goalDx * goalDx + goalDy * goalDy);
+
+                bool antiTangent = goalFwd < 0;
+                bool collapsed = goalDist < goalPointDistance * 0.5;
+
+                if (antiTangent || collapsed)
                 {
                     goalPoint.Easting = pivot.Easting + pivotDirE * goalPointDistance;
                     goalPoint.Northing = pivot.Northing + pivotDirN * goalPointDistance;
