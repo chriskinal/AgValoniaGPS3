@@ -39,6 +39,14 @@ public sealed class GpsDataRecorder
     /// </summary>
     public void Record(GpsCycleResult result)
     {
+        // Goal point comes off the Guidance snapshot. It's (0,0) on cycles
+        // where guidance didn't publish — the recorder treats those as
+        // "no goal this cycle" (CSV columns blank) so the trace is
+        // unambiguous about which cycles had a real lookahead carrot.
+        var goal = result.Guidance?.GoalPoint;
+        bool goalPublished = goal.HasValue
+            && (goal.Value.Easting != 0 || goal.Value.Northing != 0);
+
         var record = new GpsRecord
         {
             Timestamp = DateTime.UtcNow,
@@ -59,6 +67,8 @@ public sealed class GpsDataRecorder
             YouTurnTriggered = result.YouTurn?.IsTriggered ?? false,
             YouTurnExecuting = result.YouTurn?.IsExecuting ?? false,
             HeadlandDistance = result.HeadlandProximityDistance,
+            GoalEasting = goalPublished ? goal!.Value.Easting : (double?)null,
+            GoalNorthing = goalPublished ? goal!.Value.Northing : (double?)null,
         };
 
         lock (_lock)
@@ -89,7 +99,8 @@ public sealed class GpsDataRecorder
         var sb = new StringBuilder();
         sb.AppendLine("timestamp,easting,northing,heading,speed,fix,roll," +
             "tool_e,tool_n,tool_h_rad,steer_angle,xte,has_guidance,paths_away," +
-            "autosteer,yt_triggered,yt_executing,headland_dist");
+            "autosteer,yt_triggered,yt_executing,headland_dist," +
+            "goal_e,goal_n,goal_dist,forward_dot");
 
         var ci = CultureInfo.InvariantCulture;
         foreach (var r in snapshot)
@@ -111,7 +122,31 @@ public sealed class GpsDataRecorder
             sb.Append(r.IsAutoSteerEngaged ? "1" : "0"); sb.Append(',');
             sb.Append(r.YouTurnTriggered ? "1" : "0"); sb.Append(',');
             sb.Append(r.YouTurnExecuting ? "1" : "0"); sb.Append(',');
-            sb.AppendLine(r.HeadlandDistance?.ToString("F2", ci) ?? "");
+            sb.Append(r.HeadlandDistance?.ToString("F2", ci) ?? ""); sb.Append(',');
+
+            // Goal-trajectory columns. When no goal was published this cycle
+            // (Guidance snapshot absent, or goal=(0,0)) the four columns are
+            // emitted blank — matches the HeadlandDistance nullable convention
+            // and lets the analyzer skip non-goal cycles unambiguously.
+            if (r.GoalEasting.HasValue && r.GoalNorthing.HasValue)
+            {
+                double gE = r.GoalEasting.Value;
+                double gN = r.GoalNorthing.Value;
+                double dx = gE - r.Easting;
+                double dy = gN - r.Northing;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                double headingRad = r.Heading * Math.PI / 180.0;
+                double forwardDot = dx * Math.Sin(headingRad) + dy * Math.Cos(headingRad);
+
+                sb.Append(gE.ToString("F3", ci)); sb.Append(',');
+                sb.Append(gN.ToString("F3", ci)); sb.Append(',');
+                sb.Append(dist.ToString("F3", ci)); sb.Append(',');
+                sb.AppendLine(forwardDot.ToString("F3", ci));
+            }
+            else
+            {
+                sb.AppendLine(",,,");
+            }
         }
 
         return sb.ToString();
@@ -141,5 +176,6 @@ public sealed class GpsDataRecorder
         public bool IsAutoSteerEngaged;
         public bool YouTurnTriggered, YouTurnExecuting;
         public double? HeadlandDistance;
+        public double? GoalEasting, GoalNorthing;
     }
 }
