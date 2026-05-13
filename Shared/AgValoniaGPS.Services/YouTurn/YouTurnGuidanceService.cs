@@ -227,10 +227,60 @@ namespace AgValoniaGPS.Services.YouTurn
                 (B, A) = (A, B);
             }
 
-            // Ensure B is the next point after A (not some distant point that happens to be close)
-            // This fixes the issue where start and end of path are physically close (skip rows = 0)
-            if (B != A + 1 && A + 1 < ptCount)
+            // Omega-fold disambiguation: when the closest-point search picks
+            // two non-adjacent indices, the path is curling back on itself
+            // and the pivot is sitting in the fold where the entry leg and
+            // exit leg of an omega-shaped U-turn come physically close.
+            // The legacy "B = A+1" clamp picks whichever of the two close
+            // legs has the lower index — that's the ENTRY leg, anti-tangent
+            // to the pivot's actual heading on the EXIT leg. The pure-
+            // pursuit controller then steers full-lock anti-forward (the
+            // user-reported "drive over the path" at end of U-turn).
+            //
+            // Instead, when A and B are non-adjacent, treat each candidate
+            // as the anchor of its own one-step-forward segment and pick
+            // whichever segment's tangent better matches the pivot's
+            // heading vector. Then enforce B = anchor + 1 as before.
+            if (B != A + 1 && A + 1 < ptCount && ptCount >= 3)
             {
+                int candA = A;
+                int candB = B;
+
+                // Build the forward segment from each candidate. If a
+                // candidate is the last point, walk back one — there's only
+                // a previous segment available.
+                (int sa, int sb) SegFor(int idx) =>
+                    idx + 1 < ptCount ? (idx, idx + 1) : (idx - 1, idx);
+
+                var (saA, sbA) = SegFor(candA);
+                var (saB, sbB) = SegFor(candB);
+
+                double tanAx = input.TurnPath[sbA].Easting - input.TurnPath[saA].Easting;
+                double tanAz = input.TurnPath[sbA].Northing - input.TurnPath[saA].Northing;
+                double tanBx = input.TurnPath[sbB].Easting - input.TurnPath[saB].Easting;
+                double tanBz = input.TurnPath[sbB].Northing - input.TurnPath[saB].Northing;
+
+                double pivotDirE = Math.Sin(input.FixHeading);
+                double pivotDirN = Math.Cos(input.FixHeading);
+
+                // Use signed (not normalised) dot product — magnitudes are
+                // comparable because adjacent path samples have similar
+                // spacing. Larger forward-dot = better heading alignment.
+                double dotA = tanAx * pivotDirE + tanAz * pivotDirN;
+                double dotB = tanBx * pivotDirE + tanBz * pivotDirN;
+
+                // Adopt the chosen candidate's segment endpoints directly —
+                // SegFor already handles the last-point case by walking back
+                // one (so A,B is a real forward segment even when chosen ==
+                // ptCount - 1). Don't blindly set B = A+1 here: that would
+                // re-introduce the off-by-one zero-length segment when the
+                // anchor is the path's tail.
+                bool bWins = dotB > dotA;
+                (A, B) = bWins ? (saB, sbB) : (saA, sbA);
+            }
+            else if (B != A + 1 && A + 1 < ptCount)
+            {
+                // ptCount < 3 — no real ambiguity, keep the legacy clamp.
                 B = A + 1;
             }
 
