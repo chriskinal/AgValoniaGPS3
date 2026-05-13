@@ -289,21 +289,47 @@ namespace AgValoniaGPS.Services.YouTurn
                 if (i == ptCount - 1) // goalPointDistance is longer than remaining u-turn
                 {
                     // Lookahead extends past the last point of the U-turn path.
-                    // Project the remainder along the endpoint heading so the
-                    // goal point keeps advancing onto the next pass direction.
-                    // Do NOT set IsTurnComplete here — that would zero the goal
-                    // upstream and gate off SetGuidancePoints, freezing the
-                    // goal-point dot at the U-turn end while the tractor is
-                    // still approaching it. Turn completion is owned by
-                    // YouTurnStateMachine.Tick's closest-approach check, which
-                    // uses the actual tractor position. Without this projection
-                    // the steering controller chases a stationary target during
-                    // the headland traverse, producing visible wobble entering
-                    // the next pass. (#337)
+                    // Project the remainder so the goal keeps advancing onto
+                    // the next pass direction. Do NOT set IsTurnComplete here —
+                    // that would zero the goal upstream and gate off
+                    // SetGuidancePoints, freezing the goal-point dot at the
+                    // U-turn end while the tractor is still approaching it.
+                    // Turn completion is owned by YouTurnStateMachine.Tick's
+                    // closest-approach check, which uses the actual tractor
+                    // position. Without this projection the steering controller
+                    // chases a stationary target during the headland traverse,
+                    // producing visible wobble entering the next pass. (#337)
+                    //
+                    // Forward-of-pivot guard: when the path's endpoint heading
+                    // is more than ~90° away from the pivot's actual heading
+                    // (tight arc + large lookahead), the path-tangent overshoot
+                    // lands the goal BEHIND the pivot and the steering
+                    // controller chases anti-tangent — the visible "drive
+                    // over the path at apex of tight arcs" symptom. Fall back
+                    // to projecting from the endpoint along the pivot's own
+                    // heading: by construction the goal is then forward, and
+                    // pure pursuit re-anchors onto the path on the next cycle.
                     double remaining = goalPointDistance - distSoFar;
                     var endPt = input.TurnPath[i];
-                    goalPoint.Easting = endPt.Easting + Math.Sin(endPt.Heading) * remaining;
-                    goalPoint.Northing = endPt.Northing + Math.Cos(endPt.Heading) * remaining;
+
+                    double candE = endPt.Easting + Math.Sin(endPt.Heading) * remaining;
+                    double candN = endPt.Northing + Math.Cos(endPt.Heading) * remaining;
+                    double pivotDirE = Math.Sin(input.FixHeading);
+                    double pivotDirN = Math.Cos(input.FixHeading);
+                    double forwardDot =
+                        (candE - pivot.Easting) * pivotDirE
+                        + (candN - pivot.Northing) * pivotDirN;
+
+                    if (forwardDot <= 0)
+                    {
+                        goalPoint.Easting = endPt.Easting + pivotDirE * remaining;
+                        goalPoint.Northing = endPt.Northing + pivotDirN * remaining;
+                    }
+                    else
+                    {
+                        goalPoint.Easting = candE;
+                        goalPoint.Northing = candN;
+                    }
                     break;
                 }
 
