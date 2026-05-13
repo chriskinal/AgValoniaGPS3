@@ -390,6 +390,37 @@ namespace AgValoniaGPS.Services.YouTurn
                 }
             }
 
+            // Anti-tangent post-walk guard. Independent of which loop branch
+            // produced the goal (in-segment interpolation OR end-of-path
+            // projection): if the resulting goal is behind the pivot's
+            // heading vector, the lookahead walked around a fold of the
+            // path — typical on an omega U-turn whose tight loop wraps the
+            // path back near its own start. The pure-pursuit controller
+            // chases an anti-tangent carrot, slams the wheels to full lock
+            // toward the wrong side, and the tractor drives over the path
+            // (visible "drive over" symptom — v8 dump 88202834, v10 dump
+            // 07d70927 row 333+: forward_dot decays smoothly from +4 to
+            // −2.94 over 16 cycles while the closest-segment search keeps
+            // returning adjacent indices, so the v8 closest-segment-
+            // selection guard doesn't trigger).
+            //
+            // Replace anti-tangent goals with a projection from the pivot
+            // along its own heading at the configured lookahead distance.
+            // Goal is then forward by construction; pure pursuit re-anchors
+            // onto the path the next cycle as the pivot rotates into line.
+            {
+                double pivotDirE = Math.Sin(input.FixHeading);
+                double pivotDirN = Math.Cos(input.FixHeading);
+                double goalFwd =
+                    (goalPoint.Easting - pivot.Easting) * pivotDirE
+                    + (goalPoint.Northing - pivot.Northing) * pivotDirN;
+                if (goalFwd < 0)
+                {
+                    goalPoint.Easting = pivot.Easting + pivotDirE * goalPointDistance;
+                    goalPoint.Northing = pivot.Northing + pivotDirN * goalPointDistance;
+                }
+            }
+
             // Calc "D" the distance from pivot axle to lookahead point
             double goalPointDistanceSquared = DistanceSquared(goalPoint.Northing, goalPoint.Easting, pivot.Northing, pivot.Easting);
 
