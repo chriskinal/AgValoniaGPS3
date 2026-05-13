@@ -134,6 +134,11 @@ namespace AgValoniaGPS.Models
         // Hotkey bindings (empty = use defaults)
         public Dictionary<string, string> HotkeyBindings { get; set; } = new();
 
+        // Operator profile (Phase 1 placeholder — see Plans/PageBasedNavigation/PLAN.md)
+        public string OperatorName { get; set; } = string.Empty;
+        public AgValoniaGPS.Models.Configuration.OperatorLevel OperatorLevel { get; set; }
+            = AgValoniaGPS.Models.Configuration.OperatorLevel.Operator;
+
         /// <summary>
         /// Validate and clamp all settings to valid ranges.
         /// Returns list of fields that were corrected.

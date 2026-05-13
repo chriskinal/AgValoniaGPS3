@@ -1,0 +1,87 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+OperatorProfilePage — Phase 1 placeholder per
+Plans/PageBasedNavigation/PLAN.md §Operator Profile.
+
+Two fields only: Name (free text) + Level (Operator | Installer).
+"Save" persists ConfigStore.Operator through ConfigurationService →
+SettingsService (appsettings.json).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.OperatorProfilePage"
+             x:DataType="vm:MainViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <UserControl.Styles>
+        <Style Selector="Border.Card">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="24"/>
+        </Style>
+        <Style Selector="TextBlock.PageHeading">
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.FieldLabel">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource LabelTextBrush}"/>
+            <Setter Property="LetterSpacing" Value="1.0"/>
+        </Style>
+        <Style Selector="TextBlock.FieldHint">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="20" RowDefinitions="Auto,*">
+
+        <TextBlock Grid.Row="0"
+                   Classes="PageHeading"
+                   Text="Operator Profile"
+                   Margin="0,0,0,20"/>
+
+        <Border Grid.Row="1"
+                Classes="Card"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Top">
+            <StackPanel Spacing="20" MaxWidth="520" HorizontalAlignment="Left">
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="FieldLabel" Text="NAME"/>
+                    <TextBox Text="{Binding Operator.Name, Mode=TwoWay}"
+                             PlaceholderText="e.g. Chris, Hired hand"
+                             FontSize="16"
+                             MinHeight="44"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="FieldLabel" Text="LEVEL"/>
+                    <ComboBox ItemsSource="{Binding OperatorLevels}"
+                             SelectedItem="{Binding Operator.Level, Mode=TwoWay}"
+                             FontSize="16"
+                             MinHeight="44"
+                             HorizontalAlignment="Stretch"/>
+                    <TextBlock Classes="FieldHint"
+                               Text="Installer unlocks advanced configuration in a later phase."/>
+                </StackPanel>
+
+                <Button Content="Save"
+                        Command="{Binding SaveOperatorProfileCommand}"
+                        HorizontalAlignment="Left"
+                        Padding="22,10"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Background="{DynamicResource AccentBrush}"
+                        Foreground="White"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -20,7 +20,9 @@ etc.).
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:nav="using:AgValoniaGPS.Models.Navigation"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.Pages.HomePage"
+             x:DataType="vm:MainViewModel"
              Background="{DynamicResource AppBackgroundBrush}">
 
     <UserControl.Styles>
@@ -79,8 +81,11 @@ etc.).
                     Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="OPERATOR"/>
-                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
-                    <TextBlock Classes="CardUnit" Text="No operator profile loaded"
+                    <TextBlock Classes="CardValue"
+                               Text="{Binding Operator.Name, TargetNullValue='—', FallbackValue='—'}"
+                               Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit"
+                               Text="{Binding Operator.Level, StringFormat='Level: {0}'}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -91,8 +96,11 @@ etc.).
                     Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="TRACTOR"/>
-                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
-                    <TextBlock Classes="CardUnit" Text="No tractor profile loaded"
+                    <TextBlock Classes="CardValue"
+                               Text="{Binding Config.ActiveVehicleProfileName}"
+                               Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit"
+                               Text="Active vehicle profile"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -103,8 +111,11 @@ etc.).
                     Tapped="OnCardTapped">
                 <StackPanel>
                     <TextBlock Classes="CardLabel" Text="IMPLEMENT"/>
-                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
-                    <TextBlock Classes="CardUnit" Text="No implement loaded"
+                    <TextBlock Classes="CardValue"
+                               Text="{Binding Config.ActiveToolProfileName}"
+                               Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit"
+                               Text="Active tool profile"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -114,9 +125,12 @@ etc.).
                     Tag="{x:Static nav:PageType.FieldsAndJobs}"
                     Tapped="OnCardTapped">
                 <StackPanel>
-                    <TextBlock Classes="CardLabel" Text="LAST FIELD"/>
-                    <TextBlock Classes="CardValue" Text="—" Margin="0,12,0,0"/>
-                    <TextBlock Classes="CardUnit" Text="Open from Fields &amp; Jobs"
+                    <TextBlock Classes="CardLabel" Text="LAST FIELD &amp; JOB"/>
+                    <TextBlock Classes="CardValue"
+                               Text="{Binding ActiveFieldName, TargetNullValue='—', FallbackValue='—'}"
+                               Margin="0,12,0,0"/>
+                    <TextBlock Classes="CardUnit"
+                               Text="{Binding CurrentJobTaskName, StringFormat='Job: {0}', TargetNullValue='No active job', FallbackValue='No active job'}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>

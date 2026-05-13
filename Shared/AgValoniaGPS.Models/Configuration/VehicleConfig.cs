@@ -47,6 +47,9 @@ public class VehicleConfig : ObservableObject
                 // Notify computed properties that depend on Type
                 OnPropertyChanged(nameof(WheelbaseImageSource));
                 OnPropertyChanged(nameof(AntennaImageSource));
+                OnPropertyChanged(nameof(AntennaTopImageSource));
+                OnPropertyChanged(nameof(AntennaOffsetImageSource));
+                OnPropertyChanged(nameof(WheelbaseDiagramImageSource));
                 OnPropertyChanged(nameof(VehicleTypeDisplayName));
             }
         }
@@ -142,6 +145,42 @@ public class VehicleConfig : ObservableObject
         VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulated.png",
         _ => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractor.png"
     };
+
+    /// <summary>
+    /// Side-view tractor image used for Pivot Distance + Antenna Height
+    /// in the v2 Tractor page (paired with <see cref="AntennaOffsetImageSource"/>).
+    /// </summary>
+    public string AntennaTopImageSource => Type switch
+    {
+        VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaHarvesterTop.png",
+        VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulatedTop.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractorTop.png"
+    };
+
+    /// <summary>
+    /// Rear-view tractor image used for Antenna Offset in the v2
+    /// Tractor page (paired with <see cref="AntennaTopImageSource"/>).
+    /// </summary>
+    public string AntennaOffsetImageSource => Type switch
+    {
+        VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaHarvesterOffset.png",
+        VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaArticulatedOffset.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/AntennaTractorOffset.png"
+    };
+
+    /// <summary>
+    /// Combined wheelbase + track-width diagram for the v2 Geometry section.
+    /// Uses the original RadiusWheelBase composite which carries the
+    /// dimension arrows for both wheelbase and track width in one image;
+    /// hitch length is split out into its own image.
+    /// </summary>
+    public string WheelbaseDiagramImageSource => Type switch
+    {
+        VehicleType.Harvester => "avares://AgValoniaGPS.Views/Assets/Icons/RadiusWheelBaseHarvester.png",
+        VehicleType.FourWD => "avares://AgValoniaGPS.Views/Assets/Icons/RadiusWheelBaseArticulated.png",
+        _ => "avares://AgValoniaGPS.Views/Assets/Icons/RadiusWheelBase.png"
+    };
+
 
     /// <summary>
     /// Gets a user-friendly display name for the current vehicle type

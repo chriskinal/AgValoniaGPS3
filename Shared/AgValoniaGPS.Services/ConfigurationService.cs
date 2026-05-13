@@ -449,6 +449,10 @@ public class ConfigurationService(
         store.Simulator.Longitude = settings.SimulatorLongitude;
         store.Simulator.Speed = settings.SimulatorSpeed;
         store.Simulator.SteerAngle = settings.SimulatorSteerAngle;
+
+        // Operator profile
+        store.Operator.Name = settings.OperatorName;
+        store.Operator.Level = settings.OperatorLevel;
     }
 
     /// <summary>
@@ -517,6 +521,10 @@ public class ConfigurationService(
         // Active profile pair (#346)
         settings.LastUsedVehicleProfile = store.ActiveVehicleProfileName;
         settings.LastUsedToolProfile = store.ActiveToolProfileName;
+
+        // Operator profile
+        settings.OperatorName = store.Operator.Name;
+        settings.OperatorLevel = store.Operator.Level;
     }
 
     #endregion

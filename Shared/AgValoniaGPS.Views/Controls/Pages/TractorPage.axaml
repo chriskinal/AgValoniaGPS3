@@ -1,0 +1,406 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+TractorPage — mini-AppShell with its own bottom sub-tab bar.
+
+Sub-tabs:
+  • Dimensions       (Vehicle Type + Geometry + Antenna — current content)
+  • U-Turn           (placeholder)
+  • Machine Control  (placeholder)
+  • Tram Lines       (placeholder)
+  • GPS / Data Sources (placeholder)
+
+Sub-tab styling mirrors AppShell's TabLabel + TabIndicator look so the
+whole app feels consistent: same accent underline, same hover, same
+spacing. Code-behind in TractorPage.axaml.cs handles sub-tab clicks
+and content swap (identical pattern to AppShell).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:conv="using:AgValoniaGPS.Views.Converters"
+             xmlns:controls="using:AgValoniaGPS.Views.Controls"
+             xmlns:config="using:AgValoniaGPS.Views.Controls.Dialogs.Configuration"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.TractorPage"
+             x:DataType="vm:ConfigurationViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <UserControl.Styles>
+        <!-- Section + content styles for Dimensions sub-tab -->
+        <Style Selector="Border.Section">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+        </Style>
+        <Style Selector="TextBlock.SectionHeading">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource LabelTextBrush}"/>
+            <Setter Property="LetterSpacing" Value="1.2"/>
+        </Style>
+        <Style Selector="TextBlock.FieldLabel">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+        <Style Selector="Button.VehicleType">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="MinHeight" Value="64"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.VehicleType:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+
+        <!-- Bottom sub-tab bar styling — mirrors AppShell's TabLabel + TabIndicator -->
+        <Style Selector="Button.SubTabLabel">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+        </Style>
+        <Style Selector="Button.SubTabLabel:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        </Style>
+        <Style Selector="Button.SubTabLabel:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.SubTabLabel.Active">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.SubTabLabel.Active /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Border.SubTabIndicator">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="StackPanel.SubTabItem.Active > Border.SubTabIndicator">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <!-- Placeholder content for sub-tabs not yet built -->
+        <Style Selector="TextBlock.PlaceholderHeading">
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.PlaceholderSub">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ============= HEADER: Tractor · active vehicle profile ============= -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="Auto,*,Auto"
+              Margin="20,20,20,12">
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="16">
+                <TextBlock Text="Tractor"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="·"
+                           FontSize="20"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Config.ActiveVehicleProfileName}"
+                           FontSize="16"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+            <!-- DEV: drag-to-position toggle. Visible-by-default during PoC;
+                 remove or gate behind a setting once layouts are locked. -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12"
+                        VerticalAlignment="Center">
+                <TextBlock x:Name="LayoutReadout"
+                           Text=""
+                           FontSize="12"
+                           Foreground="{DynamicResource AccentBrush}"
+                           VerticalAlignment="Center"/>
+                <ToggleButton x:Name="EditLayoutToggle"
+                              Content="✎ Edit Layout"
+                              IsCheckedChanged="OnEditLayoutToggleChanged"
+                              FontSize="12"
+                              Padding="10,6"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============= SUB-TAB CONTENT (one visible at a time) ============= -->
+        <Grid Grid.Row="1" Margin="20,0,20,0">
+
+            <!-- ===== Dimensions (default) =====
+                 Free-canvas layout: every section card is positioned by
+                 absolute Margin so the dev Edit-Layout mode can drag any
+                 of them (in addition to the value boxes inside). The
+                 outer Grid is fixed-size so percentages of the canvas
+                 translate cleanly to Margin pixels. -->
+            <ScrollViewer x:Name="SectionDimensions" IsVisible="True">
+                <Grid x:Name="DimensionsCanvas"
+                      Width="1100" Height="850"
+                      HorizontalAlignment="Left">
+
+                    <!-- LEFT: Vehicle Type vertical stack -->
+                    <Border x:Name="VehicleTypeCard"
+                            Classes="Section"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="0,0,0,0"
+                            Width="200">
+                        <StackPanel Spacing="10">
+                            <TextBlock Classes="SectionHeading" Text="VEHICLE TYPE" Margin="0,0,0,4"/>
+                            <Button Classes="VehicleType"
+                                    Command="{Binding SetVehicleTypeCommand}"
+                                    CommandParameter="Harvester"
+                                    BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Harvester}">
+                                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageHarvester.png"
+                                           Width="56" Height="42" Stretch="Uniform"/>
+                                    <TextBlock Text="Harvester"
+                                               FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="VehicleType"
+                                    Command="{Binding SetVehicleTypeCommand}"
+                                    CommandParameter="Tractor"
+                                    BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=Tractor}">
+                                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageTractor.png"
+                                           Width="56" Height="42" Stretch="Uniform"/>
+                                    <TextBlock Text="Tractor"
+                                               FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="VehicleType"
+                                    Command="{Binding SetVehicleTypeCommand}"
+                                    CommandParameter="FourWD"
+                                    BorderBrush="{Binding Vehicle.Type, Converter={x:Static conv:EnumToSelectionBrushConverter.Instance}, ConverterParameter=FourWD}">
+                                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/vehiclePageArticulated.png"
+                                           Width="56" Height="42" Stretch="Uniform"/>
+                                    <TextBlock Text="Articulated"
+                                               FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- RIGHT TOP: Geometry -->
+                    <Border x:Name="GeometryCard"
+                            Classes="Section"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="220,0,0,0"
+                            Width="780">
+                        <Grid RowDefinitions="Auto,*">
+                            <TextBlock Grid.Row="0" Classes="SectionHeading" Text="GEOMETRY" Margin="0,0,0,8"/>
+                            <Grid Grid.Row="1"
+                                  Width="720"
+                                  Height="280"
+                                  HorizontalAlignment="Center">
+                                <!-- Composite tractor diagram: hitch arrows + wheelbase
+                                     + track-width all in RadiusWheelBase.png (per type). -->
+                                <Image x:Name="WheelbaseDiagramImage"
+                                       Source="{Binding Vehicle.WheelbaseDiagramImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                                       Stretch="Uniform"
+                                       Width="720" Height="280"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       Margin="0,0,0,0"/>
+                                <StackPanel x:Name="HitchLengthBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="158,132,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Tool.HitchLength, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditHitchLengthCommand}"/>
+                                    <TextBlock Text="Hitch Length" Classes="FieldLabel"/>
+                                </StackPanel>
+                                <StackPanel x:Name="TrackBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="518,62,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Vehicle.TrackWidth, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditTrackWidthCommand}"/>
+                                    <TextBlock Text="Track" Classes="FieldLabel"/>
+                                </StackPanel>
+                                <StackPanel x:Name="WheelbaseBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="216,204,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Vehicle.Wheelbase, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditWheelbaseCommand}"/>
+                                    <TextBlock Text="Wheelbase" Classes="FieldLabel"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- RIGHT BOTTOM: Antenna -->
+                    <Border x:Name="AntennaCard"
+                            Classes="Section"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="220,380,0,0"
+                            Width="780">
+                        <Grid RowDefinitions="Auto,*">
+                            <TextBlock Grid.Row="0" Classes="SectionHeading" Text="ANTENNA" Margin="0,0,0,8"/>
+                            <Grid Grid.Row="1"
+                                  Width="720"
+                                  Height="345"
+                                  HorizontalAlignment="Center">
+                                <Image x:Name="SideViewImage"
+                                       Source="{Binding Vehicle.AntennaTopImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                                       Stretch="Uniform"
+                                       Width="360" Height="345"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       Margin="0,0,0,0"/>
+                                <Image x:Name="RearViewImage"
+                                       Source="{Binding Vehicle.AntennaOffsetImageSource, Converter={x:Static conv:StringToImageConverter.Instance}}"
+                                       Stretch="None"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       Margin="346,69,0,0"/>
+                                <StackPanel x:Name="PivotDistanceBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="72,17,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Vehicle.AntennaPivot, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditAntennaPivotCommand}"/>
+                                    <TextBlock Text="Pivot Distance" Classes="FieldLabel"/>
+                                </StackPanel>
+                                <StackPanel x:Name="AntennaHeightBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="266,155,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Vehicle.AntennaHeight, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditAntennaHeightCommand}"/>
+                                    <TextBlock Text="Antenna Height" Classes="FieldLabel"/>
+                                </StackPanel>
+                                <StackPanel x:Name="AntennaOffsetBox"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="576,138,0,0">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Vehicle.AntennaOffset, Mode=TwoWay}"
+                                        Unit="m" FormatString="F2"
+                                        EditCommand="{Binding EditAntennaOffsetCommand}"/>
+                                    <TextBlock Text="Antenna Offset" Classes="FieldLabel"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,6,0,0"
+                                                HorizontalAlignment="Center">
+                                        <Button Width="40" Height="30" Padding="4"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                ToolTip.Tip="Antenna Left of Center"
+                                                Command="{Binding SetAntennaOffsetLeftCommand}">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaLeftOffset.png" Stretch="Uniform"/>
+                                        </Button>
+                                        <Button Width="40" Height="30" Padding="4"
+                                                Background="{DynamicResource AccentBrush}"
+                                                ToolTip.Tip="Antenna on Centerline"
+                                                Command="{Binding SetAntennaOffsetCenterCommand}">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaNoOffset.png" Stretch="Uniform"/>
+                                        </Button>
+                                        <Button Width="40" Height="30" Padding="4"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                ToolTip.Tip="Antenna Right of Center"
+                                                Command="{Binding SetAntennaOffsetRightCommand}">
+                                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AntennaRightOffset.png" Stretch="Uniform"/>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- ===== U-Turn — embeds existing UTurnConfigTab ===== -->
+            <config:UTurnConfigTab x:Name="SectionUTurn" IsVisible="False"/>
+
+            <!-- ===== Machine Control — embeds existing MachineControlConfigTab ===== -->
+            <config:MachineControlConfigTab x:Name="SectionMachineControl" IsVisible="False"/>
+
+            <!-- ===== Tram Lines — embeds existing TramConfigTab ===== -->
+            <config:TramConfigTab x:Name="SectionTramLines" IsVisible="False"/>
+
+            <!-- ===== GPS / Data Sources — embeds existing SourcesConfigTab ===== -->
+            <config:SourcesConfigTab x:Name="SectionGps" IsVisible="False"/>
+        </Grid>
+
+        <!-- ============= BOTTOM SUB-TAB BAR ============= -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource ChromeStripBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,4">
+            <StackPanel x:Name="SubTabBar"
+                        Orientation="Horizontal"
+                        Spacing="0"
+                        HorizontalAlignment="Center">
+
+                <StackPanel x:Name="TabDimensions" Classes="SubTabItem Active" Margin="6,0">
+                    <Button Classes="SubTabLabel" Content="DIMENSIONS"
+                            Click="OnSubTabClicked" Tag="Dimensions"/>
+                    <Border Classes="SubTabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabUTurn" Classes="SubTabItem" Margin="6,0">
+                    <Button Classes="SubTabLabel" Content="U-TURN"
+                            Click="OnSubTabClicked" Tag="UTurn"/>
+                    <Border Classes="SubTabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabMachineControl" Classes="SubTabItem" Margin="6,0">
+                    <Button Classes="SubTabLabel" Content="MACHINE CONTROL"
+                            Click="OnSubTabClicked" Tag="MachineControl"/>
+                    <Border Classes="SubTabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabTramLines" Classes="SubTabItem" Margin="6,0">
+                    <Button Classes="SubTabLabel" Content="TRAM LINES"
+                            Click="OnSubTabClicked" Tag="TramLines"/>
+                    <Border Classes="SubTabIndicator"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TabGps" Classes="SubTabItem" Margin="6,0">
+                    <Button Classes="SubTabLabel" Content="GPS / DATA SOURCES"
+                            Click="OnSubTabClicked" Tag="Gps"/>
+                    <Border Classes="SubTabIndicator"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

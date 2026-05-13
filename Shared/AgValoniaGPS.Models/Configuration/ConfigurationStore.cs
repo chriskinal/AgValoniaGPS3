@@ -51,6 +51,7 @@ public class ConfigurationStore : ObservableObject
     public TramConfig Tram { get; } = new();
     public AutoSteerConfig AutoSteer { get; } = new();
     public HotkeyConfig Hotkeys { get; } = new();
+    public OperatorConfig Operator { get; } = new();
 
     // Profile management — split into vehicle and tool sides per the
     // AgOpenGPS 6.8.2-style vehicle/tool split (#346). The pre-split

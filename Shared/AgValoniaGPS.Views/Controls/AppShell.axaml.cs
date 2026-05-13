@@ -91,8 +91,11 @@ public partial class AppShell : UserControl
 
         content.Content = page switch
         {
-            PageType.Home => (Control)new HomePage(),
-            _             => BuildPlaceholder(page),
+            PageType.Home            => (Control)new HomePage(),
+            PageType.OperatorProfile => new OperatorProfilePage(),
+            PageType.Tractor         => new TractorPage(),
+            PageType.Implement       => new ImplementPage(),
+            _                        => BuildPlaceholder(page),
         };
     }
 

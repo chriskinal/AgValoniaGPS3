@@ -106,6 +106,16 @@ public partial class MainViewModel : ObservableObject
     public ApplicationState State => _appState;
     public DisplayConfig Display => ConfigurationStore.Instance.Display;
 
+    /// <summary>Operator profile sub-config — bound by OperatorProfilePage.</summary>
+    public OperatorConfig Operator => ConfigurationStore.Instance.Operator;
+
+    /// <summary>
+    /// Public ConfigurationStore handle for AXAML bindings — needed so the
+    /// HomePage launcher cards can read active vehicle / tool profile names
+    /// off the store and observe its PropertyChanged events.
+    /// </summary>
+    public ConfigurationStore Config => ConfigurationStore.Instance;
+
     // Convenience accessors for ConfigurationStore (replaces _vehicleConfig usage)
     private static ConfigurationStore ConfigStore => ConfigurationStore.Instance;
     private static VehicleConfig Vehicle => ConfigurationStore.Instance.Vehicle;
@@ -2955,6 +2965,17 @@ public partial class MainViewModel : ObservableObject
         get => _configurationViewModel;
         set => SetProperty(ref _configurationViewModel, value);
     }
+
+    /// <summary>
+    /// Persistent ConfigurationViewModel used by the Tractor / Implement
+    /// pages (tab-embedded chrome, not modal). Lives for the app's
+    /// lifetime; mutations apply directly to the store (no Cancel button).
+    /// The dialog flow still spawns a fresh ConfigurationViewModel each
+    /// open via ShowConfigurationDialogCommand.
+    /// </summary>
+    private ConfigurationViewModel? _tabConfigurationViewModel;
+    public ConfigurationViewModel TabConfigurationViewModel
+        => _tabConfigurationViewModel ??= new ConfigurationViewModel(_configurationService);
 
     // AutoSteer Configuration Panel
     private AutoSteerConfigViewModel? _autoSteerConfigViewModel;

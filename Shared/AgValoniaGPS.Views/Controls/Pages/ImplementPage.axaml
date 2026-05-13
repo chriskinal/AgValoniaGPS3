@@ -1,0 +1,29 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+ImplementPage — embeds the existing ToolConfigTab as the page content.
+Per Plans/PageBasedNavigation/PLAN.md §Implement page, the long-term
+goal also includes Implement profile management; this iteration just
+embeds the existing tool config UI unchanged.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:config="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs.Configuration;assembly=AgValoniaGPS.Views"
+             x:Class="AgValoniaGPS.Views.Controls.Pages.ImplementPage"
+             x:DataType="vm:MainViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <Grid Margin="20" RowDefinitions="Auto,*">
+        <TextBlock Grid.Row="0"
+                   Text="Implement"
+                   FontSize="28"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   Margin="0,0,0,16"/>
+
+        <config:ToolConfigTab Grid.Row="1"
+                              DataContext="{Binding TabConfigurationViewModel}"/>
+    </Grid>
+</UserControl>
