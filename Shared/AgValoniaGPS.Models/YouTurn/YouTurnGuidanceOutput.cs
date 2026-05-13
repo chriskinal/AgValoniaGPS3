@@ -89,5 +89,14 @@ namespace AgValoniaGPS.Models.YouTurn
         /// Remaining path count.
         /// </summary>
         public int PathCount { get; set; }
+
+        /// <summary>
+        /// True when the anti-tangent post-walk guard replaced the path-
+        /// walk goal with a pivot-heading projection (because the walk
+        /// landed behind the pivot's heading on a tight-loop omega path).
+        /// Diagnostic-only — recorded in the debug dump so forensic
+        /// inspection can correlate steering anomalies with the guard.
+        /// </summary>
+        public bool AntiTangentGuardFired { get; set; }
     }
 }

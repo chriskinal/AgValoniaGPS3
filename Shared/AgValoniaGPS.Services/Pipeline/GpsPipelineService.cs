@@ -777,6 +777,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
             }
         }
 
+        int diagPathAnchorA = 0;
+        int diagPathAnchorB = 0;
+        int diagTurnPathCount = 0;
+        bool diagAntiTangentGuardFired = false;
+
         if (autoSteerEngaged && hasTrack)
         {
             if (isYouTurnTriggered && youTurnPath != null && youTurnPath.Count > 0)
@@ -793,6 +798,10 @@ public sealed class GpsPipelineService : IGpsPipelineService
                     goalN = ytResult.Value.goalN;
                     youTurnCompleted = ytResult.Value.turnComplete;
                     hasGuidance = !youTurnCompleted;
+                    diagPathAnchorA = ytResult.Value.pointA;
+                    diagPathAnchorB = ytResult.Value.pointB;
+                    diagTurnPathCount = ytResult.Value.pathPointCount;
+                    diagAntiTangentGuardFired = ytResult.Value.antiTangentGuardFired;
                 }
             }
             else
@@ -966,7 +975,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
             YouTurn = BuildYouTurnSnapshot(
                 _youTurn,
                 justCompleted: youTurnCompleted || (youTurnTickEffects?.TurnCompleted ?? false)),
-            Guidance = BuildGuidanceSnapshot(_guidanceWorking, displayTrack, baseTrack, hasGuidance),
+            Guidance = BuildGuidanceSnapshot(
+                _guidanceWorking, displayTrack, baseTrack, hasGuidance,
+                diagPathAnchorA, diagPathAnchorB, diagTurnPathCount, diagAntiTangentGuardFired),
 
             // Sections
             SectionStates = secStatesArr,
@@ -1022,7 +1033,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
         GuidanceWorkingState src,
         Models.Track.Track? displayTrack,
         Models.Track.Track? baseTrack,
-        bool hasGuidance) => new()
+        bool hasGuidance,
+        int pathAnchorA,
+        int pathAnchorB,
+        int turnPathPointCount,
+        bool antiTangentGuardFired) => new()
     {
         // GuidanceState-mirrored fields (all populated from the cycle's
         // working state — Phase D D2 writes them there at end-of-branch).
@@ -1052,6 +1067,10 @@ public sealed class GpsPipelineService : IGpsPipelineService
         HasGuidance = hasGuidance,
         DisplayTrack = displayTrack,
         BaseTrack = baseTrack,
+        PathAnchorA = pathAnchorA,
+        PathAnchorB = pathAnchorB,
+        TurnPathPointCount = turnPathPointCount,
+        AntiTangentGuardFired = antiTangentGuardFired,
     };
 
     // ══════════════════════════════════════════════════════════════════════
@@ -1237,8 +1256,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
 
     /// <summary>
     /// Calculate YouTurn path-following guidance. Returns null if no path.
+    /// Tuple includes diagnostic fields (anchor indices, anti-tangent guard
+    /// firings) that surface on the GuidanceSnapshot so the debug recorder
+    /// can correlate steering anomalies with the path-anchor advancement
+    /// pattern.
     /// </summary>
-    private (double steerAngle, double xte, double goalE, double goalN, bool turnComplete)?
+    private (double steerAngle, double xte, double goalE, double goalN, bool turnComplete,
+             int pointA, int pointB, int pathPointCount, bool antiTangentGuardFired)?
         CalculateYouTurnGuidance(Position currentPosition, List<Vec3> turnPath)
     {
         if (turnPath.Count == 0) return null;
@@ -1266,10 +1290,11 @@ public sealed class GpsPipelineService : IGpsPipelineService
         var output = _youTurnGuidanceService.CalculateGuidance(input);
 
         if (output.IsTurnComplete)
-            return (0, 0, 0, 0, true);
+            return (0, 0, 0, 0, true, 0, 0, 0, false);
 
         return (output.SteerAngle, output.DistanceFromCurrentLine,
-            output.GoalPoint.Easting, output.GoalPoint.Northing, false);
+            output.GoalPoint.Easting, output.GoalPoint.Northing, false,
+            output.PointA, output.PointB, turnPath.Count, output.AntiTangentGuardFired);
     }
 
     // ══════════════════════════════════════════════════════════════════════

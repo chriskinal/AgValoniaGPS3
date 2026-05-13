@@ -112,6 +112,31 @@ public class DebugDumpService
             AddTextEntry(archive, "gps_data_log_error.txt", ex.ToString());
         }
 
+        // 5c. Last observed YouTurn path — forensic sidecar so we can
+        // replay the exact production omega geometry in a test fixture
+        // when diagnosing drive-over. The recorder retains the most recent
+        // non-null TurnPath; if the operator captured the dump during or
+        // immediately after a U-turn, that path is the offender.
+        try
+        {
+            var lastPath = Logging.GpsDataRecorder.Instance.GetLastTurnPath();
+            if (lastPath != null && lastPath.Count > 0)
+            {
+                var pathDtos = new object[lastPath.Count];
+                for (int i = 0; i < lastPath.Count; i++)
+                {
+                    var p = lastPath[i];
+                    pathDtos[i] = new { e = p.Easting, n = p.Northing, h = p.Heading };
+                }
+                var json = JsonSerializer.Serialize(pathDtos, JsonOptions);
+                AddTextEntry(archive, "turn_path.json", json);
+            }
+        }
+        catch (Exception ex)
+        {
+            AddTextEntry(archive, "turn_path_error.txt", ex.ToString());
+        }
+
         // 6. Current field files (if a field is open)
         try
         {

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.State;
 
 namespace AgValoniaGPS.Services.Logging;
@@ -29,6 +30,16 @@ public sealed class GpsDataRecorder
     /// <summary>Number of records to keep (at 10Hz = 60 seconds).</summary>
     public const int BufferSize = 600;
 
+    /// <summary>
+    /// Last captured TurnPath, retained for the debug-dump sidecar. Cleared
+    /// to <c>null</c> when a turn completes or the field closes. Replaces
+    /// the legacy "we drop the in-flight path on completion" assumption
+    /// with explicit retention for one bug-report cycle so the operator
+    /// can capture a dump immediately after a drive-over without losing
+    /// the path that caused it.
+    /// </summary>
+    private IReadOnlyList<Vec3>? _lastTurnPath;
+
     public GpsDataRecorder()
     {
         _buffer = new GpsRecord[BufferSize];
@@ -46,6 +57,12 @@ public sealed class GpsDataRecorder
         var goal = result.Guidance?.GoalPoint;
         bool goalPublished = goal.HasValue
             && (goal.Value.Easting != 0 || goal.Value.Northing != 0);
+
+        // Capture the most-recent non-null TurnPath. Retained for the
+        // dump sidecar so a forensic replay has the exact production
+        // geometry that produced the failure window.
+        if (result.YouTurn?.TurnPath is { Count: > 0 } tp)
+            _lastTurnPath = tp;
 
         var record = new GpsRecord
         {
@@ -66,9 +83,14 @@ public sealed class GpsDataRecorder
             IsAutoSteerEngaged = result.IsAutoSteerEngaged,
             YouTurnTriggered = result.YouTurn?.IsTriggered ?? false,
             YouTurnExecuting = result.YouTurn?.IsExecuting ?? false,
+            IsTurnLeft = result.YouTurn?.IsTurnLeft ?? false,
             HeadlandDistance = result.HeadlandProximityDistance,
             GoalEasting = goalPublished ? goal!.Value.Easting : (double?)null,
             GoalNorthing = goalPublished ? goal!.Value.Northing : (double?)null,
+            PathAnchorA = result.Guidance?.PathAnchorA ?? 0,
+            PathAnchorB = result.Guidance?.PathAnchorB ?? 0,
+            TurnPathPointCount = result.Guidance?.TurnPathPointCount ?? 0,
+            AntiTangentGuardFired = result.Guidance?.AntiTangentGuardFired ?? false,
         };
 
         lock (_lock)
@@ -100,7 +122,8 @@ public sealed class GpsDataRecorder
         sb.AppendLine("timestamp,easting,northing,heading,speed,fix,roll," +
             "tool_e,tool_n,tool_h_rad,steer_angle,xte,has_guidance,paths_away," +
             "autosteer,yt_triggered,yt_executing,headland_dist," +
-            "goal_e,goal_n,goal_dist,forward_dot");
+            "goal_e,goal_n,goal_dist,forward_dot," +
+            "A,B,ptCount,is_turn_left,anti_tangent_guard_fired");
 
         var ci = CultureInfo.InvariantCulture;
         foreach (var r in snapshot)
@@ -124,10 +147,7 @@ public sealed class GpsDataRecorder
             sb.Append(r.YouTurnExecuting ? "1" : "0"); sb.Append(',');
             sb.Append(r.HeadlandDistance?.ToString("F2", ci) ?? ""); sb.Append(',');
 
-            // Goal-trajectory columns. When no goal was published this cycle
-            // (Guidance snapshot absent, or goal=(0,0)) the four columns are
-            // emitted blank — matches the HeadlandDistance nullable convention
-            // and lets the analyzer skip non-goal cycles unambiguously.
+            // Goal-trajectory columns. Blank when no goal was published.
             if (r.GoalEasting.HasValue && r.GoalNorthing.HasValue)
             {
                 double gE = r.GoalEasting.Value;
@@ -141,15 +161,33 @@ public sealed class GpsDataRecorder
                 sb.Append(gE.ToString("F3", ci)); sb.Append(',');
                 sb.Append(gN.ToString("F3", ci)); sb.Append(',');
                 sb.Append(dist.ToString("F3", ci)); sb.Append(',');
-                sb.AppendLine(forwardDot.ToString("F3", ci));
+                sb.Append(forwardDot.ToString("F3", ci)); sb.Append(',');
             }
             else
             {
-                sb.AppendLine(",,,");
+                sb.Append(",,,,");
             }
+
+            // Path-anchor / direction / guard diagnostic columns.
+            sb.Append(r.PathAnchorA); sb.Append(',');
+            sb.Append(r.PathAnchorB); sb.Append(',');
+            sb.Append(r.TurnPathPointCount); sb.Append(',');
+            sb.Append(r.IsTurnLeft ? "1" : "0"); sb.Append(',');
+            sb.AppendLine(r.AntiTangentGuardFired ? "1" : "0");
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Return the most-recently observed non-null TurnPath, or <c>null</c>
+    /// if none has been seen since the recorder cleared. Consumed by
+    /// <c>DebugDumpService</c> to attach <c>turn_path.json</c> as a
+    /// forensic sidecar.
+    /// </summary>
+    public IReadOnlyList<Vec3>? GetLastTurnPath()
+    {
+        lock (_lock) return _lastTurnPath;
     }
 
     public void Clear()
@@ -158,6 +196,7 @@ public sealed class GpsDataRecorder
         {
             _writeIndex = 0;
             _count = 0;
+            _lastTurnPath = null;
         }
     }
 
@@ -174,8 +213,10 @@ public sealed class GpsDataRecorder
         public bool HasGuidance;
         public int HowManyPathsAway;
         public bool IsAutoSteerEngaged;
-        public bool YouTurnTriggered, YouTurnExecuting;
+        public bool YouTurnTriggered, YouTurnExecuting, IsTurnLeft;
         public double? HeadlandDistance;
         public double? GoalEasting, GoalNorthing;
+        public int PathAnchorA, PathAnchorB, TurnPathPointCount;
+        public bool AntiTangentGuardFired;
     }
 }

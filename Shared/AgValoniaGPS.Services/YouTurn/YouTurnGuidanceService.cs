@@ -418,6 +418,7 @@ namespace AgValoniaGPS.Services.YouTurn
                 {
                     goalPoint.Easting = pivot.Easting + pivotDirE * goalPointDistance;
                     goalPoint.Northing = pivot.Northing + pivotDirN * goalPointDistance;
+                    output.AntiTangentGuardFired = true;
                 }
             }
 

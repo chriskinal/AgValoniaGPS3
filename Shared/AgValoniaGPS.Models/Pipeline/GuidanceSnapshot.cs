@@ -89,4 +89,26 @@ public record GuidanceSnapshot
     /// DisplayTrack already equals the base.
     /// </summary>
     public Track.Track? BaseTrack { get; init; }
+
+    // ── Cycle-only U-turn pure-pursuit diagnostics ────────────────────────
+    // Produced by the YouTurn guidance branch; surfaced here so the debug
+    // recorder can correlate per-cycle anchor advancement, lookahead-wrap
+    // events, and steering anomalies. Not mirrored to GuidanceState (no
+    // UI binding consumes them).
+
+    /// <summary>Closest-point anchor index A into <c>YouTurn.TurnPath</c>.</summary>
+    public int PathAnchorA { get; init; }
+
+    /// <summary>Closest-point anchor index B into <c>YouTurn.TurnPath</c>.</summary>
+    public int PathAnchorB { get; init; }
+
+    /// <summary>Total point count of the active turn path this cycle.</summary>
+    public int TurnPathPointCount { get; init; }
+
+    /// <summary>
+    /// True on cycles where the anti-tangent post-walk guard in
+    /// CalculatePurePursuitGuidance replaced the path-walk goal with a
+    /// pivot-heading projection (anti-tangent walk on an omega fold).
+    /// </summary>
+    public bool AntiTangentGuardFired { get; init; }
 }
