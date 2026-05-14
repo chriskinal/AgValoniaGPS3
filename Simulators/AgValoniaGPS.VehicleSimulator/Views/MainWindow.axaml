@@ -46,6 +46,16 @@
                     <Slider Minimum="0" Maximum="30" Value="{Binding Speed}"
                             TickFrequency="1" IsSnapToTickEnabled="False" />
 
+                    <!-- Bicycle-model axle length. The host's wizard has its own
+                         belief about wheelbase; the operator dials this slider
+                         to set the simulator's truth and verify the wizard /
+                         guidance reacts correctly to a mismatch. Range matches
+                         small ATVs up through large cab tractors. -->
+                    <TextBlock Text="{Binding Wheelbase, StringFormat='Wheelbase: {0:F2} m'}" />
+                    <Slider Minimum="1.0" Maximum="5.0" Value="{Binding Wheelbase}"
+                            TickFrequency="0.1" IsSnapToTickEnabled="False"
+                            ToolTip.Tip="Axle length used by the simulator's bicycle kinematic model. Operator-controlled truth — the host's wizard tries to discover this." />
+
                     <TextBlock Text="{Binding WasAngle, StringFormat='Wheel Angle: {0:F1} deg'}" />
                     <Slider Minimum="-45" Maximum="45" Value="{Binding WasAngle}"
                             TickFrequency="1" IsSnapToTickEnabled="False"
@@ -67,16 +77,6 @@
                     BorderThickness="1" CornerRadius="4">
                 <StackPanel Spacing="8">
                     <TextBlock Text="GPS" FontWeight="SemiBold" FontSize="14" />
-
-                    <!-- Bicycle-model axle length. The host's wizard has its own
-                         belief about wheelbase; the operator dials this slider
-                         to set the simulator's truth and verify the wizard /
-                         guidance reacts correctly to a mismatch. Range matches
-                         small ATVs up through large cab tractors. -->
-                    <TextBlock Text="{Binding Wheelbase, StringFormat='Wheelbase: {0:F2} m'}" />
-                    <Slider Minimum="1.0" Maximum="5.0" Value="{Binding Wheelbase}"
-                            TickFrequency="0.1" IsSnapToTickEnabled="False"
-                            ToolTip.Tip="Axle length used by the simulator's bicycle kinematic model. Operator-controlled truth — the host's wizard tries to discover this." />
 
                     <TextBlock Text="{Binding Latitude, StringFormat='Latitude: {0:F6}'}" />
                     <NumericUpDown Value="{Binding Latitude}" Increment="0.0001"
