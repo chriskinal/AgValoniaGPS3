@@ -32,8 +32,11 @@ the Free Software Foundation, either version 3 of the License, or
                 <TextBlock x:Name="VersionText" FontSize="16" FontWeight="SemiBold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
 
-                <TextBlock x:Name="GitHashText" FontSize="11"
-                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"/>
+                <!-- SelectableTextBlock so the operator can copy the
+                     build SHA out of a bug report verbatim. -->
+                <SelectableTextBlock x:Name="GitHashText" FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Center"
+                           TextWrapping="NoWrap"/>
 
                 <TextBlock Text="{loc:Localize CrossPlatformAgriculturalGpsGuidance}"
                            FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
