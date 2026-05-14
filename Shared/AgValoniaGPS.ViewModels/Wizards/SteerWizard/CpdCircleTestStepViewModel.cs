@@ -42,9 +42,10 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
     public override string Title => "CPD Circle Test";
 
     public override string Description =>
-        "Turn steering wheel to the RIGHT about 20 degrees. " +
-        "While driving in a steady circle, press Record and wait. " +
-        "The system will measure the turning diameter and calculate CPD automatically.";
+        "Turn the steering wheel to the RIGHT about 20 degrees and drive in a steady circle " +
+        "at roughly 5 km/h. Press Record and keep the turn consistent — the system will measure " +
+        "the turning diameter and calculate CPD automatically. RTK Fixed quality is required; " +
+        "RTK Float is not accurate enough for this measurement.";
 
     public override bool CanSkip => true;
 
@@ -97,7 +98,12 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
     }
 
     private bool _isRtkFixed;
-    /// <summary>True when GPS fix is RTK quality (FixQuality >= 4).</summary>
+    /// <summary>
+    /// True only when GPS fix is RTK Fixed (FixQuality == 4). RTK Float
+    /// (FixQuality == 5) reports centimeter-class precision but is still
+    /// drifting; the circle test relies on absolute accuracy of the
+    /// recorded loop, so Float is excluded here.
+    /// </summary>
     public bool IsRtkFixed
     {
         get => _isRtkFixed;
@@ -106,6 +112,50 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
             if (SetProperty(ref _isRtkFixed, value))
                 OnPropertyChanged(nameof(CanRecord));
         }
+    }
+
+    private int _fixQuality;
+    /// <summary>Raw NMEA GGA fix-quality value from the last GPS update.</summary>
+    public int FixQuality
+    {
+        get => _fixQuality;
+        set
+        {
+            if (SetProperty(ref _fixQuality, value))
+                OnPropertyChanged(nameof(FixQualityLabel));
+        }
+    }
+
+    /// <summary>
+    /// Human-readable label for <see cref="FixQuality"/>, so the wizard
+    /// shows operators *why* recording is blocked (e.g. "RTK Float" vs.
+    /// "No Fix") instead of a generic "No RTK Fix" indicator.
+    /// </summary>
+    public string FixQualityLabel => FixQuality switch
+    {
+        0 => "No Fix",
+        1 => "GPS Fix",
+        2 => "DGPS",
+        3 => "PPS",
+        4 => "RTK Fixed",
+        5 => "RTK Float",
+        6 => "Dead Reckoning",
+        7 => "Manual",
+        8 => "Simulator",
+        _ => $"Unknown ({FixQuality})"
+    };
+
+    private bool _isAtRecommendedSpeed;
+    /// <summary>
+    /// True when current speed is roughly the recommended 5 km/h
+    /// (between ~3 and ~7 km/h). Lower speeds give the WAS more time to
+    /// settle without drifting too far; higher speeds risk understeer
+    /// changing the actual circle radius.
+    /// </summary>
+    public bool IsAtRecommendedSpeed
+    {
+        get => _isAtRecommendedSpeed;
+        set => SetProperty(ref _isAtRecommendedSpeed, value);
     }
 
     private double _speed;

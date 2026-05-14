@@ -54,7 +54,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
 
-                        <!-- GPS Status -->
+                        <!-- GPS Status: show the live FixQualityLabel so the operator can
+                             see *why* recording is blocked (e.g. "RTK Float" vs. "No Fix"). -->
                         <Grid ColumnDefinitions="Auto,*">
                             <Ellipse Grid.Column="0" Width="12" Height="12"
                                      VerticalAlignment="Center" Margin="0,0,8,0">
@@ -65,16 +66,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="GPS: " FontSize="14"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
-                                <TextBlock Text="RTK Fixed" FontSize="14" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding FixQualityLabel}" FontSize="14" FontWeight="SemiBold"
                                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                                            IsVisible="{Binding IsRtkFixed}"/>
-                                <TextBlock Text="No RTK Fix" FontSize="14" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding FixQualityLabel}" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           IsVisible="{Binding !IsRtkFixed}"/>
+                                <TextBlock Text=" (RTK Fixed required)" FontSize="13"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            IsVisible="{Binding !IsRtkFixed}"/>
                             </StackPanel>
                         </Grid>
 
-                        <!-- Speed -->
+                        <!-- Speed: highlight when within the ~5 km/h sweet spot. -->
                         <Grid ColumnDefinitions="Auto,*">
                             <Ellipse Grid.Column="0" Width="12" Height="12"
                                      VerticalAlignment="Center" Margin="0,0,8,0">
@@ -82,11 +86,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     <SolidColorBrush Color="{DynamicResource SystemAccentColor}"/>
                                 </Ellipse.Fill>
                             </Ellipse>
-                            <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
-                                <Run Text="Speed: "/><Run Text="{Binding Speed, StringFormat='{}{0:F1}'}"/><Run Text=" km/h"/>
-                            </TextBlock>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}">
+                                    <Run Text="Speed: "/><Run Text="{Binding Speed, StringFormat='{}{0:F1}'}"/><Run Text=" km/h"/>
+                                </TextBlock>
+                                <TextBlock Text=" (aim for ~5 km/h)" FontSize="13"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           IsVisible="{Binding !IsAtRecommendedSpeed}"/>
+                                <TextBlock Text=" OK" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                           IsVisible="{Binding IsAtRecommendedSpeed}"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
