@@ -138,10 +138,11 @@ and content swap (identical pattern to AppShell).
             <ScrollViewer x:Name="SectionDimensions" IsVisible="True"
                           VerticalScrollBarVisibility="Disabled"
                           HorizontalScrollBarVisibility="Disabled">
+                <Viewbox Stretch="Uniform">
                 <Grid x:Name="DimensionsCanvas"
                       Width="1100" Height="640"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Top">
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
 
                     <!-- LEFT: Tractor · profile header + Vehicle Type stack -->
                     <StackPanel x:Name="VehicleTypeCard"
@@ -367,6 +368,7 @@ and content swap (identical pattern to AppShell).
                         </Grid>
                     </StackPanel>
                 </Grid>
+                </Viewbox>
             </ScrollViewer>
 
             <!-- ===== U-Turn / Tram Lines — cardless ===== -->
@@ -453,108 +455,149 @@ and content swap (identical pattern to AppShell).
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- ===== Machine Control — Machine Module + Pin Config combined ===== -->
-            <ScrollViewer x:Name="SectionMachineControl" IsVisible="False">
-                <StackPanel Spacing="20" Margin="0,12,0,0">
+            <!-- ===== Machine Control — Machine Module + Pin Config combined.
+                 Canvas-style layout: three positioned blocks (MachineModuleBlock,
+                 PinConfigBlock, ActionsBlock) registered with the drag-to-position
+                 dev mode so they can be rearranged via the Edit Layout toggle. -->
+            <Viewbox x:Name="SectionMachineControl" IsVisible="False"
+                     Stretch="Uniform">
+            <Grid Width="1100" Height="570"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top">
 
-                    <!-- =========== MACHINE MODULE =========== -->
+                <!-- MACHINE MODULE — individually draggable controls.
+                     Toggle is declared LAST in the Grid (below) so it renders
+                     on top of any draggable headers whose Background="Transparent"
+                     would otherwise swallow the click. -->
+                <StackPanel x:Name="MachineModuleHeader"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="0,0,0,0" Width="1100"
+                            Background="Transparent">
                     <TextBlock Classes="SectionHeading" Text="MACHINE MODULE" Margin="4,0,0,0"/>
                     <Border Classes="SectionLine"/>
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
-                            <StackPanel Grid.Column="0" Spacing="14">
-                                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16">
-                                    <StackPanel Grid.Column="0" Spacing="4">
-                                        <TextBlock Text="Enable" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                        <Button Background="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                                BorderBrush="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                                BorderThickness="1" CornerRadius="4" Cursor="Hand"
-                                                Command="{Binding ToggleHydraulicLiftCommand}"
-                                                Width="70" Height="70">
-                                            <TextBlock Text="⏻" FontSize="28" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
-                                        </Button>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="4">
-                                        <TextBlock Text="Raise Time" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                        <controls:EditableNumericField HorizontalAlignment="Center"
-                                            Value="{Binding Machine.RaiseTime, Mode=TwoWay}"
-                                            Unit="" FormatString="F0"
-                                            EditCommand="{Binding EditRaiseTimeCommand}"/>
-                                        <TextBlock Text="Plant Pop" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                    <Image Grid.Column="2"
-                                           Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftRaiseTime.png"
-                                           Stretch="Uniform" Height="84"/>
-                                </Grid>
+                </StackPanel>
 
-                                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16">
-                                    <StackPanel Grid.Column="0" Spacing="4">
-                                        <TextBlock Text="Look Ahead" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                        <controls:EditableNumericField HorizontalAlignment="Center"
-                                            Value="{Binding Machine.LookAhead, Mode=TwoWay}"
-                                            Unit="" FormatString="F1"
-                                            EditCommand="{Binding EditLookAheadCommand}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="4">
-                                        <TextBlock Text="Lower Time" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                        <controls:EditableNumericField HorizontalAlignment="Center"
-                                            Value="{Binding Machine.LowerTime, Mode=TwoWay}"
-                                            Unit="" FormatString="F0"
-                                            EditCommand="{Binding EditLowerTimeCommand}"/>
-                                    </StackPanel>
-                                    <Image Grid.Column="2"
-                                           Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftLowerTime.png"
-                                           Stretch="Uniform" Height="84"/>
-                                </Grid>
+                <StackPanel x:Name="MM_Enable"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="0,40,0,0"
+                            Spacing="4" Background="Transparent">
+                    <TextBlock Text="Enable" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <Button Background="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                            BorderBrush="{Binding Machine.HydraulicLiftEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                            BorderThickness="1" CornerRadius="4" Cursor="Hand"
+                            Command="{Binding ToggleHydraulicLiftCommand}"
+                            Width="70" Height="70">
+                        <TextBlock Text="⏻" FontSize="28" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
 
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Invert Relay" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11"/>
-                                    <Button Background="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                            BorderBrush="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                            BorderThickness="1" CornerRadius="4" Cursor="Hand"
-                                            Command="{Binding ToggleInvertRelayCommand}"
-                                            HorizontalAlignment="Left" Width="120" Height="60">
-                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConSt_InvertRelay.png"
-                                               Width="80" Height="40" Stretch="Uniform"/>
-                                    </Button>
-                                </StackPanel>
-                            </StackPanel>
+                <StackPanel x:Name="MM_RaiseTime"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="176,40,0,0" Spacing="4" Background="Transparent">
+                    <TextBlock Text="Raise Time" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Center"
+                        Value="{Binding Machine.RaiseTime, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditRaiseTimeCommand}"/>
+                    <TextBlock Text="Plant Pop" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                </StackPanel>
 
-                            <StackPanel Grid.Column="1" Spacing="8" Width="100" VerticalAlignment="Top">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="User 1" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                    <controls:EditableNumericField HorizontalAlignment="Stretch"
-                                        Value="{Binding Machine.User1Value, Mode=TwoWay}"
-                                        Unit="" FormatString="F0"
-                                        EditCommand="{Binding EditUser1Command}"/>
-                                </StackPanel>
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="User 2" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                    <controls:EditableNumericField HorizontalAlignment="Stretch"
-                                        Value="{Binding Machine.User2Value, Mode=TwoWay}"
-                                        Unit="" FormatString="F0"
-                                        EditCommand="{Binding EditUser2Command}"/>
-                                </StackPanel>
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="User 3" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                    <controls:EditableNumericField HorizontalAlignment="Stretch"
-                                        Value="{Binding Machine.User3Value, Mode=TwoWay}"
-                                        Unit="" FormatString="F0"
-                                        EditCommand="{Binding EditUser3Command}"/>
-                                </StackPanel>
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="User 4" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
-                                    <controls:EditableNumericField HorizontalAlignment="Stretch"
-                                        Value="{Binding Machine.User4Value, Mode=TwoWay}"
-                                        Unit="" FormatString="F0"
-                                        EditCommand="{Binding EditUser4Command}"/>
-                                </StackPanel>
-                            </StackPanel>
-                    </Grid>
+                <Image x:Name="MM_RaiseImage"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Margin="308,46,0,0"
+                       Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftRaiseTime.png"
+                       Stretch="Uniform" Height="84"/>
 
-                    <!-- =========== PIN CONFIG =========== -->
-                    <TextBlock Classes="SectionHeading" Text="PIN CONFIG" Margin="4,16,0,0"/>
+                <StackPanel x:Name="MM_LookAhead"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="176,217,0,0" Spacing="4" Background="Transparent">
+                    <TextBlock Text="Look Ahead" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Center"
+                        Value="{Binding Machine.LookAhead, Mode=TwoWay}"
+                        Unit="" FormatString="F1"
+                        EditCommand="{Binding EditLookAheadCommand}"/>
+                </StackPanel>
+
+                <StackPanel x:Name="MM_LowerTime"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="176,142,0,0" Spacing="4" Background="Transparent">
+                    <TextBlock Text="Lower Time" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Center"
+                        Value="{Binding Machine.LowerTime, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditLowerTimeCommand}"/>
+                </StackPanel>
+
+                <Image x:Name="MM_LowerImage"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Margin="297,142,0,0"
+                       Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConMa_LiftLowerTime.png"
+                       Stretch="Uniform" Height="84"/>
+
+                <StackPanel x:Name="MM_InvertRelay"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="0,148,0,0" Spacing="4" Background="Transparent">
+                    <TextBlock Text="Invert Relay" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11"/>
+                    <Button Background="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                            BorderBrush="{Binding Machine.InvertRelay, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                            BorderThickness="1" CornerRadius="4" Cursor="Hand"
+                            Command="{Binding ToggleInvertRelayCommand}"
+                            HorizontalAlignment="Left" Width="120" Height="60">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConSt_InvertRelay.png"
+                               Width="80" Height="40" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel x:Name="MM_User1"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="594,34,0,0" Spacing="2" Background="Transparent" Width="100">
+                    <TextBlock Text="User 1" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Stretch"
+                        Value="{Binding Machine.User1Value, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditUser1Command}"/>
+                </StackPanel>
+
+                <StackPanel x:Name="MM_User2"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="594,96,0,0" Spacing="2" Background="Transparent" Width="100">
+                    <TextBlock Text="User 2" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Stretch"
+                        Value="{Binding Machine.User2Value, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditUser2Command}"/>
+                </StackPanel>
+
+                <StackPanel x:Name="MM_User3"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="594,159,0,0" Spacing="2" Background="Transparent" Width="100">
+                    <TextBlock Text="User 3" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Stretch"
+                        Value="{Binding Machine.User3Value, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditUser3Command}"/>
+                </StackPanel>
+
+                <StackPanel x:Name="MM_User4"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="594,222,0,0" Spacing="2" Background="Transparent" Width="100">
+                    <TextBlock Text="User 4" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                    <controls:EditableNumericField HorizontalAlignment="Stretch"
+                        Value="{Binding Machine.User4Value, Mode=TwoWay}"
+                        Unit="" FormatString="F0"
+                        EditCommand="{Binding EditUser4Command}"/>
+                </StackPanel>
+
+                <!-- PIN CONFIG block -->
+                <StackPanel x:Name="PinConfigBlock"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="0,290,0,0"
+                            Width="1100"
+                            Spacing="10"
+                            Background="Transparent">
+                    <TextBlock Classes="SectionHeading" Text="PIN CONFIG" Margin="4,0,0,0"/>
                     <Border Classes="SectionLine"/>
-                    <UniformGrid Columns="5" Rows="5">
+                    <UniformGrid Columns="8" Rows="3">
                             <StackPanel Margin="4">
                                 <TextBlock Text="Pin 1" Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
                                 <ComboBox ItemsSource="{Binding PinFunctionOptions}" SelectedItem="{Binding Pin1Function}" HorizontalAlignment="Stretch" FontSize="11"/>
@@ -651,38 +694,63 @@ and content swap (identical pattern to AppShell).
                                 <TextBlock Text="Pin 24" Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
                                 <ComboBox ItemsSource="{Binding PinFunctionOptions}" SelectedItem="{Binding Pin24Function}" HorizontalAlignment="Stretch" FontSize="11"/>
                             </StackPanel>
-                        <StackPanel Margin="4"/>
                     </UniformGrid>
-
-                    <!-- =========== ACTIONS — single Send + Save for the whole page =========== -->
-                    <Grid ColumnDefinitions="Auto,Auto,*,Auto" Margin="4,0,4,8">
-                        <Button Grid.Column="0" Padding="14,10" Cursor="Hand"
-                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                Command="{Binding ResetPinConfigCommand}"
-                                ToolTip.Tip="Reset Pin Config">
-                            <TextBlock Text="↺" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
-                        </Button>
-                        <Button Grid.Column="1" Padding="14,10" Cursor="Hand" Margin="8,0,0,0"
-                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                Command="{Binding UploadPinConfigCommand}"
-                                ToolTip.Tip="Upload Pin Config">
-                            <TextBlock Text="↑" FontSize="20" Foreground="{DynamicResource AccentBrush}"/>
-                        </Button>
-                        <Button Grid.Column="3" Padding="18,10" Cursor="Hand"
-                                Background="{DynamicResource AccentBrush}"
-                                Foreground="White"
-                                FontWeight="SemiBold"
-                                Command="{Binding SendAndSaveMachineConfigCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <TextBlock Text="Send + Save" VerticalAlignment="Center"/>
-                                <TextBlock Text="⚙" FontSize="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="→" FontSize="16" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-
                 </StackPanel>
-            </ScrollViewer>
+
+                <!-- ACTIONS block — single Send+Save for the whole page -->
+                <Grid x:Name="ActionsBlock"
+                      HorizontalAlignment="Left" VerticalAlignment="Top"
+                      Margin="0,518,0,0"
+                      Width="1100"
+                      ColumnDefinitions="Auto,Auto,*,Auto"
+                      Background="Transparent">
+                    <Button Grid.Column="0" Padding="14,10" Cursor="Hand"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            Command="{Binding ResetPinConfigCommand}"
+                            ToolTip.Tip="Reset Pin Config">
+                        <TextBlock Text="↺" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    </Button>
+                    <Button Grid.Column="1" Padding="14,10" Cursor="Hand" Margin="8,0,0,0"
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            Command="{Binding UploadPinConfigCommand}"
+                            ToolTip.Tip="Upload Pin Config">
+                        <TextBlock Text="↑" FontSize="20" Foreground="{DynamicResource AccentBrush}"/>
+                    </Button>
+                    <Button Grid.Column="3" Padding="18,10" Cursor="Hand"
+                            Background="{DynamicResource AccentBrush}"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            Command="{Binding SendAndSaveMachineConfigCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="Send + Save" VerticalAlignment="Center"/>
+                            <TextBlock Text="⚙" FontSize="16" VerticalAlignment="Center"/>
+                            <TextBlock Text="→" FontSize="16" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Per-section Edit Layout toggle + readout. Declared LAST
+                     so it renders on top of any draggable headers that
+                     would otherwise swallow its clicks. Shares state with
+                     the Dimensions toggle via OnEditLayoutToggleChanged. -->
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="MachineControlLayoutReadout"
+                               Text=""
+                               FontSize="11"
+                               Foreground="{DynamicResource AccentBrush}"
+                               TextWrapping="Wrap"
+                               MaxWidth="700"
+                               TextAlignment="Right"
+                               VerticalAlignment="Center"/>
+                    <ToggleButton x:Name="MachineControlEditToggle"
+                                  Content="✎ Edit Layout"
+                                  IsCheckedChanged="OnEditLayoutToggleChanged"
+                                  FontSize="12"
+                                  Padding="10,6"/>
+                </StackPanel>
+            </Grid>
+            </Viewbox>
 
             <!-- ===== GPS / Data Sources — embeds existing SourcesConfigTab ===== -->
             <config:SourcesConfigTab x:Name="SectionGps" IsVisible="False"/>

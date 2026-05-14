@@ -79,11 +79,29 @@ public partial class TractorPage : UserControl
         const double canvasW = 1100, canvasH = 640;
         const double geometryW = 720, geometryH = 280;
         const double antennaW = 720, antennaH = 345;
+        const double mcCanvasW = 1100, mcCanvasH = 570;
 
         // Section headings — moveable against the outer Dimensions canvas
         // so the user can slot the divider in wherever the layout lands.
         Add("Geometry header", "GeometryHeader", canvasW, canvasH);
         Add("Antenna header",  "AntennaHeader",  canvasW, canvasH);
+
+        // Machine Control — individual draggable controls on the MC canvas.
+        Add("MM header",      "MachineModuleHeader", mcCanvasW, mcCanvasH);
+        Add("MM Enable",      "MM_Enable",           mcCanvasW, mcCanvasH);
+        Add("MM RaiseTime",   "MM_RaiseTime",        mcCanvasW, mcCanvasH);
+        Add("MM RaiseImage",  "MM_RaiseImage",       mcCanvasW, mcCanvasH);
+        Add("MM LookAhead",   "MM_LookAhead",        mcCanvasW, mcCanvasH);
+        Add("MM LowerTime",   "MM_LowerTime",        mcCanvasW, mcCanvasH);
+        Add("MM LowerImage",  "MM_LowerImage",       mcCanvasW, mcCanvasH);
+        Add("MM InvertRelay", "MM_InvertRelay",      mcCanvasW, mcCanvasH);
+        Add("MM User1",       "MM_User1",            mcCanvasW, mcCanvasH);
+        Add("MM User2",       "MM_User2",            mcCanvasW, mcCanvasH);
+        Add("MM User3",       "MM_User3",            mcCanvasW, mcCanvasH);
+        Add("MM User4",       "MM_User4",            mcCanvasW, mcCanvasH);
+        // Pin Config + Actions stay as section-level blocks.
+        Add("Pin Config block", "PinConfigBlock", mcCanvasW, mcCanvasH);
+        Add("Actions block",    "ActionsBlock",   mcCanvasW, mcCanvasH);
 
         void Add(string label, string name, double w, double h)
         {
@@ -110,6 +128,15 @@ public partial class TractorPage : UserControl
         var newMode = (sender as ToggleButton)?.IsChecked == true;
         if (newMode == _editMode) return;
         _editMode = newMode;
+
+        // Two toggles share state: the primary one in the Dimensions
+        // Vehicle Type column and a second one on the Machine Control
+        // section. Setting IsChecked on the other one re-enters this
+        // handler, but the (newMode == _editMode) early-out absorbs it.
+        var primary = this.FindControl<ToggleButton>("EditLayoutToggle");
+        var mc = this.FindControl<ToggleButton>("MachineControlEditToggle");
+        if (primary != null && primary.IsChecked != _editMode) primary.IsChecked = _editMode;
+        if (mc != null && mc.IsChecked != _editMode) mc.IsChecked = _editMode;
 
         foreach (var d in _draggables)
         {
@@ -191,26 +218,33 @@ public partial class TractorPage : UserControl
     private void UpdateReadout()
     {
         var readout = this.FindControl<TextBlock>("LayoutReadout");
-        if (readout == null) return;
+        var mcReadout = this.FindControl<TextBlock>("MachineControlLayoutReadout");
+        if (readout == null && mcReadout == null) return;
 
-        if (!_editMode) { readout.Text = ""; return; }
-
-        if (_dragging != null)
+        string text;
+        if (!_editMode)
+        {
+            text = "";
+        }
+        else if (_dragging != null)
         {
             var (x, y) = ToPercent(_dragging);
-            readout.Text = $"{_dragging.Label}: X={x:F0}% Y={y:F0}%";
+            text = $"{_dragging.Label}: X={x:F0}% Y={y:F0}%";
         }
         else
         {
             // Idle in edit mode: render the full list of current positions
             // on one line so the user can read them all off at once.
-            readout.Text = string.Join("  ·  ",
+            text = string.Join("  ·  ",
                 _draggables.Select(d =>
                 {
                     var (x, y) = ToPercent(d);
                     return $"{d.Label}=({x:F0},{y:F0})";
                 }));
         }
+
+        if (readout != null) readout.Text = text;
+        if (mcReadout != null) mcReadout.Text = text;
     }
 
     private void OnSubTabClicked(object? sender, RoutedEventArgs e)
