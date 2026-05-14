@@ -49,6 +49,14 @@ public partial class MainViewModel
 
         ShowAppSettingsDialogCommand = new RelayCommand(() =>
         {
+            // Tabs inside the App Settings dialog (DisplayConfigTab,
+            // AdditionalOptionsConfigTab) bind to ConfigurationViewModel.
+            // Mirror ShowConfigurationDialogCommand's lazy-init so the
+            // tabs work even if the user never opened Configuration first.
+            if (ConfigurationViewModel == null)
+            {
+                ConfigurationViewModel = new ConfigurationViewModel(_configurationService);
+            }
             State.UI.ShowDialog(Models.State.DialogType.AppSettings);
         });
 

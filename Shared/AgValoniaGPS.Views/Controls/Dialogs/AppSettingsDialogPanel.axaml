@@ -110,8 +110,8 @@ GNU General Public License for more details.
                     <Grid ColumnDefinitions="*,Auto">
                         <Button Grid.Column="1" Width="48" Height="48"
                                 Background="#4A9A7E" CornerRadius="24"
-                                Command="{Binding ApplyCommand}"
-                                ToolTip.Tip="Apply and Close">
+                                Command="{Binding $parent[UserControl].DataContext.CloseAppSettingsDialogCommand}"
+                                ToolTip.Tip="Close">
                             <TextBlock Text="✓" FontSize="24" FontWeight="Bold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
