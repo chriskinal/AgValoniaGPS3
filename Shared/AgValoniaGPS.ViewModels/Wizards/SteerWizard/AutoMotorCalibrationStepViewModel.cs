@@ -388,6 +388,21 @@ public class AutoMotorCalibrationStepViewModel : SwitchGatedWizardStep
                     {
                         DetectedMinPwm = module.PwmDisplay;
                         DetectedInvertMotor = autoSteerConfig.InvertMotor;
+
+                        // Persist the captured values immediately so the
+                        // operator's tuning survives any navigation path
+                        // out of the step (the previous OnLeaving-only
+                        // save was gated on a flag the ramp never set,
+                        // so results were lost on Next).
+                        //
+                        // MaxPwm defaults to 2 × MinPwm capped at 255 —
+                        // a sensible starting point. Operator can tune in
+                        // the AutoSteer config dialog afterwards.
+                        autoSteerConfig.MinPwm = DetectedMinPwm;
+                        autoSteerConfig.MaxPwm = Math.Min(2 * DetectedMinPwm, 255);
+                        autoSteerConfig.InvertMotor = DetectedInvertMotor;
+
+                        CalibrationCompleted = true;
                         detected = true;
                     }
                     else
@@ -401,7 +416,8 @@ public class AutoMotorCalibrationStepViewModel : SwitchGatedWizardStep
                 {
                     PhaseResult =
                         $"Motor direction: {(DetectedInvertMotor ? "Inverted" : "Normal")}\n" +
-                        $"Minimum PWM: {DetectedMinPwm}";
+                        $"Minimum PWM: {DetectedMinPwm}\n" +
+                        $"Maximum PWM (default): {autoSteerConfig.MaxPwm}";
                     Phase = CalibrationPhase.RampResult;
                     return;
                 }
@@ -588,14 +604,12 @@ public class AutoMotorCalibrationStepViewModel : SwitchGatedWizardStep
             }
         }
 
-        // Save results if calibration was completed
-        if (CalibrationCompleted)
-        {
-            var autoSteer = _configService.Store.AutoSteer;
-            autoSteer.InvertMotor = DetectedInvertMotor;
-            autoSteer.MinPwm = DetectedMinPwm;
-            autoSteer.MaxSteerAngle = MaxSteerAngle;
-        }
+        // Phase A persists MinPwm/MaxPwm/InvertMotor inline at success —
+        // see RunKpRampAsync. The old OnLeaving save block also tried to
+        // write a vestigial MaxSteerAngle field that's not produced by
+        // this step (it lives in MaxSteeringAngleStepViewModel now), so
+        // dropping it avoids clobbering the operator's real max-steer
+        // calibration with a stale zero on every step exit.
     }
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
