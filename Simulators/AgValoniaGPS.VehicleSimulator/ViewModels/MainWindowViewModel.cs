@@ -61,6 +61,13 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private bool _appliedWorkSwitchEnabled;
     private double _reportedSteerAngle;
 
+    // Virtual WAS hardware truth — operator-adjustable knobs that simulate the
+    // real CPD and off-center of the pretend WAS sensor. Persisted on the
+    // ViewModel so values survive Stop/Start cycles of the module.
+    private double _virtualCountsPerDegree = 100.0;
+    private short _virtualWasOffset;
+    private double _truthRawCounts;
+
     public double Speed
     {
         get => _speed;
@@ -219,6 +226,36 @@ public class MainWindowViewModel : INotifyPropertyChanged
         private set { _reportedSteerAngle = value; OnPropertyChanged(); }
     }
 
+    // === Virtual WAS hardware truth (operator-adjustable knobs) ===
+
+    public double VirtualCountsPerDegree
+    {
+        get => _virtualCountsPerDegree;
+        set
+        {
+            _virtualCountsPerDegree = Math.Clamp(value, 1.0, 255.0);
+            OnPropertyChanged();
+            if (_hub != null) _hub.Steer.VirtualCountsPerDegree = _virtualCountsPerDegree;
+        }
+    }
+
+    public short VirtualWasOffset
+    {
+        get => _virtualWasOffset;
+        set
+        {
+            _virtualWasOffset = (short)Math.Clamp(value, -2000, 2000);
+            OnPropertyChanged();
+            if (_hub != null) _hub.Steer.VirtualWasOffset = _virtualWasOffset;
+        }
+    }
+
+    public double TruthRawCounts
+    {
+        get => _truthRawCounts;
+        private set { _truthRawCounts = value; OnPropertyChanged(); }
+    }
+
     /// <summary>
     /// Whether the UI's Steer-Switch toggle should accept input. When the host
     /// has not configured a physical steer switch, the module reports the bit
@@ -267,6 +304,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
             // The module's synthetic PWM tick loop drives WAS when autosteer
             // is engaged; the legacy on-receive WAS-follow stays off.
             _hub.Steer.SimulateSteerResponse = false;
+            // Seed the module's virtual hardware truth from the operator-set VM
+            // values, so PGN 253 picks up the correct calibration on the first
+            // emit after Start (rather than the module defaults).
+            _hub.Steer.VirtualCountsPerDegree = VirtualCountsPerDegree;
+            _hub.Steer.VirtualWasOffset = VirtualWasOffset;
 
             _hub.Start();
 
@@ -380,6 +422,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         AppliedSteerSwitchEnabled = _hub.Steer.SteerSwitchEnabled;
         AppliedWorkSwitchEnabled = _hub.Steer.WorkSwitchEnabled;
         ReportedSteerAngle = _hub.Steer.ReportedSteerAngleDeg;
+        TruthRawCounts = _hub.Steer.TruthRawCounts;
 
         StatusText = $"Running, {_packetCount} packets sent";
     }
