@@ -108,14 +108,31 @@ public class VirtualSteerModule : IDisposable
     }
 
     /// <summary>
+    /// Calibrated WAS angle as a real Teensy would report it in PGN 253.
+    /// Treats ActualSteerAngleDeg as the physical wheel position, converts to
+    /// raw WAS counts, then applies the host's WasOffset / CountsPerDegree /
+    /// InvertWas calibration so any wizard re-zero shows up immediately.
+    /// </summary>
+    public double ReportedSteerAngleDeg
+    {
+        get
+        {
+            double cpd = CountsPerDegree > 0 ? CountsPerDegree : 1.0;
+            double rawCounts = ActualSteerAngleDeg * cpd;
+            double calibrated = (rawCounts - WasOffset) / cpd;
+            return InvertWas ? -calibrated : calibrated;
+        }
+    }
+
+    /// <summary>
     /// Send a single PGN 253 steer feedback packet.
     /// </summary>
     public void SendSteerFeedback()
     {
         var data = new byte[8];
 
-        // Bytes 0-1: Actual steer angle (degrees * 100, int16 LE)
-        short angleRaw = (short)(ActualSteerAngleDeg * 100);
+        // Bytes 0-1: Calibrated WAS angle (degrees * 100, int16 LE)
+        short angleRaw = (short)(ReportedSteerAngleDeg * 100);
         data[0] = (byte)(angleRaw & 0xFF);
         data[1] = (byte)((angleRaw >> 8) & 0xFF);
 

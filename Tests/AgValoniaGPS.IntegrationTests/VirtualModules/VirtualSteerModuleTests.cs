@@ -78,6 +78,51 @@ public class VirtualSteerModuleTests
         }
     }
 
+    private static SteerSettingsPacket DefaultSettings(byte cpd = 100, short wasOffset = 0)
+    {
+        return new SteerSettingsPacket
+        {
+            Kp = 40, HighPWM = 160, LowPWM = 30, MinPWM = 25,
+            CountsPerDegree = cpd, WasOffset = wasOffset, AckermannFix = 1.0,
+        };
+    }
+
+    private static SteerConfigPacket DefaultConfig(bool invertWas = false, bool steerSwitch = false, bool workSwitch = false)
+    {
+        return new SteerConfigPacket
+        {
+            InvertWas = invertWas,
+            SingleInputWas = true,
+            CytronDriver = true,
+            SteerSwitchEnabled = steerSwitch,
+            // PGN 251 has no WorkSwitchEnabled bit; tests set it directly on the module.
+        };
+    }
+
+    [Test]
+    public void AppliesWasOffsetToReportedAngle()
+    {
+        // Slider at 1.0° with CountsPerDegree=100 → 100 raw WAS counts.
+        // After offset of 20: (100 − 20) / 100 = 0.8°.
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 1, hostPort: HostPort + 1, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings(cpd: 100, wasOffset: 20));
+        steer.ApplySteerConfig(DefaultConfig());
+        steer.ActualSteerAngleDeg = 1.0;
+
+        Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(0.8).Within(1e-9));
+    }
+
+    [Test]
+    public void AppliesInvertWasToReportedAngle()
+    {
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 2, hostPort: HostPort + 2, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings());
+        steer.ApplySteerConfig(DefaultConfig(invertWas: true));
+        steer.ActualSteerAngleDeg = 5.0;
+
+        Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(-5.0).Within(1e-9));
+    }
+
     [Test]
     public void PeriodicEmission_FiresAt10Hz()
     {
