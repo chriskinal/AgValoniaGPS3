@@ -42,14 +42,31 @@ public class RollCalibrationStepViewModel : WizardStepViewModel
     public bool IsRollInvert
     {
         get => _isRollInvert;
-        set => SetProperty(ref _isRollInvert, value);
+        set
+        {
+            // Push the new value into the store immediately so the next
+            // NMEA parse uses it. NmeaParserServiceFast post-processes
+            // roll with `if (IsRollInvert) roll = -roll; roll -= RollZero;`
+            // — without the live store-write, the gauge keeps showing
+            // raw uncalibrated roll until the operator advances past
+            // the step and OnLeaving fires.
+            if (SetProperty(ref _isRollInvert, value))
+                _configService.Store.Ahrs.IsRollInvert = value;
+        }
     }
 
     private double _rollZero;
     public double RollZero
     {
         get => _rollZero;
-        set => SetProperty(ref _rollZero, value);
+        set
+        {
+            // Same live-feedback push as IsRollInvert. The Zero Roll
+            // button captures LiveRoll into this setter; the next NMEA
+            // parse subtracts it from raw roll so the gauge centres.
+            if (SetProperty(ref _rollZero, value))
+                _configService.Store.Ahrs.RollZero = value;
+        }
     }
 
     private double _liveRoll;

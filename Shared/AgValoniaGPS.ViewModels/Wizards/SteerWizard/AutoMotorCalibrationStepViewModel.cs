@@ -230,6 +230,49 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     /// <summary>True when hardware is connected and sending data.</summary>
     public bool HasHardware => _autoSteerService != null;
 
+    private bool _waitingForPhysicalSwitch;
+    /// <summary>
+    /// True when a physical AutoSteer switch is configured
+    /// (<c>Tool.IsSteerSwitchEnabled</c>) but the module's PGN 253
+    /// reports <c>SteerSwitchActive=false</c>. The operator must flip
+    /// the physical switch ON before motor calibration can begin —
+    /// otherwise the module will ignore the PWM ramp commands and the
+    /// calibration sequence will time out without movement.
+    ///
+    /// When no physical switch is configured (<c>IsSteerSwitchEnabled
+    /// =false</c>), this gate stays false and calibration starts
+    /// immediately. Reflects updates from <c>StateUpdated</c>; the gate
+    /// is bound to <c>StartTestCommand</c>'s CanExecute and to a UI
+    /// hint message in the wizard step's AXAML.
+    /// </summary>
+    public bool WaitingForPhysicalSwitch
+    {
+        get => _waitingForPhysicalSwitch;
+        private set
+        {
+            if (SetProperty(ref _waitingForPhysicalSwitch, value))
+            {
+                OnPropertyChanged(nameof(CanStartCalibration));
+                OnPropertyChanged(nameof(PhysicalSwitchPromptText));
+            }
+        }
+    }
+
+    /// <summary>
+    /// CanExecute predicate for <see cref="StartTestCommand"/>: false
+    /// while waiting for the physical switch to engage.
+    /// </summary>
+    public bool CanStartCalibration => !WaitingForPhysicalSwitch;
+
+    /// <summary>
+    /// Operator-facing hint shown while <see cref="WaitingForPhysicalSwitch"/>
+    /// is true. Empty string otherwise so the wizard step's AXAML can bind
+    /// IsVisible to non-empty.
+    /// </summary>
+    public string PhysicalSwitchPromptText => WaitingForPhysicalSwitch
+        ? "Flip the physical AutoSteer switch ON to continue."
+        : string.Empty;
+
     // =========================================================================
     // Commands
     // =========================================================================
@@ -245,8 +288,8 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         _configService = configService;
         _autoSteerService = autoSteerService;
 
-        StartTestCommand = new AsyncRelayCommand(RunPwmRampAsync);
-        ContinueToMaxAngleCommand = new AsyncRelayCommand(RunMaxAngleMeasurementAsync);
+        StartTestCommand = new AsyncRelayCommand(RunPwmRampAsync, () => CanStartCalibration);
+        ContinueToMaxAngleCommand = new AsyncRelayCommand(RunMaxAngleMeasurementAsync, () => CanStartCalibration);
         RedoPhaseACommand = new AsyncRelayCommand(RedoPhaseA);
         RedoPhaseBCommand = new AsyncRelayCommand(RedoPhaseB);
     }
@@ -420,6 +463,10 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         DetectedInvertMotor = autoSteer.InvertMotor;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
 
+        // Seed the gate from current state so the UI doesn't briefly
+        // show CanStart=true before the first PGN 253 arrives.
+        UpdatePhysicalSwitchGate();
+
         if (_autoSteerService != null)
             _autoSteerService.StateUpdated += OnStateUpdated;
     }
@@ -454,6 +501,29 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
         LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        UpdatePhysicalSwitchGate();
+    }
+
+    private void UpdatePhysicalSwitchGate()
+    {
+        bool requiresSwitch = _configService.Store.Tool.IsSteerSwitchEnabled;
+        if (!requiresSwitch)
+        {
+            WaitingForPhysicalSwitch = false;
+            return;
+        }
+        // The module's PGN 253 status bit 2 (SteerSwitchActive) reflects
+        // the physical AutoSteer switch on the operator's console. With a
+        // physical switch configured we must wait for the module to
+        // report it engaged before commanding a PWM ramp.
+        bool moduleReportsEngaged =
+            _autoSteerService?.LastSteerData.SteerSwitchActive ?? false;
+        WaitingForPhysicalSwitch = !moduleReportsEngaged;
+
+        // Bound commands need to re-evaluate CanExecute when the gate
+        // changes. AsyncRelayCommand exposes NotifyCanExecuteChanged.
+        (StartTestCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        (ContinueToMaxAngleCommand as IRelayCommand)?.NotifyCanExecuteChanged();
     }
 
     public override Task<bool> ValidateAsync()

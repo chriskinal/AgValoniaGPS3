@@ -230,6 +230,118 @@ public class NmeaParserServiceFastTests
     }
 
     [Test]
+    public void ParseIntoState_PANDA_AppliesAhrsIsRollInvert()
+    {
+        // The Roll-calibration wizard step's IsRollInvert toggle must
+        // take effect on live NMEA roll, not just on the values the
+        // wizard captures via OnLeaving. Without this post-process the
+        // operator's "Invert Roll" toggle has no visible effect on the
+        // gauge.
+        var prior = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(
+            new AgValoniaGPS.Models.Configuration.ConfigurationStore());
+        try
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.IsRollInvert = true;
+
+            byte[] sentence = BuildPandaBytes(4807.038, "N", 01131.000, "E", 4, 12, 0.9, 100, 0, 5.5,
+                heading: 90.0, roll: 5.7, pitch: 0, yawRate: 0);
+            var state = new VehicleState();
+            NmeaParserServiceFast.ParseIntoState(sentence, ref state);
+
+            Assert.That(state.Roll, Is.EqualTo(-5.7).Within(1e-6),
+                "IsRollInvert flips the sign of the parsed roll before downstream consumers.");
+        }
+        finally
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(prior);
+        }
+    }
+
+    [Test]
+    public void ParseIntoState_PANDA_SubtractsAhrsRollZero()
+    {
+        // Zero Roll calibration captures the current reading as the
+        // zero point; subsequent parses subtract it so the gauge centres.
+        var prior = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(
+            new AgValoniaGPS.Models.Configuration.ConfigurationStore());
+        try
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.RollZero = 2.0;
+
+            byte[] sentence = BuildPandaBytes(4807.038, "N", 01131.000, "E", 4, 12, 0.9, 100, 0, 5.5,
+                heading: 90.0, roll: 5.7, pitch: 0, yawRate: 0);
+            var state = new VehicleState();
+            NmeaParserServiceFast.ParseIntoState(sentence, ref state);
+
+            Assert.That(state.Roll, Is.EqualTo(3.7).Within(1e-6),
+                "RollZero offset is subtracted from the raw IMU roll.");
+        }
+        finally
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(prior);
+        }
+    }
+
+    [Test]
+    public void ParseIntoState_PANDA_InvertAndZero_CompositeOrder()
+    {
+        // Order matters: invert first, then subtract zero. Mirrors the
+        // legacy AiO firmware pipeline so the operator's calibration
+        // gives the same readings as the original hardware path.
+        var prior = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(
+            new AgValoniaGPS.Models.Configuration.ConfigurationStore());
+        try
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.IsRollInvert = true;
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.RollZero = 2.0;
+
+            byte[] sentence = BuildPandaBytes(4807.038, "N", 01131.000, "E", 4, 12, 0.9, 100, 0, 5.5,
+                heading: 90.0, roll: 5.7, pitch: 0, yawRate: 0);
+            var state = new VehicleState();
+            NmeaParserServiceFast.ParseIntoState(sentence, ref state);
+
+            // -5.7 - 2.0 = -7.7
+            Assert.That(state.Roll, Is.EqualTo(-7.7).Within(1e-6),
+                "Composite: invert first (-5.7), then subtract zero (-7.7).");
+        }
+        finally
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(prior);
+        }
+    }
+
+    [Test]
+    public void ParseIntoState_PAOGI_AlsoAppliesAhrsCalibration()
+    {
+        // Same post-process must mirror in the PAOGI branch — its roll
+        // field is float decimal degrees but the calibration semantics
+        // are identical.
+        var prior = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance;
+        AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(
+            new AgValoniaGPS.Models.Configuration.ConfigurationStore());
+        try
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.IsRollInvert = true;
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Ahrs.RollZero = 1.0;
+
+            byte[] sentence = BuildPaogiBytes(4807.038, "N", 01131.000, "E", 4, 12, 0.9, 100, 0, 5.5,
+                heading: 90.5, roll: 1.25, pitch: 0, yawRate: 0);
+            var state = new VehicleState();
+            NmeaParserServiceFast.ParseIntoState(sentence, ref state);
+
+            // -1.25 - 1.0 = -2.25
+            Assert.That(state.Roll, Is.EqualTo(-2.25).Within(1e-6));
+        }
+        finally
+        {
+            AgValoniaGPS.Models.Configuration.ConfigurationStore.SetInstance(prior);
+        }
+    }
+
+    [Test]
     public void ParseIntoState_PAOGI_HeadingAsFloatNoScaling_ImuStaysInvalid()
     {
         // PAOGI emits heading as float decimal degrees — no ×10 scaling.
