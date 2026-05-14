@@ -53,6 +53,38 @@ public class VirtualSteerModule : IDisposable
     public long SentHelloCount { get; private set; }
     public AutoSteerCommand? LastCommand { get; private set; }
 
+    // === Applied settings from PGN 252 (SteerSettings) ===
+    // Defaults mirror AgOpenGPS Teensy firmware boot defaults so the simulator
+    // behaves sanely before any host configuration arrives.
+    public byte Kp { get; private set; } = 40;
+    public byte HighPWM { get; private set; } = 160;
+    public byte LowPWM { get; private set; } = 30;
+    public byte MinPWM { get; private set; } = 25;
+    public byte CountsPerDegree { get; private set; } = 100;
+    public short WasOffset { get; private set; }
+    public double AckermannFix { get; private set; } = 1.0;
+
+    // === Applied config from PGN 251 (SteerConfig) ===
+    public bool InvertWas { get; private set; }
+    public bool IsRelayActiveHigh { get; private set; }
+    public bool MotorDriveDirection { get; private set; }
+    public bool SingleInputWas { get; private set; } = true;
+    public bool CytronDriver { get; private set; } = true;
+    public bool SteerSwitchEnabled { get; private set; }
+    public bool SteerButtonEnabled { get; private set; }
+    public bool ShaftEncoderEnabled { get; private set; }
+    public byte PulseCountMax { get; private set; } = 5;
+    public byte MinSpeed { get; private set; }
+    public bool IsDanfoss { get; private set; }
+    public bool PressureSensorEnabled { get; private set; }
+    public bool CurrentSensorEnabled { get; private set; }
+    public bool IsUseYAxis { get; private set; }
+
+    // Whether the operator has wired a physical work switch. Reported via
+    // PGN 253 byte 6 bit 0; not configurable through PGN 251 directly, so the
+    // simulator exposes it as a settable flag.
+    public bool WorkSwitchEnabled { get; set; }
+
     public VirtualSteerModule(int listenPort = 8888, int hostPort = 9999, string hostIp = "127.0.0.1")
     {
         _udp = new UdpClient(new IPEndPoint(IPAddress.Any, listenPort));
@@ -165,10 +197,50 @@ public class VirtualSteerModule : IDisposable
                 break;
 
             case PgnProtocol.PGN_STEER_SETTINGS:
+                ApplySteerSettings(PgnProtocol.ParseSteerSettings(data));
+                break;
+
             case PgnProtocol.PGN_STEER_CONFIG:
-                // Acknowledge config packets (no response needed per protocol)
+                ApplySteerConfig(PgnProtocol.ParseSteerConfig(data));
                 break;
         }
+    }
+
+    /// <summary>
+    /// Apply a freshly received PGN 252 (SteerSettings) payload.
+    /// Public so tests can drive the parse/apply path without going over UDP.
+    /// </summary>
+    public void ApplySteerSettings(SteerSettingsPacket s)
+    {
+        Kp = s.Kp;
+        HighPWM = s.HighPWM;
+        LowPWM = s.LowPWM;
+        MinPWM = s.MinPWM;
+        CountsPerDegree = s.CountsPerDegree;
+        WasOffset = s.WasOffset;
+        AckermannFix = s.AckermannFix;
+    }
+
+    /// <summary>
+    /// Apply a freshly received PGN 251 (SteerConfig) payload.
+    /// Public so tests can drive the parse/apply path without going over UDP.
+    /// </summary>
+    public void ApplySteerConfig(SteerConfigPacket c)
+    {
+        InvertWas = c.InvertWas;
+        IsRelayActiveHigh = c.IsRelayActiveHigh;
+        MotorDriveDirection = c.MotorDriveDirection;
+        SingleInputWas = c.SingleInputWas;
+        CytronDriver = c.CytronDriver;
+        SteerSwitchEnabled = c.SteerSwitchEnabled;
+        SteerButtonEnabled = c.SteerButtonEnabled;
+        ShaftEncoderEnabled = c.ShaftEncoderEnabled;
+        PulseCountMax = c.PulseCountMax;
+        MinSpeed = c.MinSpeed;
+        IsDanfoss = c.IsDanfoss;
+        PressureSensorEnabled = c.PressureSensorEnabled;
+        CurrentSensorEnabled = c.CurrentSensorEnabled;
+        IsUseYAxis = c.IsUseYAxis;
     }
 
     private void SendHello()

@@ -146,6 +146,52 @@ public static class PgnProtocol
     }
 
     /// <summary>
+    /// Parse PGN 252 (SteerSettings from host). Layout mirrors AgOpenGPS ModSim
+    /// and the Teensy AutoSteer firmware: Kp, highPWM, lowPWM, minPWM,
+    /// steerSensorCounts (counts/deg), wasOffset (int16 LE), AckermannFix*100.
+    /// </summary>
+    public static SteerSettingsPacket ParseSteerSettings(byte[] data)
+    {
+        return new SteerSettingsPacket
+        {
+            Kp = data[5],
+            HighPWM = data[6],
+            LowPWM = data[7],
+            MinPWM = data[8],
+            CountsPerDegree = data[9],
+            WasOffset = (short)(data[10] | (data[11] << 8)),
+            AckermannFix = data[12] / 100.0,
+        };
+    }
+
+    /// <summary>
+    /// Parse PGN 251 (SteerConfig from host). Two bit-packed setting bytes plus
+    /// PulseCountMax and MinSpeed.
+    /// </summary>
+    public static SteerConfigPacket ParseSteerConfig(byte[] data)
+    {
+        byte setting0 = data[5];
+        byte setting1 = data[8];
+        return new SteerConfigPacket
+        {
+            InvertWas = (setting0 & 0x01) != 0,
+            IsRelayActiveHigh = (setting0 & 0x02) != 0,
+            MotorDriveDirection = (setting0 & 0x04) != 0,
+            SingleInputWas = (setting0 & 0x08) != 0,
+            CytronDriver = (setting0 & 0x10) != 0,
+            SteerSwitchEnabled = (setting0 & 0x20) != 0,
+            SteerButtonEnabled = (setting0 & 0x40) != 0,
+            ShaftEncoderEnabled = (setting0 & 0x80) != 0,
+            PulseCountMax = data[6],
+            MinSpeed = data[7],
+            IsDanfoss = (setting1 & 0x01) != 0,
+            PressureSensorEnabled = (setting1 & 0x02) != 0,
+            CurrentSensorEnabled = (setting1 & 0x04) != 0,
+            IsUseYAxis = (setting1 & 0x08) != 0,
+        };
+    }
+
+    /// <summary>
     /// Parse PGN 239 (Machine data from host).
     /// </summary>
     public static MachineCommand ParseMachineCommand(byte[] data)
@@ -204,4 +250,44 @@ public struct MachineConfigPacket
 public struct MachinePinConfigPacket
 {
     public byte[] PinAssignments; // 24 bytes
+}
+
+/// <summary>
+/// Decoded payload of PGN 252 (SteerSettings) — PID tuning, PWM bounds,
+/// WAS calibration, Ackermann compensation.
+/// </summary>
+public struct SteerSettingsPacket
+{
+    public byte Kp;
+    public byte HighPWM;
+    public byte LowPWM;
+    public byte MinPWM;
+    public byte CountsPerDegree;
+    public short WasOffset;
+    public double AckermannFix; // unit = ratio (1.0 = 100%)
+}
+
+/// <summary>
+/// Decoded payload of PGN 251 (SteerConfig) — hardware/wiring options.
+/// </summary>
+public struct SteerConfigPacket
+{
+    // setting0 bits
+    public bool InvertWas;
+    public bool IsRelayActiveHigh;
+    public bool MotorDriveDirection;
+    public bool SingleInputWas;
+    public bool CytronDriver;
+    public bool SteerSwitchEnabled;
+    public bool SteerButtonEnabled;
+    public bool ShaftEncoderEnabled;
+
+    public byte PulseCountMax;
+    public byte MinSpeed;
+
+    // setting1 bits
+    public bool IsDanfoss;
+    public bool PressureSensorEnabled;
+    public bool CurrentSensorEnabled;
+    public bool IsUseYAxis;
 }
