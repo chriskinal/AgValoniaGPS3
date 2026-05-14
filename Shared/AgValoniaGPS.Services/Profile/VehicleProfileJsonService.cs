@@ -108,7 +108,10 @@ public static class VehicleProfileJsonService
         },
         General = new GeneralDto
         {
-            IsMetric = store.IsMetric,
+            // IsMetric intentionally omitted: device-/user-scoped, lives
+            // in AppSettings now. Kept as a nullable field on the DTO so
+            // pre-migration profiles still parse; new writes elide it.
+            IsMetric = null,
             IsSimulatorOn = store.Simulator.Enabled,
             SimLatitude = store.Simulator.Latitude,
             SimLongitude = store.Simulator.Longitude,
@@ -158,8 +161,13 @@ public static class VehicleProfileJsonService
         store.Guidance.UTurnStyle = dto.YouTurn?.Style ?? 0;
         store.Guidance.UTurnSmoothing = dto.YouTurn?.Smoothing ?? 14;
 
-        // General
-        store.IsMetric = dto.General?.IsMetric ?? false;
+        // General — IsMetric used to live here; it now lives in AppSettings.
+        // Apply only if the legacy field is present in the file;
+        // ReconcileIsMetricAfterProfileLoad post-load decides whether the
+        // value sticks (one-shot migration) or AppSettings overrides it
+        // (post-migration).
+        if (dto.General?.IsMetric is bool legacyIsMetric)
+            store.IsMetric = legacyIsMetric;
 
         // Profile metadata
         store.ActiveVehicleProfileName = profileName;
@@ -223,7 +231,14 @@ public static class VehicleProfileJsonService
 
     internal class GeneralDto
     {
-        public bool IsMetric { get; set; }
+        /// <summary>
+        /// Nullable so writers can elide it for new profiles and readers
+        /// can detect "field absent" vs "field present with value false".
+        /// On load, a non-null value seeds AppSettings via the one-shot
+        /// migration in
+        /// <see cref="IConfigurationService.ReconcileIsMetricAfterProfileLoad"/>.
+        /// </summary>
+        public bool? IsMetric { get; set; }
         public bool IsSimulatorOn { get; set; }
         public double SimLatitude { get; set; }
         public double SimLongitude { get; set; }

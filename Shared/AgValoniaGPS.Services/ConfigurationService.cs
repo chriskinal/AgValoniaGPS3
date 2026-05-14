@@ -76,6 +76,13 @@ public class ConfigurationService(
         toolProfileService.Load(toolName, Store);
 
         LoadAutoSteerConfig(vehicleName);
+
+        // IsMetric source-of-truth lives in AppSettings. A legacy profile
+        // may have written into Store.IsMetric above; either it's a fresh
+        // value (migrate to AppSettings) or AppSettings is authoritative
+        // and the profile's value is overridden.
+        ReconcileIsMetricAfterProfileLoad();
+
         Store.HasUnsavedChanges = false;
 
         // Persist the active pair so the next startup restores the same
@@ -297,6 +304,37 @@ public class ConfigurationService(
         settingsService.Save();
     }
 
+    /// <summary>
+    /// Reconcile the device-scoped <see cref="AppSettings.IsMetric"/> with
+    /// whatever value a vehicle profile just wrote into the store. Called
+    /// after a profile load so the source-of-truth move from
+    /// vehicle-profile to AppSettings holds:
+    ///
+    ///  - If migration has not yet happened, the profile's value seeds
+    ///    AppSettings (one-shot legacy fallback) and the migration latch
+    ///    flips so subsequent profile loads can't drag the unit
+    ///    preference around.
+    ///  - If migration has already happened, AppSettings is authoritative
+    ///    and re-asserted onto the store, overriding whatever the profile
+    ///    file carried.
+    ///
+    /// Either way, on return the store and AppSettings agree.
+    /// </summary>
+    public void ReconcileIsMetricAfterProfileLoad()
+    {
+        var settings = settingsService.Settings;
+        if (!settings.HasMigratedIsMetric)
+        {
+            settings.IsMetric = Store.IsMetric;
+            settings.HasMigratedIsMetric = true;
+            settingsService.Save();
+        }
+        else
+        {
+            Store.IsMetric = settings.IsMetric;
+        }
+    }
+
     #endregion
 
     #region AppSettings <-> Store Mapping
@@ -322,6 +360,7 @@ public class ConfigurationService(
         store.Display.ExtraGuidelinesCount = settings.ExtraGuidelinesCount;
         store.Display.FieldTextureVisible = settings.FieldTextureVisible;
         store.Display.FieldTextureMoveable = settings.FieldTextureMoveable;
+        store.IsMetric = settings.IsMetric;
         store.Display.AutoSteerSound = settings.AutoSteerSound;
         store.Display.UTurnSound = settings.UTurnSound;
         store.Display.HydraulicSound = settings.HydraulicSound;
@@ -388,6 +427,7 @@ public class ConfigurationService(
         settings.ExtraGuidelinesCount = store.Display.ExtraGuidelinesCount;
         settings.FieldTextureVisible = store.Display.FieldTextureVisible;
         settings.FieldTextureMoveable = store.Display.FieldTextureMoveable;
+        settings.IsMetric = store.IsMetric;
         settings.AutoSteerSound = store.Display.AutoSteerSound;
         settings.UTurnSound = store.Display.UTurnSound;
         settings.HydraulicSound = store.Display.HydraulicSound;

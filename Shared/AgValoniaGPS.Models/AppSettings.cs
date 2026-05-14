@@ -38,6 +38,23 @@ namespace AgValoniaGPS.Models
         public int ExtraGuidelinesCount { get; set; } = 10;
         public bool FieldTextureVisible { get; set; } = true;
         public bool FieldTextureMoveable { get; set; } = false;
+
+        /// <summary>
+        /// Device-/user-scoped metric vs imperial preference. The source of
+        /// truth lives here (in AppSettings); vehicle profiles must not
+        /// dictate units. Default false (imperial) matches the legacy
+        /// per-vehicle default before the migration.
+        /// </summary>
+        public bool IsMetric { get; set; } = false;
+
+        /// <summary>
+        /// One-shot migration latch: if false, the next vehicle-profile
+        /// load that carries a legacy <c>General.IsMetric</c> field will
+        /// copy that value into <see cref="IsMetric"/> and set this flag
+        /// to true. Subsequent loads ignore the profile field — units are
+        /// then a device preference, not vehicle-scoped.
+        /// </summary>
+        public bool HasMigratedIsMetric { get; set; } = false;
         public bool AutoSteerSound { get; set; } = true;
         public bool UTurnSound { get; set; } = true;
         public bool HydraulicSound { get; set; } = true;

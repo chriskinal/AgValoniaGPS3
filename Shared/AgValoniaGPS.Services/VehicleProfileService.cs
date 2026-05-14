@@ -261,7 +261,8 @@ public class VehicleProfileService : IVehicleProfileService
         sectionPositions[1] = 3.0;   // Right edge
         store.SectionPositions = sectionPositions;
 
-        store.IsMetric = false;
+        // IsMetric used to be reset here; it now lives in AppSettings and
+        // is unaffected by creating a new default vehicle profile.
 
         store.ActiveVehicleProfileName = profileName;
         store.ActiveVehicleProfilePath = Path.Combine(VehiclesDirectory, $"{profileName}.json");
@@ -340,8 +341,14 @@ public class VehicleProfileService : IVehicleProfileService
         }
         store.SectionPositions = sectionPositions;
 
-        // Display config
-        store.IsMetric = GetBool(settings, "setMenu_isMetric", false);
+        // Display config — IsMetric used to live in the vehicle XML.
+        // It now lives in AppSettings; apply the legacy XML value to the
+        // store so the post-load ReconcileIsMetricAfterProfileLoad can
+        // perform the one-shot migration (the same path the JSON profile
+        // services use). Once migration has completed, AppSettings
+        // overrides the XML value on subsequent loads.
+        if (settings.ContainsKey("setMenu_isMetric"))
+            store.IsMetric = GetBool(settings, "setMenu_isMetric", false);
 
         // Profile metadata
         store.ActiveVehicleProfileName = profileName;

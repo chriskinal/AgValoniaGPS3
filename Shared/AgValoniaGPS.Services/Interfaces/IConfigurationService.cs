@@ -123,6 +123,14 @@ public interface IConfigurationService
     /// </summary>
     void SaveAppSettings();
 
+    /// <summary>
+    /// Reconcile <see cref="AppSettings.IsMetric"/> with the value a
+    /// vehicle profile just wrote into the store. One-shot migration on
+    /// first call; thereafter AppSettings is authoritative and the
+    /// profile's value is overridden.
+    /// </summary>
+    void ReconcileIsMetricAfterProfileLoad();
+
     #endregion
 
     #region Events

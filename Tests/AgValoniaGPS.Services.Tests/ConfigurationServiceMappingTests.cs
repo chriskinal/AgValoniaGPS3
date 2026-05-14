@@ -597,6 +597,10 @@ public class ConfigurationServiceMappingTests
             "LastUsedToolProfile",    // Mapped via ActiveToolProfileName (different name) — #346
             "HotkeyBindings",       // Mapped via Hotkeys.LoadFromDictionary (special handling)
             "Language",              // Used directly from AppSettings for localization
+            "HasMigratedIsMetric",   // One-shot migration latch — written by
+                                     // ReconcileIsMetricAfterProfileLoad, not by
+                                     // the Load/Save round-trip the rest of these
+                                     // properties go through.
         };
 
         // Set every non-excluded property to a non-default value
@@ -648,6 +652,7 @@ public class ConfigurationServiceMappingTests
         _settings.SimulatorSteerAngle = 9999;
         _settings.FieldTextureVisible = false; // default is true, set to non-default
         _settings.FieldTextureMoveable = true; // default is false, set to non-default
+        _settings.IsMetric = true; // default is false, set to non-default
 
         _service.LoadAppSettings();
 
@@ -677,5 +682,56 @@ public class ConfigurationServiceMappingTests
 
         Assert.That(unmapped, Is.Empty,
             $"These AppSettings properties appear unmapped in ConfigurationService: {string.Join(", ", unmapped)}");
+    }
+
+    // =====================================================================
+    // IsMetric one-shot migration from legacy vehicle profile
+    // =====================================================================
+
+    [Test]
+    public void ReconcileIsMetricAfterProfileLoad_FirstCall_MigratesProfileValueToAppSettings()
+    {
+        // Pre-migration state: AppSettings has the default (imperial), the
+        // migration latch hasn't been flipped, and the profile load has
+        // just written its legacy IsMetric=true into the store.
+        _settings.IsMetric = false;
+        _settings.HasMigratedIsMetric = false;
+        _service.Store.IsMetric = true;
+
+        _service.ReconcileIsMetricAfterProfileLoad();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_settings.IsMetric, Is.True,
+                "First reconcile must migrate the profile value to AppSettings.");
+            Assert.That(_settings.HasMigratedIsMetric, Is.True,
+                "Migration latch must flip so subsequent profile loads don't repeat.");
+            Assert.That(_service.Store.IsMetric, Is.True,
+                "Store value remains the migrated value.");
+        });
+    }
+
+    [Test]
+    public void ReconcileIsMetricAfterProfileLoad_SubsequentCall_AppSettingsOverridesProfile()
+    {
+        // Post-migration state: AppSettings is authoritative and the user
+        // has chosen metric. A profile load just wrote IsMetric=false into
+        // the store (legacy field still present in the file). Reconcile
+        // must put the store back on AppSettings' value.
+        _settings.IsMetric = true;
+        _settings.HasMigratedIsMetric = true;
+        _service.Store.IsMetric = false;
+
+        _service.ReconcileIsMetricAfterProfileLoad();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_service.Store.IsMetric, Is.True,
+                "Post-migration, AppSettings overrides whatever the profile wrote.");
+            Assert.That(_settings.IsMetric, Is.True,
+                "AppSettings value is unchanged on subsequent reconciles.");
+            Assert.That(_settings.HasMigratedIsMetric, Is.True,
+                "Migration latch stays set.");
+        });
     }
 }
