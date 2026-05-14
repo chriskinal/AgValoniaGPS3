@@ -68,7 +68,7 @@ public partial class MainViewModel
         set => SetProperty(ref _isSkipWorkedMode, value);
     }
 
-    private bool _nextUTurnDirectionLeftOverride;
+    private bool? _nextUTurnDirectionLeftOverride;
     /// <summary>
     /// When the user taps the U-turn direction toggle while no turn is currently
     /// armed, this flag captures the desired direction for the *next* armed turn.
@@ -76,9 +76,17 @@ public partial class MainViewModel
     /// <c>yt.isTurnLeft</c> before the next trigger. The setter forwards to the
     /// cycle worker via <see cref="Services.Interfaces.IGpsPipelineService.SetNextUTurnDirectionLeftOverride"/>;
     /// the state machine consumes and clears the override on the next
-    /// turn-creation tick.
+    /// turn-creation tick, and <see cref="ApplyGpsCycleResult"/> clears the
+    /// UI's cache back to <c>null</c> when the snapshot reports the working
+    /// state's override has been consumed.
+    ///
+    /// Nullable: <c>null</c> means "no operator preference — let the auto-arm
+    /// decide". Without the nullable shape the UI's value leaked into the
+    /// cycle every tick, so once consumed, the same UI cache re-wrote the
+    /// working state with the same biased value on the next turn (the
+    /// stuck-override bug).
     /// </summary>
-    public bool NextUTurnDirectionLeftOverride
+    public bool? NextUTurnDirectionLeftOverride
     {
         get => _nextUTurnDirectionLeftOverride;
         set
@@ -154,10 +162,19 @@ public partial class MainViewModel
     /// (AgOpen_Snapshot/GPS/Forms/GUI.Designer.cs:1426).
     ///
     /// Behavior:
-    /// - Turn armed but not yet executing: flip <see cref="YouTurnState.IsTurnLeft"/>.
     /// - Turn currently executing: no-op (unsafe to flip mid-turn).
-    /// - Idle (no armed turn): flip <see cref="NextUTurnDirectionLeftOverride"/>
-    ///   so the next armed turn picks up the user's intent.
+    /// - Otherwise: post the desired direction through
+    ///   <see cref="NextUTurnDirectionLeftOverride"/>. The cycle's state
+    ///   machine consumes the override on the next tick — if a path is
+    ///   already rendered it drops it and recreates with the new direction
+    ///   in the same cycle. Result: arrow and path stay in sync.
+    ///
+    /// The armed branch used to mutate <c>State.YouTurn.IsTurnLeft</c>
+    /// directly. That visual flip lived ~1 cycle before
+    /// <see cref="ApplyGpsCycleResult"/>'s snapshot mirror reverted it,
+    /// producing a transient arrow-vs-rendered-path mismatch — operator-
+    /// confirmed. Routing through the override path eliminates that
+    /// disagreement.
     /// </summary>
     public void ToggleUTurnDirection()
     {
@@ -167,17 +184,19 @@ public partial class MainViewModel
             return;
         }
 
-        if (State.YouTurn.IsTriggered)
-        {
-            State.YouTurn.IsTurnLeft = !State.YouTurn.IsTurnLeft;
-            StatusMessage = State.YouTurn.IsTurnLeft ? "U-turn direction: Left" : "U-turn direction: Right";
-            return;
-        }
+        // Current displayed direction:
+        //   - When armed, the arrow binds to State.YouTurn.IsTurnLeft.
+        //   - When idle, it binds to NextUTurnDirectionLeftOverride; null
+        //     means "no preference" — treat as right (false) so the first
+        //     tap produces a left toggle.
+        bool currentDisplayLeft = State.YouTurn.IsTriggered
+            ? State.YouTurn.IsTurnLeft
+            : (NextUTurnDirectionLeftOverride ?? false);
 
-        NextUTurnDirectionLeftOverride = !NextUTurnDirectionLeftOverride;
-        StatusMessage = NextUTurnDirectionLeftOverride
-            ? "Next U-turn direction: Left"
-            : "Next U-turn direction: Right";
+        NextUTurnDirectionLeftOverride = !currentDisplayLeft;
+        StatusMessage = NextUTurnDirectionLeftOverride == true
+            ? "U-turn direction: Left"
+            : "U-turn direction: Right";
     }
 
     #endregion

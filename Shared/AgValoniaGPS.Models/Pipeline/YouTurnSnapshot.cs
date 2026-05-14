@@ -70,6 +70,17 @@ public record YouTurnSnapshot
     public TractorZone CurrentZone { get; init; }
 
     /// <summary>
+    /// One-shot direction override mirrored from
+    /// <see cref="YouTurnWorkingState.NextUTurnDirectionLeftOverride"/>.
+    /// Surfaced on the snapshot so the UI can drop its own cache the
+    /// cycle after the state machine consumes and clears the override —
+    /// without this signal, the UI's value gets re-written into the
+    /// working state every cycle and biases the next auto-armed turn
+    /// with the operator's stale intent.
+    /// </summary>
+    public bool? NextUTurnDirectionLeftOverride { get; init; }
+
+    /// <summary>
     /// True on the single cycle where a turn just completed — used by the UI
     /// to reset its TrackGuidanceState cache so the new offset track is
     /// searched globally rather than resumed from the pre-turn index. Replaces

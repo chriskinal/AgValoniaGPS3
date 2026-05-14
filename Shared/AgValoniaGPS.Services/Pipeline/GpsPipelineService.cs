@@ -1026,6 +1026,7 @@ public sealed class GpsPipelineService : IGpsPipelineService
         SnakeSequence = src.SnakeSequence,
         SnakeIndex = src.SnakeIndex,
         CurrentZone = src.CurrentZone,
+        NextUTurnDirectionLeftOverride = src.NextUTurnDirectionLeftOverride,
         JustCompleted = justCompleted,
     };
 

@@ -121,6 +121,19 @@ public partial class MainViewModel
             _mapService.SetYouTurnPath(yt.TurnPath?.Select(p => (p.Easting, p.Northing)).ToList());
             _mapService.SetNextTrack(yt.NextTrack);
             _mapService.SetIsInYouTurn(yt.IsExecuting);
+
+            // One-shot direction override: the state machine consumes
+            // and clears it inside the cycle, so once the snapshot
+            // reports null the UI cache must follow. Without this the
+            // UI's stale value would be re-written into the working
+            // state by GpsPipelineService.ProcessCycle every tick and
+            // bias every subsequent auto-armed turn with the operator's
+            // already-consumed intent.
+            if (!yt.NextUTurnDirectionLeftOverride.HasValue
+                && NextUTurnDirectionLeftOverride.HasValue)
+            {
+                NextUTurnDirectionLeftOverride = null;
+            }
         }
 
         if (result.Guidance is { } g)
