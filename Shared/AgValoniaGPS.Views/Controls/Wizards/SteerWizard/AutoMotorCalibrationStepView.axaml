@@ -91,20 +91,42 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                IsVisible="{Binding !HasHardware}"/>
                 </StackPanel>
 
-                <!-- ===== Phase A1: Progress ===== -->
+                <!-- ===== Phase A1: Progress (Kp ramp) ===== -->
                 <StackPanel IsVisible="{Binding IsPhaseA1}" Spacing="12">
                     <ProgressBar Value="{Binding Progress}"
                                  Minimum="0" Maximum="1"
                                  Height="8"
                                  CornerRadius="4"
                                  Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="32">
                         <StackPanel>
-                            <TextBlock Text="Current PWM"
+                            <TextBlock Text="Current Kp"
                                        FontSize="12"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding CurrentPwm}"
+                            <TextBlock Text="{Binding CurrentKp}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Module PWM"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ReportedModulePwm}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="WAS Angle"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding LiveSteerAngle, StringFormat='{}{0:F1}°'}"
                                        FontSize="24"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
