@@ -1200,6 +1200,90 @@ public class SteerWizardStepTests
         Assert.That(step.CountsPerDegree, Is.GreaterThan(0));
     }
 
+    [Test]
+    public void CpdCircleTest_IsRtkFixed_RequiresFixQualityExactlyFour()
+    {
+        // RTK Float (5) and higher modes still drift at the centimeter
+        // scale; only RTK Fixed (4) is accurate enough for the circle
+        // measurement, so IsRtkFixed must be a strict equality check,
+        // not a 'quality >= 4' gate.
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        autoSteerService.LastSteerData.Returns(SteerModuleData.Empty);
+        var step = new CpdCircleTestStepViewModel(_configService, autoSteerService);
+        var testable = new TestableStep<CpdCircleTestStepViewModel>(step);
+        testable.Enter();
+
+        // FixQuality == 4 -> RTK Fixed -> recording gate open.
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 4, Speed = 1.5 });
+        Assert.That(step.IsRtkFixed, Is.True, "FixQuality 4 must enable recording");
+        Assert.That(step.FixQuality, Is.EqualTo(4));
+
+        // FixQuality == 5 (RTK Float) -> gate closed.
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 5, Speed = 1.5 });
+        Assert.That(step.IsRtkFixed, Is.False, "RTK Float must NOT pass the gate");
+        Assert.That(step.FixQuality, Is.EqualTo(5));
+
+        // Downgrade to FixQuality 2 (DGPS) -> gate stays closed.
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 2, Speed = 1.5 });
+        Assert.That(step.IsRtkFixed, Is.False);
+        Assert.That(step.FixQuality, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void CpdCircleTest_FixQualityLabel_MapsNmeaCodesToHumanText()
+    {
+        var step = new CpdCircleTestStepViewModel(_configService);
+
+        step.FixQuality = 0;
+        Assert.That(step.FixQualityLabel, Is.EqualTo("No Fix"));
+
+        step.FixQuality = 4;
+        Assert.That(step.FixQualityLabel, Is.EqualTo("RTK Fixed"));
+
+        step.FixQuality = 5;
+        Assert.That(step.FixQualityLabel, Is.EqualTo("RTK Float"));
+
+        step.FixQuality = 99;
+        Assert.That(step.FixQualityLabel, Does.StartWith("Unknown"));
+    }
+
+    [Test]
+    public void CpdCircleTest_IsAtRecommendedSpeed_TracksFiveKmhWindow()
+    {
+        // ~5 km/h is the documented sweet spot. The window is 3..7 so
+        // the wizard nudges the operator without flickering green/red
+        // at every tenth of a km/h.
+        var autoSteerService = Substitute.For<IAutoSteerService>();
+        autoSteerService.LastSteerData.Returns(SteerModuleData.Empty);
+        var step = new CpdCircleTestStepViewModel(_configService, autoSteerService);
+        var testable = new TestableStep<CpdCircleTestStepViewModel>(step);
+        testable.Enter();
+
+        // 2 km/h: too slow. (SpeedKmh = Speed * 3.6, so Speed = 0.55 -> ~2 km/h)
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 4, Speed = 2.0 / 3.6 });
+        Assert.That(step.IsAtRecommendedSpeed, Is.False, "2 km/h is below the window");
+
+        // 5 km/h: bullseye.
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 4, Speed = 5.0 / 3.6 });
+        Assert.That(step.IsAtRecommendedSpeed, Is.True, "5 km/h is in the window");
+
+        // 10 km/h: too fast.
+        autoSteerService.StateUpdated += Raise.Event<EventHandler<VehicleStateSnapshot>>(
+            autoSteerService,
+            new VehicleStateSnapshot { FixQuality = 4, Speed = 10.0 / 3.6 });
+        Assert.That(step.IsAtRecommendedSpeed, Is.False, "10 km/h is above the window");
+    }
+
     // =========================================================================
     // AckermannTestStepViewModel
     // =========================================================================
