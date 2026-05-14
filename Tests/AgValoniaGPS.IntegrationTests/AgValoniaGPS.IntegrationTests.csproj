@@ -7,8 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- We keep our own Program.Main for `dotnet run` field-test entry; the
-         test SDK auto-generates a Main, so disable that to avoid CS0017. -->
+    <!-- Keep Program.Main for `dotnet run` field-test entry; the test SDK
+         auto-generates a Main, so disable that to avoid CS0017. -->
     <GenerateProgramFile>false</GenerateProgramFile>
     <LangVersion>14</LangVersion>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>

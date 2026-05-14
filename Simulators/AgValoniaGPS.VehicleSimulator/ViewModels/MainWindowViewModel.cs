@@ -244,7 +244,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         get => _virtualWasOffset;
         set
         {
-            _virtualWasOffset = (short)Math.Clamp(value, -2000, 2000);
+            _virtualWasOffset = (short)Math.Clamp((int)value, -2000, 2000);
             OnPropertyChanged();
             if (_hub != null) _hub.Steer.VirtualWasOffset = _virtualWasOffset;
         }
