@@ -36,6 +36,12 @@ public class AutoSteerControlTickTests
         gps.Start();
         _autoSteer = new AutoSteerService(new TrackGuidanceService(), _udp, gps, appState);
         _autoSteer.Start();
+
+        // AutoSteerService now emits a baseline PGN 251 + PGN 252 pair on
+        // Start() so the module sees current settings without waiting for
+        // the operator. These tests only care about the per-tick
+        // PGN 254 + PGN 239 traffic, so drop the baseline from the count.
+        _udp.ClearReceivedCalls();
     }
 
     [Test]

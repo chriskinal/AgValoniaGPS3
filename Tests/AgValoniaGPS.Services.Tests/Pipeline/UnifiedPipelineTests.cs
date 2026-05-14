@@ -52,6 +52,11 @@ public class UnifiedPipelineTests
 
         var autoSteer = new AutoSteerService(mockGuidance, mockUdp, mockGps, appState);
         autoSteer.Start();
+        // Start() now emits a baseline PGN 251 + PGN 252 pair; that
+        // happens off the receive thread so it doesn't violate C4, but
+        // it does show up on the UDP mock. Clear it so the SendToModules
+        // assertion below only counts receive-thread sends.
+        mockUdp.ClearReceivedCalls();
         autoSteer.SetCurrentTrack(new Models.Track.Track
         {
             Name = "test",

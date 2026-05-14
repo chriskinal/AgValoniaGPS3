@@ -15,8 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
 using AgValoniaGPS.Models.Configuration;
@@ -68,6 +70,29 @@ public class AutoSteerService : IAutoSteerService
     private bool _isEnabled;
     private bool _isEngaged;
 
+    // Config-change → PGN 251/252 emission. The wizard and the
+    // AutoSteer config dialog both mutate ConfigStore.AutoSteer (and
+    // Tool.IsSteerSwitchEnabled); previously only the dialog's
+    // Apply/Reset paths emitted the PGNs. Result: wizard-step writes
+    // weren't visible to the module/simulator until the dialog was
+    // opened. This service is the single owner of the emit: subscribe
+    // to PropertyChanged, debounce, and re-emit both PGNs.
+    private readonly Timer _configEmitTimer;
+    private int _configEmitDelayMs = 150;
+    private bool _configSubscribed;
+    private AutoSteerConfig? _subscribedAutoSteer;
+    private ToolConfig? _subscribedTool;
+
+    /// <summary>
+    /// Test seam: lets tests shorten the debounce so they don't have
+    /// to sleep the wall clock to observe coalescing behaviour.
+    /// </summary>
+    internal int ConfigEmitDebounceMilliseconds
+    {
+        get => _configEmitDelayMs;
+        set => _configEmitDelayMs = value;
+    }
+
     public event EventHandler<VehicleStateSnapshot>? StateUpdated;
 
     public bool IsEnabled => _isEnabled;
@@ -89,6 +114,15 @@ public class AutoSteerService : IAutoSteerService
         // Initialize state
         _state = new VehicleState();
         _guidanceInput = new TrackInput();
+
+        // Debounce timer: parked Infinite until a PropertyChanged event
+        // arms it. Coalesces bursts (Reset-to-Defaults touches many
+        // fields in quick succession; we want exactly one PGN emit
+        // pair, not one per field).
+        _configEmitTimer = new Timer(_ => EmitSteerConfigPgns(),
+            state: null,
+            dueTime: Timeout.Infinite,
+            period: Timeout.Infinite);
     }
 
     /// <summary>
@@ -113,13 +147,75 @@ public class AutoSteerService : IAutoSteerService
     {
         _isEnabled = true;
         _udpService.DataReceived += OnUdpDataReceived;
+
+        // Subscribe before the initial emission so a settings write that
+        // races against startup still re-fires through the debounce.
+        SubscribeToConfigChanges();
+
+        // Initial baseline: send current ConfigStore.AutoSteer values
+        // once so the module / simulator sees them without waiting for
+        // the operator to touch a setting. Prevents the "simulator's
+        // Steer Switch toggle stays greyed until I open the AutoSteer
+        // config dialog" symptom — the simulator reads switch-type from
+        // PGN 251 byte 5 and we'd previously never send it on startup.
+        EmitSteerConfigPgns();
     }
 
     public void Stop()
     {
         _udpService.DataReceived -= OnUdpDataReceived;
+        UnsubscribeFromConfigChanges();
         _isEnabled = false;
         _isEngaged = false;
+    }
+
+    private void SubscribeToConfigChanges()
+    {
+        if (_configSubscribed) return;
+        _subscribedAutoSteer = ConfigurationStore.Instance.AutoSteer;
+        _subscribedTool = ConfigurationStore.Instance.Tool;
+        _subscribedAutoSteer.PropertyChanged += OnConfigPropertyChanged;
+        _subscribedTool.PropertyChanged += OnConfigPropertyChanged;
+        _configSubscribed = true;
+    }
+
+    private void UnsubscribeFromConfigChanges()
+    {
+        if (!_configSubscribed) return;
+        if (_subscribedAutoSteer != null)
+            _subscribedAutoSteer.PropertyChanged -= OnConfigPropertyChanged;
+        if (_subscribedTool != null)
+            _subscribedTool.PropertyChanged -= OnConfigPropertyChanged;
+        _configSubscribed = false;
+    }
+
+    /// <summary>
+    /// PropertyChanged handler for AutoSteer / Tool config. Any change
+    /// re-arms the debounce timer; the timer fires the actual PGN
+    /// emission once the storm subsides. PGN 251 and 252 are always
+    /// emitted as a pair — the cost is two small UDP packets, and
+    /// splitting "which PGN does this property belong to" would
+    /// duplicate the bit-packing knowledge from <c>PgnBuilder</c>.
+    /// </summary>
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        _configEmitTimer.Change(_configEmitDelayMs, Timeout.Infinite);
+    }
+
+    private void EmitSteerConfigPgns()
+    {
+        if (!_isEnabled) return; // raced past Stop()
+        try
+        {
+            var cfg = ConfigurationStore.Instance.AutoSteer;
+            _udpService.SendToModules(PgnBuilder.BuildSteerConfigPgn(cfg));
+            _udpService.SendToModules(PgnBuilder.BuildSteerSettingsPgn(cfg));
+        }
+        catch (Exception ex)
+        {
+            // Don't let an emit failure tear down the timer / service.
+            Debug.WriteLine($"[AutoSteerService] PGN emit failed: {ex.Message}");
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
