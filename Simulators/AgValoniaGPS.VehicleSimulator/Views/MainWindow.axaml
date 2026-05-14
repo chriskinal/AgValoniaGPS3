@@ -4,7 +4,7 @@
         x:Class="AgValoniaGPS.VehicleSimulator.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="AgValoniaGPS Vehicle Simulator"
-        Width="750" Height="480"
+        Width="1024" Height="540"
         MinWidth="400" MinHeight="200">
 
     <Design.DataContext>
@@ -18,18 +18,23 @@
                    FontSize="20" FontWeight="Bold"
                    Margin="0,0,0,12" />
 
-        <!-- Main content: three columns, scrollable when window is too small -->
+        <!-- Four-column semantic layout, matching the real-hardware mental model:
+                 [Bicycle Model] = physics inputs (operator drives the vehicle)
+                 [GPS]           = position + IMU sensor outputs
+                 [WAS]           = simulated WAS hardware truth + host's applied calibration
+                 [Module Status] = outgoing PGN 253 state + switch toggles
+             Stays scrollable when the window is narrower than the natural width. -->
         <ScrollViewer Grid.Row="1" Margin="0,0,0,12"
-                      HorizontalScrollBarVisibility="Disabled"
+                      HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
-        <Grid ColumnDefinitions="*,*,*">
+        <Grid ColumnDefinitions="*,*,*,*" MinWidth="900">
 
-            <!-- Column 1: Vehicle -->
+            <!-- Column 1: Bicycle Model (physics inputs) -->
             <Border Grid.Column="0" Margin="0,0,6,0" Padding="12"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                     BorderThickness="1" CornerRadius="4">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Vehicle" FontWeight="SemiBold" FontSize="14" />
+                    <TextBlock Text="Bicycle Model" FontWeight="SemiBold" FontSize="14" />
 
                     <TextBlock Text="Drive Mode" />
                     <ComboBox SelectedItem="{Binding DriveMode}" HorizontalAlignment="Stretch">
@@ -41,9 +46,27 @@
                     <Slider Minimum="0" Maximum="30" Value="{Binding Speed}"
                             TickFrequency="1" IsSnapToTickEnabled="False" />
 
+                    <TextBlock Text="{Binding WasAngle, StringFormat='Wheel Angle: {0:F1} deg'}" />
+                    <Slider Minimum="-45" Maximum="45" Value="{Binding WasAngle}"
+                            TickFrequency="1" IsSnapToTickEnabled="False"
+                            ToolTip.Tip="Physical wheel angle. The simulated WAS reads this and applies the virtual hardware calibration before PGN 253 reports it." />
+
+                    <!-- Heading is only an operator input in Raw mode; in Bicycle
+                         mode it's an output of the kinematic integrator. Kept
+                         in this column because Raw mode needs operator control. -->
                     <TextBlock Text="{Binding Heading, StringFormat='Heading: {0:F1} deg'}" />
                     <Slider Minimum="0" Maximum="359.9" Value="{Binding Heading}"
-                            TickFrequency="1" IsSnapToTickEnabled="False" />
+                            TickFrequency="1" IsSnapToTickEnabled="False"
+                            ToolTip.Tip="Raw mode: operator-controlled heading. Bicycle mode: computed from speed × wheel angle." />
+                </StackPanel>
+            </Border>
+
+            <!-- Column 2: GPS (position + IMU sensor outputs) -->
+            <Border Grid.Column="1" Margin="3,0,3,0" Padding="12"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1" CornerRadius="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="GPS" FontWeight="SemiBold" FontSize="14" />
 
                     <TextBlock Text="{Binding Latitude, StringFormat='Latitude: {0:F6}'}" />
                     <NumericUpDown Value="{Binding Latitude}" Increment="0.0001"
@@ -52,23 +75,10 @@
                     <TextBlock Text="{Binding Longitude, StringFormat='Longitude: {0:F6}'}" />
                     <NumericUpDown Value="{Binding Longitude}" Increment="0.0001"
                                    FormatString="F6" Minimum="-180" Maximum="180" />
-                </StackPanel>
-            </Border>
 
-            <!-- Column 2: Sensors -->
-            <Border Grid.Column="1" Margin="3,0,3,0" Padding="12"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                    BorderThickness="1" CornerRadius="4">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Sensors" FontWeight="SemiBold" FontSize="14" />
-
-                    <TextBlock Text="{Binding WasAngle, StringFormat='WAS Angle: {0:F1} deg'}" />
-                    <Slider Minimum="-45" Maximum="45" Value="{Binding WasAngle}"
-                            TickFrequency="1" IsSnapToTickEnabled="False" />
-
-                    <TextBlock Text="{Binding RollAngle, StringFormat='Roll: {0:F1} deg'}" />
-                    <Slider Minimum="-15" Maximum="15" Value="{Binding RollAngle}"
-                            TickFrequency="0.5" IsSnapToTickEnabled="False" />
+                    <TextBlock Text="{Binding SatelliteCount, StringFormat='Satellites: {0}'}" />
+                    <NumericUpDown Value="{Binding SatelliteCount}" Increment="1"
+                                   Minimum="0" Maximum="30" />
 
                     <TextBlock Text="{Binding FixQuality, StringFormat='GPS Fix Quality: {0}'}" />
                     <ComboBox SelectedIndex="{Binding FixQuality}" HorizontalAlignment="Stretch">
@@ -80,14 +90,52 @@
                         <ComboBoxItem Content="5 - RTK Float" />
                     </ComboBox>
 
-                    <TextBlock Text="{Binding SatelliteCount, StringFormat='Satellites: {0}'}" />
-                    <NumericUpDown Value="{Binding SatelliteCount}" Increment="1"
-                                   Minimum="0" Maximum="30" />
+                    <!-- Roll lives here because it's the IMU's sensor output,
+                         carried by $PANDA alongside the GPS-side data. -->
+                    <TextBlock Text="{Binding RollAngle, StringFormat='Roll (IMU): {0:F1} deg'}" />
+                    <Slider Minimum="-15" Maximum="15" Value="{Binding RollAngle}"
+                            TickFrequency="0.5" IsSnapToTickEnabled="False" />
+                </StackPanel>
+            </Border>
 
-                    <!-- Disabled when the host has not configured a physical
-                         steer switch (PGN 251 SteerSwitch flag = 0). In that
-                         case the module reports the switch as continuously
-                         active regardless of this toggle. -->
+            <!-- Column 3: WAS (simulated hardware truth + host's applied calibration) -->
+            <Border Grid.Column="2" Margin="3,0,3,0" Padding="12"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1" CornerRadius="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="WAS" FontWeight="SemiBold" FontSize="14" />
+
+                    <!-- Host's guess at WAS hardware values + tuning, received
+                         via PGN 251/252. Hardware-truth knobs are added in the
+                         next commit (operator-controlled CPD / off-center). -->
+                    <TextBlock Text="Host's Guess (PGN 251/252)" FontWeight="SemiBold" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedCountsPerDegree, StringFormat='Counts/Deg: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedWasOffset, StringFormat='WAS Offset: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedInvertWas, StringFormat='Invert WAS: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedKp, StringFormat='Kp: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedHighPwm, StringFormat='Max PWM: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedIsDanfoss, StringFormat='Danfoss: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedSteerSwitchEnabled, StringFormat='Steer Switch wired: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedWorkSwitchEnabled, StringFormat='Work Switch wired: {0}'}" FontSize="12" />
+                </StackPanel>
+            </Border>
+
+            <!-- Column 4: Module Status (outgoing PGN 253 + switch toggles) -->
+            <Border Grid.Column="3" Margin="6,0,0,0" Padding="12"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1" CornerRadius="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Module Status" FontWeight="SemiBold" FontSize="14" />
+
+                    <TextBlock Text="{Binding CommandedAngle, StringFormat='Commanded Angle: {0:F1} deg'}" />
+                    <TextBlock Text="{Binding ReportedSteerAngle, StringFormat='Reported WAS: {0:F2} deg'}" />
+                    <TextBlock Text="{Binding PwmDisplay, StringFormat='PWM: {0}'}" />
+
+                    <Separator Margin="0,8" />
+
+                    <!-- Steer switch toggle is operator-driven; lives next to
+                         the read-out so cause and effect are colocated. Greyed
+                         out when the host has not wired a physical switch. -->
                     <CheckBox Content="Steer Switch ON"
                               IsChecked="{Binding SteerSwitchOn}"
                               IsEnabled="{Binding SteerSwitchToggleEnabled}"
@@ -104,39 +152,6 @@
                         </Panel>
                         <TextBlock Text="AutoSteer Engaged (from host)" VerticalAlignment="Center" />
                     </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Column 3: Module Status -->
-            <Border Grid.Column="2" Margin="6,0,0,0" Padding="12"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                    BorderThickness="1" CornerRadius="4">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Module Status" FontWeight="SemiBold" FontSize="14" />
-
-                    <TextBlock Text="{Binding CommandedAngle, StringFormat='Commanded Angle: {0:F1} deg'}" />
-
-                    <TextBlock Text="{Binding ReportedSteerAngle, StringFormat='Reported WAS: {0:F2} deg'}" />
-
-                    <TextBlock Text="{Binding PwmDisplay, StringFormat='PWM: {0}'}" />
-
-                    <TextBlock Text="{Binding SteerSwitchOn, StringFormat='Steer Switch: {0}'}" />
-
-                    <Separator Margin="0,8" />
-
-                    <!-- Applied settings: the most recently received-and-applied
-                         values from PGN 251 (SteerConfig) and PGN 252 (SteerSettings).
-                         Lets the operator confirm the host's wizard config landed
-                         on the module before driving. -->
-                    <TextBlock Text="Applied Settings" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding AppliedKp, StringFormat='Kp: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedCountsPerDegree, StringFormat='Counts/Deg: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedWasOffset, StringFormat='WAS Offset: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedHighPwm, StringFormat='Max PWM: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedInvertWas, StringFormat='Invert WAS: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedIsDanfoss, StringFormat='Danfoss: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedSteerSwitchEnabled, StringFormat='Steer Switch wired: {0}'}" FontSize="12" />
-                    <TextBlock Text="{Binding AppliedWorkSwitchEnabled, StringFormat='Work Switch wired: {0}'}" FontSize="12" />
 
                     <Separator Margin="0,8" />
 
