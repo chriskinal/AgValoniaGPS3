@@ -80,7 +80,11 @@ public static class PgnBuilder
     ///
     /// When IsInFreeDriveMode is true, overrides speed/status/angle for testing:
     /// - Speed set to 8.0 km/h (fake speed to allow motor operation)
-    /// - Status set to 1 (autosteer enabled)
+    /// - Status set to SteerSwitchActive (0x01) + AutoSteerEngaged (0x04)
+    ///   so the firmware/simulator PID actually drives toward the
+    ///   commanded angle. The previous value (0x01 alone) left
+    ///   IsEngaged=false on the receiver, so the wizard's motor ramp
+    ///   commands were silently dropped.
     /// - SteerAngle from FreeDriveSteerAngle instead of guidance
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,8 +110,11 @@ public static class PgnBuilder
             buf[5] = (byte)(freeSpeed & 0xFF);        // low byte
             buf[6] = (byte)(freeSpeed >> 8);          // high byte
 
-            // Status = 1 (autosteer enabled for testing)
-            buf[7] = 1;
+            // Status: SteerSwitchActive (0x01) + AutoSteerEngaged (0x04).
+            // The receiver's PID gates on bit 0x04; the lone bit 0x01
+            // alone (former value) was insufficient and left free-drive
+            // commands as no-ops on the simulator.
+            buf[7] = 0x01 | 0x04;
 
             // Use free drive steer angle instead of guidance angle
             // Little-endian: low byte first
