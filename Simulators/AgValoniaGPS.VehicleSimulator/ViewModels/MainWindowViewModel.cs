@@ -34,6 +34,10 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private double _heading; // degrees
     private double _latitude = 42.0308;
     private double _longitude = -93.6319;
+    // Bicycle-model axle length. Operator-adjustable so the host's wizard
+    // belief about wheelbase can be tested against a configurable truth, the
+    // same pattern as the virtual CPD / WAS offset knobs.
+    private double _wheelbase = 2.5; // meters; matches VehiclePhysicsModel default
 
     // Sensors
     private double _wasAngle; // degrees
@@ -91,6 +95,19 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         get => _longitude;
         set { _longitude = value; OnPropertyChanged(); }
+    }
+
+    public double Wheelbase
+    {
+        get => _wheelbase;
+        set
+        {
+            _wheelbase = Math.Clamp(value, 1.0, 5.0);
+            OnPropertyChanged();
+            // Push live so changes affect the next kinematic step without
+            // requiring a Stop/Start cycle.
+            _vehicle.Wheelbase = _wheelbase;
+        }
     }
 
     public double WasAngle
@@ -317,6 +334,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
             _vehicle.HeadingDeg = Heading;
             _vehicle.SpeedKmh = Speed;
             _vehicle.SteerAngleDeg = WasAngle;
+            _vehicle.Wheelbase = Wheelbase;
 
             _hub = new VirtualModuleHub(hostReceivePort: 9999, moduleListenPort: 8888);
             _hub.Gps.Latitude = Latitude;

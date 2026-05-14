@@ -68,6 +68,16 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="GPS" FontWeight="SemiBold" FontSize="14" />
 
+                    <!-- Bicycle-model axle length. The host's wizard has its own
+                         belief about wheelbase; the operator dials this slider
+                         to set the simulator's truth and verify the wizard /
+                         guidance reacts correctly to a mismatch. Range matches
+                         small ATVs up through large cab tractors. -->
+                    <TextBlock Text="{Binding Wheelbase, StringFormat='Wheelbase: {0:F2} m'}" />
+                    <Slider Minimum="1.0" Maximum="5.0" Value="{Binding Wheelbase}"
+                            TickFrequency="0.1" IsSnapToTickEnabled="False"
+                            ToolTip.Tip="Axle length used by the simulator's bicycle kinematic model. Operator-controlled truth — the host's wizard tries to discover this." />
+
                     <TextBlock Text="{Binding Latitude, StringFormat='Latitude: {0:F6}'}" />
                     <NumericUpDown Value="{Binding Latitude}" Increment="0.0001"
                                    FormatString="F6" Minimum="-90" Maximum="90" />
