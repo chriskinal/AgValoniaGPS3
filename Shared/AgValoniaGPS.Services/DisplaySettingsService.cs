@@ -27,7 +27,6 @@ namespace AgValoniaGPS.Services;
 public class DisplaySettingsService : IDisplaySettingsService
 {
     private const double CameraPitchStep = 5.0;
-    private const int BrightnessStep = 5;
 
     // Access display config directly from the store
     private static DisplayConfig Display => ConfigurationStore.Instance.Display;
@@ -116,28 +115,6 @@ public class DisplaySettingsService : IDisplaySettingsService
     }
     public event EventHandler<bool>? ViewModeChanged;
 
-    // Brightness control - local state (platform-specific, not persisted)
-    private int _brightness = 50;
-    public int Brightness
-    {
-        get => _brightness;
-        set
-        {
-            // Clamp between 0 and 100
-            var clampedValue = Math.Max(0, Math.Min(100, value));
-            if (_brightness != clampedValue)
-            {
-                _brightness = clampedValue;
-                BrightnessChanged?.Invoke(this, clampedValue);
-            }
-        }
-    }
-    public event EventHandler<int>? BrightnessChanged;
-
-    // Brightness support depends on platform
-    // For now, we'll stub this - can implement platform-specific later
-    public bool IsBrightnessSupported => false;
-
     public void IncreaseCameraPitch()
     {
         CameraPitch += CameraPitchStep;
@@ -146,16 +123,6 @@ public class DisplaySettingsService : IDisplaySettingsService
     public void DecreaseCameraPitch()
     {
         CameraPitch -= CameraPitchStep;
-    }
-
-    public void IncreaseBrightness()
-    {
-        Brightness += BrightnessStep;
-    }
-
-    public void DecreaseBrightness()
-    {
-        Brightness -= BrightnessStep;
     }
 
     public void ToggleGrid()

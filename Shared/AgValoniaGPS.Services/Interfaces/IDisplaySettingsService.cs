@@ -38,16 +38,9 @@ namespace AgValoniaGPS.Services.Interfaces
         event EventHandler<double>? CameraPitchChanged;
         event EventHandler<bool>? ViewModeChanged;
 
-        // Brightness control
-        int Brightness { get; set; }
-        bool IsBrightnessSupported { get; }
-        event EventHandler<int>? BrightnessChanged;
-
         // Methods
         void IncreaseCameraPitch();
         void DecreaseCameraPitch();
-        void IncreaseBrightness();
-        void DecreaseBrightness();
         void ToggleGrid();
         void ToggleDayNight();
         void Toggle2D3D();

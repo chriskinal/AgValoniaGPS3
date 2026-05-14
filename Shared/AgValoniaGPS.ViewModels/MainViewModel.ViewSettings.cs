@@ -27,7 +27,7 @@ namespace AgValoniaGPS.ViewModels;
 
 /// <summary>
 /// MainViewModel partial class containing View Settings and Panel Visibility.
-/// Manages UI state for panels, display settings, and camera/brightness controls.
+/// Manages UI state for panels, display settings, and camera/display controls.
 /// </summary>
 public partial class MainViewModel
 {
@@ -276,21 +276,6 @@ public partial class MainViewModel
             OnPropertyChanged();
         }
     }
-
-    public int Brightness
-    {
-        get => _displaySettings.Brightness;
-        set
-        {
-            _displaySettings.Brightness = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(BrightnessDisplay));
-        }
-    }
-
-    public string BrightnessDisplay => _displaySettings.IsBrightnessSupported
-        ? $"{_displaySettings.Brightness}%"
-        : "??";
 
     public string DisplayResolutionLabel => ConfigStore.Display.DisplayResolutionMultiplier switch
     {

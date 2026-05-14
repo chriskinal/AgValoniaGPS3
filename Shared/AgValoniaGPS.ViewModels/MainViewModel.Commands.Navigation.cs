@@ -22,7 +22,7 @@ using CommunityToolkit.Mvvm.Input;
 namespace AgValoniaGPS.ViewModels;
 
 /// <summary>
-/// Navigation panel commands - view toggles, camera controls, brightness.
+/// Navigation panel commands - view toggles, camera controls.
 /// </summary>
 public partial class MainViewModel
 {
@@ -149,17 +149,6 @@ public partial class MainViewModel
             {
                 CameraPitch += 5.0;
             }
-        });
-
-        // Brightness controls
-        IncreaseBrightnessCommand = new RelayCommand(() =>
-        {
-            Brightness += 5;
-        });
-
-        DecreaseBrightnessCommand = new RelayCommand(() =>
-        {
-            Brightness -= 5;
         });
 
         // Display resolution: cycle Ultra → High → Medium → Low → Min → Ultra

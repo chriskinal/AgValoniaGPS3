@@ -107,7 +107,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Headland Dist" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Row 1: Brightness, Svenn Arrow, Start Fullscreen, Elevation Log -->
+                        <!-- Row 1: Auto Day/Night, Svenn Arrow, Start Fullscreen, Elevation Log -->
                         <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
                             <Button Classes="DisplayToggle"
                                     Background="{Binding Display.AutoDayNight, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"

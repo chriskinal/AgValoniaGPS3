@@ -531,11 +531,6 @@ public partial class MainWindow : Window
                 MapControl.SetNorthUp(ViewModel.IsNorthUp);
             }
         }
-        else if (e.PropertyName == nameof(MainViewModel.Brightness))
-        {
-            // Brightness control depends on platform-specific implementation
-            // Currently marked as not supported in DisplaySettingsService
-        }
         else if (e.PropertyName == nameof(MainViewModel.EnableABClickSelection))
         {
             if (MapControl is DrawingContextMapControl dcMapControl)
