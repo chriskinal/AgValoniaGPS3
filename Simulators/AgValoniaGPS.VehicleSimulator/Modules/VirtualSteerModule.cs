@@ -165,10 +165,17 @@ public class VirtualSteerModule : IDisposable
         data[4] = (byte)(rollRaw & 0xFF);
         data[5] = (byte)((rollRaw >> 8) & 0xFF);
 
-        // Byte 6: Switch status
+        // Byte 6: Switch status. When the operator has not wired a physical
+        // switch (the matching config flag is OFF), the simulator always
+        // reports "active" — matching the legacy Teensy convention where an
+        // unwired input is treated as continuously engaged so the host's
+        // autosteer can still arm. When the flag is ON, the UI toggle drives
+        // the bit.
+        bool steerActive = SteerSwitchEnabled ? SteerSwitchActive : true;
+        bool workActive = WorkSwitchEnabled ? WorkSwitchActive : true;
         byte switches = 0;
-        if (!WorkSwitchActive) switches |= 0x01; // bit 0: work switch (inverted: 1=OFF)
-        if (SteerSwitchActive) switches |= 0x02;  // bit 1: steer switch
+        if (!workActive) switches |= 0x01;  // bit 0: work switch (inverted: 1=OFF)
+        if (steerActive) switches |= 0x02;  // bit 1: steer switch
         data[6] = switches;
 
         // Byte 7: PWM display

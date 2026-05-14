@@ -84,7 +84,14 @@
                     <NumericUpDown Value="{Binding SatelliteCount}" Increment="1"
                                    Minimum="0" Maximum="30" />
 
-                    <CheckBox Content="Steer Switch ON" IsChecked="{Binding SteerSwitchOn}" />
+                    <!-- Disabled when the host has not configured a physical
+                         steer switch (PGN 251 SteerSwitch flag = 0). In that
+                         case the module reports the switch as continuously
+                         active regardless of this toggle. -->
+                    <CheckBox Content="Steer Switch ON"
+                              IsChecked="{Binding SteerSwitchOn}"
+                              IsEnabled="{Binding SteerSwitchToggleEnabled}"
+                              ToolTip.Tip="No physical steer switch configured on the host — the module reports SteerSwitch as always active." />
 
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Panel Width="14" Height="14">
@@ -109,9 +116,27 @@
 
                     <TextBlock Text="{Binding CommandedAngle, StringFormat='Commanded Angle: {0:F1} deg'}" />
 
+                    <TextBlock Text="{Binding ReportedSteerAngle, StringFormat='Reported WAS: {0:F2} deg'}" />
+
                     <TextBlock Text="{Binding PwmDisplay, StringFormat='PWM: {0}'}" />
 
                     <TextBlock Text="{Binding SteerSwitchOn, StringFormat='Steer Switch: {0}'}" />
+
+                    <Separator Margin="0,8" />
+
+                    <!-- Applied settings: the most recently received-and-applied
+                         values from PGN 251 (SteerConfig) and PGN 252 (SteerSettings).
+                         Lets the operator confirm the host's wizard config landed
+                         on the module before driving. -->
+                    <TextBlock Text="Applied Settings" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AppliedKp, StringFormat='Kp: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedCountsPerDegree, StringFormat='Counts/Deg: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedWasOffset, StringFormat='WAS Offset: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedHighPwm, StringFormat='Max PWM: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedInvertWas, StringFormat='Invert WAS: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedIsDanfoss, StringFormat='Danfoss: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedSteerSwitchEnabled, StringFormat='Steer Switch wired: {0}'}" FontSize="12" />
+                    <TextBlock Text="{Binding AppliedWorkSwitchEnabled, StringFormat='Work Switch wired: {0}'}" FontSize="12" />
 
                     <Separator Margin="0,8" />
 

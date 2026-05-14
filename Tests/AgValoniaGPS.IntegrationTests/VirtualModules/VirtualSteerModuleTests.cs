@@ -157,6 +157,59 @@ public class VirtualSteerModuleTests
             $"Expected PWM loop to converge to 10 deg within 5 s, got {steer.ActualSteerAngleDeg}");
     }
 
+    /// <summary>
+    /// Decode PGN 253 byte 6 (switch status) from a captured packet.
+    /// Bit 1 = steer switch active; bit 0 = work switch inverted (1 = off).
+    /// </summary>
+    private static (bool steerActive, bool workActive) DecodeSwitchByte(byte[] packet)
+    {
+        byte b = packet[11]; // header(5) + data[6] = byte 6 of payload
+        bool steer = (b & 0x02) != 0;
+        bool work = (b & 0x01) == 0; // bit 0 inverted
+        return (steer, work);
+    }
+
+    [Test]
+    public void SwitchConfigured_RespectsUiToggle()
+    {
+        using var listener = new HostListener(HostPort + 4);
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 4, hostPort: HostPort + 4, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings());
+        steer.ApplySteerConfig(DefaultConfig(steerSwitch: true));
+        // Operator has the physical switch wired and has flipped it off.
+        steer.SteerSwitchActive = false;
+
+        steer.Tick();
+        Thread.Sleep(30);
+
+        var packet = listener.LatestSteerPacket();
+        Assert.That(packet, Is.Not.Null, "Expected a PGN 253 packet");
+        var (steerBit, _) = DecodeSwitchByte(packet!);
+        Assert.That(steerBit, Is.False,
+            "When SteerSwitch is wired and operator has toggled OFF, PGN 253 should report SteerSwitchActive=false.");
+    }
+
+    [Test]
+    public void SwitchNotConfigured_AlwaysEngaged()
+    {
+        using var listener = new HostListener(HostPort + 5);
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 5, hostPort: HostPort + 5, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings());
+        steer.ApplySteerConfig(DefaultConfig(steerSwitch: false));
+        // Even if the UI toggle says "off", with no physical switch wired the
+        // module should report it as continuously engaged.
+        steer.SteerSwitchActive = false;
+
+        steer.Tick();
+        Thread.Sleep(30);
+
+        var packet = listener.LatestSteerPacket();
+        Assert.That(packet, Is.Not.Null, "Expected a PGN 253 packet");
+        var (steerBit, _) = DecodeSwitchByte(packet!);
+        Assert.That(steerBit, Is.True,
+            "When SteerSwitch is not wired, PGN 253 should always report SteerSwitchActive=true regardless of UI toggle.");
+    }
+
     [Test]
     public void PeriodicEmission_FiresAt10Hz()
     {
