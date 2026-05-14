@@ -123,6 +123,40 @@ public class VirtualSteerModuleTests
         Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(-5.0).Within(1e-9));
     }
 
+    private static AutoSteerCommand SteerCommand(double angleDeg, bool engaged)
+    {
+        byte status = engaged ? (byte)0x0C : (byte)0x00; // bit 2 = engaged, bit 3 = gps valid
+        return new AutoSteerCommand
+        {
+            SpeedKmh = 10.0,
+            Status = status,
+            SteerAngleDeg = angleDeg,
+            IsEngaged = engaged,
+            IsGpsValid = true,
+        };
+    }
+
+    [Test]
+    public void ProportionalControl_ConvergesToCommand()
+    {
+        // 10 deg command + IsEngaged, tick the synthetic PWM control loop for
+        // ~5 simulated seconds. ActualSteerAngleDeg should converge to within
+        // 0.5 deg of the command.
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 3, hostPort: HostPort + 3, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings());
+        steer.ApplySteerConfig(DefaultConfig());
+        steer.ActualSteerAngleDeg = 0;
+        steer.ApplyAutoSteerCommand(SteerCommand(angleDeg: 10.0, engaged: true));
+
+        for (int i = 0; i < 50; i++)
+        {
+            steer.UpdateSteerControl(0.1);
+        }
+
+        Assert.That(steer.ActualSteerAngleDeg, Is.EqualTo(10.0).Within(0.5),
+            $"Expected PWM loop to converge to 10 deg within 5 s, got {steer.ActualSteerAngleDeg}");
+    }
+
     [Test]
     public void PeriodicEmission_FiresAt10Hz()
     {

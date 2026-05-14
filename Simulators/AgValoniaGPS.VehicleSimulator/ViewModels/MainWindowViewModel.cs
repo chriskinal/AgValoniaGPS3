@@ -181,7 +181,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
             _hub.Gps.Satellites = SatelliteCount;
             _hub.Gps.RollDegrees = RollAngle;
             _hub.Steer.ActualSteerAngleDeg = WasAngle;
-            _hub.Steer.SimulateSteerResponse = false; // We control WAS directly
+            // The module's synthetic PWM tick loop drives WAS when autosteer
+            // is engaged; the legacy on-receive WAS-follow stays off.
+            _hub.Steer.SimulateSteerResponse = false;
 
             _hub.Start();
 
@@ -220,14 +222,15 @@ public class MainWindowViewModel : INotifyPropertyChanged
         if (_hub == null) return;
 
         // Mirror host's autosteer engagement to the read-only indicator. When
-        // engaged, the simulated WAS follows the commanded angle with lag.
+        // engaged, the module's synthetic PWM loop owns the WAS angle; reflect
+        // it back into the UI slider so the operator sees the simulated motor
+        // turning the wheel. When not engaged, the slider is the source of
+        // truth and we push it down to the module further below.
         bool engaged = _hub.Steer.LastCommand?.IsEngaged ?? false;
         AutoSteerEngaged = engaged;
         if (engaged)
         {
-            double commanded = _hub.Steer.CommandedSteerAngleDeg;
-            double responseRate = 0.3;
-            WasAngle += (commanded - WasAngle) * responseRate;
+            WasAngle = _hub.Steer.ActualSteerAngleDeg;
         }
 
         const double dt = 0.1; // 10 Hz tick
@@ -266,7 +269,13 @@ public class MainWindowViewModel : INotifyPropertyChanged
         _hub.Gps.FixQuality = FixQuality;
         _hub.Gps.Satellites = SatelliteCount;
         _hub.Gps.RollDegrees = RollAngle;
-        _hub.Steer.ActualSteerAngleDeg = WasAngle;
+        // Only push slider → WAS when not engaged. When engaged the module's
+        // PWM loop is the source of truth (we already pulled it into WasAngle
+        // above), and pushing the slider value back would fight that loop.
+        if (!engaged)
+        {
+            _hub.Steer.ActualSteerAngleDeg = WasAngle;
+        }
         _hub.Steer.SteerSwitchActive = SteerSwitchOn;
 
         // Send GPS data

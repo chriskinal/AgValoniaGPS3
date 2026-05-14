@@ -44,8 +44,27 @@ public class VirtualSteerModule : IDisposable
     public double ImuRollDeg { get; set; }
 
     // Simulation behavior
-    public double SteerResponseRate { get; set; } = 0.5; // How fast WAS follows command (0-1)
-    public bool SimulateSteerResponse { get; set; } = true;
+    // Legacy WAS-follow path used by older Services.Tests fixtures: applies a
+    // fraction of the command-vs-actual gap on every PGN 254 receive. The
+    // current default is the PWM-driven tick loop below; this flag stays for
+    // back-compat with tests that opt into the simpler model.
+    public double SteerResponseRate { get; set; } = 0.5;
+    public bool SimulateSteerResponse { get; set; } = false;
+
+    // === Synthetic PWM control loop ===
+    // Modelled after the Teensy AutoSteer firmware: proportional control with
+    // MinPWM dead-band promotion (so the motor can overcome static friction)
+    // and a small commanded-vs-actual deadband to keep the wheel still at the
+    // target. Internal PWM is signed (-HighPWM .. +HighPWM); PGN 253 byte 7
+    // reports magnitude only, with direction handled by the driver pin on real
+    // hardware.
+    public int CurrentPwm { get; private set; }
+
+    /// <summary>Maps PWM duty (1..HighPWM) to deg/sec of WAS movement.</summary>
+    public double PwmToDegPerSec { get; set; } = 0.2;
+
+    /// <summary>Below this absolute error, drive pwm to zero so the wheel can rest.</summary>
+    public double AngleDeadbandDeg { get; set; } = 0.05;
 
     // Counters
     public long ReceivedCommandCount { get; private set; }
@@ -195,16 +214,7 @@ public class VirtualSteerModule : IDisposable
         switch (pgn)
         {
             case PgnProtocol.PGN_AUTOSTEER_TO_MODULE:
-                var cmd = PgnProtocol.ParseAutoSteerCommand(data);
-                CommandedSteerAngleDeg = cmd.SteerAngleDeg;
-                LastCommand = cmd;
-                ReceivedCommandCount++;
-
-                // Simulate WAS response
-                if (SimulateSteerResponse)
-                {
-                    ActualSteerAngleDeg += (CommandedSteerAngleDeg - ActualSteerAngleDeg) * SteerResponseRate;
-                }
+                ApplyAutoSteerCommand(PgnProtocol.ParseAutoSteerCommand(data));
                 // PGN 253 is emitted by the periodic TickLoop, not in response to PGN 254.
                 break;
 
@@ -220,6 +230,25 @@ public class VirtualSteerModule : IDisposable
             case PgnProtocol.PGN_STEER_CONFIG:
                 ApplySteerConfig(PgnProtocol.ParseSteerConfig(data));
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Apply a parsed PGN 254 (AutoSteer command) payload.
+    /// Public so tests can drive the control loop deterministically without
+    /// going over UDP and relying on receive-task timing.
+    /// </summary>
+    public void ApplyAutoSteerCommand(AutoSteerCommand cmd)
+    {
+        CommandedSteerAngleDeg = cmd.SteerAngleDeg;
+        LastCommand = cmd;
+        ReceivedCommandCount++;
+
+        // Legacy WAS-follow: applies a fraction of the gap on every receive.
+        // Disabled by default — the PWM tick loop is the real model.
+        if (SimulateSteerResponse)
+        {
+            ActualSteerAngleDeg += (CommandedSteerAngleDeg - ActualSteerAngleDeg) * SteerResponseRate;
         }
     }
 
@@ -301,7 +330,53 @@ public class VirtualSteerModule : IDisposable
     /// </summary>
     public void Tick()
     {
+        UpdateSteerControl(TickIntervalMs / 1000.0);
         SendSteerFeedback();
+    }
+
+    /// <summary>
+    /// Synthetic PWM control + WAS integration step.
+    /// Proportional law: pwm = error * Kp / 10, clamped to [-HighPWM, +HighPWM].
+    /// Below MinPWM but non-zero, magnitude is promoted to MinPWM (real motors
+    /// need that to break static friction). Below AngleDeadbandDeg of error,
+    /// pwm is forced to zero so the wheel can rest at the commanded angle.
+    /// The WAS is then moved by pwm × PwmToDegPerSec × dt, clamped so a single
+    /// tick can never overshoot the commanded angle. Runs only when the host
+    /// has IsEngaged set in PGN 254 — otherwise the wheel is freely operator-
+    /// controlled and the simulator just holds whatever ActualSteerAngleDeg is.
+    /// </summary>
+    public void UpdateSteerControl(double dt)
+    {
+        bool engaged = LastCommand?.IsEngaged ?? false;
+        double error = CommandedSteerAngleDeg - ActualSteerAngleDeg;
+
+        int pwm;
+        if (!engaged || Math.Abs(error) < AngleDeadbandDeg)
+        {
+            pwm = 0;
+        }
+        else
+        {
+            double raw = error * Kp / 10.0;
+            pwm = (int)raw;
+            if (pwm > HighPWM) pwm = HighPWM;
+            else if (pwm < -HighPWM) pwm = -HighPWM;
+            int absPwm = Math.Abs(pwm);
+            if (absPwm > 0 && absPwm < MinPWM)
+            {
+                pwm = pwm > 0 ? MinPWM : -MinPWM;
+            }
+        }
+
+        CurrentPwm = pwm;
+        PwmDisplay = (byte)Math.Min(255, Math.Abs(pwm));
+
+        if (engaged && pwm != 0)
+        {
+            double dAngle = pwm * PwmToDegPerSec * dt;
+            if (Math.Abs(dAngle) > Math.Abs(error)) dAngle = error;
+            ActualSteerAngleDeg += dAngle;
+        }
     }
 
     public void Dispose()
