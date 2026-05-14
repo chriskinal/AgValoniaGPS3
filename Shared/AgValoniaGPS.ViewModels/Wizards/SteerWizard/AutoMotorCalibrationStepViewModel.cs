@@ -22,6 +22,7 @@ using System.Windows.Input;
 
 using AgValoniaGPS.Services.Interfaces;
 
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -514,6 +515,19 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
+        // StateUpdated fires from the UDP receive thread (PGN 253 parser),
+        // so the property writes that follow would post PropertyChanged
+        // off the UI thread. Avalonia's bindings — especially the Start
+        // button's IsEnabled gate — don't refresh from a background-
+        // thread notification, which is what caused Issue I on bench-test
+        // of #381: the physical-switch toggle reached LastSteerData and
+        // the gate logic ran, but the button stayed greyed until the
+        // operator navigated away from the step and back.
+        DispatchToUI(ApplyLiveUpdate);
+    }
+
+    private void ApplyLiveUpdate()
+    {
         LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
         UpdatePhysicalSwitchGate();
     }
@@ -522,8 +536,29 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     {
         // Only re-evaluate when the gate-input flag changes; ignore the
         // dozens of unrelated tool config notifications.
-        if (e.PropertyName == nameof(_configService.Store.Tool.IsSteerSwitchEnabled))
-            UpdatePhysicalSwitchGate();
+        if (e.PropertyName != nameof(_configService.Store.Tool.IsSteerSwitchEnabled))
+            return;
+
+        // Operator-driven config changes typically come in on the UI
+        // thread, but wrap defensively — a future emitter that fires
+        // PropertyChanged from a worker would otherwise reintroduce
+        // Issue I from the config-dialog side.
+        DispatchToUI(UpdatePhysicalSwitchGate);
+    }
+
+    /// <summary>
+    /// Run <paramref name="action"/> on the UI thread, synchronously if
+    /// already there. In test contexts where the UI dispatcher pumps
+    /// inline on the test thread, <c>CheckAccess</c> returns true and
+    /// the work executes immediately — the existing
+    /// <c>Raise.Event</c>-based gate tests keep passing.
+    /// </summary>
+    private static void DispatchToUI(Action action)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            action();
+        else
+            Dispatcher.UIThread.Post(action);
     }
 
     /// <summary>

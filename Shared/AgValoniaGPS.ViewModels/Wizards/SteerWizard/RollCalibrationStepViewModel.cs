@@ -9,6 +9,7 @@ using System.Windows.Input;
 
 using AgValoniaGPS.Services.Interfaces;
 
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -110,7 +111,27 @@ public class RollCalibrationStepViewModel : WizardStepViewModel
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
-        LiveRoll = Math.Round(snapshot.Roll, 2);
+        // StateUpdated fires from the UDP receive thread; off-thread
+        // PropertyChanged doesn't refresh Avalonia bindings, so the
+        // LiveRoll gauge would freeze until the operator navigated
+        // away and back. CheckAccess keeps synchronous-on-test-thread
+        // callers (Raise.Event in NSubstitute) running inline.
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            ApplyLiveUpdate(snapshot.Roll);
+        }
+        else
+        {
+            // Capture Roll into a local so the closure doesn't observe
+            // a mutated 'snapshot' if the parser reuses the struct.
+            double roll = snapshot.Roll;
+            Dispatcher.UIThread.Post(() => ApplyLiveUpdate(roll));
+        }
+    }
+
+    private void ApplyLiveUpdate(double roll)
+    {
+        LiveRoll = Math.Round(roll, 2);
         HasLiveData = true;
     }
 

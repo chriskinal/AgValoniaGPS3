@@ -20,6 +20,7 @@ using System.Windows.Input;
 
 using AgValoniaGPS.Services.Interfaces;
 
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 
 namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
@@ -138,6 +139,25 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
     }
 
     private void OnAutoSteerStateUpdated(object? sender, VehicleStateSnapshot snapshot)
+    {
+        // StateUpdated fires from the UDP receive thread (PGN 253
+        // parser). PropertyChanged raised off the UI thread doesn't
+        // refresh Avalonia bindings, so the LiveSteerAngle TextBlock
+        // would stay stale until the operator left and re-entered the
+        // step. Marshal to the UI thread; CheckAccess keeps tests
+        // (which fire StateUpdated synchronously on the test thread)
+        // running inline.
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            ApplyLiveUpdate();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(ApplyLiveUpdate);
+        }
+    }
+
+    private void ApplyLiveUpdate()
     {
         // Show actual WAS angle from hardware (PGN 253), not commanded angle
         LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
