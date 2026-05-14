@@ -100,6 +100,53 @@ public class VirtualSteerModuleTests
     }
 
     [Test]
+    public void WasGroundTruth_OperatorChangesVirtualCpd_ReportedAngleScales()
+    {
+        // Misconfigured WAS: real hardware has 85 counts/deg, but the host
+        // believes it's 100 counts/deg. Wheel at 10° → 850 raw counts →
+        // host applies its (wrong) calibration: 850 / 100 = 8.5° reported.
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 11, hostPort: HostPort + 11, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings(cpd: 100, wasOffset: 0));
+        steer.ApplySteerConfig(DefaultConfig());
+        steer.VirtualCountsPerDegree = 85.0;
+        steer.VirtualWasOffset = 0;
+        steer.ActualSteerAngleDeg = 10.0;
+
+        Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(8.5).Within(1e-9));
+    }
+
+    [Test]
+    public void WasGroundTruth_CalibrationMatch_ReportedEqualsTruth()
+    {
+        // Host's guess matches reality — reported angle equals the wheel angle.
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 12, hostPort: HostPort + 12, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings(cpd: 85, wasOffset: 0));
+        steer.ApplySteerConfig(DefaultConfig());
+        steer.VirtualCountsPerDegree = 85.0;
+        steer.VirtualWasOffset = 0;
+        steer.ActualSteerAngleDeg = 10.0;
+
+        Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(10.0).Within(1e-9));
+    }
+
+    [Test]
+    public void WasGroundTruth_OffsetApplied()
+    {
+        // Real WAS is off-centre by 20 counts; host hasn't run Zero WAS yet
+        // (applied offset = 0). At 5° wheel angle: rawCounts = 5*100 + 20 = 520,
+        // host's inverse: (520 - 0) / 100 = 5.2° — apparent bias the operator
+        // is supposed to dial out with the wizard's Zero WAS step.
+        using var steer = new VirtualSteerModule(listenPort: ModulePort + 13, hostPort: HostPort + 13, hostIp: LoopbackIp);
+        steer.ApplySteerSettings(DefaultSettings(cpd: 100, wasOffset: 0));
+        steer.ApplySteerConfig(DefaultConfig());
+        steer.VirtualCountsPerDegree = 100.0;
+        steer.VirtualWasOffset = 20;
+        steer.ActualSteerAngleDeg = 5.0;
+
+        Assert.That(steer.ReportedSteerAngleDeg, Is.EqualTo(5.2).Within(1e-9));
+    }
+
+    [Test]
     public void AppliesWasOffsetToReportedAngle()
     {
         // Slider at 1.0° with CountsPerDegree=100 → 100 raw WAS counts.

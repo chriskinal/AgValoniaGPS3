@@ -105,9 +105,33 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="WAS" FontWeight="SemiBold" FontSize="14" />
 
-                    <!-- Host's guess at WAS hardware values + tuning, received
-                         via PGN 251/252. Hardware-truth knobs are added in the
-                         next commit (operator-controlled CPD / off-center). -->
+                    <!-- Ground-truth hardware values: the *real* CPD and offset
+                         of the simulated WAS sensor. Operator-adjustable so the
+                         steer-wizard calibration step is testable end-to-end:
+                         dial the host's PGN 251/252 values until the reported
+                         angle in the Module Status column matches the wheel
+                         angle in the Bicycle Model column. -->
+                    <TextBlock Text="Hardware Truth" FontWeight="SemiBold" FontSize="12" />
+
+                    <TextBlock Text="{Binding VirtualCountsPerDegree, StringFormat='Virtual Counts/Deg: {0:F0}'}" />
+                    <NumericUpDown Value="{Binding VirtualCountsPerDegree}" Increment="1"
+                                   Minimum="1" Maximum="255"
+                                   ToolTip.Tip="The simulated WAS sensor's real counts-per-degree. The host's wizard tries to discover this value." />
+
+                    <TextBlock Text="{Binding VirtualWasOffset, StringFormat='Virtual Off-center: {0}'}" />
+                    <NumericUpDown Value="{Binding VirtualWasOffset}" Increment="1"
+                                   Minimum="-2000" Maximum="2000"
+                                   ToolTip.Tip="The simulated WAS sensor's real off-center counts. The host's wizard tries to discover this via Zero WAS." />
+
+                    <TextBlock Text="{Binding TruthRawCounts, StringFormat='Truth raw counts: {0:F0}'}"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+                    <Separator Margin="0,8" />
+
+                    <!-- Host's guess at the same values, received via PGN 251/252.
+                         Sits next to the truth values so operator can spot a
+                         miscalibration at a glance. -->
                     <TextBlock Text="Host's Guess (PGN 251/252)" FontWeight="SemiBold" FontSize="12" />
                     <TextBlock Text="{Binding AppliedCountsPerDegree, StringFormat='Counts/Deg: {0}'}" FontSize="12" />
                     <TextBlock Text="{Binding AppliedWasOffset, StringFormat='WAS Offset: {0}'}" FontSize="12" />
