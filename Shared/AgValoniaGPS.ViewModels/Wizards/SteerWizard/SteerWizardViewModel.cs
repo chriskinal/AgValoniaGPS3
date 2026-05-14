@@ -73,6 +73,13 @@ public class SteerWizardViewModel : WizardViewModel
         autoCal.SetHardwareStep(hardwareStep);
         AddStep(autoCal);
 
+        // Step 10: Maximum Steering Angle (split out of the old combined
+        // motor cal step so the stress-style full-lock test gets its own
+        // operator-facing page with distinct warnings).
+        var maxSteer = new MaxSteeringAngleStepViewModel(configService, autoSteerService);
+        maxSteer.SetHardwareStep(hardwareStep);
+        AddStep(maxSteer);
+
         var cpdCircle = new CpdCircleTestStepViewModel(configService, autoSteerService);
         cpdCircle.SetHardwareStep(hardwareStep);
         AddStep(cpdCircle);

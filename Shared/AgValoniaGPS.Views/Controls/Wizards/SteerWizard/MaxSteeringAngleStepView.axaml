@@ -21,8 +21,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:steer="clr-namespace:AgValoniaGPS.ViewModels.Wizards.SteerWizard;assembly=AgValoniaGPS.ViewModels"
              mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="650"
-             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.AutoMotorCalibrationStepView"
-             x:DataType="steer:AutoMotorCalibrationStepViewModel">
+             x:Class="AgValoniaGPS.Views.Controls.Wizards.SteerWizard.MaxSteeringAngleStepView"
+             x:DataType="steer:MaxSteeringAngleStepViewModel">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         <TextBlock Grid.Row="0"
@@ -43,7 +43,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <ScrollViewer Grid.Row="2">
             <StackPanel Spacing="16">
 
-                <!-- Live WAS angle -->
                 <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                         CornerRadius="12"
                         Padding="20"
@@ -61,10 +60,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </Border>
 
-                <!-- ===== Phase A0: Start + gate hints ===== -->
-                <StackPanel IsVisible="{Binding IsPhaseA0}" Spacing="12">
+                <!-- ===== Waiting + gate hints ===== -->
+                <StackPanel IsVisible="{Binding IsWaiting}" Spacing="12">
                     <Button Command="{Binding StartTestCommand}"
-                            Content="Start Motor Test"
+                            Content="Start Max Angle Test"
                             HorizontalAlignment="Center"
                             Padding="24,12"
                             FontSize="18"
@@ -83,7 +82,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                TextWrapping="Wrap"
                                IsVisible="{Binding WaitingForPhysicalSwitch}"/>
 
-                    <TextBlock Text="No hardware connected - connect AutoSteer module to run calibration."
+                    <TextBlock Text="No hardware connected - connect AutoSteer module to run this test."
                                FontSize="14"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
@@ -91,38 +90,66 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                IsVisible="{Binding !HasHardware}"/>
                 </StackPanel>
 
-                <!-- ===== Phase A1: Progress ===== -->
-                <StackPanel IsVisible="{Binding IsPhaseA1}" Spacing="12">
+                <!-- ===== Measuring ===== -->
+                <StackPanel IsVisible="{Binding IsMeasuring}" Spacing="12">
                     <ProgressBar Value="{Binding Progress}"
                                  Minimum="0" Maximum="1"
                                  Height="8"
                                  CornerRadius="4"
                                  Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
-                        <StackPanel>
-                            <TextBlock Text="Current PWM"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding CurrentPwm}"
-                                       FontSize="24"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerLeft.png"
+                               Width="40" Height="40" Stretch="Uniform"/>
+                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerRight.png"
+                               Width="40" Height="40" Stretch="Uniform"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- ===== Phase A Result ===== -->
-                <StackPanel IsVisible="{Binding IsPhaseAResult}" Spacing="16">
+                <!-- ===== Complete ===== -->
+                <StackPanel IsVisible="{Binding IsComplete}" Spacing="16">
                     <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                             CornerRadius="8" Padding="16">
-                        <TextBlock Text="{Binding PhaseResult}"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   TextWrapping="Wrap"/>
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Results"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Right Max Angle"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMaxAngleRight, StringFormat='{}{0:F1}'}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Left Max Angle"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMaxAngleLeft, StringFormat='{}{0:F1}'}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Max Steer Angle (raw WAS)"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding MaxSteerAngle}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
+                            </Grid>
+                        </StackPanel>
                     </Border>
+
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
                         <Button Command="{Binding RedoCommand}"
                                 Content="Redo"
