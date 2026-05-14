@@ -1,0 +1,35 @@
+﻿{
+  "Vehicle": {
+    "Latitude": 49.99998097928763,
+    "Longitude": 49.999314849261644,
+    "Easting": -49.1223990745332,
+    "Northing": -25.36585963351458,
+    "Heading": 233.0692259011484,
+    "Speed": 2.1944444444444446,
+    "FixQuality": 4,
+    "SatelliteCount": 12,
+    "Hdop": 0.7
+  },
+  "Field": {
+    "ActiveField": "new 50,50",
+    "HasBoundary": true,
+    "HasHeadland": true,
+    "HeadlandDistance": 12,
+    "TrackCount": 2,
+    "ActiveTrack": "AB_233,5 14.48.28",
+    "OriginLat": 50.00020903,
+    "OriginLon": 50,
+    "DriftEasting": 0,
+    "DriftNorthing": 0
+  },
+  "Guidance": {
+    "CrossTrackError": -0.00021177859139631834,
+    "SteerAngle": -0.6864284488953182,
+    "HeadingError": 0
+  },
+  "UI": {
+    "ActiveDialog": "None",
+    "IsSimulatorPanelVisible": false,
+    "IsBoundaryPanelVisible": false
+  }
+}

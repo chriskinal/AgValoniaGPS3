@@ -96,10 +96,15 @@ public partial class WizardHost : UserControl
             // Step 8: WAS Calibration
             WasCalibrationStepViewModel => new WasCalibrationStepView(),
 
-            // Step 9: Auto Motor Calibration
+            // Step 9: Motor Direction + MinPWM (split out of the
+            // legacy combined motor cal step).
             AutoMotorCalibrationStepViewModel => new AutoMotorCalibrationStepView(),
 
-            // Step 10: CPD Circle Test
+            // Step 10: Maximum Steering Angle (full-lock stress test
+            // separated from Phase A discovery; see Issue K).
+            MaxSteeringAngleStepViewModel => new MaxSteeringAngleStepView(),
+
+            // Step 11: CPD Circle Test
             CpdCircleTestStepViewModel => new CpdCircleTestStepView(),
 
             // Step 10: Ackermann Calibration
