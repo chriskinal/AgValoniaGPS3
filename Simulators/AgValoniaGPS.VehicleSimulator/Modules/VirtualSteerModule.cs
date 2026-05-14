@@ -26,6 +26,11 @@ public class VirtualSteerModule : IDisposable
     private CancellationTokenSource? _cts;
     private Task? _receiveTask;
     private Task? _helloTask;
+    private Task? _tickTask;
+
+    // Real Teensy steer modules stream PGN 253 continuously at ~10 Hz regardless
+    // of host activity. The host's autosteer control loop relies on that cadence.
+    public int TickIntervalMs { get; set; } = 100;
 
     // Simulated WAS (Wheel Angle Sensor) state
     public double ActualSteerAngleDeg { get; set; }
@@ -59,6 +64,7 @@ public class VirtualSteerModule : IDisposable
         _cts = new CancellationTokenSource();
         _receiveTask = Task.Run(() => ReceiveLoop(_cts.Token));
         _helloTask = Task.Run(() => HelloLoop(_cts.Token));
+        _tickTask = Task.Run(() => TickLoop(_cts.Token));
     }
 
     public void Stop()
@@ -66,6 +72,7 @@ public class VirtualSteerModule : IDisposable
         _cts?.Cancel();
         try { _receiveTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
         try { _helloTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+        try { _tickTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
     }
 
     /// <summary>
@@ -149,9 +156,7 @@ public class VirtualSteerModule : IDisposable
                 {
                     ActualSteerAngleDeg += (CommandedSteerAngleDeg - ActualSteerAngleDeg) * SteerResponseRate;
                 }
-
-                // Send feedback after receiving command
-                SendSteerFeedback();
+                // PGN 253 is emitted by the periodic TickLoop, not in response to PGN 254.
                 break;
 
             case PgnProtocol.PGN_HELLO_FROM_HOST:
@@ -185,6 +190,29 @@ public class VirtualSteerModule : IDisposable
             }
             catch (OperationCanceledException) { break; }
         }
+    }
+
+    private async Task TickLoop(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                Tick();
+                await Task.Delay(TickIntervalMs, ct);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (SocketException) { break; }
+        }
+    }
+
+    /// <summary>
+    /// Single periodic tick. Public so deterministic tests can drive emission
+    /// without relying on Task.Delay timing.
+    /// </summary>
+    public void Tick()
+    {
+        SendSteerFeedback();
     }
 
     public void Dispose()
