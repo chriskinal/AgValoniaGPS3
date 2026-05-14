@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Services.Interfaces;
 
 using CommunityToolkit.Mvvm.Input;
@@ -155,11 +156,35 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     // Results
     // =========================================================================
 
-    private int _detectedMinPwm;
-    public int DetectedMinPwm
+    private int _detectedMinAngle;
+    /// <summary>
+    /// Test-angle step (with a 1.1 safety margin) at which the wheels
+    /// first responded during the ramp. Used to be called
+    /// <c>DetectedMinPwm</c>, but the ramp drives the module via
+    /// <see cref="IAutoSteerService.SetFreeDriveAngle"/>, not raw PWM,
+    /// so the iterated value is an angle step, not a duty cycle. The
+    /// real firmware PWM at that moment is captured separately in
+    /// <see cref="CapturedMinPwm"/> and saved into
+    /// <see cref="Configuration.AutoSteerConfig.MinPwm"/>.
+    /// </summary>
+    public int DetectedMinAngle
     {
-        get => _detectedMinPwm;
-        set => SetProperty(ref _detectedMinPwm, value);
+        get => _detectedMinAngle;
+        set => SetProperty(ref _detectedMinAngle, value);
+    }
+
+    private int _capturedMinPwm;
+    /// <summary>
+    /// Reported firmware PWM (PGN 253 byte 7 in the data-payload offset,
+    /// i.e. <see cref="SteerModuleData.PwmDisplay"/>) at the moment the
+    /// ramp first detected movement. This is the actual duty cycle the
+    /// module is running with when the wheels start to turn, so it's
+    /// what gets persisted as <c>AutoSteerConfig.MinPwm</c>.
+    /// </summary>
+    public int CapturedMinPwm
+    {
+        get => _capturedMinPwm;
+        set => SetProperty(ref _capturedMinPwm, value);
     }
 
     private bool _detectedInvertMotor;
@@ -220,11 +245,33 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _liveSteerAngle, value);
     }
 
-    private int _currentPwm;
-    public int CurrentPwm
+    private int _testAngleStep;
+    /// <summary>
+    /// Current step in the ramp test. The ramp commands the module via
+    /// <see cref="IAutoSteerService.SetFreeDriveAngle"/>, mapping this
+    /// value through <c>angle = step * 0.15</c>. Used to be exposed as
+    /// <c>CurrentPwm</c>, which was inaccurate — no PWM duty cycle is
+    /// sent during this loop. The live firmware PWM appears separately
+    /// in <see cref="ReportedModulePwm"/>.
+    /// </summary>
+    public int TestAngleStep
     {
-        get => _currentPwm;
-        set => SetProperty(ref _currentPwm, value);
+        get => _testAngleStep;
+        set => SetProperty(ref _testAngleStep, value);
+    }
+
+    private int _reportedModulePwm;
+    /// <summary>
+    /// Live PWM the steering module reports back via PGN 253 byte 7
+    /// (data-payload offset; <see cref="SteerModuleData.PwmDisplay"/>).
+    /// Shows the operator the duty cycle the firmware is actually
+    /// driving, instead of conflating it with the wizard's commanded
+    /// angle step.
+    /// </summary>
+    public int ReportedModulePwm
+    {
+        get => _reportedModulePwm;
+        set => SetProperty(ref _reportedModulePwm, value);
     }
 
     /// <summary>True when hardware is connected and sending data.</summary>
@@ -278,14 +325,20 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 
                 double currentAngle = GetCurrentWasAngle();
                 double moved = currentAngle - startAngle;
-                CurrentPwm = pwm;
+                TestAngleStep = pwm;
                 Progress = pwm / 255.0;
                 LiveSteerAngle = Math.Round(currentAngle, 1);
 
                 if (Math.Abs(moved) >= 10.0)
                 {
                     DetectedInvertMotor = moved < 0;
-                    DetectedMinPwm = (int)(pwm * 1.1);
+                    DetectedMinAngle = (int)(pwm * 1.1);
+                    // Snapshot the firmware's reported PWM at the moment
+                    // movement is detected — that's the actual duty cycle
+                    // driving the motor right now, so it's what we want
+                    // persisted as the min-PWM threshold (rather than the
+                    // wizard's commanded angle step).
+                    CapturedMinPwm = ReportedModulePwm;
 
                     _autoSteerService?.SetFreeDriveAngle(0);
                     await DelayFunc(500, token);
@@ -293,7 +346,8 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 
                     Phase = CalibrationPhase.RampResult;
                     PhaseResult = $"Motor direction: {(DetectedInvertMotor ? "Inverted" : "Normal")}\n" +
-                                  $"Minimum PWM: {DetectedMinPwm}";
+                                  $"Min trigger angle: {DetectedMinAngle}\n" +
+                                  $"Module PWM at trigger: {CapturedMinPwm}";
                     return;
                 }
             }
@@ -374,8 +428,9 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         Phase = CalibrationPhase.WaitingToStart;
         PhaseResult = "";
         Progress = 0;
-        CurrentPwm = 0;
-        DetectedMinPwm = 0;
+        TestAngleStep = 0;
+        DetectedMinAngle = 0;
+        CapturedMinPwm = 0;
         DetectedInvertMotor = false;
         NoMovementDetected = false;
         CalibrationCompleted = false;
@@ -416,7 +471,12 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         CalibrationCompleted = false;
 
         var autoSteer = _configService.Store.AutoSteer;
-        DetectedMinPwm = autoSteer.MinPwm;
+        // Restore the previously-persisted MinPwm so the result panel
+        // is populated when re-entering the step. We don't have a saved
+        // trigger angle to restore (that's a per-run measurement), so
+        // DetectedMinAngle starts at zero until a new run finishes.
+        CapturedMinPwm = autoSteer.MinPwm;
+        DetectedMinAngle = 0;
         DetectedInvertMotor = autoSteer.InvertMotor;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
 
@@ -446,14 +506,20 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         {
             var autoSteer = _configService.Store.AutoSteer;
             autoSteer.InvertMotor = DetectedInvertMotor;
-            autoSteer.MinPwm = DetectedMinPwm;
+            // Persist the firmware-reported PWM captured at the moment
+            // movement was detected. Previously this slot was filled
+            // with the wizard's commanded angle-step, which had no
+            // relationship to a real PWM duty cycle.
+            autoSteer.MinPwm = CapturedMinPwm;
             autoSteer.MaxSteerAngle = MaxSteerAngle;
         }
     }
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
-        LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        var steerData = _autoSteerService!.LastSteerData;
+        LiveSteerAngle = Math.Round(steerData.ActualSteerAngle, 1);
+        ReportedModulePwm = steerData.PwmDisplay;
     }
 
     public override Task<bool> ValidateAsync()

@@ -1450,26 +1450,26 @@ public class SteerWizardStepTests
     }
 
     [Test]
-    public async Task AutoCalibration_PhaseA_CalculatesMinPwm()
+    public async Task AutoCalibration_PhaseA_CalculatesMinAngle()
     {
         var autoSteerService = Substitute.For<IAutoSteerService>();
         var step = CreateAutoCalStep(autoSteerService);
 
-        // Movement detected at PWM=25 (call 6: pwm=0,5,10,15,20,25 -> index 5 is pwm 25)
+        // Movement detected at step=25 (call 6: step=0,5,10,15,20,25 -> index 5 is step 25)
         // startAngle read at call 0 (before loop)
-        // Loop: call 1 (pwm=0), call 2 (pwm=5), call 3 (pwm=10), call 4 (pwm=15), call 5 (pwm=20), call 6 (pwm=25)
+        // Loop: call 1 (step=0), call 2 (step=5), call 3 (step=10), call 4 (step=15), call 5 (step=20), call 6 (step=25)
         int callCount = 0;
         step.ReadWasAngle = () =>
         {
             callCount++;
-            // First call is startAngle (0). Calls 2-6 still 0. Call 7 (pwm=25) returns 12.0
+            // First call is startAngle (0). Calls 2-6 still 0. Call 7 (step=25) returns 12.0.
             return callCount <= 6 ? 0.0 : 12.0;
         };
 
         await step.RunPwmRampAsync();
 
-        // Movement detected at PWM=25 -> MinPwm = 25 * 1.1 = 27
-        Assert.That(step.DetectedMinPwm, Is.EqualTo((int)(25 * 1.1)));
+        // Movement detected at step=25 -> DetectedMinAngle = 25 * 1.1 = 27.
+        Assert.That(step.DetectedMinAngle, Is.EqualTo((int)(25 * 1.1)));
     }
 
     [Test]
@@ -1550,9 +1550,12 @@ public class SteerWizardStepTests
         var testable = new TestableStep<AutoMotorCalibrationStepViewModel>(step);
         testable.Enter();
 
-        // Set calibration results
+        // Set calibration results — note OnLeaving now saves
+        // CapturedMinPwm (the firmware-reported PWM at the moment
+        // movement was detected) rather than the wizard's commanded
+        // angle step.
         step.DetectedInvertMotor = true;
-        step.DetectedMinPwm = 28;
+        step.CapturedMinPwm = 28;
         step.MaxSteerAngle = 22;
         step.CalibrationCompleted = true;
 
@@ -1577,7 +1580,7 @@ public class SteerWizardStepTests
 
         // Modify but don't complete calibration
         step.DetectedInvertMotor = true;
-        step.DetectedMinPwm = 28;
+        step.CapturedMinPwm = 28;
         step.MaxSteerAngle = 22;
         // CalibrationCompleted remains false
 
@@ -1601,7 +1604,10 @@ public class SteerWizardStepTests
 
         testable.Enter();
 
-        Assert.That(step.DetectedMinPwm, Is.EqualTo(15));
+        // OnEntering restores the previously-saved MinPwm into the
+        // CapturedMinPwm slot (the actual firmware PWM, not the
+        // wizard's commanded angle step).
+        Assert.That(step.CapturedMinPwm, Is.EqualTo(15));
         Assert.That(step.DetectedInvertMotor, Is.True);
         Assert.That(step.MaxSteerAngle, Is.EqualTo(35));
     }
@@ -1629,7 +1635,8 @@ public class SteerWizardStepTests
         Assert.That(step.Phase, Is.EqualTo(CalibrationPhase.WaitingToStart));
         Assert.That(step.PhaseResult, Is.EqualTo(""));
         Assert.That(step.Progress, Is.EqualTo(0));
-        Assert.That(step.DetectedMinPwm, Is.EqualTo(0));
+        Assert.That(step.DetectedMinAngle, Is.EqualTo(0));
+        Assert.That(step.CapturedMinPwm, Is.EqualTo(0));
         Assert.That(step.DetectedInvertMotor, Is.False);
     }
 

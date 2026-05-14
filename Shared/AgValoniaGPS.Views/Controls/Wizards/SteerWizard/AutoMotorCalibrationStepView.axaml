@@ -92,16 +92,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                  Height="8"
                                  CornerRadius="4"
                                  Foreground="{DynamicResource SystemControlHighlightAccentBrush}"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="32">
                         <StackPanel>
-                            <TextBlock Text="Current PWM"
+                            <TextBlock Text="Test Angle Step"
                                        FontSize="12"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding CurrentPwm}"
+                            <TextBlock Text="{Binding TestAngleStep}"
                                        FontSize="24"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Module PWM"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ReportedModulePwm}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
@@ -192,13 +203,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                             </Grid>
 
-                            <!-- Min PWM -->
+                            <!-- Trigger angle (the wizard's commanded angle step at first movement) -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Trigger Angle Step"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DetectedMinAngle}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                            </Grid>
+
+                            <!-- Min PWM (reported by the module at the trigger moment; this is what gets saved) -->
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Text="Minimum PWM"
                                            FontSize="14"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding DetectedMinPwm}"
+                                           Text="{Binding CapturedMinPwm}"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
