@@ -3667,33 +3667,49 @@ public class DrawingContextMapControl : Control, ISharedMapControl
                 return;
             }
 
-            // Opt-in moveable path: tile the texture on a fixed world-space
-            // grid so the camera pan visibly scrolls the texture under the
-            // tractor. Tile size matches PR #307's 50 m grid. The tile
-            // count is bounded so an extreme zoom-out doesn't collapse FPS
-            // — past the bound the texture stops covering the viewport, but
-            // that's acceptable on zoomed-out overview where the texture
-            // adds no information anyway.
-            const double TileSize = 50.0;
+            // Opt-in moveable path: tile the texture on a world-space grid
+            // so the camera pan visibly scrolls the texture under the
+            // tractor. Base tile is 50 m matching PR #307; tile count is
+            // bounded so extreme zoom-outs don't collapse FPS.
+            //
+            // LOD: at far zooms the bounded tile count couldn't cover the
+            // viewport with a fixed 50 m tile size (the operator reported
+            // the texture disappearing past ~300 m diagonal — 6 tiles × 50
+            // m = 300 m hard cap). Instead, scale the tile size up by
+            // powers of 2 until the bounded count covers viewSpan.
+            // Power-of-2 keeps the grid coherent across LOD steps so the
+            // pattern doesn't jitter when crossing a zoom threshold (a
+            // 100 m tile's grid lines are a subset of the 50 m grid's
+            // lines). Trade-off: the texture pattern visibly grows as you
+            // zoom out — same cost as the camera-tracking stretched mode,
+            // just more obvious because there's a pattern to compare
+            // against.
+            const double BaseTileSize = 50.0;
             const int MaxTilesPerAxis = 6; // 6*6 = 36 draw calls worst case
             double halfDiagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2;
+            double viewSpan = halfDiagonal * 2;
+
+            double tileSize = BaseTileSize;
+            while (tileSize * MaxTilesPerAxis < viewSpan)
+                tileSize *= 2.0;
+
             double minX = s.CameraX - halfDiagonal;
             double maxX = s.CameraX + halfDiagonal;
             double minY = s.CameraY - halfDiagonal;
             double maxY = s.CameraY + halfDiagonal;
-            int x0 = (int)Math.Floor(minX / TileSize);
-            int y0 = (int)Math.Floor(minY / TileSize);
-            int x1 = (int)Math.Ceiling(maxX / TileSize);
-            int y1 = (int)Math.Ceiling(maxY / TileSize);
+            int x0 = (int)Math.Floor(minX / tileSize);
+            int y0 = (int)Math.Floor(minY / tileSize);
+            int x1 = (int)Math.Ceiling(maxX / tileSize);
+            int y1 = (int)Math.Ceiling(maxY / tileSize);
             int xCount = Math.Min(x1 - x0 + 1, MaxTilesPerAxis);
             int yCount = Math.Min(y1 - y0 + 1, MaxTilesPerAxis);
             for (int iy = 0; iy < yCount; iy++)
             {
                 for (int ix = 0; ix < xCount; ix++)
                 {
-                    double tx = (x0 + ix) * TileSize;
-                    double ty = (y0 + iy) * TileSize;
-                    dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, TileSize, TileSize));
+                    double tx = (x0 + ix) * tileSize;
+                    double ty = (y0 + iy) * tileSize;
+                    dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, tileSize, tileSize));
                 }
             }
         }
