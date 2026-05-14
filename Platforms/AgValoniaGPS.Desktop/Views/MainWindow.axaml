@@ -29,7 +29,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         Icon="/Assets/avalonia-logo.ico"
         Title="AgValoniaGPS"
         ToolTip.ServiceEnabled="False"
-        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+        Width="1200" Height="720"
+        MinWidth="1200" MinHeight="720"
+        MaxWidth="1200" MaxHeight="720"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
 
     <!-- Styles are now in shared SharedStyles.axaml -->
 

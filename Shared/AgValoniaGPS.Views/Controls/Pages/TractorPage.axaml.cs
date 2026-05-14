@@ -14,14 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.Views.Controls.Pages;
@@ -75,8 +76,14 @@ public partial class TractorPage : UserControl
     {
         if (_draggables.Count > 0) return;
 
+        const double canvasW = 1100, canvasH = 640;
         const double geometryW = 720, geometryH = 280;
         const double antennaW = 720, antennaH = 345;
+
+        // Section headings — moveable against the outer Dimensions canvas
+        // so the user can slot the divider in wherever the layout lands.
+        Add("Geometry header", "GeometryHeader", canvasW, canvasH);
+        Add("Antenna header",  "AntennaHeader",  canvasW, canvasH);
 
         void Add(string label, string name, double w, double h)
         {
@@ -166,8 +173,10 @@ public partial class TractorPage : UserControl
         var pixY = (int)System.Math.Round(pctY / 100.0 * d.ContainerHeight);
         d.Control.Margin = new Thickness(pixX, pixY, 0, 0);
 
-        // Mirror to debug output so the locked position is searchable in logs.
-        Debug.WriteLine($"[TractorPage layout] {d.Label}: X={pctX:F0}% Y={pctY:F0}% (Margin={pixX},{pixY},0,0)");
+        // Mirror to stdout so the locked position is searchable when the
+        // app is launched via `dotnet run` (Debug.WriteLine doesn't reach
+        // stdout — that wrote nothing during the 2026-05-14 PoC session).
+        Console.WriteLine($"[TractorPage layout] {d.Label}: X={pctX:F0}% Y={pctY:F0}% (Margin={pixX},{pixY},0,0)");
 
         e.Pointer.Capture(null);
         _dragging = null;
@@ -210,14 +219,35 @@ public partial class TractorPage : UserControl
             SetActiveSubTab(tag);
     }
 
+    /// <summary>
+    /// Home button. The page's DataContext is ConfigurationViewModel,
+    /// so walk up the visual tree until we find an ancestor whose
+    /// DataContext is the MainViewModel and invoke GoHomeCommand on it.
+    /// Walking the visual tree works on every platform; the older
+    /// TopLevel.DataContext lookup only resolved on Desktop where the
+    /// Window itself carried the MainViewModel.
+    /// </summary>
+    private void OnHomeClicked(object? sender, RoutedEventArgs e)
+    {
+        foreach (var ancestor in this.GetVisualAncestors())
+        {
+            if (ancestor is StyledElement el
+                && el.DataContext is MainViewModel vm
+                && vm.GoHomeCommand.CanExecute(null))
+            {
+                vm.GoHomeCommand.Execute(null);
+                return;
+            }
+        }
+    }
+
     private void SetActiveSubTab(string tag)
     {
         var tabs = new Dictionary<string, (StackPanel? tab, Control? section)>
         {
             ["Dimensions"]     = (this.FindControl<StackPanel>("TabDimensions"),     this.FindControl<Control>("SectionDimensions")),
-            ["UTurn"]          = (this.FindControl<StackPanel>("TabUTurn"),          this.FindControl<Control>("SectionUTurn")),
+            ["UTurnTramLines"] = (this.FindControl<StackPanel>("TabUTurnTramLines"), this.FindControl<Control>("SectionUTurnTramLines")),
             ["MachineControl"] = (this.FindControl<StackPanel>("TabMachineControl"), this.FindControl<Control>("SectionMachineControl")),
-            ["TramLines"]      = (this.FindControl<StackPanel>("TabTramLines"),      this.FindControl<Control>("SectionTramLines")),
             ["Gps"]            = (this.FindControl<StackPanel>("TabGps"),            this.FindControl<Control>("SectionGps")),
         };
 

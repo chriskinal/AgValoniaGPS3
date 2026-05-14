@@ -33,6 +33,7 @@ public partial class MainViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsMovingMapPage))]
     [NotifyPropertyChangedFor(nameof(IsNotMovingMapPage))]
+    [NotifyPropertyChangedFor(nameof(ShowsAppShellTabBar))]
     private PageType _currentPage = PageType.Home;
 
     /// <summary>
@@ -42,6 +43,17 @@ public partial class MainViewModel
     /// </summary>
     public bool IsMovingMapPage => CurrentPage == PageType.MovingMap;
     public bool IsNotMovingMapPage => CurrentPage != PageType.MovingMap;
+
+    /// <summary>
+    /// Whether the AppShell's bottom tab bar should be visible. Pages
+    /// that host their own bottom navigation (Tractor today; Implement /
+    /// FieldsAndJobs in time) hide the main bar to reclaim vertical
+    /// space on tablet viewports — those pages provide a Home button
+    /// in their own header so the user can navigate away.
+    /// </summary>
+    public bool ShowsAppShellTabBar =>
+        CurrentPage != PageType.MovingMap &&
+        CurrentPage != PageType.Tractor;
 
     /// <summary>
     /// Wires the observable <see cref="CurrentPage"/> mirror to the
