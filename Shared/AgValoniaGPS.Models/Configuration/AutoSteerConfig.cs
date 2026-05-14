@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
+
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AgValoniaGPS.Models.Configuration;
@@ -107,7 +109,17 @@ public class AutoSteerConfig : ObservableObject
     public double CountsPerDegree
     {
         get => _countsPerDegree;
-        set => SetProperty(ref _countsPerDegree, value);
+        set
+        {
+            if (SetProperty(ref _countsPerDegree, value))
+            {
+                // MaxSteerAngle is computed from MaxSteerRawCounts / CPD,
+                // so a CPD change re-meaning the degree view requires an
+                // explicit notification — bindings on the config dialog
+                // need to pick up the new degree number.
+                OnPropertyChanged(nameof(MaxSteerAngle));
+            }
+        }
     }
 
     private int _ackermann = 100;
@@ -122,15 +134,52 @@ public class AutoSteerConfig : ObservableObject
         set => SetProperty(ref _ackermann, value);
     }
 
-    private int _maxSteerAngle = 45;
+    // The mechanical-stop measurement is stored as raw WAS counts so it
+    // stays correct across CountsPerDegree changes. The wizard's
+    // Max Steering Angle step writes this directly; the legacy
+    // MaxSteerAngle (in degrees) is now a thin view computed from
+    // _maxSteerRawCounts at the current CPD. Before this change the
+    // operator had to run CPD calibration *before* max-steer or the
+    // saved degree value was scaled by the wrong ratio.
+    private int _maxSteerRawCounts = 45 * 100; // 45° at default CPD 100
+
     /// <summary>
-    /// Maximum physical steering angle (degrees).
-    /// Range: 10 - 90
+    /// Raw WAS counts at the mechanical steering stop (the measurement
+    /// captured by the max-steering-angle wizard step). Invariant under
+    /// CountsPerDegree changes — read <see cref="MaxSteerAngle"/> for
+    /// the degree-valued view.
+    /// </summary>
+    public int MaxSteerRawCounts
+    {
+        get => _maxSteerRawCounts;
+        set
+        {
+            if (SetProperty(ref _maxSteerRawCounts, value))
+                OnPropertyChanged(nameof(MaxSteerAngle));
+        }
+    }
+
+    /// <summary>
+    /// Maximum physical steering angle (degrees), computed from
+    /// <see cref="MaxSteerRawCounts"/> at the current
+    /// <see cref="CountsPerDegree"/>. Setting this value back-converts
+    /// using the current CPD so legacy callers (JSON profile load,
+    /// config dialog spinner) continue to work.
     /// </summary>
     public int MaxSteerAngle
     {
-        get => _maxSteerAngle;
-        set => SetProperty(ref _maxSteerAngle, value);
+        get
+        {
+            double cpd = _countsPerDegree;
+            if (cpd <= 0) return 0;
+            return (int)Math.Round(_maxSteerRawCounts / cpd);
+        }
+        set
+        {
+            double cpd = _countsPerDegree;
+            if (cpd <= 0) cpd = 100;
+            MaxSteerRawCounts = (int)Math.Round(value * cpd);
+        }
     }
 
     // ============================================
