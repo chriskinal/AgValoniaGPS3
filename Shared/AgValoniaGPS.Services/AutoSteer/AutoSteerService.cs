@@ -266,6 +266,17 @@ public class AutoSteerService : IAutoSteerService
         if (!PgnBuilder.TryParseSteerData(data, out var steerData))
             return;
 
+        // Track whether anything UI-relevant changed so we only burn a
+        // snapshot allocation + handler dispatch when there's news.
+        // The motor calibration wizard's physical-switch gate is the
+        // motivating case: without firing StateUpdated here, the gate
+        // would only re-evaluate on the next GPS packet, leaving the
+        // operator waiting for several ticks after flipping the switch.
+        bool switchChanged =
+            _lastSteerData.SteerSwitchActive != steerData.SteerSwitchActive ||
+            _lastSteerData.WorkSwitchActive != steerData.WorkSwitchActive ||
+            _lastSteerData.RemoteButtonPressed != steerData.RemoteButtonPressed;
+
         _lastSteerData = steerData;
 
         // Update vehicle state with actual angle from WAS
@@ -274,6 +285,19 @@ public class AutoSteerService : IAutoSteerService
         _state.WorkSwitchActive = steerData.WorkSwitchActive;
 
         _smartWas?.AddSample(steerData.ActualSteerAngle);
+
+        if (switchChanged)
+        {
+            Debug.WriteLine(
+                $"[AutoSteer] PGN 253 switch change: SteerSwitchActive={steerData.SteerSwitchActive} " +
+                $"WorkSwitchActive={steerData.WorkSwitchActive} " +
+                $"Remote={steerData.RemoteButtonPressed} Pwm={steerData.PwmDisplay}");
+
+            // Fire the standard cycle event so UI subscribers (wizard gates,
+            // config dialog indicators, chart series) see the new switch
+            // state without waiting for the next GPS packet.
+            NotifyStateUpdated();
+        }
     }
 
     /// <summary>
