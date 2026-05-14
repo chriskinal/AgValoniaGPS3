@@ -66,6 +66,16 @@ public class VirtualSteerModule : IDisposable
     /// <summary>Below this absolute error, drive pwm to zero so the wheel can rest.</summary>
     public double AngleDeadbandDeg { get; set; } = 0.05;
 
+    /// <summary>
+    /// Physical limit of the simulated wheel angle. The PID can command
+    /// any setpoint; the simulator clamps the integrated WAS so the
+    /// reported angle plateaus at this value (matching a real tractor's
+    /// hydraulic stops). Operator-adjustable in the simulator UI so the
+    /// wizard's max-steering-angle test sees a natural plateau. Default
+    /// ±35° approximates a typical agricultural front-axle range.
+    /// </summary>
+    public double MaxPhysicalWheelAngleDeg { get; set; } = 35.0;
+
     // Counters
     public long ReceivedCommandCount { get; private set; }
     public long SentFeedbackCount { get; private set; }
@@ -383,6 +393,17 @@ public class VirtualSteerModule : IDisposable
             double dAngle = pwm * PwmToDegPerSec * dt;
             if (Math.Abs(dAngle) > Math.Abs(error)) dAngle = error;
             ActualSteerAngleDeg += dAngle;
+
+            // Clamp to the simulated mechanical stops. Without this the
+            // PID can drive the integrated WAS angle indefinitely if the
+            // setpoint is past the physical max — the wizard's max-angle
+            // test then never sees a plateau and can't capture a stable
+            // reading. Real steering systems plateau on hydraulic stops
+            // and this models that behaviour.
+            if (ActualSteerAngleDeg > MaxPhysicalWheelAngleDeg)
+                ActualSteerAngleDeg = MaxPhysicalWheelAngleDeg;
+            else if (ActualSteerAngleDeg < -MaxPhysicalWheelAngleDeg)
+                ActualSteerAngleDeg = -MaxPhysicalWheelAngleDeg;
         }
     }
 

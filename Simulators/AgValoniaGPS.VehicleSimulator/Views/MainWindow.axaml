@@ -66,6 +66,14 @@
                     <Slider Minimum="-45" Maximum="45" Value="{Binding WasAngle}"
                             TickFrequency="1" IsSnapToTickEnabled="False" />
 
+                    <!-- Mechanical-limit clamp for the synthetic PWM loop. The
+                         wizard's Max Steering Angle test needs the simulator
+                         to plateau at a real-world maximum or its plateau
+                         detector never fires. -->
+                    <TextBlock Text="{Binding MaxPhysicalWheelAngle, StringFormat='Max Physical Wheel Angle: ±{0:F0} deg'}" />
+                    <Slider Minimum="5" Maximum="60" Value="{Binding MaxPhysicalWheelAngle}"
+                            TickFrequency="1" IsSnapToTickEnabled="True" />
+
                     <TextBlock Text="{Binding RollAngle, StringFormat='Roll: {0:F1} deg'}" />
                     <Slider Minimum="-15" Maximum="15" Value="{Binding RollAngle}"
                             TickFrequency="0.5" IsSnapToTickEnabled="False" />

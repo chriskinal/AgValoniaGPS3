@@ -66,6 +66,14 @@ public class VirtualSteerModule : IDisposable
     /// <summary>Below this absolute error, drive pwm to zero so the wheel can rest.</summary>
     public double AngleDeadbandDeg { get; set; } = 0.05;
 
+    /// <summary>
+    /// Physical limit of the simulated wheel angle. Clamps the
+    /// integrated WAS so the reported angle plateaus on the simulated
+    /// mechanical stops rather than drifting toward any commanded
+    /// setpoint indefinitely. Default ±35°.
+    /// </summary>
+    public double MaxPhysicalWheelAngleDeg { get; set; } = 35.0;
+
     // Counters
     public long ReceivedCommandCount { get; private set; }
     public long SentFeedbackCount { get; private set; }
@@ -383,6 +391,11 @@ public class VirtualSteerModule : IDisposable
             double dAngle = pwm * PwmToDegPerSec * dt;
             if (Math.Abs(dAngle) > Math.Abs(error)) dAngle = error;
             ActualSteerAngleDeg += dAngle;
+
+            if (ActualSteerAngleDeg > MaxPhysicalWheelAngleDeg)
+                ActualSteerAngleDeg = MaxPhysicalWheelAngleDeg;
+            else if (ActualSteerAngleDeg < -MaxPhysicalWheelAngleDeg)
+                ActualSteerAngleDeg = -MaxPhysicalWheelAngleDeg;
         }
     }
 
