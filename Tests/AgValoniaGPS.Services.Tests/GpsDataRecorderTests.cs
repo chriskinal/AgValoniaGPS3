@@ -89,11 +89,13 @@ public class GpsDataRecorderTests
         rec.Record(MakeResult(0, 0, 0, new Vec2 { Easting = 0, Northing = 3 }));
 
         var fields = LastDataLineFields(rec);
-        // Column order: ... headland_dist, goal_e, goal_n, goal_dist, forward_dot
-        double goalE = double.Parse(fields[^4], CultureInfo.InvariantCulture);
-        double goalN = double.Parse(fields[^3], CultureInfo.InvariantCulture);
-        double dist = double.Parse(fields[^2], CultureInfo.InvariantCulture);
-        double dot = double.Parse(fields[^1], CultureInfo.InvariantCulture);
+        // Column tail: ... headland_dist, goal_e, goal_n, goal_dist, forward_dot,
+        //              A, B, ptCount, is_turn_left, anti_tangent_guard_fired
+        // The goal-trajectory block is the last-9 .. last-6 columns.
+        double goalE = double.Parse(fields[^9], CultureInfo.InvariantCulture);
+        double goalN = double.Parse(fields[^8], CultureInfo.InvariantCulture);
+        double dist = double.Parse(fields[^7], CultureInfo.InvariantCulture);
+        double dot = double.Parse(fields[^6], CultureInfo.InvariantCulture);
 
         Assert.Multiple(() =>
         {
@@ -115,7 +117,7 @@ public class GpsDataRecorderTests
         rec.Record(MakeResult(0, 0, 0, new Vec2 { Easting = 0, Northing = -2 }));
 
         var fields = LastDataLineFields(rec);
-        double dot = double.Parse(fields[^1], CultureInfo.InvariantCulture);
+        double dot = double.Parse(fields[^6], CultureInfo.InvariantCulture);
         Assert.That(dot, Is.EqualTo(-2.0).Within(1e-3),
             "Anti-tangent goal (the drive-over signature) must record a "
             + "negative forward_dot so forensic filters can grep for it.");
@@ -134,10 +136,10 @@ public class GpsDataRecorderTests
         var fields = LastDataLineFields(rec);
         Assert.Multiple(() =>
         {
-            Assert.That(fields[^4], Is.Empty);
-            Assert.That(fields[^3], Is.Empty);
-            Assert.That(fields[^2], Is.Empty);
-            Assert.That(fields[^1], Is.Empty);
+            Assert.That(fields[^9], Is.Empty);
+            Assert.That(fields[^8], Is.Empty);
+            Assert.That(fields[^7], Is.Empty);
+            Assert.That(fields[^6], Is.Empty);
         });
     }
 
@@ -150,7 +152,7 @@ public class GpsDataRecorderTests
         rec.Record(MakeResult(0, 0, 90, new Vec2 { Easting = 5, Northing = 0 }));
 
         var fields = LastDataLineFields(rec);
-        double dot = double.Parse(fields[^1], CultureInfo.InvariantCulture);
+        double dot = double.Parse(fields[^6], CultureInfo.InvariantCulture);
         Assert.That(dot, Is.EqualTo(5.0).Within(1e-3),
             "Heading column is degrees; forward_dot computation must convert "
             + "to radians before sin/cos.");
@@ -164,7 +166,7 @@ public class GpsDataRecorderTests
         rec.Record(MakeResult(10, 10, 0, new Vec2 { Easting = 13, Northing = 14 }));
 
         var fields = LastDataLineFields(rec);
-        double dist = double.Parse(fields[^2], CultureInfo.InvariantCulture);
+        double dist = double.Parse(fields[^7], CultureInfo.InvariantCulture);
         Assert.That(dist, Is.EqualTo(5.0).Within(1e-3));
     }
 
@@ -185,7 +187,7 @@ public class GpsDataRecorderTests
         };
         Assert.DoesNotThrow(() => rec.Record(result));
         var fields = LastDataLineFields(rec);
-        Assert.That(fields[^4], Is.Empty);
-        Assert.That(fields[^1], Is.Empty);
+        Assert.That(fields[^9], Is.Empty);
+        Assert.That(fields[^6], Is.Empty);
     }
 }
