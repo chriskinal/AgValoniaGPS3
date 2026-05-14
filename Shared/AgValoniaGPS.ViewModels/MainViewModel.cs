@@ -2126,6 +2126,8 @@ public partial class MainViewModel : ObservableObject
     // Settings Commands
     public ICommand? ShowAppDirectoriesDialogCommand { get; private set; }
     public ICommand? CloseAppDirectoriesDialogCommand { get; private set; }
+    public ICommand? ShowAppSettingsDialogCommand { get; private set; }
+    public ICommand? CloseAppSettingsDialogCommand { get; private set; }
     public ICommand? ShowAboutDialogCommand { get; private set; }
     public ICommand? CloseAboutDialogCommand { get; private set; }
     public ICommand? ResetAllSettingsCommand { get; private set; }

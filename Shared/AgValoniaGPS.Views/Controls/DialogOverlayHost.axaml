@@ -65,6 +65,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <dialogs:FieldBuilderDialogPanel/>
         <dialogs:BugReportDialogPanel/>
         <dialogs:ConfigurationDialog DataContext="{Binding ConfigurationViewModel}"/>
+        <dialogs:AppSettingsDialogPanel/>
         <dialogs:AutoSteerConfigPanel DataContext="{Binding AutoSteerConfigViewModel}"/>
         <dialogs:SmartWasDialogPanel/>
         <dialogs:LoadVehicleToolDialogPanel/>

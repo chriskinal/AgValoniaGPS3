@@ -169,21 +169,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <config:SourcesConfigTab/>
                     </TabItem>
 
-                    <!-- Display Tab -->
-                    <TabItem ToolTip.Tip="Display">
-                        <TabItem.Header>
-                            <Border Width="40" Height="40" Background="{DynamicResource IconDisplay}"/>
-                        </TabItem.Header>
-                        <config:DisplayConfigTab/>
-                    </TabItem>
-
-                    <!-- Additional Options Tab -->
-                    <TabItem ToolTip.Tip="Additional Options">
-                        <TabItem.Header>
-                            <Border Width="40" Height="40" Background="{DynamicResource IconFeatures}"/>
-                        </TabItem.Header>
-                        <config:AdditionalOptionsConfigTab/>
-                    </TabItem>
+                    <!-- Display + Additional Options moved to the top-level
+                         AppSettings dialog (PR #app-settings-dialog). They're
+                         device-/user-scoped, not vehicle-scoped — opening
+                         them via the wrench made them feel like vehicle
+                         settings. -->
                 </TabControl>
 
                 <!-- Numeric Input Overlay -->

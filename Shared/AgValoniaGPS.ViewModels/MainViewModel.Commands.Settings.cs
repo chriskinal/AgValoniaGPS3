@@ -47,6 +47,16 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        ShowAppSettingsDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.AppSettings);
+        });
+
+        CloseAppSettingsDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
         ShowAboutDialogCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(Models.State.DialogType.About);

@@ -52,6 +52,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- App Configuration -->
+                <Button Classes="MenuListButton" Content="App Settings…"                   HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press" Command="{Binding ShowAppSettingsDialogCommand}"/>
                 <Button Classes="MenuListButton" Content="{loc:Localize ViewAllSettings}"  HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press" Command="{Binding ShowViewSettingsDialogCommand}"/>
                 <Button Classes="MenuListButton" Content="{loc:Localize AppDirectories}"   HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press" Command="{Binding ShowAppDirectoriesDialogCommand}"/>
                 <Button Classes="MenuListButton" Content="{loc:Localize LogViewer}"        HorizontalAlignment="Stretch" Margin="0,2" ClickMode="Press" Command="{Binding ShowLogViewerDialogCommand}"/>

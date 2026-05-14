@@ -1,0 +1,124 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:config="clr-namespace:AgValoniaGPS.Views.Controls.Dialogs.Configuration;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="720"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.AppSettingsDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsAppSettingsDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsAppSettingsDialogVisible}">
+
+    <UserControl.Styles>
+        <!-- Reuse the existing left-icon-strip TabControl look used by
+             ConfigurationDialog so the two dialogs feel consistent. -->
+        <Style Selector="TabControl.AppSettingsTabs">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TabControl.AppSettingsTabs > TabItem">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="MinWidth" Value="64"/>
+            <Setter Property="MinHeight" Value="64"/>
+        </Style>
+        <Style Selector="TabControl.AppSettingsTabs > TabItem:selected">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
+        <Style Selector="TabControl.AppSettingsTabs > TabItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <ImageBrush x:Key="IconDisplay" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_Display.png"/>
+                    <ImageBrush x:Key="IconFeatures" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_FeatureMenu.png"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <ImageBrush x:Key="IconDisplay" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_Display.png"/>
+                    <ImageBrush x:Key="IconFeatures" Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Dark/Con_FeatureMenu.png"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- Full screen modal overlay -->
+    <Grid>
+        <!-- Semi-transparent backdrop, tap-to-close. -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- Dialog container, fixed size to prevent resize on tab switch. -->
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="8"
+                Width="900"
+                Height="720"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                BoxShadow="0 8 32 #80000000">
+            <Grid RowDefinitions="Auto,*,Auto"
+                  DataContext="{Binding ConfigurationViewModel}"
+                  x:DataType="vm:ConfigurationViewModel">
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
+                    <TextBlock Text="App Settings" FontSize="18" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </Border>
+
+                <!-- Tabs: Display + Additional Options. ConfigurationViewModel
+                     is the DataContext both child tabs already bind to in
+                     ConfigurationDialog, so no extra plumbing is needed. -->
+                <TabControl Grid.Row="1" Classes="AppSettingsTabs" TabStripPlacement="Left"
+                            Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <TabItem ToolTip.Tip="Display">
+                        <TabItem.Header>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconDisplay}"/>
+                        </TabItem.Header>
+                        <config:DisplayConfigTab/>
+                    </TabItem>
+                    <TabItem ToolTip.Tip="Additional Options">
+                        <TabItem.Header>
+                            <Border Width="40" Height="40" Background="{DynamicResource IconFeatures}"/>
+                        </TabItem.Header>
+                        <config:AdditionalOptionsConfigTab/>
+                    </TabItem>
+                </TabControl>
+
+                <!-- Footer -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Button Grid.Column="1" Width="48" Height="48"
+                                Background="#4A9A7E" CornerRadius="24"
+                                Command="{Binding ApplyCommand}"
+                                ToolTip.Tip="Apply and Close">
+                            <TextBlock Text="✓" FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
