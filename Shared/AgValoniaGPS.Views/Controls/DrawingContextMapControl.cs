@@ -2207,6 +2207,10 @@ public class DrawingContextMapControl : Control, ISharedMapControl
         double zoomFactor = e.Delta.Y > 0 ? 1.1 : 0.9;
         _zoom *= zoomFactor;
         _zoom = Math.Clamp(_zoom, 0.02, 100.0);  // Min zoom 0.02 = 10km view height for large fields
+        // Push the new zoom to the render thread. Without this the change
+        // is invisible until something else (Pan, GPS tick) calls
+        // SendStateToHandler — so zoom did nothing with no GPS feeding.
+        SendStateToHandler();
         e.Handled = true;
     }
 
