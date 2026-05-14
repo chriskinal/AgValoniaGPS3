@@ -46,7 +46,14 @@ public class VirtualModuleHub : IDisposable
     {
         Steer.Start();
         Machine.Start();
-        Gps.Start();
+        // Don't start Gps.SendLoop. The host's SimulationTick at 10 Hz
+        // advances Lat/Lon/Heading and explicitly calls Gps.SendOnce()
+        // after each physics step. Starting the receiver's own 10 Hz
+        // SendLoop here adds a parallel emitter that reads the same
+        // fields between ticks, producing duplicate packets where every
+        // pair carries identical position data — visible to the host
+        // as stuttering / jumpy tractor motion.
+        // SendOnce() remains available for tests that drive emission.
     }
 
     public void Stop()
