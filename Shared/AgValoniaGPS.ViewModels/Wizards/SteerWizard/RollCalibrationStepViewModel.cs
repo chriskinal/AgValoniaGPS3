@@ -77,8 +77,14 @@ public class RollCalibrationStepViewModel : WizardStepViewModel
 
         ZeroRollCommand = new RelayCommand(() =>
         {
-            // Capture current roll as zero offset
-            RollZero = LiveRoll;
+            // LiveRoll is the *post-calibration* angle: the NMEA parser
+            // already applies IsRollInvert and subtracts the current
+            // RollZero before publishing. Replacing the offset would
+            // throw away the prior calibration on a second press —
+            // matches the WAS Zero accumulator bug (#385 F/G). The
+            // invert sign is already baked in upstream, so the Zero
+            // formula here is plain addition.
+            RollZero = _configService.Store.Ahrs.RollZero + LiveRoll;
         });
     }
 
