@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -231,6 +232,57 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     public bool HasHardware => _autoSteerService != null;
 
     // =========================================================================
+    // Physical-switch gate
+    // =========================================================================
+    //
+    // If the operator has Tool.IsSteerSwitchEnabled configured, the host
+    // requires the physical Steer Switch on the operator console to be
+    // ON before AutoSteer (and therefore this test) can run. Without an
+    // explicit hint the wizard's Start button just sits there greyed and
+    // the operator has no idea why; bench-test #381 caught exactly this.
+
+    private bool _waitingForPhysicalSwitch;
+    /// <summary>
+    /// True when the operator has the steer-switch gate enabled in tool
+    /// config but the live PGN 253 feedback says the physical switch is
+    /// OFF. The Start button binds <c>IsEnabled</c> to the inverse of
+    /// this, and the AXAML view shows
+    /// <see cref="PhysicalSwitchPromptText"/> below the button so the
+    /// operator knows what to do.
+    /// </summary>
+    public bool WaitingForPhysicalSwitch
+    {
+        get => _waitingForPhysicalSwitch;
+        private set
+        {
+            if (SetProperty(ref _waitingForPhysicalSwitch, value))
+            {
+                OnPropertyChanged(nameof(CanStartTest));
+                OnPropertyChanged(nameof(PhysicalSwitchPromptText));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Operator-facing prompt explaining why <see cref="CanStartTest"/>
+    /// is false when the physical switch is needed but inactive. Empty
+    /// string while the gate is open so the AXAML can use
+    /// <c>StringConverters.IsNotNullOrEmpty</c> for visibility.
+    /// </summary>
+    public string PhysicalSwitchPromptText => WaitingForPhysicalSwitch
+        ? "Turn the Steer Switch ON to start. The host is configured to require the physical switch."
+        : string.Empty;
+
+    /// <summary>
+    /// Composite gate for the Start button: hardware connected and
+    /// (if applicable) physical switch active. Separate from the
+    /// per-phase visibility flags so the AXAML can both hide the
+    /// button (no hardware) and grey it (waiting for switch) with
+    /// distinct UX.
+    /// </summary>
+    public bool CanStartTest => HasHardware && !WaitingForPhysicalSwitch;
+
+    // =========================================================================
     // Commands
     // =========================================================================
 
@@ -422,6 +474,13 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 
         if (_autoSteerService != null)
             _autoSteerService.StateUpdated += OnStateUpdated;
+
+        // Listen for the operator flipping Tool.IsSteerSwitchEnabled
+        // (config UI) while the wizard is on-screen, so the gate text
+        // reacts without needing a fresh PGN 253 to trigger reevaluation.
+        _configService.Store.Tool.PropertyChanged += OnToolPropertyChanged;
+
+        UpdatePhysicalSwitchGate();
     }
 
     protected override void OnLeaving()
@@ -441,6 +500,8 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
             }
         }
 
+        _configService.Store.Tool.PropertyChanged -= OnToolPropertyChanged;
+
         // Save results if calibration was completed
         if (CalibrationCompleted)
         {
@@ -454,6 +515,28 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
         LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        UpdatePhysicalSwitchGate();
+    }
+
+    private void OnToolPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Only re-evaluate when the gate-input flag changes; ignore the
+        // dozens of unrelated tool config notifications.
+        if (e.PropertyName == nameof(_configService.Store.Tool.IsSteerSwitchEnabled))
+            UpdatePhysicalSwitchGate();
+    }
+
+    /// <summary>
+    /// Recompute <see cref="WaitingForPhysicalSwitch"/> from the current
+    /// config + live module feedback. The gate is closed (i.e. waiting)
+    /// only when the operator has the steer-switch requirement enabled
+    /// AND the live PGN 253 says the physical switch is OFF.
+    /// </summary>
+    private void UpdatePhysicalSwitchGate()
+    {
+        bool requireSwitch = _configService.Store.Tool.IsSteerSwitchEnabled;
+        bool switchActive = _autoSteerService?.LastSteerData.SteerSwitchActive ?? false;
+        WaitingForPhysicalSwitch = requireSwitch && !switchActive;
     }
 
     public override Task<bool> ValidateAsync()

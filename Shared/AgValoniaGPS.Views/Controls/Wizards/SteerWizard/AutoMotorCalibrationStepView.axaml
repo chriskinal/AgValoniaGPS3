@@ -64,8 +64,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     </StackPanel>
                 </Border>
 
-                <!-- ===== Phase A0: Start button ===== -->
-                <StackPanel IsVisible="{Binding IsPhaseA0}" Spacing="16">
+                <!-- ===== Phase A0: Start button + gate hints ===== -->
+                <StackPanel IsVisible="{Binding IsPhaseA0}" Spacing="12">
                     <Button Command="{Binding StartTestCommand}"
                             Content="Start Motor Test"
                             HorizontalAlignment="Center"
@@ -76,7 +76,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             CornerRadius="8"
                             Cursor="Hand"
-                            IsVisible="{Binding HasHardware}"/>
+                            IsVisible="{Binding HasHardware}"
+                            IsEnabled="{Binding CanStartTest}"/>
+
+                    <!-- Physical-switch gate prompt: shows below the (disabled) Start
+                         button when Tool.IsSteerSwitchEnabled is true and the live
+                         PGN 253 says the switch is currently OFF. -->
+                    <TextBlock Text="{Binding PhysicalSwitchPromptText}"
+                               FontSize="14"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding WaitingForPhysicalSwitch}"/>
+
                     <TextBlock Text="No hardware connected - connect AutoSteer module to run calibration."
                                FontSize="14"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
