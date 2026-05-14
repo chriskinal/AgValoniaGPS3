@@ -127,6 +127,14 @@
                                FontSize="12"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 
+                    <!-- Mechanical-limit clamp for the synthetic PWM loop. The
+                         wizard's Max Steering Angle test needs the simulator
+                         to plateau at a real-world maximum or its plateau
+                         detector never fires. -->
+                    <TextBlock Text="{Binding MaxPhysicalWheelAngle, StringFormat='Max Physical Wheel Angle: ±{0:F0} deg'}" />
+                    <Slider Minimum="5" Maximum="60" Value="{Binding MaxPhysicalWheelAngle}"
+                            TickFrequency="1" IsSnapToTickEnabled="True" />
+
                     <Separator Margin="0,8" />
 
                     <!-- Host's guess at the same values, received via PGN 251/252.
