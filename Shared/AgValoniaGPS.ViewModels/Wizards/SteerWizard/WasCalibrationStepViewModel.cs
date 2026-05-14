@@ -50,14 +50,32 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
     public bool InvertWas
     {
         get => _invertWas;
-        set => SetProperty(ref _invertWas, value);
+        set
+        {
+            // Push to the store immediately so PGN 251/252 emit the new
+            // setting on the next AutoSteer config cycle. Without the
+            // live write, the operator's toggle takes effect only when
+            // they advance past the wizard step (OnLeaving), so live
+            // WAS bar feedback in the gauge above doesn't match the
+            // toggle state.
+            if (SetProperty(ref _invertWas, value))
+                _configService.Store.AutoSteer.InvertWas = value;
+        }
     }
 
     private int _wasOffset;
     public int WasOffset
     {
         get => _wasOffset;
-        set => SetProperty(ref _wasOffset, value);
+        set
+        {
+            // Same live push as InvertWas. The Zero WAS button captures
+            // the current angle into this setter; the host then emits
+            // PGN 251 with the new WasOffset on the next config cycle
+            // so the module starts subtracting it from raw counts.
+            if (SetProperty(ref _wasOffset, value))
+                _configService.Store.AutoSteer.WasOffset = value;
+        }
     }
 
     private double _liveSteerAngle;

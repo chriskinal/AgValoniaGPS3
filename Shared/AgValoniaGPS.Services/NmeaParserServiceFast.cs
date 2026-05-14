@@ -470,6 +470,7 @@ public class NmeaParserServiceFast
                 && Utf8Parser.TryParse(rollField, out int rawRoll, out _))
             {
                 state.Roll = rawRoll * 0.1;
+                ApplyAhrsRollCalibration(ref state.Roll);
             }
             else
             {
@@ -495,6 +496,7 @@ public class NmeaParserServiceFast
             if (rollField.Length > 0)
             {
                 Utf8Parser.TryParse(rollField, out state.Roll, out _);
+                ApplyAhrsRollCalibration(ref state.Roll);
             }
             else
             {
@@ -560,5 +562,20 @@ public class NmeaParserServiceFast
         }
 
         return degrees;
+    }
+
+    /// <summary>
+    /// Apply the operator-calibrated AHRS roll transform: invert sign if
+    /// <c>IsRollInvert</c> is set, then subtract <c>RollZero</c>. Mirrors
+    /// the WAS post-process in <c>SmartWasCalibrationService</c>. Without
+    /// this, the wizard's roll gauge and the guidance pipeline both see
+    /// raw uncalibrated IMU roll, and the operator's "Zero Roll" tap in
+    /// the Roll-calibration wizard step has no effect on live readings.
+    /// </summary>
+    private static void ApplyAhrsRollCalibration(ref double roll)
+    {
+        var ahrs = Models.Configuration.ConfigurationStore.Instance.Ahrs;
+        if (ahrs.IsRollInvert) roll = -roll;
+        roll -= ahrs.RollZero;
     }
 }
