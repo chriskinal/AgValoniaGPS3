@@ -131,7 +131,7 @@ public class SteerWizardLiveFeedbackTests
             "Without a physical AutoSteer switch configured, the wizard "
             + "must not gate on engagement — engagement is managed by the "
             + "host's AutoSteer button alone.");
-        Assert.That(step.CanStartCalibration, Is.True);
+        Assert.That(step.CanStartTest, Is.True);
     }
 
     [Test]
@@ -157,7 +157,7 @@ public class SteerWizardLiveFeedbackTests
             "Physical switch is configured but module reports it OFF: "
             + "calibration must wait so the operator-flips-switch prompt "
             + "is visible and StartTestCommand's CanExecute is false.");
-        Assert.That(step.CanStartCalibration, Is.False);
+        Assert.That(step.CanStartTest, Is.False);
         Assert.That(step.PhysicalSwitchPromptText,
             Does.Contain("AutoSteer switch"));
     }
@@ -201,7 +201,7 @@ public class SteerWizardLiveFeedbackTests
         Assert.That(step.WaitingForPhysicalSwitch, Is.False,
             "After the module's PGN 253 reports SteerSwitchActive=true, "
             + "the gate clears and calibration can start.");
-        Assert.That(step.CanStartCalibration, Is.True);
+        Assert.That(step.CanStartTest, Is.True);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────

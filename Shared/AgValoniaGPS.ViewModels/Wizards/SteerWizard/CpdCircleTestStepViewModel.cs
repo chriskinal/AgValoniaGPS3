@@ -341,8 +341,13 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
     /// </summary>
     private void ApplySnapshot(VehicleStateSnapshot snapshot)
     {
-        IsRtkFixed = snapshot.FixQuality >= 4;
+        FixQuality = snapshot.FixQuality;
+        // Only RTK Fixed (4) is accurate enough for the circle test; RTK
+        // Float (5) still drifts at the centimeter scale and would
+        // skew the measured diameter. See FixQualityLabel comment.
+        IsRtkFixed = snapshot.FixQuality == 4;
         Speed = Math.Round(snapshot.SpeedKmh, 1);
+        IsAtRecommendedSpeed = Speed >= 3.0 && Speed <= 7.0;
         LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
     }
 

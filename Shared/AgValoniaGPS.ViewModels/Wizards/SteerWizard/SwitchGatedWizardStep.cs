@@ -81,7 +81,7 @@ public abstract class SwitchGatedWizardStep : WizardStepViewModel
     /// visibility off <c>StringConverters.IsNotNullOrEmpty</c>.
     /// </summary>
     public virtual string PhysicalSwitchPromptText => WaitingForPhysicalSwitch
-        ? "Turn the Steer Switch ON to start. The host is configured to require the physical switch."
+        ? "Turn the physical AutoSteer switch (Steer Switch) ON to start. The host is configured to require it."
         : string.Empty;
 
     /// <summary>
