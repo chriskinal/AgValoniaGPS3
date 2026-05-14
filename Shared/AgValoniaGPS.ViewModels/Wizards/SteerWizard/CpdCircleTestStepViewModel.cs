@@ -244,7 +244,19 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
         CountsPerDegree = _configService.Store.AutoSteer.CountsPerDegree;
 
         if (_autoSteerService != null)
+        {
             _autoSteerService.StateUpdated += OnStateUpdated;
+
+            // Seed the gate inputs from the cached latest snapshot so the
+            // Record button reflects the current GPS state immediately on
+            // entry, instead of staying greyed for up to ~100 ms while
+            // waiting for the next StateUpdated publish. Without this the
+            // operator sees a disabled button on entry even when RTK fix
+            // and speed already meet the gate conditions.
+            var cached = _autoSteerService.LatestSnapshot;
+            if (cached.HasValue)
+                ApplySnapshot(cached.Value);
+        }
     }
 
     protected override void OnLeaving()
@@ -263,14 +275,25 @@ public class CpdCircleTestStepViewModel : WizardStepViewModel
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
-        IsRtkFixed = snapshot.FixQuality >= 4;
-        Speed = Math.Round(snapshot.SpeedKmh, 1);
-        LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        ApplySnapshot(snapshot);
 
         if (IsRecording)
         {
             ProcessGpsUpdate(snapshot.Easting, snapshot.Northing);
         }
+    }
+
+    /// <summary>
+    /// Copy the gate-relevant fields out of a snapshot. Pulled out of
+    /// <see cref="OnStateUpdated"/> so <see cref="OnEntering"/> can
+    /// seed from <see cref="IAutoSteerService.LatestSnapshot"/> without
+    /// triggering the recording branch.
+    /// </summary>
+    private void ApplySnapshot(VehicleStateSnapshot snapshot)
+    {
+        IsRtkFixed = snapshot.FixQuality >= 4;
+        Speed = Math.Round(snapshot.SpeedKmh, 1);
+        LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
     }
 
     public override Task<bool> ValidateAsync()
