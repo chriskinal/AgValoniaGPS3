@@ -178,6 +178,12 @@ public class YouTurnState : ObservableObject
     /// </summary>
     public double PreviousDistToTurnEnd { get; set; } = double.MaxValue;
 
+    /// <summary>
+    /// One-shot override for the direction of the *next* armed automatic turn.
+    /// Mirror of <see cref="Pipeline.YouTurnWorkingState.NextUTurnDirectionLeftOverride"/>.
+    /// </summary>
+    public bool? NextUTurnDirectionLeftOverride { get; set; }
+
     public void Reset()
     {
         IsTriggered = false;
@@ -195,6 +201,7 @@ public class YouTurnState : ObservableObject
         SnakeSequence = null;
         SnakeIndex = -1;
         CurrentZone = TractorZone.OutsideBoundary;
+        NextUTurnDirectionLeftOverride = null;
     }
 
     public void CompleteTurn()
