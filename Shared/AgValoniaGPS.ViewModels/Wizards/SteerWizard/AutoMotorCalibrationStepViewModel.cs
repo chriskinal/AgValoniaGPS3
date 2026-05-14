@@ -1,5 +1,5 @@
 // AgValoniaGPS
-// Copyright (C) 2024-2025 AgValoniaGPS Contributors
+// Copyright (C) 2024-2026 AgValoniaGPS Contributors
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
+using AgValoniaGPS.Models;
 using AgValoniaGPS.Services.Interfaces;
 
 using CommunityToolkit.Mvvm.Input;
@@ -30,16 +31,16 @@ namespace AgValoniaGPS.ViewModels.Wizards.SteerWizard;
 /// </summary>
 public enum CalibrationPhase
 {
-    /// <summary>Phase A0: Waiting for user to start PWM ramp test.</summary>
+    /// <summary>Phase A0: Waiting for the operator to start the Kp-ramp test.</summary>
     WaitingToStart,
 
-    /// <summary>Phase A1: Auto-ramping PWM, detecting motor direction and MinPWM.</summary>
+    /// <summary>Phase A1: Ramping Kp at a fixed +5° setpoint, watching for first WAS motion.</summary>
     RampingPWM,
 
-    /// <summary>Phase A result: Shows detected motor direction and MinPWM.</summary>
+    /// <summary>Phase A result: Motor direction + observed MinPWM captured.</summary>
     RampResult,
 
-    /// <summary>Phase B0: Waiting for user to start max angle measurement.</summary>
+    /// <summary>Phase B0: Waiting for the operator to start max-angle measurement.</summary>
     WaitingForMaxAngle,
 
     /// <summary>Phase B1: Driving full lock both ways to measure max angles.</summary>
@@ -50,15 +51,25 @@ public enum CalibrationPhase
 }
 
 /// <summary>
-/// Combined auto motor calibration step that replaces the separate Motor Direction Test
-/// and PWM Calibration steps. Automatically detects motor direction, minimum PWM,
-/// and maximum steering angles.
-///
-/// Phase A: Auto-ramp PWM to detect motor direction + MinPWM
-/// Phase B: Drive full lock both ways to measure max steering angles
+/// Combined auto motor calibration step. Phase A holds a small fixed
+/// angle setpoint (start + 5°) and ramps the module's proportional gain
+/// (Kp) until the wheel breaks static friction. The PWM the module is
+/// reporting at the moment of first motion is the real MinPWM; we don't
+/// guess it from a synthetic loop counter. If the wheel turns the wrong
+/// way, we flip InvertMotor in ConfigStore (which re-emits PGN 251 via
+/// the existing emit-on-change subscription) and re-run the ramp.
+/// Phase B is unchanged from the prior design.
 /// </summary>
 public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 {
+    private const int KpRampStartInclusive = 5;
+    private const int KpRampEndInclusive = 200;
+    private const int KpRampStep = 5;
+    private const int KpRampSettleMs = 200;
+    private const double TargetAngleDeltaDeg = 5.0;
+    private const double MotionThresholdDeg = 1.0;
+    private const double RunawayLimitDeg = 15.0;
+
     private readonly IConfigurationService _configService;
     private readonly IAutoSteerService? _autoSteerService;
     private HardwareInstalledStepViewModel? _hardwareStep;
@@ -70,14 +81,17 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     internal Func<int, CancellationToken, Task> DelayFunc { get; set; } = Task.Delay;
 
     /// <summary>
-    /// Injectable function to read current WAS angle. Production reads from IAutoSteerService.
+    /// Injectable accessor for the live module feedback so tests can
+    /// drive the ramp deterministically without standing up a UDP loop.
+    /// Production reads from <see cref="IAutoSteerService.LastSteerData"/>.
     /// </summary>
-    internal Func<double>? ReadWasAngle { get; set; }
+    internal Func<SteerModuleData>? ReadModuleData { get; set; }
 
     public override string Title => "Auto Motor Calibration";
 
     public override string Description =>
-        "Automatically detects motor direction, minimum PWM, and maximum steering angles. " +
+        "Automatically detects motor direction and minimum PWM by holding a small " +
+        "setpoint and increasing steering strength until the wheels respond. " +
         "Keep hands clear of the steering wheel during testing.";
 
     public override bool ShouldSkip => _hardwareStep?.HardwareLevel == 0;
@@ -117,8 +131,9 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     public string PhaseDescription => Phase switch
     {
         CalibrationPhase.WaitingToStart =>
-            "This test will slowly increase motor power to detect the minimum PWM " +
-            "needed to move the wheels and which direction the motor drives.\n\n" +
+            "We'll command a small turn and gradually increase steering strength " +
+            "until the wheels respond. This finds the minimum drive level and the " +
+            "motor direction.\n\n" +
             "WARNING: Keep hands clear of the steering wheel.",
         CalibrationPhase.RampingPWM =>
             "Testing motor response... Keep hands clear.",
@@ -156,6 +171,12 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     // =========================================================================
 
     private int _detectedMinPwm;
+    /// <summary>
+    /// PWM the module reported at the moment the WAS first registered
+    /// motion during the Kp ramp. This is the duty cycle the firmware
+    /// is actually running at when the motor breaks static friction —
+    /// the value persisted into <c>AutoSteerConfig.MinPwm</c>.
+    /// </summary>
     public int DetectedMinPwm
     {
         get => _detectedMinPwm;
@@ -220,11 +241,31 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         set => SetProperty(ref _liveSteerAngle, value);
     }
 
-    private int _currentPwm;
-    public int CurrentPwm
+    private int _currentKp;
+    /// <summary>
+    /// Current Kp value driven into ConfigStore during the ramp. The
+    /// progress bar tracks this. Note: the host's PGN 252 builder
+    /// clamps the wire-level value to 1..100, so display values past
+    /// 100 reflect the wizard's intent but the firmware sees the
+    /// saturation.
+    /// </summary>
+    public int CurrentKp
     {
-        get => _currentPwm;
-        set => SetProperty(ref _currentPwm, value);
+        get => _currentKp;
+        set => SetProperty(ref _currentKp, value);
+    }
+
+    private int _reportedModulePwm;
+    /// <summary>
+    /// Live PWM from the module's PGN 253 byte 7 (data-payload offset),
+    /// updated on every <c>StateUpdated</c>. Distinct from
+    /// <see cref="DetectedMinPwm"/>: this one moves second-to-second
+    /// during the ramp, the other is the captured snapshot at trigger.
+    /// </summary>
+    public int ReportedModulePwm
+    {
+        get => _reportedModulePwm;
+        set => SetProperty(ref _reportedModulePwm, value);
     }
 
     /// <summary>True when hardware is connected and sending data.</summary>
@@ -245,75 +286,176 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         _configService = configService;
         _autoSteerService = autoSteerService;
 
-        StartTestCommand = new AsyncRelayCommand(RunPwmRampAsync);
+        StartTestCommand = new AsyncRelayCommand(RunKpRampAsync);
         ContinueToMaxAngleCommand = new AsyncRelayCommand(RunMaxAngleMeasurementAsync);
         RedoPhaseACommand = new AsyncRelayCommand(RedoPhaseA);
         RedoPhaseBCommand = new AsyncRelayCommand(RedoPhaseB);
     }
 
     // =========================================================================
-    // Phase A1: PWM Ramp
+    // Phase A: Kp-ramp motor detection
     // =========================================================================
 
-    internal async Task RunPwmRampAsync()
+    /// <summary>
+    /// Ramp the module's Kp at a fixed +5° setpoint until the WAS
+    /// registers motion. The PWM the module is reporting at that moment
+    /// is the observed MinPWM. If the wheel turns the wrong direction
+    /// (negative delta), flip <see cref="AutoSteerConfig.InvertMotor"/>
+    /// and re-run the ramp once. Restore the operator's original Kp on
+    /// every exit path.
+    /// </summary>
+    internal async Task RunKpRampAsync()
     {
         Phase = CalibrationPhase.RampingPWM;
         NoMovementDetected = false;
+        PhaseResult = "";
+        Progress = 0;
+        CurrentKp = 0;
+
         _cancellationTokenSource = new CancellationTokenSource();
         var token = _cancellationTokenSource.Token;
 
-        double startAngle = GetCurrentWasAngle();
+        var autoSteerConfig = _configService.Store.AutoSteer;
+        int originalKp = autoSteerConfig.ProportionalGain;
 
         _autoSteerService?.EnableFreeDrive();
 
         try
         {
-            for (int pwm = 0; pwm <= 255; pwm += 5)
+            // Two-pass: first try the configured direction; if the wheel
+            // turns the wrong way at first motion, flip InvertMotor and
+            // restart the ramp from the bottom with the freshly settled
+            // start angle. A second wrong-way detection means the motor
+            // reverses in both modes (hardware/wiring fault).
+            bool invertTried = false;
+            while (true)
             {
                 token.ThrowIfCancellationRequested();
 
-                double testAngle = pwm * 0.15;
-                _autoSteerService?.SetFreeDriveAngle(testAngle);
-                await DelayFunc(200, token);
+                // Re-anchor on entry: the previous pass may have left the
+                // wheel slightly off-center, and the operator may have
+                // touched it between passes.
+                double startAngle = GetCurrentSteerAngle();
+                double target = startAngle + TargetAngleDeltaDeg;
+                _autoSteerService?.SetFreeDriveAngle(target);
 
-                double currentAngle = GetCurrentWasAngle();
-                double moved = currentAngle - startAngle;
-                CurrentPwm = pwm;
-                Progress = pwm / 255.0;
-                LiveSteerAngle = Math.Round(currentAngle, 1);
+                bool detected = false;
+                bool wrongDirection = false;
 
-                if (Math.Abs(moved) >= 10.0)
+                for (int kp = KpRampStartInclusive; kp <= KpRampEndInclusive; kp += KpRampStep)
                 {
-                    DetectedInvertMotor = moved < 0;
-                    DetectedMinPwm = (int)(pwm * 1.1);
+                    token.ThrowIfCancellationRequested();
 
-                    _autoSteerService?.SetFreeDriveAngle(0);
-                    await DelayFunc(500, token);
-                    _autoSteerService?.DisableFreeDrive();
+                    // Writing to ConfigStore.AutoSteer.ProportionalGain
+                    // triggers the AutoSteerService emit-on-change
+                    // subscription, which re-issues PGN 252 with the new
+                    // Kp. The module's PID picks up the new gain on the
+                    // next firmware tick and the duty cycle climbs.
+                    autoSteerConfig.ProportionalGain = kp;
+                    CurrentKp = kp;
+                    Progress = (double)(kp - KpRampStartInclusive)
+                               / (KpRampEndInclusive - KpRampStartInclusive);
 
+                    await DelayFunc(KpRampSettleMs, token);
+
+                    var module = GetCurrentModuleData();
+                    LiveSteerAngle = Math.Round(module.ActualSteerAngle, 1);
+                    ReportedModulePwm = module.PwmDisplay;
+
+                    double delta = module.ActualSteerAngle - startAngle;
+
+                    // Runaway guard: if we've drifted way past the small
+                    // setpoint, kill free-drive immediately rather than
+                    // let the loop keep ramping Kp.
+                    if (Math.Abs(delta) > RunawayLimitDeg)
+                    {
+                        NoMovementDetected = true;
+                        PhaseResult =
+                            "Runaway detected — the wheel moved more than " +
+                            $"{RunawayLimitDeg:F0}° from the start position. " +
+                            "Stopping for safety. Check WAS calibration and motor wiring.";
+                        Phase = CalibrationPhase.RampResult;
+                        return;
+                    }
+
+                    if (Math.Abs(delta) < MotionThresholdDeg)
+                        continue;
+
+                    // First motion. Snapshot the PWM the module is
+                    // currently driving — that's the observed MinPWM.
+                    if (delta > 0)
+                    {
+                        DetectedMinPwm = module.PwmDisplay;
+                        DetectedInvertMotor = autoSteerConfig.InvertMotor;
+                        detected = true;
+                    }
+                    else
+                    {
+                        wrongDirection = true;
+                    }
+                    break;
+                }
+
+                if (detected)
+                {
+                    PhaseResult =
+                        $"Motor direction: {(DetectedInvertMotor ? "Inverted" : "Normal")}\n" +
+                        $"Minimum PWM: {DetectedMinPwm}";
                     Phase = CalibrationPhase.RampResult;
-                    PhaseResult = $"Motor direction: {(DetectedInvertMotor ? "Inverted" : "Normal")}\n" +
-                                  $"Minimum PWM: {DetectedMinPwm}";
                     return;
                 }
-            }
 
-            // No movement detected at max PWM
-            _autoSteerService?.SetFreeDriveAngle(0);
-            _autoSteerService?.DisableFreeDrive();
-            NoMovementDetected = true;
-            Phase = CalibrationPhase.RampResult;
-            PhaseResult = "Warning: No wheel movement detected. Check motor connection.";
+                if (wrongDirection && !invertTried)
+                {
+                    // Flip InvertMotor in ConfigStore — emit-on-change
+                    // pushes PGN 251 to the module, which re-engages
+                    // the PID with the opposite sign convention on the
+                    // next tick. Settle, then restart the Kp ramp from
+                    // the bottom with a fresh start anchor.
+                    autoSteerConfig.InvertMotor = true;
+                    DetectedInvertMotor = true;
+                    invertTried = true;
+                    autoSteerConfig.ProportionalGain = originalKp;
+                    await DelayFunc(500, token);
+                    continue;
+                }
+
+                if (wrongDirection)
+                {
+                    NoMovementDetected = true;
+                    PhaseResult =
+                        "The motor turns the wrong direction in both modes. " +
+                        "This usually means the motor leads are swapped or the " +
+                        "WAS direction (Invert WAS) is wrong. Re-check wiring " +
+                        "and the WAS step.";
+                    Phase = CalibrationPhase.RampResult;
+                    return;
+                }
+
+                // Ramp completed with no motion at all.
+                NoMovementDetected = true;
+                PhaseResult =
+                    $"No wheel movement detected up to Kp={KpRampEndInclusive}. " +
+                    "Check motor wiring, MaxPWM, and supply voltage.";
+                Phase = CalibrationPhase.RampResult;
+                return;
+            }
         }
         catch (OperationCanceledException)
         {
+            // Cooperative cancel; the finally block restores Kp and
+            // disables free drive.
+        }
+        finally
+        {
             _autoSteerService?.SetFreeDriveAngle(0);
             _autoSteerService?.DisableFreeDrive();
+            autoSteerConfig.ProportionalGain = originalKp;
         }
     }
 
     // =========================================================================
-    // Phase B1: Max Angle Measurement
+    // Phase B: Max angle measurement (unchanged)
     // =========================================================================
 
     internal async Task RunMaxAngleMeasurementAsync()
@@ -329,7 +471,7 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
             // Full right - brief hold, read angle
             _autoSteerService?.SetFreeDriveAngle(45);
             await DelayFunc(1500, token);
-            DetectedMaxAngleRight = Math.Abs(GetCurrentWasAngle());
+            DetectedMaxAngleRight = Math.Abs(GetCurrentSteerAngle());
             Progress = 0.33;
 
             // Return to center
@@ -340,7 +482,7 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
             // Full left - brief hold, read angle
             _autoSteerService?.SetFreeDriveAngle(-45);
             await DelayFunc(1500, token);
-            DetectedMaxAngleLeft = Math.Abs(GetCurrentWasAngle());
+            DetectedMaxAngleLeft = Math.Abs(GetCurrentSteerAngle());
             Progress = 0.83;
 
             // Return to center
@@ -374,7 +516,7 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
         Phase = CalibrationPhase.WaitingToStart;
         PhaseResult = "";
         Progress = 0;
-        CurrentPwm = 0;
+        CurrentKp = 0;
         DetectedMinPwm = 0;
         DetectedInvertMotor = false;
         NoMovementDetected = false;
@@ -397,12 +539,14 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
     // Helpers
     // =========================================================================
 
-    private double GetCurrentWasAngle()
+    private SteerModuleData GetCurrentModuleData()
     {
-        if (ReadWasAngle != null)
-            return ReadWasAngle();
-        return _autoSteerService?.LastSteerData.ActualSteerAngle ?? 0;
+        if (ReadModuleData != null)
+            return ReadModuleData();
+        return _autoSteerService?.LastSteerData ?? SteerModuleData.Empty;
     }
+
+    private double GetCurrentSteerAngle() => GetCurrentModuleData().ActualSteerAngle;
 
     // =========================================================================
     // Lifecycle
@@ -453,7 +597,11 @@ public class AutoMotorCalibrationStepViewModel : WizardStepViewModel
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
     {
-        LiveSteerAngle = Math.Round(_autoSteerService!.LastSteerData.ActualSteerAngle, 1);
+        if (_autoSteerService == null)
+            return;
+        var steerData = _autoSteerService.LastSteerData;
+        LiveSteerAngle = Math.Round(steerData.ActualSteerAngle, 1);
+        ReportedModulePwm = steerData.PwmDisplay;
     }
 
     public override Task<bool> ValidateAsync()
