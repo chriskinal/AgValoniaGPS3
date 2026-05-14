@@ -647,6 +647,7 @@ public class ConfigurationServiceMappingTests
         _settings.SimulatorSpeed = 9999;
         _settings.SimulatorSteerAngle = 9999;
         _settings.FieldTextureVisible = false; // default is true, set to non-default
+        _settings.FieldTextureMoveable = true; // default is false, set to non-default
 
         _service.LoadAppSettings();
 

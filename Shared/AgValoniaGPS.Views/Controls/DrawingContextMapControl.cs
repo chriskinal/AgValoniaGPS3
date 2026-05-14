@@ -278,6 +278,14 @@ internal class MapRenderState
     public bool SvennArrowVisible;
     public bool DirectionMarkersVisible;
     public bool FieldTextureVisible;
+    /// <summary>
+    /// Opt-in tiled mode: when true, the ground texture is rendered as a
+    /// grid of world-anchored tiles so it visibly scrolls under the
+    /// tractor as the camera pans. When false (default), the texture is
+    /// a single stretched bitmap centered on the camera — FPS-stable but
+    /// visually static.
+    /// </summary>
+    public bool GroundTextureMoveable;
     public bool LineSmoothEnabled;
     public bool ExtraGuidelines;
     public int ExtraGuidelinesCount;
@@ -890,6 +898,7 @@ public class DrawingContextMapControl : Control, ISharedMapControl
             SvennArrowVisible = displayCfg.SvennArrowVisible,
             DirectionMarkersVisible = displayCfg.DirectionMarkersVisible,
             FieldTextureVisible = displayCfg.FieldTextureVisible,
+            GroundTextureMoveable = displayCfg.FieldTextureMoveable,
             LineSmoothEnabled = displayCfg.LineSmoothEnabled,
             ExtraGuidelines = displayCfg.ExtraGuidelines,
             ExtraGuidelinesCount = displayCfg.ExtraGuidelinesCount,
@@ -3633,25 +3642,60 @@ public class DrawingContextMapControl : Control, ISharedMapControl
 
         private void DrawGroundTexture(ImmediateDrawingContext dc, MapRenderState s, double viewWidth, double viewHeight)
         {
-            // Always draw the texture as a single stretched bitmap covering the
-            // viewport. A tile loop produced a hard FPS discontinuity at zoom
-            // levels that crossed the tile-count threshold (e.g. 19 FPS on one
-            // side, 51 on the other). The texture pattern is intentionally
-            // non-distinct so the stretched version is visually indistinguishable
-            // from the tiled version in practice. One draw call at any zoom,
-            // constant cost.
-            //
-            // The rect is in world coordinates (the camera transform is already
-            // pushed on dc). Center on the camera so the texture tracks the
-            // viewport rather than drifting relative to fixed world features.
-            // The earlier tile-loop fallback used `-(centerY + diagonal)` here,
-            // which mirrored the Y axis incorrectly and caused the texture to
-            // appear to slide south as the tractor moved north (issue #262).
-            double centerX = s.CameraX;
-            double centerY = s.CameraY;
-            double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
-            var viewRect = new Rect(centerX - diagonal, centerY - diagonal, diagonal * 2, diagonal * 2);
-            dc.DrawBitmap(s.GroundTexture!, viewRect);
+            if (!s.GroundTextureMoveable)
+            {
+                // Default path: single stretched bitmap covering the viewport.
+                // A tile loop produced a hard FPS discontinuity at zoom levels
+                // that crossed the tile-count threshold (e.g. 19 FPS on one
+                // side, 51 on the other). The texture pattern is intentionally
+                // non-distinct so the stretched version is visually
+                // indistinguishable from the tiled version in practice. One
+                // draw call at any zoom, constant cost.
+                //
+                // The rect is in world coordinates (the camera transform is
+                // already pushed on dc). Center on the camera so the texture
+                // tracks the viewport rather than drifting relative to fixed
+                // world features. The earlier tile-loop fallback used
+                // `-(centerY + diagonal)` here, which mirrored the Y axis
+                // incorrectly and caused the texture to slide south as the
+                // tractor moved north (issue #262).
+                double centerX = s.CameraX;
+                double centerY = s.CameraY;
+                double diagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2 + 100.0;
+                var viewRect = new Rect(centerX - diagonal, centerY - diagonal, diagonal * 2, diagonal * 2);
+                dc.DrawBitmap(s.GroundTexture!, viewRect);
+                return;
+            }
+
+            // Opt-in moveable path: tile the texture on a fixed world-space
+            // grid so the camera pan visibly scrolls the texture under the
+            // tractor. Tile size matches PR #307's 50 m grid. The tile
+            // count is bounded so an extreme zoom-out doesn't collapse FPS
+            // — past the bound the texture stops covering the viewport, but
+            // that's acceptable on zoomed-out overview where the texture
+            // adds no information anyway.
+            const double TileSize = 50.0;
+            const int MaxTilesPerAxis = 6; // 6*6 = 36 draw calls worst case
+            double halfDiagonal = Math.Sqrt(viewWidth * viewWidth + viewHeight * viewHeight) / 2;
+            double minX = s.CameraX - halfDiagonal;
+            double maxX = s.CameraX + halfDiagonal;
+            double minY = s.CameraY - halfDiagonal;
+            double maxY = s.CameraY + halfDiagonal;
+            int x0 = (int)Math.Floor(minX / TileSize);
+            int y0 = (int)Math.Floor(minY / TileSize);
+            int x1 = (int)Math.Ceiling(maxX / TileSize);
+            int y1 = (int)Math.Ceiling(maxY / TileSize);
+            int xCount = Math.Min(x1 - x0 + 1, MaxTilesPerAxis);
+            int yCount = Math.Min(y1 - y0 + 1, MaxTilesPerAxis);
+            for (int iy = 0; iy < yCount; iy++)
+            {
+                for (int ix = 0; ix < xCount; ix++)
+                {
+                    double tx = (x0 + ix) * TileSize;
+                    double ty = (y0 + iy) * TileSize;
+                    dc.DrawBitmap(s.GroundTexture!, new Rect(tx, ty, TileSize, TileSize));
+                }
+            }
         }
 
         private void DrawBackgroundImage(ImmediateDrawingContext dc, MapRenderState s)

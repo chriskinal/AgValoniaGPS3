@@ -321,6 +321,7 @@ public class ConfigurationService(
         store.Display.ExtraGuidelines = settings.ExtraGuidelines;
         store.Display.ExtraGuidelinesCount = settings.ExtraGuidelinesCount;
         store.Display.FieldTextureVisible = settings.FieldTextureVisible;
+        store.Display.FieldTextureMoveable = settings.FieldTextureMoveable;
         store.Display.AutoSteerSound = settings.AutoSteerSound;
         store.Display.UTurnSound = settings.UTurnSound;
         store.Display.HydraulicSound = settings.HydraulicSound;
@@ -386,6 +387,7 @@ public class ConfigurationService(
         settings.ExtraGuidelines = store.Display.ExtraGuidelines;
         settings.ExtraGuidelinesCount = store.Display.ExtraGuidelinesCount;
         settings.FieldTextureVisible = store.Display.FieldTextureVisible;
+        settings.FieldTextureMoveable = store.Display.FieldTextureMoveable;
         settings.AutoSteerSound = store.Display.AutoSteerSound;
         settings.UTurnSound = store.Display.UTurnSound;
         settings.HydraulicSound = store.Display.HydraulicSound;

@@ -912,6 +912,7 @@ public partial class ConfigurationViewModel : ObservableObject
     public event Action<bool>? FullscreenChanged;
     public ICommand ToggleElevationLogCommand { get; private set; } = null!;
     public ICommand ToggleFieldTextureCommand { get; private set; } = null!;
+    public ICommand ToggleFieldTextureMoveableCommand { get; private set; } = null!;
     public ICommand ToggleGridCommand { get; private set; } = null!;
     public ICommand ToggleExtraGuidelinesCommand { get; private set; } = null!;
     public ICommand EditExtraGuidelinesCountCommand { get; private set; } = null!;
@@ -1543,6 +1544,12 @@ public partial class ConfigurationViewModel : ObservableObject
         ToggleFieldTextureCommand = new RelayCommand(() =>
         {
             Display.FieldTextureVisible = !Display.FieldTextureVisible;
+            Config.MarkChanged();
+        });
+
+        ToggleFieldTextureMoveableCommand = new RelayCommand(() =>
+        {
+            Display.FieldTextureMoveable = !Display.FieldTextureMoveable;
             Config.MarkChanged();
         });
 

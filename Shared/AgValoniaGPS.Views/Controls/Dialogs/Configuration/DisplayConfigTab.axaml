@@ -221,17 +221,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <TextBlock Text="Smoothing" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Hidden: bitmap coverage system does not populate geometry cache (#117) -->
-                        <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" HorizontalAlignment="Center"
-                                    IsVisible="False">
+                        <!-- Opt-in: tile the ground texture in world coordinates so it
+                             visibly scrolls under the tractor. Default off keeps the
+                             FPS-stable stretched-bitmap path used historically. -->
+                        <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
                             <Button Classes="DisplayToggle"
-                                    Background="{Binding Display.DirectionMarkersVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
-                                    BorderBrush="{Binding Display.DirectionMarkersVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
-                                    Command="{Binding ToggleDirectionMarkersCommand}">
-                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_DirectionMarker.png"
+                                    Background="{Binding Display.FieldTextureMoveable, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                    BorderBrush="{Binding Display.FieldTextureMoveable, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                    Command="{Binding ToggleFieldTextureMoveableCommand}">
+                                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_FloorTexture.png"
                                        Width="60" Height="60" Stretch="Uniform"/>
                             </Button>
-                            <TextBlock Text="Direction" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Texture Moves" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Hidden: bitmap coverage system does not populate geometry cache (#118) -->
