@@ -89,16 +89,30 @@ public class WasCalibrationStepViewModel : WizardStepViewModel
 
     private void ZeroWas()
     {
-        // Capture the current live angle as the new zero offset
-        // The WAS offset is applied so that the current reading becomes 0
-        if (_autoSteerService != null)
-        {
-            // Use actual WAS angle from PGN 253 (hardware sensor reading)
-            double actualAngle = _autoSteerService.LastSteerData.ActualSteerAngle;
-            // The actual angle * CPD gives approximate raw counts to zero
-            double cpd = _configService.Store.AutoSteer.CountsPerDegree;
-            WasOffset = (int)(actualAngle * cpd);
-        }
+        if (_autoSteerService == null)
+            return;
+
+        // ActualSteerAngle from PGN 253 is the wheel angle the module
+        // has already post-processed: rawCounts -> subtract WasOffset ->
+        // divide by CountsPerDegree -> apply InvertWas sign. To drive
+        // that reported angle back to zero we need a new offset that
+        // accounts for the prior calibration, not one that replaces it.
+        //
+        // Forward direction (InvertWas = false):
+        //     reported = (raw - offset) / cpd
+        //     desired:  0 = (raw - offset') / cpd
+        //          =>   offset' = raw = offset + reported * cpd
+        //
+        // Inverted direction (InvertWas = true):
+        //     reported = -(raw - offset) / cpd
+        //          =>   raw = offset - reported * cpd
+        //          =>   offset' = offset - reported * cpd
+        //
+        // Unifying with a sign factor: offset' = offset + sign * reported * cpd
+        double actualAngle = _autoSteerService.LastSteerData.ActualSteerAngle;
+        var autoSteer = _configService.Store.AutoSteer;
+        int sign = autoSteer.InvertWas ? -1 : +1;
+        WasOffset = autoSteer.WasOffset + sign * (int)(actualAngle * autoSteer.CountsPerDegree);
     }
 
     protected override void OnEntering()
