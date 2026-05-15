@@ -27,21 +27,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              x:DataType="vm:ConfigurationViewModel">
 
     <UserControl.Styles>
-        <!-- Antenna Type Card Style -->
+        <!-- Antenna Type Card — toggle pill: light grey when inactive,
+             green when active. Content centered both horizontally and
+             vertically. -->
         <Style Selector="Border.AntennaCard">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{DynamicResource SecondaryTextBrush}"/>
             <Setter Property="Padding" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-        </Style>
-        <Style Selector="Border.AntennaCard:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
         </Style>
         <Style Selector="Border.AntennaCard.Selected">
-            <Setter Property="BorderBrush" Value="#4A9A7E"/>
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource EngagedBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource EngagedBrush}"/>
         </Style>
 
         <!-- Section Header Style -->
@@ -56,15 +55,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="TextBlock.SectionHeaderDisabled">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
-        <!-- Settings Panel -->
+        <!-- Settings Panel — cardless: no background, keep padding only. -->
         <Style Selector="Border.SettingsPanel">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Padding" Value="0,4"/>
         </Style>
 
         <!-- Toggle Button with custom template for instant feedback -->
@@ -90,19 +87,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Action Button Style (non-toggle) -->
         <Style Selector="Button.ActionButton">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SecondaryTextBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
         </Style>
         <Style Selector="Button.ActionButton:disabled">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
         </Style>
 
         <!-- Toggle Switch Style -->
@@ -116,16 +113,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Spacing="12" Margin="16,8,16,16">
 
             <!-- ANTENNA TYPE -->
-            <TextBlock Text="Antenna Type" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <TextBlock Text="ANTENNA TYPE"
+                       FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource LabelTextBrush}"
+                       LetterSpacing="1.2"/>
+            <Border Background="{DynamicResource CardBorderBrush}"
+                    Height="2" CornerRadius="1"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,4,0,10"/>
 
             <Grid ColumnDefinitions="*,16,*">
                 <!-- Dual Antenna Card -->
                 <Border Grid.Column="0" Classes="AntennaCard"
                         Classes.Selected="{Binding Connections.IsDualGps}"
                         PointerPressed="OnDualGpsCardPressed">
-                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                    <StackPanel Spacing="4"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
                         <Border Width="80" Height="50" Background="{DynamicResource IconGPSDual}"/>
-                        <TextBlock Text="Dual" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Dual" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
@@ -133,9 +139,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Border Grid.Column="2" Classes="AntennaCard"
                         Classes.Selected="{Binding !Connections.IsDualGps}"
                         PointerPressed="OnSingleGpsCardPressed">
-                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                    <StackPanel Spacing="4"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
                         <Border Width="80" Height="50" Background="{DynamicResource IconGPSSingle}"/>
-                        <TextBlock Text="Fix" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Fix" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -149,12 +157,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    Classes.SectionHeader="{Binding Connections.IsDualGps}"
                                    Classes.SectionHeaderDisabled="{Binding !Connections.IsDualGps}"/>
 
-                        <!-- Dual Antenna Graphic -->
-                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="4" Padding="4" Height="80" HorizontalAlignment="Center"
-                                IsEnabled="{Binding Connections.IsDualGps}">
-                            <Border Background="{DynamicResource IconSourcesHead}"
-                                    Opacity="{Binding Connections.IsDualGps, Converter={x:Static conv:BoolToOpacityConverter.Instance}, ConverterParameter=1|0.3}"/>
-                        </Border>
+                        <!-- Dual Antenna Graphic (cardless) -->
+                        <Border Height="80" HorizontalAlignment="Center"
+                                Background="{DynamicResource IconSourcesHead}"
+                                Opacity="{Binding Connections.IsDualGps, Converter={x:Static conv:BoolToOpacityConverter.Instance}, ConverterParameter=1|0.3}"/>
 
                         <!-- Heading Offset -->
                         <Grid ColumnDefinitions="*,Auto">
@@ -182,7 +188,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 BorderBrush="{Binding Connections.AutoDualFix, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
                                 Command="{Binding ToggleAutoDualFixCommand}" IsEnabled="{Binding Connections.IsDualGps}"
                                 HorizontalAlignment="Stretch">
-                            <TextBlock Text="Auto Dual &lt;&gt; Fix" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Auto Dual &lt;&gt; Fix" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
                         </Button>
 
                         <!-- Switch Speed -->
@@ -231,19 +237,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 <TextBlock Grid.Column="1" Text="Fusion" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontSize="11" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" Text="GPS" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=#4A9A7E|#555}" FontSize="11"/>
                             </Grid>
-                            <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Grid ColumnDefinitions="Auto,*">
                                 <TextBlock Text="{Binding Connections.HeadingFusionWeight, StringFormat='{}{0:P0}'}" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontWeight="Bold" MinWidth="35"/>
                                 <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Connections.HeadingFusionWeight}"
                                         IsEnabled="{Binding !Connections.IsDualGps}" Margin="8,0"/>
-                                <TextBlock Grid.Column="2" Foreground="{Binding !Connections.IsDualGps, Converter={StaticResource BoolToColorConverter}, ConverterParameter=White|#555}" FontWeight="Bold" MinWidth="35" TextAlignment="Right">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0:P0}">
-                                            <Binding Path="Connections.HeadingFusionWeight" Converter="{StaticResource EqualityConverter}" ConverterParameter="invert"/>
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
                             </Grid>
-                            <TextBlock Text="Default: 70%" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Default: 70%" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Reverse Detection -->
@@ -252,7 +251,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 BorderBrush="{Binding Connections.ReverseDetection, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
                                 Command="{Binding ToggleReverseDetectionCommand}" IsEnabled="{Binding !Connections.IsDualGps}"
                                 HorizontalAlignment="Stretch">
-                            <TextBlock Text="Reverse Detection" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Reverse Detection" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
                         </Button>
                     </StackPanel>
                 </Border>
@@ -267,7 +266,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding ToggleRtkAlarmCommand}" HorizontalAlignment="Stretch" Height="70">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">
                         <Border Width="32" Height="32" Background="{DynamicResource IconRTKAlarm}"/>
-                        <TextBlock Text="RTK Fix Alarm" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="RTK Fix Alarm" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
@@ -278,7 +277,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         Command="{Binding ToggleAlarmStopsAutosteerCommand}" HorizontalAlignment="Stretch" Height="70">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AutoSteerOff.png" Width="32" Height="32"/>
-                        <TextBlock Text="Alarm Stops Autosteer" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Alarm Stops Autosteer" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="11" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Grid>

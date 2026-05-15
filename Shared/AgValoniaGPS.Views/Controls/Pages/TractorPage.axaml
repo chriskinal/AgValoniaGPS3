@@ -22,6 +22,7 @@ and content swap (identical pattern to AppShell).
              xmlns:conv="using:AgValoniaGPS.Views.Converters"
              xmlns:controls="using:AgValoniaGPS.Views.Controls"
              xmlns:config="using:AgValoniaGPS.Views.Controls.Dialogs.Configuration"
+             xmlns:subtabs="using:AgValoniaGPS.Views.Controls.Dialogs.Configuration.SourcesSubTabs"
              x:Class="AgValoniaGPS.Views.Controls.Pages.TractorPage"
              x:DataType="vm:ConfigurationViewModel"
              Background="{DynamicResource AppBackgroundBrush}">
@@ -752,8 +753,12 @@ and content swap (identical pattern to AppShell).
             </Grid>
             </Viewbox>
 
-            <!-- ===== GPS / Data Sources — embeds existing SourcesConfigTab ===== -->
-            <config:SourcesConfigTab x:Name="SectionGps" IsVisible="False"/>
+            <!-- ===== GPS / Data Sources — GPS + Roll side by side on one page ===== -->
+            <Grid x:Name="SectionGps" IsVisible="False"
+                  ColumnDefinitions="*,*">
+                <subtabs:GpsSubTab Grid.Column="0"/>
+                <subtabs:RollSubTab Grid.Column="1"/>
+            </Grid>
         </Grid>
 
         <!-- ============= BOTTOM SUB-TAB BAR ============= -->

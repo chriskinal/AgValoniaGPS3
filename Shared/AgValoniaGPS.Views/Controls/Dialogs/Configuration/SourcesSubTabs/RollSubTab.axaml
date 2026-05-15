@@ -26,25 +26,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              x:DataType="vm:ConfigurationViewModel">
 
     <UserControl.Styles>
-        <!-- Section Header Style -->
+        <!-- Section Header — matches the v2 Tractor page SectionHeading style
+             so the GPS / Data Sources sub-tab looks consistent with the rest.
+             Top margin 0 so the first heading aligns with the GPS column. -->
         <Style Selector="TextBlock.SectionHeader">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#4A9A7E"/>
-            <Setter Property="Margin" Value="0,16,0,8"/>
+            <Setter Property="Foreground" Value="{DynamicResource LabelTextBrush}"/>
+            <Setter Property="LetterSpacing" Value="1.2"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+        </Style>
+        <!-- Thin rounded divider that pairs with the section header. -->
+        <Style Selector="Border.SectionLine">
+            <Setter Property="Background" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="CornerRadius" Value="1"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,4,0,10"/>
         </Style>
 
-        <!-- Setting Row Style -->
+        <!-- Setting Row — cardless: no Background or CornerRadius, just
+             padding + vertical separation so settings line up cleanly. -->
         <Style Selector="Border.SettingRow">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="0,8"/>
             <Setter Property="Margin" Value="0,4"/>
         </Style>
 
         <!-- Action Button Style -->
         <Style Selector="Button.ActionButton">
-            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderBrush" Value="#4A9A7E"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
@@ -52,7 +62,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ActionButton:pointerover">
-            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
         <!-- Toggle Switch Style -->
@@ -66,21 +76,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Spacing="4" Margin="16,8,16,16">
 
             <!-- ROLL CALIBRATION SECTION -->
-            <TextBlock Text="ROLL CALIBRATION" Classes="SectionHeader" Margin="0,0,0,8"/>
+            <TextBlock Text="ROLL CALIBRATION" Classes="SectionHeader"/>
+            <Border Classes="SectionLine"/>
 
             <!-- Roll Helper Graphic with explanation -->
             <Grid ColumnDefinitions="Auto,*">
-                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Width="160" Height="120" Margin="0,0,12,0">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_RollHelper.png" Stretch="Uniform"/>
-                </Border>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_RollHelper.png"
+                       Stretch="Uniform" Width="160" Height="120" Margin="0,0,12,0"/>
                 <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Roll Correction" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="Roll Correction" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
                     <TextBlock Text="Adjust roll offset to compensate for IMU mounting angle. Park on level ground and use 'Set Zero' to calibrate."
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="11" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" TextWrapping="Wrap"/>
                     <Button Classes="ActionButton" Command="{Binding SetRollZeroCommand}" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Width="24" Height="24"/>
-                            <TextBlock Text="Set Zero" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Set Zero" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -89,12 +99,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <!-- Roll Zero Offset -->
             <Border Classes="SettingRow" Margin="0,12,0,0">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="4" Padding="4" Width="48" Height="48" Margin="0,0,12,0">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png" Stretch="Uniform"/>
-                    </Border>
+                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_RollSetZero.png"
+                           Stretch="Uniform" Width="48" Height="48" Margin="0,0,12,0"/>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Roll Zero Offset" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
+                        <TextBlock Text="Roll Zero Offset" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Text="Manual offset adjustment" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="2"
                         Value="{Binding Ahrs.RollZero, Mode=TwoWay}"
@@ -105,12 +114,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- ROLL FILTERING SECTION -->
             <TextBlock Text="ROLL FILTERING" Classes="SectionHeader"/>
+            <Border Classes="SectionLine"/>
 
             <Border Classes="SettingRow">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel>
-                        <TextBlock Text="Roll Filter" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
+                        <TextBlock Text="Roll Filter" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Text="0 = no filtering, 1 = max filtering" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10"/>
                     </StackPanel>
                     <controls:EditableNumericField Grid.Column="1"
                         Value="{Binding Ahrs.RollFilter, Mode=TwoWay}"
@@ -121,16 +131,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- ROLL INVERSION SECTION -->
             <TextBlock Text="ROLL DIRECTION" Classes="SectionHeader"/>
+            <Border Classes="SectionLine"/>
 
             <Grid ColumnDefinitions="Auto,*">
-                <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" CornerRadius="6" Padding="8" Width="100" Height="70" Margin="0,0,12,0">
-                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_InvertRoll.png" Stretch="Uniform"/>
-                </Border>
+                <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConDa_InvertRoll.png"
+                       Stretch="Uniform" Width="100" Height="70" Margin="0,0,12,0"/>
                 <Border Grid.Column="1" Classes="SettingRow" VerticalAlignment="Center">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
-                            <TextBlock Text="Invert Roll" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontSize="10"/>
+                            <TextBlock Text="Invert Roll" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            <TextBlock Text="Flip roll direction if mounted upside-down" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="10"/>
                         </StackPanel>
                         <ToggleSwitch Grid.Column="1" IsChecked="{Binding Ahrs.IsRollInvert}" VerticalAlignment="Center"/>
                     </Grid>
