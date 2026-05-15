@@ -48,6 +48,16 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+#if DEBUG
+        // DEBUG-only viewport lock: pin the window to the design size
+        // (1200×720, matching Android tablet landscape) so layout work
+        // simulates the constrained device. Release builds resize and
+        // maximize freely so the app uses the full Windows tablet screen.
+        MinWidth = MaxWidth = 1200;
+        MinHeight = MaxHeight = 720;
+        CanResize = false;
+#endif
+
         // Create platform-specific map control
         CreateMapControl();
 
