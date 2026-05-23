@@ -27,7 +27,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built with Avalonia UI. It's a clean rewrite achieving **91.7% shared code** across platforms.
+AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built with Avalonia UI. It's a clean rewrite achieving **96.1% shared code** across platforms.
 
 **What it does:**
 - Real-time GPS guidance for agricultural equipment
@@ -43,13 +43,13 @@ AgValoniaGPS3 is a cross-platform agricultural GPS guidance application built wi
 
 ```
 AgValoniaGPS3/
-├── Shared/                              # ~92% - Platform-agnostic code
+├── Shared/                              # ~96% - Platform-agnostic code
 │   ├── AgValoniaGPS.Models/            # Data models, geometry, configuration, DTOs
 │   ├── AgValoniaGPS.Services/          # Business logic, GPS, NTRIP, UDP
 │   ├── AgValoniaGPS.ViewModels/        # MVVM ViewModels (ReactiveUI)
 │   └── AgValoniaGPS.Views/             # Shared UI controls, panels, dialogs
 │
-├── Platforms/                           # ~8% - Platform-specific code
+├── Platforms/                           # ~4% - Platform-specific code
 │   ├── AgValoniaGPS.Desktop/           # Windows/macOS/Linux
 │   ├── AgValoniaGPS.iOS/              # iOS/iPadOS
 │   └── AgValoniaGPS.Android/          # Android
