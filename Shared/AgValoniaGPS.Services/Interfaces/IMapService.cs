@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Base;
@@ -142,4 +143,10 @@ public interface IMapService
     // Initialize coverage bitmap with field bounds on field load
     // If background image is set, composites it; otherwise initializes to black
     void InitializeCoverageBitmapWithBounds(double minE, double maxE, double minN, double maxN);
+
+    // Map snapshot (thumbnail). Asynchronous: request is captured on the next
+    // rendered frame and delivered as PNG bytes via MapSnapshotCaptured on the
+    // UI thread. maxDimension caps the larger thumbnail dimension in pixels.
+    void RequestMapSnapshot(int maxDimension);
+    event EventHandler<byte[]>? MapSnapshotCaptured;
 }

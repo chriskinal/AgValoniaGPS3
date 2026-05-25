@@ -20,6 +20,7 @@ etc.).
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:nav="using:AgValoniaGPS.Models.Navigation"
+             xmlns:conv="using:AgValoniaGPS.Views.Converters"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              x:Class="AgValoniaGPS.Views.Controls.Pages.HomePage"
              x:DataType="vm:MainViewModel"
@@ -125,7 +126,7 @@ etc.).
                     Tag="{x:Static nav:PageType.FieldsAndJobs}"
                     Tapped="OnCardTapped">
                 <StackPanel>
-                    <TextBlock Classes="CardLabel" Text="LAST FIELD &amp; JOB"/>
+                    <TextBlock Classes="CardLabel" Text="FIELDS &amp; JOBS"/>
                     <TextBlock Classes="CardValue"
                                Text="{Binding ActiveFieldName, TargetNullValue='—', FallbackValue='—'}"
                                Margin="0,12,0,0"/>
@@ -136,52 +137,78 @@ etc.).
             </Border>
         </UniformGrid>
 
-        <!-- ============= Lower area: dashboard widgets (sketched) ============= -->
+        <!-- ============= Lower area: two half-width feature cards ============= -->
         <Grid Grid.Row="1"
               Margin="0,20,0,0"
-              ColumnDefinitions="2*,*"
+              ColumnDefinitions="*,*"
               RowDefinitions="*">
 
-            <!-- Left 2/3: "Resume last job" feature card with thumbnail -->
-            <Border Grid.Column="0" Classes="Card" Margin="0,0,8,0">
+            <!-- Left half: "Resume last job" — tap reopens the last field/job
+                 and routes to the Moving Map. -->
+            <Border Grid.Column="0" Classes="Card" Margin="0,0,8,0"
+                    Cursor="Hand"
+                    Tapped="OnResumeLastJobTapped">
                 <Grid RowDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Row="0" Classes="CardLabel" Text="RESUME LAST JOB"/>
-                    <!-- Thumbnail placeholder -->
+                    <!-- Thumbnail frozen at the last field/job close or switch. -->
                     <Border Grid.Row="1"
                             Margin="0,12,0,12"
                             Background="{DynamicResource AppBackgroundBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="8">
-                        <TextBlock Text="(field thumbnail)"
-                                   Classes="CardUnit"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
+                            CornerRadius="8"
+                            ClipToBounds="True">
+                        <Panel>
+                            <TextBlock Text="(last job preview)"
+                                       Classes="CardUnit"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Image Source="{Binding LastJobThumbnailPng,
+                                             Converter={x:Static conv:BytesToBitmapConverter.Instance}}"
+                                   Stretch="UniformToFill"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
+                        </Panel>
                     </Border>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
-                        <TextBlock Classes="CardValue" Text="—" FontSize="22"/>
-                        <TextBlock Classes="CardUnit" VerticalAlignment="Bottom" Text="acres covered today"/>
+                        <TextBlock Classes="CardValue"
+                                   Text="{Binding ActiveFieldName, TargetNullValue='—', FallbackValue='—'}"
+                                   FontSize="22"/>
+                        <TextBlock Classes="CardUnit" VerticalAlignment="Bottom" Text="last field"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- Right 1/3: vertical stack of small metric cards -->
-            <StackPanel Grid.Column="1" Margin="8,0,0,0" Spacing="16">
-                <Border Classes="Card">
-                    <StackPanel>
-                        <TextBlock Classes="CardLabel" Text="HOURS TODAY"/>
-                        <TextBlock Classes="CardValue" Text="0.0" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Classes="Card">
-                    <StackPanel>
-                        <TextBlock Classes="CardLabel" Text="ALERTS"/>
-                        <TextBlock Classes="CardValue" Text="0" Margin="0,8,0,0"/>
-                        <TextBlock Classes="CardUnit" Text="No active alerts"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <!-- Right half: "Map" — live thumbnail of the last-viewed map page.
+                 Tap routes to the Moving Map. -->
+            <Border Grid.Column="1" Classes="Card" Margin="8,0,0,0"
+                    Cursor="Hand"
+                    Tag="{x:Static nav:PageType.MovingMap}"
+                    Tapped="OnCardTapped">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Classes="CardLabel" Text="CURRENT MAP"/>
+                    <Border Grid.Row="1"
+                            Margin="0,12,0,0"
+                            Background="{DynamicResource AppBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            ClipToBounds="True">
+                        <Panel>
+                            <!-- Placeholder shown until the map has been viewed. -->
+                            <TextBlock Text="(map preview)"
+                                       Classes="CardUnit"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Image Source="{Binding MapThumbnailPng,
+                                             Converter={x:Static conv:BytesToBitmapConverter.Instance}}"
+                                   Stretch="UniformToFill"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
+                        </Panel>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

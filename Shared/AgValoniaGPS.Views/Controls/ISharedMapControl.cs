@@ -143,4 +143,11 @@ public interface ISharedMapControl
 
     // Auto-pan: keeps vehicle visible by panning map when vehicle nears edge
     bool AutoPanEnabled { get; set; }
+
+    // Map snapshot (thumbnail). Asynchronous: the request is queued to the
+    // render thread, captured on the next frame, then delivered as PNG bytes
+    // on the UI thread via SnapshotCaptured. maxDimension caps the larger of
+    // the thumbnail's width/height in pixels (aspect preserved).
+    void RequestSnapshot(int maxDimension);
+    event EventHandler<byte[]>? SnapshotCaptured;
 }

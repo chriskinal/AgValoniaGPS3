@@ -90,7 +90,7 @@ public partial class MainViewModel
             if (mostRecent == null) return;
             var fieldsRoot = _settingsService.Settings.FieldsDirectory;
             var fieldPath = Path.Combine(fieldsRoot, mostRecent.FieldName);
-            _ = OpenFieldResumingJobAsync(fieldPath, mostRecent.FieldName, mostRecent.TaskName);
+            _ = ResumeLastJobAndRestoreViewAsync(fieldPath, mostRecent.FieldName, mostRecent.TaskName);
         });
 
         // Field Selection Dialog
@@ -825,5 +825,15 @@ public partial class MainViewModel
             await OpenFieldAsync(fieldPath, lastField);
             IsFieldOperationsPanelVisible = false;
         });
+    }
+
+    // Resume flow: open the most recent field/job, then restore the camera
+    // framing saved at the last close so the map matches the Resume card's
+    // preview (same zoom/center the operator left), instead of OpenFieldAsync's
+    // default framing.
+    private async Task ResumeLastJobAndRestoreViewAsync(string fieldPath, string fieldName, string taskName)
+    {
+        await OpenFieldResumingJobAsync(fieldPath, fieldName, taskName);
+        RestoreLastJobView();
     }
 }

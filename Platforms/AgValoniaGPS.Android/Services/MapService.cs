@@ -24,10 +24,15 @@ public class MapService : IMapService
     private double _rotation;
     private bool _isGridVisible;
 
+    public event System.EventHandler<byte[]>? MapSnapshotCaptured;
+
     public void RegisterMapControl(ISharedMapControl mapControl)
     {
         _mapControl = mapControl;
+        mapControl.SnapshotCaptured += (s, png) => MapSnapshotCaptured?.Invoke(this, png);
     }
+
+    public void RequestMapSnapshot(int maxDimension) => _mapControl?.RequestSnapshot(maxDimension);
 
     public bool Is3DMode => _mapControl?.Is3DMode ?? _is3DMode;
     public double Pitch => _pitch;

@@ -31,13 +31,21 @@ public class MapService : IMapService
 {
     private ISharedMapControl? _mapControl;
 
+    public event System.EventHandler<byte[]>? MapSnapshotCaptured;
+
     /// <summary>
     /// Register the map control to receive service calls.
     /// </summary>
     public void RegisterMapControl(ISharedMapControl mapControl)
     {
         _mapControl = mapControl;
+        mapControl.SnapshotCaptured += (s, png) => MapSnapshotCaptured?.Invoke(this, png);
     }
+
+    // Null-safe (unlike GetMapControl): a snapshot is best-effort and may be
+    // requested at startup before the control is registered. The request is
+    // simply dropped if so.
+    public void RequestMapSnapshot(int maxDimension) => _mapControl?.RequestSnapshot(maxDimension);
 
     private ISharedMapControl GetMapControl()
     {

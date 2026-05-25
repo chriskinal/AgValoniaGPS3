@@ -203,6 +203,24 @@ public partial class SkiaMapControl : Control, ISharedMapControl
     }
 
     // ------------------------------------------------------------------
+    // Map snapshot (thumbnail)
+    // ------------------------------------------------------------------
+
+    /// <summary>Message asking the render thread to capture a thumbnail.</summary>
+    private sealed record SnapshotRequest(int MaxDimension);
+
+    public event EventHandler<byte[]>? SnapshotCaptured;
+
+    public void RequestSnapshot(int maxDimension)
+    {
+        if (_customVisual == null) return;
+        _customVisual.SendHandlerMessage(new SnapshotRequest(Math.Max(16, maxDimension)));
+    }
+
+    // Called by the handler (already marshalled onto the UI thread).
+    internal void DeliverSnapshot(byte[] png) => SnapshotCaptured?.Invoke(this, png);
+
+    // ------------------------------------------------------------------
     // Construction
     // ------------------------------------------------------------------
 
@@ -1217,6 +1235,9 @@ public partial class SkiaMapControl : Control, ISharedMapControl
             return new Rect(0, 0, 4000, 4000);
         }
 
+        // >0 means a thumbnail capture is pending; value is the max dimension.
+        private int _snapshotMaxDim;
+
         public override void OnMessage(object message)
         {
             if (message is MapRenderState state)
@@ -1226,6 +1247,12 @@ public partial class SkiaMapControl : Control, ISharedMapControl
                 Invalidate();
                 if (firstState)
                     RegisterForNextAnimationFrameUpdate();
+            }
+            else if (message is SnapshotRequest req)
+            {
+                _snapshotMaxDim = req.MaxDimension;
+                Invalidate();
+                RegisterForNextAnimationFrameUpdate();
             }
         }
 
@@ -1283,6 +1310,7 @@ public partial class SkiaMapControl : Control, ISharedMapControl
                     {
                         using var skiaLease = skiaFeature.Lease();
                         DrawSkiaScene(skiaLease.SkCanvas, s, viewWidth, viewHeight, perspective: false);
+                        TryCaptureSnapshot(skiaLease);
                     }
                 }
                 else
@@ -1311,12 +1339,59 @@ public partial class SkiaMapControl : Control, ISharedMapControl
                         {
                             canvas.Restore();
                         }
+                        TryCaptureSnapshot(skiaLease);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[SkiaMapVisualHandler] OnRender outer error: {ex.Message}");
+            }
+        }
+
+        // Captures the just-rendered surface as a downscaled PNG thumbnail when
+        // a snapshot was requested. One-shot: the request flag is cleared on
+        // entry regardless of outcome. The GPU surface image is read back to a
+        // raster image, drawn scaled into a small CPU surface, and encoded.
+        private void TryCaptureSnapshot(ISkiaSharpApiLease lease)
+        {
+            if (_snapshotMaxDim <= 0) return;
+            int maxDim = _snapshotMaxDim;
+            _snapshotMaxDim = 0;
+
+            try
+            {
+                var surface = lease.SkSurface;
+                if (surface == null) return;
+
+                using var gpuImage = surface.Snapshot();
+                if (gpuImage == null) return;
+                using var raster = gpuImage.ToRasterImage(ensurePixelData: true);
+                if (raster == null) return;
+
+                int srcW = raster.Width, srcH = raster.Height;
+                if (srcW <= 0 || srcH <= 0) return;
+
+                double scale = Math.Min(1.0, (double)maxDim / Math.Max(srcW, srcH));
+                int tw = Math.Max(1, (int)Math.Round(srcW * scale));
+                int th = Math.Max(1, (int)Math.Round(srcH * scale));
+
+                using var thumb = SKSurface.Create(new SKImageInfo(tw, th, SKColorType.Rgba8888, SKAlphaType.Premul));
+                if (thumb == null) return;
+                thumb.Canvas.Clear(SKColors.Black);
+                thumb.Canvas.DrawImage(raster, new SKRect(0, 0, tw, th),
+                    new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None));
+                thumb.Canvas.Flush();
+
+                using var thumbImg = thumb.Snapshot();
+                using var data = thumbImg.Encode(SKEncodedImageFormat.Png, 90);
+                if (data == null) return;
+                var bytes = data.ToArray();
+                Dispatcher.UIThread.Post(() => _owner.DeliverSnapshot(bytes));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SkiaMapVisualHandler] snapshot failed: {ex.Message}");
             }
         }
 

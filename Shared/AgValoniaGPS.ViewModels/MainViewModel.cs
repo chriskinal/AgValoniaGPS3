@@ -1611,6 +1611,25 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public async Task CloseFieldAsync()
     {
+        // Capture the "last job" thumbnail before any state is cleared. This is
+        // the single choke point for explicit close, field switch (OpenFieldAsync
+        // calls CloseFieldAsync first), and app exit (MainWindow.Closing awaits
+        // CloseFieldAsync). We take a FRESH snapshot rather than reusing
+        // MapThumbnailPng: the operator may have opened the field without ever
+        // visiting the Moving Map page, leaving MapThumbnailPng stale. The map
+        // control renders the loaded field underneath the page chrome regardless,
+        // so a fresh capture reflects the actual field being closed. On timeout
+        // (no frame rendered) we keep the previous thumbnail rather than clobber it.
+        if (ActiveField != null)
+        {
+            var png = await CaptureMapThumbnailAsync(MapThumbnailMaxDim);
+            if (png != null)
+                LastJobThumbnailPng = png;
+            // Persist the camera framing too so Resume restores the same
+            // zoom/center the thumbnail was captured at.
+            SaveLastJobView();
+        }
+
         // Stop the autosave timer first so a tick can't fire mid-close
         // and race the explicit close-save below. ClearFieldState also
         // stops it, but stopping here covers both branches without

@@ -43,4 +43,21 @@ public partial class HomePage : UserControl
             vm.NavigateToPageCommand.Execute(page);
         }
     }
+
+    /// <summary>
+    /// Resume-last-job card tap. Reopens the most recent field/job (async)
+    /// and routes to the Moving Map so the operator lands on the driving
+    /// view; the field populates as it finishes loading.
+    /// </summary>
+    private void OnResumeLastJobTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        if (vm.ResumeLastJobCommand?.CanExecute(null) == true)
+            vm.ResumeLastJobCommand.Execute(null);
+
+        if (vm.NavigateToPageCommand.CanExecute(PageType.MovingMap))
+            vm.NavigateToPageCommand.Execute(PageType.MovingMap);
+    }
 }
