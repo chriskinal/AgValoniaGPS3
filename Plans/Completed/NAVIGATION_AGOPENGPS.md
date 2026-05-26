@@ -175,8 +175,10 @@ then section, then sub-page).
    field with no job). *Correction:* an earlier draft called AgValonia's
    open-field hotkey-only — that's only true of the **legacy `FieldSelection`
    dialog** (superseded by Start Session #349, pending removal), not the task
-   itself. The open question is labeling: does "Start Session" read as "open a
-   field" to an AgOpen-trained operator?
+   itself. The only residual was labeling discoverability ("Start Session" vs
+   "open a field") — and the **pages-v2 design already resolves that** via the
+   task-named **Fields & Jobs** Home tile, which is what an operator scans for.
+   Nothing to fix.
 2. **AgOpen's single `FormConfig` is more consolidated** than AgValonia's
    scattered settings dialogs — supports "consolidate settings under one home."
    Trade-off: AgOpen is deeper (3–4 clicks) but coherent; AgValonia is shallower
