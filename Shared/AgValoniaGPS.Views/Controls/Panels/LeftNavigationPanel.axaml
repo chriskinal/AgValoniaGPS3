@@ -33,7 +33,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Border.FloatingPanel">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="0"/>
-            <Setter Property="Padding" Value="8"/>
+            <!-- Outer (left) padding removed so buttons sit flush to the left
+                 screen edge; inner (right) gap to the map is preserved. -->
+            <Setter Property="Padding" Value="0,8,8,8"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
@@ -69,9 +71,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/fileMenu.png" Stretch="Uniform"/>
                 </Button>
 
-                <!-- 2. View Settings -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="View Settings"
-                        Command="{Binding ToggleViewSettingsPanelCommand}">
+                <!-- 2. Screen & Alerts -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Screen &amp; Alerts"
+                        Command="{Binding ShowScreenAlertsDialogCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/NavigationSettings.png" Stretch="Uniform"/>
                 </Button>
 
@@ -109,11 +111,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Sub-panels Canvas overlay (absolute positioning relative to nav bar) -->
         <Canvas ClipToBounds="False">
-        <!-- View Settings Panel -->
-        <controls:ViewSettingsPanel x:Name="ViewSettingsPanelControl"
-                                    Canvas.Left="90" Canvas.Top="0"
-                                    ZIndex="15"
-                                    DataContext="{Binding}"/>
+        <!-- View Settings retired — replaced by the Screen & Alerts dialog. -->
 
         <!-- File Menu Panel -->
         <controls:FileMenuPanel x:Name="FileMenuPanelControl"

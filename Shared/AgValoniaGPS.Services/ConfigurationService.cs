@@ -420,6 +420,7 @@ public class ConfigurationService(
         store.Display.HardwareMessagesEnabled = settings.HardwareMessagesEnabled;
         store.Display.DayStartHour = settings.DayStartHour;
         store.Display.NightStartHour = settings.NightStartHour;
+        store.Display.DialogAutoCloseSeconds = settings.DialogAutoCloseSeconds;
         store.Display.DisplayResolutionMultiplier = settings.DisplayResolutionMultiplier;
         store.Display.AutoDayNight = settings.AutoDayNight;
 
@@ -483,6 +484,7 @@ public class ConfigurationService(
         settings.HardwareMessagesEnabled = store.Display.HardwareMessagesEnabled;
         settings.DayStartHour = store.Display.DayStartHour;
         settings.NightStartHour = store.Display.NightStartHour;
+        settings.DialogAutoCloseSeconds = store.Display.DialogAutoCloseSeconds;
         settings.DisplayResolutionMultiplier = store.Display.DisplayResolutionMultiplier;
         settings.AutoDayNight = store.Display.AutoDayNight;
 

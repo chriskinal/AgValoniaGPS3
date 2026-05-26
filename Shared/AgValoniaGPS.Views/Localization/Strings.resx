@@ -483,6 +483,24 @@
   <data xml:space="preserve" name="ViewSettings">
     <value>View Settings</value>
   </data>
+  <data xml:space="preserve" name="ScreenAndAlerts">
+    <value>Screen &amp; Alerts</value>
+  </data>
+  <data xml:space="preserve" name="Visual">
+    <value>Visual</value>
+  </data>
+  <data xml:space="preserve" name="Camera">
+    <value>Camera</value>
+  </data>
+  <data xml:space="preserve" name="OnScreenButtons">
+    <value>On-Screen Buttons</value>
+  </data>
+  <data xml:space="preserve" name="AlertsSounds">
+    <value>Alerts &amp; Sounds</value>
+  </data>
+  <data xml:space="preserve" name="HardwareMessages">
+    <value>Hardware Messages</value>
+  </data>
   <data xml:space="preserve" name="XteChart">
     <value>XTE Chart</value>
   </data>

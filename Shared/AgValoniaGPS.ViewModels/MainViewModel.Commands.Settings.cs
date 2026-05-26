@@ -49,10 +49,9 @@ public partial class MainViewModel
 
         ShowAppSettingsDialogCommand = new RelayCommand(() =>
         {
-            // Tabs inside the App Settings dialog (DisplayConfigTab,
-            // AdditionalOptionsConfigTab) bind to ConfigurationViewModel.
-            // Mirror ShowConfigurationDialogCommand's lazy-init so the
-            // tabs work even if the user never opened Configuration first.
+            // App Settings (Units/Keyboard/Fullscreen/Elevation Log) binds to
+            // ConfigurationViewModel; lazy-init it like the other config-backed
+            // dialogs so it works even if Configuration was never opened.
             if (ConfigurationViewModel == null)
             {
                 ConfigurationViewModel = new ConfigurationViewModel(_configurationService);
@@ -61,6 +60,22 @@ public partial class MainViewModel
         });
 
         CloseAppSettingsDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialog();
+        });
+
+        ShowScreenAlertsDialogCommand = new RelayCommand(() =>
+        {
+            // Sections bind to ConfigurationViewModel (display/sounds/buttons/
+            // messages), so lazy-init it like the other config-backed dialogs.
+            if (ConfigurationViewModel == null)
+            {
+                ConfigurationViewModel = new ConfigurationViewModel(_configurationService);
+            }
+            State.UI.ShowDialog(Models.State.DialogType.ScreenAlerts);
+        });
+
+        CloseScreenAlertsDialogCommand = new RelayCommand(() =>
         {
             State.UI.CloseDialog();
         });

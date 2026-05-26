@@ -1,0 +1,337 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             xmlns:conv="clr-namespace:AgValoniaGPS.Views.Converters;assembly=AgValoniaGPS.Views"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
+             mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="700"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.ScreenAlertsDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsScreenAlertsDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsScreenAlertsDialogVisible}">
+
+    <UserControl.Styles>
+        <!-- Toggle button: custom template for instant feedback, no hover overlay -->
+        <Style Selector="Button.SaToggle">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Width" Value="78"/>
+            <Setter Property="Height" Value="78"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.SaText">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="TextBlock.SaCaption">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.SaGroupHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A9A7E"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <!-- Rule lines separating logical groups -->
+        <Style Selector="Border.VRule">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Margin" Value="16,4"/>
+        </Style>
+        <Style Selector="Border.HRule">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Margin" Value="4,12"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Full screen modal overlay -->
+    <Grid>
+        <!-- Backdrop, tap-to-close -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <!-- One big page, everything visible at once (no tabs, no scrolling).
+             Sized to nearly fill the 1200x720 design target. -->
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="8" Width="1180" Height="700"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1" BoxShadow="0 8 32 #80000000">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
+                    <TextBlock Text="{loc:Localize ScreenAndAlerts}" FontSize="18" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </Border>
+
+                <!-- Single page: top region (Camera | Display), rule, bottom region
+                     (Buttons | Sounds | Messages). -->
+                <Grid Grid.Row="1" Margin="20" RowDefinitions="*,Auto,Auto">
+
+                    <!-- ===== Top: Camera | Display ===== -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*">
+                        <!-- Camera (MainViewModel commands) -->
+                        <StackPanel Grid.Column="0" Spacing="8" Width="260" VerticalAlignment="Top">
+                            <TextBlock Text="{loc:Localize Camera}" Classes="SaGroupHeader"/>
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                                <Button Grid.Row="0" Grid.Column="0" Classes="SaText" Content="{loc:Localize TiltUp}" ClickMode="Press" Command="{Binding IncreaseCameraPitchCommand}"/>
+                                <Button Grid.Row="0" Grid.Column="1" Classes="SaText" Content="{loc:Localize TiltDown}" ClickMode="Press" Command="{Binding DecreaseCameraPitchCommand}"/>
+                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding CameraPitchDisplay}" Classes="SaCaption" Margin="0,2"/>
+                                <Button Grid.Row="2" Grid.Column="0" Classes="SaText" Content="2D/3D" ClickMode="Press" Command="{Binding Toggle2D3DCommand}"/>
+                                <Button Grid.Row="2" Grid.Column="1" Classes="SaText" Content="{loc:Localize North}" ClickMode="Press" Command="{Binding ToggleNorthUpCommand}"/>
+                            </Grid>
+                            <Button Classes="SaText" HorizontalAlignment="Stretch" ClickMode="Press" Command="{Binding CycleDisplayResolutionCommand}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                                    <TextBlock Text="{loc:Localize Quality}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding DisplayResolutionLabel}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <Border Grid.Column="1" Classes="VRule"/>
+
+                        <!-- Display toggles (ConfigurationViewModel) -->
+                        <StackPanel Grid.Column="2" Spacing="8"
+                                    DataContext="{Binding ConfigurationViewModel}" x:DataType="vm:ConfigurationViewModel">
+                            <TextBlock Text="{loc:Localize Display}" Classes="SaGroupHeader"/>
+                            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="14" ColumnSpacing="14" HorizontalAlignment="Left">
+                                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.GridVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.GridVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleGridCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_Grid.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="{loc:Localize Grid}" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.FieldTextureVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.FieldTextureVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleFieldTextureCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_FloorTexture.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Field Texture" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.FieldTextureMoveable, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.FieldTextureMoveable, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleFieldTextureMoveableCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_FloorTexture.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Texture Moves" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="3" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.SvennArrowVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.SvennArrowVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleSvennArrowCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_SvennArrow.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Svenn Arrow" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="4" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.HeadlandDistanceVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.HeadlandDistanceVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleHeadlandDistanceCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_HeadlandDistance.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Headland Dist" Classes="SaCaption"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.ExtraGuidelines, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.ExtraGuidelines, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleExtraGuidelinesCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_ExtraGuides.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Extra Guides" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                                    <controls:EditableNumericField
+                                        Value="{Binding Display.ExtraGuidelinesCount, Mode=TwoWay}"
+                                        Unit="" FormatString="F0"
+                                        EditCommand="{Binding EditExtraGuidelinesCountCommand}"/>
+                                    <TextBlock Text="Guide Count" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.LineSmoothEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.LineSmoothEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleLineSmoothCommand}">
+                                        <TextBlock Text="AA" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <TextBlock Text="Smoothing" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="3" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding PersistentState.IsDayMode, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding PersistentState.IsDayMode, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleDayNightThemeCommand}">
+                                        <TextBlock Text="Light" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <TextBlock Text="Light Theme" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="4" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding !PersistentState.IsDayMode, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding !PersistentState.IsDayMode, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleDayNightThemeCommand}">
+                                        <TextBlock Text="Dark" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <TextBlock Text="Dark Theme" Classes="SaCaption"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1" Classes="HRule"/>
+
+                    <!-- ===== Bottom: On-Screen Buttons | Alerts & Sounds | Hardware Messages ===== -->
+                    <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,Auto,*"
+                          DataContext="{Binding ConfigurationViewModel}" x:DataType="vm:ConfigurationViewModel">
+                        <!-- On-Screen Buttons -->
+                        <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Top">
+                            <TextBlock Text="{loc:Localize OnScreenButtons}" Classes="SaGroupHeader"/>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.UTurnButtonVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.UTurnButtonVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleUTurnButtonCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/Con_UTurnMenu.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="U-Turn" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.LateralButtonVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.LateralButtonVisible, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleLateralButtonCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSnapNudgeMenu.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Lateral" Classes="SaCaption"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Grid.Column="1" Classes="VRule"/>
+
+                        <!-- Alerts & Sounds -->
+                        <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
+                            <TextBlock Text="{loc:Localize AlertsSounds}" Classes="SaGroupHeader"/>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.AutoSteerSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.AutoSteerSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleAutoSteerSoundCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SteerSound.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Auto Steer" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.UTurnSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.UTurnSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleUTurnSoundCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_TurnSound.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="U-Turn" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.HydraulicSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.HydraulicSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleHydraulicSoundCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_HydLiftSound.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Hydraulic" Classes="SaCaption"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.SectionsSound, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.SectionsSound, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleSectionsSoundCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConF_SoundSections.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Sections" Classes="SaCaption"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Grid.Column="3" Classes="VRule"/>
+
+                        <!-- Hardware Messages -->
+                        <StackPanel Grid.Column="4" Spacing="8" VerticalAlignment="Top">
+                            <TextBlock Text="{loc:Localize HardwareMessages}" Classes="SaGroupHeader"/>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <StackPanel Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.HardwareMessagesEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.HardwareMessagesEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleHardwareMessagesCommand}">
+                                        <Border Width="50" Height="50" Background="{DynamicResource IconModulesMachine}"/>
+                                    </Button>
+                                    <TextBlock Text="Messages" Classes="SaCaption"/>
+                                </StackPanel>
+                                <TextBlock Text="Show pop-up messages from the AiO board." MaxWidth="200"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                           FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- Footer -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Button Grid.Column="1" Width="48" Height="48" Background="#4A9A7E" CornerRadius="24"
+                                Command="{Binding CloseScreenAlertsDialogCommand}" ToolTip.Tip="Close">
+                            <TextBlock Text="✓" FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

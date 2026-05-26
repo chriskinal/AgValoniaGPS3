@@ -34,6 +34,15 @@ public class DisplayConfig : ObservableObject
         set => SetProperty(ref _gridVisible, value);
     }
 
+    // Auto-close dialogs/menus after this many seconds of no interaction with
+    // the open surface (matches AgOpenGPS). 0 disables. Behavior preference.
+    private double _dialogAutoCloseSeconds = 7.0;
+    public double DialogAutoCloseSeconds
+    {
+        get => _dialogAutoCloseSeconds;
+        set => SetProperty(ref _dialogAutoCloseSeconds, value);
+    }
+
     private bool _compassVisible = true;
     public bool CompassVisible
     {

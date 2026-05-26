@@ -78,6 +78,7 @@ public class ConfigurationServiceMappingTests
         d.DayStartHour = 8;
         d.NightStartHour = 22;
         d.DisplayResolutionMultiplier = 2.5;
+        d.DialogAutoCloseSeconds = 42;
 
         _service.SaveAppSettings();
         ConfigurationStore.SetInstance(new ConfigurationStore());
@@ -114,6 +115,7 @@ public class ConfigurationServiceMappingTests
             Assert.That(r.DayStartHour, Is.EqualTo(8));
             Assert.That(r.NightStartHour, Is.EqualTo(22));
             Assert.That(r.DisplayResolutionMultiplier, Is.EqualTo(2.5));
+            Assert.That(r.DialogAutoCloseSeconds, Is.EqualTo(42));
         });
     }
 

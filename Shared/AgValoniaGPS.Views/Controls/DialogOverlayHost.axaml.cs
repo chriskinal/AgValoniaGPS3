@@ -15,6 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.Views.Controls;
 
@@ -27,5 +30,17 @@ public partial class DialogOverlayHost : UserControl
     public DialogOverlayHost()
     {
         InitializeComponent();
+
+        // Reset the idle auto-close countdown on any interaction with an open
+        // dialog. Tunnel + handledEventsToo so the reset still fires even when a
+        // child control marks the event handled. These only route through here
+        // when the event target is inside a visible dialog (when none is open the
+        // overlays aren't hit-test-visible), and the VM no-ops if nothing is open.
+        AddHandler(PointerPressedEvent, OnDialogInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnDialogInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerWheelChangedEvent, OnDialogInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
+
+    private void OnDialogInteraction(object? sender, RoutedEventArgs e)
+        => (DataContext as MainViewModel)?.NotifyDialogInteraction();
 }

@@ -446,6 +446,16 @@ public partial class MainViewModel : ObservableObject
         InitializeChartCommands();
         InitializeCoverageGuardCommands();
 
+        // "Collapse behind you": when any dialog opens, close every nav fly-out so
+        // a selection doesn't leave its parent menu stacked behind the dialog.
+        // Also (re)starts the idle auto-close countdown for the open surface.
+        State.UI.DialogChanged += (_, e) =>
+        {
+            if (e.Current != Models.State.DialogType.None)
+                CloseAllMenuPanels();
+            RestartDialogAutoCloseTimer();
+        };
+
         // Load display settings first, then restore our app settings on top
         // This ensures AppSettings takes precedence over DisplaySettings
         // IMPORTANT: Run synchronously to ensure settings are loaded before any save can occur
@@ -2257,6 +2267,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? CloseAppDirectoriesDialogCommand { get; private set; }
     public ICommand? ShowAppSettingsDialogCommand { get; private set; }
     public ICommand? CloseAppSettingsDialogCommand { get; private set; }
+    public ICommand? ShowScreenAlertsDialogCommand { get; private set; }
+    public ICommand? CloseScreenAlertsDialogCommand { get; private set; }
     public ICommand? ShowAboutDialogCommand { get; private set; }
     public ICommand? CloseAboutDialogCommand { get; private set; }
     public ICommand? ResetAllSettingsCommand { get; private set; }

@@ -17,6 +17,9 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using AgValoniaGPS.ViewModels;
 
 namespace AgValoniaGPS.Views.Controls.Panels;
 
@@ -26,9 +29,15 @@ public partial class LeftNavigationPanel : UserControl
     {
         InitializeComponent();
 
+        // Reset the idle auto-close countdown on interaction with the nav rail
+        // or an open fly-out menu. Tunnel + handledEventsToo so it fires even when
+        // a child handles the event; the VM no-ops when no menu is open.
+        AddHandler(PointerPressedEvent, OnMenuInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnMenuInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerWheelChangedEvent, OnMenuInteraction, RoutingStrategies.Tunnel, handledEventsToo: true);
+
         // Wire up sub-panel drag events
         // SimulatorPanel moved to the window-level floating canvas (see platform views)
-        WireUpSubPanelDrag<ViewSettingsPanel>("ViewSettingsPanelControl");
         WireUpSubPanelDrag<FileMenuPanel>("FileMenuPanelControl");
         WireUpSubPanelDrag<ToolsPanel>("ToolsPanelControl");
         WireUpSubPanelDrag<ConfigurationPanel>("ConfigurationPanelControl");
@@ -37,6 +46,9 @@ public partial class LeftNavigationPanel : UserControl
         WireUpSubPanelDrag<BoundaryRecordingPanel>("BoundaryRecordingPanelControl");
         WireUpSubPanelDrag<BoundaryPlayerPanel>("BoundaryPlayerPanelControl");
     }
+
+    private void OnMenuInteraction(object? sender, RoutedEventArgs e)
+        => (DataContext as MainViewModel)?.NotifyDialogInteraction();
 
     private void WireUpSubPanelDrag<T>(string controlName) where T : UserControl
     {

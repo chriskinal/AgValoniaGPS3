@@ -48,7 +48,7 @@ public partial class MainViewModel
     {
         ShowHotkeyConfigDialogCommand = new RelayCommand(() =>
         {
-            IsFileMenuPanelVisible = false;
+            // Fly-out closes automatically via the DialogChanged hook.
             State.UI.ShowDialog(DialogType.HotkeyConfig);
         });
 

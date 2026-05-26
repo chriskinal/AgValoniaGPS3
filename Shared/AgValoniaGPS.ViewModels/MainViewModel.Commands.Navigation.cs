@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using AgValoniaGPS.Models.Configuration;
 using Avalonia;
 using Avalonia.Styling;
@@ -28,35 +29,46 @@ public partial class MainViewModel
 {
     private void InitializeNavigationCommands()
     {
-        // Panel toggle commands
-        ToggleViewSettingsPanelCommand = new RelayCommand(() =>
-        {
-            IsViewSettingsPanelVisible = !IsViewSettingsPanelVisible;
-        });
-
+        // Panel toggle commands. Nav fly-outs are mutually exclusive: opening
+        // one closes the others so they never stack ("too many windows").
         ToggleFileMenuPanelCommand = new RelayCommand(() =>
         {
-            IsFileMenuPanelVisible = !IsFileMenuPanelVisible;
+            bool willOpen = !IsFileMenuPanelVisible;
+            CloseAllMenuPanels();
+            IsFileMenuPanelVisible = willOpen;
+            RestartDialogAutoCloseTimer();
         });
 
         ToggleToolsPanelCommand = new RelayCommand(() =>
         {
-            IsToolsPanelVisible = !IsToolsPanelVisible;
+            bool willOpen = !IsToolsPanelVisible;
+            CloseAllMenuPanels();
+            IsToolsPanelVisible = willOpen;
+            RestartDialogAutoCloseTimer();
         });
 
         ToggleConfigurationPanelCommand = new RelayCommand(() =>
         {
-            IsConfigurationPanelVisible = !IsConfigurationPanelVisible;
+            bool willOpen = !IsConfigurationPanelVisible;
+            CloseAllMenuPanels();
+            IsConfigurationPanelVisible = willOpen;
+            RestartDialogAutoCloseTimer();
         });
 
         ToggleFieldOperationsPanelCommand = new RelayCommand(() =>
         {
-            IsFieldOperationsPanelVisible = !IsFieldOperationsPanelVisible;
+            bool willOpen = !IsFieldOperationsPanelVisible;
+            CloseAllMenuPanels();
+            IsFieldOperationsPanelVisible = willOpen;
+            RestartDialogAutoCloseTimer();
         });
 
         ToggleFieldToolsPanelCommand = new RelayCommand(() =>
         {
-            IsFieldToolsPanelVisible = !IsFieldToolsPanelVisible;
+            bool willOpen = !IsFieldToolsPanelVisible;
+            CloseAllMenuPanels();
+            IsFieldToolsPanelVisible = willOpen;
+            RestartDialogAutoCloseTimer();
         });
 
         ToggleAutoTrackCommand = new RelayCommand(() =>
@@ -182,6 +194,83 @@ public partial class MainViewModel
             IsSettingsVisible = !IsSettingsVisible;
         });
     }
+
+    /// <summary>
+    /// Closes every nav fly-out menu. Used to keep the fly-outs mutually
+    /// exclusive (opening one closes the rest) and to "collapse behind you"
+    /// when a dialog opens over them — see the DialogChanged hook wired in
+    /// the MainViewModel constructor.
+    /// </summary>
+    private void CloseAllMenuPanels()
+    {
+        IsFileMenuPanelVisible = false;
+        IsToolsPanelVisible = false;
+        IsConfigurationPanelVisible = false;
+        IsFieldOperationsPanelVisible = false;
+        IsFieldToolsPanelVisible = false;
+    }
+
+    private bool IsAnyMenuPanelOpen =>
+        IsFileMenuPanelVisible || IsToolsPanelVisible ||
+        IsConfigurationPanelVisible || IsFieldOperationsPanelVisible || IsFieldToolsPanelVisible;
+
+    private Avalonia.Threading.DispatcherTimer? _dialogAutoCloseTimer;
+
+    // Dialogs exempt from auto-close: they need an explicit decision or hold
+    // in-progress data entry that a timeout would silently discard.
+    private static readonly System.Collections.Generic.HashSet<Models.State.DialogType> _autoCloseExemptDialogs = new()
+    {
+        Models.State.DialogType.Confirmation,
+        Models.State.DialogType.Error,
+        Models.State.DialogType.NumericInput,
+        Models.State.DialogType.NtripProfileEditor,
+    };
+
+    /// <summary>
+    /// (Re)starts the auto-close countdown for the open dialog/menu. Called when
+    /// a surface opens and on each interaction with it (see NotifyDialogInteraction).
+    /// After ConfigStore.Display.DialogAutoCloseSeconds of no interaction the open
+    /// surface closes, returning focus to the map. 0 disables; exempt dialogs and
+    /// the busy overlay never auto-close.
+    /// </summary>
+    public void RestartDialogAutoCloseTimer()
+    {
+        _dialogAutoCloseTimer?.Stop();
+
+        double seconds = ConfigStore.Display.DialogAutoCloseSeconds;
+        if (seconds <= 0) return;
+
+        var dialog = State.UI.ActiveDialog;
+        bool dialogAutoCloseable = dialog != Models.State.DialogType.None
+            && !_autoCloseExemptDialogs.Contains(dialog);
+
+        if (!dialogAutoCloseable && !IsAnyMenuPanelOpen) return;
+
+        _dialogAutoCloseTimer ??= CreateDialogAutoCloseTimer();
+        _dialogAutoCloseTimer.Interval = TimeSpan.FromSeconds(seconds);
+        _dialogAutoCloseTimer.Start();
+    }
+
+    private Avalonia.Threading.DispatcherTimer CreateDialogAutoCloseTimer()
+    {
+        var timer = new Avalonia.Threading.DispatcherTimer();
+        timer.Tick += (_, _) =>
+        {
+            _dialogAutoCloseTimer?.Stop();
+            var dialog = State.UI.ActiveDialog;
+            if (dialog != Models.State.DialogType.None && !_autoCloseExemptDialogs.Contains(dialog))
+                State.UI.CloseDialog();
+            else if (IsAnyMenuPanelOpen)
+                CloseAllMenuPanels();
+        };
+        return timer;
+    }
+
+    /// <summary>
+    /// Views call this when the user interacts with the open dialog/menu so the
+    /// auto-close countdown resets (only dialog interaction counts, not the map).
+    /// </summary>
+    public void NotifyDialogInteraction() => RestartDialogAutoCloseTimer();
 
     /// <summary>
     /// Applies the Avalonia theme variant based on day/night mode.

@@ -35,7 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Grid RowDefinitions="Auto,*">
 
             <!-- Top Status Bar -->
-            <Border Grid.Row="0" Background="#2d2d2d" Padding="10">
+            <Border Grid.Row="0" Background="#2d2d2d" Padding="6,4">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <!-- Left: RTK Status and Diagnostics -->
                     <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
@@ -47,7 +47,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- Main Content Area - SkiaMap with overlay panels -->
             <Grid Grid.Row="1" Background="Transparent">
-                <controls:SkiaMapControl x:Name="MapControl" Margin="5"
+                <controls:SkiaMapControl x:Name="MapControl" Margin="0"
                                          IsGridVisible="{Binding IsGridOn}"/>
 
                 <!-- LIGHT BAR: Centered at top (#144) -->
@@ -62,12 +62,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             ZIndex="9"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Top"
-                                            Margin="8,10,0,0"
+                                            Margin="0,4,0,0"
                                             DataContext="{Binding}"/>
 
                 <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                            ZIndex="10" Margin="0,0,8,8" Spacing="4">
+                            ZIndex="10" Margin="0,0,0,0" Spacing="4">
                     <panels:RightNavigationPanel x:Name="RightNavPanel"
                                                  DataContext="{Binding}"/>
                     <Border Height="12"/>
@@ -89,7 +89,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel ZIndex="10"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
-                            Margin="0,0,0,8"
+                            Margin="0,0,0,0"
                             Spacing="4">
                     <panels:SimulatorPanel x:Name="SimulatorBarPanel"
                                            HorizontalAlignment="Center"

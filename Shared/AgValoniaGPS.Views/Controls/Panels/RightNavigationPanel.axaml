@@ -38,7 +38,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Border.FloatingPanel">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="0"/>
-            <Setter Property="Padding" Value="8"/>
+            <!-- Outer (right) padding removed so buttons sit flush to the right
+                 screen edge; inner (left) gap to the map is preserved. -->
+            <Setter Property="Padding" Value="8,8,0,8"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>

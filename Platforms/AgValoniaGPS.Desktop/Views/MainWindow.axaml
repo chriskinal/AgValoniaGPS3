@@ -46,8 +46,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         PointerReleased="MapOverlay_PointerReleased"
                         PointerWheelChanged="MapOverlay_PointerWheelChanged" />
 
-        <!-- Row 0: Top status bar area -->
-        <Grid Grid.Row="0" ZIndex="20" Margin="8,8,8,4" ColumnDefinitions="Auto,*,Auto">
+        <!-- Row 0: Top status bar area. Flush to top/left/right edges; only a
+             small gap below before the map content. -->
+        <Grid Grid.Row="0" ZIndex="20" Margin="0,0,0,4" ColumnDefinitions="Auto,*,Auto">
             <Border Classes="FloatingPanel" Grid.Column="0" IsHitTestVisible="True">
                 <panels:StatusBarPanel DataContext="{Binding}"/>
             </Border>
@@ -72,12 +73,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     ZIndex="9"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
-                                    Margin="8,8,0,0"
+                                    Margin="0,4,0,0"
                                     DataContext="{Binding}"/>
 
         <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    ZIndex="10" Margin="0,0,8,8" Spacing="4">
+                    ZIndex="10" Margin="0,0,0,0" Spacing="4">
             <!-- Right navigation buttons -->
             <panels:RightNavigationPanel x:Name="RightNavPanel"
                                          DataContext="{Binding}"/>
@@ -103,7 +104,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <StackPanel ZIndex="10"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
-                    Margin="0,0,0,8"
+                    Margin="0,0,0,0"
                     Spacing="4">
             <panels:SimulatorPanel x:Name="SimulatorBarPanel"
                                    HorizontalAlignment="Center"

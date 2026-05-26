@@ -81,6 +81,10 @@ namespace AgValoniaGPS.Models
         public int DayStartHour { get; set; } = 6;
         public int NightStartHour { get; set; } = 20;
 
+        // Auto-close dialogs/menus after this many seconds of no interaction
+        // (0 disables). Matches AgOpenGPS's 7s. Behavior preference.
+        public double DialogAutoCloseSeconds { get; set; } = 7.0;
+
         // Camera view (CameraZoom/Pitch/Mode) and the current day/night value
         // (IsDayMode) are "where the app was" → persistent state, in
         // PersistentAppState. The AutoDayNight *preference* below stays config.

@@ -38,7 +38,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Border.FloatingPanel">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
             <Setter Property="CornerRadius" Value="0"/>
-            <Setter Property="Padding" Value="6"/>
+            <!-- Outer (bottom) padding removed so buttons sit flush to the bottom
+                 screen edge; inner (top) gap is preserved. -->
+            <Setter Property="Padding" Value="6,6,6,0"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
