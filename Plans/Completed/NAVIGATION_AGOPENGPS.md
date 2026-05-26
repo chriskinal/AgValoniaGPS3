@@ -160,7 +160,7 @@ then section, then sub-page).
 | Aspect | AgOpenGPS (classic) | AgValonia |
 |---|---|---|
 | **Settings model** | **One** `FormConfig` with a left-nav tree — strongly consolidated; a setting is ~3–4 clicks deep | Fragmented across a Config panel + several settings dialogs; vehicle settings only 2 taps but far fewer settings surfaced |
-| **Open existing field** | Visible **Job/Field** button → File Picker (3 clicks, reachable on touch) | **Hotkey-only, no button** — unreachable by touch |
+| **Open existing field** | Visible **Job/Field** button → File Picker (3 clicks) | Visible **Start Session** button → open-only (2 taps); legacy FieldSelection dialog is hotkey-only & pending removal |
 | **Top-level grouping** | 4 dropdowns: File · Wizards&Tools · Field Tools · Settings | 6 left flyouts: File · View · Tools · Config · FieldOps · FieldTools |
 | **Charts** | Wizards&Tools ▸ Charts ▸ pick = 3 clicks | Tools ▸ chart = 2 taps (flatter) |
 | **Right column** | auto-steer / U-turn / sections / contour = 1 click | same, 1 tap |
@@ -170,9 +170,13 @@ then section, then sub-page).
 
 ## Takeaways
 
-1. **AgOpen has a visible "open field" entry; AgValonia doesn't.** Real
-   regression — AgValonia's `ShowFieldSelectionDialogCommand` is hotkey-only.
-   Confirms the 🔴 finding in the AgValonia audit: add a visible Open-Field control.
+1. **Both have a visible "open field" entry.** AgOpen via the Job/Field
+   button; AgValonia via **Start Session** (its "open field only" path opens a
+   field with no job). *Correction:* an earlier draft called AgValonia's
+   open-field hotkey-only — that's only true of the **legacy `FieldSelection`
+   dialog** (superseded by Start Session #349, pending removal), not the task
+   itself. The open question is labeling: does "Start Session" read as "open a
+   field" to an AgOpen-trained operator?
 2. **AgOpen's single `FormConfig` is more consolidated** than AgValonia's
    scattered settings dialogs — supports "consolidate settings under one home."
    Trade-off: AgOpen is deeper (3–4 clicks) but coherent; AgValonia is shallower

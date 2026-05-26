@@ -116,7 +116,7 @@ flowchart TD
     BNav --> Misc["Skip-rows / Map color / Reset heading"]
 
     %% ---------- HOTKEY-ONLY ----------
-    KB["⌨️ Hotkey only"]:::hotkey --> OpenField["Open Existing Field (FieldSelection)"]:::hotkey
+    KB["⌨️ Hotkey only"]:::hotkey --> OpenField["Legacy FieldSelection dialog (superseded by Start Session; pending removal)"]:::hotkey
 
     classDef dialog fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a;
     classDef dead fill:#fee2e2,stroke:#ef4444,color:#7f1d1d,stroke-dasharray:4 3;
@@ -126,7 +126,7 @@ flowchart TD
 ### Legend
 - **Blue** = opens a dialog/wizard · plain = direct action/toggle
 - **Red dashed** = dead button (no command wired)
-- **Orange** = no on-screen entry point (hotkey only)
+- **Orange** = hotkey-only legacy dialog (opening a field is done via Start Session)
 - **Converging arrows** = same action hosted in two places
 
 ## Taps-to-reach (representative)
@@ -140,7 +140,7 @@ flowchart TD
 | Vehicle settings | Left → Config → Vehicle Settings | 2 |
 | NTRIP profiles | Left → File → NTRIP | 2 |
 | Charts (steer/heading/XTE) | Left → Tools → chart | 2 |
-| **Open an existing field** | **hotkey only — no button** | **∞ on touch** |
+| Open an existing field | Left → Field Ops → Start Session (open-only) | 2 |
 | NTRIP edit a profile | Left → File → NTRIP → edit | 3 |
 | Boundary offset | Left → Field Tools → Boundary → offset | 3 |
 | Sim start coords | Left → File → Simulator → (bar) GPS | 3 |
@@ -148,12 +148,14 @@ flowchart TD
 
 ## Findings
 
-**🔴 High — "Open existing field" has no on-screen control.**
-`ShowFieldSelectionDialogCommand` (the saved-field picker) is bound only to
-`HotkeyAction.FieldMenu`; there is no button. On a touch tablet with no
-keyboard, a saved field cannot be reopened through the UI. (Field Ops'
-"From Existing" is a different flow — it *creates* a field from another's
-boundary.)
+**Correction (2026-05-25): the earlier "🔴 open-field has no button" finding
+was a misread — retracted.** Opening a saved field *is* reachable from a
+visible control: **Field Ops → Start Session**, whose "open field only" path
+opens a field with no job (`OpenFieldOnlyAsync`). The only hotkey-only item
+is the **legacy `FieldSelection` dialog** (`ShowFieldSelectionDialogCommand`),
+which Start Session (#349) supersedes and which is slated for M5 cleanup — it
+should *not* get a new button. (Field Ops' "From Existing" is yet another
+flow — it *creates* a field from another's boundary.)
 
 **🟠 Medium**
 - **Dead buttons:** Tools › *Log Viewer* and *Roll Correction* have no `Command`.
@@ -165,12 +167,12 @@ boundary.)
 **🟢 Low** — NTRIP-edit / boundary-offset at 3 taps are acceptable for occasional setup.
 
 ## Suggested optimizations
-1. Add a visible **Open Field** entry (top of Field Ops, or a bottom-bar field button) → `ShowFieldSelectionDialogCommand`. The one true blocker, especially on mobile.
+1. ~~Add a visible Open Field button~~ — **retracted** (see Correction): opening a field already works via Start Session. If anything, repoint the `FieldMenu` hotkey from the legacy `FieldSelection` dialog to `StartWorkSession`, and consider whether "Start Session" reads clearly enough as "open a field" for AgOpen-trained operators.
 2. Wire or delete the dead Tools buttons; remove the duplicate Log Viewer.
 3. Pick one canonical home per action (AgShare, KML, Field Builder); have the Boundary dialog *link* to it rather than re-host it.
 4. Promote the Simulator toggle out of File (it's a mode, not a file op).
 5. Consolidate the settings entries under one "Settings" with sub-sections.
-6. Lean on the hotkey system for power-user shortcuts — but never as the *only* path (see finding #1).
+6. Lean on the hotkey system for power-user shortcuts — but never as the *only* path to a non-legacy action.
 
 ### Caveats
 - Depths are exact; the "too deep?" judgment assumes typical field-work frequency.
