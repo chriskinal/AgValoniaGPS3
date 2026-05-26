@@ -55,6 +55,43 @@ cab. Software navigation events naturally cluster in the
 "navigated away while autosteer engaged." Leaving the Moving Map page
 disengages autosteer as a clean default.
 
+## Clarity & localization headroom
+
+A second, quieter reason to prefer pages over cramped overlay chrome:
+**room for words, and for words to survive.**
+
+- **One extra word.** Not Shakespeare on a tile — just the *one* extra
+  word that removes ambiguity ("Open Field" vs a bare "Open"; a tile title
+  *plus* a subtitle). Overlay strips that fight over a single map give you
+  ~2 words and an icon; pages don't have to ration.
+- **Localization headroom.** AgValonia ships ~25 languages, and German /
+  Finnish / Hungarian / Russian routinely run **30–40% longer** than
+  English. Fixed-width buttons and tight strips either truncate the
+  translation or force translators into cryptic per-language abbreviations.
+  Flowing page layout absorbs the expansion.
+- **Meaning must outlive the author.** A label is meaning written into the
+  artifact; it survives contributor turnover, the next maintainer, the
+  translator, and the operator on the Telegram chat. A bare custom glyph is
+  a bet that shared context outlives the person who drew it — and we
+  already have proof it loses (the dead, unlabelled Tools buttons whose
+  purpose is now a guess; support requests of the form "change setting X").
+
+**Match label density to context** (this is the rule, not "words
+everywhere"):
+
+- **Task / setup pages, tiles** → full words, section headers, helper text.
+  First-time and occasional users must understand at a glance, and the
+  meaning has to survive people.
+- **Moving Map and the simulator bar** → terse is correct. The map is
+  glanceable-while-driving and competes for space; the sim bar is a
+  learned-repetition dev/learning tool where spelling everything out cost
+  ~1/5 of the screen. Heavy users learn `RST` / `>0<` fast and the space
+  matters more.
+- **In the terse zones, prefer *conventional* glyphs (▼ ▲, save, trash) or
+  glyph + label — not novel glyphs alone.** A standard icon is already a
+  shared language and needs no translation; an invented one is a
+  hieroglyphic until someone teaches it.
+
 ## Pages
 
 ### Home (app startup destination)
