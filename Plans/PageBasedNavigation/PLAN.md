@@ -6,6 +6,30 @@
 `Plans/GlyphWordButtons/`. The GlyphButton work survives — it just
 mostly applies to the **Moving Map** page now, not the whole app.
 
+## Revisions from the navigation audits (2026-05-25)
+
+Folded in after auditing the current AgValonia nav, the classic WinForms
+AgOpenGPS nav, and a side-by-side (see `NAVIGATION_STRUCTURE.md`,
+`NAVIGATION_AGOPENGPS.md`, `CLICK_COMPARISON.md` in this folder):
+
+- **U-Turn, Tram, and Machine Module → Implement page** (not Tractor). The
+  tool dictates the turn (jack-knife / tank clearance) and the machine
+  module controls the implement. Corrects the absorption map *and* the
+  current PoC `TractorPage`, which still hosts all three.
+- **Avoid scrolling on dense config pages** — chunk Tractor/Implement with
+  section sub-nav like AgOpenGPS's `FormConfig`, so the 1-tap-to-page win
+  isn't lost to a scroll-hunt. See *In-page navigation* below.
+- **Add a global Settings search** — a name→location index, since support
+  advice is always "change setting X" with no idea which page X is on. See
+  *Settings search* below.
+- **Shipping model clarified** — this is all-or-nothing, not phased
+  increments (see Migration phases).
+
+Still unresolved (the audits reinforce but can't decide it): **map-as-
+destination vs. map-centric** — making Home the launcher demotes the map
+from "always primary" to one destination. That's the core strategic bet
+everything else hangs on.
+
 ## Problem
 
 The app today is "map + overlay everything." A persistent map is the
@@ -59,7 +83,11 @@ Everything tractor-specific, nothing implement-specific.
   (the extra sensor data is relevant when validating tractor setup)
 
 > **Out of Vehicle Config and moved elsewhere:** Display Options +
-> Additional Options sub-tabs → Application Settings (Home).
+> Additional Options sub-tabs → Application Settings (Home). **U-Turn,
+> Tram, and Machine Module → Implement page** — they're implement
+> concerns (tool dictates turn radius; machine module controls the
+> implement), not tractor ones. NB: the current PoC `TractorPage` still
+> hosts these three; they need to move to the Implement page.
 
 ### Implement page
 
@@ -69,6 +97,14 @@ Everything tool/implement-specific.
 - **Implement configuration** — Tool, Tool Hitch, Tool Offset, Tool
   Pivot, Tool Switches, Tool Timing, Tool Type. All the `ToolSubTabs/*`
   content from current Configuration dialog.
+- **U-Turn** — turn radius, extension, smoothing, trigger distance. Lives
+  here because the **tool dictates the turn**: jack-knife angle and tank/
+  clearance limits are implement properties, not tractor ones.
+- **Tram lines** — passes, display mode, tram-line config. Tram geometry
+  is a function of the implement width.
+- **Machine Module** — pin config, relays, raise/lower timing, section
+  on/off control. The machine module **controls the implement** (lifting
+  it and switching sections), so it belongs with the implement.
 - **Top bar:** GPS · Module · Date / Time (no sensor info — implement
   config doesn't need live driving data)
 
@@ -140,6 +176,30 @@ Driving-only — present on Moving Map, absent everywhere else.
 
 `LeftNavigationPanel` and `RightNavigationPanel` are Moving-Map-only.
 
+### In-page navigation — avoid scrolling
+
+Distributing settings across task pages buys a 1-tap path *to* the page,
+but that win evaporates if the page is a long scroll. On mobile/tablet,
+scrolling to hunt for a field is the thing to avoid. Dense config pages
+(Tractor, Implement) must **chunk** their content the way AgOpenGPS's
+`FormConfig` does — section sub-nav / sticky section headers / a sub-tab
+strip — so a setting is "tap page → tap section", not "tap page → scroll
+past 40 fields". Target: any single setting reachable without a scroll, or
+with one short scroll within its section.
+
+### Settings search (cross-cutting)
+
+A global "find a setting by name" affordance, callable from anywhere (like
+the modal utilities). Type/scan a setting name → it routes to the page +
+section that owns it and highlights the control.
+
+Motivation: support reality. On the Telegram chat the advice is constantly
+"change setting X" — useless if the operator doesn't know *which page* X
+lives on. AgOpenGPS's `FormAllSettings` (and today's AgValonia "View All
+Settings") provide this flat findability; the page model must not lose it.
+A name→location index also keeps support instructions stable as pages get
+reorganized.
+
 ## Dialog absorption map
 
 Mapping today's ~30 dialogs to the new structure. **Utility dialogs**
@@ -153,7 +213,7 @@ from any page — they're cross-cutting.
 | ConfigurationDialog (Display, Additional) | Application Settings (Home) |
 | ConfigurationDialog (Sources/Gps,Roll) | Tractor page |
 | ConfigurationDialog (Tram, UTurn) | Implement page |
-| ConfigurationDialog (MachineModule) | Tractor page |
+| ConfigurationDialog (MachineModule) | Implement page |
 | AutoSteerConfigPanel | Tractor page (Steer Config section) |
 | FieldBuilderDialog | F&J page |
 | BoundaryMapDialog | F&J page |
@@ -234,8 +294,13 @@ Animations can come later if they don't hurt the FPS floor.
 
 ## Migration phases
 
-Each phase leaves the app shippable. The current panel-based UI keeps
-working while we build the page shell next to it.
+**This ships all-at-once, not incrementally.** The page-based UI is a
+complete replacement built as a WIP alongside the current panel UI — there
+is no scenario where it ships partially done. The phases below are a
+**build order for developer convenience only**; they do not represent
+shippable increments, and there's no value in resequencing them to "ship a
+fix sooner." The current navigation gaps (e.g. open-field being
+hotkey-only) get fixed when the whole thing ships.
 
 ### Phase 1 — Page shell + Home + Moving Map redirect
 
