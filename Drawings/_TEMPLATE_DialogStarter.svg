@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  AgValoniaGPS — STARTER TEMPLATE for Implied Form Design (Inkscape -> Avalonia XAML).
+
+  COPY this file, rename it, and replace its contents to design a new page/dialog.
+  Read Plans/ARTIST_HANDOFF.md for the full conventions. Quick reminders:
+
+   * Layer label  = "Form-<Window Title>"           -> window/page title
+   * Object label = control type  (Button, TextBox, ComboBox, CheckBox, Label, ...)
+   * Object ID    = the control's x:Name            -> use meaningful names (btnSave),
+                    NEVER leave Inkscape defaults like "rect1234"
+   * Group label  = layout intent (VerticalStackPanel / HorizontalStackPanel / Grid)
+   * Anchor attr  = edge pinning, e.g. Anchor="Right, Bottom"
+
+  STRUCTURE THAT CONVERTS CLEANLY (proven):
+   * Write every caption as <text ...><tspan ...>caption</tspan></text>
+     (this is how Inkscape stores text; plain <text>caption</text> gets dropped
+     or merged into the heading).
+   * Make each Button a <g> wrapping its labeled <rect> + its caption <text>,
+     with the caption positioned over the rect. Bare buttons can vanish.
+   * Generated .axaml is a throwaway DRAFT — do not commit it; we re-author the
+     real MVVM component in AgValoniaGPS from it.
+-->
+<svg
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns="http://www.w3.org/2000/svg"
+   width="460"
+   height="420"
+   viewBox="0 0 460 420"
+   version="1.1">
+  <g inkscape:groupmode="layer" id="layer1" inkscape:label="Form-Vehicle Settings">
+
+    <!-- Heading: a Label-intent text. Note the <tspan> child. -->
+    <text id="lblHeading" inkscape:label="Label" x="24" y="40" xml:space="preserve"
+          style="font-family:Roboto;font-size:28px;font-weight:bold;fill:#000000"><tspan id="tsHeading" x="24" y="40">Vehicle Settings</tspan></text>
+
+    <!-- A vertical stack of rows. Each row is a horizontal stack: caption + input. -->
+    <g id="stackFields" inkscape:label="VerticalStackPanel">
+
+      <g id="rowName" inkscape:label="HorizontalStackPanel">
+        <text id="lblName" inkscape:label="Label" x="24" y="92" xml:space="preserve"
+              style="font-family:Roboto;font-size:18px;fill:#000000"><tspan id="tsName" x="24" y="92">Vehicle Name</tspan></text>
+        <rect id="txtVehicleName" inkscape:label="TextBox" x="180" y="74" width="250" height="32"
+              style="fill:#ffffff;stroke:#999999;stroke-width:1"/>
+      </g>
+
+      <g id="rowType" inkscape:label="HorizontalStackPanel">
+        <text id="lblType" inkscape:label="Label" x="24" y="140" xml:space="preserve"
+              style="font-family:Roboto;font-size:18px;fill:#000000"><tspan id="tsType" x="24" y="140">Vehicle Type</tspan></text>
+        <rect id="cmbVehicleType" inkscape:label="ComboBox" x="180" y="122" width="250" height="32"
+              style="fill:#ffffff;stroke:#999999;stroke-width:1"/>
+      </g>
+
+    </g>
+
+    <!-- Buttons: each rect labeled "Button" is grouped with its caption text. -->
+    <g id="btnSaveGroup">
+      <rect id="btnSave" inkscape:label="Button" x="244" y="360" width="100" height="40"
+            Anchor="Right, Bottom" style="fill:#ffffff;stroke:#999999;stroke-width:1"/>
+      <text id="lblSave" x="270" y="386" xml:space="preserve"
+            style="font-family:Roboto;font-size:18px;fill:#000000"><tspan id="tsSave" x="270" y="386">Save</tspan></text>
+    </g>
+    <g id="btnCancelGroup">
+      <rect id="btnCancel" inkscape:label="Button" x="352" y="360" width="100" height="40"
+            Anchor="Right, Bottom" style="fill:#ffffff;stroke:#999999;stroke-width:1"/>
+      <text id="lblCancel" x="372" y="386" xml:space="preserve"
+            style="font-family:Roboto;font-size:18px;fill:#000000"><tspan id="tsCancel" x="372" y="386">Cancel</tspan></text>
+    </g>
+
+  </g>
+</svg>
