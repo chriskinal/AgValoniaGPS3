@@ -9,8 +9,10 @@ mostly applies to the **Moving Map** page now, not the whole app.
 ## Revisions from the navigation audits (2026-05-25)
 
 Folded in after auditing the current AgValonia nav, the classic WinForms
-AgOpenGPS nav, and a side-by-side (see `NAVIGATION_STRUCTURE.md`,
-`NAVIGATION_AGOPENGPS.md`, `CLICK_COMPARISON.md` in this folder):
+AgOpenGPS nav, and a side-by-side (audits archived in
+`../Completed/NAVIGATION_STRUCTURE.md` and
+`../Completed/NAVIGATION_AGOPENGPS.md`; `CLICK_COMPARISON.md` is in this
+folder):
 
 - **U-Turn, Tram, and Machine Module → Implement page** (not Tractor). The
   tool dictates the turn (jack-knife / tank clearance) and the machine
