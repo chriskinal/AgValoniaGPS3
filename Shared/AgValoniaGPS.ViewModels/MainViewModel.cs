@@ -245,6 +245,22 @@ public partial class MainViewModel : ObservableObject
                 UpdateTramLines(SelectedTrack);
             }
         };
+
+        // The Screen & Alerts "On-Screen Buttons" toggles gate the on-map U-Turn
+        // and Lateral overlays. Refresh those computed visibilities when the user
+        // flips a toggle so the overlays appear/disappear live.
+        ConfigStore.Display.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Models.Configuration.DisplayConfig.UTurnButtonVisible))
+            {
+                OnPropertyChanged(nameof(IsUTurnButtonVisible));
+                OnPropertyChanged(nameof(IsUTurnOverlayVisible));
+            }
+            else if (e.PropertyName == nameof(Models.Configuration.DisplayConfig.LateralButtonVisible))
+            {
+                OnPropertyChanged(nameof(IsLateralOverlayVisible));
+            }
+        };
         _udpService = udpService;
         _gpsService = gpsService;
         _fieldService = fieldService;
@@ -994,7 +1010,11 @@ public partial class MainViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _isAutoSteerEngaged, value))
+            {
                 OnPropertyChanged(nameof(IsManualUTurnVisible));
+                OnPropertyChanged(nameof(IsUTurnOverlayVisible));
+                OnPropertyChanged(nameof(IsLateralOverlayVisible));
+            }
         }
     }
 

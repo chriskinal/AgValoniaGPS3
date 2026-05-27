@@ -520,7 +520,9 @@ public sealed class YouTurnStateMachine
 
         var config = ConfigurationStore.Instance;
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
-        double nextDistAway = widthMinusOverlap * nextPath.Value;
+        // Match the driven line: pass offset + fine nudge, so the snake-mode next
+        // (cyan) line lines up with the turn's exit leg.
+        double nextDistAway = widthMinusOverlap * nextPath.Value + guidance.NudgeOffset;
         int pathDiff = nextPath.Value - guidance.HowManyPathsAway;
 
         // Snake mode directly sets the turn geometry without going through the regular

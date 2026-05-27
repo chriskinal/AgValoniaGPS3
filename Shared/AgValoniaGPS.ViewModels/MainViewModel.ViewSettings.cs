@@ -375,12 +375,33 @@ public partial class MainViewModel
     public bool IsManualUTurnVisible => IsAutoSteerEngaged && !IsActiveTrackClosed;
 
     /// <summary>
-    /// Notify IsUTurnButtonVisible when IsAutoSteerAvailable changes.
-    /// Called from MainViewModel.Guidance.cs when track state changes.
+    /// On-map U-Turn overlay (the two yellow manual-turn arrows). Same conditions
+    /// as the manual U-turn buttons, additionally gated by the Screen &amp; Alerts
+    /// "U-Turn" on-screen-button toggle (<see cref="DisplayConfig.UTurnButtonVisible"/>).
+    /// </summary>
+    public bool IsUTurnOverlayVisible =>
+        ConfigurationStore.Instance.Display.UTurnButtonVisible && IsManualUTurnVisible;
+
+    /// <summary>
+    /// On-map Lateral overlay (the two cyan shift arrows). Shown only while
+    /// autosteer is engaged (same gate as the U-turn overlay), additionally
+    /// gated by the Screen &amp; Alerts "Lateral" on-screen-button toggle
+    /// (<see cref="DisplayConfig.LateralButtonVisible"/>) — previously orphaned.
+    /// </summary>
+    public bool IsLateralOverlayVisible =>
+        ConfigurationStore.Instance.Display.LateralButtonVisible && IsManualUTurnVisible;
+
+    /// <summary>
+    /// Notify IsUTurnButtonVisible and the on-map overlay visibilities when their
+    /// inputs change. Called from MainViewModel.Guidance.cs when track state
+    /// changes and from the ConfigStore.Display subscription when the on-screen-
+    /// button toggles flip.
     /// </summary>
     private void RaiseUTurnButtonVisibleChanged()
     {
         OnPropertyChanged(nameof(IsUTurnButtonVisible));
+        OnPropertyChanged(nameof(IsUTurnOverlayVisible));
+        OnPropertyChanged(nameof(IsLateralOverlayVisible));
     }
 
     #endregion

@@ -116,6 +116,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Map Banners (Flag Placement, AB Creation) -->
         <panels:MapBannersPanel DataContext="{Binding}"/>
 
+        <!-- On-map U-Turn + Lateral overlay (manual turn / lateral-shift arrows) -->
+        <panels:TurnLateralOverlayPanel DataContext="{Binding}" ZIndex="15"/>
+
         <!-- Modal Dialog Overlays (shared across platforms) -->
         <controls:DialogOverlayHost DataContext="{Binding}"/>
     </Panel>

@@ -88,9 +88,14 @@ public sealed class YouTurnPathingService
         int nextPathsAway = guidance.HowManyPathsAway + offsetChange;
 
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
-        double nextDistAway = widthMinusOverlap * nextPathsAway;
+        // Absolute position of the next (cyan) line must match the driven line:
+        // pass offset + fine nudge. Without the nudge term the return line drifts
+        // off the turn's exit leg (which already includes the nudge).
+        double nextDistAway = widthMinusOverlap * nextPathsAway + guidance.NudgeOffset;
 
-        // Authoritative perpendicular width for the U-turn arc — direction lives in IsTurnLeft.
+        // Authoritative perpendicular width for the U-turn arc — direction lives in
+        // IsTurnLeft. This is the pass-to-pass delta, which the nudge shifts equally,
+        // so it stays nudge-free.
         turn.NextTrackTurnOffset = Math.Abs(pathsToMove * widthMinusOverlap);
 
         Models.Track.Track nextTrack;

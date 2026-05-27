@@ -233,7 +233,12 @@ public partial class YouTurnCreationService
             RowSkipsWidth = uTurnSkipRows,
             TurnStartOffset = 0,
             HowManyPathsAway = guidance.HowManyPathsAway,
-            NudgeDistance = 0.0,
+            // Fine lateral nudge: the driven guidance line is offset by
+            // (HowManyPathsAway * widthMinusOverlap + NudgeOffset) (see
+            // GpsPipelineService distAway). The turn's exit/target-line math
+            // already adds input.NudgeDistance — feed it the live nudge so the
+            // turn tracks the nudged line instead of the un-nudged base track.
+            NudgeDistance = guidance.NudgeOffset,
             TrackMode = 0,
 
             MakeUTurnCounter = turn.YouTurnCounter + 10,
@@ -266,7 +271,8 @@ public partial class YouTurnCreationService
 
         var config = ConfigurationStore.Instance;
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
-        double offsetDistance = guidance.HowManyPathsAway * widthMinusOverlap;
+        // Match the driven line: pass offset + fine nudge (see GpsPipelineService distAway).
+        double offsetDistance = guidance.HowManyPathsAway * widthMinusOverlap + guidance.NudgeOffset;
 
         List<Vec3> searchPoints = Math.Abs(offsetDistance) < 0.01
             ? track.Points
@@ -326,7 +332,8 @@ public partial class YouTurnCreationService
 
         var config = ConfigurationStore.Instance;
         double widthMinusOverlap = config.ActualToolWidth - config.Tool.Overlap;
-        double offsetDistance = guidance.HowManyPathsAway * widthMinusOverlap;
+        // Match the driven line: pass offset + fine nudge (see GpsPipelineService distAway).
+        double offsetDistance = guidance.HowManyPathsAway * widthMinusOverlap + guidance.NudgeOffset;
 
         Models.Track.Track currentOffsetTrack;
         if (Math.Abs(offsetDistance) < 0.01)

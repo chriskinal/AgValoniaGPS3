@@ -5,9 +5,17 @@ Licensed under GNU GPL v3.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:converters="using:AgValoniaGPS.Views.Converters"
              x:Class="AgValoniaGPS.Views.Controls.Panels.LightBarPanel"
+             x:DataType="vm:MainViewModel"
              IsHitTestVisible="False"
              IsVisible="False">
+
+    <UserControl.Resources>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:BoolToStringConverter x:Key="BoolToStringConverter"/>
+    </UserControl.Resources>
 
     <!-- Light Bar: arrow indicators showing cross-track error.
          Green arrows (right) = steer right to correct.
@@ -35,6 +43,25 @@ Licensed under GNU GPL v3.
             <TextBlock x:Name="XteText"
                        HorizontalAlignment="Center"
                        FontSize="16" FontWeight="Bold"/>
+
+            <!-- Next U-turn readout (skip count + pending direction + distance to
+                 trigger, e.g. "1R  12 m"). Shown only while auto U-Turn is
+                 armed/approaching. -->
+            <StackPanel x:Name="TurnDistancePanel" Orientation="Horizontal" Spacing="4"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding IsUTurnDistanceVisible}">
+                <TextBlock Text="{Binding UTurnSkipRows}" FontSize="13" FontWeight="SemiBold"
+                           Foreground="#FFE000" VerticalAlignment="Center"/>
+                <!-- Pending direction: when armed bind to IsTurnLeft, else the override. -->
+                <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#FFE000" VerticalAlignment="Center"
+                           IsVisible="{Binding State.YouTurn.IsTriggered}"
+                           Text="{Binding State.YouTurn.IsTurnLeft, Converter={StaticResource BoolToStringConverter}, ConverterParameter=↰|↱}"/>
+                <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#FFE000" VerticalAlignment="Center"
+                           IsVisible="{Binding State.YouTurn.IsTriggered, Converter={StaticResource InverseBoolConverter}}"
+                           Text="{Binding NextUTurnDirectionLeftOverride, Converter={StaticResource BoolToStringConverter}, ConverterParameter=↰|↱}"/>
+                <TextBlock Text="{Binding State.YouTurn.DistanceToTrigger, StringFormat='{}{0:F0} m'}"
+                           FontSize="13" FontWeight="SemiBold" Foreground="#FFE000" VerticalAlignment="Center"/>
+            </StackPanel>
 
             <!-- Arrow dot canvas -->
             <Canvas x:Name="DotCanvas" Width="560" Height="24"

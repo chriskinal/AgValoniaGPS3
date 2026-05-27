@@ -1,0 +1,122 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<!--
+On-map U-Turn + Lateral overlay (AgOpen-style). Replaces the old right-rail
+direction+distance button and manual L/R pair. Two yellow manual-turn arrows
+(left/right) trigger a manual U-turn; two cyan arrows shift the guidance line
+laterally. A compact indicator shows the armed auto-turn's skip count + pending
+direction. Distance-to-turn now lives on the LightBar HUD, not here.
+
+Transparent container: only the buttons hit-test, so empty space passes pointer
+events through to the map. Each group's visibility is gated by the matching
+Screen & Alerts "On-Screen Buttons" toggle (UTurnButtonVisible / LateralButtonVisible).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.TurnLateralOverlayPanel"
+             x:DataType="vm:MainViewModel"
+             HorizontalAlignment="Left" VerticalAlignment="Top"
+             Margin="100,90,0,0"
+             Background="{x:Null}">
+
+    <UserControl.Styles>
+        <!-- Icon-only on-map action button: no box, just the glyph. A subtle
+             highlight appears on hover so the hit target is discoverable. -->
+        <Style Selector="Button.MapArrow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.MapArrow:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#30FFFFFF"/>
+        </Style>
+        <Style Selector="Button.MapArrow TextBlock">
+            <Setter Property="FontSize" Value="44"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Spacing="6" HorizontalAlignment="Left">
+
+        <!-- U-Turn: two separate manual-turn arrows (one L, one R). Drawn as an
+             actual U-turn shape (up, 180° around, back down with arrowhead) so it
+             can't be mistaken for a plain left/right arrow. -->
+        <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Left"
+                    IsVisible="{Binding IsUTurnOverlayVisible}">
+            <Button Classes="MapArrow" ToolTip.Tip="Manual U-Turn Left"
+                    Command="{Binding ManualYouTurnLeftCommand}">
+                <Viewbox Width="42" Height="42">
+                    <Canvas Width="40" Height="44">
+                        <!-- Enter up the right leg, arch over, exit down the left leg. -->
+                        <Path Stroke="#FFE000" StrokeThickness="4"
+                              StrokeLineCap="Round" StrokeJoin="Round"
+                              Data="M26,38 L26,18 C26,8 14,8 14,18 L14,30"/>
+                        <Polygon Points="9,30 19,30 14,40" Fill="#FFE000"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+            <Button Classes="MapArrow" ToolTip.Tip="Manual U-Turn Right"
+                    Command="{Binding ManualYouTurnRightCommand}">
+                <Viewbox Width="42" Height="42">
+                    <Canvas Width="40" Height="44">
+                        <!-- Mirror: enter up the left leg, arch over, exit down the right leg. -->
+                        <Path Stroke="#FFE000" StrokeThickness="4"
+                              StrokeLineCap="Round" StrokeJoin="Round"
+                              Data="M14,38 L14,18 C14,8 26,8 26,18 L26,30"/>
+                        <Polygon Points="21,30 31,30 26,40" Fill="#FFE000"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+        </StackPanel>
+
+        <!-- Lateral: cyan shift arrows. Drawn as vectors with the same stroke
+             weight, canvas and viewbox as the U-turn icons so the two rows match. -->
+        <StackPanel Orientation="Horizontal" Spacing="28" HorizontalAlignment="Left"
+                    IsVisible="{Binding IsLateralOverlayVisible}">
+            <Button Classes="MapArrow" ToolTip.Tip="Shift guidance left"
+                    Command="{Binding NudgeLeftCommand}">
+                <Viewbox Width="42" Height="42">
+                    <Canvas Width="40" Height="44">
+                        <Path Stroke="#3FD0F0" StrokeThickness="4"
+                              StrokeLineCap="Round" StrokeJoin="Round"
+                              Data="M33,22 L15,22"/>
+                        <Polygon Points="15,16 15,28 5,22" Fill="#3FD0F0"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+            <Button Classes="MapArrow" ToolTip.Tip="Shift guidance right"
+                    Command="{Binding NudgeRightCommand}">
+                <Viewbox Width="42" Height="42">
+                    <Canvas Width="40" Height="44">
+                        <Path Stroke="#3FD0F0" StrokeThickness="4"
+                              StrokeLineCap="Round" StrokeJoin="Round"
+                              Data="M7,22 L25,22"/>
+                        <Polygon Points="25,16 25,28 35,22" Fill="#3FD0F0"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

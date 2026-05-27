@@ -379,6 +379,22 @@ public sealed class GpsPipelineService : IGpsPipelineService
     // Core cycle — runs on background thread
     // ══════════════════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// Drop a plotted-but-not-yet-executing u-turn so the state machine re-arms
+    /// it against the just-changed pass offset / nudge on the next tick. Mid-arc
+    /// turns (IsExecuting) are left alone — replanning under the tractor is unsafe.
+    /// Shared by the snap, nudge and reset-nudge intent handlers.
+    /// </summary>
+    private void ReArmPlottedYouTurnAfterOffsetChange()
+    {
+        if (_youTurn.TurnPath != null && !_youTurn.IsExecuting)
+        {
+            _youTurn.TurnPath = null;
+            _youTurn.NextTrack = null;
+            _youTurn.IsTriggered = false;
+        }
+    }
+
     private void ProcessCycle(GpsData data)
     {
         _cycleCounter++;
@@ -416,19 +432,9 @@ public sealed class GpsPipelineService : IGpsPipelineService
             _guidanceWorking.NudgeOffset = 0;
             _trackGuidanceState = null;
 
-            // #408. If a u-turn is plotted but not yet executing, drop it
-            // so the state machine re-arms for the new pass direction on
-            // the next tick. Without this the tractor enters the already-
-            // armed arc and lands on the *old* NextTrack (the original
-            // exit pass) instead of replanning for the just-snapped pass.
-            // Mirrors the direction-override re-arm in YouTurnStateMachine.
-            // Mid-arc snaps are unsafe and stay no-op.
-            if (_youTurn.TurnPath != null && !_youTurn.IsExecuting)
-            {
-                _youTurn.TurnPath = null;
-                _youTurn.NextTrack = null;
-                _youTurn.IsTriggered = false;
-            }
+            // #408. Re-arm a plotted-but-not-executing u-turn so it replans for
+            // the just-snapped pass instead of landing on the old NextTrack.
+            ReArmPlottedYouTurnAfterOffsetChange();
         }
         // Phase D D5. Nudge accumulates (multiple clicks between drains sum).
         // Heading-same-way flips the sign so "left" always means left from the
@@ -441,11 +447,13 @@ public sealed class GpsPipelineService : IGpsPipelineService
                 : -intents.GuidanceNudgeMeters;
             _guidanceWorking.NudgeOffset += adjusted;
             _trackGuidanceState = null;
+            ReArmPlottedYouTurnAfterOffsetChange();
         }
         if (intents.GuidanceResetNudge)
         {
             _guidanceWorking.NudgeOffset = 0;
             _trackGuidanceState = null;
+            ReArmPlottedYouTurnAfterOffsetChange();
         }
 
         // Stage 2: Fix-quality status. The validator labels the fix; it does not
