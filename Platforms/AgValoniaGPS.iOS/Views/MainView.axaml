@@ -71,18 +71,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <panels:RightNavigationPanel x:Name="RightNavPanel"
                                                  DataContext="{Binding}"/>
                     <Border Height="12"/>
-                    <Button Classes="ZoomButton" Content="+" Command="{Binding ZoomInCommand}" ClickMode="Press"
-                            HorizontalAlignment="Center"/>
-                    <Button Classes="ZoomButton" Content="-" Command="{Binding ZoomOutCommand}" ClickMode="Press"
-                            HorizontalAlignment="Center"/>
-                    <Button Command="{Binding ToggleCameraModeCommand}"
-                            Width="64" Height="64"
-                            HorizontalAlignment="Center"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            CornerRadius="0" Background="#4A90D9">
-                        <TextBlock Text="{Binding CameraModeLabel}" FontSize="20" FontWeight="Bold"
-                                   Foreground="White" HorizontalAlignment="Center"/>
-                    </Button>
+                    <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
+                         mode cycle (center). Replaces the old zoom +/- + mode cluster. -->
+                    <panels:CameraPadControl x:Name="CameraPad"
+                                             HorizontalAlignment="Center"
+                                             DataContext="{Binding}"/>
                 </StackPanel>
 
                 <!-- BOTTOM: Simulator bar above section control above bottom navigation -->

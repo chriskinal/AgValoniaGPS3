@@ -1,0 +1,98 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<!--
+On-map 4-way camera pad. Replaces the old right-edge zoom +/- and camera-mode
+cluster. Vertical axis = tilt (Up = toward overhead/2D, Down = toward horizon/3D);
+horizontal axis = zoom (Left = out, Right = in); center = camera-mode cycle
+(H -> N -> M -> C, shows CameraModeLabel). The directional keys are RepeatButtons:
+a tap fires once, press-and-hold repeats (Delay then Interval); the center is a
+single-tap Button.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="150" d:DesignHeight="150"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.CameraPadControl"
+             x:DataType="vm:MainViewModel">
+
+    <UserControl.Styles>
+        <!-- Directional (tilt/zoom) keys: tap = one step, hold = repeat. -->
+        <Style Selector="RepeatButton.CamPadDir">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Delay" Value="350"/>
+            <Setter Property="Interval" Value="120"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="RepeatButton.CamPadDir:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="RepeatButton.CamPadDir:pressed">
+            <Setter Property="Background" Value="#4A90D9"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- 3x3 cross: corners empty, edges = directions, center = mode cycle. -->
+    <Grid ColumnDefinitions="44,44,44" RowDefinitions="44,44,44" RowSpacing="2" ColumnSpacing="2">
+        <!-- Tilt up: toward overhead (2D at full up) -->
+        <RepeatButton Classes="CamPadDir"
+                      Grid.Row="0" Grid.Column="1" Content="&#x25B2;"
+                      Command="{Binding IncreaseCameraPitchCommand}"
+                      ToolTip.Tip="Tilt toward overhead (2D)"/>
+
+        <!-- Zoom out -->
+        <RepeatButton Classes="CamPadDir"
+                      Grid.Row="1" Grid.Column="0" Content="&#x2212;"
+                      Command="{Binding ZoomOutCommand}"
+                      ToolTip.Tip="Zoom out"/>
+
+        <!-- Center: camera-mode cycle (single tap) -->
+        <Button Grid.Row="1" Grid.Column="1"
+                Width="44" Height="44"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                CornerRadius="0" BorderThickness="0" Background="#4A90D9"
+                Cursor="Hand"
+                Command="{Binding ToggleCameraModeCommand}"
+                ToolTip.Tip="Camera mode: Heading-Up / North-Up / Map / Center">
+            <TextBlock Text="{Binding CameraModeLabel}" FontSize="16" FontWeight="Bold"
+                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Button>
+
+        <!-- Zoom in -->
+        <RepeatButton Classes="CamPadDir"
+                      Grid.Row="1" Grid.Column="2" Content="+"
+                      Command="{Binding ZoomInCommand}"
+                      ToolTip.Tip="Zoom in"/>
+
+        <!-- Tilt down: toward horizon (3D) -->
+        <RepeatButton Classes="CamPadDir"
+                      Grid.Row="2" Grid.Column="1" Content="&#x25BC;"
+                      Command="{Binding DecreaseCameraPitchCommand}"
+                      ToolTip.Tip="Tilt toward horizon (3D)"/>
+    </Grid>
+</UserControl>

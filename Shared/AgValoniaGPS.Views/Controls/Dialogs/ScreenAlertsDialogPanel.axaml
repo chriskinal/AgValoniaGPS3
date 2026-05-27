@@ -104,16 +104,10 @@ GNU General Public License for more details.
 
                     <!-- ===== Top: Camera | Display ===== -->
                     <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*">
-                        <!-- Camera (MainViewModel commands) -->
+                        <!-- Render quality (MainViewModel command). Camera tilt /
+                             zoom / mode now live on the on-map 4-way camera pad. -->
                         <StackPanel Grid.Column="0" Spacing="8" Width="260" VerticalAlignment="Top">
-                            <TextBlock Text="{loc:Localize Camera}" Classes="SaGroupHeader"/>
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-                                <Button Grid.Row="0" Grid.Column="0" Classes="SaText" Content="{loc:Localize TiltUp}" ClickMode="Press" Command="{Binding IncreaseCameraPitchCommand}"/>
-                                <Button Grid.Row="0" Grid.Column="1" Classes="SaText" Content="{loc:Localize TiltDown}" ClickMode="Press" Command="{Binding DecreaseCameraPitchCommand}"/>
-                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding CameraPitchDisplay}" Classes="SaCaption" Margin="0,2"/>
-                                <Button Grid.Row="2" Grid.Column="0" Classes="SaText" Content="2D/3D" ClickMode="Press" Command="{Binding Toggle2D3DCommand}"/>
-                                <Button Grid.Row="2" Grid.Column="1" Classes="SaText" Content="{loc:Localize North}" ClickMode="Press" Command="{Binding ToggleNorthUpCommand}"/>
-                            </Grid>
+                            <TextBlock Text="{loc:Localize Quality}" Classes="SaGroupHeader"/>
                             <Button Classes="SaText" HorizontalAlignment="Stretch" ClickMode="Press" Command="{Binding CycleDisplayResolutionCommand}">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
                                     <TextBlock Text="{loc:Localize Quality}" VerticalAlignment="Center"/>
