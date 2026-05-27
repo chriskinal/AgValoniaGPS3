@@ -51,6 +51,33 @@ Sort every surface by **the question it answers / when you reach for it**:
 | **Tools panel** | diagnose | Steer Wizard, Heading/XTE charts, **Log Viewer**, (likely Bug Report) |
 | **Camera pad** *(on map, not a menu)* | aim the view | zoom + tilt + camera-mode, where you can see the map |
 
+### Interaction archetypes (how a surface behaves)
+
+Not everything is menu-vs-modal. Four behaviors:
+
+1. **Menu fly-out** — transient launcher; mutually exclusive; auto-collapses.
+2. **Modal dialog** — takes over the screen (setup done stopped); backdrop.
+3. **Floating HUD / on-map overlay** — always-available over the live map
+   (status strip, camera pad, manual U-Turn/Lateral, sim bar).
+4. **Field-work tool** *(new archetype)* — *initiated as setup, executed while
+   driving.* Launched from a menu → **its menu collapses** → tool becomes a
+   **floating panel over the live map** (not modal — you see + drive) → on
+   **close, the launching menu reopens** so you can chain the next setup step
+   (e.g. record boundary → done → Field Tools reopens → build headland).
+   - Applies to: **boundary recording**, recorded path (record/drive), drive-in
+     AB creation, boundary player — anything captured/followed by driving.
+   - Composes with idle auto-close: while the tool is up its menu is closed; on
+     tool close the menu reopens and its idle timer restarts.
+   - *Open:* always reopen the menu on close, or also offer "done → back to the
+     map" (drop straight to driving without the menu popping back)?
+5. **Wizard** *(new archetype)* — a guided multi-step task that **takes over
+   full-frame** while running. Launched from a menu → menu collapses → wizard
+   runs full-frame → on finish/cancel, returns to the map and the launching menu
+   **stays closed** (the wizard *is* the whole task, not a setup step to chain).
+   Applies to: Steer Wizard, setup wizards.
+   - Differs from the field-work tool on two axes: **takeover vs float**, and
+     **stay-closed vs reopen-menu** on completion.
+
 ## 4. Surface-by-surface moves
 
 | Today | → Proposed |
