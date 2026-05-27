@@ -48,6 +48,18 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+#if DEBUG
+        // DEBUG-only viewport lock: pin to the 1200×720 design size
+        // (Android tablet landscape) so layout work simulates the
+        // constrained device. Release builds resize and maximize freely.
+        MinWidth = MaxWidth = 1200;
+        MinHeight = MaxHeight = 720;
+        Width = 1200;
+        Height = 720;
+        CanResize = false;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+#endif
+
         // Create platform-specific map control
         CreateMapControl();
 
@@ -260,8 +272,11 @@ public partial class MainWindow : Window
 
     private void LoadWindowSettings()
     {
+#if !DEBUG
         // StartFullscreen is a preference (config); window geometry is
         // persistent state (appstate.json).
+        // In DEBUG the constructor pins the window to 1200×720 and centers it,
+        // so skip the saved-size/state restore to leave the lock uncontested.
         var display = AgValoniaGPS.Models.Configuration.ConfigurationStore.Instance.Display;
         var state = AgValoniaGPS.Models.State.PersistentAppState.Instance;
 
@@ -285,6 +300,7 @@ public partial class MainWindow : Window
         {
             WindowState = WindowState.Maximized;
         }
+#endif
 
         // Panel positions are now anchored (no saved positions needed)
     }
