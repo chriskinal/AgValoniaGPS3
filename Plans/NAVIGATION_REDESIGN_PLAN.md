@@ -150,10 +150,16 @@ sometimes; manual buttons come and go). Break it up the AgOpenGPS way:
   *arm* toggle stays on the rail.
 - So the Screen & Alerts "On-Screen Buttons" toggles become the genuine
   show/hide for the on-map U-Turn + Lateral overlays (their intended job).
-- ✅ *Resolved:* the **next-turn direction toggle** (flip L/R for the auto turn)
-  lands **on the on-map U-Turn overlay** (all turn controls together on the map;
-  the right rail keeps only the arm toggle). *Reference current controls from
-  Chris's screenshot when building the overlay.*
+- ✅ *Resolved:* next-turn direction is **two separate on-map buttons — one L,
+  one R** (the AgOpen-style yellow curved arrows), not a single flip toggle.
+  They live on the **on-map U-Turn overlay** (all turn controls together on the
+  map; the right rail keeps only the arm toggle).
+  - **Overlay layout (from Chris's reference shot):** yellow curved L + R turn
+    arrows (manual trigger / direction); a next-turn indicator like `1R`
+    (sequence/skip count + direction); the **Lateral** overlay is the separate
+    cyan L/R shift arrows below, gated by `LateralButtonVisible`.
+  - Skip-row **count** stays where it is for now; this commit moves only the
+    L/R direction + manual-trigger arrows on-map.
 
 ### Network panel
 NTRIP profiles + expanded module status (backed by `State.Connections`) + IP /
@@ -184,6 +190,11 @@ PGN-send config. The status-bar dots are the glanceable view; this is the detail
    Requires a per-module **"installed/configured" tick in the Network panel** so
    the button knows which modules to expect. (Supersedes the §3 "G/R/Y dots, one
    per module" sketch.)
+   - *Reuse what exists:* the **Module configuration** surface already has a
+     per-module enable (IMU / AutoSteer / GPS / Machine, each a red-✗ toggle;
+     GPS shows in/out rates `← 12 / → ---`). The "configured set" = the modules
+     enabled there; the Network panel surfaces that state + rates rather than
+     introducing a new flag.
 8. **Application Settings menu** — ✅ **Retired.** Help / About (incl. the app
    **version number**) move to the **Tools panel**; everything else has a new
    home (Directories/Language/Reset/Hotkeys → App Settings, NTRIP → Network,
