@@ -128,7 +128,7 @@ GNU General Public License for more details.
                         <StackPanel Grid.Column="2" Spacing="8"
                                     DataContext="{Binding ConfigurationViewModel}" x:DataType="vm:ConfigurationViewModel">
                             <TextBlock Text="{loc:Localize Display}" Classes="SaGroupHeader"/>
-                            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="14" ColumnSpacing="14" HorizontalAlignment="Left">
+                            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="14" ColumnSpacing="14" HorizontalAlignment="Left">
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
                                     <Button Classes="SaToggle"
                                             Background="{Binding Display.GridVisible, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
@@ -217,6 +217,17 @@ GNU General Public License for more details.
                                         <TextBlock Text="Dark" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Button>
                                     <TextBlock Text="Dark Theme" Classes="SaCaption"/>
+                                </StackPanel>
+
+                                <!-- Row 2: Auto Day/Night (clock-driven theme switching) -->
+                                <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.AutoDayNight, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.AutoDayNight, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleAutoDayNightCommand}">
+                                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Config/ConD_AutoDayNight.png" Width="50" Height="50" Stretch="Uniform"/>
+                                    </Button>
+                                    <TextBlock Text="Auto Day/Night" Classes="SaCaption"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

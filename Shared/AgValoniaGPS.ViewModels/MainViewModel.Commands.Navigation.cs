@@ -216,14 +216,30 @@ public partial class MainViewModel
 
     private Avalonia.Threading.DispatcherTimer? _dialogAutoCloseTimer;
 
-    // Dialogs exempt from auto-close: they need an explicit decision or hold
-    // in-progress data entry that a timeout would silently discard.
+    // Dialogs exempt from idle auto-close: those needing an explicit decision,
+    // and every dialog with text/coordinate entry — a 7s pause (e.g. looking up
+    // sim GPS coords) must not silently discard in-progress input. Auto-close
+    // still applies to the nav fly-outs and the glanceable settings/info dialogs.
     private static readonly System.Collections.Generic.HashSet<Models.State.DialogType> _autoCloseExemptDialogs = new()
     {
+        // Explicit decision required
         Models.State.DialogType.Confirmation,
         Models.State.DialogType.Error,
+        // Text / coordinate / data entry
         Models.State.DialogType.NumericInput,
         Models.State.DialogType.NtripProfileEditor,
+        Models.State.DialogType.SimCoords,
+        Models.State.DialogType.FlagByLatLon,
+        Models.State.DialogType.FlagList,
+        Models.State.DialogType.NewField,
+        Models.State.DialogType.FromExistingField,
+        Models.State.DialogType.KmlImport,
+        Models.State.DialogType.IsoXmlImport,
+        Models.State.DialogType.LoadVehicleTool,
+        Models.State.DialogType.RecordedPath,
+        Models.State.DialogType.StartWorkSession,
+        Models.State.DialogType.FieldBuilder,
+        Models.State.DialogType.BugReport,
     };
 
     /// <summary>
