@@ -1,6 +1,7 @@
 # Navigation & UI Redesign — Proposal for Discussion
 
-**Status:** proposal / design discussion — Screen & Alerts built; rest not started.
+**Status:** in progress — Screen & Alerts + camera 4-way pad built; all §6
+decisions resolved (2026-05-27). Next commit: U-Turn/Lateral rework.
 **Branch:** `feature/ui-redesign` — the whole redesign ships as **one branch / one
 PR** (Screen & Alerts folded in). Per-surface **commits** for reviewability, but
 one delivery. Rebase onto `develop` **regularly** (it's active — don't let this
@@ -42,13 +43,13 @@ Sort every surface by **the question it answers / when you reach for it**:
 
 | Home | Question | Holds |
 |------|----------|-------|
-| **Start-Session hub** | get into a field | pick existing / create (drive-in, from-existing) / import (KML, ISO-XML) field; resume or start a job; open-field-only |
+| **Start-Session hub** | get into a field | pick existing / create (drive-in, from-existing) / import (KML, ISO-XML) field; resume or start a job; open-field-only; **AgShare** (field data in/out) |
 | **Field Tools** | build the field | boundary, headland, **track create/edit**, tram setup, field builder, offset fix, delete applied area, close field |
 | **Bottom HUD** | drive the field | track **select**/cycle/auto, nudge, snap, U-turn skip, headland on/off, section-in-headland, flags, reset tool heading, tram display |
 | **Screen & Alerts** | see & hear *(shipping now)* | display prefs, theme, day/night, sounds, on-screen buttons, hardware messages |
-| **App Settings** | configure the app | units, keyboard, fullscreen, elevation log, **App Directories**, Language, Reset (TBD Hotkeys) — one dialog, sections |
+| **App Settings** | configure the app | units, keyboard, fullscreen, elevation log, **App Directories**, Language, Reset, **Hotkeys** — one dialog, sections |
 | **Network panel** | talk to the outside world | NTRIP profiles, expanded module status (G/I/A/M + IPs + rates, from `State.Connections`), IP / PGN-send config |
-| **Tools panel** | diagnose | Steer Wizard, Heading/XTE charts, **Log Viewer**, (likely Bug Report) |
+| **Tools panel** | diagnose | Steer Wizard, Heading/XTE charts, **Log Viewer**, Bug Report, **Help / About (incl. app version)** |
 | **Camera pad** *(on map, not a menu)* | aim the view | zoom + tilt + camera-mode, where you can see the map |
 
 ### Interaction archetypes (how a surface behaves)
@@ -68,8 +69,8 @@ Not everything is menu-vs-modal. Four behaviors:
      AB creation, boundary player — anything captured/followed by driving.
    - Composes with idle auto-close: while the tool is up its menu is closed; on
      tool close the menu reopens and its idle timer restarts.
-   - *Open:* always reopen the menu on close, or also offer "done → back to the
-     map" (drop straight to driving without the menu popping back)?
+   - ✅ *Resolved:* on close, **always reopen the launching menu** (so you can
+     chain the next setup step); idle timer restarts.
 5. **Wizard** *(new archetype)* — a guided multi-step task that **takes over
    full-frame** while running. Launched from a menu → menu collapses → wizard
    runs full-frame → on finish/cancel, returns to the map and the launching menu
@@ -82,7 +83,7 @@ Not everything is menu-vs-modal. Four behaviors:
 
 | Today | → Proposed |
 |-------|-----------|
-| **Field Operations** menu | **retired** — create/select/resume → Start-Session hub; Close/Drive-In/AgShare → Field Tools |
+| **Field Operations** menu | **retired** — create/select/resume + **AgShare** → Start-Session hub; Close/Drive-In → Field Tools |
 | **Start Work Session** dialog | becomes the **Start-Session hub** (adds field pick/create/import, not just job) |
 | **Tracks / AB-line flyout** | keep *select/cycle/auto/nudge/snap*; **create + edit → Field Tools** |
 | **Bottom bar** | trim to immediate (driving) actions only |
@@ -95,9 +96,10 @@ Not everything is menu-vs-modal. Four behaviors:
 | **Bug Report, Simulator** (File menu) | → Tools panel (TBD) |
 | **Dev readouts** (top strip) | → floating **Dev overlay** |
 
-After this, the "Application Settings" fly-out is down to App Settings +
-connections (NTRIP→Network, AgShare?) + info (Help/About) — possibly not worth a
-top-level menu anymore.
+After this the "Application Settings" fly-out has nothing left of its own —
+**retired** (§6.8): App Directories/Language/Reset/Hotkeys → App Settings, NTRIP
+→ Network, AgShare → Start-Session hub, Log Viewer + Help/About (incl. version) →
+Tools.
 
 ## 5. Component designs
 
@@ -119,9 +121,12 @@ creation/import/resume buttons + the Start Work Session dialog.
 
 ### Top status strip + Dev overlay
 - Shorter strip.
-- Module status as **G/R/Y dots** (green ok / yellow stale / red absent) for
-  GPS·IMU·AutoSteer·Machine; tap a dot → Network panel.
-- FPS / latency / Lat-Lon → toggleable **floating Dev overlay**.
+- Module status as **one live aggregate button** (not per-module dots): Green =
+  all *configured* modules present · Yellow = ≥1 configured module absent · Red =
+  all absent. Tap → Network panel. Needs a per-module "installed/configured" tick
+  in the Network panel so the button knows which modules to expect. (See §6.7.)
+- FPS / latency / Lat-Lon → **floating Dev overlay**, toggled by a cross-platform
+  **file flag** (marker file), not a hotkey (mobile has no keyboard). (See §6.6.)
 - Mine `feature/toolbar-redesign` for the strip concept.
 
 ### U-Turn controls (rework the right-rail cluster)
@@ -145,29 +150,46 @@ sometimes; manual buttons come and go). Break it up the AgOpenGPS way:
   *arm* toggle stays on the rail.
 - So the Screen & Alerts "On-Screen Buttons" toggles become the genuine
   show/hide for the on-map U-Turn + Lateral overlays (their intended job).
-- *Open:* where the **next-turn direction toggle** (flip L/R for the auto turn)
-  lands — into the on-map U-Turn overlay, or beside the YouTurn arm button?
+- ✅ *Resolved:* the **next-turn direction toggle** (flip L/R for the auto turn)
+  lands **on the on-map U-Turn overlay** (all turn controls together on the map;
+  the right rail keeps only the arm toggle). *Reference current controls from
+  Chris's screenshot when building the overlay.*
 
 ### Network panel
 NTRIP profiles + expanded module status (backed by `State.Connections`) + IP /
 PGN-send config. The status-bar dots are the glanceable view; this is the detail.
 
-## 6. Decisions needed (discussion)
+## 6. Decisions — RESOLVED (2026-05-27)
 
-1. **Four-tier sort** — does immediate-vs-build match how you work, or recut?
-2. **App Settings depth** — Directories only, or also Language / Reset / Hotkeys?
-3. **AgShare** — join Network panel (it's network) or stay separate (it's data
-   sharing)?  *(lean: separate)*
-4. **Machine-module config** (pins/relays) — stays in Configuration (implement
-   setup); Network panel takes only connection status/IP. Confirm?
-5. **Field Tools size** — it grows large (build + track create/edit + tram +
-   boundary + headland); does it need section sub-nav like Screen & Alerts?
-6. **Dev overlay** — toggle via hotkey / dev flag? persist across restart?
-7. **G/R/Y dots** — need a 3-state connection model (today `IsXxxDataOk` is bool);
-   define "yellow."
-8. **Does the "Application Settings" menu survive** once it's down to
-   connections + info?
-9. **Camera pad conventions** — Right=in, Up=overhead, hold-to-repeat (defaults).
+1. **IA sort** — ✅ Keep **Start-Session hub** (get into a field) and **Field
+   Tools** (build the field) as *separate* homes. Stopped-at-start vs
+   once-per-field are different moments.
+2. **App Settings depth** — ✅ Fold **Hotkeys in too**. App Settings is the one
+   config dialog: units, keyboard, fullscreen, elevation log, App Directories,
+   Language, Reset, **+ the full hotkey-binding editor**.
+3. **AgShare** — ✅ Neither Network nor a separate top-level menu. AgShare
+   **belongs with field create/setup** — it's part of getting a field in/out,
+   so it lives on the **Start-Session hub** side, not Network.
+4. **Machine-module config** (pins/relays) — ✅ Stays in **implement
+   Configuration**. Pins/relays, section on/off, disc lift/lower are all
+   *implement behavior* (sprayer/grain-drill/etc.). Network panel takes only
+   connection status + IP.
+5. **Field Tools size** — ✅ **Section sub-nav** like Screen & Alerts (group
+   into Boundary / Tracks / Tram / Field). Scales as it grows.
+6. **Dev overlay** — ✅ Toggle via a **cross-platform file flag** (marker file,
+   like `.use_skia_map`). Hotkeys won't work (mobile has no keyboard).
+7. **Module status = ONE live aggregate button**, not four dots. Color rolls up
+   presence of the **configured** module set: **Green** = all configured modules
+   present · **Yellow** = ≥1 configured module absent · **Red** = all absent.
+   Requires a per-module **"installed/configured" tick in the Network panel** so
+   the button knows which modules to expect. (Supersedes the §3 "G/R/Y dots, one
+   per module" sketch.)
+8. **Application Settings menu** — ✅ **Retired.** Help / About (incl. the app
+   **version number**) move to the **Tools panel**; everything else has a new
+   home (Directories/Language/Reset/Hotkeys → App Settings, NTRIP → Network,
+   Log Viewer → Tools).
+9. **Camera pad conventions** — ✅ Right=in, Up=overhead, tap=step / hold=repeat.
+   *Shipped* (commit 1).
 
 ## 7. Sequencing & scope
 
