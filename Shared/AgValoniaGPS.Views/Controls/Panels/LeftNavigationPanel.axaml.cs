@@ -42,7 +42,6 @@ public partial class LeftNavigationPanel : UserControl
         WireUpSubPanelDrag<ToolsPanel>("ToolsPanelControl");
         WireUpSubPanelDrag<ConfigurationPanel>("ConfigurationPanelControl");
         WireUpSubPanelDrag<FieldOperationsPanel>("FieldOperationsPanelControl");
-        WireUpSubPanelDrag<FieldToolsPanel>("FieldToolsPanelControl");
         WireUpSubPanelDrag<BoundaryRecordingPanel>("BoundaryRecordingPanelControl");
         WireUpSubPanelDrag<BoundaryPlayerPanel>("BoundaryPlayerPanelControl");
     }

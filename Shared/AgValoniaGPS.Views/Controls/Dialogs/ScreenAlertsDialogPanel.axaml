@@ -223,6 +223,17 @@ GNU General Public License for more details.
                                     </Button>
                                     <TextBlock Text="Auto Day/Night" Classes="SaCaption"/>
                                 </StackPanel>
+
+                                <!-- Auto-close idle menus/dialogs (off = stay open) -->
+                                <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
+                                    <Button Classes="SaToggle"
+                                            Background="{Binding Display.DialogAutoCloseEnabled, Converter={x:Static conv:BoolToToggleBackgroundConverter.Instance}}"
+                                            BorderBrush="{Binding Display.DialogAutoCloseEnabled, Converter={x:Static conv:BoolToToggleBorderConverter.Instance}}"
+                                            Command="{Binding ToggleDialogAutoCloseCommand}">
+                                        <TextBlock Text="⏱" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <TextBlock Text="Auto-close" Classes="SaCaption"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Grid>

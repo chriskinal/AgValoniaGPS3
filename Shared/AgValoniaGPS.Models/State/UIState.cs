@@ -79,6 +79,7 @@ public class UIState : ObservableObject
                 OnPropertyChanged(nameof(IsAppSettingsDialogVisible));
                 OnPropertyChanged(nameof(IsUnsavedCoverageDialogVisible));
                 OnPropertyChanged(nameof(IsScreenAlertsDialogVisible));
+                OnPropertyChanged(nameof(IsFieldToolsDialogVisible));
 
                 DialogChanged?.Invoke(this, new DialogChangedEventArgs(previous, value));
             }
@@ -128,6 +129,7 @@ public class UIState : ObservableObject
     public bool IsAppSettingsDialogVisible => ActiveDialog == DialogType.AppSettings;
     public bool IsUnsavedCoverageDialogVisible => ActiveDialog == DialogType.UnsavedCoverage;
     public bool IsScreenAlertsDialogVisible => ActiveDialog == DialogType.ScreenAlerts;
+    public bool IsFieldToolsDialogVisible => ActiveDialog == DialogType.FieldTools;
 
     // Panel visibility (non-modal, can have multiple open)
     private bool _isSimulatorPanelVisible;
@@ -266,6 +268,7 @@ public enum DialogType
     AppSettings,
     UnsavedCoverage,
     ScreenAlerts,
+    FieldTools,
 }
 
 /// <summary>

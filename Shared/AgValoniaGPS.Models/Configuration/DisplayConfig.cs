@@ -36,11 +36,30 @@ public class DisplayConfig : ObservableObject
 
     // Auto-close dialogs/menus after this many seconds of no interaction with
     // the open surface (matches AgOpenGPS). 0 disables. Behavior preference.
-    private double _dialogAutoCloseSeconds = 7.0;
+    /// <summary>Default countdown when the idle auto-close is enabled.</summary>
+    public const double DefaultDialogAutoCloseSeconds = 7.0;
+
+    // Off by default — idle auto-close is opt-in via the Screen & Alerts toggle.
+    private double _dialogAutoCloseSeconds;
     public double DialogAutoCloseSeconds
     {
         get => _dialogAutoCloseSeconds;
-        set => SetProperty(ref _dialogAutoCloseSeconds, value);
+        set
+        {
+            if (SetProperty(ref _dialogAutoCloseSeconds, value))
+                OnPropertyChanged(nameof(DialogAutoCloseEnabled));
+        }
+    }
+
+    /// <summary>
+    /// Display-option view of <see cref="DialogAutoCloseSeconds"/>: on = the
+    /// default countdown, off = 0 (never auto-close). Bound by the Screen &amp;
+    /// Alerts "Auto-close menus" toggle.
+    /// </summary>
+    public bool DialogAutoCloseEnabled
+    {
+        get => _dialogAutoCloseSeconds > 0;
+        set => DialogAutoCloseSeconds = value ? DefaultDialogAutoCloseSeconds : 0.0;
     }
 
     private bool _compassVisible = true;

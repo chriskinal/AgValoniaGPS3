@@ -63,14 +63,6 @@ public partial class MainViewModel
             RestartDialogAutoCloseTimer();
         });
 
-        ToggleFieldToolsPanelCommand = new RelayCommand(() =>
-        {
-            bool willOpen = !IsFieldToolsPanelVisible;
-            CloseAllMenuPanels();
-            IsFieldToolsPanelVisible = willOpen;
-            RestartDialogAutoCloseTimer();
-        });
-
         ToggleAutoTrackCommand = new RelayCommand(() =>
         {
             IsAutoTrackEnabled = !IsAutoTrackEnabled;
@@ -207,12 +199,11 @@ public partial class MainViewModel
         IsToolsPanelVisible = false;
         IsConfigurationPanelVisible = false;
         IsFieldOperationsPanelVisible = false;
-        IsFieldToolsPanelVisible = false;
     }
 
     private bool IsAnyMenuPanelOpen =>
         IsFileMenuPanelVisible || IsToolsPanelVisible ||
-        IsConfigurationPanelVisible || IsFieldOperationsPanelVisible || IsFieldToolsPanelVisible;
+        IsConfigurationPanelVisible || IsFieldOperationsPanelVisible;
 
     private Avalonia.Threading.DispatcherTimer? _dialogAutoCloseTimer;
 

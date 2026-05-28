@@ -199,10 +199,13 @@ public class ConfigurationServiceMappingTests
     public void Completeness_EveryDisplayConfigProperty_IsMappedOrAccountedFor()
     {
         // Display properties intentionally NOT persisted via AppSettings.
-        // (Empty today — all DisplayConfig members are config preferences that
-        // map to AppSettings; view/window STATE was moved to PersistentAppState
-        // and is no longer part of DisplayConfig.)
-        var notPersistedViaAppSettings = new System.Collections.Generic.HashSet<string>();
+        // DialogAutoCloseEnabled is a derived bool view of DialogAutoCloseSeconds
+        // (which IS persisted) — the Screen & Alerts toggle binds to it; it has
+        // no independent state to store.
+        var notPersistedViaAppSettings = new System.Collections.Generic.HashSet<string>
+        {
+            nameof(DisplayConfig.DialogAutoCloseEnabled),
+        };
 
         var displayProps = typeof(DisplayConfig)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)

@@ -980,6 +980,7 @@ public partial class ConfigurationViewModel : ObservableObject
     public ICommand ToggleFieldTextureCommand { get; private set; } = null!;
     public ICommand ToggleFieldTextureMoveableCommand { get; private set; } = null!;
     public ICommand ToggleGridCommand { get; private set; } = null!;
+    public ICommand ToggleDialogAutoCloseCommand { get; private set; } = null!;
     public ICommand ToggleExtraGuidelinesCommand { get; private set; } = null!;
     public ICommand EditExtraGuidelinesCountCommand { get; private set; } = null!;
     public ICommand ToggleLineSmoothCommand { get; private set; } = null!;
@@ -1644,6 +1645,12 @@ public partial class ConfigurationViewModel : ObservableObject
         ToggleGridCommand = new RelayCommand(() =>
         {
             Display.GridVisible = !Display.GridVisible;
+            Config.MarkChanged();
+        });
+
+        ToggleDialogAutoCloseCommand = new RelayCommand(() =>
+        {
+            Display.DialogAutoCloseEnabled = !Display.DialogAutoCloseEnabled;
             Config.MarkChanged();
         });
 

@@ -95,9 +95,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Stretch="Uniform"/>
                 </Button>
 
-                <!-- 6. Field Tools (includes Boundary) -->
+                <!-- 6. Field Tools (sectioned modal: tracks / boundary / field) -->
                 <Button Classes="LeftPanelButton" ToolTip.Tip="Field Tools"
-                        Command="{Binding ToggleFieldToolsPanelCommand}">
+                        Command="{Binding ShowFieldToolsDialogCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FieldTools.png" Stretch="Uniform"/>
                 </Button>
 
@@ -137,11 +137,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        ZIndex="15"
                                        DataContext="{Binding}"/>
 
-        <!-- Field Tools Panel -->
-        <controls:FieldToolsPanel x:Name="FieldToolsPanelControl"
-                                  Canvas.Left="90" Canvas.Top="0"
-                                  ZIndex="15"
-                                  DataContext="{Binding}"/>
+        <!-- Field Tools is now a sectioned modal dialog (DialogOverlayHost),
+             no longer a left-nav fly-out. -->
 
         <!-- Simulator Panel moved to the window-level floating canvas (bottom-center home) -->
 

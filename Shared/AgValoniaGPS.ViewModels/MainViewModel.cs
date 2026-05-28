@@ -2289,6 +2289,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? CloseAppSettingsDialogCommand { get; private set; }
     public ICommand? ShowScreenAlertsDialogCommand { get; private set; }
     public ICommand? CloseScreenAlertsDialogCommand { get; private set; }
+    public ICommand? ShowFieldToolsDialogCommand { get; private set; }
+    public ICommand? CloseFieldToolsDialogCommand { get; private set; }
     public ICommand? ShowAboutDialogCommand { get; private set; }
     public ICommand? CloseAboutDialogCommand { get; private set; }
     public ICommand? ResetAllSettingsCommand { get; private set; }
@@ -3499,7 +3501,6 @@ public partial class MainViewModel : ObservableObject
     public ICommand? ToggleToolsPanelCommand { get; private set; }
     public ICommand? ToggleConfigurationPanelCommand { get; private set; }
     public ICommand? ToggleFieldOperationsPanelCommand { get; private set; }
-    public ICommand? ToggleFieldToolsPanelCommand { get; private set; }
     public ICommand? ToggleAutoTrackCommand { get; private set; }
     public ICommand? ToggleGridCommand { get; private set; }
     public ICommand? ToggleDayNightCommand { get; private set; }

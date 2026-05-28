@@ -80,6 +80,24 @@ public partial class MainViewModel
             State.UI.CloseDialog();
         });
 
+        // Field Tools: sectioned modal launcher (build the field — track
+        // create/edit, boundary, field builder, offset, etc.). Replaces the old
+        // left-nav Field Tools fly-out.
+        ShowFieldToolsDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.ShowDialog(Models.State.DialogType.FieldTools);
+        });
+
+        // Guarded: only close if Field Tools is still the active dialog. A tool
+        // tile that launches its own dialog (e.g. Field Builder) has already
+        // replaced Field Tools by the time its close fires — this prevents the
+        // launcher's close from clobbering the dialog it just opened.
+        CloseFieldToolsDialogCommand = new RelayCommand(() =>
+        {
+            if (State.UI.ActiveDialog == Models.State.DialogType.FieldTools)
+                State.UI.CloseDialog();
+        });
+
         ShowAboutDialogCommand = new RelayCommand(() =>
         {
             State.UI.ShowDialog(Models.State.DialogType.About);

@@ -1,7 +1,10 @@
 # Navigation & UI Redesign — Proposal for Discussion
 
-**Status:** in progress — Screen & Alerts + camera 4-way pad built; all §6
-decisions resolved (2026-05-27). Next commit: U-Turn/Lateral rework.
+**Status:** in progress — built: Screen & Alerts, camera 4-way pad, U-Turn/Lateral
+overlays, **Field Tools sectioned modal + bottom-HUD trim** (field creation moved
+into Field Tools; idle auto-close is now an opt-in Screen & Alerts toggle, default
+off). All §6 decisions resolved (2026-05-27). Next commit: Start-Session hub
+(retire Field Operations).
 **Branch:** `feature/ui-redesign` — the whole redesign ships as **one branch / one
 PR** (Screen & Alerts folded in). Per-surface **commits** for reviewability, but
 one delivery. Rebase onto `develop` **regularly** (it's active — don't let this
@@ -43,8 +46,8 @@ Sort every surface by **the question it answers / when you reach for it**:
 
 | Home | Question | Holds |
 |------|----------|-------|
-| **Start-Session hub** | get into a field | pick existing / create (drive-in, from-existing) / import (KML, ISO-XML) field; resume or start a job; open-field-only; **AgShare** (field data in/out) |
-| **Field Tools** | build the field | boundary, headland, **track create/edit**, tram setup, field builder, offset fix, delete applied area, close field |
+| **Start-Session hub** | start work on a field | pick an **existing** field; start a job; resume last job / resume job; open-field-only. *(AgShare — TBD.)* Field **creation** moved to Field Tools (see below). |
+| **Field Tools** | create + build the field | **Creation** (new / from-existing / import KML + ISO-XML / drive-in), **Boundaries** (field builder, drive-around, draw, import KML, from-tracks, inner, delete), **Tracks** (create/edit), **Other** (offset fix, recorded path, import tracks, delete applied, close field). Sectioned modal. |
 | **Bottom HUD** | drive the field | track **select**/cycle/auto, nudge, snap, U-turn skip, headland on/off, section-in-headland, flags, reset tool heading, tram display |
 | **Screen & Alerts** | see & hear *(shipping now)* | display prefs, theme, day/night, sounds, on-screen buttons, hardware messages |
 | **App Settings** | configure the app | units, keyboard, fullscreen, elevation log, **App Directories**, Language, Reset, **Hotkeys** — one dialog, sections |
@@ -167,9 +170,11 @@ PGN-send config. The status-bar dots are the glanceable view; this is the detail
 
 ## 6. Decisions — RESOLVED (2026-05-27)
 
-1. **IA sort** — ✅ Keep **Start-Session hub** (get into a field) and **Field
-   Tools** (build the field) as *separate* homes. Stopped-at-start vs
-   once-per-field are different moments.
+1. **IA sort** — ✅ Keep **Start-Session hub** and **Field Tools** as *separate*
+   homes. **Revised 2026-05-27:** the line is **create+build (Field Tools)** vs
+   **start a work session on an existing field (Start-Session hub)** — field
+   *creation* (new/from-existing/import/drive-in) lives in **Field Tools**, not
+   the hub. Field Tools is sectioned Creation → Boundaries → Tracks → Other.
 2. **App Settings depth** — ✅ Fold **Hotkeys in too**. App Settings is the one
    config dialog: units, keyboard, fullscreen, elevation log, App Directories,
    Language, Reset, **+ the full hotkey-binding editor**.

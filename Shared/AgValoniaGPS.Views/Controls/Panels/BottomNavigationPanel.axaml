@@ -221,11 +221,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 Canvas.Left="500" Canvas.Top="-350"
                 IsVisible="False">
             <StackPanel Spacing="6">
-                <!-- Track creation & selection — laid out in rows (3 wide) so
-                     the flyout stays short enough for the Android tablet. -->
+                <!-- Driving-only track actions: select + cycle + auto. Track
+                     create/edit moved to the Field Tools dialog (#ui-redesign). -->
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <!-- AB Tracks Dialog (manage saved tracks) -->
-                    <Button Classes="BottomPanelButton" ToolTip.Tip="Tracks - Manage AB Lines"
+                    <!-- AB Tracks Dialog (manage / select saved tracks) -->
+                    <Button Classes="BottomPanelButton" ToolTip.Tip="Tracks - Select AB Lines"
                             Command="{Binding ShowTracksDialogCommand}">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Stretch="Uniform"/>
                     </Button>
@@ -239,47 +239,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
-                    <!-- Quick AB (mode selector for drive-in creation) -->
-                    <Button Classes="BottomPanelButton" ToolTip.Tip="Quick AB Line Creator"
-                            Command="{Binding ShowQuickABSelectorCommand}">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png" Stretch="Uniform"/>
-                    </Button>
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <!-- Create AB from Boundary Edge -->
-                    <Button Classes="BottomPanelButton" ToolTip.Tip="Create AB Line from Boundary Edge"
-                            Command="{Binding CreateTrackFromBoundaryCommand}">
-                        <TextBlock Text="BE" FontSize="14" FontWeight="Bold"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Button>
-
-                    <!-- Draw AB (tap on map to place points) -->
-                    <Button Classes="BottomPanelButton" ToolTip.Tip="Draw AB Line on Map"
-                            Command="{Binding ShowDrawABDialogCommand}">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png" Stretch="Uniform"/>
-                    </Button>
-                </StackPanel>
-
-                <Separator Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Height="2" Margin="4" IsVisible="{Binding HasActiveTrack}"/>
-
-                <!-- Active track operations — one row (Cycle / Smooth / Delete). -->
-                <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasActiveTrack}">
                     <!-- Cycle Lines -->
                     <Button Classes="BottomPanelButton" ToolTip.Tip="Cycle AB Lines"
-                            Command="{Binding CycleABLinesCommand}">
+                            Command="{Binding CycleABLinesCommand}"
+                            IsVisible="{Binding HasActiveTrack}">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABLineCycle.png" Stretch="Uniform"/>
                     </Button>
 
-                    <!-- Smooth -->
-                    <Button Classes="BottomPanelButton" ToolTip.Tip="Smooth AB Curve"
-                            Command="{Binding SmoothABLineCommand}">
-                        <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSmooth.png" Stretch="Uniform"/>
-                    </Button>
-
-                    <!-- Delete Contours -->
+                    <!-- Delete Contours (clears contour-follow reference paths) -->
                     <Button Classes="BottomPanelButton" ToolTip.Tip="Delete Contours"
-                            Command="{Binding DeleteContoursCommand}">
+                            Command="{Binding DeleteContoursCommand}"
+                            IsVisible="{Binding HasActiveTrack}">
                         <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashContourRef.png" Stretch="Uniform"/>
                     </Button>
                 </StackPanel>

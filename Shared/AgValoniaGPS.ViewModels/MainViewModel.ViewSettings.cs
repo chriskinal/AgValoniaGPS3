@@ -38,7 +38,6 @@ public partial class MainViewModel
     private bool _isToolsPanelVisible;
     private bool _isConfigurationPanelVisible;
     private bool _isFieldOperationsPanelVisible;
-    private bool _isFieldToolsPanelVisible;
     private bool _isSimulatorPanelVisible;
     private bool _isSteerChartPanelVisible;
     private bool _isHeadingChartPanelVisible;
@@ -76,12 +75,6 @@ public partial class MainViewModel
     {
         get => _isFieldOperationsPanelVisible;
         set => SetProperty(ref _isFieldOperationsPanelVisible, value);
-    }
-
-    public bool IsFieldToolsPanelVisible
-    {
-        get => _isFieldToolsPanelVisible;
-        set => SetProperty(ref _isFieldToolsPanelVisible, value);
     }
 
     public bool IsSimulatorPanelVisible

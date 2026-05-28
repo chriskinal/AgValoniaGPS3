@@ -1,0 +1,303 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<!--
+Field Tools — "build the field" launcher, organized into sections like the
+Screen & Alerts dialog (decision #5). It surfaces the *leaf* actions directly
+(the buttons the QuickAB / Draw AB / Boundary panels used to nest one level
+deeper) to flatten the path to a tool and cut clicks. Every tile is a map-mode
+or direct action, so each closes this launcher on tap (ToolThenClose_Click);
+the close is guarded so a tile that opens its own dialog isn't clobbered.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="600"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.FieldToolsDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsFieldToolsDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsFieldToolsDialogVisible}">
+
+    <UserControl.Styles>
+        <!-- Compact tool tile: icon + caption. -->
+        <Style Selector="Button.FtTool">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Height" Value="82"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.FtTool:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.FtCaption">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="MaxWidth" Value="86"/>
+        </Style>
+        <Style Selector="TextBlock.FtGroupHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A9A7E"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style Selector="Border.HRule">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Margin" Value="0,12"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Backdrop, tap-to-close -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                CornerRadius="8" Width="760" MaxHeight="640"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1" BoxShadow="0 8 32 #80000000">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
+                    <TextBlock Text="{loc:Localize FieldTools}" FontSize="18" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </Border>
+
+                <!-- Sections -->
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20,16">
+
+                        <!-- ===== Creation ===== -->
+                        <TextBlock Text="Creation" Classes="FtGroupHeader"/>
+                        <WrapPanel>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowNewFieldDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="New Field" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowFromExistingFieldDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="From Existing" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowIsoXmlImportDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ISOXML.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="From ISO-XML" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowKmlImportDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="From KML" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DriveInCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/SteerDriveOn.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Drive In" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <Border Classes="HRule"/>
+
+                        <!-- ===== Boundaries ===== -->
+                        <TextBlock Text="Boundaries" Classes="FtGroupHeader"/>
+                        <WrapPanel>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowFieldBuilderCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Headache.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Field Builder" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DriveAroundFieldCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ST_SteerTab.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Drive Around" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DrawMapBoundaryCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryByMap.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Draw on Map" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ImportKmlBoundaryCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryLoadFromGE.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Import KML" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding BuildFromTracksCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="From Tracks" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DriveAroundInnerBoundaryCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ST_SteerTab.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Inner: Drive" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DrawMapInnerBoundaryCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryByMap.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Inner: Draw" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DeleteBoundaryCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Delete Boundary" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <Border Classes="HRule"/>
+
+                        <!-- ===== Tracks: create + edit ===== -->
+                        <TextBlock Text="Tracks" Classes="FtGroupHeader"/>
+                        <WrapPanel>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding StartAPlusLineCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAPlus.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="A+ Line" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding StartDriveABCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackAB.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Drive A-B" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding StartCurveRecordingCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Record Curve" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding StartDrawABModeCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABDraw.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Draw Straight" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding StartDrawCurveModeCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTrackCurve.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Draw Curve" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding CreateTrackFromBoundaryCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Longest Edge" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding CreateCurveFromBoundaryCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Boundary.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Boundary Curve" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding CreateTracksFromAllEdgesCommand}"
+                                    IsVisible="{Binding HasBoundary}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABTracks.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="All Edges" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding SmoothABLineCommand}"
+                                    IsVisible="{Binding HasActiveTrack}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ABSmooth.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Smooth Track" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <Border Classes="HRule"/>
+
+                        <!-- ===== Other ===== -->
+                        <TextBlock Text="Other" Classes="FtGroupHeader"/>
+                        <WrapPanel>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowOffsetFixDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/YouTurnReverse.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="{loc:Localize OffsetFix}" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ToggleRecordedPathPanelCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/RecPath.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="{loc:Localize RecordedPath}" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ImportTracksCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/BoundaryFromTracks.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="{loc:Localize ImportTracks}" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DeleteAppliedAreaCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="{loc:Localize DeleteAppliedArea}" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding CloseFieldCommand}"
+                                    IsVisible="{Binding IsFieldOpen}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileClose.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Close Field" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Button Grid.Column="1" Width="48" Height="48" Background="#4A9A7E" CornerRadius="24"
+                                Command="{Binding CloseFieldToolsDialogCommand}" ToolTip.Tip="Close">
+                            <TextBlock Text="✓" FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
