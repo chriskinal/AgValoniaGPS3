@@ -85,6 +85,9 @@ namespace AgValoniaGPS.Models
         // (0 disables). Opt-in via the Screen & Alerts toggle; default off.
         public double DialogAutoCloseSeconds { get; set; }
 
+        // On-map field-stats detail card. Toggled from the strip; default OFF.
+        public bool FieldStatsOnMapVisible { get; set; } = false;
+
         // Camera view (CameraZoom/Pitch/Mode) and the current day/night value
         // (IsDayMode) are "where the app was" → persistent state, in
         // PersistentAppState. The AutoDayNight *preference* below stays config.

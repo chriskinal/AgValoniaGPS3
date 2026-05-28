@@ -421,6 +421,7 @@ public class ConfigurationService(
         store.Display.DayStartHour = settings.DayStartHour;
         store.Display.NightStartHour = settings.NightStartHour;
         store.Display.DialogAutoCloseSeconds = settings.DialogAutoCloseSeconds;
+        store.Display.FieldStatsOnMapVisible = settings.FieldStatsOnMapVisible;
         store.Display.DisplayResolutionMultiplier = settings.DisplayResolutionMultiplier;
         store.Display.AutoDayNight = settings.AutoDayNight;
 
@@ -489,6 +490,7 @@ public class ConfigurationService(
         settings.DayStartHour = store.Display.DayStartHour;
         settings.NightStartHour = store.Display.NightStartHour;
         settings.DialogAutoCloseSeconds = store.Display.DialogAutoCloseSeconds;
+        settings.FieldStatsOnMapVisible = store.Display.FieldStatsOnMapVisible;
         settings.DisplayResolutionMultiplier = store.Display.DisplayResolutionMultiplier;
         settings.AutoDayNight = store.Display.AutoDayNight;
 

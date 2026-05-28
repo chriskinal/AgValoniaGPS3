@@ -36,13 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <!-- Top Status Bar -->
             <Border Grid.Row="0" Background="#2d2d2d" Padding="6,4">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <!-- Left: RTK Status and Diagnostics -->
-                    <panels:StatusBarPanel Grid.Column="0" DataContext="{Binding}"/>
-
-                    <!-- Right: Field Statistics (when field is active) -->
-                    <panels:FieldStatsPanel Grid.Column="2" DataContext="{Binding}"/>
-                </Grid>
+                <panels:StatusBarPanel DataContext="{Binding}"/>
             </Border>
 
             <!-- Main Content Area - SkiaMap with overlay panels -->
@@ -68,6 +62,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         IsVisible="{Binding IsDevOverlayVisible}"
                                         DataContext="{Binding}"/>
 
+                <!-- FIELD STATS DETAIL: AgOpen-style vertical card. Anchored on the
+                     LEFT, just to the right of the LeftNavigationPanel (64 px wide).
+                     Toggled from the strip's field-stats button. -->
+                <panels:FieldStatsPanel x:Name="FieldStats"
+                                        ZIndex="6"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Margin="68,4,0,0"
+                                        DataContext="{Binding}"/>
+
                 <!-- LEFT SIDEBAR: Anchored to left edge -->
                 <panels:LeftNavigationPanel x:Name="LeftNavPanel"
                                             ZIndex="9"
@@ -76,16 +80,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             Margin="0,4,0,0"
                                             DataContext="{Binding}"/>
 
-                <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
+                <!-- RIGHT SIDEBAR + Camera pad. Children individually anchored
+                     Right so each one sits flush against the right edge. -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             ZIndex="10" Margin="0,0,0,0" Spacing="4">
                     <panels:RightNavigationPanel x:Name="RightNavPanel"
+                                                 HorizontalAlignment="Right"
                                                  DataContext="{Binding}"/>
                     <Border Height="12"/>
                     <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
                          mode cycle (center). Replaces the old zoom +/- + mode cluster. -->
                     <panels:CameraPadControl x:Name="CameraPad"
-                                             HorizontalAlignment="Center"
+                                             HorizontalAlignment="Right"
                                              DataContext="{Binding}"/>
                 </StackPanel>
 

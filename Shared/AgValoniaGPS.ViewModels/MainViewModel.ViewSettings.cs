@@ -459,5 +459,30 @@ public partial class MainViewModel
     /// <summary>True when the platform exposed a real reading. The icon hides when this is false.</summary>
     public bool IsBatteryAvailable => _batteryStatus.IsAvailable;
 
+    /// <summary>
+    /// On-map field-stats detail card. Replaces the old auto-show-when-active
+    /// top-right strip; toggled from the strip button. Persists via
+    /// <see cref="DisplayConfig.FieldStatsOnMapVisible"/>.
+    /// </summary>
+    public bool IsFieldStatsOnMapVisible
+    {
+        get => ConfigurationStore.Instance.Display.FieldStatsOnMapVisible;
+        set
+        {
+            if (ConfigurationStore.Instance.Display.FieldStatsOnMapVisible != value)
+            {
+                ConfigurationStore.Instance.Display.FieldStatsOnMapVisible = value;
+                OnPropertyChanged();
+                _settingsService.Save();
+            }
+        }
+    }
+
+    /// <summary>Strip button: flips <see cref="IsFieldStatsOnMapVisible"/>.</summary>
+    public CommunityToolkit.Mvvm.Input.IRelayCommand ToggleFieldStatsOnMapCommand =>
+        _toggleFieldStatsOnMapCommand ??= new CommunityToolkit.Mvvm.Input.RelayCommand(
+            () => IsFieldStatsOnMapVisible = !IsFieldStatsOnMapVisible);
+    private CommunityToolkit.Mvvm.Input.IRelayCommand? _toggleFieldStatsOnMapCommand;
+
     #endregion
 }

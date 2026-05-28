@@ -52,10 +52,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Classes="FloatingPanel" Grid.Column="0" IsHitTestVisible="True">
                 <panels:StatusBarPanel DataContext="{Binding}"/>
             </Border>
-            <Border Classes="FloatingPanel" Grid.Column="2" IsHitTestVisible="True"
-                    IsVisible="{Binding HasActiveField}">
-                <panels:FieldStatsPanel DataContext="{Binding}"/>
-            </Border>
         </Grid>
 
         <!-- Row 1: All panels live here, below the status bar -->
@@ -79,6 +75,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 IsVisible="{Binding IsDevOverlayVisible}"
                                 DataContext="{Binding}"/>
 
+        <!-- FIELD STATS DETAIL: AgOpen-style vertical card. Anchored on the
+             LEFT, just to the right of the LeftNavigationPanel (64 px wide).
+             Toggled from the strip's field-stats button. -->
+        <panels:FieldStatsPanel x:Name="FieldStats"
+                                ZIndex="6"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
+                                Margin="68,4,0,0"
+                                DataContext="{Binding}"/>
+
         <!-- LEFT SIDEBAR: Anchored to left edge -->
         <panels:LeftNavigationPanel x:Name="LeftNavPanel"
                                     ZIndex="9"
@@ -87,18 +93,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     Margin="0,4,0,0"
                                     DataContext="{Binding}"/>
 
-        <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge -->
+        <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge.
+             Children individually anchored Right so each one sits flush
+             against the right window edge regardless of their own width
+             (the CameraPad is wider than the nav strip). -->
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                     ZIndex="10" Margin="0,0,0,0" Spacing="4">
             <!-- Right navigation buttons -->
             <panels:RightNavigationPanel x:Name="RightNavPanel"
+                                         HorizontalAlignment="Right"
                                          DataContext="{Binding}"/>
             <!-- Spacer before the camera pad -->
             <Border Height="12"/>
             <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
                  mode cycle (center). Replaces the old zoom +/- + mode cluster. -->
             <panels:CameraPadControl x:Name="CameraPad"
-                                     HorizontalAlignment="Center"
+                                     HorizontalAlignment="Right"
                                      DataContext="{Binding}"/>
         </StackPanel>
 

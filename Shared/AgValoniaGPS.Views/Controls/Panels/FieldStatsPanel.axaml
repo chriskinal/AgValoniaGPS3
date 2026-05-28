@@ -22,28 +22,90 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:vm="using:AgValoniaGPS.ViewModels"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.FieldStatsPanel"
-             x:DataType="vm:MainViewModel"
-             IsVisible="{Binding HasActiveField}">
+             x:DataType="vm:MainViewModel">
 
-    <StackPanel Orientation="Horizontal" Spacing="18">
-        <TextBlock Text="{Binding CurrentFieldAndJobLabel}" Foreground="#3498DB" FontSize="13" FontWeight="Bold"
-                   IsVisible="{Binding CurrentFieldName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-        <StackPanel Orientation="Horizontal" Spacing="4">
-            <TextBlock Text="Field:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
-            <TextBlock Text="{Binding BoundaryAreaDisplay}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="13" FontWeight="Bold"/>
+    <!--
+    AgOpen-style on-map field-stats detail card. Replaces the old auto-show
+    top-right horizontal strip. Visibility is now driven by the strip's
+    field-stats toggle (IsFieldStatsOnMapVisible) AND requires an active
+    field; default OFF.
+    -->
+    <UserControl.IsVisible>
+        <MultiBinding Converter="{x:Static BoolConverters.And}">
+            <Binding Path="IsFieldStatsOnMapVisible"/>
+            <Binding Path="HasActiveField"/>
+        </MultiBinding>
+    </UserControl.IsVisible>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,6,0,2"/>
+        </Style>
+        <Style Selector="TextBlock.RowLabel">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.RowValue">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+        </Style>
+        <Style Selector="Separator.SectionRule">
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="#CC1E1E1E" CornerRadius="6" Padding="10,6" MinWidth="160">
+        <StackPanel Spacing="2">
+            <!-- Total -->
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Total:" Classes="RowLabel" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding BoundaryAreaDisplay}" Classes="RowValue"/>
+            </Grid>
+
+            <!-- Worked section -->
+            <TextBlock Text="Worked" Classes="SectionHeader"/>
+            <Separator Classes="SectionRule"/>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Applied:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding WorkedAreaDisplay}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Remain:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding RemainingAreaDisplay}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding WorkedPercent, StringFormat='{}{0:F1}%'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding HoursRemainingDisplay, StringFormat='{}{0} Hrs'}" Classes="RowValue"/>
+            </Grid>
+
+            <!-- Actual section -->
+            <TextBlock Text="Actual" Classes="SectionHeader"/>
+            <Separator Classes="SectionRule"/>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Applied:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding ActualAreaDisplay}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Overlap:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding OverlapPercent, StringFormat='{}{0:F1}%'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Rate:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding WorkRateDisplay}" Classes="RowValue"/>
+            </Grid>
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="4">
-            <TextBlock Text="Done:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
-            <TextBlock Text="{Binding WorkedAreaDisplay}" Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="4">
-            <TextBlock Text="Left:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
-            <TextBlock Text="{Binding RemainingPercent, StringFormat='{}{0:F1}%'}" Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="4">
-            <TextBlock Text="Rate:" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" FontSize="13"/>
-            <TextBlock Text="{Binding WorkRateDisplay}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" FontSize="13" FontWeight="Bold"/>
-        </StackPanel>
-    </StackPanel>
+    </Border>
 
 </UserControl>

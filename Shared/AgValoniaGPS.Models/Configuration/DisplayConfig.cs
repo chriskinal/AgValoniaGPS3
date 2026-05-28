@@ -69,6 +69,15 @@ public class DisplayConfig : ObservableObject
         set => SetProperty(ref _compassVisible, value);
     }
 
+    // On-map field-stats detail card. Replaces the old auto-show-when-active
+    // top-right strip with an explicit strip toggle. Default OFF.
+    private bool _fieldStatsOnMapVisible;
+    public bool FieldStatsOnMapVisible
+    {
+        get => _fieldStatsOnMapVisible;
+        set => SetProperty(ref _fieldStatsOnMapVisible, value);
+    }
+
     private bool _speedVisible = true;
     public bool SpeedVisible
     {

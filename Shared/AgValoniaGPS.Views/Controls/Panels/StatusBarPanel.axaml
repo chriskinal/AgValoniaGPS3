@@ -100,6 +100,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
 
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="10,0,0,0">
+            <!-- Field-stats on-map toggle. Glyph reflects current state:
+                 lit when the card is visible, dim when hidden. -->
+            <Button Classes="RotatorPause"
+                    Command="{Binding ToggleFieldStatsOnMapCommand}"
+                    ToolTip.Tip="Toggle field-stats card on the map">
+                <TextBlock FontSize="16" FontWeight="Bold"
+                           Text="ℹ"
+                           Foreground="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"/>
+            </Button>
+
             <!-- Battery icon (hidden on machines without a battery). -->
             <controls:BatteryIndicator
                 Level="{Binding BatteryLevel}"

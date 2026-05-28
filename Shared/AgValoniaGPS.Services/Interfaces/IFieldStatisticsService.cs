@@ -30,6 +30,12 @@ namespace AgValoniaGPS.Services.Interfaces
         /// </summary>
         FieldStatistics Statistics { get; }
 
+        /// <summary>Actual area covered (worked area minus overlap), square metres.</summary>
+        double ActualAreaCovered { get; }
+
+        /// <summary>Overlap as a percentage (0–100).</summary>
+        double OverlapPercent { get; }
+
         /// <summary>
         /// Event raised when statistics are updated
         /// </summary>

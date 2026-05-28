@@ -1312,6 +1312,50 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>Worked area minus overlap, formatted for the AgOpen-style stats card.</summary>
+    public string ActualAreaDisplay => FormatArea(_fieldStatistics.ActualAreaCovered);
+
+    /// <summary>Remaining boundary area = total minus worked, formatted.</summary>
+    public string RemainingAreaDisplay
+    {
+        get
+        {
+            double remaining = WorkableAreaSqM - _coverageMapService.TotalWorkedArea;
+            return FormatArea(Math.Max(0, remaining));
+        }
+    }
+
+    /// <summary>Percentage of the boundary that has been worked.</summary>
+    public double WorkedPercent
+    {
+        get
+        {
+            double workable = WorkableAreaSqM;
+            if (workable <= 0) return 0;
+            return Math.Clamp((_coverageMapService.TotalWorkedArea / workable) * 100.0, 0, 100);
+        }
+    }
+
+    /// <summary>Overlap percent from the field-statistics service.</summary>
+    public double OverlapPercent => _fieldStatistics.OverlapPercent;
+
+    /// <summary>
+    /// Hours remaining at the current work rate. Returns <c>∞</c> when the
+    /// instantaneous rate is zero (stopped) so the card mirrors AgOpen's
+    /// readout instead of showing a confusing 0.
+    /// </summary>
+    public string HoursRemainingDisplay
+    {
+        get
+        {
+            double rateSqMPerHour = Speed * 3600 * ToolWidth;
+            if (rateSqMPerHour <= 0) return "∞";
+            double remainingSqM = Math.Max(0, WorkableAreaSqM - _coverageMapService.TotalWorkedArea);
+            double hours = remainingSqM / rateSqMPerHour;
+            return $"{hours:F1}";
+        }
+    }
+
     // Helper method to format area with metric/imperial support
     private string FormatArea(double squareMeters)
     {
@@ -1330,6 +1374,11 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(WorkedAreaDisplay));
         OnPropertyChanged(nameof(RemainingPercent));
         OnPropertyChanged(nameof(WorkRateDisplay));
+        OnPropertyChanged(nameof(ActualAreaDisplay));
+        OnPropertyChanged(nameof(RemainingAreaDisplay));
+        OnPropertyChanged(nameof(WorkedPercent));
+        OnPropertyChanged(nameof(OverlapPercent));
+        OnPropertyChanged(nameof(HoursRemainingDisplay));
         RaiseStatusStripChanged();
     }
 
