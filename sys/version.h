@@ -4,7 +4,7 @@
 
 #define VERSION_MAJOR 26
 #define VERSION_MINOR 5
-#define VERSION_PATCH 25
+#define VERSION_PATCH 26
 
-#define VERSION "26.5.25"
+#define VERSION "26.5.26"
 #define VERSION_DATE "2026-05-28"

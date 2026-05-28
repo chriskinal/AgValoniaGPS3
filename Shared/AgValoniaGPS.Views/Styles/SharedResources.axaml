@@ -28,6 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
     <converters:FixQualityToColorConverter x:Key="FixQualityToColorConverter"/>
     <converters:ModuleStatusKindToColorConverter x:Key="ModuleStatusKindToColorConverter"/>
+    <converters:BoolToPlayPauseConverter x:Key="BoolToPlayPauseConverter"/>
     <converters:FixQualityNameConverter x:Key="FixQualityNameConverter"/>
     <converters:BoolToSteerColorConverter x:Key="BoolToSteerColorConverter"/>
     <converters:BoolToSteerTextConverter x:Key="BoolToSteerTextConverter"/>

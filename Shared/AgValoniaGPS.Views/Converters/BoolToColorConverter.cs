@@ -190,6 +190,19 @@ public class FixQualityToColorConverter : IValueConverter
 }
 
 /// <summary>
+/// Maps the rotator's paused/running state to a play/pause glyph. True =
+/// paused → ▶ (tap to resume); false = running → ⏸ (tap to pause).
+/// </summary>
+public class BoolToPlayPauseConverter : IValueConverter
+{
+    public static readonly BoolToPlayPauseConverter Instance = new();
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is bool paused && paused ? "▶" : "⏸";
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => BindingOperations.DoNothing;
+}
+
+/// <summary>
 /// Aggregate module-presence indicator: green when every configured module is
 /// producing data, yellow when ≥1 is missing, red when none are present.
 /// </summary>

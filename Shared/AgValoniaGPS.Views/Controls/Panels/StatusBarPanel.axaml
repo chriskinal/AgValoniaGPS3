@@ -40,24 +40,66 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Style Selector="Button.ModulesAggregate:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
+        <!-- Pause-rotation tap target. Borderless square that toggles the
+             auto-cycling of the bottom line. -->
+        <Style Selector="Button.RotatorPause">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.RotatorPause:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
     </UserControl.Styles>
 
-    <!-- Single-row strip: left readouts + right aggregate-modules button. The
-         old second row (FPS / Latency / Lat / Lon) moved out to the on-map
-         Dev overlay, gated by a .show_dev_overlay marker file. -->
-    <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
-            <!-- Widths fixed so values don't reflow the bar as digits change (#277). -->
-            <Ellipse Width="12" Height="12"
-                     Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
-            <TextBlock Width="75" Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"/>
+    <!-- Single-row strip. AgOpen-style packing: pause button, then a two-line
+         text stack (Fix/Age on top, rotating field info on the bottom),
+         then the live readouts, then battery + aggregate Modules. -->
+    <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+        <!-- Pause/play for the rotating bottom line. -->
+        <Button Grid.Column="0" Classes="RotatorPause"
+                Command="{Binding ToggleStatusStripRotationCommand}"
+                ToolTip.Tip="Pause / resume rotating field info">
+            <TextBlock FontSize="14" FontWeight="Bold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                       Text="{Binding IsStatusStripRotationPaused, Converter={StaticResource BoolToPlayPauseConverter}}"/>
+        </Button>
+
+        <!-- Two-line text stack: Fix/Age on top, rotating field info on the
+             bottom. Width fixed so the live readouts to the right don't
+             reflow when the rotating line changes pages. -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,Auto" Margin="6,0,12,0" Width="240"
+              VerticalAlignment="Center">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+                <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                         Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
+                <TextBlock Text="{Binding State.Vehicle.FixQualityText}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           FontSize="13" FontWeight="Bold"/>
+                <TextBlock Text="{Binding State.Vehicle.Age, StringFormat='Age: {0:F1}'}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           FontSize="13"/>
+            </StackPanel>
+            <TextBlock Grid.Row="1"
+                       Text="{Binding StatusStripRotatingLine}"
+                       Foreground="#3498DB"
+                       FontSize="13"
+                       TextTrimming="CharacterEllipsis"/>
+        </Grid>
+
+        <!-- Live readouts: Speed kept on the strip pending the dedicated
+             large-Speed slot. Heading + Roll + Time will move to on-map
+             elements in upcoming commits. -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
             <TextBlock Width="100" Text="{Binding SpeedKmh, StringFormat='{}{0:F1} km/h'}" Foreground="#E67E22" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="70" Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
         </StackPanel>
 
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="10,0,0,0">
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="10,0,0,0">
             <!-- Battery icon (hidden on machines without a battery). -->
             <controls:BatteryIndicator
                 Level="{Binding BatteryLevel}"

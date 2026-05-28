@@ -245,6 +245,10 @@ public partial class MainViewModel : ObservableObject
         _batteryService.Start();
         _batteryStatus = _batteryService.CurrentStatus;
 
+        // Status-strip rotator: cycles the bottom of the two-line text stack
+        // through field name / stats / AB-line every 5 s, with a pause button.
+        InitializeStatusStripRotation();
+
         // Sync GuidanceConfig.TramDisplay -> TramConfig.DisplayMode and regenerate
         ConfigStore.Guidance.PropertyChanged += (_, e) =>
         {
@@ -338,6 +342,7 @@ public partial class MainViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(CurrentJobTaskName));
             OnPropertyChanged(nameof(CurrentFieldAndJobLabel));
+            RaiseStatusStripChanged();
         };
         _gpsPipelineService = gpsPipelineService;
         _controlLoop = controlLoop;
@@ -477,6 +482,7 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(BoundaryAreaDisplay));
                 OnPropertyChanged(nameof(WorkRateDisplay));
                 OnPropertyChanged(nameof(SimulatorSpeedDisplay));
+                RaiseStatusStripChanged();
             }
         };
 
@@ -1324,6 +1330,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(WorkedAreaDisplay));
         OnPropertyChanged(nameof(RemainingPercent));
         OnPropertyChanged(nameof(WorkRateDisplay));
+        RaiseStatusStripChanged();
     }
 
     /// <summary>
@@ -1354,6 +1361,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ActiveFieldName));
         OnPropertyChanged(nameof(ActiveFieldArea));
         OnPropertyChanged(nameof(HasActiveField));
+        RaiseStatusStripChanged();
     }
 
     // Pending intents consumed by the next OpenFieldAsync. Set by the
@@ -2157,6 +2165,7 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsActiveTrackClosed));
                 OnPropertyChanged(nameof(IsManualUTurnVisible));
                 RaiseUTurnButtonVisibleChanged();
+                RaiseStatusStripChanged();
 
                 // Sync to pipeline so guidance computes on background thread
                 SyncGuidanceStateToPipeline();
