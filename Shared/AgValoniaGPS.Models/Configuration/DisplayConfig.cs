@@ -78,6 +78,17 @@ public class DisplayConfig : ObservableObject
         set => SetProperty(ref _fieldStatsOnMapVisible, value);
     }
 
+    // On-map GPS detail card. Toggled by tapping the strip's Modules
+    // aggregate button (which still tracks colour for the aggregate). Lands
+    // at the same on-map slot as the Field-Stats card; if both are on they
+    // overlap and the user picks which one to keep open. Default OFF.
+    private bool _gpsDetailOverlayVisible;
+    public bool GpsDetailOverlayVisible
+    {
+        get => _gpsDetailOverlayVisible;
+        set => SetProperty(ref _gpsDetailOverlayVisible, value);
+    }
+
     private bool _speedVisible = true;
     public bool SpeedVisible
     {

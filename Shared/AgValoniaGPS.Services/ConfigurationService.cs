@@ -422,6 +422,7 @@ public class ConfigurationService(
         store.Display.NightStartHour = settings.NightStartHour;
         store.Display.DialogAutoCloseSeconds = settings.DialogAutoCloseSeconds;
         store.Display.FieldStatsOnMapVisible = settings.FieldStatsOnMapVisible;
+        store.Display.GpsDetailOverlayVisible = settings.GpsDetailOverlayVisible;
         store.Display.DisplayResolutionMultiplier = settings.DisplayResolutionMultiplier;
         store.Display.AutoDayNight = settings.AutoDayNight;
 
@@ -491,6 +492,7 @@ public class ConfigurationService(
         settings.NightStartHour = store.Display.NightStartHour;
         settings.DialogAutoCloseSeconds = store.Display.DialogAutoCloseSeconds;
         settings.FieldStatsOnMapVisible = store.Display.FieldStatsOnMapVisible;
+        settings.GpsDetailOverlayVisible = store.Display.GpsDetailOverlayVisible;
         settings.DisplayResolutionMultiplier = store.Display.DisplayResolutionMultiplier;
         settings.AutoDayNight = store.Display.AutoDayNight;
 

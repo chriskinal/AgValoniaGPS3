@@ -484,5 +484,30 @@ public partial class MainViewModel
             () => IsFieldStatsOnMapVisible = !IsFieldStatsOnMapVisible);
     private CommunityToolkit.Mvvm.Input.IRelayCommand? _toggleFieldStatsOnMapCommand;
 
+    /// <summary>
+    /// On-map GPS detail card. Toggled by tapping the strip's Modules
+    /// aggregate button (the button still shows the aggregate dot colour).
+    /// Shares the on-map slot with the Field-Stats card.
+    /// </summary>
+    public bool IsGpsDetailOverlayVisible
+    {
+        get => ConfigurationStore.Instance.Display.GpsDetailOverlayVisible;
+        set
+        {
+            if (ConfigurationStore.Instance.Display.GpsDetailOverlayVisible != value)
+            {
+                ConfigurationStore.Instance.Display.GpsDetailOverlayVisible = value;
+                OnPropertyChanged();
+                _settingsService.Save();
+            }
+        }
+    }
+
+    /// <summary>Modules button: flips <see cref="IsGpsDetailOverlayVisible"/>.</summary>
+    public CommunityToolkit.Mvvm.Input.IRelayCommand ToggleGpsDetailOverlayCommand =>
+        _toggleGpsDetailOverlayCommand ??= new CommunityToolkit.Mvvm.Input.RelayCommand(
+            () => IsGpsDetailOverlayVisible = !IsGpsDetailOverlayVisible);
+    private CommunityToolkit.Mvvm.Input.IRelayCommand? _toggleGpsDetailOverlayCommand;
+
     #endregion
 }

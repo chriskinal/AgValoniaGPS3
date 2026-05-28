@@ -73,14 +73,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Grid Grid.Column="1" RowDefinitions="Auto,Auto" Margin="6,0,12,0" Width="240"
               VerticalAlignment="Center">
             <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
-                <Ellipse Width="10" Height="10" VerticalAlignment="Center"
-                         Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
-                <TextBlock Text="{Binding State.Vehicle.FixQualityText}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                           FontSize="13" FontWeight="Bold"/>
+                <!-- Fix dot + RTK label form one tap target that toggles the
+                     on-map GPS detail card (lands at the same left slot as
+                     the Field-Stats card; the user manages which one they
+                     want there). Dot colour tracks fix quality. -->
+                <Button Classes="RotatorPause" Padding="2,1"
+                        Command="{Binding ToggleGpsDetailOverlayCommand}"
+                        ToolTip.Tip="Toggle GPS detail card on the map">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Ellipse Width="12" Height="12" VerticalAlignment="Center"
+                                 Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
+                        <TextBlock Text="{Binding State.Vehicle.FixQualityText}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   FontSize="13" FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
                 <TextBlock Text="{Binding State.Vehicle.Age, StringFormat='Age: {0:F1}'}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                           FontSize="13"/>
+                           FontSize="13"
+                           VerticalAlignment="Center"/>
             </StackPanel>
             <TextBlock Grid.Row="1"
                        Text="{Binding StatusStripRotatingLine}"
@@ -117,6 +129,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 IsVisible="{Binding IsBatteryAvailable}"
                 VerticalAlignment="Center"/>
 
+        <!-- Aggregate module-status indicator. Colour tracks Green = all
+             configured modules present, Yellow = ≥1 absent, Red = none.
+             Tap opens a flyout listing per-module connection state until
+             the Network panel ships. The GPS-detail overlay is toggled
+             from the fix dot at top-left of the strip, not from here. -->
         <Button Classes="ModulesAggregate"
                 ToolTip.Tip="Module status: GPS / IMU / AutoSteer / Machine">
             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -130,8 +147,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <Flyout Placement="Bottom">
                     <StackPanel Spacing="6" MinWidth="220">
                         <TextBlock Text="Modules" FontWeight="Bold" FontSize="14"/>
-
-                        <!-- GPS -->
                         <Grid ColumnDefinitions="Auto,80,*">
                             <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
                                      Fill="{Binding State.Connections.IsGpsDataOk, Converter={StaticResource BoolToColorConverter}}"/>
@@ -140,8 +155,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                        TextAlignment="Right"/>
                         </Grid>
-
-                        <!-- IMU -->
                         <Grid ColumnDefinitions="Auto,80,*">
                             <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
                                      Fill="{Binding State.Connections.IsImuDataOk, Converter={StaticResource BoolToColorConverter}}"/>
@@ -152,8 +165,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                        TextAlignment="Right"/>
                         </Grid>
-
-                        <!-- AutoSteer -->
                         <Grid ColumnDefinitions="Auto,80,*">
                             <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
                                      Fill="{Binding State.Connections.IsAutoSteerDataOk, Converter={StaticResource BoolToColorConverter}}"/>
@@ -164,8 +175,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                        TextAlignment="Right"/>
                         </Grid>
-
-                        <!-- Machine -->
                         <Grid ColumnDefinitions="Auto,80,*">
                             <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
                                      Fill="{Binding State.Connections.IsMachineDataOk, Converter={StaticResource BoolToColorConverter}}"/>
@@ -176,7 +185,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
                                        TextAlignment="Right"/>
                         </Grid>
-
                         <TextBlock Text="Set which modules to expect in the Network panel."
                                    FontSize="11"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"

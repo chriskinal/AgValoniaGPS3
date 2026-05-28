@@ -72,6 +72,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         Margin="68,4,0,0"
                                         DataContext="{Binding}"/>
 
+                <!-- GPS DETAIL: AgOpen-style vertical card with Lat / Lon /
+                     fix / heading / IMU. Shares the same on-map slot as the
+                     Field-Stats card. Toggled from the strip Modules button. -->
+                <panels:GpsDetailPanel x:Name="GpsDetail"
+                                       ZIndex="7"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       Margin="68,4,0,0"
+                                       DataContext="{Binding}"/>
+
                 <!-- LEFT SIDEBAR: Anchored to left edge -->
                 <panels:LeftNavigationPanel x:Name="LeftNavPanel"
                                             ZIndex="9"

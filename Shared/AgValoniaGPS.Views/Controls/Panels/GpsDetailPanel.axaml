@@ -1,0 +1,104 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.GpsDetailPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding IsGpsDetailOverlayVisible}">
+
+    <!--
+    AgOpen-style on-map GPS detail card. Lands at the same left-anchored
+    slot as the field-stats card; if both are toggled on they overlap and
+    the user picks which one to keep open (Brian's stance — both belong on
+    the same slot, the user manages the conflict).
+    -->
+    <UserControl.Styles>
+        <Style Selector="TextBlock.RowLabel">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.RowValue">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+        </Style>
+        <Style Selector="TextBlock.LatLon">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#F1C40F"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+        </Style>
+        <Style Selector="Separator.SectionRule">
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="0,4,0,4"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="#CC1E1E1E" CornerRadius="6" Padding="10,6" MinWidth="170">
+        <StackPanel Spacing="2">
+            <!-- Lat / Lon up top, like AgOpen. -->
+            <TextBlock Classes="LatLon" Text="{Binding Latitude, StringFormat='{}{0:F7}'}"/>
+            <TextBlock Classes="LatLon" Text="{Binding Longitude, StringFormat='{}{0:F7}'}"/>
+
+            <Separator Classes="SectionRule"/>
+
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Elev:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding State.Vehicle.Altitude, StringFormat='{}{0:F1}'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="# Sats:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding State.Vehicle.SatelliteCount}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="HDOP:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding State.Vehicle.Hdop, StringFormat='{}{0:F2}'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Fix:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding State.Vehicle.FixQualityText}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Age:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding State.Vehicle.Age, StringFormat='{}{0:F1}'}" Classes="RowValue"/>
+            </Grid>
+
+            <Separator Classes="SectionRule"/>
+
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Heading:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding Heading, StringFormat='{}{0:F1}°'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="IMU Roll:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding RollDegrees, StringFormat='{}{0:F1}°'}" Classes="RowValue"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="FPS:" Classes="RowLabel"/>
+                <TextBlock Grid.Column="1" Text="{Binding CurrentFps, StringFormat='{}{0:F0}'}" Classes="RowValue"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+
+</UserControl>
