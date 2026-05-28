@@ -91,33 +91,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Button>
                 <TextBlock Text="{Binding State.Vehicle.Age, StringFormat='Age: {0:F1}'}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                           FontSize="13"
+                           FontSize="13" FontWeight="Bold"
                            VerticalAlignment="Center"/>
             </StackPanel>
             <TextBlock Grid.Row="1"
                        Text="{Binding StatusStripRotatingLine}"
                        Foreground="#3498DB"
-                       FontSize="13"
+                       FontSize="13" FontWeight="Bold"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
-        <!-- Live readouts: Roll + Time stay pending their on-map relocations
-             in the next commit. Heading moved to the on-map HeadingReadout;
-             Speed has moved to the large slot at the right of the strip. -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
-            <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
-            <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
-        </StackPanel>
+        <!-- Live readouts row deliberately empty: Heading + Roll + Time are
+             all on-map now (HeadingReadout upper-left, RollGaugeReadout
+             lower-right). Speed lives in the large slot at the right of
+             the strip. The column is kept so the strip still expands. -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center"/>
 
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="10,0,0,0">
-            <!-- Field-stats on-map toggle. Glyph reflects current state:
-                 lit when the card is visible, dim when hidden. -->
+            <!-- Field-stats on-map toggle. Glyph: an irregular field-shaped
+                 polygon with a big "i" inside. Stroke + letter both track
+                 the active/inactive colour so the active state stays
+                 readable at a glance. -->
             <Button Classes="RotatorPause"
                     Command="{Binding ToggleFieldStatsOnMapCommand}"
                     ToolTip.Tip="Toggle field-stats card on the map">
-                <TextBlock FontSize="16" FontWeight="Bold"
-                           Text="ℹ"
-                           Foreground="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"/>
+                <Grid Width="32" Height="26">
+                    <Polygon Points="4,6 15,2 28,7 26,22 11,24 3,17"
+                             Stroke="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"
+                             StrokeThickness="1.8"
+                             Fill="Transparent"/>
+                    <TextBlock Text="i" FontSize="18" FontWeight="Bold"
+                               Foreground="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="0,-1,0,0"/>
+                </Grid>
             </Button>
 
             <!-- Battery icon (hidden on machines without a battery). -->
@@ -202,7 +210,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding SpeedLargeUnit}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                           FontSize="11"
+                           FontSize="11" FontWeight="Bold"
                            VerticalAlignment="Bottom"
                            Margin="2,0,0,4"/>
             </StackPanel>

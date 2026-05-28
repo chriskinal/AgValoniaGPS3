@@ -57,7 +57,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 PointerPressed="StatusBar_OnPointerPressed"
                 Padding="0">
             <Grid ColumnDefinitions="*,Auto">
-                <panels:StatusBarPanel Grid.Column="0" Margin="15" DataContext="{Binding}"/>
+                <!-- Margin shrunk top/bottom from 15 → 5 to drop the strip
+                     20 px (10 each side) without changing element sizes. -->
+                <panels:StatusBarPanel Grid.Column="0" Margin="15,5" DataContext="{Binding}"/>
                 <!-- Custom window controls (frameless build). -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0"
                             VerticalAlignment="Stretch">
@@ -87,15 +89,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                               VerticalAlignment="Top"
                               Margin="0,4,0,0"/>
 
-        <!-- HEADING: AgOpen-style large degree readout anchored upper-left of
-             the map area, well clear of the LeftNavigationPanel. Always
-             visible; the FieldStats / GPSDetail cards stack below it. -->
-        <panels:HeadingReadout x:Name="HeadingReadout"
-                               ZIndex="5"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Top"
-                               Margin="80,4,0,0"
-                               DataContext="{Binding}"/>
 
         <!-- DEV OVERLAY: FPS / latency / raw Lat / raw Lon. Gated by a
              file-flag (.show_dev_overlay) in the AgValoniaGPS Documents
@@ -137,16 +130,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                     Margin="0,4,0,0"
                                     DataContext="{Binding}"/>
 
-        <!-- RIGHT SIDEBAR + Zoom/Compass stacked vertically on right edge.
-             Children individually anchored Right so each one sits flush
-             against the right window edge regardless of their own width
-             (the CameraPad is wider than the nav strip). -->
+        <!-- HEADING + RIGHT SIDEBAR + Roll gauge + Camera pad. Heading sits
+             just above the right nav; the gauge sits BELOW the right nav
+             and ABOVE the spacer/camera pad so its bottom position stays
+             fixed regardless of whether the right nav is shown. -->
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                     ZIndex="10" Margin="0,0,0,0" Spacing="4">
-            <!-- Right navigation buttons -->
+            <!-- Heading readout — sits just above the right nav. -->
+            <panels:HeadingReadout x:Name="HeadingReadout"
+                                   HorizontalAlignment="Right"
+                                   DataContext="{Binding}"/>
+            <!-- Right navigation buttons (collapses when no field). -->
             <panels:RightNavigationPanel x:Name="RightNavPanel"
                                          HorizontalAlignment="Right"
                                          DataContext="{Binding}"/>
+            <!-- Roll gauge — just above the camera-pad spacer. -->
+            <panels:RollGaugeReadout x:Name="RollGauge"
+                                     HorizontalAlignment="Right"
+                                     DataContext="{Binding}"/>
             <!-- Spacer before the camera pad -->
             <Border Height="12"/>
             <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
@@ -155,6 +156,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                      HorizontalAlignment="Right"
                                      DataContext="{Binding}"/>
         </StackPanel>
+
+        <!-- Time. Transparent; sits just above the bottom nav, left of the
+             camera-pad column. -->
+        <panels:TimeReadout x:Name="TimeReadout"
+                            ZIndex="10"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,144,8"
+                            DataContext="{Binding}"/>
 
         <!-- BOTTOM: Simulator bar above section control above bottom navigation -->
         <StackPanel ZIndex="10"

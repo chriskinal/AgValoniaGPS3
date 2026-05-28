@@ -51,14 +51,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       VerticalAlignment="Top"
                                       Margin="0,4,0,0"/>
 
-                <!-- HEADING: large degree readout anchored upper-left of the
-                     map area, well clear of the LeftNavigationPanel. -->
-                <panels:HeadingReadout x:Name="HeadingReadout"
-                                       ZIndex="5"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Top"
-                                       Margin="80,4,0,0"
-                                       DataContext="{Binding}"/>
 
                 <!-- DEV OVERLAY: FPS / latency / raw Lat / raw Lon. Gated by a
                      file-flag (.show_dev_overlay) in the AgValoniaGPS Documents
@@ -95,20 +87,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                             Margin="0,4,0,0"
                                             DataContext="{Binding}"/>
 
-                <!-- RIGHT SIDEBAR + Camera pad. Children individually anchored
-                     Right so each one sits flush against the right edge. -->
+                <!-- HEADING + RIGHT SIDEBAR + Roll gauge + Camera pad.
+                     Heading sits just above the right nav; Roll sits below
+                     it and above the camera-pad spacer so its bottom
+                     position stays fixed regardless of nav visibility. -->
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             ZIndex="10" Margin="0,0,0,0" Spacing="4">
+                    <panels:HeadingReadout x:Name="HeadingReadout"
+                                           HorizontalAlignment="Right"
+                                           DataContext="{Binding}"/>
                     <panels:RightNavigationPanel x:Name="RightNavPanel"
                                                  HorizontalAlignment="Right"
                                                  DataContext="{Binding}"/>
+                    <panels:RollGaugeReadout x:Name="RollGauge"
+                                             HorizontalAlignment="Right"
+                                             DataContext="{Binding}"/>
                     <Border Height="12"/>
-                    <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
-                         mode cycle (center). Replaces the old zoom +/- + mode cluster. -->
                     <panels:CameraPadControl x:Name="CameraPad"
                                              HorizontalAlignment="Right"
                                              DataContext="{Binding}"/>
                 </StackPanel>
+
+                <!-- Time. Transparent; sits just above the bottom nav, left
+                     of the camera-pad column. -->
+                <panels:TimeReadout x:Name="TimeReadout"
+                                    ZIndex="10"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,144,8"
+                                    DataContext="{Binding}"/>
 
                 <!-- BOTTOM: Simulator bar above section control above bottom navigation -->
                 <StackPanel ZIndex="10"

@@ -1,0 +1,79 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="80"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.RollGaugeReadout"
+             x:DataType="vm:MainViewModel"
+             Background="Transparent"
+             IsHitTestVisible="False">
+
+    <!--
+    AgOpen-style roll gauge. Two pink curved arcs flank a centred degree
+    number; each arc carries four outward tick marks (two above and two
+    below horizontal). A long green horizon line through the centre tilts
+    by the current roll angle, with a small white dot fixed at centre as
+    the level reference.
+    -->
+    <Grid Width="200" Height="80">
+
+        <!-- Left pink arc + four outward ticks. -->
+        <Path Stroke="#E91E90" StrokeThickness="2.5" StrokeLineCap="Round"
+              Data="M 80,12 A 22,28 0 0 0 80,68
+                    M 69,20 L 61,20
+                    M 62,30 L 54,30
+                    M 62,50 L 54,50
+                    M 69,60 L 61,60"/>
+
+        <!-- Right pink arc + four outward ticks, mirrored. -->
+        <Path Stroke="#E91E90" StrokeThickness="2.5" StrokeLineCap="Round"
+              Data="M 120,12 A 22,28 0 0 1 120,68
+                    M 131,20 L 139,20
+                    M 138,30 L 146,30
+                    M 138,50 L 146,50
+                    M 131,60 L 139,60"/>
+
+        <!-- Tilting green horizon line through the centre. Extends 2 px past
+             each arc's outermost point (left arc leftmost x=58, right arc
+             rightmost x=142) so it visibly bisects both arcs. Rotates around
+             centre. -->
+        <Line StartPoint="56,40" EndPoint="144,40"
+              Stroke="#2ECC71" StrokeThickness="4" StrokeLineCap="Round"
+              RenderTransformOrigin="0.5,0.5">
+            <Line.RenderTransform>
+                <RotateTransform Angle="{Binding RollDegrees}"/>
+            </Line.RenderTransform>
+        </Line>
+
+        <!-- Static centre dot — the level reference. -->
+        <Ellipse Width="6" Height="6" Fill="White"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Roll degrees, big and centred above the horizon line. -->
+        <TextBlock Text="{Binding RollDegrees, StringFormat='{}{0:F0}'}"
+                   Foreground="White"
+                   FontSize="32" FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Margin="0,0,0,28"/>
+    </Grid>
+
+</UserControl>

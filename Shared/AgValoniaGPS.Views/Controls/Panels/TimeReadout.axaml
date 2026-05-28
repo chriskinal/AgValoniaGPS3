@@ -20,28 +20,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="120" d:DesignHeight="50"
-             x:Class="AgValoniaGPS.Views.Controls.Panels.HeadingReadout"
+             mc:Ignorable="d" d:DesignWidth="120" d:DesignHeight="32"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.TimeReadout"
              x:DataType="vm:MainViewModel"
+             Background="Transparent"
              IsHitTestVisible="False">
 
-    <!--
-    On-map heading readout. AgOpen-style large degree number with a small
-    "HDG" label underneath. Anchored upper-left of the map area near the
-    speed slot in the strip; always visible (not a toggle).
-    -->
-    <StackPanel Spacing="0">
-        <!-- Heading in 000.0° form so the width stays constant whether the
-             value is single-, double- or triple-digit. -->
-        <TextBlock Text="{Binding Heading, StringFormat='{}{0:000.0}°'}"
-                   Foreground="#E91E90"
-                   FontSize="26" FontWeight="Bold"
-                   HorizontalAlignment="Center"/>
-        <TextBlock Text="HDG"
-                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                   FontSize="10"
-                   HorizontalAlignment="Center"
-                   Margin="0,-4,0,0"/>
-    </StackPanel>
+    <!-- Transparent time readout. Separated from the roll gauge so each
+         lives in its own spot — Roll up high, Time near the bottom nav. -->
+    <TextBlock Text="{Binding CurrentTime}"
+               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+               FontSize="18" FontWeight="Bold"
+               VerticalAlignment="Center"/>
 
 </UserControl>
