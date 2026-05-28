@@ -261,6 +261,22 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsLateralOverlayVisible));
             }
         };
+
+        // Aggregate module-status indicator (replaces the four-letter G/I/A/M
+        // cluster). Refresh when either the configured set or the live data-ok
+        // flags change. State.Connections is wired in the post-_appState block.
+        ConfigStore.Connections.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(Models.Configuration.ConnectionConfig.IsGpsConfigured):
+                case nameof(Models.Configuration.ConnectionConfig.IsImuConfigured):
+                case nameof(Models.Configuration.ConnectionConfig.IsAutoSteerConfigured):
+                case nameof(Models.Configuration.ConnectionConfig.IsMachineConfigured):
+                    RaiseModuleStatusKindChanged();
+                    break;
+            }
+        };
         _udpService = udpService;
         _gpsService = gpsService;
         _fieldService = fieldService;
@@ -313,6 +329,23 @@ public partial class MainViewModel : ObservableObject
         _intents = intents;
         _appState = appState;
         _fieldPlaneFileService = new FieldPlaneFileService();
+
+        // Live half of the aggregate module-status indicator (see the
+        // ConfigStore.Connections subscription above for the configured-set
+        // half). Only the four data-ok flags participate; IP and engaged flags
+        // do not affect the colour.
+        _appState.Connections.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(Models.State.ConnectionState.IsGpsDataOk):
+                case nameof(Models.State.ConnectionState.IsImuDataOk):
+                case nameof(Models.State.ConnectionState.IsAutoSteerDataOk):
+                case nameof(Models.State.ConnectionState.IsMachineDataOk):
+                    RaiseModuleStatusKindChanged();
+                    break;
+            }
+        };
 
         // Subscribe to events
         _gpsService.GpsDataUpdated += OnGpsDataUpdated;

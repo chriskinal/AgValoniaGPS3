@@ -1,0 +1,46 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.DevOverlayPanel"
+             x:DataType="vm:MainViewModel"
+             IsHitTestVisible="False">
+
+    <!--
+    On-map Dev overlay: FPS / GPS→PGN latency / raw Lat / raw Lon. Read by a
+    file-flag at startup (see DevOverlayMarker) so the toggle works on iPad
+    and Android without a UI control. Not visible to non-dev users.
+    -->
+    <Border Background="#B0000000" CornerRadius="4" Padding="8,4">
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <TextBlock Text="{Binding CurrentFps, StringFormat='FPS {0:F0}'}"
+                       Foreground="#2ECC71" FontSize="12" FontWeight="Bold"/>
+            <TextBlock Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat {0:F2} ms'}"
+                       Foreground="#F39C12" FontSize="12" FontWeight="Bold"/>
+            <TextBlock Text="{Binding Latitude, StringFormat='{}{0:F8}'}"
+                       Foreground="#3498DB" FontSize="12" FontWeight="Bold"/>
+            <TextBlock Text="{Binding Longitude, StringFormat='{}{0:F8}'}"
+                       Foreground="#3498DB" FontSize="12" FontWeight="Bold"/>
+        </StackPanel>
+    </Border>
+
+</UserControl>

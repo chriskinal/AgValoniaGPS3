@@ -57,6 +57,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       VerticalAlignment="Top"
                                       Margin="0,4,0,0"/>
 
+                <!-- DEV OVERLAY: FPS / latency / raw Lat / raw Lon. Gated by a
+                     file-flag (.show_dev_overlay) in the AgValoniaGPS Documents
+                     folder so dev users can toggle it without it appearing in the UI. -->
+                <panels:DevOverlayPanel x:Name="DevOverlay"
+                                        ZIndex="6"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,4,8,0"
+                                        IsVisible="{Binding IsDevOverlayVisible}"
+                                        DataContext="{Binding}"/>
+
                 <!-- LEFT SIDEBAR: Anchored to left edge -->
                 <panels:LeftNavigationPanel x:Name="LeftNavPanel"
                                             ZIndex="9"

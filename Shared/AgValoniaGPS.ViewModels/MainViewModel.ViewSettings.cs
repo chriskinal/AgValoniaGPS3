@@ -17,6 +17,7 @@
 using System;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Services;
 using Avalonia.Threading;
 
@@ -401,6 +402,45 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(IsUTurnOverlayVisible));
         OnPropertyChanged(nameof(IsLateralOverlayVisible));
     }
+
+    /// <summary>
+    /// Aggregate of the four module-status flags shown in the top status strip,
+    /// replacing the per-letter G/I/A/M cluster. Configured set comes from
+    /// <see cref="ConnectionConfig.IsGpsConfigured"/> etc.; presence comes from
+    /// <see cref="ConnectionState.IsGpsDataOk"/> etc.
+    /// </summary>
+    public ModuleStatusKind ModuleStatusKind
+    {
+        get
+        {
+            var cfg = ConfigurationStore.Instance.Connections;
+            var st = State.Connections;
+            int configured = 0;
+            int present = 0;
+
+            if (cfg.IsGpsConfigured)       { configured++; if (st.IsGpsDataOk)       present++; }
+            if (cfg.IsImuConfigured)       { configured++; if (st.IsImuDataOk)       present++; }
+            if (cfg.IsAutoSteerConfigured) { configured++; if (st.IsAutoSteerDataOk) present++; }
+            if (cfg.IsMachineConfigured)   { configured++; if (st.IsMachineDataOk)   present++; }
+
+            if (configured == 0 || present == 0) return ModuleStatusKind.NonePresent;
+            if (present == configured) return ModuleStatusKind.AllPresent;
+            return ModuleStatusKind.PartiallyPresent;
+        }
+    }
+
+    private void RaiseModuleStatusKindChanged()
+    {
+        OnPropertyChanged(nameof(ModuleStatusKind));
+    }
+
+    /// <summary>
+    /// On-map Dev overlay (FPS / Latency / Lat / Lon). Read once at startup
+    /// from a file-flag in the AgValoniaGPS Documents folder so the toggle
+    /// works on iPad/Android (where hotkeys aren't available) without
+    /// surfacing in the UI.
+    /// </summary>
+    public bool IsDevOverlayVisible { get; } = Services.DevOverlayMarker.IsEnabled();
 
     #endregion
 }

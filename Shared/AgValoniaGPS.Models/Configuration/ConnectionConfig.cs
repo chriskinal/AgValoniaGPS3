@@ -212,4 +212,39 @@ public class ConnectionConfig : ObservableObject
         get => _maxHdop;
         set => SetProperty(ref _maxHdop, value);
     }
+
+    // Module presence — which modules the user expects to be present.
+    // Drives the aggregate Module-status indicator in the top status strip:
+    //   Green  = every configured module currently OK
+    //   Yellow = ≥1 configured module currently OK, ≥1 absent
+    //   Red    = no configured module currently OK
+    // Toggle UI ships with the Network panel (next commit); defaults make
+    // first-launch behavior the same as the previous four-letter cluster.
+    private bool _isGpsConfigured = true;
+    public bool IsGpsConfigured
+    {
+        get => _isGpsConfigured;
+        set => SetProperty(ref _isGpsConfigured, value);
+    }
+
+    private bool _isImuConfigured = true;
+    public bool IsImuConfigured
+    {
+        get => _isImuConfigured;
+        set => SetProperty(ref _isImuConfigured, value);
+    }
+
+    private bool _isAutoSteerConfigured = true;
+    public bool IsAutoSteerConfigured
+    {
+        get => _isAutoSteerConfigured;
+        set => SetProperty(ref _isAutoSteerConfigured, value);
+    }
+
+    private bool _isMachineConfigured = true;
+    public bool IsMachineConfigured
+    {
+        get => _isMachineConfigured;
+        set => SetProperty(ref _isMachineConfigured, value);
+    }
 }

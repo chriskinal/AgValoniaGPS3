@@ -16,6 +16,7 @@
 
 using System;
 using System.Globalization;
+using AgValoniaGPS.Models.State;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
@@ -185,6 +186,34 @@ public class FixQualityToColorConverter : IValueConverter
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Aggregate module-presence indicator: green when every configured module is
+/// producing data, yellow when ≥1 is missing, red when none are present.
+/// </summary>
+public class ModuleStatusKindToColorConverter : IValueConverter
+{
+    public static readonly ModuleStatusKindToColorConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is ModuleStatusKind kind)
+        {
+            return kind switch
+            {
+                ModuleStatusKind.AllPresent       => Brushes.LimeGreen,
+                ModuleStatusKind.PartiallyPresent => Brushes.Gold,
+                _                                  => Brushes.OrangeRed,
+            };
+        }
+        return Brushes.OrangeRed;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return BindingOperations.DoNothing;
     }
 }
 

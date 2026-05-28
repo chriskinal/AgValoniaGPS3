@@ -25,108 +25,106 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              x:DataType="vm:MainViewModel">
 
     <UserControl.Styles>
-        <!-- Compact letter-indicator button for G/I/A/M. Letter color tracks
-             connection status; click opens a Flyout with module details. -->
-        <Style Selector="Button.StatusIndicator">
+        <!-- Aggregate Modules indicator (replaces the four-letter G/I/A/M
+             cluster). Dot colour tracks ModuleStatusKind; click opens a
+             Flyout that breaks the aggregate back down per-module. -->
+        <Style Selector="Button.ModulesAggregate">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="6,2"/>
-            <Setter Property="MinWidth" Value="24"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <Style Selector="Button.StatusIndicator:pointerover /template/ ContentPresenter">
+        <Style Selector="Button.ModulesAggregate:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-        </Style>
-        <Style Selector="Button.StatusIndicator TextBlock">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="Bold"/>
         </Style>
     </UserControl.Styles>
 
-    <StackPanel Spacing="6">
-        <!-- Line 1: existing readouts on the left, G/I/A/M indicators on the right. -->
-        <Grid ColumnDefinitions="*,Auto">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
-                <!-- Widths fixed so values don't reflow the bar as digits change (#277). -->
-                <Ellipse Width="12" Height="12"
-                         Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
-                <TextBlock Width="75" Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"/>
-                <TextBlock Width="100" Text="{Binding SpeedKmh, StringFormat='{}{0:F1} km/h'}" Foreground="#E67E22" FontSize="14" FontWeight="Bold"/>
-                <TextBlock Width="70" Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
-                <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
-                <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
-            </StackPanel>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="10,0,0,0">
-                <!-- G: GPS -->
-                <Button Classes="StatusIndicator">
-                    <TextBlock Text="G"
-                               Foreground="{Binding State.Connections.IsGpsDataOk, Converter={StaticResource BoolToColorConverter}}"/>
-                    <Button.Flyout>
-                        <Flyout Placement="Bottom">
-                            <StackPanel Spacing="4" MinWidth="180">
-                                <TextBlock Text="GPS" FontWeight="Bold" FontSize="14"/>
-                                <TextBlock Text="{Binding State.Vehicle.FixQualityText, StringFormat='Fix: {0}'}" FontSize="13"/>
-                                <TextBlock Text="{Binding State.Vehicle.SatelliteCount, StringFormat='Satellites: {0}'}" FontSize="13"/>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-
-                <!-- I: IMU -->
-                <Button Classes="StatusIndicator">
-                    <TextBlock Text="I"
-                               Foreground="{Binding State.Connections.IsImuDataOk, Converter={StaticResource BoolToColorConverter}}"/>
-                    <Button.Flyout>
-                        <Flyout Placement="Bottom">
-                            <StackPanel Spacing="4" MinWidth="180">
-                                <TextBlock Text="IMU" FontWeight="Bold" FontSize="14"/>
-                                <TextBlock Text="{Binding State.Connections.ImuIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-
-                <!-- A: AutoSteer -->
-                <Button Classes="StatusIndicator">
-                    <TextBlock Text="A"
-                               Foreground="{Binding State.Connections.IsAutoSteerDataOk, Converter={StaticResource BoolToColorConverter}}"/>
-                    <Button.Flyout>
-                        <Flyout Placement="Bottom">
-                            <StackPanel Spacing="4" MinWidth="180">
-                                <TextBlock Text="AutoSteer" FontWeight="Bold" FontSize="14"/>
-                                <TextBlock Text="{Binding State.Connections.AutoSteerIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-
-                <!-- M: Machine -->
-                <Button Classes="StatusIndicator">
-                    <TextBlock Text="M"
-                               Foreground="{Binding State.Connections.IsMachineDataOk, Converter={StaticResource BoolToColorConverter}}"/>
-                    <Button.Flyout>
-                        <Flyout Placement="Bottom">
-                            <StackPanel Spacing="4" MinWidth="180">
-                                <TextBlock Text="Machine" FontWeight="Bold" FontSize="14"/>
-                                <TextBlock Text="{Binding State.Connections.MachineIpAddress, TargetNullValue='No module detected', StringFormat='IP: {0}'}" FontSize="13"/>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,2"/>
-
-        <StackPanel Orientation="Horizontal" Spacing="20">
-            <TextBlock Width="85"  Text="{Binding CurrentFps, StringFormat='FPS: {0:F0}'}" Foreground="#2ECC71" FontSize="14" FontWeight="Bold"/>
-            <TextBlock Width="110" Text="{Binding GpsToPgnLatencyMs, StringFormat='Lat: {0:F2}ms'}" Foreground="#F39C12" FontSize="14" FontWeight="Bold"/>
-            <TextBlock Width="160" Text="{Binding Latitude, StringFormat='Lat: {0:F8}'}" Foreground="#3498DB" FontSize="14" FontWeight="Bold"/>
-            <TextBlock Width="170" Text="{Binding Longitude, StringFormat='Lon: {0:F8}'}" Foreground="#3498DB" FontSize="14" FontWeight="Bold"/>
+    <!-- Single-row strip: left readouts + right aggregate-modules button. The
+         old second row (FPS / Latency / Lat / Lon) moved out to the on-map
+         Dev overlay, gated by a .show_dev_overlay marker file. -->
+    <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
+            <!-- Widths fixed so values don't reflow the bar as digits change (#277). -->
+            <Ellipse Width="12" Height="12"
+                     Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
+            <TextBlock Width="75" Text="{Binding State.Vehicle.FixQualityText}" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" FontSize="14" FontWeight="Bold"/>
+            <TextBlock Width="100" Text="{Binding SpeedKmh, StringFormat='{}{0:F1} km/h'}" Foreground="#E67E22" FontSize="14" FontWeight="Bold"/>
+            <TextBlock Width="70" Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
+            <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
+            <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
         </StackPanel>
-    </StackPanel>
+
+        <Button Grid.Column="1" Classes="ModulesAggregate" Margin="10,0,0,0"
+                ToolTip.Tip="Module status: GPS / IMU / AutoSteer / Machine">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Ellipse Width="14" Height="14"
+                         Fill="{Binding ModuleStatusKind, Converter={StaticResource ModuleStatusKindToColorConverter}}"/>
+                <TextBlock Text="Modules" FontSize="13" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+            <Button.Flyout>
+                <Flyout Placement="Bottom">
+                    <StackPanel Spacing="6" MinWidth="220">
+                        <TextBlock Text="Modules" FontWeight="Bold" FontSize="14"/>
+
+                        <!-- GPS -->
+                        <Grid ColumnDefinitions="Auto,80,*">
+                            <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
+                                     Fill="{Binding State.Connections.IsGpsDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                            <TextBlock Grid.Column="1" Text="GPS" Margin="8,0,0,0" FontSize="13"/>
+                            <TextBlock Grid.Column="2" Text="{Binding State.Vehicle.FixQualityText}" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       TextAlignment="Right"/>
+                        </Grid>
+
+                        <!-- IMU -->
+                        <Grid ColumnDefinitions="Auto,80,*">
+                            <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
+                                     Fill="{Binding State.Connections.IsImuDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                            <TextBlock Grid.Column="1" Text="IMU" Margin="8,0,0,0" FontSize="13"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding State.Connections.ImuIpAddress, TargetNullValue='Not detected'}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       TextAlignment="Right"/>
+                        </Grid>
+
+                        <!-- AutoSteer -->
+                        <Grid ColumnDefinitions="Auto,80,*">
+                            <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
+                                     Fill="{Binding State.Connections.IsAutoSteerDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                            <TextBlock Grid.Column="1" Text="AutoSteer" Margin="8,0,0,0" FontSize="13"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding State.Connections.AutoSteerIpAddress, TargetNullValue='Not detected'}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       TextAlignment="Right"/>
+                        </Grid>
+
+                        <!-- Machine -->
+                        <Grid ColumnDefinitions="Auto,80,*">
+                            <Ellipse Grid.Column="0" Width="10" Height="10" VerticalAlignment="Center"
+                                     Fill="{Binding State.Connections.IsMachineDataOk, Converter={StaticResource BoolToColorConverter}}"/>
+                            <TextBlock Grid.Column="1" Text="Machine" Margin="8,0,0,0" FontSize="13"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding State.Connections.MachineIpAddress, TargetNullValue='Not detected'}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                       TextAlignment="Right"/>
+                        </Grid>
+
+                        <TextBlock Text="Set which modules to expect in the Network panel."
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   Margin="0,4,0,0"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Flyout>
+            </Button.Flyout>
+        </Button>
+    </Grid>
 
 </UserControl>
