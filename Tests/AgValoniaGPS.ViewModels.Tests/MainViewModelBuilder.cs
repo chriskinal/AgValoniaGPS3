@@ -1,6 +1,7 @@
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Services;
+using AgValoniaGPS.Services.Battery;
 using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.YouTurn;
 using AgValoniaGPS.ViewModels;
@@ -85,6 +86,7 @@ public class MainViewModelBuilder
             intents: Intents,
             logger: NullLogger<MainViewModel>.Instance,
             appState: new ApplicationState(),
-            persistentStateService: Substitute.For<IPersistentStateService>());
+            persistentStateService: Substitute.For<IPersistentStateService>(),
+            batteryService: new NullBatteryService());
     }
 }

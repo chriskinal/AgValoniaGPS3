@@ -442,5 +442,22 @@ public partial class MainViewModel
     /// </summary>
     public bool IsDevOverlayVisible { get; } = Services.DevOverlayMarker.IsEnabled();
 
+    private BatteryStatus _batteryStatus;
+
+    /// <summary>
+    /// Latest battery reading from the per-platform <see cref="IBatteryService"/>.
+    /// The status-strip battery icon binds to the derived properties below.
+    /// </summary>
+    public BatteryStatus BatteryStatus => _batteryStatus;
+
+    /// <summary>Battery level as a 0-1 fraction. Meaningless when <see cref="IsBatteryAvailable"/> is false.</summary>
+    public double BatteryLevel => _batteryStatus.Level;
+
+    /// <summary>True when the device is currently plugged in.</summary>
+    public bool IsBatteryCharging => _batteryStatus.IsCharging;
+
+    /// <summary>True when the platform exposed a real reading. The icon hides when this is false.</summary>
+    public bool IsBatteryAvailable => _batteryStatus.IsAvailable;
+
     #endregion
 }

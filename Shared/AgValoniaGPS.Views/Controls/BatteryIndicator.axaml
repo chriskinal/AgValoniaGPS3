@@ -1,0 +1,57 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="16" d:DesignHeight="26"
+             x:Class="AgValoniaGPS.Views.Controls.BatteryIndicator"
+             x:Name="Root">
+
+    <!--
+    Vertical battery icon for the status strip. Glanceable charger-state
+    indicator — fill colour + lightning bolt say "is the charger plugged in?"
+    Exact percentage is intentionally omitted. Bound to MainViewModel.BatteryLevel
+    / IsBatteryCharging / IsBatteryAvailable. Hides itself when the platform
+    has no reading.
+    -->
+    <Grid Width="16" Height="26" VerticalAlignment="Center">
+        <!-- Cap on top, centred horizontally. -->
+        <Rectangle Width="6" Height="2"
+                   Fill="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"/>
+        <!-- Body outline. -->
+        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                BorderThickness="1.5" CornerRadius="2"
+                Width="14" Height="22"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+        <!-- Fill bar; height set in code-behind from Level, anchored bottom. -->
+        <Rectangle x:Name="FillBar" Width="10"
+                   Fill="LimeGreen"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Margin="0,0,0,3"/>
+        <!-- Lightning bolt when charging. -->
+        <Path x:Name="ChargeBolt"
+              Data="M8,5 L4,14 L7,14 L5,21 L11,11 L8,11 Z"
+              Fill="Yellow"
+              Stroke="Black" StrokeThickness="0.5"
+              IsVisible="False"
+              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+
+</UserControl>

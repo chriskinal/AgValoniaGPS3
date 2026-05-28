@@ -114,6 +114,11 @@ public static class ServiceCollectionExtensions
         // Audio service (cross-platform sound effects)
         services.AddSingleton<IAudioService, AgValoniaGPS.Desktop.Services.AudioService>();
 
+        // Battery service — per-platform reader (Windows P/Invoke, macOS pmset,
+        // Linux /sys/class/power_supply). Reports Unavailable on machines with
+        // no battery so the strip icon hides itself.
+        services.AddSingleton<IBatteryService, AgValoniaGPS.Desktop.Services.DesktopBatteryService>();
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 

@@ -20,6 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:AgValoniaGPS.ViewModels"
+             xmlns:controls="clr-namespace:AgValoniaGPS.Views.Controls;assembly=AgValoniaGPS.Views"
              mc:Ignorable="d"
              x:Class="AgValoniaGPS.Views.Controls.Panels.StatusBarPanel"
              x:DataType="vm:MainViewModel">
@@ -56,7 +57,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
         </StackPanel>
 
-        <Button Grid.Column="1" Classes="ModulesAggregate" Margin="10,0,0,0"
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="10,0,0,0">
+            <!-- Battery icon (hidden on machines without a battery). -->
+            <controls:BatteryIndicator
+                Level="{Binding BatteryLevel}"
+                IsCharging="{Binding IsBatteryCharging}"
+                IsVisible="{Binding IsBatteryAvailable}"
+                VerticalAlignment="Center"/>
+
+        <Button Classes="ModulesAggregate"
                 ToolTip.Tip="Module status: GPS / IMU / AutoSteer / Machine">
             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <Ellipse Width="14" Height="14"
@@ -125,6 +134,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Flyout>
             </Button.Flyout>
         </Button>
+        </StackPanel>
     </Grid>
 
 </UserControl>

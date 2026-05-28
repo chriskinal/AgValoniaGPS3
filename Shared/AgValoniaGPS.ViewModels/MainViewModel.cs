@@ -57,6 +57,7 @@ public partial class MainViewModel : ObservableObject
     private readonly AgValoniaGPS.Services.Interfaces.IGpsSimulationService _simulatorService;
     private readonly ISettingsService _settingsService;
     private readonly IPersistentStateService _persistentStateService;
+    private readonly IBatteryService _batteryService;
     private readonly IMapService _mapService;
     private readonly IBoundaryRecordingService _boundaryRecordingService;
     private readonly IBoundaryBuilderService _boundaryBuilderService;
@@ -222,12 +223,27 @@ public partial class MainViewModel : ObservableObject
         ILogger<MainViewModel> logger,
         ApplicationState appState,
         IPersistentStateService persistentStateService,
+        IBatteryService batteryService,
         ISteerMachineLoopService? controlLoop = null,
         IPositionEstimator? positionEstimator = null)
     {
         _logger = logger;
         _persistentStateService = persistentStateService;
+        _batteryService = batteryService;
         _tramLineService = tramLineService;
+
+        // Battery icon in the strip — start the per-platform reader, prime with
+        // its initial reading, and refresh on each StatusChanged notification.
+        _batteryService.StatusChanged += (_, status) =>
+        {
+            _batteryStatus = status;
+            OnPropertyChanged(nameof(BatteryStatus));
+            OnPropertyChanged(nameof(BatteryLevel));
+            OnPropertyChanged(nameof(IsBatteryCharging));
+            OnPropertyChanged(nameof(IsBatteryAvailable));
+        };
+        _batteryService.Start();
+        _batteryStatus = _batteryService.CurrentStatus;
 
         // Sync GuidanceConfig.TramDisplay -> TramConfig.DisplayMode and regenerate
         ConfigStore.Guidance.PropertyChanged += (_, e) =>

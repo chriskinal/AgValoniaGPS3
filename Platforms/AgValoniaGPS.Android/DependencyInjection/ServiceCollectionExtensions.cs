@@ -114,6 +114,12 @@ public static class ServiceCollectionExtensions
         // Audio service (cross-platform sound effects)
         services.AddSingleton<IAudioService, AgValoniaGPS.Android.Services.AudioService>();
 
+        // Battery service — subscribes to the sticky ACTION_BATTERY_CHANGED
+        // broadcast via Application.Context (no polling needed).
+        services.AddSingleton<IBatteryService>(_ =>
+            new AgValoniaGPS.Android.Services.AndroidBatteryService(
+                global::Android.App.Application.Context!));
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 

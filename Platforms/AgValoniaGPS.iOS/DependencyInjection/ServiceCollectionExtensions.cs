@@ -114,6 +114,10 @@ public static class ServiceCollectionExtensions
         // Audio service (cross-platform sound effects)
         services.AddSingleton<IAudioService, AgValoniaGPS.iOS.Services.AudioService>();
 
+        // Battery service — UIDevice.BatteryLevel / BatteryState via
+        // NSNotificationCenter (no polling needed).
+        services.AddSingleton<IBatteryService, AgValoniaGPS.iOS.Services.IOSBatteryService>();
+
         // Module communication service (work switch, steer switch logic)
         services.AddSingleton<IModuleCommunicationService, ModuleCommunicationService>();
 
