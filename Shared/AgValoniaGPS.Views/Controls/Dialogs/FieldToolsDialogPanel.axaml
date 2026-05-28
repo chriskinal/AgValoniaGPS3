@@ -269,6 +269,18 @@ the close is guarded so a tile that opens its own dialog isn't clobbered.
                                     <TextBlock Text="{loc:Localize ImportTracks}" Classes="FtCaption"/>
                                 </StackPanel>
                             </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowAgShareDownloadDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="AgShare Download" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowAgShareUploadDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/AgShare.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="AgShare Upload" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
                             <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding DeleteAppliedAreaCommand}">
                                 <StackPanel Spacing="4">
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/TrashApplied.png" Width="40" Height="40" Stretch="Uniform"/>

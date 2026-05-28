@@ -41,6 +41,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
     private readonly Action<string, Action> _confirm;   // (message, onConfirm)
     private readonly Action<string, string, string, bool, Action<bool>> _confirmWithOption;
     // (title, message, checkboxLabel, defaultChecked, onConfirm(checked))
+    private readonly Action _showResumeHistory;   // open the cross-field Resume-Job dialog
     private readonly double? _nearbyMaxKm;
 
     public StartWorkSessionDialogViewModel(
@@ -54,6 +55,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         Action<string, string, string> openFieldResumingJob,
         Action<string, Action> confirm,
         Action<string, string, string, bool, Action<bool>> confirmWithOption,
+        Action showResumeHistory,
         double? nearbyMaxKm = null)
     {
         _fieldService = fieldService;
@@ -66,6 +68,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         _openFieldResumingJob = openFieldResumingJob;
         _confirm = confirm;
         _confirmWithOption = confirmWithOption;
+        _showResumeHistory = showResumeHistory;
         _nearbyMaxKm = nearbyMaxKm;
 
         StartNewJobCommand = new RelayCommand(StartNewJob, () => SelectedField != null);
@@ -75,7 +78,27 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         DeleteFieldCommand = new RelayCommand(DeleteField, CanDeleteField);
         UseLastNotesCommand = new RelayCommand(UseLastNotes,
             () => JobsForSelectedField.Count > 0);
+        // One-tap reopen of the most-recent job across all fields (hub quick action).
+        ResumeLastCommand = new RelayCommand(ResumeLast,
+            () => _jobService.ListAllJobs().Any());
+        // Hand off to the cross-field Resume-Job history dialog.
+        ShowResumeHistoryCommand = new RelayCommand(() => _showResumeHistory());
         CancelCommand = new RelayCommand(() => _close());
+    }
+
+    /// <summary>
+    /// Reopen the most-recently-opened job across all fields, then close the hub.
+    /// Mirrors MainViewModel.ResumeLastJobCommand using this VM's own deps so the
+    /// hub owns its quick action.
+    /// </summary>
+    private void ResumeLast()
+    {
+        var mostRecent = _jobService.ListAllJobs().FirstOrDefault();
+        if (mostRecent == null) return;
+        var fieldPath = System.IO.Path.Combine(
+            _settingsService.Settings.FieldsDirectory, mostRecent.FieldName);
+        _openFieldResumingJob(fieldPath, mostRecent.FieldName, mostRecent.TaskName);
+        _close();
     }
 
     /// <summary>
@@ -139,6 +162,8 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
     public RelayCommand<JobSummary?> DeleteJobCommand { get; }
     public RelayCommand DeleteFieldCommand { get; }
     public RelayCommand UseLastNotesCommand { get; }
+    public RelayCommand ResumeLastCommand { get; }
+    public RelayCommand ShowResumeHistoryCommand { get; }
     public ICommand CancelCommand { get; }
 
     /// <summary>

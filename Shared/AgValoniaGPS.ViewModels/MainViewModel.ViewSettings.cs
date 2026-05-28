@@ -71,6 +71,11 @@ public partial class MainViewModel
         set => SetProperty(ref _isConfigurationPanelVisible, value);
     }
 
+    // Vestigial: the Field Operations fly-out was retired (replaced by the
+    // Start-Session hub). This property is kept only because the field
+    // open/create flows in MainViewModel.Commands.Fields.cs still assign it
+    // false to dismiss the (now-absent) panel; those are harmless no-ops. Safe
+    // to delete once those call sites are cleaned up.
     public bool IsFieldOperationsPanelVisible
     {
         get => _isFieldOperationsPanelVisible;

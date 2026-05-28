@@ -89,9 +89,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Settings48.png" Stretch="Uniform"/>
                 </Button>
 
-                <!-- 5. Field Operations -->
-                <Button Classes="LeftPanelButton" ToolTip.Tip="Field Operations"
-                        Command="{Binding ToggleFieldOperationsPanelCommand}">
+                <!-- 5. Start Session hub (pick existing field, start/resume a job) -->
+                <Button Classes="LeftPanelButton" ToolTip.Tip="Start Session"
+                        Command="{Binding ShowStartWorkSessionDialogCommand}">
                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/JobActive.png" Stretch="Uniform"/>
                 </Button>
 
@@ -131,11 +131,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                      ZIndex="15"
                                      DataContext="{Binding}"/>
 
-        <!-- Field Operations Panel -->
-        <controls:FieldOperationsPanel x:Name="FieldOperationsPanelControl"
-                                       Canvas.Left="90" Canvas.Top="0"
-                                       ZIndex="15"
-                                       DataContext="{Binding}"/>
+        <!-- Field Operations retired — replaced by the Start-Session hub
+             (existing Start Work Session dialog); creation/Drive-In/Close moved
+             to Field Tools, AgShare to Field Tools. -->
 
         <!-- Field Tools is now a sectioned modal dialog (DialogOverlayHost),
              no longer a left-nav fly-out. -->

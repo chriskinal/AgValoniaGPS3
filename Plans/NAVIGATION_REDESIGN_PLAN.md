@@ -1,10 +1,11 @@
 # Navigation & UI Redesign — Proposal for Discussion
 
 **Status:** in progress — built: Screen & Alerts, camera 4-way pad, U-Turn/Lateral
-overlays, **Field Tools sectioned modal + bottom-HUD trim** (field creation moved
-into Field Tools; idle auto-close is now an opt-in Screen & Alerts toggle, default
-off). All §6 decisions resolved (2026-05-27). Next commit: Start-Session hub
-(retire Field Operations).
+overlays, Field Tools sectioned modal + bottom-HUD trim, **Start-Session hub +
+Field Operations retired** (left-nav slot 5 opens the Start Work Session hub;
+hub gained Resume-Last + cross-field Job-History quick entries; AgShare → Field
+Tools/Other). All §6 decisions resolved (2026-05-27). Next commit: status strip +
+single aggregate status button + Dev overlay.
 **Branch:** `feature/ui-redesign` — the whole redesign ships as **one branch / one
 PR** (Screen & Alerts folded in). Per-surface **commits** for reviewability, but
 one delivery. Rebase onto `develop` **regularly** (it's active — don't let this
@@ -178,9 +179,11 @@ PGN-send config. The status-bar dots are the glanceable view; this is the detail
 2. **App Settings depth** — ✅ Fold **Hotkeys in too**. App Settings is the one
    config dialog: units, keyboard, fullscreen, elevation log, App Directories,
    Language, Reset, **+ the full hotkey-binding editor**.
-3. **AgShare** — ✅ Neither Network nor a separate top-level menu. AgShare
-   **belongs with field create/setup** — it's part of getting a field in/out,
-   so it lives on the **Start-Session hub** side, not Network.
+3. **AgShare** — ✅ Neither Network nor a separate top-level menu. It's field
+   data in/out = part of create/setup, which now lives in **Field Tools** →
+   **Other** section (Download + Upload). *(Shipped there with the hub commit;
+   the earlier "Start-Session hub side" note is superseded — creation moved to
+   Field Tools, and AgShare followed it.)*
 4. **Machine-module config** (pins/relays) — ✅ Stays in **implement
    Configuration**. Pins/relays, section on/off, disc lift/lower are all
    *implement behavior* (sprayer/grain-drill/etc.). Network panel takes only
