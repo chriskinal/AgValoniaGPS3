@@ -62,7 +62,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <Button Grid.Column="0" Classes="RotatorPause"
                 Command="{Binding ToggleStatusStripRotationCommand}"
                 ToolTip.Tip="Pause / resume rotating field info">
-            <TextBlock FontSize="14" FontWeight="Bold"
+            <TextBlock FontSize="16" FontWeight="Bold"
                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                        Text="{Binding IsStatusStripRotationPaused, Converter={StaticResource BoolToPlayPauseConverter}}"/>
         </Button>
@@ -70,7 +70,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         <!-- Two-line text stack: Fix/Age on top, rotating field info on the
              bottom. Width fixed so the live readouts to the right don't
              reflow when the rotating line changes pages. -->
-        <Grid Grid.Column="1" RowDefinitions="Auto,Auto" Margin="6,0,12,0" Width="240"
+        <Grid Grid.Column="1" RowDefinitions="Auto,Auto" Margin="6,0,12,0" Width="350"
               VerticalAlignment="Center">
             <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
                 <!-- Fix dot + RTK label form one tap target that toggles the
@@ -85,19 +85,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                  Fill="{Binding State.Vehicle.FixQualityText, Converter={StaticResource FixQualityToColorConverter}}"/>
                         <TextBlock Text="{Binding State.Vehicle.FixQualityText}"
                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                   FontSize="13" FontWeight="Bold"
+                                   FontSize="16" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
                 <TextBlock Text="{Binding State.Vehicle.Age, StringFormat='Age: {0:F1}'}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                           FontSize="13" FontWeight="Bold"
+                           FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center"/>
             </StackPanel>
             <TextBlock Grid.Row="1"
                        Text="{Binding StatusStripRotatingLine}"
                        Foreground="#3498DB"
-                       FontSize="13" FontWeight="Bold"
+                       FontSize="16" FontWeight="Bold"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
@@ -115,12 +115,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Button Classes="RotatorPause"
                     Command="{Binding ToggleFieldStatsOnMapCommand}"
                     ToolTip.Tip="Toggle field-stats card on the map">
-                <Grid Width="32" Height="26">
-                    <Polygon Points="4,6 15,2 28,7 26,22 11,24 3,17"
+                <Grid Width="38" Height="30">
+                    <Polygon Points="5,7 18,2 33,8 31,26 13,28 4,20"
                              Stroke="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"
-                             StrokeThickness="1.8"
+                             StrokeThickness="2"
                              Fill="Transparent"/>
-                    <TextBlock Text="i" FontSize="18" FontWeight="Bold"
+                    <TextBlock Text="i" FontSize="22" FontWeight="Bold"
                                Foreground="{Binding IsFieldStatsOnMapVisible, Converter={StaticResource BoolToColorConverter}}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -145,7 +145,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <Ellipse Width="14" Height="14"
                          Fill="{Binding ModuleStatusKind, Converter={StaticResource ModuleStatusKindToColorConverter}}"/>
-                <TextBlock Text="Modules" FontSize="13" FontWeight="Bold"
+                <TextBlock Text="Modules" FontSize="16" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            VerticalAlignment="Center"/>
             </StackPanel>
@@ -210,7 +210,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                            VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding SpeedLargeUnit}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
-                           FontSize="11" FontWeight="Bold"
+                           FontSize="13" FontWeight="Bold"
                            VerticalAlignment="Bottom"
                            Margin="2,0,0,4"/>
             </StackPanel>
