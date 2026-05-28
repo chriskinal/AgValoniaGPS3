@@ -87,6 +87,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                               VerticalAlignment="Top"
                               Margin="0,4,0,0"/>
 
+        <!-- HEADING: AgOpen-style large degree readout anchored upper-left of
+             the map area, well clear of the LeftNavigationPanel. Always
+             visible; the FieldStats / GPSDetail cards stack below it. -->
+        <panels:HeadingReadout x:Name="HeadingReadout"
+                               ZIndex="5"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Top"
+                               Margin="80,4,0,0"
+                               DataContext="{Binding}"/>
+
         <!-- DEV OVERLAY: FPS / latency / raw Lat / raw Lon. Gated by a
              file-flag (.show_dev_overlay) in the AgValoniaGPS Documents
              folder so dev users can toggle it without it appearing in the UI. -->
@@ -99,24 +109,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 DataContext="{Binding}"/>
 
         <!-- FIELD STATS DETAIL: AgOpen-style vertical card. Anchored on the
-             LEFT, just to the right of the LeftNavigationPanel (64 px wide).
-             Toggled from the strip's field-stats button. -->
+             LEFT, just right of the LeftNavigationPanel and stacked below the
+             on-map HeadingReadout so the two don't collide. -->
         <panels:FieldStatsPanel x:Name="FieldStats"
                                 ZIndex="6"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Top"
-                                Margin="68,4,0,0"
+                                Margin="68,72,0,0"
                                 DataContext="{Binding}"/>
 
-        <!-- GPS DETAIL: AgOpen-style vertical card with Lat / Lon / fix /
-             heading / IMU. Shares the same on-map slot as the Field-Stats
-             card; if both are toggled on they overlap and the user picks
-             which one to keep open. Toggled from the strip Modules button. -->
+        <!-- GPS DETAIL: AgOpen-style vertical card. Shares the same slot as
+             the Field-Stats card (below the HeadingReadout); if both are
+             toggled on they overlap and the user picks which one to keep
+             open. Toggled from the strip's fix dot / RTK label. -->
         <panels:GpsDetailPanel x:Name="GpsDetail"
                                ZIndex="7"
                                HorizontalAlignment="Left"
                                VerticalAlignment="Top"
-                               Margin="68,4,0,0"
+                               Margin="68,72,0,0"
                                DataContext="{Binding}"/>
 
         <!-- LEFT SIDEBAR: Anchored to left edge -->

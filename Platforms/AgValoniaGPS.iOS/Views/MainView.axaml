@@ -51,6 +51,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                       VerticalAlignment="Top"
                                       Margin="0,4,0,0"/>
 
+                <!-- HEADING: large degree readout anchored upper-left of the
+                     map area, well clear of the LeftNavigationPanel. -->
+                <panels:HeadingReadout x:Name="HeadingReadout"
+                                       ZIndex="5"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Top"
+                                       Margin="80,4,0,0"
+                                       DataContext="{Binding}"/>
+
                 <!-- DEV OVERLAY: FPS / latency / raw Lat / raw Lon. Gated by a
                      file-flag (.show_dev_overlay) in the AgValoniaGPS Documents
                      folder so dev users can toggle it without it appearing in the UI. -->
@@ -62,24 +71,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                         IsVisible="{Binding IsDevOverlayVisible}"
                                         DataContext="{Binding}"/>
 
-                <!-- FIELD STATS DETAIL: AgOpen-style vertical card. Anchored on the
-                     LEFT, just to the right of the LeftNavigationPanel (64 px wide).
-                     Toggled from the strip's field-stats button. -->
+                <!-- FIELD STATS DETAIL: stacked below the HeadingReadout. -->
                 <panels:FieldStatsPanel x:Name="FieldStats"
                                         ZIndex="6"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Top"
-                                        Margin="68,4,0,0"
+                                        Margin="68,72,0,0"
                                         DataContext="{Binding}"/>
 
-                <!-- GPS DETAIL: AgOpen-style vertical card with Lat / Lon /
-                     fix / heading / IMU. Shares the same on-map slot as the
-                     Field-Stats card. Toggled from the strip Modules button. -->
+                <!-- GPS DETAIL: shares the same slot as Field-Stats. -->
                 <panels:GpsDetailPanel x:Name="GpsDetail"
                                        ZIndex="7"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Top"
-                                       Margin="68,4,0,0"
+                                       Margin="68,72,0,0"
                                        DataContext="{Binding}"/>
 
                 <!-- LEFT SIDEBAR: Anchored to left edge -->

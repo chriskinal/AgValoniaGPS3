@@ -1,0 +1,47 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2025 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="120" d:DesignHeight="50"
+             x:Class="AgValoniaGPS.Views.Controls.Panels.HeadingReadout"
+             x:DataType="vm:MainViewModel"
+             IsHitTestVisible="False">
+
+    <!--
+    On-map heading readout. AgOpen-style large degree number with a small
+    "HDG" label underneath. Anchored upper-left of the map area near the
+    speed slot in the strip; always visible (not a toggle).
+    -->
+    <Border Background="#A0000000" CornerRadius="4" Padding="10,4">
+        <StackPanel Spacing="0">
+            <TextBlock Text="{Binding Heading, StringFormat='{}{0:F0}°'}"
+                       Foreground="#E91E90"
+                       FontSize="26" FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="HDG"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                       FontSize="10"
+                       HorizontalAlignment="Center"
+                       Margin="0,-4,0,0"/>
+        </StackPanel>
+    </Border>
+
+</UserControl>

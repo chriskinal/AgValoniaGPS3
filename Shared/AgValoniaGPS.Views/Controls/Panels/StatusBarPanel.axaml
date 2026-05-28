@@ -101,11 +101,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
-        <!-- Live readouts: Heading + Roll + Time stay pending their on-map
-             relocations in upcoming commits. Speed has moved to the large
-             slot at the right of the strip, AgOpen-style. -->
+        <!-- Live readouts: Roll + Time stay pending their on-map relocations
+             in the next commit. Heading moved to the on-map HeadingReadout;
+             Speed has moved to the large slot at the right of the strip. -->
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
-            <TextBlock Width="70" Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
         </StackPanel>
