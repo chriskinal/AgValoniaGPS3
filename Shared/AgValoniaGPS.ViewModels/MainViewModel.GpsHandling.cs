@@ -75,6 +75,7 @@ public partial class MainViewModel
         {
             SetProperty(ref _speed, value);
             OnPropertyChanged(nameof(SpeedKmh));
+            OnPropertyChanged(nameof(SpeedLargeValue));
             OnPropertyChanged(nameof(IsReversing));
         }
     }
@@ -84,6 +85,19 @@ public partial class MainViewModel
 
     /// <summary>Speed in km/h for display (absolute value).</summary>
     public double SpeedKmh => Math.Abs(_speed) * 3.6;
+
+    /// <summary>
+    /// Speed in the user's preferred units (km/h when metric, mph when
+    /// imperial). Used by the large speed slot in the top status strip.
+    /// </summary>
+    public double SpeedLargeValue =>
+        Models.Configuration.ConfigurationStore.Instance.IsMetric
+            ? SpeedKmh
+            : SpeedKmh * 0.621371;
+
+    /// <summary>Unit label that pairs with <see cref="SpeedLargeValue"/>.</summary>
+    public string SpeedLargeUnit =>
+        Models.Configuration.ConfigurationStore.Instance.IsMetric ? "km/h" : "mph";
 
     public int SatelliteCount
     {

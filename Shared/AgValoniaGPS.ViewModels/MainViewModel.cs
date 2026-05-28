@@ -482,6 +482,8 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(BoundaryAreaDisplay));
                 OnPropertyChanged(nameof(WorkRateDisplay));
                 OnPropertyChanged(nameof(SimulatorSpeedDisplay));
+                OnPropertyChanged(nameof(SpeedLargeValue));
+                OnPropertyChanged(nameof(SpeedLargeUnit));
                 RaiseStatusStripChanged();
             }
         };

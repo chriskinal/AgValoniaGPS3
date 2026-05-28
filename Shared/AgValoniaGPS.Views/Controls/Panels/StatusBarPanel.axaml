@@ -101,11 +101,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
-        <!-- Live readouts: Speed kept on the strip pending the dedicated
-             large-Speed slot. Heading + Roll + Time will move to on-map
-             elements in upcoming commits. -->
+        <!-- Live readouts: Heading + Roll + Time stay pending their on-map
+             relocations in upcoming commits. Speed has moved to the large
+             slot at the right of the strip, AgOpen-style. -->
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
-            <TextBlock Width="100" Text="{Binding SpeedKmh, StringFormat='{}{0:F1} km/h'}" Foreground="#E67E22" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="70" Text="{Binding Heading, StringFormat='{}{0:F0}deg'}" Foreground="#E91E90" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="95" Text="{Binding RollDegrees, StringFormat='Roll {0:F1}'}" Foreground="#9B59B6" FontSize="14" FontWeight="Bold"/>
             <TextBlock Width="80" Text="{Binding CurrentTime}" Foreground="#95A5A6" FontSize="14"/>
@@ -194,6 +193,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 </Flyout>
             </Button.Flyout>
         </Button>
+
+            <!-- Large Speed slot — AgOpen-style. Value tracks the user's
+                 metric/imperial preference. Units sit small beside it. -->
+            <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center" Margin="6,0,0,0">
+                <TextBlock Text="{Binding SpeedLargeValue, StringFormat='{}{0:F1}'}"
+                           Foreground="#E67E22"
+                           FontSize="26" FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding SpeedLargeUnit}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                           FontSize="11"
+                           VerticalAlignment="Bottom"
+                           Margin="2,0,0,4"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 
