@@ -29,6 +29,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         Icon="/Assets/avalonia-logo.ico"
         Title="AgValoniaGPS"
         ToolTip.ServiceEnabled="False"
+        SystemDecorations="BorderOnly"
         Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
 
     <!-- Styles are now in shared SharedStyles.axaml -->
@@ -46,13 +47,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         PointerReleased="MapOverlay_PointerReleased"
                         PointerWheelChanged="MapOverlay_PointerWheelChanged" />
 
-        <!-- Row 0: Top status bar area. Flush to top/left/right edges; only a
-             small gap below before the map content. -->
-        <Grid Grid.Row="0" ZIndex="20" Margin="0,0,0,4" ColumnDefinitions="Auto,*,Auto">
-            <Border Classes="FloatingPanel" Grid.Column="0" IsHitTestVisible="True">
-                <panels:StatusBarPanel DataContext="{Binding}"/>
-            </Border>
-        </Grid>
+        <!-- Row 0: Top status bar area. SystemDecorations is BorderOnly so we
+             provide our own Min/Max/Close on the right end of the strip; the
+             rest of the strip background acts as a drag handle for moving the
+             window. The strip background spans edge-to-edge so the window
+             controls visually sit on the same surface as the readouts. -->
+        <Border Grid.Row="0" Classes="FloatingPanel" ZIndex="20"
+                IsHitTestVisible="True"
+                PointerPressed="StatusBar_OnPointerPressed"
+                Padding="0">
+            <Grid ColumnDefinitions="*,Auto">
+                <panels:StatusBarPanel Grid.Column="0" Margin="15" DataContext="{Binding}"/>
+                <!-- Custom window controls (frameless build). -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0"
+                            VerticalAlignment="Stretch">
+                    <Button Classes="WindowControl" Click="WindowMinimize_Click"
+                            ToolTip.Tip="Minimize">
+                        <TextBlock Text="—" FontSize="14" FontWeight="Bold"/>
+                    </Button>
+                    <Button Classes="WindowControl" Click="WindowMaximize_Click"
+                            ToolTip.Tip="Maximize / Restore">
+                        <TextBlock Text="☐" FontSize="14" FontWeight="Bold"/>
+                    </Button>
+                    <Button Classes="WindowControl WindowControlClose" Click="WindowClose_Click"
+                            ToolTip.Tip="Close">
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- Row 1: All panels live here, below the status bar -->
         <Grid Grid.Row="1">

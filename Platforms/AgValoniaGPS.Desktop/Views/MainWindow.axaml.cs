@@ -579,6 +579,36 @@ public partial class MainWindow : Window
         }
     }
 
+    // --- Custom window controls (frameless build). The status strip's
+    // background drags the window; the three buttons at its right end do
+    // Min / Max-toggle / Close. ---
+
+    private void StatusBar_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // A button or other interactive element inside the strip already
+        // handled the press — don't intercept it as a window drag.
+        if (e.Handled) return;
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        BeginMoveDrag(e);
+    }
+
+    private void WindowMinimize_Click(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void WindowMaximize_Click(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    private void WindowClose_Click(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
     // Map overlay event handlers that forward to MapControl
     private void MapOverlay_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
