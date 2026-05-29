@@ -89,12 +89,15 @@ public partial class MainViewModel
         // AB Line Guidance Commands - Flyout Menu
         ShowTracksDialogCommand = new RelayCommand(() =>
         {
-            State.UI.ShowDialog(DialogType.Tracks);
+            // Carry the launcher (e.g. the Field Tools ring) as parent so Close
+            // returns there. Opened from elsewhere (parent None) it just closes.
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.Tracks, parent);
         });
 
         CloseTracksDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
         });
 
         // Track management commands
@@ -233,6 +236,9 @@ public partial class MainViewModel
 
             CurrentABCreationMode = ABCreationMode.None;
             StatusMessage = $"A+ line '{track.Name}' created at heading {Heading:F1}";
+            // Immediate creation: reopen the launcher (Field Tools) if armed.
+            // Synchronous, so the earlier CloseDialog never visibly flashes.
+            CompleteLauncherReturn();
         });
 
         StartDriveABCommand = new RelayCommand(() =>
@@ -316,6 +322,7 @@ public partial class MainViewModel
             _lastCurvePoint = null;
             OnPropertyChanged(nameof(IsRecordingCurve));
             OnPropertyChanged(nameof(RecordedCurvePointCount));
+            CompleteLauncherReturn();
         });
 
         StartDrawABModeCommand = new RelayCommand(() =>
@@ -398,6 +405,7 @@ public partial class MainViewModel
             _drawnCurvePoints.Clear();
             OnPropertyChanged(nameof(IsDrawingCurve));
             OnPropertyChanged(nameof(DrawnCurvePointCount));
+            CompleteLauncherReturn();
         });
 
         UndoLastDrawnPointCommand = new RelayCommand(() =>
@@ -533,6 +541,8 @@ public partial class MainViewModel
                     CurrentABCreationMode = ABCreationMode.None;
                     CurrentABPointStep = ABPointStep.None;
                     PendingPointA = null;
+                    // Point B set → AB line done. Reopen launcher if armed.
+                    CompleteLauncherReturn();
                 }
             }
         });
@@ -562,6 +572,7 @@ public partial class MainViewModel
             CurrentABPointStep = ABPointStep.None;
             PendingPointA = null;
             StatusMessage = "AB line/curve creation cancelled";
+            CompleteLauncherReturn();
         });
 
         CycleABLinesCommand = new RelayCommand(() =>
@@ -1237,12 +1248,17 @@ public partial class MainViewModel
             StatusMessage = $"Created A+ line at {State.Vehicle.Heading:F0}\u00B0";
         });
 
-        // Field Builder dialog
+        // Field Builder dialog. Carry the launcher (Field Tools) as parent so
+        // closing returns there. Opened from headland commands with a plain
+        // ShowDialog (no parent) — CloseDialogReturnToParent then just closes.
         ShowFieldBuilderCommand = new RelayCommand(() =>
-            State.UI.ShowDialog(Models.State.DialogType.FieldBuilder));
+        {
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(Models.State.DialogType.FieldBuilder, parent);
+        });
 
         CloseFieldBuilderCommand = new RelayCommand(() =>
-            State.UI.CloseDialog());
+            State.UI.CloseDialogReturnToParent());
 
         IncreaseHeadlandDistanceCommand = new RelayCommand(() =>
         {

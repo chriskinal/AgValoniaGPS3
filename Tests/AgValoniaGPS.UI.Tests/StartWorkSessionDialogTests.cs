@@ -43,7 +43,8 @@ public class StartWorkSessionDialogTests
             openFieldResumingJob: (_, _, _) => { },
             confirm: (_, _) => { },
             confirmWithOption: (_, _, _, _, _) => { },
-            showResumeHistory: () => { });
+            showResumeHistory: () => { },
+            driveIn: () => { });
     }
 
     [Test]

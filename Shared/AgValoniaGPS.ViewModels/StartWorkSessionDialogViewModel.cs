@@ -42,6 +42,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
     private readonly Action<string, string, string, bool, Action<bool>> _confirmWithOption;
     // (title, message, checkboxLabel, defaultChecked, onConfirm(checked))
     private readonly Action _showResumeHistory;   // open the cross-field Resume-Job dialog
+    private readonly Action _driveIn;             // open the closest field to the current fix
     private readonly double? _nearbyMaxKm;
 
     public StartWorkSessionDialogViewModel(
@@ -56,6 +57,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         Action<string, Action> confirm,
         Action<string, string, string, bool, Action<bool>> confirmWithOption,
         Action showResumeHistory,
+        Action driveIn,
         double? nearbyMaxKm = null)
     {
         _fieldService = fieldService;
@@ -69,6 +71,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
         _confirm = confirm;
         _confirmWithOption = confirmWithOption;
         _showResumeHistory = showResumeHistory;
+        _driveIn = driveIn;
         _nearbyMaxKm = nearbyMaxKm;
 
         StartNewJobCommand = new RelayCommand(StartNewJob, () => SelectedField != null);
@@ -83,6 +86,9 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
             () => _jobService.ListAllJobs().Any());
         // Hand off to the cross-field Resume-Job history dialog.
         ShowResumeHistoryCommand = new RelayCommand(() => _showResumeHistory());
+        // Open the closest field to the current GPS fix (delegates to
+        // MainViewModel.DriveInCommand, which owns the live position).
+        DriveInCommand = new RelayCommand(() => _driveIn());
         CancelCommand = new RelayCommand(() => _close());
     }
 
@@ -164,6 +170,7 @@ public partial class StartWorkSessionDialogViewModel : ObservableObject
     public RelayCommand UseLastNotesCommand { get; }
     public RelayCommand ResumeLastCommand { get; }
     public RelayCommand ShowResumeHistoryCommand { get; }
+    public RelayCommand DriveInCommand { get; }
     public ICommand CancelCommand { get; }
 
     /// <summary>

@@ -108,15 +108,20 @@ Licensed under GNU GPL v3. See LICENSE.md.
 
                 <!-- Title row spans both columns: title + quick resume entries -->
                 <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
-                      ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,16">
+                      ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,16">
                     <TextBlock Grid.Column="0" Classes="Header" Text="Start Work Session"
                                FontSize="24" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="DialogButton SecondaryButton"
+                    <Button Grid.Column="1" Classes="DialogButton"
+                            Content="Drive In"
+                            Command="{Binding DriveInCommand}"
+                            FontSize="14" Padding="14,8" Margin="0,0,8,0"
+                            ToolTip.Tip="Open the closest field to your current position"/>
+                    <Button Grid.Column="2" Classes="DialogButton SecondaryButton"
                             Content="Resume Last Job"
                             Command="{Binding ResumeLastCommand}"
                             FontSize="14" Padding="14,8" Margin="0,0,8,0"
                             ToolTip.Tip="Reopen the most recent job across all fields"/>
-                    <Button Grid.Column="2" Classes="DialogButton SecondaryButton"
+                    <Button Grid.Column="3" Classes="DialogButton SecondaryButton"
                             Content="Job History"
                             Command="{Binding ShowResumeHistoryCommand}"
                             FontSize="14" Padding="14,8"

@@ -28,9 +28,10 @@ public partial class KmlImportDialogPanel : UserControl
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // Backdrop = abandon to the map; the Back button returns to Field Tools.
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
-            vm.CancelKmlImportDialogCommand?.Execute(null);
+            vm.State.UI.CloseDialog();
         }
         e.Handled = true;
     }

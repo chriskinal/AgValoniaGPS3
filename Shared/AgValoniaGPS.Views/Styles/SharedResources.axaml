@@ -35,6 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <converters:BoolToSectionColorConverter x:Key="BoolToSectionColorConverter"/>
     <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
     <converters:EqualityConverter x:Key="EqualityConverter"/>
+    <converters:BoolToThicknessConverter x:Key="BoolToThicknessConverter"/>
 
     <!-- Theme overrides for both variants -->
     <ResourceDictionary.ThemeDictionaries>

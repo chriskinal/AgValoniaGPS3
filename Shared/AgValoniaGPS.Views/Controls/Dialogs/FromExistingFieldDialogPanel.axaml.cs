@@ -28,10 +28,12 @@ public partial class FromExistingFieldDialogPanel : UserControl
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Cancel the dialog when clicking/tapping the backdrop
+        // Backdrop = "abandon" (drop to the map), distinct from the Back
+        // button which returns to the Field Tools launcher. The Show command
+        // re-initialises this dialog's state on next open.
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
-            vm.CancelFromExistingFieldDialogCommand?.Execute(null);
+            vm.State.UI.CloseDialog();
         }
         e.Handled = true;
     }

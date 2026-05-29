@@ -152,8 +152,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <Border Height="12"/>
             <!-- On-map 4-way camera pad: tilt (vertical) / zoom (horizontal) /
                  mode cycle (center). Replaces the old zoom +/- + mode cluster. -->
+            <!-- While the Field Tools ring is open, slide inward into the map
+                 hole so the ring's right/bottom bands don't cover it. -->
             <panels:CameraPadControl x:Name="CameraPad"
                                      HorizontalAlignment="Right"
+                                     Margin="{Binding State.UI.IsFieldToolsDialogVisible, Converter={StaticResource BoolToThicknessConverter}, ConverterParameter='0,0,100,100'}"
                                      DataContext="{Binding}"/>
         </StackPanel>
 

@@ -213,7 +213,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <!-- Action Buttons -->
                 <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
                     <Border Grid.Column="0"/>
-                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Back}"
                             MinWidth="80" MinHeight="44"
                             Command="{Binding CancelKmlImportDialogCommand}"/>
                     <Button Grid.Column="2" Classes="DialogButton OkButton" Content="{loc:Localize Import}"

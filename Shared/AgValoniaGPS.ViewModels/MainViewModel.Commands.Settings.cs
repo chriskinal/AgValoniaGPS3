@@ -34,6 +34,39 @@ namespace AgValoniaGPS.ViewModels;
 
 public partial class MainViewModel
 {
+    // ── Field-work-tool launcher return ─────────────────────────────────
+    // A Field Tools tile that launches a tool which takes over the live map
+    // (AB-line/curve creation, boundary recording) arms this with the
+    // launching dialog. When the tool finishes or is cancelled, the launcher
+    // reopens so the operator can chain the next setup step (e.g. record
+    // boundary → Field Tools reopens → build headland). See
+    // NAVIGATION_REDESIGN_PLAN §3 "Field-work tool" archetype.
+    private Models.State.DialogType _pendingLauncherReturn = Models.State.DialogType.None;
+
+    /// <summary>
+    /// Remember the dialog currently open (the launcher) so it reopens once a
+    /// map-takeover tool completes. Called from a Field Tools tile's Click
+    /// handler, before the bound command closes the dialog.
+    /// </summary>
+    public void ArmLauncherReturn()
+    {
+        _pendingLauncherReturn = State.UI.ActiveDialog;
+    }
+
+    /// <summary>
+    /// Reopen the launcher armed by <see cref="ArmLauncherReturn"/>, if any.
+    /// No-op when the tool was launched from somewhere that didn't arm a
+    /// return (the Quick-AB selector, Draw-AB dialog, the bottom bar), so
+    /// those entry points still end on the live map.
+    /// </summary>
+    private void CompleteLauncherReturn()
+    {
+        if (_pendingLauncherReturn == Models.State.DialogType.None) return;
+        var launcher = _pendingLauncherReturn;
+        _pendingLauncherReturn = Models.State.DialogType.None;
+        State.UI.ShowDialog(launcher);
+    }
+
     private void InitializeSettingsCommands()
     {
         ShowAppDirectoriesDialogCommand = new RelayCommand(() =>

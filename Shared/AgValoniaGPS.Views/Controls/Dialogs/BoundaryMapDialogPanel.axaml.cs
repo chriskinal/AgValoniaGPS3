@@ -730,9 +730,11 @@ public partial class BoundaryMapDialogPanel : UserControl
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // Backdrop = abandon to the map; the Back button returns to Field Tools.
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
-            vm.CancelBoundaryMapDialogCommand?.Execute(null);
+            vm.State.UI.CloseDialog();
+            vm.BoundaryMapResultPoints.Clear();
             ResetState();
         }
         e.Handled = true;

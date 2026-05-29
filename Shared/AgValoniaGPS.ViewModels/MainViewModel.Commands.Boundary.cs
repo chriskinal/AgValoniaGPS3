@@ -53,12 +53,15 @@ public partial class MainViewModel
             BoundaryMapCoordinateText = string.Empty;
             BoundaryMapResultPoints.Clear();
             PopulateBoundaryMapExistingPolygons();
-            State.UI.ShowDialog(DialogType.BoundaryMap);
+            // Carry the launcher (Field Tools) as parent so Cancel/Confirm
+            // returns there instead of dropping to the map.
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.BoundaryMap, parent);
         });
 
         CancelBoundaryMapDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             BoundaryMapResultPoints.Clear();
         });
 
@@ -150,7 +153,7 @@ public partial class MainViewModel
                 }
             }
 
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             IsBoundaryPanelVisible = false;
             BoundaryMapResultPoints.Clear();
         });
@@ -481,6 +484,7 @@ public partial class MainViewModel
 
             IsBoundaryPlayerPanelVisible = false;
             IsBoundaryRecording = false;
+            CompleteLauncherReturn();
         });
 
         ToggleRecordingCommand = new RelayCommand(() =>
@@ -597,6 +601,22 @@ public partial class MainViewModel
 
         DeleteBoundaryCommand = new RelayCommand(DeleteSelectedBoundary);
 
+        // Boundary Management dialog — lists the field's boundaries with
+        // select / delete / drive-through (the standalone equivalent of the
+        // Tracks dialog). Carry the launcher (Field Tools ring) as parent so
+        // Close returns there.
+        ShowBoundaryManagementDialogCommand = new RelayCommand(() =>
+        {
+            RefreshBoundaryList();
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.BoundaryManagement, parent);
+        });
+
+        CloseBoundaryManagementDialogCommand = new RelayCommand(() =>
+        {
+            State.UI.CloseDialogReturnToParent();
+        });
+
         ImportKmlBoundaryCommand = new RelayCommand(() =>
         {
             if (!IsFieldOpen || string.IsNullOrEmpty(CurrentFieldName))
@@ -620,7 +640,8 @@ public partial class MainViewModel
                 SelectedKmlFile = AvailableKmlFiles[0];
             }
 
-            State.UI.ShowDialog(DialogType.KmlImport);
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.KmlImport, parent);
         });
 
         DrawMapBoundaryCommand = new RelayCommand(() =>
@@ -682,6 +703,11 @@ public partial class MainViewModel
 
             IsBoundaryPanelVisible = false;
             IsBoundaryPlayerPanelVisible = true;
+            // Field-work tool: close the launcher so the player panel owns the
+            // map; CompleteLauncherReturn (on Stop) reopens it. Guard passed
+            // above, so we only close when the tool actually starts.
+            if (State.UI.ActiveDialog == DialogType.FieldTools)
+                State.UI.CloseDialog();
 
             _boundaryRecordingService.StartRecording(BoundaryType.Outer);
             _boundaryRecordingService.PauseRecording();
@@ -711,6 +737,8 @@ public partial class MainViewModel
 
             IsBoundaryPanelVisible = false;
             IsBoundaryPlayerPanelVisible = true;
+            if (State.UI.ActiveDialog == DialogType.FieldTools)
+                State.UI.CloseDialog();
 
             _boundaryRecordingService.StartRecording(BoundaryType.Inner);
             _boundaryRecordingService.PauseRecording();

@@ -54,7 +54,8 @@ public partial class MainViewModel
                 confirm: (msg, action) => ShowConfirmationDialog("Delete Job", msg, action),
                 confirmWithOption: (title, msg, checkboxLabel, defaultChecked, action) =>
                     ShowConfirmationDialog(title, msg, checkboxLabel, defaultChecked, action),
-                showResumeHistory: () => ShowResumeJobDialogCommand?.Execute(null));
+                showResumeHistory: () => ShowResumeJobDialogCommand?.Execute(null),
+                driveIn: () => DriveInCommand?.Execute(null));
             StartWorkSessionDialogVm.Refresh();
             State.UI.ShowDialog(DialogType.StartWorkSession);
         });
@@ -315,12 +316,15 @@ public partial class MainViewModel
                 FromExistingSelectedField = AvailableFields[0];
             }
 
-            State.UI.ShowDialog(DialogType.FromExistingField);
+            // Carry the launcher (Field Tools) as parent so Cancel/Confirm
+            // returns here instead of dropping to the map.
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.FromExistingField, parent);
         });
 
         CancelFromExistingFieldDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             FromExistingSelectedField = null;
             FromExistingFieldName = string.Empty;
         });
@@ -421,7 +425,7 @@ public partial class MainViewModel
                 PersistentState.LastOpenedField = newFieldName;
                 _persistentStateService.Save();
 
-                State.UI.CloseDialog();
+                State.UI.CloseDialogReturnToParent();
                 IsFieldOperationsPanelVisible = false;
                 StatusMessage = $"Created field from existing: {newFieldName}";
             }
@@ -484,12 +488,13 @@ public partial class MainViewModel
                 SelectedKmlFile = AvailableKmlFiles[0];
             }
 
-            State.UI.ShowDialog(DialogType.KmlImport);
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.KmlImport, parent);
         });
 
         CancelKmlImportDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             SelectedKmlFile = null;
             KmlImportFieldName = string.Empty;
         });
@@ -592,7 +597,7 @@ public partial class MainViewModel
                 RefreshBoundaryList();
                 SetSimulatorCoordinates(_fieldOriginLatitude, _fieldOriginLongitude);
 
-                State.UI.CloseDialog();
+                State.UI.CloseDialogReturnToParent();
                 IsFieldOperationsPanelVisible = false;
                 var innerCount = _kmlParsedPolygons.Count - 1;
                 var innerMsg = innerCount > 0 ? $" ({innerCount} inner boundaries)" : "";
@@ -636,12 +641,13 @@ public partial class MainViewModel
                 SelectedIsoXmlFile = AvailableIsoXmlFiles[0];
             }
 
-            State.UI.ShowDialog(DialogType.IsoXmlImport);
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.IsoXmlImport, parent);
         });
 
         CancelIsoXmlImportDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             SelectedIsoXmlFile = null;
             IsoXmlImportFieldName = string.Empty;
         });
@@ -687,7 +693,7 @@ public partial class MainViewModel
                 PersistentState.LastOpenedField = newFieldName;
                 _persistentStateService.Save();
 
-                State.UI.CloseDialog();
+                State.UI.CloseDialogReturnToParent();
                 IsFieldOperationsPanelVisible = false;
                 StatusMessage = $"Imported ISO-XML: {newFieldName}";
             }
@@ -768,6 +774,9 @@ public partial class MainViewModel
                 var only = nearby[0];
                 _ = OpenFieldAsync(only.DirectoryPath, only.Name);
                 IsFieldOperationsPanelVisible = false;
+                // Drive In now lives in the Start-Session hub; close it so the
+                // opened field is visible rather than left under the dialog.
+                State.UI.CloseDialog();
                 return;
             }
 
@@ -787,6 +796,7 @@ public partial class MainViewModel
                 confirmWithOption: (title, msg, checkboxLabel, defaultChecked, action) =>
                     ShowConfirmationDialog(title, msg, checkboxLabel, defaultChecked, action),
                 showResumeHistory: () => ShowResumeJobDialogCommand?.Execute(null),
+                driveIn: () => DriveInCommand?.Execute(null),
                 nearbyMaxKm: 0.5);
             StartWorkSessionDialogVm.Refresh();
             State.UI.ShowDialog(DialogType.StartWorkSession);

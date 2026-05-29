@@ -3697,6 +3697,8 @@ public partial class MainViewModel : ObservableObject
     public ICommand? DriveAroundInnerBoundaryCommand { get; private set; }
     public ICommand? DrawMapInnerBoundaryCommand { get; private set; }
     public ICommand? ToggleDriveThroughCommand { get; private set; }
+    public ICommand? ShowBoundaryManagementDialogCommand { get; private set; }
+    public ICommand? CloseBoundaryManagementDialogCommand { get; private set; }
     public ICommand? ToggleRecordingCommand { get; private set; }
     public ICommand? ToggleBoundaryLeftRightCommand { get; private set; }
     public ICommand? ToggleBoundaryAntennaToolCommand { get; private set; }
@@ -4593,7 +4595,7 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(BoundaryAreaDisplay));
             }
 
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             PendingBoundaryType = BoundaryType.Outer;
 
             var innerCount = _kmlParsedPolygons.Count > 1 ? _kmlParsedPolygons.Count - 1 : 0;

@@ -49,7 +49,8 @@ public class StartWorkSessionDialogViewModelTests
             openFieldResumingJob: (p, n, t) => _resumeCalls.Add((p, n, t)),
             confirm: (msg, action) => _confirmCalls.Add((msg, action)),
             confirmWithOption: (_, _, _, _, _) => { },
-            showResumeHistory: () => { });
+            showResumeHistory: () => { },
+            driveIn: () => { });
 
     [Test]
     public void StartNewJob_DoesNotCallJobServiceCreate_DefersViaOpenField()

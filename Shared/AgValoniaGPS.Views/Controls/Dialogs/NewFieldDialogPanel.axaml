@@ -166,7 +166,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Spacing="12"
                             Margin="0,24,0,0">
                     <Button Classes="CancelButton"
-                            Content="{loc:Localize Cancel}"
+                            Content="{loc:Localize Back}"
                             Command="{Binding CancelNewFieldDialogCommand}"/>
                     <Button Classes="DialogButton"
                             Content="{loc:Localize Create}"

@@ -144,7 +144,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <Border Grid.Column="2"/>
 
                     <!-- Cancel Button -->
-                    <Button Grid.Column="3" Classes="DialogButton CancelButton" Content="{loc:Localize Cancel}"
+                    <Button Grid.Column="3" Classes="DialogButton CancelButton" Content="{loc:Localize Back}"
                             Command="{Binding CancelFieldSelectionDialogCommand}"/>
 
                     <!-- Open Button -->

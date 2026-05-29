@@ -1,0 +1,169 @@
+<!--
+AgValoniaGPS
+Copyright (C) 2024-2026 AgValoniaGPS Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+-->
+<!--
+Boundary Management — the standalone equivalent of the Tracks dialog: list the
+field's boundaries, select one (drives DeleteBoundaryCommand), toggle its
+drive-through, see its area. Reuses the existing VM surface (BoundaryItems,
+SelectedBoundaryIndex, DeleteBoundaryCommand, ToggleDriveThroughCommand) that
+previously only lived embedded in the floating BoundaryRecordingPanel. Opened
+from the Field Tools ring; Close returns to it.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:AgValoniaGPS.Views.Localization;assembly=AgValoniaGPS.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AgValoniaGPS.ViewModels;assembly=AgValoniaGPS.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="420"
+             x:Class="AgValoniaGPS.Views.Controls.Dialogs.BoundaryManagementDialogPanel"
+             x:DataType="vm:MainViewModel"
+             IsVisible="{Binding State.UI.IsBoundaryManagementDialogVisible}"
+             IsHitTestVisible="{Binding State.UI.IsBoundaryManagementDialogVisible}">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="TrueColor" Color="#1ABC9C"/>
+        <SolidColorBrush x:Key="FalseColor" Color="#E74C3C"/>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Header">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style Selector="Button.DialogButton">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button.DialogButton:pointerover">
+            <Setter Property="Background" Value="#2980B9"/>
+        </Style>
+        <Style Selector="Button.CancelButton">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+        </Style>
+        <Style Selector="Button.ToolbarButton">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Backdrop = abandon to the map; Back returns to the launcher. -->
+        <Border Background="#80000000" PointerPressed="Backdrop_PointerPressed"/>
+
+        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                CornerRadius="12"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MinWidth="460"
+                MaxWidth="600"
+                MaxHeight="520"
+                Padding="16">
+            <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+                <!-- Header -->
+                <TextBlock Grid.Row="0" Classes="Header" Text="Boundaries"/>
+
+                <!-- Toolbar -->
+                <Border Grid.Row="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="6" Padding="4" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button Classes="ToolbarButton" ToolTip.Tip="Delete selected boundary"
+                                Command="{Binding DeleteBoundaryCommand}">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/Trash.png"
+                                   Width="28" Height="28" Stretch="Uniform"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Column headers -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4,4,0,0" Padding="12,8">
+                    <Grid ColumnDefinitions="*,*,*">
+                        <TextBlock Grid.Column="0" Text="Type" TextAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="{loc:Localize Area}" TextAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="2" Text="{loc:Localize DriveThru}" TextAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" FontWeight="SemiBold"/>
+                    </Grid>
+                </Border>
+
+                <!-- Boundary list -->
+                <ScrollViewer Grid.Row="3" MinHeight="180" MaxHeight="300">
+                    <ListBox ItemsSource="{Binding BoundaryItems}"
+                             SelectedIndex="{Binding SelectedBoundaryIndex}"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,*,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding BoundaryType}"
+                                               HorizontalAlignment="Center" Padding="8,8"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding AreaDisplay}"
+                                               HorizontalAlignment="Center" Padding="8,8"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <Button Grid.Column="2" Content="{Binding DriveThruDisplay}"
+                                            HorizontalAlignment="Center" Padding="8,6"
+                                            Foreground="{Binding IsDriveThrough, Converter={StaticResource BoolToColorConverter}}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                            Command="{Binding $parent[ListBox].((vm:MainViewModel)DataContext).ToggleDriveThroughCommand}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </ScrollViewer>
+
+                <!-- Footer -->
+                <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+                    <Border Grid.Column="0"/>
+                    <Button Grid.Column="1" Classes="DialogButton CancelButton" Content="{loc:Localize Back}"
+                            Command="{Binding CloseBoundaryManagementDialogCommand}"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

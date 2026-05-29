@@ -60,6 +60,9 @@
   <data xml:space="preserve" name="Cancel">
     <value>Cancel</value>
   </data>
+  <data xml:space="preserve" name="Back">
+    <value>Back</value>
+  </data>
   <data xml:space="preserve" name="CentimetersPerSecond">
     <value>cm/s</value>
   </data>
