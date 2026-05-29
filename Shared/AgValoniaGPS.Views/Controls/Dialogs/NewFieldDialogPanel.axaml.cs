@@ -28,10 +28,13 @@ public partial class NewFieldDialogPanel : UserControl
 
     private void Backdrop_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Clicking backdrop cancels the dialog
+        // Backdrop = clicking on the map below. Full-abandon the flow rather
+        // than return to the parent dialog: Cancel ⇒ "go back to launcher",
+        // backdrop ⇒ "I'm done with all of this".
         if (DataContext is AgValoniaGPS.ViewModels.MainViewModel vm)
         {
-            vm.CancelNewFieldDialogCommand?.Execute(null);
+            vm.State.UI.CloseDialog();
+            vm.NewFieldName = string.Empty;
         }
     }
 }

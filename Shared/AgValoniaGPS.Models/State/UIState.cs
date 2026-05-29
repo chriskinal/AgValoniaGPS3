@@ -193,16 +193,48 @@ public class UIState : ObservableObject
     // Dialog events
     public event EventHandler<DialogChangedEventArgs>? DialogChanged;
 
+    // Parent-dialog tracking for child-returns-to-parent flows. Set by
+    // ShowDialog(target, returnsTo); consumed by CloseDialogReturnToParent.
+    // Cleared on a plain CloseDialog() (full-close, e.g. backdrop tap).
+    private DialogType _returnsTo = DialogType.None;
+
     // Methods
     public void ShowDialog(DialogType dialog)
     {
+        _returnsTo = DialogType.None;
+        ActiveDialog = dialog;
+    }
+
+    /// <summary>
+    /// Open <paramref name="dialog"/> and remember <paramref name="returnsTo"/>
+    /// as the dialog to reopen if the child closes via
+    /// <see cref="CloseDialogReturnToParent"/>. Used by Field Tools tiles
+    /// that launch child dialogs so the launcher reopens on Cancel / Confirm.
+    /// </summary>
+    public void ShowDialog(DialogType dialog, DialogType returnsTo)
+    {
+        _returnsTo = returnsTo;
         ActiveDialog = dialog;
     }
 
     public void CloseDialog()
     {
+        _returnsTo = DialogType.None;
         ActiveDialog = DialogType.None;
         SelectedItem = null;
+    }
+
+    /// <summary>
+    /// Close the active dialog and reopen the parent dialog stored on the
+    /// last <see cref="ShowDialog(DialogType, DialogType)"/> call. Falls back
+    /// to a full close when there's no parent recorded.
+    /// </summary>
+    public void CloseDialogReturnToParent()
+    {
+        var parent = _returnsTo;
+        _returnsTo = DialogType.None;
+        SelectedItem = null;
+        ActiveDialog = parent;
     }
 
     public void CloseAllPanels()

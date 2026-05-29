@@ -80,8 +80,19 @@ the close is guarded so a tile that opens its own dialog isn't clobbered.
             <Grid RowDefinitions="Auto,*,Auto">
                 <!-- Header -->
                 <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="16,8">
-                    <TextBlock Text="{loc:Localize FieldTools}" FontSize="18" FontWeight="Bold"
-                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{loc:Localize FieldTools}" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="→" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumHighBrush}"
+                                   IsVisible="{Binding HasActiveField}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ActiveFieldName}" FontSize="18" FontWeight="Bold"
+                                   Foreground="#3498DB"
+                                   IsVisible="{Binding HasActiveField}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Border>
 
                 <!-- Sections -->
@@ -91,7 +102,21 @@ the close is guarded so a tile that opens its own dialog isn't clobbered.
                         <!-- ===== Creation ===== -->
                         <TextBlock Text="Creation" Classes="FtGroupHeader"/>
                         <WrapPanel>
-                            <Button Classes="FtTool" Click="ToolThenClose_Click" Command="{Binding ShowNewFieldDialogCommand}">
+                            <!-- Open Field: launches the picker. No Click pre-close
+                                 so the picker returns to Field Tools on Cancel /
+                                 after the field opens. -->
+                            <Button Classes="FtTool" Command="{Binding ShowFieldSelectionDialogCommand}">
+                                <StackPanel Spacing="4">
+                                    <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="40" Height="40" Stretch="Uniform"/>
+                                    <TextBlock Text="Open Field" Classes="FtCaption"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- New Field: dialog-opening tile; no Click pre-close so
+                                 ShowNewFieldDialogCommand sees FieldTools as the
+                                 active parent and the dialog can return here on
+                                 Cancel/Confirm. -->
+                            <Button Classes="FtTool" Command="{Binding ShowNewFieldDialogCommand}">
                                 <StackPanel Spacing="4">
                                     <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="40" Height="40" Stretch="Uniform"/>
                                     <TextBlock Text="New Field" Classes="FtCaption"/>

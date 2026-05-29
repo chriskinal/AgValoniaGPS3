@@ -94,7 +94,8 @@ public partial class MainViewModel
             _ = OpenFieldResumingJobAsync(fieldPath, mostRecent.FieldName, mostRecent.TaskName);
         });
 
-        // Field Selection Dialog
+        // Field Selection Dialog. Carry over the active dialog as parent so
+        // child Cancel / Confirm reopens it (Field Tools "Open Field" tile).
         ShowFieldSelectionDialogCommand = new RelayCommand(() =>
         {
             var fieldsDir = _settingsService.Settings.FieldsDirectory;
@@ -106,12 +107,13 @@ public partial class MainViewModel
             }
             _fieldSelectionDirectory = fieldsDir;
             PopulateAvailableFields(fieldsDir);
-            State.UI.ShowDialog(DialogType.FieldSelection);
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.FieldSelection, parent);
         });
 
         CancelFieldSelectionDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             SelectedFieldInfo = null;
         });
 
@@ -128,7 +130,7 @@ public partial class MainViewModel
 
             if (isLegacy)
             {
-                State.UI.CloseDialog();
+                State.UI.CloseDialogReturnToParent();
                 ShowConfirmationDialog(
                     "Import Legacy Field",
                     $"'{fieldName}' uses the legacy AgOpenGPS format. " +
@@ -144,7 +146,7 @@ public partial class MainViewModel
                 return;
             }
 
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             SelectedFieldInfo = null;
 
             await OpenFieldAsync(fieldPath, fieldName);
@@ -185,18 +187,20 @@ public partial class MainViewModel
             }
         });
 
-        // New Field Dialog
+        // New Field Dialog. Carry over the active dialog as the return-to
+        // parent so child Cancel / Confirm reopens it (e.g. Field Tools).
         ShowNewFieldDialogCommand = new RelayCommand(() =>
         {
             NewFieldLatitude = Latitude != 0 ? Latitude : 40.7128;
             NewFieldLongitude = Longitude != 0 ? Longitude : -74.0060;
             NewFieldName = string.Empty;
-            State.UI.ShowDialog(DialogType.NewField);
+            var parent = State.UI.ActiveDialog;
+            State.UI.ShowDialog(DialogType.NewField, parent);
         });
 
         CancelNewFieldDialogCommand = new RelayCommand(() =>
         {
-            State.UI.CloseDialog();
+            State.UI.CloseDialogReturnToParent();
             NewFieldName = string.Empty;
         });
 
@@ -276,7 +280,7 @@ public partial class MainViewModel
                 PersistentState.LastOpenedField = NewFieldName;
                 _persistentStateService.Save();
 
-                State.UI.CloseDialog();
+                State.UI.CloseDialogReturnToParent();
                 IsFieldOperationsPanelVisible = false;
                 StatusMessage = $"Created field: {NewFieldName}";
             }
