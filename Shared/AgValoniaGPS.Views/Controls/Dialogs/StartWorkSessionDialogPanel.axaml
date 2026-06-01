@@ -66,15 +66,19 @@ Licensed under GNU GPL v3. See LICENSE.md.
     <Grid>
         <Border Background="Transparent" PointerPressed="Backdrop_PointerPressed"/>
 
-        <controls:DialogChrome Title="Start Work Session"
+        <controls:DialogChrome Title="Fields and Jobs"
                 BackCommand="{Binding NavBackCommand}"
                 CloseCommand="{Binding NavCloseChainCommand}"
-                MinWidth="960" MaxWidth="1350" MaxHeight="960">
-            <Grid RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="*,16,1.5*"
+                MinWidth="1105" MaxWidth="1475" MaxHeight="960">
+            <!-- Columns: Fields | gap | Jobs+New-Job | gap | Creation.
+                 The Creation column hosts the field-creation actions that used
+                 to live in the Field Operations fly-out, so you can create a
+                 field and work with it without bouncing between panels. -->
+            <Grid RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="*,16,1.5*,16,Auto"
                   DataContext="{Binding StartWorkSessionDialogVm}">
 
                 <!-- LEFT: Fields list -->
-                <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,Auto,*">
+                <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,Auto,*" VerticalAlignment="Top">
                     <TextBlock Grid.Row="0" Classes="SubHeader" Text="Fields"/>
                     <Border Grid.Row="1"
                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
@@ -115,19 +119,17 @@ Licensed under GNU GPL v3. See LICENSE.md.
                     </ListBox>
                 </Grid>
 
-                <!-- RIGHT: selected-field detail + Jobs + New-Job form -->
+                <!-- RIGHT: Jobs + New-Job form. The selected field's name and size
+                     already show in the left column, so they're not repeated here;
+                     dropping them frees the vertical space the job-name row needs. -->
                 <Grid Grid.Row="1" Grid.Column="2"
-                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      VerticalAlignment="Top"
                       IsVisible="{Binding SelectedField, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <TextBlock Grid.Row="0" Classes="Header"
-                               Text="{Binding SelectedField.Name}"
-                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Grid.Row="1" Classes="SubHeader"
-                               Text="{Binding SelectedField.BoundaryAreaHectares, StringFormat='Area: {0:F1} ha'}"/>
 
                     <!-- Jobs history -->
-                    <TextBlock Grid.Row="2" Classes="FieldLabel" Text="Jobs"/>
-                    <ListBox Grid.Row="3" x:Name="JobsListBox" Height="220"
+                    <TextBlock Grid.Row="0" Classes="SubHeader" Text="Jobs"/>
+                    <ListBox Grid.Row="1" x:Name="JobsListBox" Height="220"
                              ItemsSource="{Binding JobsForSelectedField}"
                              SelectedItem="{Binding SelectedJob, Mode=TwoWay}"
                              SelectionMode="Single">
@@ -156,27 +158,27 @@ Licensed under GNU GPL v3. See LICENSE.md.
                     </ListBox>
 
                     <!-- New job form -->
-                    <TextBlock Grid.Row="4" Classes="FieldLabel" Text="New Job — Work Type"/>
-                    <AutoCompleteBox Grid.Row="5"
+                    <TextBlock Grid.Row="2" Classes="FieldLabel" Text="New Job — Work Type"/>
+                    <AutoCompleteBox Grid.Row="3"
                                      Text="{Binding NewJobWorkType, Mode=TwoWay}"
                                      ItemsSource="{Binding WorkTypeSuggestions}"
                                      FilterMode="ContainsOrdinal"/>
 
-                    <Grid Grid.Row="6" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
                         <TextBlock Grid.Column="0" Classes="FieldLabel" Text="Notes"/>
                         <Button Grid.Column="1" Classes="DialogButton SecondaryButton"
                                 Content="Use Last"
                                 Command="{Binding UseLastNotesCommand}"
                                 FontSize="14" Padding="12,6"/>
                     </Grid>
-                    <TextBox Grid.Row="7"
+                    <TextBox Grid.Row="5"
                              Text="{Binding NewJobNotes, Mode=TwoWay}"
                              AcceptsReturn="True"
                              Height="80"
                              TextWrapping="Wrap"/>
 
-                    <TextBlock Grid.Row="8" Classes="FieldLabel" Text="Job name"/>
-                    <Grid Grid.Row="9" ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Grid.Row="6" Classes="FieldLabel" Text="Job name"/>
+                    <Grid Grid.Row="7" ColumnDefinitions="*,Auto,Auto">
                         <TextBox Grid.Column="0" x:Name="TaskNameBox"
                                  Text="{Binding NewJobTaskName, Mode=TwoWay}"
                                  KeyDown="TaskNameBox_KeyDown"/>
@@ -211,8 +213,48 @@ Licensed under GNU GPL v3. See LICENSE.md.
                     </StackPanel>
                 </Border>
 
+                <!-- RIGHT EDGE: Field creation. Always visible (you create a
+                     field whether or not one is selected). The commands live on
+                     MainViewModel, reached via the UserControl's DataContext
+                     ($parent[UserControl]) because this grid's DataContext is the sub-VM. -->
+                <StackPanel Grid.Row="1" Grid.Column="4" Spacing="6" MinWidth="150" VerticalAlignment="Top">
+                    <TextBlock Classes="SubHeader" Text="Creation"/>
+                    <Button Classes="DialogButton SecondaryButton"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ShowNewFieldDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="24" Height="24"/>
+                            <TextBlock Text="New Field" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="DialogButton SecondaryButton"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ShowFromExistingFieldDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="24" Height="24"/>
+                            <TextBlock Text="From Existing" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="DialogButton SecondaryButton"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ShowIsoXmlImportDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ISOXML.png" Width="24" Height="24"/>
+                            <TextBlock Text="From ISO-XML" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="DialogButton SecondaryButton"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Command="{Binding $parent[UserControl].((vm:MainViewModel)DataContext).ShowKmlImportDialogCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="False">
+                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="24" Height="24"/>
+                            <TextBlock Text="From KML" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
                 <!-- Status / error message -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="5"
                            Text="{Binding StatusMessage}"
                            Foreground="{DynamicResource DangerButtonBrush}"
                            FontSize="14"
@@ -221,21 +263,36 @@ Licensed under GNU GPL v3. See LICENSE.md.
 
                 <!-- Buttons. Inner Border still has DataContext = sub-VM, so
                      all commands resolve against StartWorkSessionDialogVm.
-                     UniformGrid gives every button the same width so the row
-                     reads as evenly spaced. Order:
-                     [Cancel] [Open Field Only] [Delete Field] [Delete Job] [Resume] [Start New]. -->
-                <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
-                             Rows="1"
-                             Margin="0,16,0,0">
+                     Field actions sit under the Fields column (col 0) so they
+                     line up with the Fields list box; job actions sit under the
+                     Jobs column (col 2). -->
+                <UniformGrid Grid.Row="3" Grid.Column="0" Rows="1" Margin="0,16,0,0">
                     <Button Classes="DialogButton SecondaryButton"
                             Content="Open Field Only"
                             Command="{Binding OpenFieldOnlyCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
-                            Margin="6,0,6,0"/>
+                            Margin="0,0,6,0"/>
                     <Button Classes="DialogButton DangerButton"
                             Content="Delete Field"
                             Command="{Binding DeleteFieldCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="6,0,0,0"/>
+                </UniformGrid>
+
+                <UniformGrid Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3"
+                             Rows="1" Margin="0,16,0,0">
+                    <Button Classes="DialogButton SecondaryButton"
+                            Content="Resume Job"
+                            Command="{Binding ResumeJobCommand}"
+                            CommandParameter="{Binding SelectedJob}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,6,0"/>
+                    <Button Classes="DialogButton"
+                            Content="Start New Job"
+                            Command="{Binding StartNewJobCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Margin="6,0,6,0"/>
@@ -243,19 +300,6 @@ Licensed under GNU GPL v3. See LICENSE.md.
                             Content="Delete Job"
                             Command="{Binding DeleteJobCommand}"
                             CommandParameter="{Binding SelectedJob}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Margin="6,0,6,0"/>
-                    <Button Classes="DialogButton SecondaryButton"
-                            Content="Resume Job"
-                            Command="{Binding ResumeJobCommand}"
-                            CommandParameter="{Binding SelectedJob}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Margin="6,0,6,0"/>
-                    <Button Classes="DialogButton"
-                            Content="Start New Job"
-                            Command="{Binding StartNewJobCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Margin="6,0,0,0"/>

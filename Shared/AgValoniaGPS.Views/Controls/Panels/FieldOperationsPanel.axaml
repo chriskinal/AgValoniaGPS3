@@ -29,49 +29,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             Title="Field Operations"
                             CloseCommand="{Binding CloseAllNavFlyoutsCommand}">
 
-        <!-- All UI moves into PanelContent so we can group buttons into the
-             three sections (Create Field / Work Field / AgShare) with
-             separators. The default MenuItems slot only renders one flat
-             UniformGrid which can't carry section breaks. -->
+        <!-- All UI moves into PanelContent so we can group buttons into
+             sections (Work Field / AgShare) with separators. The default
+             MenuItems slot only renders one flat UniformGrid which can't carry
+             section breaks. Field creation now lives in the Fields and Jobs
+             dialog (right column) so you can create and work with a field
+             without bouncing between panels. -->
         <controls:FloatingPanel.PanelContent>
             <StackPanel Spacing="6">
-
-                <!-- Create Field -->
-                <UniformGrid Columns="2">
-                    <Button Classes="ModernButton" Command="{Binding ShowNewFieldDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileNew.png" Width="28" Height="28"/>
-                            <TextBlock Text="New Field" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowFromExistingFieldDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileExisting.png" Width="28" Height="28"/>
-                            <TextBlock Text="From Existing" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowIsoXmlImportDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/ISOXML.png" Width="28" Height="28"/>
-                            <TextBlock Text="From ISO-XML" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="ModernButton" Command="{Binding ShowKmlImportDialogCommand}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                            <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/GoogleEarth.png" Width="28" Height="28"/>
-                            <TextBlock Text="From KML" VerticalAlignment="Center" FontSize="12"/>
-                        </StackPanel>
-                    </Button>
-                </UniformGrid>
-
-                <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4"/>
 
                 <!-- Work Field -->
                 <UniformGrid Columns="2">
                     <Button Classes="ModernButton" Command="{Binding ShowStartWorkSessionDialogCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
                             <Image Source="avares://AgValoniaGPS.Views/Assets/Icons/FileOpen.png" Width="28" Height="28"/>
-                            <TextBlock Text="Start Session" VerticalAlignment="Center" FontSize="12"/>
+                            <TextBlock Text="Fields and Jobs" VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
                     <Button Classes="ModernButton" Command="{Binding ResumeLastJobCommand}">
