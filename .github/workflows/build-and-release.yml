@@ -215,13 +215,17 @@ jobs:
 
       - name: Find and rename APK
         run: |
-          APK=$(find publish/android -name "*.apk" | head -1)
-          if [ -n "$APK" ]; then
-            cp "$APK" AgValoniaGPS-Android.apk
-          else
-            echo "No APK found!"
+          # dotnet publish emits BOTH an unsigned (com.*.apk) and a signed
+          # (com.*-Signed.apk) APK. Only the signed one is installable, so
+          # select it explicitly — never fall back to the unsigned APK.
+          APK=$(find publish/android -name "*-Signed.apk" | head -1)
+          if [ -z "$APK" ]; then
+            echo "::error::No signed APK found in publish/android. Available APKs:"
+            find publish/android -name "*.apk"
             exit 1
           fi
+          echo "Selected signed APK: $APK"
+          cp "$APK" AgValoniaGPS-Android.apk
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
