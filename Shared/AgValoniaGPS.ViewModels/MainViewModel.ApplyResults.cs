@@ -16,7 +16,7 @@ public partial class MainViewModel
     /// </summary>
     private void OnGpsCycleCompleted(GpsCycleResult result)
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyGpsCycleResult(result));
+        _dispatcher.Post(() => ApplyGpsCycleResult(result));
     }
 
     /// <summary>

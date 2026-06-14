@@ -281,8 +281,8 @@ public class AutoMotorCalibrationStepViewModel : SwitchGatedWizardStep
     public ICommand RedoPhaseBCommand { get; }
 
     public AutoMotorCalibrationStepViewModel(IConfigurationService configService,
-        IAutoSteerService? autoSteerService = null)
-        : base(configService, autoSteerService)
+        IUiDispatcher dispatcher, IAutoSteerService? autoSteerService = null)
+        : base(configService, autoSteerService, dispatcher)
     {
         _configService = configService;
         _autoSteerService = autoSteerService;

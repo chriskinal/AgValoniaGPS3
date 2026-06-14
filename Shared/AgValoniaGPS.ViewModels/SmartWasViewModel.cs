@@ -42,17 +42,20 @@ public partial class SmartWasViewModel : ObservableObject
     private readonly IConfigurationService _configService;
     private readonly IUdpCommunicationService _udpService;
     private readonly IAutoSteerService _autoSteerService;
+    private readonly IUiDispatcher _dispatcher;
 
     public SmartWasViewModel(
         ISmartWasCalibrationService smartWas,
         IConfigurationService configService,
         IUdpCommunicationService udpService,
-        IAutoSteerService autoSteerService)
+        IAutoSteerService autoSteerService,
+        IUiDispatcher dispatcher)
     {
         _smartWas = smartWas;
         _configService = configService;
         _udpService = udpService;
         _autoSteerService = autoSteerService;
+        _dispatcher = dispatcher;
 
         StartCommand = new RelayCommand(() => _smartWas.Start());
         StopCommand = new RelayCommand(() => _smartWas.Stop());
@@ -187,10 +190,10 @@ public partial class SmartWasViewModel : ObservableObject
 
     private void OnSnapshotChanged(object? sender, SmartWasSnapshot snap)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
             ApplySnapshot(snap);
         else
-            Dispatcher.UIThread.Post(() => ApplySnapshot(snap));
+            _dispatcher.Post(() => ApplySnapshot(snap));
     }
 
     private void ApplySnapshot(SmartWasSnapshot snap)

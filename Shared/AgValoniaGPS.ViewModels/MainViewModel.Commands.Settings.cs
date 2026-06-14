@@ -23,6 +23,7 @@ using System.Reflection;
 using System.Windows.Input;
 using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Configuration;
+using AgValoniaGPS.Services.Interfaces;
 using AgValoniaGPS.Services.Logging;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
@@ -295,7 +296,7 @@ public partial class MainViewModel
                 State.UI.IsBusy = true;
 
                 // Force UI to render busy overlay
-                await Dispatcher.UIThread.InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
+                await _dispatcher.InvokeAsync(() => { }, UiDispatcherPriority.Render);
                 await System.Threading.Tasks.Task.Delay(50);
 
                 var bugReportsDir = Path.Combine(
@@ -486,7 +487,7 @@ public partial class MainViewModel
 
     private void OnLogStoreUpdated()
     {
-        Dispatcher.UIThread.Post(RefreshLogEntries);
+        _dispatcher.Post(RefreshLogEntries);
     }
 
     private void RefreshLogEntries()

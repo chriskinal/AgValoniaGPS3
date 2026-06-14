@@ -36,6 +36,7 @@ using AgValoniaGPS.Models;
 using AgValoniaGPS.Models.Pipeline;
 using AgValoniaGPS.Models.State;
 using AgValoniaGPS.Desktop.Services;
+using AgValoniaGPS.Views.Infrastructure;
 
 namespace AgValoniaGPS.Desktop.DependencyInjection;
 
@@ -55,6 +56,10 @@ public static class ServiceCollectionExtensions
         // Centralized application state (single source of truth)
         services.AddSingleton<ApplicationState>();           // ephemeral, in-memory only
         services.AddSingleton(_ => PersistentAppState.Instance); // persisted to appstate.json (same object as .Instance)
+
+        // UI-thread dispatcher abstraction (replaces direct Dispatcher.UIThread
+        // in the VM layer — see Plans/CONFIG_STATE_AUDIT.md §11).
+        services.AddSingleton<IUiDispatcher, AvaloniaUiDispatcher>();
 
         // Register ViewModels
         services.AddTransient<MainViewModel>();

@@ -63,7 +63,7 @@ public partial class MainViewModel
 
     private void OnBoundaryPointAdded(object? sender, BoundaryPointAddedEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
+        _dispatcher.Post(() =>
         {
             // Update centralized state
             State.BoundaryRec.PointCount = e.TotalPoints;
@@ -84,7 +84,7 @@ public partial class MainViewModel
 
     private void OnBoundaryStateChanged(object? sender, BoundaryRecordingStateChangedEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
+        _dispatcher.Post(() =>
         {
             // Update centralized state
             State.BoundaryRec.IsRecording = e.State == BoundaryRecordingState.Recording;

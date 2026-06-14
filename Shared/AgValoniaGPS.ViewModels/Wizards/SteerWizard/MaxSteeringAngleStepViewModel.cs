@@ -82,8 +82,8 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
     public void SetHardwareStep(HardwareInstalledStepViewModel step) => _hardwareStep = step;
 
     public MaxSteeringAngleStepViewModel(IConfigurationService configService,
-        IAutoSteerService? autoSteerService = null)
-        : base(configService, autoSteerService)
+        IUiDispatcher dispatcher, IAutoSteerService? autoSteerService = null)
+        : base(configService, autoSteerService, dispatcher)
     {
         StartTestCommand = new AsyncRelayCommand(RunMaxAngleMeasurementAsync);
         RedoCommand = new AsyncRelayCommand(Redo);

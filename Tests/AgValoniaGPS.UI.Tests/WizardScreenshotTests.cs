@@ -75,7 +75,7 @@ public class WizardScreenshotTests
 
     private SteerWizardViewModel CreateWizard()
     {
-        return new SteerWizardViewModel(_configService);
+        return new SteerWizardViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher());
     }
 
     private static async Task ExecuteNextAsync(WizardViewModel wizard)

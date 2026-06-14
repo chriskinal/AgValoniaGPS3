@@ -63,9 +63,9 @@ public class MotorCalAndMaxSteerGateTests
     private SwitchGatedWizardStep CreateStep<T>() where T : SwitchGatedWizardStep
     {
         if (typeof(T) == typeof(AutoMotorCalibrationStepViewModel))
-            return new AutoMotorCalibrationStepViewModel(_configService, _autoSteer);
+            return new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         if (typeof(T) == typeof(MaxSteeringAngleStepViewModel))
-            return new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            return new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         throw new InvalidOperationException("Unknown step type for fixture");
     }
 
@@ -78,8 +78,8 @@ public class MotorCalAndMaxSteerGateTests
         GivenSwitch(active: false);
 
         SwitchGatedWizardStep step = stepType == typeof(AutoMotorCalibrationStepViewModel)
-            ? new AutoMotorCalibrationStepViewModel(_configService, _autoSteer)
-            : new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            ? new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer)
+            : new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         EnterStep(step);
 
         Assert.That(step.WaitingForPhysicalSwitch, Is.False);
@@ -95,8 +95,8 @@ public class MotorCalAndMaxSteerGateTests
         GivenSwitch(active: false);
 
         SwitchGatedWizardStep step = stepType == typeof(AutoMotorCalibrationStepViewModel)
-            ? new AutoMotorCalibrationStepViewModel(_configService, _autoSteer)
-            : new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            ? new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer)
+            : new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         EnterStep(step);
 
         Assert.That(step.WaitingForPhysicalSwitch, Is.True);
@@ -112,8 +112,8 @@ public class MotorCalAndMaxSteerGateTests
         GivenSwitch(active: true);
 
         SwitchGatedWizardStep step = stepType == typeof(AutoMotorCalibrationStepViewModel)
-            ? new AutoMotorCalibrationStepViewModel(_configService, _autoSteer)
-            : new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            ? new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer)
+            : new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         EnterStep(step);
 
         Assert.That(step.WaitingForPhysicalSwitch, Is.False);
@@ -131,8 +131,8 @@ public class MotorCalAndMaxSteerGateTests
         GivenSwitch(active: false);
 
         SwitchGatedWizardStep step = stepType == typeof(AutoMotorCalibrationStepViewModel)
-            ? new AutoMotorCalibrationStepViewModel(_configService, _autoSteer)
-            : new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            ? new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer)
+            : new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         EnterStep(step);
         Assert.That(step.CanStartTest, Is.False);
 
@@ -157,8 +157,8 @@ public class MotorCalAndMaxSteerGateTests
         GivenSwitch(active: false);
 
         SwitchGatedWizardStep step = stepType == typeof(AutoMotorCalibrationStepViewModel)
-            ? new AutoMotorCalibrationStepViewModel(_configService, _autoSteer)
-            : new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+            ? new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer)
+            : new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         EnterStep(step);
         Assert.That(step.WaitingForPhysicalSwitch, Is.False);
 

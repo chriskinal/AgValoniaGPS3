@@ -84,7 +84,8 @@ public partial class MainViewModel
                 _smartWasService,
                 _configurationService,
                 _udpService,
-                _autoSteerService);
+                _autoSteerService,
+                _dispatcher);
             State.UI.ShowDialog(DialogType.SmartWas);
         });
 

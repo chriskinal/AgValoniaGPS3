@@ -31,7 +31,7 @@ public class SteerWizardE2ETests
 
     private SteerWizardViewModel CreateWizard()
     {
-        return new SteerWizardViewModel(_configService);
+        return new SteerWizardViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher());
     }
 
     /// <summary>

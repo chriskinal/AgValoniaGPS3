@@ -45,12 +45,14 @@ public abstract class SwitchGatedWizardStep : WizardStepViewModel
     protected IAutoSteerService? AutoSteerService { get; }
 
     private bool _gateSubscribed;
+    private readonly IUiDispatcher _dispatcher;
 
     protected SwitchGatedWizardStep(IConfigurationService configService,
-        IAutoSteerService? autoSteerService)
+        IAutoSteerService? autoSteerService, IUiDispatcher dispatcher)
     {
         ConfigService = configService;
         AutoSteerService = autoSteerService;
+        _dispatcher = dispatcher;
     }
 
     /// <summary>True when hardware is connected and sending data.</summary>
@@ -161,11 +163,11 @@ public abstract class SwitchGatedWizardStep : WizardStepViewModel
         WaitingForPhysicalSwitch = requireSwitch && !switchActive;
     }
 
-    private static void DispatchToUI(Action action)
+    private void DispatchToUI(Action action)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
             action();
         else
-            Dispatcher.UIThread.Post(action);
+            _dispatcher.Post(action);
     }
 }

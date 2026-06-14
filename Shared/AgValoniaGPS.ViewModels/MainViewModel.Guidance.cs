@@ -50,14 +50,14 @@ public partial class MainViewModel
         // stays on the source rate. Single-double / single-byte writes are
         // atomic on x86/ARM — no lock needed.
         _latestGpsToPgnLatencyMs = state.TotalLatencyMs;
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             TramControlByte = state.TramState;
             _mapService.SetTramControlByte(state.TramState);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            _dispatcher.Post(() =>
             {
                 TramControlByte = state.TramState;
                 _mapService.SetTramControlByte(state.TramState);

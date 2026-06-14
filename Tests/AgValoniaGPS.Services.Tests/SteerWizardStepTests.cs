@@ -1455,7 +1455,7 @@ public class SteerWizardStepTests
     private AutoMotorCalibrationStepViewModel CreateAutoCalStep(
         IAutoSteerService? autoSteerService = null)
     {
-        var step = new AutoMotorCalibrationStepViewModel(_configService, autoSteerService);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), autoSteerService);
         // Use instant delays for testing
         step.DelayFunc = (_, _) => Task.CompletedTask;
         return step;

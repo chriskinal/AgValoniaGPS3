@@ -51,7 +51,7 @@ public class SmartWasViewModelTests
             HasValidCalibration = false,
             SampleCount = 0,
         });
-        return new SmartWasViewModel(_smartWas, _configService, _udpService, _autoSteer);
+        return new SmartWasViewModel(_smartWas, _configService, _udpService, _autoSteer, new AgValoniaGPS.Services.Threading.InlineUiDispatcher());
     }
 
     private void SetSnapshot(SmartWasSnapshot snap)

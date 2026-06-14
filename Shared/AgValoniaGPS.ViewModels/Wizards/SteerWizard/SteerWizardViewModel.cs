@@ -35,7 +35,7 @@ public class SteerWizardViewModel : WizardViewModel
     public override WizardStatusBarViewModel? StatusBar { get; }
 
     public SteerWizardViewModel(IConfigurationService configService,
-        IAutoSteerService? autoSteerService = null)
+        IUiDispatcher dispatcher, IAutoSteerService? autoSteerService = null)
     {
         _configService = configService;
         StatusBar = new WizardStatusBarViewModel(autoSteerService);
@@ -69,14 +69,14 @@ public class SteerWizardViewModel : WizardViewModel
         wasCal.SetHardwareStep(hardwareStep);
         AddStep(wasCal);
 
-        var autoCal = new AutoMotorCalibrationStepViewModel(configService, autoSteerService);
+        var autoCal = new AutoMotorCalibrationStepViewModel(configService, dispatcher, autoSteerService);
         autoCal.SetHardwareStep(hardwareStep);
         AddStep(autoCal);
 
         // Step 10: Maximum Steering Angle (split out of the old combined
         // motor cal step so the stress-style full-lock test gets its own
         // operator-facing page with distinct warnings).
-        var maxSteer = new MaxSteeringAngleStepViewModel(configService, autoSteerService);
+        var maxSteer = new MaxSteeringAngleStepViewModel(configService, dispatcher, autoSteerService);
         maxSteer.SetHardwareStep(hardwareStep);
         AddStep(maxSteer);
 

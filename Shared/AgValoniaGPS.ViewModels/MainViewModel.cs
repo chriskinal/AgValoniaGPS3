@@ -52,6 +52,7 @@ public partial class MainViewModel : ObservableObject
     private readonly AgValoniaGPS.Services.Interfaces.IGpsService _gpsService;
     private readonly IFieldService _fieldService;
     private readonly INtripClientService _ntripService;
+    private readonly IUiDispatcher _dispatcher;
     private readonly AgValoniaGPS.Services.Interfaces.IDisplaySettingsService _displaySettings;
     private readonly AgValoniaGPS.Services.Interfaces.IFieldStatisticsService _fieldStatistics;
     private readonly AgValoniaGPS.Services.Interfaces.IGpsSimulationService _simulatorService;
@@ -224,12 +225,14 @@ public partial class MainViewModel : ObservableObject
         ApplicationState appState,
         IPersistentStateService persistentStateService,
         IBatteryService batteryService,
+        IUiDispatcher uiDispatcher,
         ISteerMachineLoopService? controlLoop = null,
         IPositionEstimator? positionEstimator = null)
     {
         _logger = logger;
         _persistentStateService = persistentStateService;
         _batteryService = batteryService;
+        _dispatcher = uiDispatcher;
         _tramLineService = tramLineService;
 
         // Battery icon in the strip — start the per-platform reader, prime with
@@ -550,14 +553,14 @@ public partial class MainViewModel : ObservableObject
         // scenarios across force-stop restarts without manual taps.
         if (DiagFlags.AutoResumeField)
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            _dispatcher.Post(() =>
             {
                 if (ResumeFieldCommand?.CanExecute(null) == true)
                 {
                     _logger.LogInformation("[DiagFlags] auto_resume_field: invoking ResumeFieldCommand");
                     ResumeFieldCommand.Execute(null);
                 }
-            }, Avalonia.Threading.DispatcherPriority.Background);
+            }, UiDispatcherPriority.Background);
         }
     }
 
@@ -770,9 +773,9 @@ public partial class MainViewModel : ObservableObject
         // Surface any crash-recovery that happened while loading settings or
         // the active profile pair. Deferred to the dispatcher so the dialog
         // host is ready (RestoreSettings runs during construction).
-        Avalonia.Threading.Dispatcher.UIThread.Post(
+        _dispatcher.Post(
             CheckStartupRecovery,
-            Avalonia.Threading.DispatcherPriority.Background);
+            UiDispatcherPriority.Background);
     }
 
     private void LoadDefaultVehicleProfile()
@@ -1170,7 +1173,7 @@ public partial class MainViewModel : ObservableObject
     private void OnCoverageBoundsExpanded(object? sender, BoundsExpandedEventArgs e)
     {
         // Reinitialize display bitmap with new expanded bounds
-        Dispatcher.UIThread.Post(() =>
+        _dispatcher.Post(() =>
         {
             _mapService.InitializeCoverageBitmapWithBounds(e.MinE, e.MaxE, e.MinN, e.MaxN);
             _logger.LogDebug($"[Coverage] Display bitmap reinitialized for expanded bounds: E[{e.MinE:F0},{e.MaxE:F0}] N[{e.MinN:F0},{e.MaxN:F0}]");
@@ -1179,7 +1182,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnAutoSteerToggleRequested(object? sender, AutoSteerToggleEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
+        _dispatcher.Post(() =>
         {
             // Toggle autosteer when requested by module communication service
             // (e.g., from work switch or steer switch)
@@ -1189,7 +1192,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnSectionMasterToggleRequested(object? sender, SectionMasterToggleEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
+        _dispatcher.Post(() =>
         {
             // Toggle section master when requested by module communication service
             // This replaces the direct PerformClick() calls from the WinForms implementation
@@ -1497,7 +1500,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             // Force UI to render busy overlay
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await _dispatcher.InvokeAsync(() => { }, UiDispatcherPriority.Render);
             await Task.Delay(50);
 
             // Update field state
@@ -1654,7 +1657,7 @@ public partial class MainViewModel : ObservableObject
 
             // Load coverage (shows busy overlay — pixel buffer callback needs UI thread for bitmap access)
             State.UI.BusyMessage = "Loading coverage...";
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await _dispatcher.InvokeAsync(() => { }, UiDispatcherPriority.Render);
 
             if (activeJob != null)
             {
@@ -1729,7 +1732,7 @@ public partial class MainViewModel : ObservableObject
             }
 
             // Let GPS events propagate through the UI
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await _dispatcher.InvokeAsync(() => { }, UiDispatcherPriority.Render);
             await Task.Delay(100);
 
             // Notify subscribers that the field is fully loaded
@@ -1778,7 +1781,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             // Force UI to render busy overlay
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await _dispatcher.InvokeAsync(() => { }, UiDispatcherPriority.Render);
             await Task.Delay(50);
 
             // Save coverage on background thread (RLE compression can take seconds).

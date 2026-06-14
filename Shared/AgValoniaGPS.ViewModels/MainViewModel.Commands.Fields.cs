@@ -137,7 +137,7 @@ public partial class MainViewModel
                     {
                         SelectedFieldInfo = null;
                         _ = OpenFieldAsync(fieldPath, fieldName).ContinueWith(_ =>
-                            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                            _dispatcher.Post(() =>
                                 IsFieldOperationsPanelVisible = false));
                     });
                 return;
@@ -826,7 +826,7 @@ public partial class MainViewModel
                     () =>
                     {
                         _ = OpenFieldAsync(fieldPath, lastField).ContinueWith(_ =>
-                            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                            _dispatcher.Post(() =>
                                 IsFieldOperationsPanelVisible = false));
                     });
                 return;

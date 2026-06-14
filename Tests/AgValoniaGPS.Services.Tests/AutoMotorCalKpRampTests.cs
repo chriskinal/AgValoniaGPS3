@@ -47,7 +47,7 @@ public class AutoMotorCalKpRampTests
     /// </summary>
     private AutoMotorCalibrationStepViewModel CreateStep(System.Func<int, SteerModuleData> moduleFor)
     {
-        var step = new AutoMotorCalibrationStepViewModel(_configService, _autoSteer);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         step.DelayFunc = (_, _) => Task.CompletedTask;
         step.ReadModuleData = () => moduleFor(_store.AutoSteer.ProportionalGain);
         return step;
@@ -151,7 +151,7 @@ public class AutoMotorCalKpRampTests
         // cancel by overriding DelayFunc to throw OperationCanceled on
         // the second delay invocation.
         _store.AutoSteer.ProportionalGain = 17;
-        var step = new AutoMotorCalibrationStepViewModel(_configService, _autoSteer);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         step.ReadModuleData = () => ModuleAt(0.0, 0);
 
         int delayCalls = 0;

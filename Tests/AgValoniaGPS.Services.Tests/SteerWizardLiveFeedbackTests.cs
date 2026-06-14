@@ -123,7 +123,7 @@ public class SteerWizardLiveFeedbackTests
         _configService.Store.Tool.IsSteerSwitchEnabled = false;
         var autoSteer = Substitute.For<IAutoSteerService>();
         autoSteer.LastSteerData.Returns(default(SteerModuleData));
-        var step = new AutoMotorCalibrationStepViewModel(_configService, autoSteer);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), autoSteer);
 
         InvokeNonPublic(step, "OnEntering", null);
 
@@ -149,7 +149,7 @@ public class SteerWizardLiveFeedbackTests
             RemoteButtonPressed: false,
             VwasFusionActive: false,
             PwmDisplay: 0));
-        var step = new AutoMotorCalibrationStepViewModel(_configService, autoSteer);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), autoSteer);
 
         InvokeNonPublic(step, "OnEntering", null);
 
@@ -176,7 +176,7 @@ public class SteerWizardLiveFeedbackTests
             RemoteButtonPressed: false,
             VwasFusionActive: false,
             PwmDisplay: 0));
-        var step = new AutoMotorCalibrationStepViewModel(_configService, autoSteer);
+        var step = new AutoMotorCalibrationStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), autoSteer);
 
         InvokeNonPublic(step, "OnEntering", null);
         Assume.That(step.WaitingForPhysicalSwitch, Is.True);

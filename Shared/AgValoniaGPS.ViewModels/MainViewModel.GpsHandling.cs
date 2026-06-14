@@ -145,13 +145,13 @@ public partial class MainViewModel
         // section control, coverage, boundary checks) on a background thread.
         // This handler only does lightweight UI-only work and user-action-driven recording.
 
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             HandleGpsUiUpdates(data);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => HandleGpsUiUpdates(data));
+            _dispatcher.Post(() => HandleGpsUiUpdates(data));
         }
     }
 

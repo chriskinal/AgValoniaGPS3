@@ -220,13 +220,13 @@ public partial class MainViewModel
         _lastAnyActive = currentAnyActive;
 
         // Marshal to UI thread
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             UpdateSectionStates();
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateSectionStates);
+            _dispatcher.Post(UpdateSectionStates);
         }
     }
 

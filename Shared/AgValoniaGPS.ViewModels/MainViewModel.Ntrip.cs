@@ -243,13 +243,13 @@ public partial class MainViewModel
     private void OnNtripConnectionChanged(object? sender, NtripConnectionEventArgs e)
     {
         // Marshal to UI thread (use Invoke for synchronous execution to avoid modal dialog issues)
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             UpdateNtripConnectionProperties(e);
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateNtripConnectionProperties(e));
+            _dispatcher.Post(() => UpdateNtripConnectionProperties(e));
         }
     }
 
@@ -266,13 +266,13 @@ public partial class MainViewModel
 
     private void OnRtcmDataReceived(object? sender, RtcmDataReceivedEventArgs e)
     {
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        if (_dispatcher.CheckAccess())
         {
             UpdateNtripDataProperties();
         }
         else
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateNtripDataProperties());
+            _dispatcher.Post(() => UpdateNtripDataProperties());
         }
     }
 

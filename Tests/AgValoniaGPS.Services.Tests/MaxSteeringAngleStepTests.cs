@@ -50,7 +50,7 @@ public class MaxSteeringAngleStepTests
         // Simulator-style WAS: ramp up to ±35° then plateau. The
         // detector should fire once it sees PlateauStableSamples
         // consecutive samples within PlateauThresholdDeg of each other.
-        var step = new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+        var step = new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         step.DelayFunc = (_, _) => Task.CompletedTask;
 
         // Right-lock sequence: 10, 20, 30, 35, 35, 35, 35, 35, 35, 35
@@ -101,7 +101,7 @@ public class MaxSteeringAngleStepTests
         // hydraulics), the detector must time out and return the last
         // sample rather than hang forever. The wizard caps the poll loop
         // at PlateauTimeoutMs internally.
-        var step = new MaxSteeringAngleStepViewModel(_configService, _autoSteer);
+        var step = new MaxSteeringAngleStepViewModel(_configService, new AgValoniaGPS.Services.Threading.InlineUiDispatcher(), _autoSteer);
         step.DelayFunc = (_, _) => Task.CompletedTask;
 
         double angle = 0;
