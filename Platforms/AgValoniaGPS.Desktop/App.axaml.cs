@@ -31,6 +31,7 @@ namespace AgValoniaGPS.Desktop;
 public partial class App : Application
 {
     private IHost? _host;
+    private AgValoniaGPS.RemoteServer.RemoteServerHost? _remoteServer;
 
     public static IServiceProvider? Services { get; set; }
 
@@ -71,6 +72,13 @@ public partial class App : Application
 
         // Wire up cross-referencing services (AutoSteer → UDP)
         Services.WireUpServices();
+
+        // Phase 1 web UI (Plans/REMOTE_WEB_UI_SPLIT.md): embedded SignalR map
+        // server running ALONGSIDE the app, fed by the live ApplicationState.
+        // Browse to http://localhost:5174 (or the LAN IP) to see the live map.
+        _remoteServer = new AgValoniaGPS.RemoteServer.RemoteServerHost();
+        _ = _remoteServer.StartAsync(
+            Services.GetRequiredService<AgValoniaGPS.Models.State.ApplicationState>());
 
         // Extract sound files from Avalonia resources for cross-platform audio
         ExtractSoundFiles(Services);
@@ -125,6 +133,7 @@ public partial class App : Application
                 // ConfigurationStore is the source of truth for the written file.
                 configService.SaveAppSettings();
                 Services.GetRequiredService<IPersistentStateService>().Save();
+                _ = _remoteServer?.StopAsync();
                 _host?.Dispose();
             };
 

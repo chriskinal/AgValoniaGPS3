@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>AgValonia Remote Map (Phase 1)</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0f1115; overflow: hidden; }
+    #c { display: block; touch-action: none; }
+    #hud {
+      position: fixed; top: 8px; left: 8px; color: #7CFC9A;
+      font: 12px/1.5 ui-monospace, Menlo, monospace; white-space: pre; pointer-events: none;
+      text-shadow: 0 1px 2px #000;
+    }
+    #help { position: fixed; bottom: 8px; left: 8px; color: #668; font: 11px ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="hud">connecting…</div>
+  <div id="help">wheel/pinch = zoom · drag = pan · F = follow vehicle</div>
+  <!-- MVP: SignalR client from CDN. Phase 4 bundles this locally for offline cab use. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
