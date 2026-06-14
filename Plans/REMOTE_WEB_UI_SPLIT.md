@@ -376,6 +376,37 @@ The native app keeps running throughout. **Do not cut over until parity is field
 
 ---
 
+## 9. Phase 0 spike results (2026-06-14, code probe)
+
+A read-only probe of the codebase (not yet the headless-boot harness) tested both load-bearing assumptions. **No hard blocker found — the architecture is more amenable to the split than this plan originally assumed.** Verified against current `develop`:
+
+### 9.1 VM/service view-independence (litmus test) — largely PASSES
+- **Services & Models are Avalonia-free.** `AgValoniaGPS.Services` and `AgValoniaGPS.Models` have **no** Avalonia/Skia/ReactiveUI package refs and **no** `using Avalonia` in source. Headless-ready as-is.
+- **VM Avalonia coupling is shallow.** `AgValoniaGPS.ViewModels` references `Avalonia 12.0.3`, but usage is only `Avalonia.Threading` (Dispatcher — 8 files, ~47 calls) plus a handful of `Point`/`Color`/`Application`/`Visual`/`Control` uses. No control/binding/rendering entanglement. Needs a headless dispatcher (Avalonia.Headless supplies one) + minor type localization — not surgery.
+- **The wire contract already exists in-process as `MapRenderState`.** `Shared/AgValoniaGPS.Views/Controls/MapRenderState.cs` (164 lines) is a plain-data snapshot bundling everything the map draws — camera, vehicle pose, tool/sections, coverage, boundary, headland, U-turn path, tracks, tram lines, flags. It is assembled from the `ConfigurationStore` + `ApplicationState` singletons (the pipeline) and *pushed* to the render handler; the renderer never reaches back into the VM. This maps ~1:1 onto `Scene` (boundary/tracks/headland) + `Tick` (pose/sections/youturn/guidance) + `Coverage`.
+
+**Caveats to resolve when projecting `MapRenderState` → wire contract:**
+- It mixes pure data with **render objects** (`IImage`/`Bitmap`/`SKImage`/`SKBitmap`/`IBrush`/`Geometry`). The contract needs a serializable projection (coverage → tile bytes per §6; images → handles/paths). The *shape* is right; the payload is not directly serializable.
+- **Camera is baked in** (`CameraX/Y/Zoom/Rotation/CameraPitch`). Per §5 rule 3, camera is **client-owned and must not cross the wire** — strip these when projecting. Clean separation, no obstacle.
+
+### 9.2 Coverage streaming (§6) — CONFIRMED, with one refinement
+All §6 machinery verified in `CoverageMapService.cs` (the plan's layer names were wrong; the mechanics are real):
+- **Two layers:** `_detectionBits` (bit array, fixed `BITMAP_CELL_SIZE = 0.1 m`, authoritative — never ships) vs `_displayPixels` (RGB565 `ushort[]`, variable `_displayCellSize` — this is what streams).
+- **Delta sources:** `ConsumeDirtyRect()` (line 156, display-pixel rect) + `GetNewCoverageBitmapCells(cellSize)` (line 830, already `CoverageColor`-indexed). Pacing via `CoverageUpdated`.
+- **Codec already exists:** COVS save (line 1513+) = Header + Palette (`List<ushort>` RGB565, ≤255 entries built from tool section colors) + **RLE over palette-index bytes** — exactly §6's "don't invent a codec." Trivially sliceable per tile.
+- **Snapshot is bounded:** `MAX_DISPLAY_PIXELS = 25_000_000`; `ComputeDisplayCellSize` (line 1013) rescales past the cap, **snapping to discrete steps** (0.2/0.25/0.35/0.5/0.75/ceil) × `DisplayResolutionMultiplier`. Discrete snapping is a bonus — epochs are quantized, so host/client always agree on cell size.
+
+**Refinement to §6 — split the one "epoch" into two events (they cost very differently):**
+1. **Bounds expansion** (`CheckAndExpandBounds`: `EXPAND_MARGIN = 50 m`, `EXPAND_AMOUNT = 250 m`; fires `BoundsExpanded`) — origin/dimensions grow, **cell size unchanged**. Existing tiles stay valid; only *new* tiles appear. **Not** a re-snapshot — tiling absorbs it. This is the common case (happens whenever the vehicle nears the grid edge).
+2. **Display cell-size change** (only when crossing the 25M cap → coarser cells) — invalidates *all* tiles → **true epoch re-snapshot**. Rare.
+
+`CoverageMessage` should therefore carry a cheap "bounds grew, here are new tiles" variant distinct from the rare "cell size changed, drop everything" variant, rather than §6's single `CoverageEpoch`.
+
+### 9.3 Net
+The remaining Phase 0 work is **projection/serialization + a headless dispatcher**, not architectural change. Next empirical step: the headless-boot harness (Phase 0, §7) on `spike/web-ui-blockers` to confirm `MapRenderState` populates from a simulated GPS fix with no View attached.
+
+---
+
 ## References
 - `Plans/ARCHITECTURE.md` — services, state, data flow
 - `Plans/Completed/UNIFIED_CONTROL_LOOP_PLAN.md` — decoupled cadences (100/50/10 Hz, dead-reckoned position)
