@@ -250,3 +250,44 @@ Implemented as named below (the snapshot/service ended up as `PersistentAppState
 `Alpha`, `IsDisplayTramControl`, `IsEnabled`) lacked a home; those now persist per-field.
 `Passes`/`DisplayMode` were intentionally left on the Guidance sync to avoid double-sourcing —
 a smaller follow-up could consolidate them if desired.
+
+---
+
+## 11. Follow-up scope — de-ambient the VM (added 2026-06-14, not scheduled)
+
+**Different axis from §1–§10.** Everything above is about *data single-source-of-truth* — which
+of the three stores owns a value. This item is about *ambient framework coupling*: the ViewModel
+reaching into framework/global statics **out of the air** instead of receiving them through its
+constructor. It's the same "not injected, just grabbed" smell, one layer down, and it's exactly
+what `Plans/ARCHITECTURE.md` flags under "Tight Coupling Points → Historical, needs refactor" —
+which the completed storage audit deliberately did **not** touch.
+
+### 11.1 Injectable `IDispatcher` (the concrete item)
+The VM depends directly on `Avalonia.Threading.Dispatcher.UIThread` — a static from the
+*presentation* framework — in **~10 `MainViewModel` partials**: ~18 `Post`, 5 `InvokeAsync`,
+7 `CheckAccess`. By the project's own MVVM rule (VM coordinates, doesn't bind itself to the View
+framework), this should be an injected `IDispatcher`:
+- Define `IDispatcher` (Post / InvokeAsync / CheckAccess) in `AgValoniaGPS.Services` (or Models).
+- Avalonia-backed implementation registered in **Desktop + iOS + Android** (three-platform DI rule).
+- VM partials take `IDispatcher` via ctor; replace every `Dispatcher.UIThread.*` call.
+- Behavior-preserving for the current apps; independently shippable; no data-tier change.
+
+**Payoff:** (a) VM unit tests stop needing `Avalonia.Headless` *just to supply a dispatcher* — an
+inline/synchronous `IDispatcher` suffices; (b) it unblocks the headless web-UI host, which has a
+VM consumer with no UI thread (see `Plans/REMOTE_WEB_UI_SPLIT.md` §9.1 + the
+`Spikes/HeadlessHostSpike` proof — the spike had to pull in `Avalonia.Headless` purely for this).
+
+**Why it wasn't already done (and wasn't wrong to defer):** until the headless host, every VM
+consumer was an Avalonia View on a real UI thread, so `Dispatcher.UIThread` was correct everywhere
+and an abstraction would have had exactly one implementation. Defensible YAGNI; the web UI is the
+forcing function that makes it earn its keep.
+
+### 11.2 Sibling: static store access (optional, same pass)
+The same "ambient, not injected" smell applies to `ConfigurationStore.Instance` and
+`ApplicationState.Instance`, read statically across services and VMs (also flagged in
+`ARCHITECTURE.md`). The storage audit (§1–§10) made these the enforced SoT but left them as
+**statics**. De-static-ing them (inject the store instances) is the natural companion to §11.1 and
+would complete the "de-ambient the VM" pass — but it's larger blast-radius and can be sequenced
+separately. Keep §11.1 as the committed first step.
+
+**Status:** scoped, not scheduled. Surfaced by the remote/web-UI Phase 0 spike.
