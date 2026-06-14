@@ -35,6 +35,7 @@ public sealed class RemoteServerHost
         app.MapHub<MapHub>("/maphub");
         app.MapGet("/", () => Results.Content(ReadAsset("index.html"), "text/html"));
         app.MapGet("/app.js", () => Results.Content(ReadAsset("app.js"), "text/javascript"));
+        app.MapGet("/transport.js", () => Results.Content(ReadAsset("transport.js"), "text/javascript"));
 
         await app.StartAsync();
         app.Services.GetRequiredService<MapBroadcaster>().Start();

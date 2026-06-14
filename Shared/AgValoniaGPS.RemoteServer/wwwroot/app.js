@@ -1,6 +1,8 @@
-// Phase 1 client — Canvas2D renderer fed by the Scene + Tick SignalR feed.
-// Camera is entirely client-side (pan/zoom/follow never cross the wire).
-// This is the Phase 0 map-render de-risk in context; CanvasKit swaps in later.
+// Renderer — consumes plain Scene + Tick objects via the transport interface.
+// It has NO knowledge of SignalR or the wire format (see transport.js); swapping
+// the transport at Phase 2 leaves this file untouched. Canvas2D for now; the
+// CanvasKit swap (and client-side dead-reckoning) slot in here without touching
+// the transport seam.
 
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
@@ -9,38 +11,36 @@ const hud = document.getElementById('hud');
 function resize() { cv.width = innerWidth; cv.height = innerHeight; }
 addEventListener('resize', resize); resize();
 
+// ---- model (fed by the transport) ----
 let scene = null;      // SceneDto
-let tick = null;       // TickDto
+let tick = null;       // TickDto (latest — for sections/HUD)
+let lastTick = null;   // { e, n, heading, speed, t } authoritative pose + receipt time, for DR
 let connState = 'connecting…';
 
-// Client-owned camera: world meters -> screen px.
-let pxPerM = 4.0;            // zoom
-let follow = true;          // re-center on the vehicle each tick
-let camE = 0, camN = 0;     // camera center in field-local meters
+// ---- client-owned camera (never crosses the wire) ----
+let pxPerM = 4.0;
+let follow = true;
+let camE = 0, camN = 0;
 
-const conn = new signalR.HubConnectionBuilder()
-  .withUrl('/maphub')
-  .withAutomaticReconnect()
-  .build();
-
-conn.on('scene', s => {
-  scene = s;
-  // First scene with geometry but no vehicle yet: center on the boundary.
-  if (follow && (!tick || !tick.pose) && s.boundaries.length && s.boundaries[0].length) {
-    const r = s.boundaries[0];
-    camE = r.reduce((a, p) => a + p.e, 0) / r.length;
-    camN = r.reduce((a, p) => a + p.n, 0) / r.length;
-  }
+// ---- transport wiring (the only coupling point) ----
+const transport = RemoteTransport.create({
+  onScene(s) {
+    scene = s;
+    if (follow && (!tick || !tick.pose) && s.boundaries.length && s.boundaries[0].length) {
+      const r = s.boundaries[0];
+      camE = r.reduce((a, p) => a + p.e, 0) / r.length;
+      camN = r.reduce((a, p) => a + p.n, 0) / r.length;
+    }
+  },
+  onTick(t) {
+    tick = t;
+    if (t.pose) {
+      lastTick = { e: t.pose.e, n: t.pose.n, heading: t.pose.heading, speed: t.pose.speed, t: performance.now() };
+    }
+  },
+  onStatus(s) { connState = s; },
 });
-conn.on('tick', t => {
-  tick = t;
-  if (follow && t.pose) { camE = t.pose.e; camN = t.pose.n; }
-});
-
-conn.onreconnecting(() => connState = 'reconnecting…');
-conn.onreconnected(() => connState = 'connected');
-conn.onclose(() => connState = 'disconnected');
-conn.start().then(() => connState = 'connected').catch(e => connState = 'error: ' + e);
+transport.start();
 
 // ---- camera controls ----
 addEventListener('wheel', e => {
@@ -64,7 +64,7 @@ addEventListener('keydown', e => { if (e.key === 'f' || e.key === 'F') follow = 
 function w2s(e, n) {
   return [cv.width / 2 + (e - camE) * pxPerM, cv.height / 2 - (n - camN) * pxPerM];
 }
-function stroke(pts, close) {
+function strokePts(pts, close) {
   if (!pts || !pts.length) return;
   ctx.beginPath();
   pts.forEach((p, i) => { const [x, y] = w2s(p.e, p.n); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
@@ -82,22 +82,40 @@ function vehicle(p) {
   ctx.fill();
   ctx.restore();
 }
+// Dead-reckon the pose from the last authoritative tick: extrapolate along the
+// heading at the reported speed. dt is clamped so motion freezes (rather than
+// flies off) if ticks stall — same spirit as the app's own stale-pose cap.
+function renderPose() {
+  if (!lastTick) return null;
+  let dt = (performance.now() - lastTick.t) / 1000;
+  dt = Math.min(Math.max(dt, 0), 0.5);
+  return {
+    e: lastTick.e + lastTick.speed * Math.sin(lastTick.heading) * dt,
+    n: lastTick.n + lastTick.speed * Math.cos(lastTick.heading) * dt,
+    heading: lastTick.heading,
+    speed: lastTick.speed,
+  };
+}
 function draw() {
   ctx.clearRect(0, 0, cv.width, cv.height);
+
+  const rp = renderPose();
+  if (rp && follow) { camE = rp.e; camN = rp.n; }
+
   if (scene) {
     ctx.lineWidth = 2; ctx.strokeStyle = '#46a0ff';
-    for (const ring of scene.boundaries) stroke(ring, true);
+    for (const ring of scene.boundaries) strokePts(ring, true);
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffd24a';
-    for (const tr of scene.tracks) stroke(tr.points, false);
+    for (const tr of scene.tracks) strokePts(tr.points, false);
   }
-  if (tick && tick.pose) vehicle(tick.pose);
+  if (rp) vehicle(rp);
 
-  const spd = tick && tick.pose ? (tick.pose.speed * 3.6).toFixed(1) + ' km/h' : '—';
+  const spd = rp ? (rp.speed * 3.6).toFixed(1) + ' km/h' : '—';
   const secs = tick && tick.sections ? tick.sections.filter(Boolean).length + '/' + tick.sections.length : '—';
   hud.textContent =
     `${connState}\n` +
     (scene ? `field: ${scene.fieldName}\nboundaries: ${scene.boundaries.length}  tracks: ${scene.tracks.length}\n` : 'waiting for scene…\n') +
-    `speed: ${spd}   sections on: ${secs}\nzoom: ${pxPerM.toFixed(1)} px/m   follow: ${follow ? 'on' : 'off'}`;
+    `speed: ${spd}   sections on: ${secs}\nzoom: ${pxPerM.toFixed(1)} px/m   follow: ${follow ? 'on' : 'off'}  (DR)`;
 
   requestAnimationFrame(draw);
 }
