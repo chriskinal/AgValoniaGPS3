@@ -67,7 +67,7 @@ public class TranslationSource : INotifyPropertyChanged
     {
         "en", "da", "de", "es", "et", "fi", "fr", "hu", "it", "ko",
         "lt", "lv", "nl", "no", "pl", "pt", "ru", "sk", "sr", "tr",
-        "uk", "zh-Hans"
+        "uk", "zh-Hans", "cs"
     };
 
     public event PropertyChangedEventHandler? PropertyChanged;
