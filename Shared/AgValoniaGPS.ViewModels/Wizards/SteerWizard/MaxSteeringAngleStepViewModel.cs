@@ -155,13 +155,28 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
 
     private int _maxSteerAngle;
     /// <summary>
-    /// Final max steer angle as a raw WAS value. Conservative:
-    /// <c>min(left, right) * 0.9</c>.
+    /// Final max steer angle in degrees. Derived from the captured
+    /// raw counts at the current CountsPerDegree so the UI shows the
+    /// same value the config dialog will read back after persistence.
     /// </summary>
     public int MaxSteerAngle
     {
         get => _maxSteerAngle;
         set => SetProperty(ref _maxSteerAngle, value);
+    }
+
+    private int _maxSteerRawCounts;
+    /// <summary>
+    /// Final max steer measurement as raw WAS counts — what gets
+    /// persisted to <see cref="AutoSteerConfig.MaxSteerRawCounts"/>.
+    /// Invariant under CountsPerDegree changes, so the operator can
+    /// run CPD calibration before or after this step and the saved
+    /// limit stays correct.
+    /// </summary>
+    public int MaxSteerRawCounts
+    {
+        get => _maxSteerRawCounts;
+        set => SetProperty(ref _maxSteerRawCounts, value);
     }
 
     private bool _calibrationCompleted;
@@ -215,14 +230,23 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
             // Conservative: 90 % of the smaller side. Treating asymmetric
             // mechanical limits as if they were symmetric would push past
             // the tighter stop on every guidance correction.
-            MaxSteerAngle = (int)(Math.Min(DetectedMaxAngleRight, DetectedMaxAngleLeft) * 0.9);
+            double chosenDeg = Math.Min(DetectedMaxAngleRight, DetectedMaxAngleLeft) * 0.9;
+
+            // Store the measurement as raw WAS counts so it stays correct
+            // even if the operator re-runs the CPD calibration after this
+            // step. Degrees are derived from rawCounts / currentCpd, both
+            // here for the UI and in AutoSteerConfig for persistence.
+            double cpd = ConfigService.Store.AutoSteer.CountsPerDegree;
+            if (cpd <= 0) cpd = 100;
+            MaxSteerRawCounts = (int)Math.Round(chosenDeg * cpd);
+            MaxSteerAngle = (int)Math.Round(chosenDeg);
 
             CalibrationCompleted = true;
             Phase = MaxSteeringAnglePhase.Complete;
             PhaseResult =
                 $"Right max: {DetectedMaxAngleRight:F1}\n" +
                 $"Left max: {DetectedMaxAngleLeft:F1}\n" +
-                $"Max steer angle (raw WAS): {MaxSteerAngle}";
+                $"Max steer angle: {MaxSteerAngle}° ({MaxSteerRawCounts} counts)";
         }
         catch (OperationCanceledException)
         {
@@ -283,6 +307,7 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
         DetectedMaxAngleRight = 0;
         DetectedMaxAngleLeft = 0;
         MaxSteerAngle = 0;
+        MaxSteerRawCounts = 0;
         PhaseResult = "";
         CalibrationCompleted = false;
         return Task.CompletedTask;
@@ -303,6 +328,9 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
         CalibrationCompleted = false;
 
         var autoSteer = ConfigService.Store.AutoSteer;
+        // Restore the persisted raw-counts measurement; MaxSteerAngle is
+        // derived from it for the UI display.
+        MaxSteerRawCounts = autoSteer.MaxSteerRawCounts;
         MaxSteerAngle = autoSteer.MaxSteerAngle;
 
         if (AutoSteerService != null)
@@ -329,7 +357,14 @@ public class MaxSteeringAngleStepViewModel : SwitchGatedWizardStep
         UnsubscribeFromSwitchGate();
 
         if (CalibrationCompleted)
-            ConfigService.Store.AutoSteer.MaxSteerAngle = MaxSteerAngle;
+        {
+            // Persist as raw counts. MaxSteerAngle (degrees) on the
+            // config is now a computed view of MaxSteerRawCounts at the
+            // current CountsPerDegree, so writing rawCounts is the
+            // single source of truth — and re-running CPD later
+            // automatically updates the displayed degree value.
+            ConfigService.Store.AutoSteer.MaxSteerRawCounts = MaxSteerRawCounts;
+        }
     }
 
     private void OnStateUpdated(object? sender, VehicleStateSnapshot snapshot)
